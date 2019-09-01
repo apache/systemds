@@ -482,7 +482,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public DataCharacteristics getDataCharacteristics() {
-		return new MatrixCharacteristics(rlen, clen, -1, -1, nonZeros);
+		return new MatrixCharacteristics(rlen, clen, -1, nonZeros);
 	}
 	
 	public boolean isVector() {
@@ -3962,12 +3962,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	@Override
-	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
-			int normalBlockRowFactor, int normalBlockColFactor, int boundaryRlen, int boundaryClen)
+	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range,
+		int rowCut, int colCut, int blen, int boundaryRlen, int boundaryClen)
 	{
 		MatrixBlock topleft=null, topright=null, bottomleft=null, bottomright=null;
 		Iterator<IndexedMatrixValue> p=outlist.iterator();
-		int blockRowFactor=normalBlockRowFactor, blockColFactor=normalBlockColFactor;
+		int blockRowFactor=blen, blockColFactor=blen;
 		if(rowCut>range.rowEnd)
 			blockRowFactor=boundaryRlen;
 		if(colCut>range.colEnd)
@@ -4012,10 +4012,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			{
 				int r=(int)range.rowStart;
 				for(; r<Math.min(Math.min(rowCut, sparseBlock.numRows()), range.rowEnd+1); r++)
-					sliceHelp(r, range, colCut, topleft, topright, normalBlockRowFactor-rowCut, normalBlockRowFactor, normalBlockColFactor);
+					sliceHelp(r, range, colCut, topleft, topright, blen-rowCut, blen, blen);
 				
 				for(; r<=Math.min(range.rowEnd, sparseBlock.numRows()-1); r++)
-					sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, normalBlockRowFactor, normalBlockColFactor);
+					sliceHelp(r, range, colCut, bottomleft, bottomright, -rowCut, blen, blen);
 			}
 		}
 		else {
@@ -4028,9 +4028,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				{
 					int c=(int) range.colStart;
 					for(; c<Math.min(colCut, range.colEnd+1); c++)
-						topleft.appendValue(r+normalBlockRowFactor-rowCut, c+normalBlockColFactor-colCut, a[i+c]);
+						topleft.appendValue(r+blen-rowCut, c+blen-colCut, a[i+c]);
 					for(; c<=range.colEnd; c++)
-						topright.appendValue(r+normalBlockRowFactor-rowCut, c-colCut, a[i+c]);
+						topright.appendValue(r+blen-rowCut, c-colCut, a[i+c]);
 					i+=clen;
 				}
 				
@@ -4038,7 +4038,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				{
 					int c=(int) range.colStart;
 					for(; c<Math.min(colCut, range.colEnd+1); c++)
-						bottomleft.appendValue(r-rowCut, c+normalBlockColFactor-colCut, a[i+c]);
+						bottomleft.appendValue(r-rowCut, c+blen-colCut, a[i+c]);
 					for(; c<=range.colEnd; c++)
 						bottomright.appendValue(r-rowCut, c-colCut, a[i+c]);
 					i+=clen;
@@ -4074,24 +4074,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	//This the append operations for MR side
 	//nextNCol is the number columns for the block right of block v2
-	public void append(MatrixValue v2,
-			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
-			int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) {
+	public void append(MatrixValue v2, ArrayList<IndexedMatrixValue> outlist, int blen, boolean cbind, boolean m2IsLast, int nextNCol)
+	{
 		MatrixBlock m2 = (MatrixBlock)v2;
 		
 		//case 1: copy lhs and rhs to output
-		if( cbind && clen==blockColFactor 
-			|| !cbind && rlen==blockRowFactor )
-		{
+		if( cbind && clen==blen || !cbind && rlen==blen ) {
 			((MatrixBlock) outlist.get(0).getValue()).copy(this);
 			((MatrixBlock) outlist.get(1).getValue()).copy(m2);
 		}
 		//case 2: append part of rhs to lhs, append to 2nd output if necessary
-		else
-		{
+		else {
 			//single output block (via plain append operation)
-			if( cbind && clen + m2.clen < blockColFactor
-				|| !cbind && rlen + m2.rlen < blockRowFactor )
+			if( cbind && clen + m2.clen < blen
+				|| !cbind && rlen + m2.rlen < blen )
 			{
 				append(m2, (MatrixBlock) outlist.get(0).getValue(), cbind);
 			}
@@ -4100,8 +4096,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			{
 				//prepare output block 1
 				MatrixBlock ret1 = (MatrixBlock) outlist.get(0).getValue();
-				int lrlen1 = cbind ? rlen-1 : blockRowFactor-rlen-1;
-				int lclen1 = cbind ? blockColFactor-clen-1 : clen-1;
+				int lrlen1 = cbind ? rlen-1 : blen-rlen-1;
+				int lclen1 = cbind ? blen-clen-1 : clen-1;
 				MatrixBlock tmp1 = m2.slice(0, lrlen1, 0, lclen1, new MatrixBlock());
 				append(tmp1, ret1, cbind);
 	
@@ -4224,15 +4220,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	@Override
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn) {
-		return aggregateUnaryOperations(op, result, 
-				blockingFactorRow, blockingFactorCol, indexesIn, false);
+	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
+			MatrixValue result, int blen, MatrixIndexes indexesIn) {
+		return aggregateUnaryOperations(op, result, blen, indexesIn, false);
 	}
 	
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result,
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP)  {
+			int blen, MatrixIndexes indexesIn, boolean inCP)  {
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
 		if(op.aggOp.correctionExists)
@@ -4274,12 +4269,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op, op.getNumThreads());
 			else
 				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
-			LibMatrixAgg.recomputeIndexes(ret, op, blockingFactorRow, blockingFactorCol, indexesIn);
+			LibMatrixAgg.recomputeIndexes(ret, op, blen, indexesIn);
 		}
 		else if(op.sparseSafe)
-			sparseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
+			sparseAggregateUnaryHelp(op, ret, blen, indexesIn);
 		else
-			denseAggregateUnaryHelp(op, ret, blockingFactorRow, blockingFactorCol, indexesIn);
+			denseAggregateUnaryHelp(op, ret, blen, indexesIn);
 		
 		if(op.aggOp.correctionExists && inCP)
 			((MatrixBlock)result).dropLastRowsOrColumns(op.aggOp.correctionLocation);
@@ -4288,7 +4283,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	private void sparseAggregateUnaryHelp(AggregateUnaryOperator op, MatrixBlock result,
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
+			int blen, MatrixIndexes indexesIn)
 	{
 		//initialize result
 		if(op.aggOp.initialValue!=0)
@@ -4325,7 +4320,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	private void denseAggregateUnaryHelp(AggregateUnaryOperator op, MatrixBlock result,
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn)
+			int blen, MatrixIndexes indexesIn)
 	{
 		if(op.aggOp.initialValue!=0)
 			result.reset(result.rlen, result.clen, op.aggOp.initialValue);
@@ -5191,11 +5186,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	@Override
 	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat,
-			boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock)
+			boolean left, int blen, CTableMap resultMap, MatrixBlock resultBlock)
 	{	
 		CTable ctable = CTable.getCTableFnObject();
 		double w = scalarThat;
-		int offset = (int) ((ix1.getRowIndex()-1)*brlen); 
+		int offset = (int) ((ix1.getRowIndex()-1)*blen); 
 		
 		//sparse-unsafe ctable execution
 		//(because input values of 0 are invalid and have to result in errors) 
@@ -5462,7 +5457,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 */
 	public static MatrixBlock randOperations(int rows, int cols, double sparsity, double min, double max, String pdf, long seed, int k) {
 		RandomMatrixGenerator rgen = new RandomMatrixGenerator(pdf, rows, cols, 
-				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), sparsity, min, max);
+				ConfigurationManager.getBlocksize(), sparsity, min, max);
 		
 		if (k > 1)
 			return randOperations(rgen, seed, k);

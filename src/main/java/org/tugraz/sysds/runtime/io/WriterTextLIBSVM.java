@@ -36,7 +36,7 @@ public class WriterTextLIBSVM extends MatrixWriter
 	}
 
 	@Override
-	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz, boolean diag) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
 	{
 		//validity check matrix dimensions
@@ -60,7 +60,7 @@ public class WriterTextLIBSVM extends MatrixWriter
 	}
 
 	@Override
-	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException 
 	{
 	

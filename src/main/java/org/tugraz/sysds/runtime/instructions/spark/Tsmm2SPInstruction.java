@@ -85,13 +85,13 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		//execute tsmm2 instruction 
 		//step 1: first pass of X, filter-collect-broadcast excess blocks 
 		JavaPairRDD<MatrixIndexes,MatrixBlock> tmp1 = 
-			in.filter(new IsBlockInRange(_type.isLeft() ? 1 : mc.getRowsPerBlock()+1, mc.getRows(), 
-					_type.isLeft() ? mc.getColsPerBlock()+1 : 1, mc.getCols(), mc))
+			in.filter(new IsBlockInRange(_type.isLeft() ? 1 : mc.getBlocksize()+1, mc.getRows(), 
+					_type.isLeft() ? mc.getBlocksize()+1 : 1, mc.getCols(), mc))
 			  .mapToPair(new ShiftTSMMIndexesFunction(_type));		
 		PartitionedBlock<MatrixBlock> pmb = SparkExecutionContext.toPartitionedMatrixBlock(tmp1, 
-				(int)(_type.isLeft() ? mc.getRows() : mc.getRows() - mc.getRowsPerBlock()), 
-				(int)(_type.isLeft() ? mc.getCols()-mc.getColsPerBlock() : mc.getCols()), 
-				mc.getRowsPerBlock(), mc.getColsPerBlock(), -1L);
+				(int)(_type.isLeft() ? mc.getRows() : mc.getRows() - mc.getBlocksize()), 
+				(int)(_type.isLeft() ? mc.getCols()-mc.getBlocksize() : mc.getCols()), 
+				mc.getBlocksize(), -1L);
 		Broadcast<PartitionedBlock<MatrixBlock>> bpmb = sec.getSparkContext().broadcast(pmb);
 		
 		//step 2: second pass of X, compute tsmm/mapmm and aggregate result blocks
@@ -99,7 +99,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		if( OptimizerUtils.estimateSize(outputDim, outputDim) <= 32*1024*1024 ) { //default: <=32MB
 			//output large blocks and reduceAll to avoid skew on combineByKey
 			JavaRDD<MatrixBlock> tmp2 = in.map(
-					new RDDTSMM2ExtFunction(bpmb, _type, outputDim, (int)mc.getRowsPerBlock()));
+					new RDDTSMM2ExtFunction(bpmb, _type, outputDim, (int)mc.getBlocksize()));
 			MatrixBlock out = RDDAggregateUtils.sumStable(tmp2);
 
 			//put output block into symbol table (no lineage because single block)
@@ -112,7 +112,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.sumByKeyStable(tmp2, false);
 			
 			//put output RDD handle into symbol table
-			sec.getDataCharacteristics(output.getName()).set(outputDim, outputDim, mc.getRowsPerBlock(), mc.getColsPerBlock());
+			sec.getDataCharacteristics(output.getName()).set(outputDim, outputDim, mc.getBlocksize(), mc.getBlocksize());
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}

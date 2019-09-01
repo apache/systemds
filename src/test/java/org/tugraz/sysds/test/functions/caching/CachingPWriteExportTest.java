@@ -91,7 +91,7 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 				ii = InputInfo.TextCellInputInfo;
 			
 			MatrixBlock mb = DataConverter.readMatrixFromHDFS(output("V"),
-				ii, rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
+				ii, rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 			Vp = DataConverter.convertToDoubleMatrix(mb);
 		}
 		catch(Exception ex)

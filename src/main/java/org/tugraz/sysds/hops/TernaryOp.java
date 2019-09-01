@@ -203,7 +203,7 @@ public class TernaryOp extends Hop
 				getInput().get(1).constructLops(),
 				getInput().get(2).constructLops(),
 				getDataType(), getValueType(), et);
-		cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		cm.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cm);
 		setLops(cm);
 	}
@@ -223,7 +223,7 @@ public class TernaryOp extends Hop
 				getInput().get(1).constructLops(), 
 				getInput().get(2).constructLops(), 
 				getDataType(), getValueType(), et);
-		cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		cov.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cov);
 		setLops(cov);
 	}
@@ -254,8 +254,7 @@ public class TernaryOp extends Hop
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),
-				getInput().get(0).getRowsInBlock(), 
-				getInput().get(0).getColsInBlock(),
+				getInput().get(0).getBlocksize(),
 				getInput().get(0).getNnz());
 		
 		setOutputDimensions(pick);
@@ -311,11 +310,11 @@ public class TernaryOp extends Hop
 		
 		Ctable ternary = new Ctable(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
 		
-		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getBlocksize(), -1);
 		setLineNumbers(ternary);
 		
 		//force blocked output in CP and SPARK
-		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getBlocksize(), -1);
 		
 		//ternary opt, w/o reblock in CP
 		setLops(ternary);

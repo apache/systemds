@@ -290,7 +290,7 @@ public class FrameConverterTest extends AutomatedTestBase
 			writer.writeFrameToHDFS(frame1, input("A"), rows, schema.length);
 	
 			//run converter under test
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1);
 			runConverter(type, mc, null, Arrays.asList(schema), input("A"), output("B"));
 			
 			//read frame data from hdfs
@@ -323,8 +323,8 @@ public class FrameConverterTest extends AutomatedTestBase
 	{
 		try
 		{
-			MatrixCharacteristics mcMatrix = new MatrixCharacteristics(rows, schema.length, 1000, 1000, -1);
-			MatrixCharacteristics mcFrame = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
+			MatrixCharacteristics mcMatrix = new MatrixCharacteristics(rows, schema.length, 1000, -1);
+			MatrixCharacteristics mcFrame = new MatrixCharacteristics(rows, schema.length, -1, -1);
 			
 			MatrixBlock matrixBlock1 = null;
 			FrameBlock frame1 = null;
@@ -337,7 +337,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				//write matrix data to hdfs
 				MatrixWriter matWriter = MatrixWriterFactory.createMatrixWriter(oinfo);
 				matWriter.writeMatrixToHDFS(matrixBlock1, input("A"), rows, schema.length, 
-						mcMatrix.getRowsPerBlock(), mcMatrix.getColsPerBlock(), mcMatrix.getNonZeros());
+						mcMatrix.getBlockSize(), mcMatrix.getNonZeros());
 			} 
 			else {
 				//initialize the frame data.
@@ -364,7 +364,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				//read matrix data from hdfs
 				MatrixReader matReader = MatrixReaderFactory.createMatrixReader(iinfo);
 				MatrixBlock matrixBlock2 = matReader.readMatrixFromHDFS(output("B"), rows, schema.length, 
-						mcMatrix.getRowsPerBlock(), mcMatrix.getColsPerBlock(), mcMatrix.getNonZeros());
+						mcMatrix.getBlocksize(), mcMatrix.getNonZeros());
 
 				//verify input and output frame/matrix
 				verifyFrameMatrixData(frame1, matrixBlock2);

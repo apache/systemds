@@ -25,16 +25,14 @@ public class VarStats
 {
 	long _rlen = -1;
 	long _clen = -1;
-	int _brlen = -1;
-	int _bclen = -1;
+	int _blen = -1;
 	long _nnz = -1;
 	boolean _inmem = false;
 	
-	public VarStats( long rlen, long clen, int brlen, int bclen, long nnz, boolean inmem ) {
+	public VarStats( long rlen, long clen, int blen, long nnz, boolean inmem ) {
 		_rlen = rlen;
 		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
+		_blen = blen;
 		_nnz = nnz;
 		_inmem = inmem;
 	}
@@ -44,8 +42,7 @@ public class VarStats
 	}
 	
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("VarStats: [");
 		sb.append("rlen = ");
@@ -57,13 +54,11 @@ public class VarStats
 		sb.append(", inmem = ");
 		sb.append(_inmem);
 		sb.append("]");
-	
 		return sb.toString();
 	}
 	
 	@Override
-	public Object clone()
-	{
-		return new VarStats(_rlen, _clen, _brlen, _bclen,(long)_nnz, _inmem );
+	public Object clone() {
+		return new VarStats(_rlen, _clen, _blen, (long)_nnz, _inmem );
 	}
 }

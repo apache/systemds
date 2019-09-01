@@ -128,7 +128,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 			dim2 = ctableOp.hasSecondInput() ? (long) RDDAggregateUtils.max(in2) :
 				sec.getScalarInput(input3).getLongValue();
 		}
-		mcOut.set(dim1, dim2, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+		mcOut.set(dim1, dim2, mc1.getBlocksize(), mc1.getBlocksize());
 		mcOut.setNonZerosBound(mc1.getRows());
 		
 		//compute preferred degree of parallelism
@@ -195,7 +195,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		private final double _scalar_input2, _scalar_input3;
 		private final boolean _ignoreZeros;
 		private final long _dim1, _dim2;
-		private final int _brlen, _bclen;
+		private final int _blen;
 		
 		public CTableFunction(Ctable.OperationTypes ctableOp, double s2, double s3, boolean ignoreZeros, DataCharacteristics mcOut) {
 			this(ctableOp, s2, s3, ignoreZeros, false, mcOut);
@@ -208,8 +208,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 			_ignoreZeros = ignoreZeros;
 			_dim1 = mcOut.getRows();
 			_dim2 = mcOut.getCols();
-			_brlen = mcOut.getRowsPerBlock();
-			_bclen = mcOut.getColsPerBlock();
+			_blen = mcOut.getBlocksize();
 		}
 		
 		@Override
@@ -253,7 +252,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 			}
 			
 			ReblockBuffer rbuff = new ReblockBuffer(Math.min(
-				4*1024*1024, map.size()), _dim1, _dim2, _brlen, _bclen);
+				4*1024*1024, map.size()), _dim1, _dim2, _blen);
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			
 			//append to buffer for blocked output

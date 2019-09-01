@@ -228,7 +228,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			{
 				int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
 				grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et, k);
-				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
+				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getBlocksize(), -1);
 			}
 			else if(et == ExecType.SPARK) 
 			{
@@ -236,7 +236,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				Hop groups = getParameterHop(Statement.GAGG_GROUPS);
 				boolean broadcastGroups = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) == null &&
 						OptimizerUtils.checkSparkBroadcastMemoryBudget( groups.getDim1(), groups.getDim2(), 
-								groups.getRowsInBlock(), groups.getColsInBlock(), groups.getNnz()) );
+								groups.getBlocksize(), groups.getNnz()) );
 				
 				if( broadcastGroups //mapgroupedagg
 					&& getParameterHop(Statement.GAGG_FN) instanceof LiteralOp
@@ -245,13 +245,13 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				{
 					Hop target = getTargetHop();
 					grp_agg = new GroupedAggregateM(inputlops, getDataType(), getValueType(), true, ExecType.SPARK);
-					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);
+					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getBlocksize(), -1);
 					//no reblock required (directly output binary block)
 				}
 				else //groupedagg (w/ or w/o broadcast)
 				{
 					grp_agg = new GroupedAggregate(inputlops, getDataType(), getValueType(), et, broadcastGroups);
-					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, -1, -1, -1);
+					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, -1, -1);
 					setRequiresReblock( true );	
 				}
 			}
@@ -284,8 +284,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				
 				//get input vector (without materializing diag())
 				Hop input = targetHop.getInput().get(0);
-				long brlen = input.getRowsInBlock();
-				long bclen = input.getColsInBlock();
+				long blen = input.getBlocksize();
+				long blen = input.getColsInBlock();
 				MemoTable memo = new MemoTable();
 			
 				boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
@@ -294,20 +294,20 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				Hop ppred0 = input;
 				if( !isPPredInput ) { //ppred only if required
 					ppred0 = new BinaryOp("tmp1", DataType.MATRIX, ValueType.DOUBLE, OpOp2.NOTEQUAL, input, new LiteralOp("0",0));
-					HopRewriteUtils.setOutputBlocksizes(ppred0, brlen, bclen);
+					HopRewriteUtils.setBlocksize(ppred0, blen, blen);
 					ppred0.refreshSizeInformation();
 					ppred0.computeMemEstimate(memo); //select exec type
 					HopRewriteUtils.copyLineNumbers(this, ppred0);
 				}
 				
 				UnaryOp cumsum = new UnaryOp("tmp2", DataType.MATRIX, ValueType.DOUBLE, OpOp1.CUMSUM, ppred0); 
-				HopRewriteUtils.setOutputBlocksizes(cumsum, brlen, bclen);
+				HopRewriteUtils.setBlocksize(cumsum, blen, blen);
 				cumsum.refreshSizeInformation(); 
 				cumsum.computeMemEstimate(memo); //select exec type
 				HopRewriteUtils.copyLineNumbers(this, cumsum);	
 			
 				BinaryOp sel = new BinaryOp("tmp3", DataType.MATRIX, ValueType.DOUBLE, OpOp2.MULT, ppred0, cumsum);
-				HopRewriteUtils.setOutputBlocksizes(sel, brlen, bclen); 
+				HopRewriteUtils.setBlocksize(sel, blen, blen); 
 				sel.refreshSizeInformation();
 				sel.computeMemEstimate(memo); //select exec type
 				HopRewriteUtils.copyLineNumbers(this, sel);
@@ -323,7 +323,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin( et, inputlops,
 						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType());
 				
-				pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				pbilop.getOutputParameters().setDimensions(getDim1(),getDim2(), getBlocksize(), getColsInBlock(), getNnz());
 				setLineNumbers(pbilop);
 				setLops(pbilop);
 			}
@@ -337,8 +337,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			Hop input = targetHop;
 			long rlen = input.getDim1();
 			long clen = input.getDim2();
-			int brlen = input.getRowsInBlock();
-			int bclen = input.getColsInBlock();
+			int blen = input.getBlocksize();
 			boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
 			
 			//construct lops via new partial hop dag and subsequent lops construction 
@@ -365,23 +364,23 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			Hop cumsumInput = emptyInd;
 			if( !rmRows ){
 				cumsumInput = HopRewriteUtils.createTranspose(emptyInd);
-				HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);
+				HopRewriteUtils.updateHopCharacteristics(cumsumInput, blen, this);
 			}
 		
 			UnaryOp cumsum = HopRewriteUtils.createUnary(cumsumInput, OpOp1.CUMSUM); 
-			HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, this);
+			HopRewriteUtils.updateHopCharacteristics(cumsum, blen, this);
 		
 			Hop cumsumOutput = cumsum;
 			if( !rmRows ){
 				cumsumOutput = HopRewriteUtils.createTranspose(cumsum);
-				HopRewriteUtils.updateHopCharacteristics(cumsumOutput, brlen, bclen, this);	
+				HopRewriteUtils.updateHopCharacteristics(cumsumOutput, blen, this);	
 			}
 			
 			Hop maxDim = HopRewriteUtils.createAggUnaryOp(cumsumOutput, AggOp.MAX, Direction.RowCol); //alternative: right indexing
-			HopRewriteUtils.updateHopCharacteristics(maxDim, brlen, bclen, this);
+			HopRewriteUtils.updateHopCharacteristics(maxDim, blen, this);
 			
 			BinaryOp offsets = HopRewriteUtils.createBinary(cumsumOutput, emptyInd, OpOp2.MULT);
-			HopRewriteUtils.updateHopCharacteristics(offsets, brlen, bclen, this);
+			HopRewriteUtils.updateHopCharacteristics(offsets, blen, this);
 			
 			//Step 3: gather non-empty rows/cols into final results 
 			Lop linput = input.constructLops();

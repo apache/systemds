@@ -98,20 +98,20 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 				 .persist(pmapmmStorageLevel);
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		for( int i=0; i<mc1.getRows(); i+=NUM_ROWBLOCKS*mc1.getRowsPerBlock() ) 
+		for( int i=0; i<mc1.getRows(); i+=NUM_ROWBLOCKS*mc1.getBlocksize() ) 
 		{
 			//create broadcast for rdd partition
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = in1
-					.filter(new IsBlockInRange(i+1, i+NUM_ROWBLOCKS*mc1.getRowsPerBlock(), 1, mc1.getCols(), mc1))
-					.mapToPair(new PMapMMRebaseBlocksFunction(i/mc1.getRowsPerBlock()));
+					.filter(new IsBlockInRange(i+1, i+NUM_ROWBLOCKS*mc1.getBlocksize(), 1, mc1.getCols(), mc1))
+					.mapToPair(new PMapMMRebaseBlocksFunction(i/mc1.getBlocksize()));
 			
-			int rlen = (int)Math.min(mc1.getRows()-i, NUM_ROWBLOCKS*mc1.getRowsPerBlock());
-			PartitionedBlock<MatrixBlock> pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, (int)mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1L);
+			int rlen = (int)Math.min(mc1.getRows()-i, NUM_ROWBLOCKS*mc1.getBlocksize());
+			PartitionedBlock<MatrixBlock> pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, (int)mc1.getCols(), mc1.getBlocksize(), -1L);
 			Broadcast<PartitionedBlock<MatrixBlock>> bpmb = sec.getSparkContext().broadcast(pmb);
 			
 			//matrix multiplication
 			JavaPairRDD<MatrixIndexes,MatrixBlock> rdd2 = in2
-					.flatMapToPair(new PMapMMFunction(bpmb, i/mc1.getRowsPerBlock()));
+					.flatMapToPair(new PMapMMFunction(bpmb, i/mc1.getBlocksize()));
 			rdd2 = RDDAggregateUtils.sumByKeyStable(rdd2, false);
 			rdd2.persist(pmapmmStorageLevel)
 			    .count();

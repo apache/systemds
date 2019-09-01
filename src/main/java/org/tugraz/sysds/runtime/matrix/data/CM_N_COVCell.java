@@ -50,7 +50,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int brlen, int bclen, MatrixIndexes indexesIn) {
+			MatrixValue result, int blen, MatrixIndexes indexesIn) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
@@ -244,7 +244,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 	
 	@Override
-	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
+	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int blen,
 			CTableMap resultMap, MatrixBlock resultBlock) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
@@ -257,8 +257,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void slice(ArrayList<IndexedMatrixValue> outlist,
-			IndexRange range, int rowCut, int colCut, int blockRowFactor,
-			int blockColFactor, int boundaryRlen, int boundaryClen) {
+			IndexRange range, int rowCut, int colCut, int blen, int boundaryRlen, int boundaryClen) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 	
@@ -269,14 +268,14 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
+			MatrixValue result, int blen,
 			MatrixIndexes indexesIn, boolean inCP) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) {
+			int blen, boolean cbind, boolean m2IsLast, int nextNCol) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 }

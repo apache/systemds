@@ -52,7 +52,7 @@ import java.util.Iterator;
 public class RDDSortUtils 
 {
 
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> in, long rlen, int brlen )
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> in, long rlen, int blen )
 	{
 		//create value-index rdd from inputs
 		JavaRDD<Double> dvals = in.values()
@@ -67,14 +67,14 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 				.zipWithIndex()
-				.mapPartitionsToPair(new ConvertToBinaryBlockFunction(rlen, brlen));
+				.mapPartitionsToPair(new ConvertToBinaryBlockFunction(rlen, blen));
 		ret = RDDAggregateUtils.mergeByKey(ret, false);
 		
 		return ret;
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> in, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in2, long rlen, int brlen )
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in2, long rlen, int blen )
 	{
 		//create value-index rdd from inputs
 		JavaRDD<DoublePair> dvals = in.join(in2).values()
@@ -89,14 +89,14 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 			.zipWithIndex()
-			.mapPartitionsToPair(new ConvertToBinaryBlockFunction2(rlen, brlen));
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction2(rlen, blen));
 		ret = RDDAggregateUtils.mergeByKey(ret, false);		
 		
 		return ret;
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortByVals(
-		JavaPairRDD<MatrixIndexes, MatrixBlock> in, long rlen, long clen, int brlen )
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in, long rlen, long clen, int blen )
 	{
 		//create value-index rdd from inputs
 		JavaRDD<MatrixBlock> dvals = in.values()
@@ -104,25 +104,25 @@ public class RDDSortUtils
 		
 		//sort (creates sorted range per partition)
 		int numPartitions = SparkUtils.getNumPreferredPartitions(
-			new MatrixCharacteristics(rlen, clen, brlen, brlen), in);
+			new MatrixCharacteristics(rlen, clen, blen, blen), in);
 		JavaRDD<MatrixBlock> sdvals = dvals
 			.sortBy(new CreateDoubleKeysFunction(), true, numPartitions);
 		
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 			.zipWithIndex()
-			.mapPartitionsToPair(new ConvertToBinaryBlockFunction5(rlen, brlen));
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction5(rlen, blen));
 		ret = RDDAggregateUtils.mergeByKey(ret, false);
 		
 		return ret;
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortIndexesByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
-			boolean asc, long rlen, int brlen )
+			boolean asc, long rlen, int blen )
 	{
 		//create value-index rdd from inputs
 		JavaPairRDD<ValueIndexPair, Double> dvals = val
-			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(blen));
 		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
@@ -134,22 +134,22 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 			.zipWithIndex()
-			.mapPartitionsToPair(new ConvertToBinaryBlockFunction3(rlen, brlen));
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction3(rlen, blen));
 		ret = RDDAggregateUtils.mergeByKey(ret, false);
 		
 		return ret;
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortIndexesByVals( JavaPairRDD<MatrixIndexes, MatrixBlock> in,
-			boolean asc, long rlen, long clen, int brlen )
+			boolean asc, long rlen, long clen, int blen )
 	{
 		//create value-index rdd from inputs
 		JavaPairRDD<ValuesIndexPair, double[]> dvals = in
-			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction2(brlen));
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction2(blen));
 		
 		//sort (creates sorted range per partition)
 		int numPartitions = SparkUtils.getNumPreferredPartitions(
-			new MatrixCharacteristics(rlen, clen+1, brlen, brlen));
+			new MatrixCharacteristics(rlen, clen+1, blen, blen));
 		JavaRDD<ValuesIndexPair> sdvals = dvals
 			.sortByKey(new IndexComparator2(asc), true, numPartitions)
 			.keys(); //workaround for index comparator
@@ -157,18 +157,18 @@ public class RDDSortUtils
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, MatrixBlock> ret = sdvals
 			.zipWithIndex()
-			.mapPartitionsToPair(new ConvertToBinaryBlockFunction6(rlen, brlen));
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction6(rlen, blen));
 		ret = RDDAggregateUtils.mergeByKey(ret, false);
 		
 		return ret;
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByVal( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
-		JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen )
+		JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int blen )
 	{
 		//create value-index rdd from inputs
 		JavaPairRDD<ValueIndexPair, Double> dvals = val
-			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(brlen));
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction(blen));
 		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
@@ -182,23 +182,23 @@ public class RDDSortUtils
 			.zipWithIndex()
 			.mapToPair(new ExtractIndexFunction())
 			.sortByKey()
-			.mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, brlen));
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, blen));
 		ixmap = RDDAggregateUtils.mergeByKey(ixmap, false);
 		
 		//actual data sort
-		return sortDataByIx(data, ixmap, rlen, clen, brlen, bclen);
+		return sortDataByIx(data, ixmap, rlen, clen, blen);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByVals( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
-		JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, long clen2, int brlen, int bclen )
+		JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, long clen2, int blen )
 	{
 		//create value-index rdd from inputs
 		JavaPairRDD<ValuesIndexPair, double[]> dvals = val
-			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction2(brlen));
+			.flatMapToPair(new ExtractDoubleValuesWithIndexFunction2(blen));
 		
 		//sort (creates sorted range per partition)
 		int numPartitions = SparkUtils.getNumPreferredPartitions(
-			new MatrixCharacteristics(rlen, clen2+1, brlen, brlen));
+			new MatrixCharacteristics(rlen, clen2+1, blen, blen));
 		JavaRDD<ValuesIndexPair> sdvals = dvals
 			.sortByKey(new IndexComparator2(asc), true, numPartitions)
 			.keys(); //workaround for index comparator
@@ -208,24 +208,24 @@ public class RDDSortUtils
 			.zipWithIndex()
 			.mapToPair(new ExtractIndexFunction2())
 			.sortByKey()
-			.mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, brlen));
+			.mapPartitionsToPair(new ConvertToBinaryBlockFunction4(rlen, blen));
 		ixmap = RDDAggregateUtils.mergeByKey(ixmap, false);
 		
 		//actual data sort
-		return sortDataByIx(data, ixmap, rlen, clen, brlen, bclen);
+		return sortDataByIx(data, ixmap, rlen, clen, blen);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByIx(JavaPairRDD<MatrixIndexes,MatrixBlock> data,
-		JavaPairRDD<MatrixIndexes,MatrixBlock> ixmap, long rlen, long clen, int brlen, int bclen) {
+		JavaPairRDD<MatrixIndexes,MatrixBlock> ixmap, long rlen, long clen, int blen) {
 		//replicate indexes for all column blocks
-		long numRep = (long)Math.ceil((double)clen/bclen);
+		long numRep = (long)Math.ceil((double)clen/blen);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> rixmap = ixmap
 			.flatMapToPair(new ReplicateVectorFunction(false, numRep));
 		
 		//create binary block output
 		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data
 			.join(rixmap)
-			.mapPartitionsToPair(new ShuffleMatrixBlockRowsFunction(rlen, brlen));
+			.mapPartitionsToPair(new ShuffleMatrixBlockRowsFunction(rlen, blen));
 		return RDDAggregateUtils.mergeRowsByKey(ret);
 	}
 	
@@ -237,19 +237,19 @@ public class RDDSortUtils
 	 * @param asc if true, sort ascending
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param brlen number of rows in a block
-	 * @param bclen number of columns in a block
+	 * @param blen number of rows in a block
+	 * @param blen number of columns in a block
 	 * @param sec spark execution context
 	 * @param r_op reorg operator
 	 * @return data as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByValMemSort( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
-			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen, 
+			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int blen, 
 			SparkExecutionContext sec, ReorgOperator r_op) 
 	{
 		//collect orderby column for in-memory sorting
 		MatrixBlock inMatBlock = SparkExecutionContext
-				.toMatrixBlock(val, (int)rlen, 1, brlen, bclen, -1);
+			.toMatrixBlock(val, (int)rlen, 1, blen, -1);
 
 		//in-memory sort operation (w/ index return: source index in target position)
 		ReorgOperator lrop = new ReorgOperator(new SortIndex(1, !asc, true));
@@ -262,12 +262,12 @@ public class RDDSortUtils
 			sortedIxSrc.quickSetValue((int)sortedIx.quickGetValue(i,0)-1, 0, i+1);
 
 		//broadcast index vector
-		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(sortedIxSrc, brlen, bclen);
-		Broadcast<PartitionedBlock<MatrixBlock>> _pmb = sec.getSparkContext().broadcast(pmb);	
+		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(sortedIxSrc, blen);
+		Broadcast<PartitionedBlock<MatrixBlock>> _pmb = sec.getSparkContext().broadcast(pmb);
 
 		//sort data with broadcast index vector
 		JavaPairRDD<MatrixIndexes, RowMatrixBlock> ret = data
-				.mapPartitionsToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, brlen, _pmb));
+				.mapPartitionsToPair(new ShuffleMatrixBlockRowsInMemFunction(rlen, blen, _pmb));
 		return RDDAggregateUtils.mergeRowsByKey(ret);
 	}
 
@@ -322,11 +322,11 @@ public class RDDSortUtils
 	{
 		private static final long serialVersionUID = -3976735381580482118L;
 		
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ExtractDoubleValuesWithIndexFunction(int brlen)
+		public ExtractDoubleValuesWithIndexFunction(int blen)
 		{
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		@Override
@@ -337,7 +337,7 @@ public class RDDSortUtils
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock mb = arg0._2();
 			
-			long ixoffset = (ix.getRowIndex()-1)*_brlen;
+			long ixoffset = (ix.getRowIndex()-1)*_blen;
 			for( int i=0; i<mb.getNumRows(); i++) {
 				double val = mb.quickGetValue(i, 0);
 				ret.add(new Tuple2<>(new ValueIndexPair(val,ixoffset+i+1), val));
@@ -351,10 +351,10 @@ public class RDDSortUtils
 	{
 		private static final long serialVersionUID = 8358254634903633283L;
 		
-		private final int _brlen;
+		private final int _blen;
 		
-		public ExtractDoubleValuesWithIndexFunction2(int brlen) {
-			_brlen = brlen;
+		public ExtractDoubleValuesWithIndexFunction2(int blen) {
+			_blen = blen;
 		}
 		
 		@Override
@@ -365,7 +365,7 @@ public class RDDSortUtils
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock mb = arg0._2();
 			
-			long ixoffset = (ix.getRowIndex()-1)*_brlen;
+			long ixoffset = (ix.getRowIndex()-1)*_blen;
 			for( int i=0; i<mb.getNumRows(); i++) {
 				double[] vals = DataConverter.convertToDoubleVector(
 					mb.slice(i, i));
@@ -433,12 +433,12 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 5000298196472931653L;
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction(long rlen, int brlen)
+		public ConvertToBinaryBlockFunction(long rlen, int blen)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Double,Long>> arg0) 
@@ -452,14 +452,14 @@ public class RDDSortUtils
 			{
 				Tuple2<Double,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
 						ret.add(new Tuple2<>(ix,mb));
-					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 1, false);	
 				}
@@ -479,12 +479,12 @@ public class RDDSortUtils
 		private static final long serialVersionUID = -8638434373377180192L;
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction2(long rlen, int brlen)
+		public ConvertToBinaryBlockFunction2(long rlen, int blen)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<DoublePair,Long>> arg0) 
@@ -499,14 +499,14 @@ public class RDDSortUtils
 			{
 				Tuple2<DoublePair,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
 						ret.add(new Tuple2<>(ix,mb));
-					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 2, false);
 				}
@@ -528,12 +528,12 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 9113122668214965797L;
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction3(long rlen, int brlen)
+		public ConvertToBinaryBlockFunction3(long rlen, int blen)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValueIndexPair,Long>> arg0) 
@@ -548,14 +548,14 @@ public class RDDSortUtils
 			{
 				Tuple2<ValueIndexPair,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
 						ret.add(new Tuple2<>(ix,mb));
-					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 1, false);	
 				}
@@ -576,12 +576,12 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 9113122668214965797L;
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction4(long rlen, int brlen)
+		public ConvertToBinaryBlockFunction4(long rlen, int blen)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Long,Long>> arg0) 
@@ -596,14 +596,14 @@ public class RDDSortUtils
 			{
 				Tuple2<Long,Long> val = arg0.next();
 				long valix = val._1;
-				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 				
 				if( ix == null || ix.getRowIndex() != rix )
 				{
 					if( ix !=null )
 						ret.add(new Tuple2<>(ix,mb));
-					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 1, false);	
 				}
@@ -624,12 +624,12 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 6357994683868091724L;
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction5(long rlen, int brlen)
+		public ConvertToBinaryBlockFunction5(long rlen, int blen)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixBlock,Long>> arg0) 
@@ -643,13 +643,13 @@ public class RDDSortUtils
 			{
 				Tuple2<MatrixBlock,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 				
 				if( ix == null || ix.getRowIndex() != rix ) {
 					if( ix !=null )
 						ret.add(new Tuple2<>(ix,mb));
-					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, val._1.getNumColumns(), false);
 				}
@@ -669,12 +669,12 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 5351649694631911694L;
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction6(long rlen, int brlen)
+		public ConvertToBinaryBlockFunction6(long rlen, int blen)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValuesIndexPair,Long>> arg0) 
@@ -689,13 +689,13 @@ public class RDDSortUtils
 			{
 				Tuple2<ValuesIndexPair,Long> val = arg0.next();
 				long valix = val._2 + 1;
-				long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-				int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
+				long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+				int pos = UtilFunctions.computeCellInBlock(valix, _blen);
 				
 				if( ix == null || ix.getRowIndex() != rix ) {
 					if( ix !=null )
 						ret.add(new Tuple2<>(ix,mb));
-					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					ix = new MatrixIndexes(rix,1);
 					mb = new MatrixBlock((int)len, 1, false);
 				}
@@ -716,12 +716,12 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 6885207719329119646L;
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public ShuffleMatrixBlockRowsFunction(long rlen, int brlen)
+		public ShuffleMatrixBlockRowsFunction(long rlen, int blen)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 		}
 
 		@Override
@@ -771,9 +771,9 @@ public class RDDSortUtils
 					MatrixBlock mbTargetIndex = _currBlk._2()._2();
 					
 					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
-					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-					int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
-					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+					int pos = UtilFunctions.computeCellInBlock(valix, _blen);
+					int len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
 					MatrixBlock tmp = data.slice(_currPos, _currPos);
 					_currPos++;
@@ -802,14 +802,14 @@ public class RDDSortUtils
 		private static final long serialVersionUID = 6885207719329119646L; 
 		
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 
 		private Broadcast<PartitionedBlock<MatrixBlock>> _pmb = null;
 		
-		public ShuffleMatrixBlockRowsInMemFunction(long rlen, int brlen, Broadcast<PartitionedBlock<MatrixBlock>> pmb)
+		public ShuffleMatrixBlockRowsInMemFunction(long rlen, int blen, Broadcast<PartitionedBlock<MatrixBlock>> pmb)
 		{
 			_rlen = rlen;
-			_brlen = brlen;
+			_blen = blen;
 			_pmb = pmb;
 		}
 
@@ -860,9 +860,9 @@ public class RDDSortUtils
 					MatrixBlock mbTargetIndex = _pmb.value().getBlock((int)ixmap.getRowIndex(), 1);
 					
 					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
-					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
-					int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
-					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
+					long rix = UtilFunctions.computeBlockIndex(valix, _blen);
+					int pos = UtilFunctions.computeCellInBlock(valix, _blen);
+					int len = UtilFunctions.computeBlockSize(_rlen, rix, _blen);
 					MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
 					MatrixBlock tmp = data.slice(_currPos, _currPos);
 					_currPos++;

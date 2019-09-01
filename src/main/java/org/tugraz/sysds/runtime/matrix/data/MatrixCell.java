@@ -167,7 +167,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int brlen, int bclen,
+			MatrixValue result, int blen,
 			MatrixIndexes indexesIn) {
 		
 		MatrixCell c3=checkType(result);
@@ -318,7 +318,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 	
 	@Override
-	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
+	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int blen,
 			CTableMap resultMap, MatrixBlock resultBlock) {
 		//ctable expand (column vector to ctable)
 		CTable ctable = CTable.getCTableFnObject();
@@ -350,8 +350,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void slice(ArrayList<IndexedMatrixValue> outlist,
-			IndexRange range, int rowCut, int colCut, int blockRowFactor,
-			int blockColFactor, int boundaryRlen, int boundaryClen) {
+			IndexRange range, int rowCut, int colCut, int blen, int boundaryRlen, int boundaryClen) {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
 	}
 	
@@ -367,16 +366,16 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
+			MatrixValue result, int blen,
 			MatrixIndexes indexesIn, boolean inCP) {
-		return aggregateUnaryOperations(op,	result, blockingFactorRow, blockingFactorCol,indexesIn);
+		return aggregateUnaryOperations(op,	result, blen,indexesIn);
 	}
 
 	@Override
 	public void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) {
+			int blen, boolean cbind, boolean m2IsLast, int nextNCol) {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
 		MatrixCell c2=checkType(valueIn2);
-		((MatrixCell)outlist.get(1).getValue()).setValue(c2.getValue());	
+		((MatrixCell)outlist.get(1).getValue()).setValue(c2.getValue());
 	}
 }

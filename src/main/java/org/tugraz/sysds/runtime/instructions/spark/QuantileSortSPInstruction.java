@@ -96,11 +96,11 @@ public class QuantileSortSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		long clen = -1;
 		if( !weighted ) { //W/O WEIGHTS (default)
-			out = RDDSortUtils.sortByVal(in, mc.getRows(), mc.getRowsPerBlock());
+			out = RDDSortUtils.sortByVal(in, mc.getRows(), mc.getBlocksize());
 			clen = 1;
 		}
 		else { //W/ WEIGHTS
-			out = RDDSortUtils.sortByVal(in, inW, mc.getRows(), mc.getRowsPerBlock());
+			out = RDDSortUtils.sortByVal(in, inW, mc.getRows(), mc.getBlocksize());
 			clen = 2;
 		}
 
@@ -112,6 +112,6 @@ public class QuantileSortSPInstruction extends UnarySPInstruction {
 		
 		//update output matrix characteristics
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-		mcOut.set(mc.getRows(), clen, mc.getRowsPerBlock(), mc.getColsPerBlock());
+		mcOut.set(mc.getRows(), clen, mc.getBlocksize(), mc.getBlocksize());
 	}
 }

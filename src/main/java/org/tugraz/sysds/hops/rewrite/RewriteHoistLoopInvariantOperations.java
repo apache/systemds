@@ -197,7 +197,7 @@ public class RewriteHoistLoopInvariantOperations extends StatementBlockRewriteRu
 			//update live variable analysis
 			DataIdentifier diVar = new DataIdentifier(e.getKey());
 			diVar.setDimensions(h.getDim1(), h.getDim2());
-			diVar.setBlockDimensions(h.getRowsInBlock(), h.getColsInBlock());
+			diVar.setBlocksize(h.getBlocksize());
 			diVar.setDataType(h.getDataType());
 			diVar.setValueType(h.getValueType());
 			ret.liveOut().addVariable(e.getKey(), diVar);

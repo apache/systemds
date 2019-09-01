@@ -139,12 +139,12 @@ public class AggUnaryOp extends MultiThreadedHop
 					agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
 							binput.getInput().get(1).constructLops(), op, dir, 
 							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.CP);
-					PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
+					PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getBlocksize(), dir);
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
 							getDataType(), getValueType());
-						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						agg1 = unary1;
 					}
@@ -161,7 +161,7 @@ public class AggUnaryOp extends MultiThreadedHop
 				setLops(agg1);
 				
 				if (getDataType() == DataType.SCALAR) {
-					agg1.getOutputParameters().setDimensions(1, 1, getRowsInBlock(), getColsInBlock(), getNnz());
+					agg1.getOutputParameters().setDimensions(1, 1, getBlocksize(), getNnz());
 				}
 			}
 			else if( et == ExecType.SPARK )
@@ -183,14 +183,15 @@ public class AggUnaryOp extends MultiThreadedHop
 					Lop transform1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
 							binput.getInput().get(1).constructLops(), op, dir, 
 							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.SPARK);
-					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
+					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getBlocksize(), dir);
 					setLineNumbers(transform1);
 					setLops(transform1);
 				
 					if (getDataType() == DataType.SCALAR) {
-						UnaryCP unary1 = new UnaryCP(transform1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-								                    getDataType(), getValueType());
-						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+						UnaryCP unary1 = new UnaryCP(transform1,
+							HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+							getDataType(), getValueType());
+						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						setLops(unary1);
 					}
@@ -203,14 +204,14 @@ public class AggUnaryOp extends MultiThreadedHop
 					
 					PartialAggregate aggregate = new PartialAggregate(input.constructLops(), 
 							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), input._dataType, getValueType(), aggtype, et);
-					aggregate.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
+					aggregate.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getBlocksize());
 					setLineNumbers(aggregate);
 					setLops(aggregate);
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(aggregate, 
 							HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
-						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						setLops(unary1);
 					}
@@ -407,8 +408,8 @@ public class AggUnaryOp extends MultiThreadedHop
 			return false; //customization not allowed
 		
 		boolean noAggRequired = 
-				  ( input.getDim1()>1 && input.getDim1()<=input.getRowsInBlock() && dir==Direction.Col ) //e.g., colSums(X) with nrow(X)<=1000
-				||( input.getDim2()>1 && input.getDim2()<=input.getColsInBlock() && dir==Direction.Row ); //e.g., rowSums(X) with ncol(X)<=1000
+				  ( input.getDim1()>1 && input.getDim1()<=input.getBlocksize() && dir==Direction.Col ) //e.g., colSums(X) with nrow(X)<=1000
+				||( input.getDim2()>1 && input.getDim2()<=input.getBlocksize() && dir==Direction.Row ); //e.g., rowSums(X) with ncol(X)<=1000
 	
 		return !noAggRequired;
 	}
@@ -419,7 +420,7 @@ public class AggUnaryOp extends MultiThreadedHop
 			return SparkAggType.NONE;
 		
 		if(   getDataType()==DataType.SCALAR //in case of scalars the block dims are not set
-		   || dimsKnown() && getDim1()<=getRowsInBlock() && getDim2()<=getColsInBlock() )
+		   || dimsKnown() && getDim1()<=getBlocksize() && getDim2()<=getBlocksize() )
 			return SparkAggType.SINGLE_BLOCK;
 		else
 			return SparkAggType.MULTI_BLOCK;

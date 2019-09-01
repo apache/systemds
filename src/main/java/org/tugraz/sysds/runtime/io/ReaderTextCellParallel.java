@@ -77,7 +77,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 	}
 
 	@Override
-	protected void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	protected void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int blen )
 		throws IOException
 	{
 		int par = _numThreads;

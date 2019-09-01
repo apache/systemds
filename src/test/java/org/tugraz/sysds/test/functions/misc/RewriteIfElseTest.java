@@ -166,7 +166,7 @@ public class RewriteIfElseTest extends AutomatedTestBase
 				double val = pred ? 1 : 0;
 				double[][] X = getRandomMatrix(rows, cols, val, val, 1.0, 7);
 				writeInputMatrixWithMTD("X", X, true,
-					new MatrixCharacteristics(10,10,1000,1000,pred?100:0));
+					new MatrixCharacteristics(10,10,1000,pred?100:0));
 			}
 			
 			//execute tests

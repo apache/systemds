@@ -170,7 +170,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = false;
 			
 			MatrixBlock mb = MatrixBlock.randOperations((int)rows, (int)cols, sparsity, 0, 1, "uniform", 732);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,OptimizerUtils.DEFAULT_BLOCKSIZE,OptimizerUtils.DEFAULT_BLOCKSIZE,(long)(rows*cols*sparsity));
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,OptimizerUtils.DEFAULT_BLOCKSIZE,(long)(rows*cols*sparsity));
 			
 			DataConverter.writeMatrixToHDFS(mb, input("V"), OutputInfo.TextCellOutputInfo, mc);
 			HDFSTool.writeMetaDataFile(input("V.mtd"), ValueType.FP64, mc, OutputInfo.TextCellOutputInfo);

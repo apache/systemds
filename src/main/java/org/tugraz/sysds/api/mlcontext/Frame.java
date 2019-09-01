@@ -74,8 +74,7 @@ public class Frame {
 	 *            the number of columns
 	 */
 	public Frame(Dataset<Row> dataFrame, long numRows, long numCols) {
-		this(dataFrame, new FrameMetadata(numRows, numCols, ConfigurationManager.getBlocksize(),
-				ConfigurationManager.getBlocksize()));
+		this(dataFrame, new FrameMetadata(numRows, numCols, ConfigurationManager.getBlocksize()));
 	}
 
 	/**

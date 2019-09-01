@@ -173,14 +173,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		return getDataCharacteristics().getCols();
 	}
 
-	public long getNumRowsPerBlock() {
-		return getDataCharacteristics().getRowsPerBlock();
+	public long getBlocksize() {
+		return getDataCharacteristics().getBlocksize();
 	}
-
-	public long getNumColumnsPerBlock() {
-		return getDataCharacteristics().getColsPerBlock();
-	}
-
+	
 	public long getNnz() {
 		return getDataCharacteristics().getNonZeros();
 	}
@@ -264,11 +260,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			//preparations for block wise access
 			MetaDataFormat iimd = (MetaDataFormat) _metaData;
 			DataCharacteristics mc = iimd.getDataCharacteristics();
-			int brlen = mc.getRowsPerBlock();
-			int bclen = mc.getColsPerBlock();
+			int blen = mc.getBlocksize();
 			
 			//get filename depending on format
-			String fname = getPartitionFileName( pred, brlen, bclen );
+			String fname = getPartitionFileName( pred, blen );
 			
 			//probe cache
 			if( blockwise && _partitionCacheName != null && _partitionCacheName.equals(fname) )
@@ -288,7 +283,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						cols = mc.getCols();
 						break;
 					case ROW_BLOCK_WISE: 
-						rows = brlen;
+						rows = blen;
 						cols = mc.getCols();
 						break;
 					case ROW_BLOCK_WISE_N: 
@@ -301,7 +296,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						break;
 					case COLUMN_BLOCK_WISE: 
 						rows = mc.getRows();
-						cols = bclen;
+						cols = blen;
 						break;
 					case COLUMN_BLOCK_WISE_N: 
 						rows = mc.getRows();
@@ -331,12 +326,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				
 				if( _partitionFormat == PDataPartitionFormat.ROW_BLOCK_WISE )
 				{
-					int rix = (int)((pred.rowStart-1)%brlen);
+					int rix = (int)((pred.rowStart-1)%blen);
 					mb = mb.slice(rix, rix, (int)(pred.colStart-1), (int)(pred.colEnd-1), new MatrixBlock());
 				}
 				if( _partitionFormat == PDataPartitionFormat.COLUMN_BLOCK_WISE )
 				{
-					int cix = (int)((pred.colStart-1)%bclen);
+					int cix = (int)((pred.colStart-1)%blen);
 					mb = mb.slice((int)(pred.rowStart-1), (int)(pred.rowEnd-1), cix, cix, new MatrixBlock());
 				}
 			}
@@ -356,7 +351,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		return mb;
 	}
 
-	public String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
+	public String getPartitionFileName( IndexRange pred, int blen ) 
 	{
 		if ( !_partitioned )
 			throw new DMLRuntimeException("MatrixObject not available to indexed read.");
@@ -372,7 +367,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				break;
 			case ROW_BLOCK_WISE:
 				sb.append(Lop.FILE_SEPARATOR);
-				sb.append((pred.rowStart-1)/brlen+1);
+				sb.append((pred.rowStart-1)/blen+1);
 				break;
 			case ROW_BLOCK_WISE_N:
 				sb.append(Lop.FILE_SEPARATOR);
@@ -384,7 +379,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				break;
 			case COLUMN_BLOCK_WISE:
 				sb.append(Lop.FILE_SEPARATOR);
-				sb.append((pred.colStart-1)/bclen+1);
+				sb.append((pred.colStart-1)/blen+1);
 				break;
 			case COLUMN_BLOCK_WISE_N:
 				sb.append(Lop.FILE_SEPARATOR);
@@ -435,7 +430,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		//read matrix and maintain meta data
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(fname, iimd.getInputInfo(), rlen, clen,
-				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros(), getFileFormatProperties());
+				mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
 		setHDFSFileExists(true);
 		
 		//sanity check correct output
@@ -473,8 +468,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			//obtain matrix block from RDD
 			int rlen = (int)mc.getRows();
 			int clen = (int)mc.getCols();
-			int brlen = mc.getRowsPerBlock();
-			int bclen = mc.getColsPerBlock();
+			int blen = mc.getBlocksize();
 			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
@@ -499,7 +493,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			else {
 				//collect matrix block from binary cell RDD
-				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, brlen, bclen, nnz);
+				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, blen, nnz);
 			}
 		}
 		catch(DMLRuntimeException ex) {
@@ -539,11 +533,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
-			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE &&
-				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) )
+			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
+				&& mc.getBlocksize() != ConfigurationManager.getBlocksize() )
 			{
 				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
-					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
+					ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
 			}
 			else {
 				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, mc, rep, fprop, _diag);

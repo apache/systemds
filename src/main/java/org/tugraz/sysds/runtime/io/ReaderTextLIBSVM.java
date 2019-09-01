@@ -41,13 +41,13 @@ public class ReaderTextLIBSVM extends MatrixReader
 	}
 
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
 		MatrixBlock ret = null;
 		if( rlen>=0 && clen>=0 ) //otherwise allocated on read
-			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
+			ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 		
 		//prepare file access
 		JobConf    job  =  new JobConf(ConfigurationManager.getCachedJobConf());
@@ -58,7 +58,7 @@ public class ReaderTextLIBSVM extends MatrixReader
 		checkValidInputFile(fs, path); 
 	
 		//core read 
-		ret = readLIBSVMMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
+		ret = readLIBSVMMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen);
 		
 		//finally check if change of sparse/dense block representation required
 		//(nnz explicitly maintained during read)
@@ -68,15 +68,15 @@ public class ReaderTextLIBSVM extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 		
 		//core read 
 		long lnnz = readLIBSVMMatrixFromInputStream(is, "external inputstream", ret,
-			new MutableInt(0), rlen, clen, brlen, bclen);
+			new MutableInt(0), rlen, clen, blen);
 		
 		//finally check if change of sparse/dense block representation required
 		ret.setNonZeros( lnnz );
@@ -87,7 +87,7 @@ public class ReaderTextLIBSVM extends MatrixReader
 	
 	@SuppressWarnings("unchecked")
 	private static MatrixBlock readLIBSVMMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
-			long rlen, long clen, int brlen, int bclen)
+			long rlen, long clen, int blen)
 		throws IOException, DMLRuntimeException
 	{
 		//prepare file paths in alphanumeric order
@@ -110,8 +110,8 @@ public class ReaderTextLIBSVM extends MatrixReader
 		long lnnz = 0;
 		MutableInt row = new MutableInt(0);
 		for(int fileNo=0; fileNo<files.size(); fileNo++) {
-			lnnz += readLIBSVMMatrixFromInputStream(fs.open(files.get(fileNo)), path.toString(), dest, 
-				row, rlen, clen, brlen, bclen);
+			lnnz += readLIBSVMMatrixFromInputStream(fs.open(files.get(fileNo)),
+				path.toString(), dest, row, rlen, clen, blen);
 		}
 		
 		//post processing
@@ -121,7 +121,7 @@ public class ReaderTextLIBSVM extends MatrixReader
 	}
 	
 	private static long readLIBSVMMatrixFromInputStream( InputStream is, String srcInfo, MatrixBlock dest, MutableInt rowPos, 
-			long rlen, long clen, int brlen, int bclen )
+			long rlen, long clen, int blen )
 		throws IOException
 	{
 		SparseRowVector vect = new SparseRowVector(1024);
@@ -156,7 +156,7 @@ public class ReaderTextLIBSVM extends MatrixReader
 		
 		// allocate target matrix block based on given size; 
 		return createOutputMatrixBlock(nrow, ncol, 
-			nrow, (int)ncol, (long)nrow*ncol, true, false);
+			nrow, (long)nrow*ncol, true, false);
 	}
 	
 	protected static int parseLibsvmRow(String rowStr, SparseRowVector vect, int clen) {

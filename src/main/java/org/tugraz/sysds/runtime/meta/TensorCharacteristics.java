@@ -28,23 +28,20 @@ public class TensorCharacteristics extends DataCharacteristics
 
 	public static final int[] DEFAULT_BLOCK_SIZE = {1024, 128, 32, 16, 8, 8};
 	private long[] _dims;
-	private int[] _blkSizes;
 	private long _nnz = -1;
 	
 	public TensorCharacteristics() {}
 	
 	public TensorCharacteristics(long[] dims, long nnz) {
-		int[] blkSizes = new int[dims.length];
-		Arrays.fill(blkSizes, DEFAULT_BLOCK_SIZE[dims.length - 2]);
-		set(dims, blkSizes, nnz);
+		set(dims, DEFAULT_BLOCK_SIZE[dims.length], nnz);
 	}
 	
-	public TensorCharacteristics(long[] dims, int[] blkSizes) {
-		set(dims, blkSizes, -1);
+	public TensorCharacteristics(long[] dims, int blocksize) {
+		set(dims, blocksize, -1);
 	}
 
-	public TensorCharacteristics(long[] dims, int[] blkSizes, long nnz) {
-		set(dims, blkSizes, nnz);
+	public TensorCharacteristics(long[] dims, int blocksize, long nnz) {
+		set(dims, blocksize, nnz);
 	}
 
 	public TensorCharacteristics(DataCharacteristics that) {
@@ -52,23 +49,22 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public DataCharacteristics set(long[] dims, int[] blkSizes) {
-		set(dims, blkSizes, -1);
+	public DataCharacteristics set(long[] dims, int blocksize) {
+		set(dims, blocksize, -1);
 		return this;
 	}
 
 	@Override
-	public DataCharacteristics set(long[] dims, int[] blkSizes, long nnz) {
+	public DataCharacteristics set(long[] dims, int blocksize, long nnz) {
 		_dims = dims;
-		_blkSizes = blkSizes;
+		_blocksize = blocksize;
 		return this;
 	}
 
 	@Override
 	public DataCharacteristics set(DataCharacteristics that) {
 		long[] dims = that.getDims().clone();
-		int[] blockSizes = that.getBlockSizes().clone();
-		set(dims, blockSizes, that.getNonZeros());
+		set(dims, that.getBlockSize(), that.getNonZeros());
 		return this;
 	}
 
@@ -124,28 +120,6 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public int getBlockSize(int i) {
-		return _blkSizes[i];
-	}
-
-	@Override
-	public int[] getBlockSizes() {
-		return _blkSizes;
-	}
-
-	@Override
-	public DataCharacteristics setBlockSize(int i, int blksize) {
-		_blkSizes[i] = blksize;
-		return this;
-	}
-
-	@Override
-	public DataCharacteristics setBlockSizes(int[] blkSizes) {
-		_blkSizes = blkSizes;
-		return this;
-	}
-
-	@Override
 	public long getLength() {
 		return UtilFunctions.prod(_dims);
 	}
@@ -160,7 +134,7 @@ public class TensorCharacteristics extends DataCharacteristics
 
 	@Override
 	public long getNumBlocks(int i) {
-		return Math.max((long) Math.ceil((double)getDim(i) / getBlockSize(i)), 1);
+		return Math.max((long) Math.ceil((double)getDim(i) / getBlockSize()), 1);
 	}
 
 	@Override
@@ -170,8 +144,7 @@ public class TensorCharacteristics extends DataCharacteristics
 
 	@Override
 	public String toString() {
-		return "["+Arrays.toString(_dims)+", nnz="+_nnz
-			+ ", blocks "+Arrays.toString(_blkSizes)+"]";
+		return "["+Arrays.toString(_dims)+", nnz="+_nnz + ", blocksize= "+_blocksize+"]";
 	}
 	
 	@Override
@@ -180,14 +153,13 @@ public class TensorCharacteristics extends DataCharacteristics
 			return false;
 		TensorCharacteristics tc = (TensorCharacteristics) anObject;
 		return Arrays.equals(_dims, tc._dims)
-			&& Arrays.equals(_blkSizes, tc._blkSizes)
+			&& _blocksize == tc._blocksize
 			&& _nnz == tc._nnz;
 	}
 	
 	@Override
 	public int hashCode() {
 		return UtilFunctions.intHashCode(UtilFunctions.intHashCode(
-			Arrays.hashCode(_dims), Arrays.hashCode(_blkSizes)),
-			Long.hashCode(_nnz));
+			Arrays.hashCode(_dims), _blocksize), Long.hashCode(_nnz));
 	}
 }

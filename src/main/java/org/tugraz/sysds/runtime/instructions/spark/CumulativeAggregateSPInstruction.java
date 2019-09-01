@@ -63,9 +63,8 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = new MatrixCharacteristics(mc);
 		long rlen = mc.getRows();
-		int brlen = mc.getRowsPerBlock();
-		int bclen = mc.getColsPerBlock();
-		mcOut.setRows((long)(Math.ceil((double)rlen/brlen)));
+		int blen = mc.getBlocksize();
+		mcOut.setRows((long)(Math.ceil((double)rlen/blen)));
 		
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
@@ -73,7 +72,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		//execute unary aggregate (w/ implicit drop correction)
 		AggregateUnaryOperator auop = (AggregateUnaryOperator) _optr;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-			in.mapToPair(new RDDCumAggFunction(auop, rlen, brlen, bclen));
+			in.mapToPair(new RDDCumAggFunction(auop, rlen, blen));
 		//merge partial aggregates, adjusting for correct number of partitions
 		//as size can significant shrink (1K) but also grow (sparse-dense)
 		int numParts = SparkUtils.getNumPreferredPartitions(mcOut);
@@ -93,14 +92,12 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		private final AggregateUnaryOperator _op;
 		private UnaryOperator _uop = null;
 		private final long _rlen;
-		private final int _brlen;
-		private final int _bclen;
+		private final int _blen;
 		
-		public RDDCumAggFunction( AggregateUnaryOperator op, long rlen, int brlen, int bclen ) {
+		public RDDCumAggFunction( AggregateUnaryOperator op, long rlen, int blen ) {
 			_op = op;
 			_rlen = rlen;
-			_brlen = brlen;
-			_bclen = bclen;
+			_blen = blen;
 		}
 		
 		@Override
@@ -126,17 +123,17 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 				blkOut.quickSetValue(0, 1, t2.prod());
 			}
 			else { //general case
-				OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, ixOut, blkOut, aop, _brlen, _bclen);
+				OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, ixOut, blkOut, aop, _blen);
 				if( aop.aggOp.correctionExists )
 					blkOut.dropLastRowsOrColumns(aop.aggOp.correctionLocation);
 			}
 			
 			//cumsum expand partial aggregates
-			long rlenOut = (long)Math.ceil((double)_rlen/_brlen);
-			long rixOut = (long)Math.ceil((double)ixIn.getRowIndex()/_brlen);
-			int rlenBlk = (int) Math.min(rlenOut-(rixOut-1)*_brlen, _brlen);
+			long rlenOut = (long)Math.ceil((double)_rlen/_blen);
+			long rixOut = (long)Math.ceil((double)ixIn.getRowIndex()/_blen);
+			int rlenBlk = (int) Math.min(rlenOut-(rixOut-1)*_blen, _blen);
 			int clenBlk = blkOut.getNumColumns();
-			int posBlk = (int) ((ixIn.getRowIndex()-1) % _brlen);
+			int posBlk = (int) ((ixIn.getRowIndex()-1) % _blen);
 			
 			//construct sparse output blocks (single row in target block size)
 			MatrixBlock blkOut2 = new MatrixBlock(rlenBlk, clenBlk, true);

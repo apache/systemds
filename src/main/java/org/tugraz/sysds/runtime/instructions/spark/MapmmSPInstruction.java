@@ -177,9 +177,9 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 	private static boolean preservesPartitioning(DataCharacteristics mcIn, CacheType type )
 	{
 		if( type == CacheType.LEFT )
-			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();
+			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getBlocksize();
 		else // RIGHT
-			return mcIn.dimsKnown() && mcIn.getCols() <= mcIn.getColsPerBlock();
+			return mcIn.dimsKnown() && mcIn.getCols() <= mcIn.getBlocksize();
 	}
 	
 	/**
@@ -192,8 +192,8 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 	 */
 	private static boolean requiresFlatMapFunction( CacheType type, DataCharacteristics mcBc)
 	{
-		return    (type == CacheType.LEFT && mcBc.getRows() > mcBc.getRowsPerBlock())
-			   || (type == CacheType.RIGHT && mcBc.getCols() > mcBc.getColsPerBlock());
+		return    (type == CacheType.LEFT && mcBc.getRows() > mcBc.getBlocksize())
+			   || (type == CacheType.RIGHT && mcBc.getCols() > mcBc.getBlocksize());
 	}
 	
 	/**
@@ -214,11 +214,10 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		
 		boolean isLeft = (type == CacheType.LEFT);
 		boolean isOuter = isLeft ? 
-				(mcRdd.getRows() <= mcRdd.getRowsPerBlock()) :
-				(mcRdd.getCols() <= mcRdd.getColsPerBlock());
+				(mcRdd.getRows() <= mcRdd.getBlocksize()) :
+				(mcRdd.getCols() <= mcRdd.getBlocksize());
 		boolean isLargeOutput = (OptimizerUtils.estimatePartitionedSizeExactSparsity(isLeft?mcBc.getRows():mcRdd.getRows(),
-				isLeft?mcRdd.getCols():mcBc.getCols(), isLeft?mcBc.getRowsPerBlock():mcRdd.getRowsPerBlock(),
-				isLeft?mcRdd.getColsPerBlock():mcBc.getColsPerBlock(), 1.0) / numPartitions) > 1024*1024*1024; 
+				isLeft?mcRdd.getCols():mcBc.getCols(), mcRdd.getBlocksize(), 1.0) / numPartitions) > 1024*1024*1024; 
 		return isOuter && isLargeOutput && mcRdd.dimsKnown() && mcBc.dimsKnown()
 			&& numPartitions < getNumRepartitioning(type, mcRdd, mcBc);
 	}
@@ -235,8 +234,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 	private static int getNumRepartitioning(CacheType type, DataCharacteristics mcRdd, DataCharacteristics mcBc ) {
 		boolean isLeft = (type == CacheType.LEFT);
 		long sizeOutput = (OptimizerUtils.estimatePartitionedSizeExactSparsity(isLeft?mcBc.getRows():mcRdd.getRows(),
-				isLeft?mcRdd.getCols():mcBc.getCols(), isLeft?mcBc.getRowsPerBlock():mcRdd.getRowsPerBlock(),
-				isLeft?mcRdd.getColsPerBlock():mcBc.getColsPerBlock(), 1.0)); 
+				isLeft?mcRdd.getCols():mcBc.getCols(), mcRdd.getBlocksize(), 1.0)); 
 		long numParts = sizeOutput / InfrastructureAnalyzer.getHDFSBlockSize();
 		return (int)Math.min(numParts, (isLeft?mcRdd.getNumColBlocks():mcRdd.getNumRowBlocks()));
 	}

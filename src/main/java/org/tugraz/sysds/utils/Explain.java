@@ -565,8 +565,7 @@ public class Explain
 		//matrix characteristics
 		sb.append(" [" + hop.getDim1() + ","
 				+ hop.getDim2() + ","
-				+ hop.getRowsInBlock() + ","
-				+ hop.getColsInBlock() + ","
+				+ hop.getBlocksize() + ","
 				+ hop.getNnz());
 
 		if (hop.getUpdateType().isInPlace())

@@ -50,7 +50,7 @@ public class ReaderBinaryBlock extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//early abort for known empty matrices (e.g., remote parfor result vars)
@@ -58,7 +58,7 @@ public class ReaderBinaryBlock extends MatrixReader
 			return new MatrixBlock((int)rlen, (int)clen, true);
 		
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, brlen, bclen, estnnz, false, false);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, blen, estnnz, false, false);
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
@@ -69,7 +69,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		checkValidInputFile(fs, path); 
 	
 		//core read 
-		readBinaryBlockMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
+		readBinaryBlockMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen);
 		
 		//finally check if change of sparse/dense block representation required
 		if( !AGGREGATE_BLOCK_NNZ )
@@ -80,13 +80,13 @@ public class ReaderBinaryBlock extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		throw new DMLRuntimeException("Not implemented yet.");
 	}
 
-	public ArrayList<IndexedMatrixValue> readIndexedMatrixBlocksFromHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public ArrayList<IndexedMatrixValue> readIndexedMatrixBlocksFromHDFS(String fname, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block collection
@@ -101,19 +101,19 @@ public class ReaderBinaryBlock extends MatrixReader
 		checkValidInputFile(fs, path);
 	
 		//core read 
-		readBinaryBlockMatrixBlocksFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
+		readBinaryBlockMatrixBlocksFromHDFS(path, job, fs, ret, rlen, clen, blen);
 		
 		return ret;
 	}
 	
-	protected static MatrixBlock getReuseBlock(int brlen, int bclen, boolean sparse) {
+	protected static MatrixBlock getReuseBlock(int blen, boolean sparse) {
 		//note: we allocate the reuse block in CSR because this avoids unnecessary
 		//reallocations in the presence of a mix of sparse and ultra-sparse blocks,
 		//where ultra-sparse deserialization only reuses CSR blocks
-		MatrixBlock value = new MatrixBlock(brlen, bclen, sparse);
+		MatrixBlock value = new MatrixBlock(blen, blen, sparse);
 		if( sparse ) {
 			value.allocateAndResetSparseBlock(true, SparseBlock.Type.CSR);
-			value.getSparseBlock().allocate(0, brlen*bclen);
+			value.getSparseBlock().allocate(0, blen*blen);
 		}
 		return value;
 	}
@@ -135,16 +135,16 @@ public class ReaderBinaryBlock extends MatrixReader
 	 * @param dest matrix block
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param brlen number of rows in block
-	 * @param bclen number of columns in block
+	 * @param blen number of rows in block
+	 * @param blen number of columns in block
 	 * @throws IOException if IOException occurs
 	 */
-	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int blen )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
 		MatrixIndexes key = new MatrixIndexes(); 
-		MatrixBlock value = getReuseBlock(brlen, bclen, sparse);
+		MatrixBlock value = getReuseBlock(blen, sparse);
 		long lnnz = 0; //aggregate block nnz
 		
 		//set up preferred custom serialization framework for binary block format
@@ -166,8 +166,8 @@ public class ReaderBinaryBlock extends MatrixReader
 					if( value.isEmptyBlock(false) )
 						continue;
 					
-					int row_offset = (int)(key.getRowIndex()-1)*brlen;
-					int col_offset = (int)(key.getColumnIndex()-1)*bclen;
+					int row_offset = (int)(key.getRowIndex()-1)*blen;
+					int col_offset = (int)(key.getColumnIndex()-1)*blen;
 					
 					int rows = value.getNumRows();
 					int cols = value.getNumColumns();
@@ -204,13 +204,13 @@ public class ReaderBinaryBlock extends MatrixReader
 		
 		//post-processing
 		dest.setNonZeros( lnnz );
-		if( sparse && clen>bclen ){
+		if( sparse && clen>blen ){
 			//no need to sort if 1 column block since always sorted
 			dest.sortSparseRows();
 		}
 	}
 	
-	private static void readBinaryBlockMatrixBlocksFromHDFS( Path path, JobConf job, FileSystem fs, Collection<IndexedMatrixValue> dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryBlockMatrixBlocksFromHDFS( Path path, JobConf job, FileSystem fs, Collection<IndexedMatrixValue> dest, long rlen, long clen, int blen )
 		throws IOException
 	{
 		MatrixIndexes key = new MatrixIndexes(); 
@@ -230,8 +230,8 @@ public class ReaderBinaryBlock extends MatrixReader
 			{
 				while( reader.next(key, value) )
 				{	
-					int row_offset = (int)(key.getRowIndex()-1)*brlen;
-					int col_offset = (int)(key.getColumnIndex()-1)*bclen;
+					int row_offset = (int)(key.getRowIndex()-1)*blen;
+					int col_offset = (int)(key.getColumnIndex()-1)*blen;
 					int rows = value.getNumRows();
 					int cols = value.getNumColumns();
 					

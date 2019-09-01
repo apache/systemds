@@ -214,10 +214,9 @@ public class DnnSPInstruction extends UnarySPInstruction {
 	private static JavaPairRDD<MatrixIndexes,MatrixBlock> reblockAsRectangularMatrices(SparkExecutionContext sec, String name, int numRowsPerBlock) {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( name );
 		DataCharacteristics mcRdd = sec.getDataCharacteristics(name);
-		if(mcRdd.getColsPerBlock() < mcRdd.getCols() || mcRdd.getRowsPerBlock() != 1) {
+		if( mcRdd.getBlocksize() != 1) {
 			DataCharacteristics mcOut = new MatrixCharacteristics(mcRdd);
-			mcOut.setColsPerBlock((int)mcRdd.getCols());
-			mcOut.setRowsPerBlock(numRowsPerBlock); 
+			mcOut.setBlocksize(numRowsPerBlock); 
 			in1 = RDDAggregateUtils.mergeByKey(in1.flatMapToPair(new ExtractBlockForBinaryReblock(mcRdd, mcOut)));
 			// TODO: Inject checkpoint to avoid doing this repeated for validation set
 //			sec.setRDDHandleForVariable(name, in1);
@@ -288,7 +287,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 				throw new DMLRuntimeException("The current operator doesnot support large outputs.");
 			}
 			sec.setMetaData(output.getName(), 
-					new MetaDataFormat(new MatrixCharacteristics(mcRdd.getRows(), numCols, numRowsPerBlock, (int)numCols, nnz), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+					new MetaDataFormat(new MatrixCharacteristics(mcRdd.getRows(), numCols, numRowsPerBlock, nnz), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		}
 		else {
 			throw new DMLRuntimeException("Not implemented: " + instOpcode);

@@ -211,11 +211,11 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 2373); 
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A); 
 			int blksz = ConfigurationManager.getBlocksize();
-			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows, cols, blksz, blksz, mbA.getNonZeros());
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows, cols, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
 
 			//get binary block input rdd
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz);
 			
 			//matrix - dataframe - matrix conversion
 			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(spark, in, mc1, vector);
@@ -223,7 +223,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true, vector);
 			
 			//get output matrix block
-			MatrixBlock mbB = SparkExecutionContext.toMatrixBlock(out, rows, cols, blksz, blksz, -1);
+			MatrixBlock mbB = SparkExecutionContext.toMatrixBlock(out, rows, cols, blksz, -1);
 			
 			//compare matrix blocks
 			double[][] B = DataConverter.convertToDoubleMatrix(mbB);
@@ -253,18 +253,18 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 			MatrixBlock mbA = LibMatrixReorg.diag(mbA0, new MatrixBlock(rows1, rows1, true));
 			
 			int blksz = ConfigurationManager.getBlocksize();
-			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, rows1, blksz, blksz, mbA.getNonZeros());
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, rows1, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
 
 			//get binary block input rdd
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz);
 			
 			//matrix - dataframe - matrix conversion
 			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(spark, in, mc1, vector);
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDConverterUtils.dataFrameToBinaryBlock(sc, df, mc2, true, vector);
 			
 			//get output matrix block
-			MatrixBlock mbB0 = SparkExecutionContext.toMatrixBlock(out, rows1, rows1, blksz, blksz, -1);
+			MatrixBlock mbB0 = SparkExecutionContext.toMatrixBlock(out, rows1, rows1, blksz, -1);
 			MatrixBlock mbB = LibMatrixReorg.diag(mbB0, new MatrixBlock(rows1, 1, false));
 			
 			//compare matrix blocks

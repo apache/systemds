@@ -196,8 +196,7 @@ public class UnaryOp extends MultiThreadedHop
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),
-				getInput().get(0).getRowsInBlock(),
-				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getBlocksize(),
 				getInput().get(0).getNnz());
 		PickByCount pick = new PickByCount(
 				sort,
@@ -206,8 +205,8 @@ public class UnaryOp extends MultiThreadedHop
 				getValueType(),
 				PickByCount.OperationTypes.MEDIAN, et, true);
 
-		pick.getOutputParameters().setDimensions(getDim1(),
-				getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		pick.getOutputParameters().setDimensions(
+			getDim1(), getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(pick);
 		setLops(pick);
 		
@@ -227,15 +226,14 @@ public class UnaryOp extends MultiThreadedHop
 		sort.getOutputParameters().setDimensions(
 				input.getDim1(),
 				input.getDim2(),
-				input.getRowsInBlock(),
-				input.getColsInBlock(),
+				input.getBlocksize(),
 				input.getNnz());
 		PickByCount pick = new PickByCount(sort, null,
 				getDataType(),getValueType(),
 				PickByCount.OperationTypes.IQM, et, true);
 
-		pick.getOutputParameters().setDimensions(getDim1(),
-				getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		pick.getOutputParameters().setDimensions(
+			getDim1(), getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(pick);
 		
 		return pick;
@@ -247,17 +245,16 @@ public class UnaryOp extends MultiThreadedHop
 		Hop input = getInput().get(0);
 		long rlen = input.getDim1();
 		long clen = input.getDim2();
-		long brlen = input.getRowsInBlock();
-		long bclen = input.getColsInBlock();
+		long blen = input.getBlocksize();
 		boolean force = !dimsKnown() || _etypeForced == ExecType.SPARK;
 		OperationTypes aggtype = getCumulativeAggType();
 		Lop X = input.constructLops();
 		
 		//special case single row block (no offsets needed)
-		if( rlen > 0 && clen > 0 && rlen <= brlen ) {
+		if( rlen > 0 && clen > 0 && rlen <= blen ) {
 			Lop offset = HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1), new LiteralOp(clen),
 					new LiteralOp("1 1"), DataType.MATRIX, ValueType.FP64, getCumulativeInitValue()).constructLops();
-			return constructCumOffBinary(X, offset, aggtype, rlen, clen, brlen, bclen);
+			return constructCumOffBinary(X, offset, aggtype, rlen, clen, blen);
 		}
 		
 		Lop TEMP = X;
@@ -279,9 +276,9 @@ public class UnaryOp extends MultiThreadedHop
 	
 			//preaggregation per block (for spark, the CumulativePartialAggregate subsumes both
 			//the preaggregation and subsequent block aggregation)
-			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/brlen);
+			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/blen);
 			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.FP64, aggtype, ExecType.SPARK);
-			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
+			preagg.getOutputParameters().setDimensions(rlenAgg, clen, blen, -1);
 			setLineNumbers(preagg);
 			
 			TEMP = preagg;
@@ -293,7 +290,7 @@ public class UnaryOp extends MultiThreadedHop
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
 			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
 			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.FP64, ExecType.CP, k, true);
-			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
+			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, blen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
 		}
@@ -301,13 +298,13 @@ public class UnaryOp extends MultiThreadedHop
 		//split, group and mr cumsum
 		while( level-- > 0  ) {
 			TEMP = constructCumOffBinary(DATA.get(level),
-				TEMP, aggtype, rlen, clen, brlen, bclen);
+				TEMP, aggtype, rlen, clen, blen);
 		}
 		
 		return TEMP;
 	}
 	
-	private Lop constructCumOffBinary(Lop data, Lop offset, OperationTypes aggtype, long rlen, long clen, long brlen, long bclen) {
+	private Lop constructCumOffBinary(Lop data, Lop offset, OperationTypes aggtype, long rlen, long clen, long blen) {
 		//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
 		//the subsequent offset binary apply of split aggregates against the original data)
 		double initValue = getCumulativeInitValue();
@@ -317,7 +314,7 @@ public class UnaryOp extends MultiThreadedHop
 		
 		CumulativeOffsetBinary binary = new CumulativeOffsetBinary(data, offset, 
 				DataType.MATRIX, ValueType.FP64, initValue, broadcast, aggtype, ExecType.SPARK);
-		binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+		binary.getOutputParameters().setDimensions(rlen, clen, blen, -1);
 		setLineNumbers(binary);
 		return binary;
 	}

@@ -573,11 +573,11 @@ public class LibMatrixAgg
 	 * 
 	 * @param out matrix block
 	 * @param op aggregate unary operator
-	 * @param brlen number of rows in a block
-	 * @param bclen number of columns in a block
+	 * @param blen number of rows in a block
+	 * @param blen number of columns in a block
 	 * @param ix matrix indexes
 	 */
-	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int brlen, int bclen, MatrixIndexes ix )
+	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int blen, MatrixIndexes ix )
 	{
 		AggType type = getAggType(op);
 		if( (type == AggType.MAX_INDEX || type == AggType.MIN_INDEX) && ix.getColumnIndex()!=1 ) //MAXINDEX or MININDEX
@@ -585,7 +585,7 @@ public class LibMatrixAgg
 			int m = out.rlen;
 			double[] c = out.getDenseBlockValues();
 			for( int i=0, cix=0; i<m; i++, cix+=2 )
-				c[cix] = UtilFunctions.computeCellIndex(ix.getColumnIndex(), bclen, (int)c[cix]-1);
+				c[cix] = UtilFunctions.computeCellIndex(ix.getColumnIndex(), blen, (int)c[cix]-1);
 		}
 	}	
 

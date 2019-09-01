@@ -102,8 +102,8 @@ public class WriteTest extends AutomatedTestBase
 		//read and compare output matrix
 		try {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.BinaryBlockInputInfo);
-			MatrixBlock mb = reader.readMatrixFromHDFS(output("a"), rows, cols, 1000, 1000, -1);
-			checkDMLMetaDataFile("a", new MatrixCharacteristics(rows,cols,1000,1000));
+			MatrixBlock mb = reader.readMatrixFromHDFS(output("a"), rows, cols, 1000, -1);
+			checkDMLMetaDataFile("a", new MatrixCharacteristics(rows,cols,1000));
 			TestUtils.compareMatrices(a, DataConverter.convertToDoubleMatrix(mb), rows, cols, 0);
 		}
 		catch(Exception ex) {

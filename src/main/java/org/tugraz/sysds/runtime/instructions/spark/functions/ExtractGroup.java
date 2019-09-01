@@ -39,12 +39,12 @@ public abstract class ExtractGroup implements Serializable
 {
 	private static final long serialVersionUID = -7059358143841229966L;
 
-	protected long _bclen = -1; 
+	protected long _blen = -1; 
 	protected long _ngroups = -1; 
 	protected Operator _op = null;
 	
-	public ExtractGroup( long bclen, long ngroups, Operator op ) {
-		_bclen = bclen;
+	public ExtractGroup( long blen, long ngroups, Operator op ) {
+		_blen = blen;
 		_ngroups = ngroups;
 		_op = op;
 	}
@@ -58,7 +58,7 @@ public abstract class ExtractGroup implements Serializable
 		
 		//output weighted cells
 		ArrayList<Tuple2<MatrixIndexes, WeightedCell>> groupValuePairs = new ArrayList<>();
-		long coloff = (ix.getColumnIndex()-1)*_bclen;
+		long coloff = (ix.getColumnIndex()-1)*_blen;
 		
 		//local pre-aggregation for sum w/ known output dimensions
 		if(_op instanceof AggregateOperator && _ngroups > 0 
@@ -104,8 +104,8 @@ public abstract class ExtractGroup implements Serializable
 	{
 		private static final long serialVersionUID = 8890978615936560266L;
 
-		public ExtractGroupJoin(long bclen, long ngroups, Operator op) {
-			super(bclen, ngroups, op);
+		public ExtractGroupJoin(long blen, long ngroups, Operator op) {
+			super(blen, ngroups, op);
 		}
 		
 		@Override
@@ -127,8 +127,8 @@ public abstract class ExtractGroup implements Serializable
 		
 		private PartitionedBroadcast<MatrixBlock> _pbm = null;
 		
-		public ExtractGroupBroadcast( PartitionedBroadcast<MatrixBlock> pbm, long bclen, long ngroups, Operator op ) {
-			super(bclen, ngroups, op);
+		public ExtractGroupBroadcast( PartitionedBroadcast<MatrixBlock> pbm, long blen, long ngroups, Operator op ) {
+			super(blen, ngroups, op);
 			_pbm = pbm;
 		}
 		

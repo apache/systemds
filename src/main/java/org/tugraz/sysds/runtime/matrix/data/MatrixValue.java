@@ -114,15 +114,15 @@ public abstract class MatrixValue implements WritableComparable
 	
 	public abstract void ctableOperations(Operator op, double scalar_that, double scalar_that2, CTableMap resultMap, MatrixBlock resultBlock);
 	
-	public abstract void ctableOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int brlen, CTableMap resultMap, MatrixBlock resultBlock);
+	public abstract void ctableOperations(Operator op, MatrixIndexes ix1, double scalar_that, boolean left, int blen, CTableMap resultMap, MatrixBlock resultBlock);
 
 	public abstract void ctableOperations(Operator op, double scalarThat, MatrixValue that2, CTableMap ctableResult, MatrixBlock ctableResultBlock);
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-			int brlen, int bclen, MatrixIndexes indexesIn);
+		int blen, MatrixIndexes indexesIn);
 	
 	public abstract MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
-			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP);
+		int blen, MatrixIndexes indexesIn, boolean inCP);
 	
 	public abstract MatrixValue unaryOperations(UnaryOperator op, MatrixValue result);
 	
@@ -133,10 +133,10 @@ public abstract class MatrixValue implements WritableComparable
 	public abstract MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary);
 	
 	public abstract void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, 
-			int blockRowFactor, int blockColFactor, int boundaryRlen, int boundaryClen);
+		int blen, int boundaryRlen, int boundaryClen);
 
 	public abstract MatrixValue replaceOperations( MatrixValue result, double pattern, double replacement );
 
 	public abstract void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol);
+		int blen, boolean cbind, boolean m2IsLast, int nextNCol);
 }

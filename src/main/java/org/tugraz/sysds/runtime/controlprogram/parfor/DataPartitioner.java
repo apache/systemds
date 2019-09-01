@@ -96,8 +96,7 @@ public abstract class DataPartitioner
 		OutputInfo oi = meta.getOutputInfo();
 		long rows = dc.getRows();
 		long cols = dc.getCols();
-		int brlen = dc.getRowsPerBlock();
-		int bclen = dc.getColsPerBlock();
+		int blen = dc.getBlocksize();
 		long nonZeros = dc.getNonZeros();
 		double sparsity = dc.dimsKnown(true) ?
 				((double)nonZeros)/(rows*cols) : 1.0;
@@ -146,12 +145,12 @@ public abstract class DataPartitioner
 		}
 		
 		//core partitioning (depending on subclass)
-		partitionMatrix( in, fnameNew, ii, oi, rows, cols, brlen, bclen );
+		partitionMatrix( in, fnameNew, ii, oi, rows, cols, blen );
 		
 		//create output matrix object
 		out.setPartitioned( _format, _n ); 
 		
-		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, (int)brlen, (int)bclen );
+		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, (int)blen );
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;
@@ -167,7 +166,7 @@ public abstract class DataPartitioner
 		_allowBinarycell = false;
 	}
 
-	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen );
+	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int blen );
 
 	
 	public static MatrixBlock createReuseMatrixBlock( PDataPartitionFormat dpf, int rows, int cols ) 

@@ -203,7 +203,7 @@ public class FrameEvictionTest extends AutomatedTestBase
 			CacheableData.initCaching("tmp_frame_eviction_test");
 			
 			//create frame object
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1);
 			MetaDataFormat meta = new MetaDataFormat (mc, 
 					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			FrameObject fo = new FrameObject("fA",  meta, schema);

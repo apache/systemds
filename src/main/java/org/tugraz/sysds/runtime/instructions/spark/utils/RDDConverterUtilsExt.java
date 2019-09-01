@@ -70,7 +70,7 @@ public class RDDConverterUtilsExt
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(JavaSparkContext sc,
-	                                                                                    CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks)
+		CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks)
 	{
 		//convert matrix entry rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.entries().toJavaRDD()
@@ -89,7 +89,7 @@ public class RDDConverterUtilsExt
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(SparkContext sc,
-	                                                                                    CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks) {
+			CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks) {
 		return coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), input, mcIn, true);
 	}
 
@@ -282,16 +282,15 @@ public class RDDConverterUtilsExt
 
 		private long _rlen = -1;
 		private long _clen = -1;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private int _blen = -1;
 
 		public IJVToBinaryBlockFunctionHelper(DataCharacteristics mc) {
 			if(!mc.dimsKnown())
 				throw new DMLRuntimeException("The dimensions need to be known in given DataCharacteristics for given input RDD");
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
-			_brlen = mc.getRowsPerBlock();
-			_bclen = mc.getColsPerBlock();
+			_blen = mc.getBlocksize();
+			_blen = mc.getBlocksize();
 			//determine upper bounded buffer len
 			_bufflen = (int) Math.min(_rlen*_clen, BUFFER_SIZE);
 		}
@@ -325,7 +324,7 @@ public class RDDConverterUtilsExt
 
 		Iterable<Tuple2<MatrixIndexes, MatrixBlock>> convertToBinaryBlock(Object arg0, RDDConverterTypes converter)  throws Exception {
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<Tuple2<MatrixIndexes,MatrixBlock>>();
-			ReblockBuffer rbuff = new ReblockBuffer(_bufflen, _rlen, _clen, _brlen, _bclen);
+			ReblockBuffer rbuff = new ReblockBuffer(_bufflen, _rlen, _clen, _blen);
 
 			Iterator<?> iter = (Iterator<?>) arg0;
 			while( iter.hasNext() ) {

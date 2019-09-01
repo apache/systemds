@@ -237,10 +237,10 @@ public class HDFSTool
 	}
 	
 	public static long estimateNnzBasedOnFileSize(Path path,
-		long rlen, long clen, int brlen, int bclen, double factor) throws IOException
+		long rlen, long clen, int blen, double factor) throws IOException
 	{
 		return (long) Math.min(rlen*clen, rlen*clen*(getFilesizeOnHDFS(path)/factor/
-			OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, 1.0)));
+			OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, blen, 1.0)));
 	}
 
 	/**
@@ -417,8 +417,8 @@ public class HDFSTool
 			// handle output nnz and binary block configuration
 			if( dt.isMatrix() ) {
 				if (outinfo == OutputInfo.BinaryBlockOutputInfo ) {
-					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, dc.getRowsPerBlock());
-					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, dc.getColsPerBlock());
+					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, dc.getBlocksize());
+					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, dc.getBlocksize());
 				}
 				mtd.put(DataExpression.READNNZPARAM, dc.getNonZeros());
 			}
@@ -448,21 +448,21 @@ public class HDFSTool
 		return mtd.toString(4); // indent with 4 spaces	
 	}
 	
-	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
+	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
 		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
-		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, estnnz);
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz);
 		return DataConverter.convertToDoubleMatrix(mb);
 	}
 	
-	public static double[] readColumnVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
+	public static double[] readColumnVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
 		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
-		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, brlen, bclen, estnnz);
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz);
 		return DataConverter.convertToDoubleVector(mb, false);
 	}
 	

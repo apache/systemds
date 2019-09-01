@@ -711,7 +711,7 @@ public class Dag<N extends Lop>
 				// TODO: ideally, this should be done by having a member variable in Lop 
 				//       which stores the outputInfo.   
 				try {
-					oparams.setDimensions(oparams.getNumRows(), oparams.getNumCols(), -1, -1, oparams.getNnz(), oparams.getUpdateType());
+					oparams.setDimensions(oparams.getNumRows(), oparams.getNumCols(), -1, oparams.getNnz(), oparams.getUpdateType());
 				} catch(HopsException e) {
 					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag ", e);
 				}
@@ -798,16 +798,12 @@ public class Dag<N extends Lop>
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
 				//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
-				int rpb = (int) oparams.getRowsInBlock();
-				int cpb = (int) oparams.getColsInBlock();
+				int blen = (int) oparams.getBlocksize();
 				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
-									        oparams.getLabel(),
-											oparams.getFile_name(), 
-											true, node.getDataType(),
-											OutputInfo.outputInfoToString(getOutputInfo(node, false)),
-											new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-											oparams.getUpdateType()
-										);
+					oparams.getLabel(), oparams.getFile_name(), true, node.getDataType(),
+					OutputInfo.outputInfoToString(getOutputInfo(node, false)),
+					new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), blen, oparams.getNnz()),
+					oparams.getUpdateType());
 				
 				createvarInst.setLocation(node);
 				
@@ -829,13 +825,11 @@ public class Dag<N extends Lop>
 						OutputParameters fnOutParams = fnOut.getOutputParameters();
 						//OutputInfo oinfo = getOutputInfo((N)fnOut, false);
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
-								fnOutParams.getLabel(),
-								getFilePath() + fnOutParams.getLabel(), 
-								true, fnOut.getDataType(),
-								OutputInfo.outputInfoToString(getOutputInfo(fnOut, false)),
-								new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getRowsInBlock(), (int)fnOutParams.getColsInBlock(), fnOutParams.getNnz()),
-								oparams.getUpdateType()
-							);
+							fnOutParams.getLabel(), getFilePath() + fnOutParams.getLabel(), 
+							true, fnOut.getDataType(),
+							OutputInfo.outputInfoToString(getOutputInfo(fnOut, false)),
+							new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getBlocksize(), fnOutParams.getNnz()),
+							oparams.getUpdateType());
 						
 						if (node._beginLine != 0)
 							createvarInst.setLocation(node);
@@ -936,16 +930,12 @@ public class Dag<N extends Lop>
 						String tempVarName = oparams.getLabel() + "temp";
 						String tempFileName = getNextUniqueFilename();
 						
-						int rpb = (int) oparams.getRowsInBlock();
-						int cpb = (int) oparams.getColsInBlock();
+						int blen = (int) oparams.getBlocksize();
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
-													tempVarName, 
-													tempFileName, 
-													true, node.getDataType(),
-													OutputInfo.outputInfoToString(out.getOutInfo()), 
-													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-													oparams.getUpdateType()
-												);
+							tempVarName, tempFileName, true, node.getDataType(),
+							OutputInfo.outputInfoToString(out.getOutInfo()), 
+							new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), blen, oparams.getNnz()),
+							oparams.getUpdateType());
 						
 						createvarInst.setLocation(node);
 						

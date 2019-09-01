@@ -45,12 +45,12 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 	}
 	
 	@Override
-	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
+	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int blen )
 		throws IOException, DMLRuntimeException
 	{
 		//estimate output size and number of output blocks (min 1)
 		int numPartFiles = (int)(OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, 
-				brlen, bclen, src.getNonZeros()) / InfrastructureAnalyzer.getHDFSBlockSize());
+				blen, src.getNonZeros()) / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism
@@ -59,7 +59,7 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
 		if( numThreads <= 1 ) {
-			super.writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
+			super.writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, blen);
 			return;
 		}
 
@@ -71,10 +71,10 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		{
 			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<WriteFileTask> tasks = new ArrayList<>();
-			int blklen = (int)Math.ceil((double)rlen / brlen / numThreads) * brlen;
+			int blklen = (int)Math.ceil((double)rlen / blen / numThreads) * blen;
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));
-				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, rlen), brlen, bclen));
+				tasks.add(new WriteFileTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, rlen), blen));
 			}
 
 			//wait until all tasks have been executed
@@ -105,25 +105,24 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		private MatrixBlock _src = null;
 		private long _rl = -1;
 		private long _ru = -1;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private int _blen = -1;
 		
-		public WriteFileTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, long rl, long ru, int brlen, int bclen) {
+		public WriteFileTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, long rl, long ru, int blen) {
 			_path = path;
 			_fs = fs;
 			_job = job;
 			_src = src;
 			_rl = rl;
 			_ru = ru;
-			_brlen = brlen;
-			_bclen = bclen;
+			_blen = blen;
+			_blen = blen;
 		}
 	
 		@Override
 		public Object call() 
 			throws Exception 
 		{
-			writeBinaryBlockMatrixToSequenceFile(_path, _job, _fs, _src, _brlen, _bclen, (int)_rl, (int)_ru);
+			writeBinaryBlockMatrixToSequenceFile(_path, _job, _fs, _src, _blen, (int)_rl, (int)_ru);
 			return null;
 		}
 	}

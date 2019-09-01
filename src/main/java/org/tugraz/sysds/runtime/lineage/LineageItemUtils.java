@@ -184,7 +184,7 @@ public class LineageItemUtils {
 					params.put(DataExpression.RAND_SPARSITY, new LiteralOp(rand.getSparsity()));
 					params.put(DataExpression.RAND_SEED, new LiteralOp(rand.getSeed()));
 					Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-					datagen.setOutputBlocksizes(rand.getRowsInBlock(), rand.getColsInBlock());
+					datagen.setBlocksize(rand.getBlocksize());
 					operands.put(item.getId(), datagen);
 				} else if (inst instanceof VariableCPInstruction
 						&& ((VariableCPInstruction) inst).isCreateVariable()) {
@@ -267,7 +267,7 @@ public class LineageItemUtils {
 					}
 				} else if (stype == SPType.Reblock) {
 					Hop input = operands.get(item.getInputs()[0].getId());
-					input.setOutputBlocksizes(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
+					input.setBlocksize(ConfigurationManager.getBlocksize());
 					input.setRequiresReblock(true);
 					operands.put(item.getId(), input);
 				} else

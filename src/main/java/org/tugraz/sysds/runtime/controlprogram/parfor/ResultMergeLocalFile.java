@@ -506,8 +506,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		Text value = new Text();
 
 		DataCharacteristics mc = mo.getDataCharacteristics();
-		int brlen = mc.getRowsPerBlock(); 
-		int bclen = mc.getColsPerBlock();
+		int blen = mc.getBlocksize(); 
 		//long row = -1, col = -1; //FIXME needs reconsideration whenever textcell is used actively
 		//NOTE MB: Originally, we used long row, col but this led reproducibly to JIT compilation
 		// errors during runtime; experienced under WINDOWS, Intel x86-64, IBM JDK 64bit/32bit.
@@ -534,7 +533,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					buffer.addLast( tmp );
 					if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 					{
-						appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
+						appendCellBufferToStagingArea(fnameStaging, ID, buffer, blen);
 						buffer.clear();
 					}
 				}
@@ -542,7 +541,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				//final flush
 				if( !buffer.isEmpty() )
 				{
-					appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
+					appendCellBufferToStagingArea(fnameStaging, ID, buffer, blen);
 					buffer.clear();
 				}
 			}
@@ -565,8 +564,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixCell value = new MatrixCell();
 	
 		DataCharacteristics mc = mo.getDataCharacteristics();
-		int brlen = mc.getRowsPerBlock();
-		int bclen = mc.getColsPerBlock();
+		int blen = mc.getBlocksize();
 		
 		for(Path lpath: IOUtilFunctions.getSequenceFilePaths(fs, path))
 		{
@@ -580,7 +578,7 @@ public class ResultMergeLocalFile extends ResultMerge
 					buffer.addLast( tmp );
 					if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 					{
-						appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
+						appendCellBufferToStagingArea(fnameStaging, ID, buffer, blen);
 						buffer.clear();
 					}
 				}
@@ -588,7 +586,7 @@ public class ResultMergeLocalFile extends ResultMerge
 				//final flush
 				if( !buffer.isEmpty() )
 				{
-					appendCellBufferToStagingArea(fnameStaging, ID, buffer, brlen, bclen);
+					appendCellBufferToStagingArea(fnameStaging, ID, buffer, blen);
 					buffer.clear();
 				}
 			}
@@ -598,7 +596,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		}
 	}
 
-	private static void appendCellBufferToStagingArea( String fnameStaging, long ID, LinkedList<Cell> buffer, int brlen, int bclen ) 
+	private static void appendCellBufferToStagingArea( String fnameStaging, long ID, LinkedList<Cell> buffer, int blen ) 
 		throws IOException
 	{
 		HashMap<Long,HashMap<Long,LinkedList<Cell>>> sortedBuffer = new HashMap<>();
@@ -606,10 +604,10 @@ public class ResultMergeLocalFile extends ResultMerge
 		
 		for( Cell c : buffer )
 		{
-			brow = (c.getRow()-1)/brlen + 1;
-			bcol = (c.getCol()-1)/bclen + 1;
-			row_offset = (brow-1)*brlen + 1;
-			col_offset = (bcol-1)*bclen + 1;
+			brow = (c.getRow()-1)/blen + 1;
+			bcol = (c.getCol()-1)/blen + 1;
+			row_offset = (brow-1)*blen + 1;
+			col_offset = (bcol-1)*blen + 1;
 			
 			c.setRow( c.getRow() - row_offset);
 			c.setCol(c.getCol() - col_offset);
@@ -647,15 +645,14 @@ public class ResultMergeLocalFile extends ResultMerge
 		DataCharacteristics mc = metadata.getDataCharacteristics();
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
-		int brlen = mc.getRowsPerBlock();
-		int bclen = mc.getColsPerBlock();
+		int blen = mc.getBlocksize();
 		
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class); //beware ca 50ms
 		try
 		{
 			MatrixIndexes indexes = new MatrixIndexes();
-			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)brlen); brow++)
-				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)bclen); bcol++)
+			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)blen); brow++)
+				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)blen); bcol++)
 				{
 					File dir = new File(fnameStaging+"/"+brow+"_"+bcol);
 					File dir2 = new File(fnameStagingCompare+"/"+brow+"_"+bcol);
@@ -709,8 +706,8 @@ public class ResultMergeLocalFile extends ResultMerge
 					}
 					else {
 						//NOTE: whenever runtime does not need all blocks anymore, this can be removed
-						int maxRow = (int)(((brow-1)*brlen + brlen < rlen) ? brlen : rlen - (brow-1)*brlen);
-						int maxCol = (int)(((bcol-1)*bclen + bclen < clen) ? bclen : clen - (bcol-1)*bclen);
+						int maxRow = (int)(((brow-1)*blen + blen < rlen) ? blen : rlen - (brow-1)*blen);
+						int maxCol = (int)(((bcol-1)*blen + blen < clen) ? blen : clen - (bcol-1)*blen);
 						mb = new MatrixBlock(maxRow, maxCol, true);
 					}
 					
@@ -734,23 +731,22 @@ public class ResultMergeLocalFile extends ResultMerge
 		DataCharacteristics mc = metadata.getDataCharacteristics();
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
-		int brlen = mc.getRowsPerBlock();
-		int bclen = mc.getColsPerBlock();
+		int blen = mc.getBlocksize();
 		
 		try( BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
 			boolean written=false;
-			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)brlen); brow++)
-				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)bclen); bcol++)
+			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)blen); brow++)
+				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)blen); bcol++)
 				{
 					File dir = new File(fnameStaging+"/"+brow+"_"+bcol);
 					File dir2 = new File(fnameStagingCompare+"/"+brow+"_"+bcol);
 					MatrixBlock mb = null;
 					
-					long row_offset = (brow-1)*brlen + 1;
-					long col_offset = (bcol-1)*bclen + 1;
+					long row_offset = (brow-1)*blen + 1;
+					long col_offset = (bcol-1)*blen + 1;
 					
 					
 					if( dir.exists() )
@@ -761,11 +757,11 @@ public class ResultMergeLocalFile extends ResultMerge
 							String[] lnames2 = dir2.list();
 							if( lnames2.length != 1 ) //there should be exactly 1 compare block
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
-							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], brlen, bclen );
+							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], blen );
 							boolean appendOnly = mb.isInSparseFormat();
 							DenseBlock compare = DataConverter.convertToDenseBlock(mb, false);
 							for( String lname : dir.list() ) {
-								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
+								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, blen );
 								mergeWithComp(mb, tmp, compare);
 							}
 							
@@ -782,11 +778,11 @@ public class ResultMergeLocalFile extends ResultMerge
 							boolean appendOnly = false;
 							for( String lname : dir.list() ) {
 								if( mb == null ) {
-									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, brlen, bclen );
+									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, blen );
 									appendOnly = mb.isInSparseFormat();
 								}
 								else {
-									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
+									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, blen );
 									mergeWithoutComp(mb, tmp, appendOnly);
 								}
 							}	
@@ -819,8 +815,8 @@ public class ResultMergeLocalFile extends ResultMerge
 							}
 						}
 						else {
-							for( int i=0; i<brlen; i++ )
-								for( int j=0; j<bclen; j++ )
+							for( int i=0; i<blen; i++ )
+								for( int j=0; j<blen; j++ )
 								{
 									double lvalue = mb.getValueDenseUnsafe(i, j);
 									if( lvalue != 0 ) //for nnz
@@ -856,8 +852,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		DataCharacteristics mc = metadata.getDataCharacteristics();
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
-		int brlen = mc.getRowsPerBlock();
-		int bclen = mc.getColsPerBlock();
+		int blen = mc.getBlocksize();
 		
 		MatrixIndexes indexes = new MatrixIndexes(1,1);
 		MatrixCell cell = new MatrixCell(0);
@@ -866,15 +861,15 @@ public class ResultMergeLocalFile extends ResultMerge
 		try
 		{
 			boolean written=false;
-			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)brlen); brow++)
-				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)bclen); bcol++)
+			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)blen); brow++)
+				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)blen); bcol++)
 				{
 					File dir = new File(fnameStaging+"/"+brow+"_"+bcol);
 					File dir2 = new File(fnameStagingCompare+"/"+brow+"_"+bcol);
 					MatrixBlock mb = null;
 					
-					long row_offset = (brow-1)*brlen + 1;
-					long col_offset = (bcol-1)*bclen + 1;
+					long row_offset = (brow-1)*blen + 1;
+					long col_offset = (bcol-1)*blen + 1;
 					
 					
 					if( dir.exists() )
@@ -885,11 +880,11 @@ public class ResultMergeLocalFile extends ResultMerge
 							String[] lnames2 = dir2.list();
 							if( lnames2.length != 1 ) //there should be exactly 1 compare block
 								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
-							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], brlen, bclen );
+							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], blen );
 							boolean appendOnly = mb.isInSparseFormat();
 							DenseBlock compare = DataConverter.convertToDenseBlock(mb, false);
 							for( String lname : dir.list() ) {
-								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
+								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, blen );
 								mergeWithComp(mb, tmp, compare);
 							}
 							
@@ -906,11 +901,11 @@ public class ResultMergeLocalFile extends ResultMerge
 							boolean appendOnly = false;
 							for( String lname : dir.list() ) {
 								if( mb == null ) {
-									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, brlen, bclen );
+									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, blen );
 									appendOnly = mb.isInSparseFormat();
 								}
 								else {
-									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, brlen, bclen );
+									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, blen );
 									mergeWithoutComp(mb, tmp, appendOnly);
 								}
 							}
@@ -940,8 +935,8 @@ public class ResultMergeLocalFile extends ResultMerge
 						}
 						else
 						{
-							for( int i=0; i<brlen; i++ )
-								for( int j=0; j<bclen; j++ )
+							for( int i=0; i<blen; i++ )
+								for( int j=0; j<blen; j++ )
 								{
 									double lvalue = mb.getValueDenseUnsafe(i, j);
 									if( lvalue != 0 ) //for nnz

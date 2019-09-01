@@ -107,7 +107,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 		public MergeWithShiftedBlocks(DataCharacteristics mc1, DataCharacteristics mc2, boolean cbind)
 		{
 			_cbind = cbind;
-			_blen = cbind ? mc1.getColsPerBlock() : mc1.getRowsPerBlock();
+			_blen = cbind ? mc1.getBlocksize() : mc1.getBlocksize();
 			_lastIxLeft = (long) Math.ceil((double)(cbind ? mc1.getCols():mc1.getRows()) / _blen);			
 		}
 
@@ -162,9 +162,9 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 		public ShiftMatrix(DataCharacteristics mc1, DataCharacteristics mc2, boolean cbind)
 		{
 			_cbind = cbind;
-			_startIx = cbind ? UtilFunctions.computeBlockIndex(mc1.getCols(), mc1.getColsPerBlock()) :
-				UtilFunctions.computeBlockIndex(mc1.getRows(), mc1.getRowsPerBlock());
-			_blen = (int) (cbind ? mc1.getColsPerBlock() : mc1.getRowsPerBlock());
+			_startIx = cbind ? UtilFunctions.computeBlockIndex(mc1.getCols(), mc1.getBlocksize()) :
+				UtilFunctions.computeBlockIndex(mc1.getRows(), mc1.getBlocksize());
+			_blen = (int) (cbind ? mc1.getBlocksize() : mc1.getBlocksize());
 			_shiftBy = (int) (cbind ? mc1.getCols()%_blen : mc1.getRows()%_blen); 
 			_outlen = cbind ? mc1.getCols()+mc2.getCols() : mc1.getRows()+mc2.getRows();
 		}

@@ -35,17 +35,15 @@ public class CSVReBlock extends Lop
 {
 	public static final String OPCODE = "csvrblk"; 
 	
-	private int _rows_per_block;
-	private int _cols_per_block;
+	private int _blocksize;
 
-	public CSVReBlock(Lop input, int rows_per_block, int cols_per_block, DataType dt, ValueType vt, ExecType et)
+	public CSVReBlock(Lop input, int blen, DataType dt, ValueType vt, ExecType et)
 	{
 		super(Lop.Type.CSVReBlock, dt, vt);
 		addInput(input);
 		input.addOutput(this);
 		
-		_rows_per_block = rows_per_block;
-		_cols_per_block = cols_per_block;
+		_blocksize = blen;
 		
 		if(et == ExecType.SPARK) {
 			lps.setProperties( inputs, ExecType.SPARK);
@@ -56,8 +54,8 @@ public class CSVReBlock extends Lop
 	}
 
 	@Override
-	public String toString() {	
-		return "CSVReblock - rows per block = " + _rows_per_block + " cols per block  " + _cols_per_block ;
+	public String toString() {
+		return "CSVReblock - blocksize = " + _blocksize;
 	}
 	
 	private String prepCSVProperties() {
@@ -109,8 +107,8 @@ public class CSVReBlock extends Lop
 			OPCODE,
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output),
-			String.valueOf(_rows_per_block),
-			String.valueOf(_cols_per_block),
+			String.valueOf(_blocksize),
+			String.valueOf(_blocksize),
 			prepCSVProperties());
 	}
 }

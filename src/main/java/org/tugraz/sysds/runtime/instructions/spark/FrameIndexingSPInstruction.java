@@ -82,7 +82,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			//update and check output dimensions
 			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getBlocksize(), mcIn.getBlocksize());
 			checkValidOutputDimensions(mcOut);
 			
 			//execute right indexing operation (partitioning-preserving if possible)
@@ -116,7 +116,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			//update and check output dimensions
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			DataCharacteristics mcLeft = ec.getDataCharacteristics(input1.getName());
-			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
+			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getBlocksize(), mcLeft.getBlocksize());
 			checkValidOutputDimensions(mcOut);
 			
 			//note: always frame rhs, scalars are preprocessed via cast to 1x1 frame
@@ -177,8 +177,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		private static final long serialVersionUID = 5724800998701216440L;
 
 		private IndexRange _ixrange = null; 
-		private int _brlen = -1; 
-		private int _bclen = -1;
+		private int _blen = -1;
 		private long _rlen = -1;
 		private long _clen = -1;
 		
@@ -186,8 +185,8 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			_ixrange = ixrange;
 			_rlen = mcLeft.getRows();
 			_clen = mcLeft.getCols();
-			_brlen = (int) Math.min(OptimizerUtils.getDefaultFrameSize(), _rlen);
-			_bclen = (int) mcLeft.getCols();
+			_blen = (int) Math.min(OptimizerUtils.getDefaultFrameSize(), _rlen);
+			_blen = (int) mcLeft.getCols();
 		}
 
 		@Override
@@ -196,7 +195,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		{
 			Pair<Long,FrameBlock> in = SparkUtils.toIndexedFrameBlock(rightKV);
 			ArrayList<Pair<Long,FrameBlock>> out = new ArrayList<>();
-			OperationsOnMatrixValues.performShift(in, _ixrange, _brlen, _bclen, _rlen, _clen, out);
+			OperationsOnMatrixValues.performShift(in, _ixrange, _blen, _rlen, _clen, out);
 			return SparkUtils.fromIndexedFrameBlock(out).iterator();
 		}
 	}
@@ -207,15 +206,14 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 
 		private boolean _complement = false;
 		private IndexRange _ixrange = null;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private int _blen = -1;
 		private long _rlen = -1;
 		
 		public ZeroOutLHS(boolean complement, IndexRange range, DataCharacteristics mcLeft) {
 			_complement = complement;
 			_ixrange = range;
-			_brlen = (int) OptimizerUtils.getDefaultFrameSize();
-			_bclen = (int) mcLeft.getCols();
+			_blen = (int) OptimizerUtils.getDefaultFrameSize();
+			_blen = (int) mcLeft.getCols();
 			_rlen = mcLeft.getRows();
 		}
 		
@@ -228,19 +226,20 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			IndexRange curBlockRange = new IndexRange(_ixrange.rowStart, _ixrange.rowEnd, _ixrange.colStart, _ixrange.colEnd);
 			
 			// Global index of row (1-based)
-			long lGblStartRow = ((kv._1.longValue()-1)/_brlen)*_brlen+1;
+			long lGblStartRow = ((kv._1.longValue()-1)/_blen)*_blen+1;
 			FrameBlock zeroBlk = null;
 			int iMaxRowsToCopy = 0;
 			
 			// Starting local location (0-based) of target block where to start copy. 
-			int iRowStartDest = UtilFunctions.computeCellInBlock(kv._1, _brlen);
-			for(int iRowStartSrc = 0; iRowStartSrc<kv._2.getNumRows(); iRowStartSrc += iMaxRowsToCopy, lGblStartRow += _brlen) {
-				IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(new Pair<>(kv._1, kv._2), _brlen, _bclen, curBlockRange, lGblStartRow-1, lGblStartRow);
+			int iRowStartDest = UtilFunctions.computeCellInBlock(kv._1, _blen);
+			for(int iRowStartSrc = 0; iRowStartSrc<kv._2.getNumRows(); iRowStartSrc += iMaxRowsToCopy, lGblStartRow += _blen) {
+				IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(
+					new Pair<Long,FrameBlock>(kv._1, kv._2), _blen, curBlockRange, lGblStartRow-1, lGblStartRow);
 				if(range.rowStart == -1 && range.rowEnd == -1 && range.colStart == -1 && range.colEnd == -1) {
 					throw new Exception("Error while getting range for zero-out");
 				}
 				//Maximum range of rows in target block 
-				int iMaxRows=(int) Math.min(_brlen, _rlen-lGblStartRow+1);
+				int iMaxRows=(int) Math.min(_blen, _rlen-lGblStartRow+1);
 				
 				// Maximum number of rows to be copied from source block to target.
 				iMaxRowsToCopy = Math.min(iMaxRows, kv._2.getNumRows()-iRowStartSrc);
@@ -249,8 +248,8 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				// Zero out the applicable range in this block
 				zeroBlk = (FrameBlock) kv._2.zeroOutOperations(new FrameBlock(), range, _complement, iRowStartSrc, iRowStartDest, iMaxRows, iMaxRowsToCopy);
 				out.add(new Pair<>(lGblStartRow, zeroBlk));
-				curBlockRange.rowStart =  lGblStartRow + _brlen;
-				iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _brlen);
+				curBlockRange.rowStart =  lGblStartRow + _blen;
+				iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _blen);
 			}
 			return SparkUtils.fromIndexedFrameBlock(out).iterator();
 		}
@@ -288,7 +287,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			{
 				int iNumRowsInBlock = arg._2.getNumRows();
 				int iNumCols = arg._2.getNumColumns();
-				if(!UtilFunctions.isInFrameBlockRange(arg._1(), iNumRowsInBlock, iNumCols, _ixrange)) {
+				if(!UtilFunctions.isInFrameBlockRange(arg._1(), iNumRowsInBlock, _ixrange)) {
 					return arg;
 				}
 				
@@ -311,9 +310,9 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				int lhs_lcu = (int)lhs_cu-1;
 
 				FrameBlock ret = arg._2;
-				int brlen = OptimizerUtils.DEFAULT_BLOCKSIZE;
+				int blen = OptimizerUtils.DEFAULT_BLOCKSIZE;
 				long rhs_rl_pb = rhs_rl;
-				long rhs_ru_pb = Math.min(rhs_ru, (((rhs_rl-1)/brlen)+1)*brlen); 
+				long rhs_ru_pb = Math.min(rhs_ru, (((rhs_rl-1)/blen)+1)*blen); 
 				while(rhs_rl_pb <= rhs_ru_pb) {
 					// Provide global zero-based index to sliceOperations, but only for one RHS partition block at a time.
 					FrameBlock slicedRHSMatBlock = _binput.slice(rhs_rl_pb, rhs_ru_pb, rhs_cl, rhs_cu, new FrameBlock());
@@ -323,7 +322,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 					int lhs_lru_pb = (int) (lhs_lru + (rhs_ru_pb - rhs_ru));
 					ret = ret.leftIndexingOperations(slicedRHSMatBlock, lhs_lrl_pb, lhs_lru_pb, lhs_lcl, lhs_lcu, new FrameBlock());
 					rhs_rl_pb = rhs_ru_pb + 1;
-					rhs_ru_pb = Math.min(rhs_ru, rhs_ru_pb+brlen);
+					rhs_ru_pb = Math.min(rhs_ru, rhs_ru_pb+blen);
 				}
 				
 				return new Tuple2<>(arg._1, ret);

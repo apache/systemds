@@ -117,8 +117,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					String varname = null;
 					long rlen = c.getDim1();
 					long clen = c.getDim2();
-					int brlen = c.getRowsInBlock();
-					int bclen = c.getColsInBlock();
+					int blen = c.getBlocksize();
 					
 					if( hasTWrites && moveTWrite) //reuse existing transient_write
 					{
@@ -168,7 +167,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					//update live in and out of new statement block (for piggybacking)
 					DataIdentifier diVar = new DataIdentifier(varname);
 					diVar.setDimensions(rlen, clen);
-					diVar.setBlockDimensions(brlen, bclen);
+					diVar.setBlocksize(blen);
 					diVar.setDataType(c.getDataType());
 					diVar.setValueType(c.getValueType());
 					sb1.liveOut().addVariable(varname, new DataIdentifier(diVar));
@@ -351,7 +350,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				//update live in and out of new statement block (for piggybacking)
 				DataIdentifier diVar = new DataIdentifier(varname);
 				diVar.setDimensions(c.getDim1(), c.getDim2());
-				diVar.setBlockDimensions(c.getRowsInBlock(), c.getColsInBlock());
+				diVar.setBlocksize(c.getBlocksize());
 				diVar.setDataType(c.getDataType());
 				diVar.setValueType(c.getValueType());
 				sb1out.addVariable(varname, new DataIdentifier(diVar));

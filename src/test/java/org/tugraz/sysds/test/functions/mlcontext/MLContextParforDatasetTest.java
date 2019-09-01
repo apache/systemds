@@ -102,12 +102,12 @@ public class MLContextParforDatasetTest extends MLContextTestBase
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 76543); 
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A); 
 			int blksz = ConfigurationManager.getBlocksize();
-			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows, cols, blksz, blksz, mbA.getNonZeros());
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows, cols, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
 			
 			//create input dataset
 			SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz);
 			Dataset<Row> df = RDDConverterUtils.binaryBlockToDataFrame(sparkSession, in, mc1, vector);
 			MatrixMetadata mm = new MatrixMetadata(vector ? MatrixFormat.DF_VECTOR_WITH_INDEX : MatrixFormat.DF_DOUBLES_WITH_INDEX);
 			mm.setMatrixCharacteristics(mc2);

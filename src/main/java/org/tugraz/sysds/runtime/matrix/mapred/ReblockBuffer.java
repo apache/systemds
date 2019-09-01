@@ -43,17 +43,15 @@ public class ReblockBuffer
 	private int _count;
 	private final long _rlen;
 	private final long _clen;
-	private final int _brlen;
-	private final int _bclen;
+	private final int _blen;
 
-	public ReblockBuffer( int buffersize, long rlen, long clen, int brlen, int bclen  ) {
+	public ReblockBuffer( int buffersize, long rlen, long clen, int blen ) {
 		_bufflen = Math.max(buffersize, 16);
 		_count = 0;
 		_buff = new long[ _bufflen ][3];
 		_rlen = rlen;
 		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
+		_blen = blen;
 	}
 
 	public void appendCell( long r, long c, double v ) {
@@ -86,8 +84,8 @@ public class ReblockBuffer
 		long cbi = -1, cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _brlen);
-			long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _bclen);
+			long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _blen);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _blen);
 			
 			//switch to next block
 			if( bi != cbi || bj != cbj ) {
@@ -99,7 +97,7 @@ public class ReblockBuffer
 		
 		//Step 3) output blocks
 		ArrayList<IndexedMatrixValue> ret = new ArrayList<>();
-		boolean sparse = MatrixBlock.evalSparseFormatInMemory(_brlen, _bclen, _count/numBlocks);
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(_blen, _blen, _count/numBlocks);
 		MatrixIndexes tmpIx = new MatrixIndexes();
 		MatrixBlock tmpBlock = new MatrixBlock();
 		
@@ -107,8 +105,8 @@ public class ReblockBuffer
 		cbi = -1; cbj = -1; //current block indexes
 		for( int i=0; i<_count; i++ )
 		{
-			long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _brlen);
-			long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _bclen);
+			long bi = UtilFunctions.computeBlockIndex(_buff[i][0], _blen);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i][1], _blen);
 			
 			//output block and switch to next index pair
 			if( bi != cbi || bj != cbj ) {
@@ -117,12 +115,12 @@ public class ReblockBuffer
 				cbj = bj;
 				tmpIx = new MatrixIndexes(bi, bj);
 				tmpBlock = new MatrixBlock(
-					UtilFunctions.computeBlockSize(_rlen, bi, _brlen),
-					UtilFunctions.computeBlockSize(_clen, bj, _bclen), sparse);
+					UtilFunctions.computeBlockSize(_rlen, bi, _blen),
+					UtilFunctions.computeBlockSize(_clen, bj, _blen), sparse);
 			}
 			
-			int ci = UtilFunctions.computeCellInBlock(_buff[i][0], _brlen);
-			int cj = UtilFunctions.computeCellInBlock(_buff[i][1], _bclen);
+			int ci = UtilFunctions.computeCellInBlock(_buff[i][0], _blen);
+			int cj = UtilFunctions.computeCellInBlock(_buff[i][1], _blen);
 			double tmp = Double.longBitsToDouble(_buff[i][2]);
 			tmpBlock.appendValue(ci, cj, tmp); 
 		}
@@ -164,10 +162,10 @@ public class ReblockBuffer
 	private class ReblockBufferComparator implements Comparator<long[]> {
 		@Override
 		public int compare(long[] arg0, long[] arg1) {
-			long bi0 = UtilFunctions.computeBlockIndex( arg0[0], _brlen );
-			long bj0 = UtilFunctions.computeBlockIndex( arg0[1], _bclen );
-			long bi1 = UtilFunctions.computeBlockIndex( arg1[0], _brlen );
-			long bj1 = UtilFunctions.computeBlockIndex( arg1[1], _bclen );
+			long bi0 = UtilFunctions.computeBlockIndex( arg0[0], _blen );
+			long bj0 = UtilFunctions.computeBlockIndex( arg0[1], _blen );
+			long bi1 = UtilFunctions.computeBlockIndex( arg1[0], _blen );
+			long bj1 = UtilFunctions.computeBlockIndex( arg1[1], _blen );
 			return ( bi0 < bi1 || (bi0 == bi1 && bj0 < bj1) ) ? -1 :
 				(( bi0 == bi1 && bj0 == bj1)? 0 : 1);
 		}

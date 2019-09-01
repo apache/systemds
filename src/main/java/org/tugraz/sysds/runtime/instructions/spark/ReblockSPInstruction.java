@@ -52,15 +52,14 @@ import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.utils.Statistics;
 
 public class ReblockSPInstruction extends UnarySPInstruction {
-	private int brlen;
-	private int bclen;
+	private int blen;
 	private boolean outputEmptyBlocks;
 
 	private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
 			String opcode, String instr) {
 		super(SPType.Reblock, op, in, out, opcode, instr);
-		brlen = br;
-		bclen = bc;
+		blen = br;
+		blen = bc;
 		outputEmptyBlocks = emptyBlocks;
 	}
 
@@ -74,12 +73,11 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		int brlen=Integer.parseInt(parts[3]);
-		int bclen=Integer.parseInt(parts[4]);
+		int blen=Integer.parseInt(parts[3]);
 		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[5]);
 		
 		Operator op = null; // no operator for ReblockSPInstruction
-		return new ReblockSPInstruction(op, in, out, brlen, bclen, outputEmptyBlocks, opcode, str);
+		return new ReblockSPInstruction(op, in, out, blen, blen, outputEmptyBlocks, opcode, str);
 	}
 
 	@Override
@@ -90,7 +88,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		CacheableData<?> obj = sec.getCacheableData(input1.getName());
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-		mcOut.set(mc.getRows(), mc.getCols(), brlen, bclen, mc.getNonZeros());
+		mcOut.set(mc.getRows(), mc.getCols(), blen, mc.getNonZeros());
 		
 		//get the source format form the meta data
 		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
@@ -156,7 +154,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				fillValue = props.getFillValue();
 			}
 			
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
 			csvInstruction.processInstruction(sec);
 			return;
 		}
@@ -175,8 +173,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 			
 			boolean shuffleFreeReblock = mc.dimsKnown() && mcOut.dimsKnown()
-				&& (mc.getRows() < mcOut.getRowsPerBlock() || mc.getRowsPerBlock()%mcOut.getRowsPerBlock() == 0)
-				&& (mc.getCols() < mcOut.getColsPerBlock() || mc.getColsPerBlock()%mcOut.getColsPerBlock() == 0);
+				&& (mc.getRows() < mcOut.getBlocksize() || mc.getBlocksize()%mcOut.getBlocksize() == 0)
+				&& (mc.getCols() < mcOut.getBlocksize() || mc.getBlocksize()%mcOut.getBlocksize() == 0);
 			
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1
 				.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
@@ -230,7 +228,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				fillValue = props.getFillValue();
 			}
 			
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
 			csvInstruction.processInstruction(sec);
 		}
 		else {

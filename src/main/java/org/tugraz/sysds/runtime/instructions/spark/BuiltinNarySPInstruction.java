@@ -79,8 +79,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 			mcOut = computeAppendOutputDataCharacteristics(sec, inputs, cbind);
 			
 			//get consolidated input via union over shifted and padded inputs
-			DataCharacteristics off = new MatrixCharacteristics(
-				0, 0, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), 0);
+			DataCharacteristics off = new MatrixCharacteristics(0, 0, mcOut.getBlocksize(), 0);
 			for( CPOperand input : inputs ) {
 				DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
 				JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec
@@ -125,7 +124,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 	private static DataCharacteristics computeAppendOutputDataCharacteristics(SparkExecutionContext sec, CPOperand[] inputs, boolean cbind) {
 		DataCharacteristics mcIn1 = sec.getDataCharacteristics(inputs[0].getName());
 		DataCharacteristics mcOut = new MatrixCharacteristics(
-			0, 0, mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock(), 0);
+			0, 0, mcIn1.getBlocksize(), 0);
 		for( CPOperand input : inputs ) {
 			DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
 			updateAppendDataCharacteristics(mcIn, mcOut, cbind);
@@ -146,8 +145,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 			DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
 			mcOut.setRows(Math.max(mcOut.getRows(), mcIn.getRows()));
 			mcOut.setCols(Math.max(mcOut.getCols(), mcIn.getCols()));
-			mcOut.setRowsPerBlock(mcIn.getRowsPerBlock());
-			mcOut.setColsPerBlock(mcIn.getColsPerBlock());
+			mcOut.setBlocksize(mcIn.getBlocksize());
 		}
 		return mcOut;
 	}
@@ -165,18 +163,18 @@ public class BuiltinNarySPInstruction extends SPInstruction
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock mb = arg0._2();
-			int brlen = UtilFunctions.computeBlockSize(_mcOut.getRows(), ix.getRowIndex(), _mcOut.getRowsPerBlock());
-			int bclen = UtilFunctions.computeBlockSize(_mcOut.getCols(), ix.getColumnIndex(), _mcOut.getColsPerBlock());
+			int blen = UtilFunctions.computeBlockSize(_mcOut.getRows(), ix.getRowIndex(), _mcOut.getBlocksize());
+			//int lblen = UtilFunctions.computeBlockSize(_mcOut.getCols(), ix.getColumnIndex(), _mcOut.getBlocksize());
 			
 			//check for pass-through
-			if( brlen == mb.getNumRows() && bclen == mb.getNumColumns() )
+			if( blen == mb.getNumRows() && blen == mb.getNumColumns() )
 				return arg0;
 			
 			//cbind or rbind to pad to right blocksize
-			if( brlen > mb.getNumRows() ) //rbind
-				mb = mb.append(new MatrixBlock(brlen-mb.getNumRows(),bclen,true), new MatrixBlock(), false);
-			else if( bclen > mb.getNumColumns() ) //cbind
-				mb = mb.append(new MatrixBlock(brlen,bclen-mb.getNumColumns(),true), new MatrixBlock(), true);
+			if( blen > mb.getNumRows() ) //rbind
+				mb = mb.append(new MatrixBlock(blen-mb.getNumRows(),blen,true), new MatrixBlock(), false);
+			else if( blen > mb.getNumColumns() ) //cbind
+				mb = mb.append(new MatrixBlock(blen,blen-mb.getNumColumns(),true), new MatrixBlock(), true);
 			return new Tuple2<>(ix, mb);
 		}
 	}

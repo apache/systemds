@@ -1365,11 +1365,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//create new indexing operations
 			IndexingOp ix1 = new IndexingOp("tmp1", DataType.MATRIX, ValueType.FP64, X, 
 					rowExpr, rowExpr, new LiteralOp(1), HopRewriteUtils.createValueHop(X, false), true, false);
-			ix1.setOutputBlocksizes(X.getRowsInBlock(), X.getColsInBlock());
+			ix1.setBlocksize(X.getBlocksize());
 			ix1.refreshSizeInformation();
 			IndexingOp ix2 = new IndexingOp("tmp2", DataType.MATRIX, ValueType.FP64, Y, 
 					new LiteralOp(1), HopRewriteUtils.createValueHop(Y, true), colExpr, colExpr, false, true);
-			ix2.setOutputBlocksizes(Y.getRowsInBlock(), Y.getColsInBlock());
+			ix2.setBlocksize(Y.getBlocksize());
 			ix2.refreshSizeInformation();
 			
 			//rewire matrix mult over ix1 and ix2

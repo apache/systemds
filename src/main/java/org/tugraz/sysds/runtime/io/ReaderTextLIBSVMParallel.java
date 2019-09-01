@@ -50,7 +50,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader
 	
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen,
-			int brlen, int bclen, long estnnz) 
+			int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		// prepare file access
@@ -75,7 +75,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader
 		clen = ret.getNumColumns();
 
 		// Second Read Pass (read, parse strings, append to matrix block)
-		readLIBSVMMatrixFromHDFS(splits, path, job, ret, rlen, clen, brlen, bclen);
+		readLIBSVMMatrixFromHDFS(splits, path, job, ret, rlen, clen, blen);
 		
 		//post-processing (representation-specific, change of sparse/dense block representation)
 		// - nnz explicitly maintained in parallel for the individual splits
@@ -90,16 +90,16 @@ public class ReaderTextLIBSVMParallel extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//not implemented yet, fallback to sequential reader
 		return new ReaderTextLIBSVM()
-			.readMatrixFromInputStream(is, rlen, clen, brlen, bclen, estnnz);
+			.readMatrixFromInputStream(is, rlen, clen, blen, estnnz);
 	}
 	
 	private void readLIBSVMMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, 
-			MatrixBlock dest, long rlen, long clen, int brlen, int bclen) 
+			MatrixBlock dest, long rlen, long clen, int blen) 
 		throws IOException 
 	{
 		FileInputFormat.addInputPath(job, path);
@@ -190,7 +190,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader
 		// allocate target matrix block based on given size; 
 		// need to allocate sparse as well since lock-free insert into target
 		long estnnz2 = (estnnz < 0) ? (long)nrow * ncol : estnnz;
-		return createOutputMatrixBlock(nrow, ncol, nrow, ncol, estnnz2, true, true);
+		return createOutputMatrixBlock(nrow, ncol, nrow, estnnz2, true, true);
 	}
 	
 	private static class SplitOffsetInfos {

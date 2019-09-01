@@ -80,8 +80,7 @@ public class Matrix {
 	 *            the number of columns
 	 */
 	public Matrix(Dataset<Row> dataFrame, long numRows, long numCols) {
-		this(dataFrame, new MatrixMetadata(numRows, numCols, ConfigurationManager.getBlocksize(),
-				ConfigurationManager.getBlocksize()));
+		this(dataFrame, new MatrixMetadata(numRows, numCols, ConfigurationManager.getBlocksize()));
 	}
 
 	/**

@@ -37,7 +37,7 @@ import org.tugraz.sysds.runtime.util.HDFSTool;
 public class WriterBinaryCell extends MatrixWriter
 {
 	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz, boolean diag) 
+	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
@@ -48,7 +48,7 @@ public class WriterBinaryCell extends MatrixWriter
 		HDFSTool.deleteFileIfExistOnHDFS( fname );
 			
 		//core write
-		writeBinaryCellMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen);
+		writeBinaryCellMatrixToHDFS(path, job, src, rlen, clen, blen);
 
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
@@ -56,7 +56,7 @@ public class WriterBinaryCell extends MatrixWriter
 
 	@Override
 	@SuppressWarnings("deprecation")
-	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException 
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -80,7 +80,7 @@ public class WriterBinaryCell extends MatrixWriter
 	}
 
 	@SuppressWarnings("deprecation")
-	protected void writeBinaryCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
+	protected void writeBinaryCellMatrixToHDFS( Path path, JobConf job, MatrixBlock src, long rlen, long clen, int blen )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();

@@ -98,8 +98,8 @@ public class LibMatrixDatagen
 	}
 
 	@Deprecated
-	public static LongStream computeNNZperBlock(long nrow, long ncol, int brlen, int bclen, double sparsity) {
-		long lnumBlocks = (long) (Math.ceil((double)nrow/brlen) * Math.ceil((double)ncol/bclen));
+	public static LongStream computeNNZperBlock(long nrow, long ncol, int blen, double sparsity) {
+		long lnumBlocks = (long) (Math.ceil((double)nrow/blen) * Math.ceil((double)ncol/blen));
 		
 		//sanity check max number of blocks (before cast to avoid overflow)
 		if ( lnumBlocks > Integer.MAX_VALUE ) {
@@ -108,7 +108,7 @@ public class LibMatrixDatagen
 		}
 
 		int numBlocks = (int) lnumBlocks;
-		int numColBlocks = (int) Math.ceil((double)ncol/bclen);
+		int numColBlocks = (int) Math.ceil((double)ncol/blen);
 		long nnz = (long) Math.ceil (nrow * (ncol*sparsity));
 		
 		if( nnz < numBlocks ) {
@@ -119,9 +119,9 @@ public class LibMatrixDatagen
 			double P = (double) nnz / numBlocks;
 			Random runif = new Random(System.nanoTime());
 			return LongStream.range(0, numBlocks).map( i -> {
-				double lP = P / (brlen*bclen) *
-					UtilFunctions.computeBlockSize(nrow, 1 + i / numColBlocks, brlen) *
-					UtilFunctions.computeBlockSize(ncol, 1 + i % numColBlocks, bclen);
+				double lP = P / (blen*blen) *
+					UtilFunctions.computeBlockSize(nrow, 1 + i / numColBlocks, blen) *
+					UtilFunctions.computeBlockSize(ncol, 1 + i % numColBlocks, blen);
 				return (runif.nextDouble() <= lP) ? 1 : 0;
 			});
 		}
@@ -130,36 +130,35 @@ public class LibMatrixDatagen
 			//nnz per block: lrlen * lclen * sparsity (note: this is a biased generator 
 			//that might actually create fewer but never more non zeros than expected)
 			return LongStream.range(0, numBlocks).map( i -> (long)(sparsity * 
-				UtilFunctions.computeBlockSize(nrow, 1 + i / numColBlocks, brlen) *
-				UtilFunctions.computeBlockSize(ncol, 1 + i % numColBlocks, bclen)));
+				UtilFunctions.computeBlockSize(nrow, 1 + i / numColBlocks, blen) *
+				UtilFunctions.computeBlockSize(ncol, 1 + i % numColBlocks, blen)));
 		}
 	}
 
-    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdfStr, int r, int c, int rpb, int cpb, double sp, double min, double max, String distParams) {
+    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdfStr, int r, int c, int blen, double sp, double min, double max, String distParams) {
 		RandomMatrixGenerator.PDF pdf = RandomMatrixGenerator.PDF.valueOf(pdfStr.toUpperCase());
 		RandomMatrixGenerator rgen = null;
-    	switch (pdf) {
-		case UNIFORM:
-			rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, min, max);
-			break;
-		case NORMAL:
-			rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp);
-			break;
-		case POISSON:
-			double mean = Double.NaN;
-			try {
-				mean = Double.parseDouble(distParams);
-			} catch (NumberFormatException e) {
-				throw new DMLRuntimeException("Failed to parse Poisson distribution parameter: " + distParams);
-			}
-			rgen = new RandomMatrixGenerator(pdf, r, c, rpb, cpb, sp, min, max, mean);
-			break;
-		default:
-			throw new DMLRuntimeException("Unsupported probability distribution \"" + pdf + "\" in rand() -- it must be one of \"uniform\", \"normal\", or \"poisson\"");
-
+		switch (pdf) {
+			case UNIFORM:
+				rgen = new RandomMatrixGenerator(pdf, r, c, blen, sp, min, max);
+				break;
+			case NORMAL:
+				rgen = new RandomMatrixGenerator(pdf, r, c, blen, sp);
+				break;
+			case POISSON:
+				double mean = Double.NaN;
+				try {
+					mean = Double.parseDouble(distParams);
+				} catch (NumberFormatException e) {
+					throw new DMLRuntimeException("Failed to parse Poisson distribution parameter: " + distParams);
+				}
+				rgen = new RandomMatrixGenerator(pdf, r, c, blen, sp, min, max, mean);
+				break;
+			default:
+				throw new DMLRuntimeException("Unsupported probability distribution \"" + pdf + "\" in rand() -- it must be one of \"uniform\", \"normal\", or \"poisson\"");
 		}
-    	return rgen;
-    }
+		return rgen;
+	}
 	
 	/**
 	 * Function to generate a matrix of random numbers. This is invoked both
@@ -184,8 +183,7 @@ public class LibMatrixDatagen
 		boolean invokedFromCP = (bigrand != null);
 		int rows = rgen._rows;
 		int cols = rgen._cols;
-		int rpb = rgen._rowsPerBlock;
-		int cpb = rgen._colsPerBlock;
+		int blen = rgen._blocksize;
 		double sparsity = rgen._sparsity;
 		
 		// sanity check valid dimensions and sparsity
@@ -224,8 +222,8 @@ public class LibMatrixDatagen
 		out.allocateBlock();
 		
 		//prepare rand internal parameters
-		int nrb = (int) Math.ceil((double)rows/rpb);
-		int ncb = (int) Math.ceil((double)cols/cpb);
+		int nrb = (int) Math.ceil((double)rows/blen);
+		int ncb = (int) Math.ceil((double)cols/blen);
 		long[] seeds = invokedFromCP ? generateSeedsForCP(bigrand, nrb, ncb) : null;
 		
 		genRandomNumbers(invokedFromCP, 0, nrb, 0, ncb, out, rgen, bSeed, seeds);
@@ -257,8 +255,7 @@ public class LibMatrixDatagen
 	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k ) {
 		int rows = rgen._rows;
 		int cols = rgen._cols;
-		int rpb = rgen._rowsPerBlock;
-		int cpb = rgen._colsPerBlock;
+		int blen = rgen._blocksize;
 		double sparsity = rgen._sparsity;
 		
 		//sanity check valid dimensions and sparsity
@@ -279,7 +276,7 @@ public class LibMatrixDatagen
 		boolean lsparse = MatrixBlock.evalSparseFormatInMemory( rows, cols, estnnz );
 		
 		//fallback to sequential if single rowblock or too few cells or if MatrixBlock is not thread safe
-		if( k<=1 || (rows <= rpb && lsparse) || (long)rows*cols < PAR_NUMCELL_THRESHOLD 
+		if( k<=1 || (rows <= blen && lsparse) || (long)rows*cols < PAR_NUMCELL_THRESHOLD 
 			|| !MatrixBlock.isThreadSafe(lsparse) ) {
 			generateRandomMatrix(out, rgen, bigrand, bSeed);
 			return;
@@ -301,8 +298,8 @@ public class LibMatrixDatagen
 		out.reset(rows, cols, lsparse, estnnz);
 		out.allocateBlock();
 		
-		int nrb = (int) Math.ceil((double)rows/rpb);
-		int ncb = (int) Math.ceil((double)cols/cpb);
+		int nrb = (int) Math.ceil((double)rows/blen);
+		int ncb = (int) Math.ceil((double)cols/blen);
 		
 		//default: parallelization over row blocks, fallback to parallelization
 		//over column blocks if possible and necessary (higher degree of par)
@@ -448,8 +445,7 @@ public class LibMatrixDatagen
 	private static void genRandomNumbers(boolean invokedFromCP, int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long bSeed, long[] seeds) {
 		int rows = rgen._rows;
 		int cols = rgen._cols;
-		int rpb = rgen._rowsPerBlock;
-		int cpb = rgen._colsPerBlock;
+		int blen = rgen._blocksize;
 		double sparsity = rgen._sparsity;
 		double min = rgen._pdf == RandomMatrixGenerator.PDF.UNIFORM ? rgen._min : 0;
 		double max = rgen._pdf == RandomMatrixGenerator.PDF.UNIFORM ? rgen._max : 1;
@@ -457,8 +453,8 @@ public class LibMatrixDatagen
 		int clen = out.clen;
 		int estnnzRow = (int)(sparsity * cols);
 		
-		int nrb = (int) Math.ceil((double)rows/rpb);
-		int ncb = (int) Math.ceil((double)cols/cpb);
+		int nrb = (int) Math.ceil((double)rows/blen);
+		int ncb = (int) Math.ceil((double)cols/blen);
 		int counter = 0;
 
 		// Setup Pseudo Random Number Generator for cell values based on 'pdf'.
@@ -478,18 +474,18 @@ public class LibMatrixDatagen
 		
 		//preallocate sparse rows if safe
 		if( out.sparse && estnnzRow > 0 && cl==0 && cu==ncb )
-			for( int i=rl*rpb; i<Math.min(ru*rpb, rows); i++ )
+			for( int i=rl*blen; i<Math.min(ru*blen, rows); i++ )
 				out.sparseBlock.allocate(i, estnnzRow);
 		
 		// loop through row-block indices
 		for(int rbi = rl; rbi < ru; rbi++) {
-			int blockrows = (rbi == nrb-1 ? (rows-rbi*rpb) : rpb);
-			int rowoffset = rbi*rpb;
+			int blockrows = (rbi == nrb-1 ? (rows-rbi*blen) : blen);
+			int rowoffset = rbi*blen;
 
 			// loop through column-block indices
 			for(int cbj = cl; cbj < cu; cbj++) {
-				int blockcols = (cbj == ncb-1 ? (cols-cbj*cpb) : cpb);
-				int coloffset = cbj*cpb;
+				int blockcols = (cbj == ncb-1 ? (cols-cbj*blen) : blen);
+				int coloffset = cbj*blen;
 				
 				// select the appropriate block-level seed and init PRNG
 				long seed = !invokedFromCP ?  bSeed : seeds[counter++]; 
@@ -509,7 +505,7 @@ public class LibMatrixDatagen
 					SparseBlock c = out.sparseBlock;
 					// Prob [k-1 zeros before a nonzero] = Prob [k-1 < log(uniform)/log(1-p) < k] = p*(1-p)^(k-1), where p=sparsity
 					double log1mp = Math.log(1-sparsity);
-					int idx = 0;  // takes values in range [1, brlen*bclen] (both ends including)
+					int idx = 0;  // takes values in range [1, blen*blen] (both ends including)
 					long blocksize = blockrows*blockcols;
 					while(idx < blocksize) {
 						//compute skip to next index
@@ -604,7 +600,7 @@ public class LibMatrixDatagen
 			_cl = cl;
 			_cu = cu;
 			_out = out;
-			_rgen.init(rgen._pdf, rgen._rows, rgen._cols, rgen._rowsPerBlock, rgen._colsPerBlock, rgen._sparsity, rgen._min, rgen._max, rgen._mean);
+			_rgen.init(rgen._pdf, rgen._rows, rgen._cols, rgen._blocksize, rgen._sparsity, rgen._min, rgen._max, rgen._mean);
 			_bSeed = bSeed;
 			_seeds = seeds;
 		}
@@ -614,9 +610,9 @@ public class LibMatrixDatagen
 			//execute rand operations (with block indexes)
 			genRandomNumbers(true, _rl, _ru, _cl, _cu, _out, _rgen, _bSeed, _seeds);
 			//thread-local maintenance of non-zero values
-			int rpb =_rgen._rowsPerBlock, cpb = _rgen._colsPerBlock;
-			return _out.recomputeNonZeros(_rl*rpb, Math.min(_ru*rpb,_rgen._rows)-1,
-				_cl*cpb, Math.min(_cu*cpb, _rgen._cols)-1);
+			int blen =_rgen._blocksize;
+			return _out.recomputeNonZeros(_rl*blen, Math.min(_ru*blen,_rgen._rows)-1,
+				_cl*blen, Math.min(_cu*blen, _rgen._cols)-1);
 		}
 	}
 }

@@ -109,7 +109,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 				out = out.filter(new FilterNonEmptyBlocksFunction());
 
 			JavaRDD<MatrixBlock> out2 = out.map(
-					new RDDUAggFunction2(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
+					new RDDUAggFunction2(auop, mc.getBlocksize()));
 			MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, aggop);
 
 			//drop correction after aggregation
@@ -124,11 +124,11 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			if( _aggtype == SparkAggType.NONE ) {
 				//in case of no block aggregation, we always drop the correction as well as
 				//use a partitioning-preserving mapvalues
-				out = out.mapValues(new RDDUAggValueFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
+				out = out.mapValues(new RDDUAggValueFunction(auop, mc.getBlocksize()));
 			}
 			else if( _aggtype == SparkAggType.MULTI_BLOCK ) {
 				//in case of multi-block aggregation, we always keep the correction
-				out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
+				out = out.mapToPair(new RDDUAggFunction(auop, mc.getBlocksize()));
 				out = RDDAggregateUtils.aggByKeyStable(out, aggop, false);
 
 				//drop correction after aggregation if required (aggbykey creates
@@ -184,7 +184,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 				throw new DMLRuntimeException("Multi block spark aggregations are not supported for tensors yet.");
 				/*
 				//in case of multi-block aggregation, we always keep the correction
-				out = out.mapToPair(new RDDUTensorAggFunction(auop, dc.getRowsPerBlock(), dc.getColsPerBlock()));
+				out = out.mapToPair(new RDDUTensorAggFunction(auop, dc.getBlocksize(), dc.getBlocksize()));
 				out = RDDAggregateUtils.aggByKeyStable(out, aggop, false);
 
 				//drop correction after aggregation if required (aggbykey creates
@@ -206,14 +206,11 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = 2672082409287856038L;
 		
 		private AggregateUnaryOperator _op = null;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private int _blen = -1;
 		
-		public RDDUAggFunction( AggregateUnaryOperator op, int brlen, int bclen )
-		{
+		public RDDUAggFunction( AggregateUnaryOperator op, int blen ) {
 			_op = op;
-			_brlen = brlen;
-			_bclen = bclen;
+			_blen = blen;
 		}
 		
 		@Override
@@ -227,8 +224,8 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//unary aggregate operation (always keep the correction)
-			OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, 
-					ixOut, blkOut, _op, _brlen, _bclen);
+			OperationsOnMatrixValues.performAggregateUnary(
+				ixIn, blkIn, ixOut, blkOut, _op, _blen);
 			
 			//output new tuple
 			return new Tuple2<>(ixOut, blkOut);
@@ -243,13 +240,12 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = 2672082409287856038L;
 		
 		private AggregateUnaryOperator _op = null;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private int _blen = -1;
 		
-		public RDDUAggFunction2( AggregateUnaryOperator op, int brlen, int bclen ) {
+		public RDDUAggFunction2( AggregateUnaryOperator op, int blen ) {
 			_op = op;
-			_brlen = brlen;
-			_bclen = bclen;
+			_blen = blen;
+			_blen = blen;
 		}
 		
 		@Override
@@ -258,7 +254,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		{
 			//unary aggregate operation (always keep the correction)
 			return (MatrixBlock) arg0._2.aggregateUnaryOperations(
-					_op, new MatrixBlock(), _brlen, _bclen, arg0._1());
+					_op, new MatrixBlock(), _blen, arg0._1());
 		}
 	}
 
@@ -290,15 +286,13 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = 5352374590399929673L;
 		
 		private AggregateUnaryOperator _op = null;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private int _blen = -1;
 		private MatrixIndexes _ix = null;
 		
-		public RDDUAggValueFunction( AggregateUnaryOperator op, int brlen, int bclen )
-		{
+		public RDDUAggValueFunction( AggregateUnaryOperator op, int blen ) {
 			_op = op;
-			_brlen = brlen;
-			_bclen = bclen;
+			_blen = blen;
+			_blen = blen;
 			
 			_ix = new MatrixIndexes(1,1);
 		}
@@ -310,7 +304,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//unary aggregate operation
-			arg0.aggregateUnaryOperations(_op, blkOut, _brlen, _bclen, _ix);
+			arg0.aggregateUnaryOperations(_op, blkOut, _blen, _ix);
 			
 			//always drop correction since no aggregation
 			blkOut.dropLastRowsOrColumns(_op.aggOp.correctionLocation);

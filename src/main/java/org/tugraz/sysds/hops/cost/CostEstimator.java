@@ -67,8 +67,8 @@ public abstract class CostEstimator
 	
 	private static final int DEFAULT_NUMITER = 15;
 	
-	protected static final VarStats _unknownStats = new VarStats(1,1,-1,-1,-1,false);
-	protected static final VarStats _scalarStats = new VarStats(1,1,1,1,1,true);
+	protected static final VarStats _unknownStats = new VarStats(1,1,-1,-1,false);
+	protected static final VarStats _scalarStats = new VarStats(1,1,1,1,true);
 	
 	public double getTimeEstimate(Program rtprog, LocalVariableMap vars, HashMap<String,VarStats> stats) {
 		double costs = 0;
@@ -189,11 +189,10 @@ public abstract class CostEstimator
 				DataCharacteristics dc = mo.getDataCharacteristics();
 				long rlen = dc.getRows();
 				long clen = dc.getCols();
-				int brlen = dc.getRowsPerBlock();
-				int bclen = dc.getColsPerBlock();
+				int blen = dc.getBlocksize();
 				long nnz = dc.getNonZeros();
 				boolean inmem = mo.getStatus()==CacheStatus.CACHED;
-				vs = new VarStats(rlen, clen, brlen, bclen, nnz, inmem);
+				vs = new VarStats(rlen, clen, blen, nnz, inmem);
 			}
 			else //scalar
 			{
@@ -217,10 +216,9 @@ public abstract class CostEstimator
 				String varname = parts[1];
 				long rlen = Long.parseLong(parts[6]);
 				long clen = Long.parseLong(parts[7]);
-				int brlen = Integer.parseInt(parts[8]);
-				int bclen = Integer.parseInt(parts[9]);
+				int blen = Integer.parseInt(parts[8]);
 				long nnz = Long.parseLong(parts[10]);
-				VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, false);
+				VarStats vs = new VarStats(rlen, clen, blen, nnz, false);
 				stats.put(varname, vs);
 			}
 			else if ( optype.equals("cpvar") ) {
@@ -245,10 +243,9 @@ public abstract class CostEstimator
 			String varname = randInst.output.getName();
 			long rlen = randInst.getRows();
 			long clen = randInst.getCols();
-			int brlen = randInst.getRowsInBlock();
-			int bclen = randInst.getColsInBlock();
+			int blen = randInst.getBlocksize();
 			long nnz = (long) (randInst.getSparsity() * rlen * clen);
-			VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, true);
+			VarStats vs = new VarStats(rlen, clen, blen, nnz, true);
 			stats.put(varname, vs);
 		}
 		else if( inst instanceof StringInitCPInstruction ){
@@ -256,7 +253,7 @@ public abstract class CostEstimator
 			String varname = iinst.output.getName();
 			long rlen = iinst.getRows();
 			long clen = iinst.getCols();
-			VarStats vs = new VarStats(rlen, clen, ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), rlen*clen, true);
+			VarStats vs = new VarStats(rlen, clen, ConfigurationManager.getBlocksize(), rlen*clen, true);
 			stats.put(varname, vs);	
 		}
 		else if( inst instanceof FunctionCallCPInstruction )

@@ -133,8 +133,8 @@ public class AggregateNaNTest extends AutomatedTestBase
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		
 		double ret = mb.aggregateUnaryOperations(
-		InstructionUtils.parseBasicAggregateUnaryOperator(type),
-		new MatrixBlock(), -1, -1, new MatrixIndexes(1, 1), true).getValue(7, 0);
+			InstructionUtils.parseBasicAggregateUnaryOperator(type),
+			new MatrixBlock(), -1, new MatrixIndexes(1, 1), true).getValue(7, 0);
 
 		Assert.assertTrue(ret == 1);
 	}

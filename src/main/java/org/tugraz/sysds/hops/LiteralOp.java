@@ -109,7 +109,7 @@ public class LiteralOp extends Hop
 						"unexpected value type constructing lops for LiteralOp.\n");
 			}
 
-			l.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			l.getOutputParameters().setDimensions(0, 0, 0, -1);
 			setLineNumbers(l);
 			setLops(l);
 		} 

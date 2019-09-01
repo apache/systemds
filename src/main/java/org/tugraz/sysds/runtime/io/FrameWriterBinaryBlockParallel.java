@@ -52,7 +52,7 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 	{
 		//estimate output size and number of output blocks (min 1)
 		int blen = ConfigurationManager.getBlocksize();
-		int numPartFiles = Math.max((int)(OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, blen, blen, rlen*clen) 
+		int numPartFiles = Math.max((int)(OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, blen, rlen*clen) 
 						   / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
 		
 		//determine degree of parallelism

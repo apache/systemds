@@ -1129,11 +1129,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param complementary ?
 	 * @param iRowStartSrc ?
 	 * @param iRowStartDest ?
-	 * @param brlen ?
+	 * @param blen ?
 	 * @param iMaxRowsToCopy ?
 	 * @return frame block
 	 */
-	public FrameBlock zeroOutOperations(FrameBlock result, IndexRange range, boolean complementary, int iRowStartSrc, int iRowStartDest, int brlen, int iMaxRowsToCopy) {
+	public FrameBlock zeroOutOperations(FrameBlock result, IndexRange range, boolean complementary, int iRowStartSrc, int iRowStartDest, int blen, int iMaxRowsToCopy) {
 		int clen = getNumColumns();
 		
 		if(result==null)
@@ -1143,11 +1143,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			result.reset(0, true);
 			result.setSchema(getSchema());
 		}
-		result.ensureAllocatedColumns(brlen);
+		result.ensureAllocatedColumns(blen);
 		
 		if(complementary)
 		{
-			for(int r=(int) range.rowStart; r<=range.rowEnd&&r+iRowStartDest<brlen; r++)
+			for(int r=(int) range.rowStart; r<=range.rowEnd&&r+iRowStartDest<blen; r++)
 			{
 				for(int c=(int) range.colStart; c<=range.colEnd; c++)
 					result.set(r+iRowStartDest, c, get(r+iRowStartSrc,c));

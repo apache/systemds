@@ -48,8 +48,7 @@ public class DataOp extends Hop
 	
 	//read dataop properties
 	private FileFormatTypes _inFormat = FileFormatTypes.TEXT;
-	private long _inRowsInBlock = -1;
-	private long _inColsInBlock = -1;
+	private long _inBlocksize = -1;
 	
 	private boolean _recompileRead = true;
 	
@@ -79,19 +78,17 @@ public class DataOp extends Hop
 	 * @param dim1 dimension 1
 	 * @param dim2 dimension 2
 	 * @param nnz number of non-zeros
-	 * @param rowsPerBlock rows per block
-	 * @param colsPerBlock cols per block
+	 * @param blen rows/cols per block
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
-			String fname, long dim1, long dim2, long nnz, int rowsPerBlock, int colsPerBlock) {
+			String fname, long dim1, long dim2, long nnz, int blen) {
 		super(l, dt, vt);
 		_dataop = dop;
 		
 		_fileName = fname;
 		setDim1(dim1);
 		setDim2(dim2);
-		setRowsInBlock(rowsPerBlock);
-		setColsInBlock(colsPerBlock);
+		setBlocksize(blen);
 		setNnz(nnz);
 		
 		if( dop == DataOpTypes.TRANSIENTREAD )
@@ -99,8 +96,8 @@ public class DataOp extends Hop
 	}
 
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
-			String fname, long dim1, long dim2, long nnz, UpdateType update, int rowsPerBlock, int colsPerBlock) {
-		this(l, dt, vt, dop, fname, dim1, dim2, nnz, rowsPerBlock, colsPerBlock);
+			String fname, long dim1, long dim2, long nnz, UpdateType update, int blen) {
+		this(l, dt, vt, dop, fname, dim1, dim2, nnz, blen);
 		setUpdateType(update);
 	}
 
@@ -227,13 +224,12 @@ public class DataOp extends Hop
 		_dataop = type;
 	}
 	
-	public void setOutputParams(long dim1, long dim2, long nnz, UpdateType update, int rowsPerBlock, int colsPerBlock) {
+	public void setOutputParams(long dim1, long dim2, long nnz, UpdateType update, int blen) {
 		setDim1(dim1);
 		setDim2(dim2);
 		setNnz(nnz);
 		setUpdateType(update);
-		setRowsInBlock(rowsPerBlock);
-		setColsInBlock(colsPerBlock);
+		setBlocksize(blen);
 	}
 
 	public void setFileName(String fn) {
@@ -282,7 +278,7 @@ public class DataOp extends Hop
 			case PERSISTENTREAD:
 				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, 
 						getDataType(), getValueType(), false, getInputFormatType());
-				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inRowsInBlock, _inColsInBlock, getNnz(), getUpdateType());
+				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
 				break;
 				
 			case PERSISTENTWRITE:
@@ -327,39 +323,23 @@ public class DataOp extends Hop
 		return _inFormat;
 	}
 	
-	public void setInputBlockSizes( long brlen, long bclen ){
-		setInputRowsInBlock(brlen);
-		setInputColsInBlock(bclen);
+	public void setInputBlocksize(long blen){
+		_inBlocksize = blen;
 	}
 	
-	public void setInputRowsInBlock( long brlen ){
-		_inRowsInBlock = brlen;
+	public long getInputBlocksize(){
+		return _inBlocksize;
 	}
 	
-	public long getInputRowsInBlock(){
-		return _inRowsInBlock;
-	}
-	
-	public void setInputColsInBlock( long bclen ){
-		_inColsInBlock = bclen;
-	}
-	
-	public long getInputColsInBlock(){
-		return _inColsInBlock;
-	}
-	
-	public boolean isRead()
-	{
+	public boolean isRead() {
 		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD );
 	}
 	
-	public boolean isWrite()
-	{
+	public boolean isWrite() {
 		return( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE );
 	}
 	
-	public boolean isPersistentReadWrite()
-	{
+	public boolean isPersistentReadWrite() {
 		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.PERSISTENTWRITE );
 	}
 
@@ -546,8 +526,7 @@ public class DataOp extends Hop
 		ret._dataop = _dataop;
 		ret._fileName = _fileName;
 		ret._inFormat = _inFormat;
-		ret._inRowsInBlock = _inRowsInBlock;
-		ret._inColsInBlock = _inColsInBlock;
+		ret._inBlocksize = _inBlocksize;
 		ret._recompileRead = _recompileRead;
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 
@@ -565,16 +544,15 @@ public class DataOp extends Hop
 		//to avoid unnecessary read and reblocks as well as to prevent specific anomalies, e.g., 
 		//with multiple piggybacked csvreblock of the same input w/ unknown input sizes
 		
-		DataOp that2 = (DataOp)that;	
+		DataOp that2 = (DataOp)that;
 		boolean ret = ( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION 
-					  && ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_CSE_PERSISTENT_READS) 
-					  &&_dataop == that2._dataop
-					  && _dataop == DataOpTypes.PERSISTENTREAD
-					  && _fileName.equals(that2._fileName)
-					  && _inFormat == that2._inFormat
-					  && _inRowsInBlock == that2._inRowsInBlock
-					  && _inColsInBlock == that2._inColsInBlock
-					  && _paramIndexMap!=null && that2._paramIndexMap!=null );
+			&& ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_CSE_PERSISTENT_READS) 
+			&&_dataop == that2._dataop
+			&& _dataop == DataOpTypes.PERSISTENTREAD
+			&& _fileName.equals(that2._fileName)
+			&& _inFormat == that2._inFormat
+			&& _inBlocksize == that2._inBlocksize
+			&& _paramIndexMap!=null && that2._paramIndexMap!=null );
 		
 		//above conditions also ensure consistency with regard to 
 		//(1) checkpointing, (2) reblock and (3) recompile.

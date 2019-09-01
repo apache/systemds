@@ -67,7 +67,7 @@ public class OffsetColumnIndex extends IndexFunction
 
 	@Override
 	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
-		out.set(numRowsInOutput, numColumnsInOutput, in.getRowsPerBlock(), in.getColsPerBlock());
+		out.set(numRowsInOutput, numColumnsInOutput, in.getBlocksize());
 		return false;
 	}
 }

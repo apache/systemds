@@ -52,7 +52,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//early abort for known empty matrices (e.g., remote parfor result vars)
@@ -60,7 +60,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			return new MatrixBlock((int)rlen, (int)clen, true);
 		
 		//allocate output matrix block (incl block allocation for parallel)
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, brlen, bclen, estnnz, true, true);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, blen, estnnz, true, true);
 		
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
@@ -72,9 +72,9 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		
 		//core read
 		int numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
-		long numBlocks = (long)Math.ceil((double)rlen / brlen);
+		long numBlocks = (long)Math.ceil((double)rlen / blen);
 		readBinaryBlockMatrixFromHDFS(path, job, fs, ret,
-			rlen, clen, brlen, bclen, numThreads<=numBlocks);
+			rlen, clen, blen, numThreads<=numBlocks);
 		
 		//finally check if change of sparse/dense block representation required
 		if( !AGGREGATE_BLOCK_NNZ )
@@ -85,7 +85,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 	}
 
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest,
-			long rlen, long clen, int brlen, int bclen, boolean syncBlock )
+			long rlen, long clen, int blen, boolean syncBlock )
 		throws IOException, DMLRuntimeException
 	{
 		//set up preferred custom serialization framework for binary block format
@@ -98,7 +98,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			ArrayList<ReadFileTask> tasks = new ArrayList<>();
 			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ){
-				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, brlen, bclen, syncBlock);
+				ReadFileTask t = new ReadFileTask(lpath, job, dest, rlen, clen, blen, syncBlock);
 				tasks.add(t);
 			}
 
@@ -112,7 +112,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 			
 			//post-processing
 			dest.setNonZeros( lnnz );
-			if( dest.isInSparseFormat() && clen>bclen ) 
+			if( dest.isInSparseFormat() && clen>blen ) 
 				sortSparseRowsParallel(dest, rlen, _numThreads, pool);
 			
 			pool.shutdown();
@@ -128,17 +128,16 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		private final JobConf _job;
 		private final MatrixBlock _dest;
 		private final long _rlen, _clen;
-		private final int _brlen, _bclen;
+		private final int _blen;
 		private final boolean _syncBlocks;
 		
-		public ReadFileTask(Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean syncBlocks) {
+		public ReadFileTask(Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int blen, boolean syncBlocks) {
 			_path = path;
 			_job = job;
 			_dest = dest;
 			_rlen = rlen;
 			_clen = clen;
-			_brlen = brlen;
-			_bclen = bclen;
+			_blen = blen;
 			_syncBlocks = syncBlocks;
 		}
 
@@ -147,7 +146,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		{
 			boolean sparse = _dest.isInSparseFormat();
 			MatrixIndexes key = new MatrixIndexes(); 
-			MatrixBlock value = getReuseBlock(_brlen, _bclen, sparse);
+			MatrixBlock value = getReuseBlock(_blen, sparse);
 			long lnnz = 0; //aggregate block nnz
 			
 			//directly read from sequence files (individual partfiles)
@@ -163,8 +162,8 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 					if( value.isEmptyBlock(false) )
 						continue;
 					
-					int row_offset = (int)(key.getRowIndex()-1)*_brlen;
-					int col_offset = (int)(key.getColumnIndex()-1)*_bclen;
+					int row_offset = (int)(key.getRowIndex()-1)*_blen;
+					int col_offset = (int)(key.getColumnIndex()-1)*_blen;
 					int rows = value.getNumRows();
 					int cols = value.getNumColumns();
 					

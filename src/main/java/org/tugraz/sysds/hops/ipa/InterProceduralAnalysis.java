@@ -532,7 +532,7 @@ public class InterProceduralAnalysis
 				//propagate matrix characteristics
 				MatrixObject mo = new MatrixObject(ValueType.FP64, null);
 				DataCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(),
-					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
+					ConfigurationManager.getBlocksize(),
 					fcallSizes.isSafeNnz(fkey, i)?input.getNnz():-1 );
 				MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 				mo.setMetaData(meta);
@@ -665,11 +665,10 @@ public class InterProceduralAnalysis
 	
 	private static MatrixObject createOutputMatrix( long dim1, long dim2, long nnz ) {
 		MatrixObject moOut = new MatrixObject(ValueType.FP64, null);
-		DataCharacteristics mc = new MatrixCharacteristics( dim1, dim2,
-				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), nnz);
+		DataCharacteristics mc = new MatrixCharacteristics(
+			dim1, dim2, ConfigurationManager.getBlocksize(), nnz);
 		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 		moOut.setMetaData(meta);
-		
 		return moOut;
 	}
 }

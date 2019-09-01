@@ -54,8 +54,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		checkBinaryAppendInputCharacteristics(sec, _cbind, false, false);
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
-		int brlen = mc1.getRowsPerBlock();
-		int bclen = mc1.getColsPerBlock();
+		int blen = mc1.getBlocksize();
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() );
@@ -65,11 +64,11 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		if( preservesPartitioning(mc1, mc2, _cbind) ) {
 			out = in1.mapPartitionsToPair(
-					new MapSideAppendPartitionFunction(in2, _cbind, off, brlen, bclen), true);
+				new MapSideAppendPartitionFunction(in2, _cbind, off, blen), true);
 		}
 		else {
 			out = in1.flatMapToPair(
-					new MapSideAppendFunction(in2, _cbind, off, brlen, bclen));
+				new MapSideAppendFunction(in2, _cbind, off, blen));
 		}
 		
 		//put output RDD handle into symbol table
@@ -85,8 +84,8 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		//with awareness of zero number of rows or columns
 		long ncblksIn1 = cbind ? mcIn1.getNumColBlocks() : mcIn1.getNumRowBlocks();
 		long ncblksOut = cbind ? 
-				Math.max((long)Math.ceil(((double)mcIn1.getCols()+mcIn2.getCols())/mcIn1.getColsPerBlock()),1) : 
-				Math.max((long)Math.ceil(((double)mcIn1.getRows()+mcIn2.getRows())/mcIn1.getRowsPerBlock()),1);
+			Math.max((long)Math.ceil(((double)mcIn1.getCols()+mcIn2.getCols())/mcIn1.getBlocksize()),1) : 
+			Math.max((long)Math.ceil(((double)mcIn1.getRows()+mcIn2.getRows())/mcIn1.getBlocksize()),1);
 		
 		//mappend is partitioning-preserving if in-block append (e.g., common case of colvector append)
 		return (ncblksIn1 == ncblksOut);
@@ -98,20 +97,18 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		
 		private final PartitionedBroadcast<MatrixBlock> _pm;
 		private final boolean _cbind;
-		private final int _brlen; 
-		private final int _bclen;
+		private final int _blen;
 		private final long _lastBlockColIndex;
 		
-		public MapSideAppendFunction(PartitionedBroadcast<MatrixBlock> binput, boolean cbind, long offset, int brlen, int bclen)  
+		public MapSideAppendFunction(PartitionedBroadcast<MatrixBlock> binput, boolean cbind, long offset, int blen)  
 		{
 			_pm = binput;
 			_cbind = cbind;
-			_brlen = brlen;
-			_bclen = bclen;
+			_blen = blen;
 			
 			//check for boundary block
 			_lastBlockColIndex = Math.max((long)Math.ceil(
-				(double)offset/(cbind ? bclen : brlen)),1);
+				(double)offset/(cbind ? blen : blen)),1);
 		}
 		
 		@Override
@@ -129,8 +126,8 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				ret.add( kv );
 			}
 			//case 2: pass through full input block and rhs block 
-			else if( _cbind && in1.getValue().getNumColumns() == _bclen 
-					|| !_cbind && in1.getValue().getNumRows() == _brlen) 
+			else if( _cbind && in1.getValue().getNumColumns() == _blen 
+					|| !_cbind && in1.getValue().getNumRows() == _blen) 
 			{				
 				//output lhs block
 				ret.add( kv );
@@ -156,7 +153,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				MatrixBlock value_in2 = null;
 				if( _cbind ) {
 					value_in2 = _pm.getBlock((int)ix.getRowIndex(), 1);
-					if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>_bclen) {
+					if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>_blen) {
 						IndexedMatrixValue second=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
 						second.getIndexes().setIndexes(ix.getRowIndex(), ix.getColumnIndex()+1);
 						outlist.add(second);
@@ -164,14 +161,14 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				}
 				else { //rbind
 					value_in2 = _pm.getBlock(1, (int)ix.getColumnIndex());
-					if(in1.getValue().getNumRows()+value_in2.getNumRows()>_brlen) {
+					if(in1.getValue().getNumRows()+value_in2.getNumRows()>_blen) {
 						IndexedMatrixValue second=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
 						second.getIndexes().setIndexes(ix.getRowIndex()+1, ix.getColumnIndex());
 						outlist.add(second);
 					}
 				}
 	
-				OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, _brlen, _bclen, _cbind, true, 0);	
+				OperationsOnMatrixValues.performAppend(in1.getValue(), value_in2, outlist, _blen, _cbind, true, 0);	
 				ret.addAll(SparkUtils.fromIndexedMatrixBlock(outlist));
 			}
 			
@@ -187,14 +184,14 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		private boolean _cbind = true;
 		private long _lastBlockColIndex = -1;
 		
-		public MapSideAppendPartitionFunction(PartitionedBroadcast<MatrixBlock> binput, boolean cbind, long offset, int brlen, int bclen)  
+		public MapSideAppendPartitionFunction(PartitionedBroadcast<MatrixBlock> binput, boolean cbind, long offset, int blen)  
 		{
 			_pm = binput;
 			_cbind = cbind;
 			
 			//check for boundary block
 			_lastBlockColIndex = Math.max((long)Math.ceil(
-				(double)offset/(cbind ? bclen : brlen)),1);
+				(double)offset/(cbind ? blen : blen)),1);
 		}
 
 		@Override

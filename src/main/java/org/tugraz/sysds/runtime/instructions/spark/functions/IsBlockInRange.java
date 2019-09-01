@@ -33,21 +33,18 @@ public class IsBlockInRange implements Function<Tuple2<MatrixIndexes,MatrixBlock
 	private static final long serialVersionUID = 5849687296021280540L;
 	
 	private long _rl; long _ru; long _cl; long _cu;
-	private int _brlen; int _bclen;
+	private int _blen;
 	
 	public IsBlockInRange(long rl, long ru, long cl, long cu, DataCharacteristics mc) {
 		_rl = rl;
 		_ru = ru;
 		_cl = cl;
 		_cu = cu;
-		_brlen = mc.getRowsPerBlock();
-		_bclen = mc.getColsPerBlock();
+		_blen = mc.getBlocksize();
 	}
 
 	@Override
-	public Boolean call(Tuple2<MatrixIndexes, MatrixBlock> kv) 
-		throws Exception 
-	{
-		return UtilFunctions.isInBlockRange(kv._1(), _brlen, _bclen, _rl, _ru, _cl, _cu);
+	public Boolean call(Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
+		return UtilFunctions.isInBlockRange(kv._1(), _blen, _rl, _ru, _cl, _cu);
 	}
 }

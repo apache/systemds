@@ -288,7 +288,7 @@ public class FrameTest extends MLContextTestBase
 				Dataset<Row> df = results.getDataFrame("A");
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
-				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
+				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.dataFrameToBinaryBlock(sc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
@@ -314,7 +314,7 @@ public class FrameTest extends MLContextTestBase
 				Dataset<Row> df = results.getDataFrame("C");
 				
 				//Convert back DataFrame to binary block for comparison using original binary to converted DF and back to binary 
-				MatrixCharacteristics mc = new MatrixCharacteristics(cRows, cCols, -1, -1, -1);
+				MatrixCharacteristics mc = new MatrixCharacteristics(cRows, cCols, -1, -1);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.dataFrameToBinaryBlock(sc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());

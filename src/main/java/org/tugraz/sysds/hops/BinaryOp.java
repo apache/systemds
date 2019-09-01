@@ -71,7 +71,7 @@ public class BinaryOp extends MultiThreadedHop
 		MR_MAPPEND, //map-only append (rhs must be vector and fit in mapper mem)
 		MR_RAPPEND, //reduce-only append (output must have at most one column block)
 		MR_GAPPEND, //map-reduce general case append (map-extend, aggregate)
-		SP_GAlignedAppend // special case for general case in Spark where left.getCols() % left.getColsPerBlock() == 0
+		SP_GAlignedAppend // special case for general case in Spark where left.getCols() % left.getBlocksize() == 0
 	}
 	
 	public enum MMBinaryMethod {
@@ -229,8 +229,7 @@ public class BinaryOp extends MultiThreadedHop
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(), 
-				getInput().get(0).getRowsInBlock(), 
-				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getBlocksize(), 
 				getInput().get(0).getNnz());
 		PickByCount pick = new PickByCount(
 				sort,
@@ -253,8 +252,7 @@ public class BinaryOp extends MultiThreadedHop
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),
-				getInput().get(0).getRowsInBlock(),
-				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getBlocksize(),
 				getInput().get(0).getNnz());
 		PickByCount pick = new PickByCount(
 				sort,
@@ -264,7 +262,7 @@ public class BinaryOp extends MultiThreadedHop
 				PickByCount.OperationTypes.MEDIAN, et, true);
 
 		pick.getOutputParameters().setDimensions(getDim1(),
-				getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+				getDim2(), getBlocksize(), getNnz());
 		
 		pick.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
@@ -282,7 +280,7 @@ public class BinaryOp extends MultiThreadedHop
 				dt, getValueType(), et);
 
 		setLineNumbers(cm);
-		cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		cm.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLops(cm);
 	}
 
@@ -291,7 +289,7 @@ public class BinaryOp extends MultiThreadedHop
 				getInput().get(0).constructLops(), 
 				getInput().get(1).constructLops(), 
 				getDataType(), getValueType(), et);
-		cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		cov.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cov);
 		setLops(cov);
 	}
@@ -314,8 +312,7 @@ public class BinaryOp extends MultiThreadedHop
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),
-				getInput().get(0).getRowsInBlock(),
-				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getBlocksize(),
 				getInput().get(0).getNnz());
 		PickByCount pick = new PickByCount( sort, getInput().get(1).constructLops(),
 				getDataType(), getValueType(), pick_op, et, true);
@@ -353,20 +350,20 @@ public class BinaryOp extends MultiThreadedHop
 			if(et == ExecType.SPARK) 
 			{
 				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);
-				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
+				append.getOutputParameters().setDimensions(rlen, clen, getBlocksize(), getNnz());
 			}
 			else //CP
 			{
 				Lop offset = createOffsetLop( getInput().get(0), cbind ); //offset 1st input
 				append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType(), cbind, et);
-				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
+				append.getOutputParameters().setDimensions(rlen, clen, getBlocksize(), getNnz());
 			}
 		}
 		else //SCALAR-STRING and SCALAR-STRING (always CP)
 		{
 			append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(),
 				     Data.createLiteralLop(ValueType.INT64, "-1"), getDataType(), getValueType(), cbind, ExecType.CP);
-			append.getOutputParameters().setDimensions(0,0,-1,-1,-1);
+			append.getOutputParameters().setDimensions(0,0,-1,-1);
 		}
 		
 		setLineNumbers(append);
@@ -385,7 +382,7 @@ public class BinaryOp extends MultiThreadedHop
 			BinaryScalar binScalar1 = new BinaryScalar(getInput().get(0)
 				.constructLops(),getInput().get(1).constructLops(),
 				HopsOpOp2LopsBS.get(op), getDataType(), getValueType());
-			binScalar1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+			binScalar1.getOutputParameters().setDimensions(0, 0, 0, -1);
 			setLineNumbers(binScalar1);
 			setLops(binScalar1);
 
@@ -764,7 +761,7 @@ public class BinaryOp extends MultiThreadedHop
 		
 		Lop offset = createOffsetLop( left, cbind ); //offset 1st input
 		AppendMethod am = optFindAppendSPMethod(left.getDim1(), left.getDim2(), right.getDim1(), right.getDim2(), 
-				right.getRowsInBlock(), right.getColsInBlock(), right.getNnz(), cbind, dt);
+				right.getBlocksize(), right.getNnz(), cbind, dt);
 	
 		switch( am )
 		{
@@ -831,7 +828,7 @@ public class BinaryOp extends MultiThreadedHop
 		return footprint;
 	}
 		
-	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, long m2_nnz, boolean cbind, DataType dt )
+	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_blen, long m2_nnz, boolean cbind, DataType dt )
 	{
 		if(FORCED_APPEND_METHOD != null) {
 			return FORCED_APPEND_METHOD;
@@ -839,20 +836,20 @@ public class BinaryOp extends MultiThreadedHop
 		
 		//check for best case (map-only w/o shuffle)		
 		if((    m2_dim1 >= 1 && m2_dim2 >= 1   //rhs dims known 				
-			&& (cbind && m2_dim2 <= m1_cpb    //rhs is smaller than column block 
-			|| !cbind && m2_dim1 <= m1_rpb) ) //rhs is smaller than row block
+			&& (cbind && m2_dim2 <= m1_blen    //rhs is smaller than column block 
+			|| !cbind && m2_dim1 <= m1_blen) ) //rhs is smaller than row block
 			&& ((dt == DataType.MATRIX) || (dt == DataType.FRAME && cbind)))
 		{
-			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz) ) {
+			if( OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_blen, m2_nnz) ) {
 				return AppendMethod.MR_MAPPEND;
 			}
 		}
 		
 		//check for in-block append (reduce-only)
 		if( cbind && m1_dim2 >= 1 && m2_dim2 >= 0  //column dims known
-			&& m1_dim2+m2_dim2 <= m1_cpb   //output has one column block
+			&& m1_dim2+m2_dim2 <= m1_blen   //output has one column block
 		  ||!cbind && m1_dim1 >= 1 && m2_dim1 >= 0 //row dims known
-			&& m1_dim1+m2_dim1 <= m1_rpb   //output has one column block
+			&& m1_dim1+m2_dim1 <= m1_blen   //output has one column block
 		  || dt == DataType.FRAME ) 
 		{
 			return AppendMethod.MR_RAPPEND;
@@ -861,8 +858,8 @@ public class BinaryOp extends MultiThreadedHop
 		//note: below append methods are only supported for matrix, not frame
 		
 		//special case of block-aligned append line
-		if( cbind && m1_dim2 % m1_cpb == 0 
-		   || !cbind && m1_dim1 % m1_rpb == 0 ) 
+		if( cbind && m1_dim2 % m1_blen == 0 
+		   || !cbind && m1_dim1 % m1_blen == 0 ) 
 		{
 			return AppendMethod.SP_GAlignedAppend;
 		}
@@ -874,8 +871,8 @@ public class BinaryOp extends MultiThreadedHop
 	public static boolean requiresReplication( Hop left, Hop right )
 	{
 		return (!(left.getDim2()>=1 && right.getDim2()>=1) //cols of any input unknown 
-				||(left.getDim2() > 1 && right.getDim2()==1 && left.getDim2()>=left.getColsInBlock() ) //col MV and more than 1 block
-				||(left.getDim1() > 1 && right.getDim1()==1 && left.getDim1()>=left.getRowsInBlock() )); //row MV and more than 1 block
+				||(left.getDim2() > 1 && right.getDim2()==1 && left.getDim2()>=left.getBlocksize() ) //col MV and more than 1 block
+				||(left.getDim1() > 1 && right.getDim1()==1 && left.getDim1()>=left.getBlocksize() )); //row MV and more than 1 block
 	}
 
 	private static MMBinaryMethod optFindMMBinaryMethodSpark(Hop left, Hop right) {
@@ -886,14 +883,13 @@ public class BinaryOp extends MultiThreadedHop
 		long m1_dim2 = left.getDim2();
 		long m2_dim1 =  right.getDim1();
 		long m2_dim2 = right.getDim2();
-		long m1_rpb = left.getRowsInBlock();
-		long m1_cpb = left.getColsInBlock();
+		long m1_blen = left.getBlocksize();
 		
 		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
 		if( OptimizerUtils.ALLOW_OPERATOR_FUSION
 			&& right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
-			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
-			|| (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
+			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_blen ) //single column block
+			|| (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_blen ))) //single row block
 		{
 			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
 		}

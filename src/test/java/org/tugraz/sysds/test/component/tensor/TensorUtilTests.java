@@ -25,16 +25,16 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 public class TensorUtilTests {
 	@Test
 	public void testBlockNumber() {
-		Assert.assertEquals(5, UtilFunctions.computeBlockNumber(new int[]{3, 2, 1}, new long[]{4000, 133, 1}, new int[]{128, 128, 128}));
+		Assert.assertEquals(5, UtilFunctions.computeBlockNumber(new int[]{3, 2, 1}, new long[]{4000, 133, 1}, 128));
 	}
 
 	@Test
 	public void testBlockNumberBegin() {
-		Assert.assertEquals(0, UtilFunctions.computeBlockNumber(new int[]{1, 1, 1}, new long[]{4000, 133000, 9}, new int[]{128, 128, 128}));
+		Assert.assertEquals(0, UtilFunctions.computeBlockNumber(new int[]{1, 1, 1}, new long[]{4000, 133000, 9}, 128));
 	}
 
 	@Test
 	public void testBlockNumberLast() {
-		Assert.assertEquals(2 * 8 - 1, UtilFunctions.computeBlockNumber(new int[]{1, 2, 8}, new long[]{128, 128 + 1, 8 * 128}, new int[]{128, 128, 128}));
+		Assert.assertEquals(2 * 8 - 1, UtilFunctions.computeBlockNumber(new int[]{1, 2, 8}, new long[]{128, 128 + 1, 8 * 128}, 128));
 	}
 }

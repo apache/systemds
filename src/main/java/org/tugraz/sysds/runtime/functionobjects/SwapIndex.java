@@ -64,7 +64,7 @@ public class SwapIndex extends IndexFunction implements Serializable
 
 	@Override
 	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
-		out.set(in.getCols(), in.getRows(), in.getColsPerBlock(), in.getRowsPerBlock());
+		out.set(in.getCols(), in.getRows(), in.getBlocksize());
 		return false;
 	}
 }

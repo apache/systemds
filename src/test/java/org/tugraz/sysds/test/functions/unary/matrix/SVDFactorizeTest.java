@@ -94,7 +94,7 @@ public class SVDFactorizeTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", input("A"), output("D") };
 			
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 			writeInputMatrixWithMTD("A", A, false, mc);
 			
 			// Expected matrix = 1x1 zero matrix 

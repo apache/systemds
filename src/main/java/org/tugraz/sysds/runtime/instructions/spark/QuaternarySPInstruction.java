@@ -203,8 +203,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		DataCharacteristics inMc = sec.getDataCharacteristics( input1.getName() );
 		long rlen = inMc.getRows();
 		long clen = inMc.getCols();
-		int brlen = inMc.getRowsPerBlock();
-		int bclen = inMc.getColsPerBlock();
+		int blen = inMc.getBlocksize();
 		
 		//pre-filter empty blocks (ultra-sparse matrices) for full aggregates
 		//(map/redwsloss, map/redwcemm); safe because theses ops produce a scalar
@@ -213,7 +212,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		}
 		
 		//map-side only operation (one rdd input, two broadcasts)
-		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(getOpcode())  
+		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(getOpcode())
 			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(getOpcode())
 			|| WeightedDivMM.OPCODE.equalsIgnoreCase(getOpcode()) 
 			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(getOpcode())
@@ -242,12 +241,12 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 
 			//preparation of transposed and replicated U
 			if( inU != null )
-				inU = inU.flatMapToPair(new ReplicateBlockFunction(clen, bclen, true));
+				inU = inU.flatMapToPair(new ReplicateBlockFunction(clen, blen, true));
 
 			//preparation of transposed and replicated V
 			if( inV != null )
 				inV = inV.mapToPair(new TransposeFactorIndexesFunction())
-				         .flatMapToPair(new ReplicateBlockFunction(rlen, brlen, false));
+				         .flatMapToPair(new ReplicateBlockFunction(rlen, blen, false));
 			
 			//functions calls w/ two rdd inputs		
 			if( inU != null && inV == null && inW == null )
@@ -317,12 +316,12 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		if( qop.wtype2 != null || qop.wtype5 != null ) {
 			//output size determined by main input
-			mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
+			mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getBlocksize(), mcIn1.getBlocksize());
 		}
 		else if(qop.wtype3 != null ) { //wdivmm
 			long rank = qop.wtype3.isLeft() ? mcIn3.getCols() : mcIn2.getCols();
 			DataCharacteristics mcTmp = qop.wtype3.computeOutputCharacteristics(mcIn1.getRows(), mcIn1.getCols(), rank);
-			mcOut.set(mcTmp.getRows(), mcTmp.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
+			mcOut.set(mcTmp.getRows(), mcTmp.getCols(), mcIn1.getBlocksize(), mcIn1.getBlocksize());
 		}
 	}
 

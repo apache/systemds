@@ -264,7 +264,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			double[][] A = TestUtils.round(getRandomMatrix(rows1, cols, -10, 1000, sparsity, 2373)); 
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
 			int blksz = ConfigurationManager.getBlocksize();
-			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, cols, blksz, blksz, mbA.getNonZeros());
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, cols, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
 
 			//create input data frame

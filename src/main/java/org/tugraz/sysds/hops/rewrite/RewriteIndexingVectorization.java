@@ -201,9 +201,9 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				if( ihops.size() > 1 ){
 					//new row indexing operator
 					IndexingOp newRix = new IndexingOp("tmp", input.getDataType(), input.getValueType(), input, 
-							            ihop0.getInput().get(1), ihop0.getInput().get(1), new LiteralOp(1), 
-							            HopRewriteUtils.createValueHop(input, false), true, false); 
-					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
+						ihop0.getInput().get(1), ihop0.getInput().get(1), new LiteralOp(1), 
+						HopRewriteUtils.createValueHop(input, false), true, false); 
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getBlocksize(), -1);
 					newRix.refreshSizeInformation();
 					//rewire current operator and all candidates
 					for( Hop c : ihops ) {
@@ -240,9 +240,9 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 				if( ihops.size() > 1 ){
 					//new row indexing operator
 					IndexingOp newRix = new IndexingOp("tmp", input.getDataType(), input.getValueType(), input, 
-							         new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),
-				                    ihop0.getInput().get(3), ihop0.getInput().get(3), false, true); 
-					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
+						new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),
+						ihop0.getInput().get(3), ihop0.getInput().get(3), false, true); 
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getBlocksize(), -1);
 					newRix.refreshSizeInformation();
 					//rewire current operator and all candidates
 					for( Hop c : ihops ) {
@@ -299,7 +299,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), 
 						input, rowExpr, rowExpr, new LiteralOp(1), 
 						HopRewriteUtils.createValueHop(input, false), true, false); 
-					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getBlocksize(), -1);
 					newRix.refreshSizeInformation();
 					//reset visit status of copied hops (otherwise hidden by left indexing)
 					for( Hop c : newRix.getInput() )
@@ -331,7 +331,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), 
 						input, ihop0, rowExpr, rowExpr, new LiteralOp(1), 
 						HopRewriteUtils.createValueHop(input, false), true, false); 
-					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
+					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getBlocksize(), -1);
 					newLix.refreshSizeInformation();
 					//reset visit status of copied hops (otherwise hidden by left indexing)
 					for( Hop c : newLix.getInput() )
@@ -375,10 +375,10 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					Hop colExpr = ihop0.getInput().get(4); //keep before reset
 					
 					//new row indexing operator
-					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(), 
-						input, new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),            
+					IndexingOp newRix = new IndexingOp("tmp1", input.getDataType(), input.getValueType(),
+						input, new LiteralOp(1), HopRewriteUtils.createValueHop(input, true),
 						colExpr, colExpr, false, true); 
-					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
+					HopRewriteUtils.setOutputParameters(newRix, -1, -1, input.getBlocksize(), -1);
 					newRix.refreshSizeInformation();
 					//reset visit status of copied hops (otherwise hidden by left indexing)
 					for( Hop c : newRix.getInput() )
@@ -410,7 +410,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 					LeftIndexingOp newLix = new LeftIndexingOp("tmp2", input.getDataType(), input.getValueType(), 
 						input, ihop0, new LiteralOp(1), HopRewriteUtils.createValueHop(input, true), 
 						colExpr, colExpr, false, true); 
-					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getRowsInBlock(), input.getColsInBlock(), -1);
+					HopRewriteUtils.setOutputParameters(newLix, -1, -1, input.getBlocksize(), -1);
 					newLix.refreshSizeInformation();
 					//reset visit status of copied hops (otherwise hidden by left indexing)
 					for( Hop c : newLix.getInput() )

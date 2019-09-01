@@ -194,10 +194,10 @@ public class SeqParReadTest extends AutomatedTestBase {
 			
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rowsA, big?colsA:colsB, 0, 1, dense?sparsity2:sparsity1, 7); 
-			writeMatrix(A, input("AX"), fmt, rowsA, big?colsA:colsB, 1000, 1000, rowsA*(big?colsA:colsB));
+			writeMatrix(A, input("AX"), fmt, rowsA, big?colsA:colsB, 1000, rowsA*(big?colsA:colsB));
 			
 			//always write in MM format for R
-			writeMatrix(A, input("BX"), OutputInfo.MatrixMarketOutputInfo, rowsA, big?colsA:colsB, 1000, 1000, rowsA*(big?colsA:colsB));
+			writeMatrix(A, input("BX"), OutputInfo.MatrixMarketOutputInfo, rowsA, big?colsA:colsB, 1000, rowsA*(big?colsA:colsB));
 			
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
@@ -221,15 +221,15 @@ public class SeqParReadTest extends AutomatedTestBase {
 		}
 		finally
 		{
-			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;		
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 		}
 	}
 	
-	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
+	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int blen, long nnz ) 
 		throws IOException
 	{
 		HDFSTool.deleteFileWithMTDIfExistOnHDFS(fname);
-		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blen, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
 		if( oi != OutputInfo.MatrixMarketOutputInfo )

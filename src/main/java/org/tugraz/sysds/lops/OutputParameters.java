@@ -36,10 +36,9 @@ public class OutputParameters
 	private boolean _blocked = true;
 	private long _num_rows = -1;
 	private long _num_cols = -1;
-	private long _nnz = -1;	
+	private long _nnz = -1;
 	private UpdateType _updateType = UpdateType.COPY;
-	private long _num_rows_in_block = -1;
-	private long _num_cols_in_block = -1;
+	private long _blocksize = -1;
 	private String _file_name = null;
 	private String _file_label = null;
 
@@ -61,37 +60,32 @@ public class OutputParameters
 		_file_label = label;
 	}
 
-	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block, long nnz) {
+	public void setDimensions(long rows, long cols, long blen, long nnz) {
 		_num_rows = rows;
 		_num_cols = cols;
 		_nnz = nnz;
-		_num_rows_in_block = rows_per_block;
-		_num_cols_in_block = cols_per_block;
+		_blocksize = blen;
 
-		if ( _num_rows_in_block == 0 && _num_cols_in_block == 0 ) {
-			_blocked = false;
-		}
-		else if (_num_rows_in_block == -1 && _num_cols_in_block == -1) {
+		if ( _blocksize == 0 || _blocksize == -1) {
 			_blocked = false;
  		}
-		else if ( _num_rows_in_block > 0 && _num_cols_in_block > 0 ) {
+		else if ( _blocksize > 0 ) {
 			_blocked = true;
 		}
 		else {
-			throw new HopsException("In OutputParameters Lop, Invalid values for blocking dimensions: [" + _num_rows_in_block + "," + _num_cols_in_block +"].");
+			throw new HopsException("In OutputParameters Lop, Invalid values for blocking dimensions: [" + _blocksize + "," + _blocksize +"].");
 		}
 	}
 
-	public void setDimensions(long rows, long cols, long rows_per_block, long cols_per_block, long nnz, UpdateType update) {
+	public void setDimensions(long rows, long cols, long blen, long nnz, UpdateType update) {
 		_updateType = update;
-		setDimensions(rows, cols, rows_per_block, cols_per_block, nnz);
+		setDimensions(rows, cols, blen, nnz);
 	}
 	
 	public void setDimensions(OutputParameters input) {
 		_num_rows = input._num_rows;
 		_num_cols = input._num_cols;
-		_num_rows_in_block = input._num_rows_in_block;
-		_num_cols_in_block = input._num_cols_in_block;
+		_blocksize = input._blocksize;
 	}
 	
 	public Format getFormat() {
@@ -149,20 +143,12 @@ public class OutputParameters
 		_updateType = update;
 	}
 
-	public long getRowsInBlock() {
-		return _num_rows_in_block;
+	public long getBlocksize() {
+		return _blocksize;
 	}
 	
-	public void setRowsInBlock(long rows_in_block) {
-		_num_rows_in_block = rows_in_block;
-	}
-
-	public long getColsInBlock() {
-		return _num_cols_in_block;
-	}
-
-	public void setColsInBlock(long cols_in_block) {
-		_num_cols_in_block = cols_in_block;
+	public void setBlocksize(long blen) {
+		_blocksize = blen;
 	}
 	
 	@Override
@@ -172,8 +158,7 @@ public class OutputParameters
 		sb.append("cols=" + getNumCols() + Lop.VALUETYPE_PREFIX);
 		sb.append("nnz=" + getNnz() + Lop.VALUETYPE_PREFIX);
 		sb.append("updateInPlace=" + getUpdateType().toString() + Lop.VALUETYPE_PREFIX);
-		sb.append("rowsInBlock=" + getRowsInBlock() + Lop.VALUETYPE_PREFIX);
-		sb.append("colsInBlock=" + getColsInBlock() + Lop.VALUETYPE_PREFIX);
+		sb.append("blocksize=" + getBlocksize() + Lop.VALUETYPE_PREFIX);
 		sb.append("isBlockedRepresentation=" + isBlocked() + Lop.VALUETYPE_PREFIX);
 		sb.append("format=" + getFormat() + Lop.VALUETYPE_PREFIX);
 		sb.append("label=" + getLabel() + Lop.VALUETYPE_PREFIX);

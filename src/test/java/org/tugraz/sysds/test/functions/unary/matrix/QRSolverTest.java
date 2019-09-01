@@ -59,7 +59,7 @@ public class QRSolverTest extends AutomatedTestBase
 			input("y.mtx") + " " + expected(config.getOutputFiles()[0]);
 		
 		double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
-		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 		writeInputMatrixWithMTD("A", A, true, mc);
 		
 		double[][] y = getRandomMatrix(rows, 1, 0, 1, 1.0, 11);

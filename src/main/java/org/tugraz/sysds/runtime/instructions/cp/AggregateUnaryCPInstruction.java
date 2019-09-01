@@ -162,7 +162,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 					MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 					
 					MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(),
-						matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
+						matBlock.getNumRows(), new MatrixIndexes(1, 1), true);
 
 					ec.releaseMatrixInput(input1.getName());
 					if (output.getDataType() == DataType.SCALAR) {

@@ -47,7 +47,7 @@ public class BlockPartitioner extends Partitioner
 	public BlockPartitioner(DataCharacteristics mc, int numParts)
 	{
 		//sanity check known dimensions
-		if( !mc.dimsKnown() || mc.getRowsPerBlock()<1 || mc.getColsPerBlock()<1 ) {
+		if( !mc.dimsKnown() || mc.getBlocksize()<1 || mc.getBlocksize()<1 ) {
 			throw new RuntimeException("Invalid unknown matrix characteristics.");
 		}
 		

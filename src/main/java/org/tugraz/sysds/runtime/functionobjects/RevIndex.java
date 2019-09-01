@@ -53,7 +53,7 @@ public class RevIndex extends IndexFunction implements Serializable
 
 	@Override //for mr block operations
 	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
-		out.set(in.getRows(), in.getCols(), in.getColsPerBlock(), in.getRowsPerBlock(), in.getNonZeros());
+		out.set(in.getRows(), in.getCols(), in.getBlocksize(), in.getNonZeros());
 		return false;
 	}
 

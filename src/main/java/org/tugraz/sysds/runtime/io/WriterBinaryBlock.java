@@ -42,7 +42,7 @@ public class WriterBinaryBlock extends MatrixWriter
 	}
 
 	@Override
-	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz, boolean diag) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
@@ -59,16 +59,16 @@ public class WriterBinaryBlock extends MatrixWriter
 		
 		//core write sequential/parallel
 		if( diag )
-			writeDiagBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
+			writeDiagBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, blen);
 		else
-			writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
+			writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, blen);
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
 	@Override
 	@SuppressWarnings("deprecation")
-	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int brlen, int bclen) 
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException 
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -80,8 +80,8 @@ public class WriterBinaryBlock extends MatrixWriter
 				MatrixIndexes.class, MatrixBlock.class);
 			MatrixIndexes index = new MatrixIndexes(1, 1);
 			MatrixBlock block = new MatrixBlock(
-				(int)Math.max(Math.min(rlen, brlen),1),
-				(int)Math.max(Math.min(clen, bclen),1), true);
+				(int)Math.max(Math.min(rlen, blen),1),
+				(int)Math.max(Math.min(clen, blen),1), true);
 			writer.append(index, block);
 		}
 		finally {
@@ -91,15 +91,15 @@ public class WriterBinaryBlock extends MatrixWriter
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
-	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int brlen, int bclen )
+	protected void writeBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int blen )
 		throws IOException, DMLRuntimeException
 	{
 		//sequential write 
-		writeBinaryBlockMatrixToSequenceFile(path, job, fs, src, brlen, bclen, 0, (int)rlen);
+		writeBinaryBlockMatrixToSequenceFile(path, job, fs, src, blen, 0, (int)rlen);
 	}
 
 	@SuppressWarnings("deprecation")
-	protected final void writeBinaryBlockMatrixToSequenceFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int brlen, int bclen, int rl, int ru ) 
+	protected final void writeBinaryBlockMatrixToSequenceFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int blen, int rl, int ru ) 
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
@@ -132,7 +132,7 @@ public class WriterBinaryBlock extends MatrixWriter
 			//3) reblock and write
 			MatrixIndexes indexes = new MatrixIndexes();
 
-			if( rlen <= brlen && clen <= bclen && rl == 0 ) //opt for single block
+			if( rlen <= blen && clen <= blen && rl == 0 ) //opt for single block
 			{
 				//directly write single block
 				indexes.setIndexes(1, 1);
@@ -141,20 +141,20 @@ public class WriterBinaryBlock extends MatrixWriter
 			else //general case
 			{
 				//initialize blocks for reuse (at most 4 different blocks required)
-				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
+				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, blen, sparse, src.getNonZeros());
 				
 				//create and write subblocks of matrix
-				for(int blockRow = rl/brlen; blockRow < (int)Math.ceil(ru/(double)brlen); blockRow++)
-					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
+				for(int blockRow = rl/blen; blockRow < (int)Math.ceil(ru/(double)blen); blockRow++)
+					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)blen); blockCol++)
 					{
-						int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
-						int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
+						int maxRow = (blockRow*blen + blen < src.getNumRows()) ? blen : src.getNumRows() - blockRow*blen;
+						int maxCol = (blockCol*blen + blen < src.getNumColumns()) ? blen : src.getNumColumns() - blockCol*blen;
 				
-						int row_offset = blockRow*brlen;
-						int col_offset = blockCol*bclen;
+						int row_offset = blockRow*blen;
+						int col_offset = blockCol*blen;
 						
 						//get reuse matrix block
-						MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+						MatrixBlock block = getMatrixBlockForReuse(blocks, maxRow, maxCol, blen);
 	
 						//copy submatrix to block
 						src.slice( row_offset, row_offset+maxRow-1, 
@@ -175,7 +175,7 @@ public class WriterBinaryBlock extends MatrixWriter
 	}
 
 	@SuppressWarnings("deprecation")
-	protected final void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int brlen, int bclen ) 
+	protected final void writeDiagBinaryBlockMatrixToHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock src, long rlen, long clen, int blen ) 
 		throws IOException, DMLRuntimeException
 	{
 		boolean sparse = src.isInSparseFormat();
@@ -206,7 +206,7 @@ public class WriterBinaryBlock extends MatrixWriter
 			//3) reblock and write
 			MatrixIndexes indexes = new MatrixIndexes();
 
-			if( rlen <= brlen && clen <= bclen ) //opt for single block
+			if( rlen <= blen && clen <= blen ) //opt for single block
 			{
 				//directly write single block
 				indexes.setIndexes(1, 1);
@@ -215,24 +215,24 @@ public class WriterBinaryBlock extends MatrixWriter
 			else //general case
 			{
 				//initialize blocks for reuse (at most 4 different blocks required)
-				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, brlen, bclen, sparse, src.getNonZeros());  
+				MatrixBlock[] blocks = createMatrixBlocksForReuse(rlen, clen, blen, sparse, src.getNonZeros());
 				MatrixBlock emptyBlock = new MatrixBlock();
 					
 				//create and write subblocks of matrix
-				for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)brlen); blockRow++)
-					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)bclen); blockCol++)
+				for(int blockRow = 0; blockRow < (int)Math.ceil(src.getNumRows()/(double)blen); blockRow++)
+					for(int blockCol = 0; blockCol < (int)Math.ceil(src.getNumColumns()/(double)blen); blockCol++)
 					{
-						int maxRow = (blockRow*brlen + brlen < src.getNumRows()) ? brlen : src.getNumRows() - blockRow*brlen;
-						int maxCol = (blockCol*bclen + bclen < src.getNumColumns()) ? bclen : src.getNumColumns() - blockCol*bclen;
+						int maxRow = (blockRow*blen + blen < src.getNumRows()) ? blen : src.getNumRows() - blockRow*blen;
+						int maxCol = (blockCol*blen + blen < src.getNumColumns()) ? blen : src.getNumColumns() - blockCol*blen;
 						MatrixBlock block = null;
 						
 						if( blockRow==blockCol ) //block on diagonal
 						{	
-							int row_offset = blockRow*brlen;
-							int col_offset = blockCol*bclen;
+							int row_offset = blockRow*blen;
+							int col_offset = blockCol*blen;
 							
 							//get reuse matrix block
-							block = getMatrixBlockForReuse(blocks, maxRow, maxCol, brlen, bclen);
+							block = getMatrixBlockForReuse(blocks, maxRow, maxCol, blen);
 		
 							//copy submatrix to block
 							src.slice( row_offset, row_offset+maxRow-1, 

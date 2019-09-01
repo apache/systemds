@@ -88,7 +88,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 				MatrixObject compare = (mcOld.getNonZeros()==0) ? null : _output;
 				
 				//actual merge
-				RDDObject ro = executeMerge(compare, _inputs, mcOld.getRows(), mcOld.getCols(), mcOld.getRowsPerBlock(), mcOld.getColsPerBlock());
+				RDDObject ro = executeMerge(compare, _inputs, mcOld.getRows(), mcOld.getCols(), mcOld.getBlocksize());
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict
 				moNew = new MatrixObject(_output.getValueType(), _outputFName);
@@ -112,7 +112,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	}
 
 	@SuppressWarnings("unchecked")
-	protected RDDObject executeMerge(MatrixObject compare, MatrixObject[] inputs, long rlen, long clen, int brlen, int bclen)
+	protected RDDObject executeMerge(MatrixObject compare, MatrixObject[] inputs, long rlen, long clen, int blen)
 	{
 		String jobname = "ParFor-RMSP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -123,7 +123,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		RDDObject ret = null;
 		
 		//determine degree of parallelism
-		int numRed = (int)determineNumReducers(rlen, clen, brlen, bclen, _numReducers);
+		int numRed = (int)determineNumReducers(rlen, clen, blen, _numReducers);
 		
 		//sanity check for empty src files
 		if( inputs == null || inputs.length==0  )
@@ -197,9 +197,9 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		return ret;
 	}
 
-	private static int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed) {
+	private static int determineNumReducers(long rlen, long clen, int blen, long numRed) {
 		//set the number of mappers and reducers 
-		long reducerGroups = Math.max(rlen/brlen,1) * Math.max(clen/bclen, 1);
+		long reducerGroups = Math.max(rlen/blen,1) * Math.max(clen/blen, 1);
 		return (int)Math.min( numRed, reducerGroups );
 	}
 	

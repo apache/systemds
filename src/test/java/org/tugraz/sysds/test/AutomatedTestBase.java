@@ -517,12 +517,12 @@ public abstract class AutomatedTestBase
 	}
 	
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR) {
-		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}
 
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, long nnz, boolean bIncludeR) {
-		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
 	}
 
@@ -1748,7 +1748,7 @@ public abstract class AutomatedTestBase
 	}
 
 	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) throws IOException {
-		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, data[0].length, -1);
+		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
 		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, oi);
 	}
 

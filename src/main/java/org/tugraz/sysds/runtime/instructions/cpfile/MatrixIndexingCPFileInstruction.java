@@ -88,7 +88,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 		{
 			MetaDataFormat meta = (MetaDataFormat)mo.getMetaData();
 			DataCharacteristics mc = meta.getDataCharacteristics();
-			String pfname = mo.getPartitionFileName( ixrange, mc.getRowsPerBlock(), mc.getColsPerBlock());
+			String pfname = mo.getPartitionFileName( ixrange, mc.getBlocksize());
 			
 			if( HDFSTool.existsFileOnHDFS(pfname) ) { //default
 				//create output matrix object
@@ -96,16 +96,16 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 				DataCharacteristics mcNew = null;
 				switch( mo.getPartitionFormat() ) {
 					case ROW_WISE:
-						mcNew = new MatrixCharacteristics( 1, mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
+						mcNew = new MatrixCharacteristics( 1, mc.getCols(), mc.getBlocksize(), mc.getBlocksize() );
 						break;
 					case ROW_BLOCK_WISE_N:
-						mcNew = new MatrixCharacteristics( mo.getPartitionSize(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
+						mcNew = new MatrixCharacteristics( mo.getPartitionSize(), mc.getCols(), mc.getBlocksize(), mc.getBlocksize() );
 						break;
 					case COLUMN_WISE:
-						mcNew = new MatrixCharacteristics( mc.getRows(), 1, mc.getRowsPerBlock(), mc.getColsPerBlock() );
+						mcNew = new MatrixCharacteristics( mc.getRows(), 1, mc.getBlocksize(), mc.getBlocksize() );
 						break;
 					case COLUMN_BLOCK_WISE_N:
-						mcNew = new MatrixCharacteristics( mc.getRows(), mo.getPartitionSize(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
+						mcNew = new MatrixCharacteristics( mc.getRows(), mo.getPartitionSize(), mc.getBlocksize(), mc.getBlocksize() );
 						break;
 					default:
 						throw new DMLRuntimeException("Unsupported partition format for CP_FILE "+RightIndex.OPCODE+": "+ mo.getPartitionFormat());

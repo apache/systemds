@@ -536,8 +536,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		long rlen = mo.getNumRows();
 		long clen = mo.getNumColumns();
-		long brlen = mo.getNumRowsPerBlock();
-		long bclen = mo.getNumColumnsPerBlock();
+		long blen = mo.getBlocksize();
 		long nnz = mo.getNnz();
 		double lsparsity = ((double)nnz)/rlen/clen;		
 		double sparsity = withSparsity ? lsparsity : 1.0;
@@ -548,13 +547,13 @@ public class OptimizerRuleBased extends Optimizer
 				mem = OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), 1, sparsity); 
 				break;
 			case COLUMN_BLOCK_WISE:
-				mem = OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), bclen, sparsity); 
+				mem = OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), blen, sparsity); 
 				break;
 			case ROW_WISE:
 				mem = OptimizerUtils.estimateSizeExactSparsity(1, mo.getNumColumns(), sparsity);
 				break;
 			case ROW_BLOCK_WISE:
-				mem = OptimizerUtils.estimateSizeExactSparsity(brlen, mo.getNumColumns(), sparsity);
+				mem = OptimizerUtils.estimateSizeExactSparsity(blen, mo.getNumColumns(), sparsity);
 				break;
 				
 			default:

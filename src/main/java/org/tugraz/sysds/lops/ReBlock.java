@@ -36,18 +36,15 @@ public class ReBlock extends Lop
 	
 	private boolean _outputEmptyBlocks = true;
 	
-	private int _rows_per_block;
-	private int _cols_per_block;
+	private int _blocksize;
 
-	public ReBlock(Lop input, int rows_per_block, int cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks, ExecType et)
+	public ReBlock(Lop input, int blen, DataType dt, ValueType vt, boolean outputEmptyBlocks, ExecType et)
 	{
 		super(Lop.Type.ReBlock, dt, vt);
-		this.addInput(input);
+		addInput(input);
 		input.addOutput(this);
 		
-		_rows_per_block = rows_per_block;
-		_cols_per_block = cols_per_block;
-		
+		_blocksize = blen;
 		_outputEmptyBlocks = outputEmptyBlocks;
 		
 		if(et == ExecType.SPARK) 
@@ -58,7 +55,7 @@ public class ReBlock extends Lop
 
 	@Override
 	public String toString() {
-		return "Reblock - rows per block = " + _rows_per_block + " cols per block  " + _cols_per_block ;
+		return "Reblock - blocksize = " + _blocksize;
 	}
 
 	@Override
@@ -68,8 +65,8 @@ public class ReBlock extends Lop
 			"rblk",
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output),
-			String.valueOf(_rows_per_block),
-			String.valueOf(_cols_per_block ),
+			String.valueOf(_blocksize),
+			String.valueOf(_blocksize),
 			String.valueOf(_outputEmptyBlocks));
 	}
 	

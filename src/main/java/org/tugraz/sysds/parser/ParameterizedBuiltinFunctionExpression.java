@@ -311,7 +311,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.LIST);
 		output.setValueType(ValueType.UNKNOWN);
 		output.setDimensions(getVarParam(Statement.PS_MODEL).getOutput().getDim1(), 1);
-		output.setBlockDimensions(-1, -1);
+		output.setBlocksize(-1);
 	}
 
 	private void checkStringParam(boolean optional, String fname, String pname, boolean conditional) {
@@ -805,7 +805,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.LIST);
 		output.setValueType(ValueType.UNKNOWN);
 		output.setDimensions(varParams.size(), 1);
-		output.setBlockDimensions(-1, -1);
+		output.setBlocksize(-1);
 	}
 
 	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) {

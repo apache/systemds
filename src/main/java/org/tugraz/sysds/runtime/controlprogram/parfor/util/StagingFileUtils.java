@@ -177,18 +177,18 @@ public class StagingFileUtils
 		return buffer;
 	}
 
-	public static MatrixBlock readCellList2BlockFromLocal( String fname, int brlen, int bclen ) 
+	public static MatrixBlock readCellList2BlockFromLocal( String fname, int blen ) 
 		throws IOException, DMLRuntimeException 
 	{
-		return readCellList2BlockFromLocal( fname, brlen, bclen, false );
+		return readCellList2BlockFromLocal( fname, blen, false );
 	}
 	
-	public static MatrixBlock readCellList2BlockFromLocal( String fname, int brlen, int bclen, boolean sparse ) 
+	public static MatrixBlock readCellList2BlockFromLocal( String fname, int blen, boolean sparse ) 
 		throws IOException, DMLRuntimeException 
 	{
-		MatrixBlock tmp = new MatrixBlock( brlen, bclen, sparse );
+		MatrixBlock tmp = new MatrixBlock( blen, blen, sparse );
 		if( !sparse )
-			tmp.allocateDenseBlockUnsafe(brlen, bclen);
+			tmp.allocateDenseBlockUnsafe(blen, blen);
 		
 		FileInputStream fis = new FileInputStream( fname );
 		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	

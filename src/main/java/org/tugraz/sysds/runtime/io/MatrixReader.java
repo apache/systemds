@@ -55,10 +55,10 @@ public abstract class MatrixReader
 	protected static final boolean AGGREGATE_BLOCK_NNZ = true;
 	protected static final boolean RETURN_EMPTY_NNZ0 = true;
 	
-	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int brlen, int bclen, long estnnz )
+	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int blen, long estnnz )
 		throws IOException, DMLRuntimeException;
 
-	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz )
+	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int blen, long estnnz )
 			throws IOException, DMLRuntimeException;
 	
 	/**
@@ -67,8 +67,8 @@ public abstract class MatrixReader
 	 * 
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param bclen number of columns in a block
-	 * @param brlen number of rows in a block
+	 * @param blen number of columns in a block
+	 * @param blen number of rows in a block
 	 * @param estnnz estimated number of non-zeros
 	 * @param mallocDense if true and not sparse, allocate dense block unsafe
 	 * @param mallocSparse if true and sparse, allocate sparse rows block
@@ -76,7 +76,7 @@ public abstract class MatrixReader
 	 * @throws IOException if IOException occurs
 	 */
 	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, 
-			int bclen, int brlen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
+			int blen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
 		throws IOException
 	{
 		//check input dimension
@@ -86,7 +86,7 @@ public abstract class MatrixReader
 		//determine target representation (sparse/dense)
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, estnnz); 
 		int numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
-		long numBlocks = (long)Math.ceil((double)rlen / brlen);
+		long numBlocks = (long)Math.ceil((double)rlen / blen);
 		
 		//prepare result matrix block
 		MatrixBlock ret = new MatrixBlock((int)rlen, (int)clen, sparse, estnnz);
@@ -96,12 +96,12 @@ public abstract class MatrixReader
 			ret.allocateSparseRowsBlock();
 			SparseBlock sblock = ret.getSparseBlock();
 			//create synchronization points for MCSR (start row per block row)
-			if( sblock instanceof SparseBlockMCSR && clen > bclen      //multiple col blocks 
-				&& clen >= 0 && bclen > 0 && rlen >= 0 && brlen > 0 ) {  //all dims known
+			if( sblock instanceof SparseBlockMCSR && clen > blen      //multiple col blocks 
+				&& clen >= 0 && blen > 0 && rlen >= 0 && blen > 0 ) {  //all dims known
 				//note: allocate w/ min 2 nnz to ensure allocated row object because
 				//adaptive change from scalar to row could cause synchronization issues
 				if( numThreads <= numBlocks )
-					for( int i=0; i<rlen; i+=brlen )
+					for( int i=0; i<rlen; i+=blen )
 						sblock.allocate(i, Math.max((int)(estnnz/rlen),2), (int)clen);
 				else //allocate all rows to avoid contention
 					for( int i=0; i<rlen; i++ )

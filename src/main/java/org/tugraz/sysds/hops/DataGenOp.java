@@ -190,8 +190,7 @@ public class DataGenOp extends MultiThreadedHop
 		rnd.getOutputParameters().setDimensions(
 				getDim1(), getDim2(),
 				//robust handling for blocksize (important for -exec singlenode; otherwise incorrect results)
-				(getRowsInBlock()>0)?getRowsInBlock():ConfigurationManager.getBlocksize(), 
-				(getColsInBlock()>0)?getColsInBlock():ConfigurationManager.getBlocksize(),  
+				(getBlocksize()>0)?getBlocksize():ConfigurationManager.getBlocksize(),
 				//actual rand nnz might differ (in cp/mr they are corrected after execution)
 				(_op==DataGenMethod.RAND && et==ExecType.SPARK && getNnz()!=0) ? -1 : getNnz(),
 				getUpdateType());

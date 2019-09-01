@@ -95,10 +95,10 @@ public class DataConverter
 	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, DataCharacteristics dc, int replication, FileFormatProperties formatProperties, boolean diag)
 		throws IOException {
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter( outputinfo, replication, formatProperties );
-		writer.writeMatrixToHDFS(mat, dir, dc.getRows(), dc.getCols(), dc.getRowsPerBlock(), dc.getColsPerBlock(), dc.getNonZeros(), diag);
+		writer.writeMatrixToHDFS(mat, dir, dc.getRows(), dc.getCols(), dc.getBlocksize(), dc.getNonZeros(), diag);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, boolean localFS) 
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, boolean localFS) 
 		throws IOException
 	{	
 		ReadProperties prop = new ReadProperties();
@@ -107,14 +107,13 @@ public class DataConverter
 		prop.inputInfo = inputinfo;
 		prop.rlen = rlen;
 		prop.clen = clen;
-		prop.brlen = brlen;
-		prop.bclen = bclen;
+		prop.blen = blen;
 		prop.localFS = localFS;
 		
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen) 
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen) 
 		throws IOException
 	{	
 		ReadProperties prop = new ReadProperties();
@@ -123,13 +122,12 @@ public class DataConverter
 		prop.inputInfo = inputinfo;
 		prop.rlen = rlen;
 		prop.clen = clen;
-		prop.brlen = brlen;
-		prop.bclen = bclen;
+		prop.blen = blen;
 		
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, long expectedNnz) 
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, long expectedNnz) 
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
@@ -138,15 +136,14 @@ public class DataConverter
 		prop.inputInfo = inputinfo;
 		prop.rlen = rlen;
 		prop.clen = clen;
-		prop.brlen = brlen;
-		prop.bclen = bclen;
+		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
 		
 		return readMatrixFromHDFS(prop);
 	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen, long expectedNnz, boolean localFS) 
+			int blen, long expectedNnz, boolean localFS) 
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
@@ -155,8 +152,7 @@ public class DataConverter
 		prop.inputInfo = inputinfo;
 		prop.rlen = rlen;
 		prop.clen = clen;
-		prop.brlen = brlen;
-		prop.bclen = bclen;
+		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
 		prop.localFS = localFS;
 		
@@ -164,7 +160,7 @@ public class DataConverter
 	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int brlen, int bclen, long expectedNnz, FileFormatProperties formatProperties) 
+			int blen, long expectedNnz, FileFormatProperties formatProperties) 
 	throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
@@ -173,8 +169,7 @@ public class DataConverter
 		prop.inputInfo = inputinfo;
 		prop.rlen = rlen;
 		prop.clen = clen;
-		prop.brlen = brlen;
-		prop.bclen = bclen;
+		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
 		prop.formatProperties = formatProperties;
 		
@@ -191,7 +186,7 @@ public class DataConverter
 	 * DENSE MxN input:
 	 *  * best/average/worst: O(M*N)
 	 * SPARSE MxN input
-	 *  * best (ordered, or binary block w/ clen&lt;=bclen): O(M*N)
+	 *  * best (ordered, or binary block w/ clen&lt;=blen): O(M*N)
 	 *  * average (unordered): O(M*N*log(N))
 	 *  * worst (descending order per row): O(M * N^2)
 	 * 
@@ -211,7 +206,7 @@ public class DataConverter
 		MatrixBlock ret = null;
 		try {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(prop);
-			ret = reader.readMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.brlen, prop.bclen, prop.expectedNnz);
+			ret = reader.readMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.blen, prop.expectedNnz);
 		}
 		catch(DMLRuntimeException rex)
 		{

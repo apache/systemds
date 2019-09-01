@@ -34,23 +34,21 @@ public class MatrixCharacteristics extends DataCharacteristics
 
 	private long numRows = -1;
 	private long numColumns = -1;
-	private int numRowsPerBlock = 1;
-	private int numColumnsPerBlock = 1;
 	private long nonZero = -1;
 	private boolean ubNnz = false;
 	
 	public MatrixCharacteristics() {}
 	
 	public MatrixCharacteristics(long nr, long nc, long nnz) {
-		set(nr, nc, -1, -1, nnz);
+		set(nr, nc, -1, nnz);
 	}
 	
-	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc) {
-		set(nr, nc, bnr, bnc);
+	public MatrixCharacteristics(long nr, long nc, int blen) {
+		set(nr, nc, blen);
 	}
 
-	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc, long nnz) {
-		set(nr, nc, bnr, bnc, nnz);
+	public MatrixCharacteristics(long nr, long nc, int blen, long nnz) {
+		set(nr, nc, blen, nnz);
 	}
 	
 	public MatrixCharacteristics(DataCharacteristics that) {
@@ -58,17 +56,16 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public DataCharacteristics set(long nr, long nc, int bnr, int bnc) {
+	public DataCharacteristics set(long nr, long nc, int blen) {
 		numRows = nr;
 		numColumns = nc;
-		numRowsPerBlock = bnr;
-		numColumnsPerBlock = bnc;
+		_blocksize = blen;
 		return this;
 	}
 
 	@Override
-	public DataCharacteristics set(long nr, long nc, int bnr, int bnc, long nnz) {
-		set(nr, nc, bnr, bnc);
+	public DataCharacteristics set(long nr, long nc, int blen, long nnz) {
+		set(nr, nc, blen);
 		nonZero = nnz;
 		ubNnz = false;
 		return this;
@@ -76,7 +73,7 @@ public class MatrixCharacteristics extends DataCharacteristics
 
 	@Override
 	public DataCharacteristics set(DataCharacteristics that) {
-		set(that.getRows(), that.getCols(), that.getRowsPerBlock(), that.getColsPerBlock(), that.getNonZeros());
+		set(that.getRows(), that.getCols(), that.getBlocksize(), that.getNonZeros());
 		ubNnz = (that instanceof MatrixCharacteristics && ((MatrixCharacteristics)that).ubNnz);
 		return this;
 	}
@@ -107,26 +104,6 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public int getRowsPerBlock() {
-		return numRowsPerBlock;
-	}
-
-	@Override
-	public void setRowsPerBlock( int brlen){
-		numRowsPerBlock = brlen;
-	}
-
-	@Override
-	public int getColsPerBlock() {
-		return numColumnsPerBlock;
-	}
-
-	@Override
-	public void setColsPerBlock( int bclen){
-		numColumnsPerBlock = bclen;
-	}
-
-	@Override
 	public long getNumBlocks() {
 		return getNumRowBlocks() * getNumColBlocks();
 	}
@@ -134,19 +111,19 @@ public class MatrixCharacteristics extends DataCharacteristics
 	@Override
 	public long getNumRowBlocks() {
 		//number of row blocks w/ awareness of zero rows
-		return Math.max((long) Math.ceil((double)getRows() / getRowsPerBlock()), 1);
+		return Math.max((long) Math.ceil((double)getRows() / getBlocksize()), 1);
 	}
 
 	@Override
 	public long getNumColBlocks() {
 		//number of column blocks w/ awareness of zero columns
-		return Math.max((long) Math.ceil((double)getCols() / getColsPerBlock()), 1);
+		return Math.max((long) Math.ceil((double)getCols() / getBlocksize()), 1);
 	}
 	
 	@Override
 	public String toString() {
 		return "["+numRows+" x "+numColumns+", nnz="+nonZero+" ("+ubNnz+")"
-		+", blocks ("+numRowsPerBlock+" x "+numColumnsPerBlock+")]";
+		+", blocks ("+_blocksize+" x "+_blocksize+")]";
 	}
 
 	@Override
@@ -154,19 +131,7 @@ public class MatrixCharacteristics extends DataCharacteristics
 		numRows = nr;
 		numColumns = nc;
 	}
-
-	@Override
-	public MatrixCharacteristics setBlockSize(int blen) {
-		return setBlockSize(blen, blen);
-	}
-
-	@Override
-	public MatrixCharacteristics setBlockSize(int bnr, int bnc) {
-		numRowsPerBlock = bnr;
-		numColumnsPerBlock = bnc;
-		return this;
-	}
-
+	
 	@Override
 	public void setNonZeros(long nnz) {
 		ubNnz = false;
@@ -228,8 +193,8 @@ public class MatrixCharacteristics extends DataCharacteristics
 
 	@Override
 	public boolean mightHaveEmptyBlocks() {
-		long singleBlk = Math.max(Math.min(numRows, numRowsPerBlock),1) 
-				* Math.max(Math.min(numColumns, numColumnsPerBlock),1);
+		long singleBlk = Math.max(Math.min(numRows, _blocksize),1) 
+				* Math.max(Math.min(numColumns, _blocksize),1);
 		return !nnzKnown() || numRows==0 || numColumns==0
 			|| (nonZero < numRows*numColumns - singleBlk);
 	}
@@ -241,14 +206,13 @@ public class MatrixCharacteristics extends DataCharacteristics
 		MatrixCharacteristics mc = (MatrixCharacteristics) anObject;
 		return ((numRows == mc.numRows)
 			&& (numColumns == mc.numColumns)
-			&& (numRowsPerBlock == mc.numRowsPerBlock)
-			&& (numColumnsPerBlock == mc.numColumnsPerBlock)
+			&& (_blocksize == mc._blocksize)
 			&& (nonZero == mc.nonZero));
 	}
 	
 	@Override
 	public int hashCode() {
-		return Arrays.hashCode(new long[]{numRows,numColumns,
-			numRowsPerBlock,numColumnsPerBlock,nonZero});
+		return Arrays.hashCode(new long[]{
+			numRows, numColumns, _blocksize, nonZero});
 	}
 }

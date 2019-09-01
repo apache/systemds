@@ -138,10 +138,10 @@ public class SpoofSPInstruction extends SPInstruction {
 			if( _out.getDataType()==DataType.MATRIX ) {
 				//execute codegen block operation
 				out = in.mapPartitionsToPair(new CellwiseFunction(_class.getName(),
-					_classBytes, bcVect2, bcMatrices, scalars, mcIn.getRowsPerBlock()), true);
+					_classBytes, bcVect2, bcMatrices, scalars, mcIn.getBlocksize()), true);
 				
-				if( (op.getCellType()==CellType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock())
-					|| (op.getCellType()==CellType.COL_AGG && mcIn.getRows() > mcIn.getRowsPerBlock())) {
+				if( (op.getCellType()==CellType.ROW_AGG && mcIn.getCols() > mcIn.getBlocksize())
+					|| (op.getCellType()==CellType.COL_AGG && mcIn.getRows() > mcIn.getBlocksize())) {
 					long numBlocks = (op.getCellType()==CellType.ROW_AGG ) ? 
 						mcIn.getNumRowBlocks() : mcIn.getNumColBlocks();
 					out = RDDAggregateUtils.aggByKeyStable(out, aggop,
@@ -155,7 +155,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			}
 			else { //SCALAR
 				out = in.mapPartitionsToPair(new CellwiseFunction(_class.getName(),
-					_classBytes, bcVect2, bcMatrices, scalars, mcIn.getRowsPerBlock()), true);
+					_classBytes, bcVect2, bcMatrices, scalars, mcIn.getBlocksize()), true);
 				MatrixBlock tmpMB = RDDAggregateUtils.aggStable(out, aggop);
 				sec.setVariable(_out.getName(), new DoubleObject(tmpMB.getValue(0, 0)));
 			}
@@ -165,7 +165,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			SpoofMultiAggregate op = (SpoofMultiAggregate) CodegenUtils.createInstance(_class);
 			AggOp[] aggOps = op.getAggOps();
 			MatrixBlock tmpMB = in.mapToPair(new MultiAggregateFunction(_class.getName(),
-				_classBytes, bcVect2, bcMatrices, scalars, mcIn.getRowsPerBlock()))
+				_classBytes, bcVect2, bcMatrices, scalars, mcIn.getBlocksize()))
 				.values().fold(new MatrixBlock(), new MultiAggAggregateFunction(aggOps) );
 			sec.setMatrixOutput(_out.getName(), tmpMB);
 		}
@@ -199,15 +199,15 @@ public class SpoofSPInstruction extends SPInstruction {
 			}
 		}
 		else if( _class.getSuperclass() == SpoofRowwise.class ) { //ROW
-			if( mcIn.getCols() > mcIn.getColsPerBlock() ) {
+			if( mcIn.getCols() > mcIn.getBlocksize() ) {
 				throw new DMLRuntimeException("Invalid spark rowwise operator w/ ncol=" + 
-					mcIn.getCols()+", ncolpb="+mcIn.getColsPerBlock()+".");
+					mcIn.getCols()+", ncolpb="+mcIn.getBlocksize()+".");
 			}
 			SpoofRowwise op = (SpoofRowwise) CodegenUtils.createInstance(_class);
 			long clen2 = op.getRowType().isConstDim2(op.getConstDim2()) ? op.getConstDim2() :
 				op.getRowType().isRowTypeB1() ? sec.getDataCharacteristics(_in[1].getName()).getCols() : -1;
 			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(), _classBytes, bcVect2,
-				bcMatrices, scalars, mcIn.getRowsPerBlock(), (int)mcIn.getCols(), (int)clen2);
+				bcMatrices, scalars, mcIn.getBlocksize(), (int)mcIn.getCols(), (int)clen2);
 			out = in.mapPartitionsToPair(fmmc, op.getRowType()==RowType.ROW_AGG
 					|| op.getRowType() == RowType.NO_AGG);
 			
@@ -221,7 +221,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			}
 			else //row-agg or no-agg 
 			{
-				if( op.getRowType()==RowType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
+				if( op.getRowType()==RowType.ROW_AGG && mcIn.getCols() > mcIn.getBlocksize() ) {
 					out = RDDAggregateUtils.sumByKeyStable(out,
 						(int)Math.min(out.getNumPartitions(), mcIn.getNumRowBlocks()), false);
 				}
@@ -289,11 +289,11 @@ public class SpoofSPInstruction extends SPInstruction {
 				DataCharacteristics mcTmp = sec.getDataCharacteristics(varname);
 				//replicate blocks if mismatch with main input
 				if( outer && i==2 )
-					tmp = tmp.flatMapToPair(new ReplicateRightFactorFunction(mcIn.getRows(), mcIn.getRowsPerBlock()));
+					tmp = tmp.flatMapToPair(new ReplicateRightFactorFunction(mcIn.getRows(), mcIn.getBlocksize()));
 				else if( mcIn.getNumRowBlocks() > mcTmp.getNumRowBlocks() )
-					tmp = tmp.flatMapToPair(new ReplicateBlockFunction(mcIn.getRows(), mcIn.getRowsPerBlock(), false));
+					tmp = tmp.flatMapToPair(new ReplicateBlockFunction(mcIn.getRows(), mcIn.getBlocksize(), false));
 				else if( mcIn.getNumColBlocks() > mcTmp.getNumColBlocks() )
-					tmp = tmp.flatMapToPair(new ReplicateBlockFunction(mcIn.getCols(), mcIn.getColsPerBlock(), true));
+					tmp = tmp.flatMapToPair(new ReplicateBlockFunction(mcIn.getCols(), mcIn.getBlocksize(), true));
 				//join main and side inputs and consolidate signature
 				ret = ret.join(tmp)
 					.mapValues(new MapJoinSignature());
@@ -319,9 +319,9 @@ public class SpoofSPInstruction extends SPInstruction {
 			DataCharacteristics mcIn = sec.getDataCharacteristics(_in[0].getName());
 			DataCharacteristics mcOut = sec.getDataCharacteristics(_out.getName());
 			if( ((SpoofCellwise)op).getCellType()==CellType.ROW_AGG )
-				mcOut.set(mcIn.getRows(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				mcOut.set(mcIn.getRows(), 1, mcIn.getBlocksize(), mcIn.getBlocksize());
 			else if( ((SpoofCellwise)op).getCellType()==CellType.NO_AGG )
-				mcOut.set(mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				mcOut.set(mcIn.getRows(), mcIn.getCols(), mcIn.getBlocksize(), mcIn.getBlocksize());
 		}
 		else if(op instanceof SpoofOuterProduct) {
 			DataCharacteristics mcIn1 = sec.getDataCharacteristics(_in[0].getName()); //X
@@ -331,11 +331,11 @@ public class SpoofSPInstruction extends SPInstruction {
 			OutProdType type = ((SpoofOuterProduct)op).getOuterProdType();
 			
 			if( type == OutProdType.CELLWISE_OUTER_PRODUCT)
-				mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
+				mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getBlocksize(), mcIn1.getBlocksize());
 			else if( type == OutProdType.LEFT_OUTER_PRODUCT)
-				mcOut.set(mcIn3.getRows(), mcIn3.getCols(), mcIn3.getRowsPerBlock(), mcIn3.getColsPerBlock());
+				mcOut.set(mcIn3.getRows(), mcIn3.getCols(), mcIn3.getBlocksize(), mcIn3.getBlocksize());
 			else if( type == OutProdType.RIGHT_OUTER_PRODUCT )
-				mcOut.set(mcIn2.getRows(), mcIn2.getCols(), mcIn2.getRowsPerBlock(), mcIn2.getColsPerBlock());
+				mcOut.set(mcIn2.getRows(), mcIn2.getCols(), mcIn2.getBlocksize(), mcIn2.getBlocksize());
 		}
 		else if(op instanceof SpoofRowwise) {
 			DataCharacteristics mcIn = sec.getDataCharacteristics(_in[0].getName());
@@ -345,11 +345,11 @@ public class SpoofSPInstruction extends SPInstruction {
 				mcOut.set(mcIn);
 			else if( type == RowType.ROW_AGG )
 				mcOut.set(mcIn.getRows(), 1, 
-					mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+					mcIn.getBlocksize(), mcIn.getBlocksize());
 			else if( type == RowType.COL_AGG )
-				mcOut.set(1, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				mcOut.set(1, mcIn.getCols(), mcIn.getBlocksize(), mcIn.getBlocksize());
 			else if( type == RowType.COL_AGG_T )
-				mcOut.set(mcIn.getCols(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+				mcOut.set(mcIn.getCols(), 1, mcIn.getBlocksize(), mcIn.getBlocksize());
 		}
 	}
 	
@@ -399,15 +399,15 @@ public class SpoofSPInstruction extends SPInstruction {
 	{
 		private static final long serialVersionUID = -7926980450209760212L;
 
-		private final int _brlen;
+		private final int _blen;
 		private final int _clen;
 		private final int _clen2;
 		private SpoofRowwise _op = null;
 		
 		public RowwiseFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices,
-			ArrayList<ScalarObject> scalars, int brlen, int clen, int clen2) {
+			ArrayList<ScalarObject> scalars, int blen, int clen, int clen2) {
 			super(className, classBytes, bcInd, bcMatrices, scalars);
-			_brlen = brlen;
+			_blen = blen;
 			_clen = clen;
 			_clen2 = clen;
 		}
@@ -433,7 +433,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				Tuple2<MatrixIndexes,MatrixBlock[]> e = arg.next();
 				MatrixIndexes ixIn = e._1();
 				MatrixBlock[] blkIn = e._2();
-				long rix = (ixIn.getRowIndex()-1) * _brlen; //0-based
+				long rix = (ixIn.getRowIndex()-1) * _blen; //0-based
 				
 				//prepare output and execute single-threaded operator
 				ArrayList<MatrixBlock> inputs = getAllMatrixInputs(ixIn, blkIn);
@@ -464,11 +464,11 @@ public class SpoofSPInstruction extends SPInstruction {
 		private static final long serialVersionUID = -8209188316939435099L;
 		
 		private SpoofCellwise _op = null;
-		private final int _brlen;
+		private final int _blen;
 		
-		public CellwiseFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars, int brlen) {
+		public CellwiseFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars, int blen) {
 			super(className, classBytes, bcInd, bcMatrices, scalars);
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		@Override
@@ -490,7 +490,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				MatrixIndexes ixOut = ixIn; 
 				MatrixBlock blkOut = new MatrixBlock();
 				ArrayList<MatrixBlock> inputs = getAllMatrixInputs(ixIn, blkIn);
-				long rix = (ixIn.getRowIndex()-1) * _brlen; //0-based
+				long rix = (ixIn.getRowIndex()-1) * _blen; //0-based
 				
 				//execute core operation
 				if( _op.getCellType()==CellType.FULL_AGG ) {
@@ -517,11 +517,11 @@ public class SpoofSPInstruction extends SPInstruction {
 		private static final long serialVersionUID = -5224519291577332734L;
 		
 		private SpoofMultiAggregate _op = null;
-		private final int _brlen;
+		private final int _blen;
 		
-		public MultiAggregateFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars, int brlen) {
+		public MultiAggregateFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars, int blen) {
 			super(className, classBytes, bcInd, bcMatrices, scalars);
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		@Override
@@ -537,7 +537,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			//execute core operation
 			ArrayList<MatrixBlock> inputs = getAllMatrixInputs(arg._1(), arg._2());
 			MatrixBlock blkOut = new MatrixBlock();
-			long rix = (arg._1().getRowIndex()-1) * _brlen; //0-based
+			long rix = (arg._1().getRowIndex()-1) * _blen; //0-based
 			blkOut = _op.execute(inputs, _scalars, blkOut, 1, rix);
 			
 			return new Tuple2<>(arg._1(), blkOut);

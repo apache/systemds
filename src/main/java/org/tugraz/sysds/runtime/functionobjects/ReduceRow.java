@@ -66,7 +66,7 @@ public class ReduceRow extends IndexFunction
 	
 	@Override
 	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
-		out.set(1, in.getCols(), in.getRowsPerBlock(), in.getColsPerBlock());
+		out.set(1, in.getCols(), in.getBlocksize());
 		return true;
 	}
 

@@ -33,12 +33,11 @@ public class IsBlockInList implements Function<Tuple2<MatrixIndexes,MatrixBlock>
 	private static final long serialVersionUID = -1956151588590369875L;
 	
 	private final long[] _cols;
-	private final int _brlen, _bclen;
+	private final int _blen;
 	
 	public IsBlockInList(long[] cols, DataCharacteristics mc) {
 		_cols = cols;
-		_brlen = mc.getRowsPerBlock();
-		_bclen = mc.getColsPerBlock();
+		_blen = mc.getBlocksize();
 	}
 
 	@Override
@@ -46,7 +45,7 @@ public class IsBlockInList implements Function<Tuple2<MatrixIndexes,MatrixBlock>
 		throws Exception 
 	{
 		for( int i=0; i<_cols.length; i++ )
-			if( UtilFunctions.isInBlockRange(kv._1(), _brlen, _bclen, 1, Long.MAX_VALUE, _cols[i], _cols[i]) )
+			if( UtilFunctions.isInBlockRange(kv._1(), _blen, 1, Long.MAX_VALUE, _cols[i], _cols[i]) )
 				return true;
 		return false;
 	}

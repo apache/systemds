@@ -163,10 +163,10 @@ public class UtilFunctions
 	 * @param blen length of blocks
 	 * @return the number of the block
 	 */
-	public static long computeBlockNumber(int[] ix, long[] dims, int[] blen) {
+	public static long computeBlockNumber(int[] ix, long[] dims, int blen) {
 		long pos = ix[ix.length - 1] - 1;
 		for (int i = ix.length - 2; i >= 0; i--) {
-			pos += (ix[i] - 1) * Math.ceil((double)dims[i + 1] / blen[i + 1]);
+			pos += (ix[i] - 1) * Math.ceil((double)dims[i + 1] / blen);
 		}
 		return pos;
 	}
@@ -197,12 +197,12 @@ public class UtilFunctions
 		return ret;
 	}
 	
-	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, long rl, long ru, long cl, long cu )
+	public static boolean isInBlockRange( MatrixIndexes ix, int blen, long rl, long ru, long cl, long cu )
 	{
-		long bRLowerIndex = (ix.getRowIndex()-1)*brlen + 1;
-		long bRUpperIndex = ix.getRowIndex()*brlen;
-		long bCLowerIndex = (ix.getColumnIndex()-1)*bclen + 1;
-		long bCUpperIndex = ix.getColumnIndex()*bclen;
+		long bRLowerIndex = (ix.getRowIndex()-1)*blen + 1;
+		long bRUpperIndex = ix.getRowIndex()*blen;
+		long bCLowerIndex = (ix.getColumnIndex()-1)*blen + 1;
+		long bCUpperIndex = ix.getColumnIndex()*blen;
 		
 		if(rl > bRUpperIndex || ru < bRLowerIndex) {
 			return false;
@@ -215,44 +215,42 @@ public class UtilFunctions
 		}
 	}
 
-	public static boolean isInFrameBlockRange( Long ix, int brlen, long rl, long ru )
+	public static boolean isInFrameBlockRange( Long ix, int blen, long rl, long ru )
 	{
-		if(rl > ix+brlen-1 || ru < ix)
+		if(rl > ix+blen-1 || ru < ix)
 			return false;
 		else
 			return true;
 	}
 
-	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, IndexRange ixrange )
-	{
-		return isInBlockRange(ix, brlen, bclen, 
-				ixrange.rowStart, ixrange.rowEnd, 
-				ixrange.colStart, ixrange.colEnd);
+	public static boolean isInBlockRange( MatrixIndexes ix, int blen, IndexRange ixrange ) {
+		return isInBlockRange(ix, blen, 
+			ixrange.rowStart, ixrange.rowEnd, ixrange.colStart, ixrange.colEnd);
 	}
 
-	public static boolean isInFrameBlockRange( Long ix, int brlen, int bclen, IndexRange ixrange )
+	public static boolean isInFrameBlockRange( Long ix, int blen, IndexRange ixrange )
 	{
-		return isInFrameBlockRange(ix, brlen, ixrange.rowStart, ixrange.rowEnd);
+		return isInFrameBlockRange(ix, blen, ixrange.rowStart, ixrange.rowEnd);
 	}
 	
 	// Reused by both MR and Spark for performing zero out
-	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blockRowFactor, int blockColFactor, IndexRange indexRange) 
+	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blen, IndexRange indexRange) 
 	{
 		IndexRange tempRange = new IndexRange(-1, -1, -1, -1);
 		
-		long topBlockRowIndex=UtilFunctions.computeBlockIndex(indexRange.rowStart, blockRowFactor);
-		int topRowInTopBlock=UtilFunctions.computeCellInBlock(indexRange.rowStart, blockRowFactor);
-		long bottomBlockRowIndex=UtilFunctions.computeBlockIndex(indexRange.rowEnd, blockRowFactor);
-		int bottomRowInBottomBlock=UtilFunctions.computeCellInBlock(indexRange.rowEnd, blockRowFactor);
+		long topBlockRowIndex=UtilFunctions.computeBlockIndex(indexRange.rowStart, blen);
+		int topRowInTopBlock=UtilFunctions.computeCellInBlock(indexRange.rowStart, blen);
+		long bottomBlockRowIndex=UtilFunctions.computeBlockIndex(indexRange.rowEnd, blen);
+		int bottomRowInBottomBlock=UtilFunctions.computeCellInBlock(indexRange.rowEnd, blen);
 		
-		long leftBlockColIndex=UtilFunctions.computeBlockIndex(indexRange.colStart, blockColFactor);
-		int leftColInLeftBlock=UtilFunctions.computeCellInBlock(indexRange.colStart, blockColFactor);
-		long rightBlockColIndex=UtilFunctions.computeBlockIndex(indexRange.colEnd, blockColFactor);
-		int rightColInRightBlock=UtilFunctions.computeCellInBlock(indexRange.colEnd, blockColFactor);
+		long leftBlockColIndex=UtilFunctions.computeBlockIndex(indexRange.colStart, blen);
+		int leftColInLeftBlock=UtilFunctions.computeCellInBlock(indexRange.colStart, blen);
+		long rightBlockColIndex=UtilFunctions.computeBlockIndex(indexRange.colEnd, blen);
+		int rightColInRightBlock=UtilFunctions.computeCellInBlock(indexRange.colEnd, blen);
 		
 		//no overlap
 		if(in.getIndexes().getRowIndex()<topBlockRowIndex || in.getIndexes().getRowIndex()>bottomBlockRowIndex
-		   || in.getIndexes().getColumnIndex()<leftBlockColIndex || in.getIndexes().getColumnIndex()>rightBlockColIndex)
+			|| in.getIndexes().getColumnIndex()<leftBlockColIndex || in.getIndexes().getColumnIndex()>rightBlockColIndex)
 		{
 			tempRange.set(-1,-1,-1,-1);
 			return tempRange;
@@ -273,19 +271,12 @@ public class UtilFunctions
 	}
 	
 	// Reused by both MR and Spark for performing zero out
-	public static IndexRange getSelectedRangeForZeroOut(Pair<Long, FrameBlock> in, int blockRowFactor, int blockColFactor, IndexRange indexRange, long lSrcRowIndex, long lDestRowIndex) 
-	{
-		int iRowStart, iRowEnd, iColStart, iColEnd;
-		
-		if(indexRange.rowStart <= lDestRowIndex)
-			iRowStart = 0;
-		else
-			iRowStart = (int) (indexRange.rowStart - in.getKey());
-		iRowEnd = (int) Math.min(indexRange.rowEnd - lSrcRowIndex, blockRowFactor)-1;
-		
-		iColStart = UtilFunctions.computeCellInBlock(indexRange.colStart, blockColFactor);
-		iColEnd = UtilFunctions.computeCellInBlock(indexRange.colEnd, blockColFactor);
-
+	public static IndexRange getSelectedRangeForZeroOut(Pair<Long, FrameBlock> in, int blen, IndexRange indexRange, long lSrcRowIndex, long lDestRowIndex)  {
+		int iRowStart = (indexRange.rowStart <= lDestRowIndex) ?
+			0 : (int) (indexRange.rowStart - in.getKey());
+		int iRowEnd = (int) Math.min(indexRange.rowEnd - lSrcRowIndex, blen)-1;
+		int iColStart = UtilFunctions.computeCellInBlock(indexRange.colStart, blen);
+		int iColEnd = UtilFunctions.computeCellInBlock(indexRange.colEnd, blen);
 		return  new IndexRange(iRowStart, iRowEnd, iColStart, iColEnd);
 	}
 

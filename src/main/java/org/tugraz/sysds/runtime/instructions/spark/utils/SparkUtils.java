@@ -230,7 +230,7 @@ public class SparkUtils
 	{
 		//compute degree of parallelism and block ranges
 		long size = mc.getNumBlocks() * OptimizerUtils.estimateSizeEmptyBlock(Math.min(
-				Math.max(mc.getRows(),1), mc.getRowsPerBlock()), Math.min(Math.max(mc.getCols(),1), mc.getColsPerBlock()));
+				Math.max(mc.getRows(),1), mc.getBlocksize()), Math.min(Math.max(mc.getCols(),1), mc.getBlocksize()));
 		int par = (int) Math.min(4*Math.max(SparkExecutionContext.getDefaultParallelism(true),
 				Math.ceil(size/InfrastructureAnalyzer.getHDFSBlockSize())), mc.getNumBlocks());
 		long pNumBlocks = (long)Math.ceil((double)mc.getNumBlocks()/par);
@@ -276,13 +276,11 @@ public class SparkUtils
 		private static final long serialVersionUID = 8899395272683723008L;
 
 		@Override
-		public DataCharacteristics call(Tuple2<MatrixIndexes, MatrixCell> arg0)
-			throws Exception 
-		{
+		public DataCharacteristics call(Tuple2<MatrixIndexes, MatrixCell> arg0) throws Exception {
 			long rix = arg0._1().getRowIndex();
 			long cix = arg0._1().getColumnIndex();
 			long nnz = (arg0._2().getValue()!=0) ? 1 : 0;
-			return new MatrixCharacteristics(rix, cix, 0, 0, nnz);
+			return new MatrixCharacteristics(rix, cix, 0, nnz);
 		}
 	}
 
@@ -291,16 +289,13 @@ public class SparkUtils
 		private static final long serialVersionUID = 4263886749699779994L;
 
 		@Override
-		public DataCharacteristics call(DataCharacteristics arg0, DataCharacteristics arg1)
-			throws Exception 
-		{
+		public DataCharacteristics call(DataCharacteristics arg0, DataCharacteristics arg1) throws Exception {
 			return new MatrixCharacteristics(
-					Math.max(arg0.getRows(), arg1.getRows()),  //max
-					Math.max(arg0.getCols(), arg1.getCols()),  //max
-					arg0.getRowsPerBlock(), 
-					arg0.getColsPerBlock(),
-					arg0.getNonZeros() + arg1.getNonZeros() ); //sum
-		}	
+				Math.max(arg0.getRows(), arg1.getRows()),  //max
+				Math.max(arg0.getCols(), arg1.getCols()),  //max
+				arg0.getBlocksize(), 
+				arg0.getNonZeros() + arg1.getNonZeros() ); //sum
+		}
 	}
 	
 	private static class GenerateEmptyBlocks implements PairFlatMapFunction<Long, MatrixIndexes, MatrixBlock> 
@@ -325,8 +320,8 @@ public class SparkUtils
 			return LongStream.range(arg0, nblocksU).mapToObj(i -> {
 				long rix = 1 + i / ncblks;
 				long cix = 1 + i % ncblks;
-				int lrlen = UtilFunctions.computeBlockSize(_mc.getRows(), rix, _mc.getRowsPerBlock());
-				int lclen = UtilFunctions.computeBlockSize(_mc.getCols(), cix, _mc.getColsPerBlock());
+				int lrlen = UtilFunctions.computeBlockSize(_mc.getRows(), rix, _mc.getBlocksize());
+				int lclen = UtilFunctions.computeBlockSize(_mc.getCols(), cix, _mc.getBlocksize());
 				return new Tuple2<>(new MatrixIndexes(rix,cix), new MatrixBlock(lrlen, lclen, true));
 			}).iterator();
 		}

@@ -35,14 +35,14 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 public class ReaderBinaryCell extends MatrixReader
 {
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 		
 		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
@@ -50,7 +50,7 @@ public class ReaderBinaryCell extends MatrixReader
 		checkValidInputFile(fs, path); 
 	
 		//core read 
-		readBinaryCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen);
+		readBinaryCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen);
 		
 		//finally check if change of sparse/dense block representation required
 		//(nnz maintained via append during read for both dense/sparse)
@@ -60,14 +60,14 @@ public class ReaderBinaryCell extends MatrixReader
 	}
 
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		throw new DMLRuntimeException("Not implemented yet.");
 	}
 	
 	@SuppressWarnings("deprecation")
-	private static void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	private static void readBinaryCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int blen )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();		

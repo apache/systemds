@@ -230,7 +230,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		public long getNumRows(DataCharacteristics mc) {
 			switch( _dpf ) {
 				case ROW_WISE: return 1;
-				case ROW_BLOCK_WISE: return mc.getRowsPerBlock();
+				case ROW_BLOCK_WISE: return mc.getBlocksize();
 				case ROW_BLOCK_WISE_N: return _N;
 				case COLUMN_WISE: return mc.getRows();
 				case COLUMN_BLOCK_WISE: return mc.getRows();
@@ -245,7 +245,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				case ROW_BLOCK_WISE: return mc.getCols();
 				case ROW_BLOCK_WISE_N: return mc.getCols();
 				case COLUMN_WISE: return 1;
-				case COLUMN_BLOCK_WISE: return mc.getColsPerBlock();
+				case COLUMN_BLOCK_WISE: return mc.getBlocksize();
 				case COLUMN_BLOCK_WISE_N: return _N;
 				default:
 					throw new RuntimeException("Unsupported partition format: "+_dpf);

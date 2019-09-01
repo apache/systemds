@@ -125,8 +125,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 							&& _inputsMeta.get(dop.getName()) instanceof MetaDataFormat) {
 							MetaDataFormat meta = (MetaDataFormat)_inputsMeta.get(dop.getName());
 							DataCharacteristics dc = meta.getDataCharacteristics();
-							boolean matchingBlksz = dc.getRowsPerBlock() == dop.getRowsInBlock()
-									&& dc.getColsPerBlock() == dop.getColsInBlock();
+							boolean matchingBlksz = dc.getBlocksize() == dop.getBlocksize();
 							//binary matrix w/ matching dims and frames do not require reblock
 							if( meta.getInputInfo() == InputInfo.BinaryBlockInputInfo 
 								&& (matchingBlksz || dop.getDataType() == DataType.FRAME))
@@ -141,8 +140,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 				case PERSISTENTWRITE:
 					if( _outputs.contains(dop.getName()) ) {
 						dop.setDataOpType(DataOpTypes.TRANSIENTWRITE);
-						dop.setRowsInBlock(dop.getInput().get(0).getRowsInBlock());
-						dop.setColsInBlock(dop.getInput().get(0).getColsInBlock());
+						dop.setBlocksize(dop.getInput().get(0).getBlocksize());
 						if (hop.getDataType() == DataType.SCALAR) {
 							dop.removeInput("iofilename");
 						}

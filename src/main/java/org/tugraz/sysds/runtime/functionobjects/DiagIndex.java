@@ -67,9 +67,9 @@ public class DiagIndex extends IndexFunction
 	@Override
 	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
 		if( in.getCols() == 1 ) //diagV2M
-			out.set(in.getRows(), in.getRows(), in.getRowsPerBlock(), in.getRowsPerBlock());
+			out.set(in.getRows(), in.getRows(), in.getBlocksize(), in.getBlocksize());
 		else //diagM2V
-			out.set(in.getRows(), 1, in.getRowsPerBlock(), in.getRowsPerBlock());
+			out.set(in.getRows(), 1, in.getBlocksize(), in.getBlocksize());
 		return false;
 	}
 }

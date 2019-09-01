@@ -70,7 +70,7 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 			if(!dc1.dimsKnown())
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + dc1.toString() + " " + dcOut.toString());
 			else
-				dcOut.set(dc1.getRows(), dc1.getCols(), dc1.getRowsPerBlock(), dc1.getColsPerBlock());
+				dcOut.set(dc1.getRows(), dc1.getCols(), dc1.getBlocksize(), dc1.getBlocksize());
 		}
 	}
 
@@ -84,9 +84,9 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 			if(!dcIn1.dimsKnown())
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + dcIn1.toString() + " " + dcIn2.toString() + " " + dcOut.toString());
 			else if(outer)
-				sec.getDataCharacteristics(output.getName()).set(dcIn1.getRows(), dcIn2.getCols(), dcIn1.getRowsPerBlock(), dcIn2.getColsPerBlock());
+				sec.getDataCharacteristics(output.getName()).set(dcIn1.getRows(), dcIn2.getCols(), dcIn1.getBlocksize(), dcIn2.getBlocksize());
 			else
-				sec.getDataCharacteristics(output.getName()).set(dcIn1.getRows(), dcIn1.getCols(), dcIn1.getRowsPerBlock(), dcIn1.getRowsPerBlock());
+				sec.getDataCharacteristics(output.getName()).set(dcIn1.getRows(), dcIn1.getCols(), dcIn1.getBlocksize(), dcIn1.getBlocksize());
 		}
 	}
 
@@ -120,11 +120,11 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 		else {
 			//infer statistics from input based on operator
 			if( ixFn instanceof ReduceAll )
-				mcOut.set(1, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(1, 1, mc1.getBlocksize(), mc1.getBlocksize());
 			else if( ixFn instanceof ReduceCol )
-				mcOut.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(mc1.getRows(), 1, mc1.getBlocksize(), mc1.getBlocksize());
 			else if( ixFn instanceof ReduceRow )
-				mcOut.set(1, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(1, mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 		}
 	}
 	

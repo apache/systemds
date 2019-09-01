@@ -101,7 +101,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	}
 	
 	@Override
-	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
+	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int blen)
 	{
 		//force writing to disk (typically not required since partitioning only applied if dataset exceeds CP size)
 		in.exportData(); //written to disk iff dirty
@@ -111,15 +111,15 @@ public class DataPartitionerLocal extends DataPartitioner
 		
 		//reblock input matrix
 		if( ii == InputInfo.TextCellInputInfo )
-			partitionTextCell( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
+			partitionTextCell( fname, fnameStaging, fnameNew, rlen, clen, blen );
 		else if( ii == InputInfo.BinaryCellInputInfo )
-			partitionBinaryCell( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
+			partitionBinaryCell( fname, fnameStaging, fnameNew, rlen, clen, blen );
 		else if( ii == InputInfo.BinaryBlockInputInfo )
 		{
 			if( oi == OutputInfo.BinaryBlockOutputInfo )
-				partitionBinaryBlock( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
+				partitionBinaryBlock( fname, fnameStaging, fnameNew, rlen, clen, blen );
 			else if ( oi == OutputInfo.BinaryCellOutputInfo )
-				partitionBinaryBlock2BinaryCell( fname, fnameStaging, fnameNew, rlen, clen, brlen, bclen );
+				partitionBinaryBlock2BinaryCell( fname, fnameStaging, fnameNew, rlen, clen, blen );
 		}
 		else	
 			throw new DMLRuntimeException("Cannot create data partitions of format: "+ii.toString());
@@ -127,7 +127,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
 	}
 
-	private void partitionTextCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
+	private void partitionTextCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int blen ) 
 	{
 		long row = -1;
 		long col = -1;
@@ -164,7 +164,7 @@ public class DataPartitionerLocal extends DataPartitioner
 						buffer.addLast( tmp );
 						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 						{
-							appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+							appendCellBufferToStagingArea(fnameStaging, buffer, blen);
 							buffer.clear();
 						}
 					}
@@ -172,7 +172,7 @@ public class DataPartitionerLocal extends DataPartitioner
 					//final flush
 					if( !buffer.isEmpty() )
 					{
-						appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+						appendCellBufferToStagingArea(fnameStaging, buffer, blen);
 						buffer.clear();
 					}
 				}
@@ -219,7 +219,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	}	
 
 	@SuppressWarnings("deprecation")
-	private void partitionBinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
+	private void partitionBinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int blen ) 
 	{
 		long row = -1;
 		long col = -1;
@@ -251,7 +251,7 @@ public class DataPartitionerLocal extends DataPartitioner
 						buffer.addLast( tmp );
 						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 						{
-							appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+							appendCellBufferToStagingArea(fnameStaging, buffer, blen);
 							buffer.clear();
 						}
 					}
@@ -259,7 +259,7 @@ public class DataPartitionerLocal extends DataPartitioner
 					//final flush
 					if( !buffer.isEmpty() )
 					{
-						appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+						appendCellBufferToStagingArea(fnameStaging, buffer, blen);
 						buffer.clear();
 					}
 				}
@@ -269,7 +269,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			}
 			
 			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
-			String[] fnamesPartitions = new File(fnameStaging).list();			
+			String[] fnamesPartitions = new File(fnameStaging).list();
 			if(PARALLEL) 
 			{
 				int len = Math.min(fnamesPartitions.length, _par);
@@ -306,12 +306,12 @@ public class DataPartitionerLocal extends DataPartitioner
 	}	
 
 	@SuppressWarnings("deprecation")
-	private void partitionBinaryBlock( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
+	private void partitionBinaryBlock( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int blen ) 
 	{
 		try 
 		{	
 			//create reuse object
-			_reuseBlk = DataPartitioner.createReuseMatrixBlock(_format, brlen, bclen);
+			_reuseBlk = DataPartitioner.createReuseMatrixBlock(_format, blen, blen);
 			
 			//STEP 1: read matrix from HDFS and write blocks to local staging area	
 			//check and add input path
@@ -330,8 +330,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				{
 					while(reader.next(key, value)) //for each block
 					{
-						long row_offset = (key.getRowIndex()-1)*brlen;
-						long col_offset = (key.getColumnIndex()-1)*bclen;
+						long row_offset = (key.getRowIndex()-1)*blen;
+						long col_offset = (key.getColumnIndex()-1)*blen;
 						long rows = value.getNumRows();
 						long cols = value.getNumColumns();
 						
@@ -342,7 +342,7 @@ public class DataPartitionerLocal extends DataPartitioner
 									              "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
 						}
 						
-					    appendBlockToStagingArea(fnameStaging, value, row_offset, col_offset, brlen, bclen);
+					    appendBlockToStagingArea(fnameStaging, value, row_offset, col_offset, blen);
 					}
 				}
 				finally {
@@ -351,7 +351,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			}
 
 			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
-			String[] fnamesPartitions = new File(fnameStaging).list();			
+			String[] fnamesPartitions = new File(fnameStaging).list();
 			if(PARALLEL) 
 			{
 				int len = Math.min(fnamesPartitions.length, _par);
@@ -371,7 +371,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			else
 			{
 				for( String pdir : fnamesPartitions  )
-					writeBinaryBlockSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir, false );		
+					writeBinaryBlockSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir, false );
 			}
 		} 
 		catch (Exception e) 
@@ -381,10 +381,10 @@ public class DataPartitionerLocal extends DataPartitioner
 	}
 
 	@SuppressWarnings("deprecation")
-	private void partitionBinaryBlock2BinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int brlen, int bclen ) 
+	private void partitionBinaryBlock2BinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int blen ) 
 	{
 		try 
-		{		
+		{
 			//STEP 1: read matrix from HDFS and write blocks to local staging area	
 			//check and add input path
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -404,8 +404,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				{
 					while(reader.next(key, value)) //for each block
 					{
-						long row_offset = (key.getRowIndex()-1)*brlen;
-						long col_offset = (key.getColumnIndex()-1)*bclen;
+						long row_offset = (key.getRowIndex()-1)*blen;
+						long col_offset = (key.getColumnIndex()-1)*blen;
 						long rows = value.getNumRows();
 						long cols = value.getNumColumns();
 						
@@ -437,15 +437,16 @@ public class DataPartitionerLocal extends DataPartitioner
 									double lvalue  = value.getValueDenseUnsafe(i, j);
 									if( lvalue != 0 ) //for nnz
 									{
-										Cell tmp = new Cell( row_offset + i + 1, 
-												 			 col_offset + j + 1,
-												 			 lvalue ); 
+										Cell tmp = new Cell(
+											row_offset + i + 1, 
+											col_offset + j + 1,
+											lvalue ); 
 										buffer.addLast( tmp );
 									}
 								}
 						}
 						
-						appendCellBufferToStagingArea(fnameStaging, buffer, brlen, bclen);
+						appendCellBufferToStagingArea(fnameStaging, buffer, blen);
 						buffer.clear();
 					}
 				}
@@ -455,7 +456,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			}
 
 			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
-			String[] fnamesPartitions = new File(fnameStaging).list();			
+			String[] fnamesPartitions = new File(fnameStaging).list();
 			if(PARALLEL) 
 			{
 				int len = Math.min(fnamesPartitions.length, _par);
@@ -484,7 +485,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 
-	private void appendBlockToStagingArea( String dir, MatrixBlock mb, long row_offset, long col_offset, long brlen, long bclen ) 
+	private void appendBlockToStagingArea( String dir, MatrixBlock mb, long row_offset, long col_offset, long blen ) 
 		throws IOException
 	{
 		//NOTE: for temporary block we always create dense representations
@@ -500,7 +501,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			for( int i=0; i<rows; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));
-				String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
+				String pfname = pdir+"/"+"block_"+(col_offset/blen+1);
 				mb.slice(i, i, 0, (int)(cols-1), _reuseBlk);
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
 				_reuseBlk.reset();
@@ -508,8 +509,8 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 		else if( _format == PDataPartitionFormat.ROW_BLOCK_WISE )
 		{
-			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset/brlen+1));
-			String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
+			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset/blen+1));
+			String pfname = pdir+"/"+"block_"+(col_offset/blen+1);
 			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
 		else if( _format == PDataPartitionFormat.COLUMN_WISE )
@@ -520,7 +521,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			for( int i=0; i<cols; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset+1+i));
-				String pfname = pdir+"/"+"block_"+(row_offset/brlen+1); 			
+				String pfname = pdir+"/"+"block_"+(row_offset/blen+1);
 				mb.slice(0, (int)(rows-1), i, i, _reuseBlk);
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
 				_reuseBlk.reset();
@@ -528,13 +529,13 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 		else if( _format == PDataPartitionFormat.COLUMN_BLOCK_WISE )
 		{
-			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset/bclen+1));
-			String pfname = pdir+"/"+"block_"+(row_offset/brlen+1);
+			String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset/blen+1));
+			String pfname = pdir+"/"+"block_"+(row_offset/blen+1);
 			LocalFileUtils.writeMatrixBlockToLocal(pfname, mb);
 		}
 	}
 
-	private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
+	private void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int blen ) 
 		throws IOException
 	{
 		HashMap<Long,LinkedList<Cell>> sortedBuffer = new HashMap<>();
@@ -550,16 +551,16 @@ public class DataPartitionerLocal extends DataPartitioner
 					c.setRow(1);
 					break;
 				case ROW_BLOCK_WISE:
-					key = (c.getRow()-1)/brlen+1;
-					c.setRow((c.getRow()-1)%brlen+1);
+					key = (c.getRow()-1)/blen+1;
+					c.setRow((c.getRow()-1)%blen+1);
 					break;
 				case COLUMN_WISE:
 					key = c.getCol();
 					c.setCol(1);
 					break;
 				case COLUMN_BLOCK_WISE:
-					key = (c.getCol()-1)/bclen+1;
-					c.setCol((c.getCol()-1)%bclen+1);
+					key = (c.getCol()-1)/blen+1;
+					c.setCol((c.getCol()-1)%blen+1);
 					break;
 				default:
 					//do nothing

@@ -27,20 +27,22 @@ import java.io.Serializable;
 public abstract class DataCharacteristics implements Serializable {
 	private static final long serialVersionUID = 3411056029517599342L;
 
-	public DataCharacteristics set(long nr, long nc, int bnr, int bnc) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int, int): should never get called in the base class");
+	protected int _blocksize;
+	
+	public DataCharacteristics set(long nr, long nc, int len) {
+		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int): should never get called in the base class");
 	}
 
-	public DataCharacteristics set(long nr, long nc, int bnr, int bnc, long nnz) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int, int, long): should never get called in the base class");
+	public DataCharacteristics set(long nr, long nc, int blen, long nnz) {
+		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int, long): should never get called in the base class");
 	}
 
-	public DataCharacteristics set(long[] dims, int[] blkSizes) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long[], int[]): should never get called in the base class");
+	public DataCharacteristics set(long[] dims, int blocksize) {
+		throw new DMLRuntimeException("DataCharacteristics.set(long[], int): should never get called in the base class");
 	}
 
-	public DataCharacteristics set(long[] dims, int[] blkSizes, long nnz) {
-		throw new DMLRuntimeException("DataCharacteristics.set(long[], int[], long): should never get called in the base class");
+	public DataCharacteristics set(long[] dims, int blocksize, long nnz) {
+		throw new DMLRuntimeException("DataCharacteristics.set(long[], int, long): should never get called in the base class");
 	}
 
 	public DataCharacteristics set(DataCharacteristics that) {
@@ -67,20 +69,12 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.getLength(): should never get called in the base class");
 	}
 
-	public int getRowsPerBlock() {
-		throw new DMLRuntimeException("DataCharacteristics.getRowsPerBlock(): should never get called in the base class");
+	public int getBlocksize() {
+		return _blocksize;
 	}
 
-	public void setRowsPerBlock(int brlen) {
-		throw new DMLRuntimeException("DataCharacteristics.setRowsPerBlock(int): should never get called in the base class");
-	}
-
-	public int getColsPerBlock() {
-		throw new DMLRuntimeException("DataCharacteristics.getColsPerBlock(): should never get called in the base class");
-	}
-
-	public void setColsPerBlock(int bclen) {
-		throw new DMLRuntimeException("DataCharacteristics.setColsPerBlock(int): should never get called in the base class");
+	public void setBlocksize(int blen){
+		_blocksize = blen;
 	}
 
 	public long getNumBlocks() {
@@ -119,24 +113,12 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.setDims(long[]): should never get called in the base class");
 	}
 
-	public int getBlockSize(int i) {
-		throw new DMLRuntimeException("DataCharacteristics.getBlockSize(int): should never get called in the base class");
-	}
-
-	public int[] getBlockSizes() {
-		throw new DMLRuntimeException("DataCharacteristics.getBlockSizes(): should never get called in the base class");
+	public int getBlockSize() {
+		throw new DMLRuntimeException("DataCharacteristics.getBlockSize(): should never get called in the base class");
 	}
 
 	public DataCharacteristics setBlockSize(int blen) {
 		throw new DMLRuntimeException("DataCharacteristics.setBlockSize(int): should never get called in the base class");
-	}
-
-	public DataCharacteristics setBlockSize(int a, int b) {
-		throw new DMLRuntimeException("DataCharacteristics.setBlockSize(int, int): should never get called in the base class");
-	}
-
-	public DataCharacteristics setBlockSizes(int[] blkSizes) {
-		throw new DMLRuntimeException("DataCharacteristics.setBlockSizes(int[]): should never get called in the base class");
 	}
 
 	public long getNumBlocks(int i) {
@@ -200,7 +182,7 @@ public abstract class DataCharacteristics implements Serializable {
 	}
 
 	public static void aggregateBinary(DataCharacteristics dim1, DataCharacteristics dim2, AggregateBinaryOperator op, DataCharacteristics dimOut) {
-		dimOut.set(dim1.getRows(), dim2.getCols(), dim1.getRowsPerBlock(), dim2.getColsPerBlock());
+		dimOut.set(dim1.getRows(), dim2.getCols(), dim1.getBlocksize());
 	}
 
 	@Override

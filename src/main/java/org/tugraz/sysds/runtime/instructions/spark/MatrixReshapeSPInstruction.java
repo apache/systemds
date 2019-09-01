@@ -98,7 +98,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 					.getBinaryMatrixBlockRDDHandleForVariable(input1.getName(), -1, _outputEmptyBlocks);
 
 			//update output characteristics and sanity check
-			mcOut.set(rows, cols, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getNonZeros());
+			mcOut.set(rows, cols, mcIn.getBlocksize(), mcIn.getNonZeros());
 			if (!mcIn.nnzKnown())
 				mcOut.setNonZerosBound(mcIn.getNonZerosBound());
 			if (mcIn.getRows() * mcIn.getCols() != mcOut.getRows() * mcOut.getCols()) {

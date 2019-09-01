@@ -743,11 +743,11 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 					|| OptimizerUtils.getTotalMemEstimate(hop.getInput().toArray(new Hop[0]), hop, true)
 						> OptimizerUtils.getLocalMemBudget();
 				boolean validNcol = hop.getDataType().isScalar() || (HopRewriteUtils.isTransposeOperation(hop) ? 
-					hop.getDim1() <= hop.getRowsInBlock() : hop.getDim2() <= hop.getColsInBlock());
+					hop.getDim1() <= hop.getBlocksize() : hop.getDim2() <= hop.getBlocksize());
 				for( Hop in : hop.getInput() )
 					validNcol &= in.getDataType().isScalar()
-						|| (in.getDim2() <= in.getColsInBlock())
-						|| (hop instanceof AggBinaryOp && in.getDim1() <= in.getRowsInBlock()
+						|| (in.getDim2() <= in.getBlocksize())
+						|| (hop instanceof AggBinaryOp && in.getDim1() <= in.getBlocksize()
 							&& HopRewriteUtils.isTransposeOperation(in));
 				if( isSpark && !validNcol ) {
 					List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW);

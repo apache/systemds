@@ -926,9 +926,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE &&
-				(dc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || dc.getColsPerBlock() != ConfigurationManager.getBlocksize()) )
+				dc.getBlocksize() != ConfigurationManager.getBlocksize() )
 			{
-				dc = new MatrixCharacteristics(dc.getRows(), dc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), dc.getNonZeros());
+				dc = new MatrixCharacteristics(dc.getRows(), dc.getCols(), ConfigurationManager.getBlocksize(), dc.getNonZeros());
 			}
 			
 			//write the actual meta data file

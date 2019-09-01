@@ -315,7 +315,7 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-		datagen.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		datagen.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, datagen);
 		
 		if( value==0 )
@@ -371,7 +371,7 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		DataGenOp datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params2);
-		datagen.setOutputBlocksizes(inputGen.getRowsInBlock(), inputGen.getColsInBlock());
+		datagen.setBlocksize(inputGen.getBlocksize());
 		copyLineNumbers(inputGen, datagen);
 		
 		if( smin==0 && smax==0 )
@@ -401,7 +401,7 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-		datagen.setOutputBlocksizes(rowInput.getRowsInBlock(), colInput.getColsInBlock());
+		datagen.setBlocksize(rowInput.getBlocksize());
 		copyLineNumbers(rowInput, datagen);
 		
 		if( value==0 )
@@ -434,12 +434,12 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
-		datagen.setOutputBlocksizes(rowInput.getRowsInBlock(), colInput.getColsInBlock());
+		datagen.setBlocksize(colInput.getBlocksize());
 		copyLineNumbers(rowInput, datagen);
 		
 		if( value==0 )
 			datagen.setNnz(0);
-			
+		
 		return datagen;
 	}
 	
@@ -463,7 +463,7 @@ public class HopRewriteUtils
 		di.setDataType(dt);
 		di.setValueType(vt);
 		Hop datagen = new DataGenOp(DataGenMethod.RAND, di, params);
-		datagen.setOutputBlocksizes(rowInput.getRowsInBlock(), colInput.getColsInBlock());
+		datagen.setBlocksize(rowInput.getBlocksize());
 		copyLineNumbers(rowInput, datagen);
 		
 		if( value==0 )
@@ -491,8 +491,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED));
 		
 		Hop datagen = new DataGenOp(DataGenMethod.SINIT, new DataIdentifier("tmp"), params);
-		int blksz = ConfigurationManager.getBlocksize();
-		datagen.setOutputBlocksizes(blksz, blksz);
+		datagen.setBlocksize(ConfigurationManager.getBlocksize());
 		copyLineNumbers(values.get(0), datagen);
 		
 		return datagen;
@@ -530,7 +529,7 @@ public class HopRewriteUtils
 		//note: different constructor necessary for formattype
 		DataOp tread = new DataOp(name, h.getDataType(), h.getValueType(),
 			DataOpTypes.TRANSIENTREAD, null, h.getDim1(), h.getDim2(), h.getNnz(),
-			h.getUpdateType(), h.getRowsInBlock(), h.getColsInBlock());
+			h.getUpdateType(), h.getBlocksize());
 		tread.setVisited();
 		copyLineNumbers(h, tread);
 		return tread;
@@ -545,7 +544,7 @@ public class HopRewriteUtils
 			in.getValueType(), in, type, null);
 		dop.setVisited();
 		dop.setOutputParams(in.getDim1(), in.getDim2(), in.getNnz(),
-			in.getUpdateType(), in.getRowsInBlock(), in.getColsInBlock());
+			in.getUpdateType(), in.getBlocksize());
 		copyLineNumbers(in, dop);
 		return dop;
 	}
@@ -556,7 +555,7 @@ public class HopRewriteUtils
 	
 	public static ReorgOp createReorg(Hop input, ReOrgOp rop) {
 		ReorgOp reorg = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), rop, input);
-		reorg.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		reorg.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, reorg);
 		reorg.refreshSizeInformation();
 		return reorg;
@@ -565,7 +564,7 @@ public class HopRewriteUtils
 	public static ReorgOp createReorg(ArrayList<Hop> inputs, ReOrgOp rop) {
 		Hop main = inputs.get(0);
 		ReorgOp reorg = new ReorgOp(main.getName(), main.getDataType(), main.getValueType(), rop, inputs);
-		reorg.setOutputBlocksizes(main.getRowsInBlock(), main.getColsInBlock());
+		reorg.setBlocksize(main.getBlocksize());
 		copyLineNumbers(main, reorg);
 		reorg.refreshSizeInformation();
 		return reorg;
@@ -581,11 +580,11 @@ public class HopRewriteUtils
 			(type==OpOp1.CAST_AS_MATRIX) ? DataType.MATRIX : input.getDataType();
 		ValueType vt = (type==OpOp1.CAST_AS_MATRIX) ? ValueType.FP64 : input.getValueType();
 		UnaryOp unary = new UnaryOp(input.getName(), dt, vt, type, input);
-		unary.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		unary.setBlocksize(input.getBlocksize());
 		if( type == OpOp1.CAST_AS_SCALAR || type == OpOp1.CAST_AS_MATRIX ) {
 			int dim = (type==OpOp1.CAST_AS_SCALAR) ? 0 : 1;
 			int blksz = (type==OpOp1.CAST_AS_SCALAR) ? 0 : ConfigurationManager.getBlocksize();
-			setOutputParameters(unary, dim, dim, blksz, blksz, -1);		
+			setOutputParameters(unary, dim, dim, blksz, -1);
 		}
 		
 		copyLineNumbers(input, unary);
@@ -615,9 +614,9 @@ public class HopRewriteUtils
 		if( bop.isPPredOperation() && bop.getDataType().isScalar() )
 			bop.setValueType(ValueType.BOOLEAN);
 		bop.setOuterVectorOperation(outer);
-		bop.setOutputBlocksizes(mainInput.getRowsInBlock(), mainInput.getColsInBlock());
+		bop.setBlocksize(mainInput.getBlocksize());
 		copyLineNumbers(mainInput, bop);
-		bop.refreshSizeInformation();	
+		bop.refreshSizeInformation();
 		return bop;
 	}
 	
@@ -634,7 +633,7 @@ public class HopRewriteUtils
 	public static AggUnaryOp createAggUnaryOp( Hop input, AggOp op, Direction dir ) {
 		DataType dt = (dir==Direction.RowCol) ? DataType.SCALAR : input.getDataType();
 		AggUnaryOp auop = new AggUnaryOp(input.getName(), dt, input.getValueType(), op, dir, input);
-		auop.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		auop.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, auop);
 		auop.refreshSizeInformation();
 		
@@ -643,7 +642,7 @@ public class HopRewriteUtils
 	
 	public static AggBinaryOp createMatrixMultiply(Hop left, Hop right) {
 		AggBinaryOp mmult = new AggBinaryOp(left.getName(), left.getDataType(), left.getValueType(), OpOp2.MULT, AggOp.SUM, left, right);
-		mmult.setOutputBlocksizes(left.getRowsInBlock(), right.getColsInBlock());
+		mmult.setBlocksize(left.getBlocksize());
 		copyLineNumbers(left, mmult);
 		mmult.refreshSizeInformation();
 		
@@ -652,7 +651,7 @@ public class HopRewriteUtils
 	
 	public static ParameterizedBuiltinOp createParameterizedBuiltinOp(Hop input, LinkedHashMap<String,Hop> args, ParamBuiltinOp op) {
 		ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.FP64, op, args);
-		pbop.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		pbop.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, pbop);
 		pbop.refreshSizeInformation();
 		
@@ -672,7 +671,7 @@ public class HopRewriteUtils
 	
 	public static IndexingOp createIndexingOp(Hop input, Hop rl, Hop ru, Hop cl, Hop cu) {
 		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.FP64, input, rl, ru, cl, cu, rl==ru, cl==cu);
-		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		ix.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, ix);
 		ix.refreshSizeInformation();
 		return ix;
@@ -680,7 +679,7 @@ public class HopRewriteUtils
 	
 	public static LeftIndexingOp createLeftIndexingOp(Hop lhs, Hop rhs, Hop rl, Hop ru, Hop cl, Hop cu) {
 		LeftIndexingOp ix = new LeftIndexingOp("tmp", DataType.MATRIX, ValueType.FP64, lhs, rhs, rl, ru, cl, cu, rl==ru, cl==cu);
-		ix.setOutputBlocksizes(lhs.getRowsInBlock(), lhs.getColsInBlock());
+		ix.setBlocksize(lhs.getBlocksize());
 		copyLineNumbers(lhs, ix);
 		ix.refreshSizeInformation();
 		return ix;
@@ -690,7 +689,7 @@ public class HopRewriteUtils
 		Hop mainInput = inputs[0];
 		NaryOp nop = new NaryOp(mainInput.getName(), mainInput.getDataType(),
 			mainInput.getValueType(), op, inputs);
-		nop.setOutputBlocksizes(mainInput.getRowsInBlock(), mainInput.getColsInBlock());
+		nop.setBlocksize(mainInput.getBlocksize());
 		copyLineNumbers(mainInput, nop);
 		nop.refreshSizeInformation();
 		return nop;
@@ -733,7 +732,7 @@ public class HopRewriteUtils
 		
 		//note internal refresh size information
 		DataGenOp datagen = new DataGenOp(DataGenMethod.SEQ, new DataIdentifier("tmp"), params);
-		datagen.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
+		datagen.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, datagen);
 		
 		return datagen;
@@ -745,31 +744,31 @@ public class HopRewriteUtils
 	
 	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
 		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, mleft, smid, mright);
-		ternOp.setOutputBlocksizes(mleft.getRowsInBlock(), mleft.getColsInBlock());
+		ternOp.setBlocksize(mleft.getBlocksize());
 		copyLineNumbers(mleft, ternOp);
 		ternOp.refreshSizeInformation();
 		return ternOp;
 	}
 	
-	public static void setOutputParameters( Hop hop, long rlen, long clen, int brlen, int bclen, long nnz ) {
-		hop.setDim1( rlen );
-		hop.setDim2( clen );
-		hop.setOutputBlocksizes(brlen, bclen );
-		hop.setNnz( nnz );
+	public static void setOutputParameters( Hop hop, long rlen, long clen, int blen, long nnz ) {
+		hop.setDim1(rlen);
+		hop.setDim2(clen);
+		hop.setBlocksize(blen);
+		hop.setNnz(nnz);
 	}
 	
 	public static void setOutputParametersForScalar( Hop hop ) {
 		hop.setDataType(DataType.SCALAR);
-		hop.setDim1( 0 );
-		hop.setDim2( 0 );
-		hop.setOutputBlocksizes(-1, -1 );
-		hop.setNnz( -1 );
+		hop.setDim1(0);
+		hop.setDim2(0);
+		hop.setBlocksize(-1);
+		hop.setNnz(-1);
 	}
 	
 	public static void refreshOutputParameters( Hop hnew, Hop hold ) {
 		hnew.setDim1( hold.getDim1() );
 		hnew.setDim2( hold.getDim2() );
-		hnew.setOutputBlocksizes(hold.getRowsInBlock(), hold.getColsInBlock());
+		hnew.setBlocksize(hold.getBlocksize());
 		hnew.refreshSizeInformation();
 	}
 
@@ -777,13 +776,13 @@ public class HopRewriteUtils
 		dest.setParseInfo(src);
 	}
 
-	public static void updateHopCharacteristics( Hop hop, int brlen, int bclen, Hop src ) {
-		updateHopCharacteristics(hop, brlen, bclen, new MemoTable(), src);
+	public static void updateHopCharacteristics( Hop hop, int blen, Hop src ) {
+		updateHopCharacteristics(hop, blen, new MemoTable(), src);
 	}
 	
-	public static void updateHopCharacteristics( Hop hop, int brlen, int bclen, MemoTable memo, Hop src ) {
+	public static void updateHopCharacteristics( Hop hop, int blen, MemoTable memo, Hop src ) {
 		//update block sizes and dimensions  
-		hop.setOutputBlocksizes(brlen, bclen);
+		hop.setBlocksize(blen);
 		hop.refreshSizeInformation();
 		
 		//compute memory estimates (for exec type selection)
@@ -847,8 +846,8 @@ public class HopRewriteUtils
 		}
 		
 		//check row- or column-wise single block constraint 
-		return cols ? (hop.colsKnown() && hop.getDim2()<=hop.getColsInBlock()) :
-			(hop.rowsKnown() && hop.getDim1()<=hop.getRowsInBlock());
+		return cols ? (hop.colsKnown() && hop.getDim2()<=hop.getBlocksize()) :
+			(hop.rowsKnown() && hop.getDim1()<=hop.getBlocksize());
 	}
 	
 	public static boolean isOuterProductLikeMM( Hop hop ) {

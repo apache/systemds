@@ -90,7 +90,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		long rlen = mc2.getRows();
-		int brlen = mc2.getRowsPerBlock();
+		int blen = mc2.getBlocksize();
 		
 		//get and join inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
@@ -100,13 +100,13 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		if( broadcast ) {
 			//broadcast offsets and broadcast join with data
 			PartitionedBroadcast<MatrixBlock> inAgg = sec.getBroadcastForVariable(input2.getName());
-			joined = inData.mapToPair(new RDDCumSplitLookupFunction(inAgg,_initValue, rlen, brlen));
+			joined = inData.mapToPair(new RDDCumSplitLookupFunction(inAgg,_initValue, rlen, blen));
 		}
 		else {
 			//prepare aggregates (cumsplit of offsets) and repartition join with data
 			joined = inData.join(sec
 				.getBinaryMatrixBlockRDDHandleForVariable(input2.getName())
-				.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, brlen)));
+				.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, blen)));
 		}
 		
 		//execute cumulative offset (apply cumulative op w/ offsets)
@@ -116,7 +116,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		//put output handle in symbol table
 		if( _cumsumprod )
 			sec.getDataCharacteristics(output.getName())
-				.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				.set(mc1.getRows(), 1, mc1.getBlocksize(), mc1.getBlocksize());
 		else //general case
 			updateUnaryOutputDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -129,14 +129,14 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		private static final long serialVersionUID = -8407407527406576965L;
 		
 		private double _initValue = 0;
-		private int _brlen = -1;
+		private int _blen = -1;
 		private long _lastRowBlockIndex;
 		
-		public RDDCumSplitFunction( double initValue, long rlen, int brlen )
+		public RDDCumSplitFunction( double initValue, long rlen, int blen )
 		{
 			_initValue = initValue;
-			_brlen = brlen;
-			_lastRowBlockIndex = (long)Math.ceil((double)rlen/brlen);
+			_blen = blen;
+			_lastRowBlockIndex = (long)Math.ceil((double)rlen/blen);
 		}
 		
 		@Override
@@ -148,7 +148,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 			
-			long rixOffset = (ixIn.getRowIndex()-1)*_brlen;
+			long rixOffset = (ixIn.getRowIndex()-1)*_blen;
 			boolean firstBlk = (ixIn.getRowIndex() == 1);
 			boolean lastBlk = (ixIn.getRowIndex() == _lastRowBlockIndex );
 			
@@ -183,12 +183,12 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		
 		private final PartitionedBroadcast<MatrixBlock> _pbc;
 		private final double _initValue;
-		private final int _brlen;
+		private final int _blen;
 		
-		public RDDCumSplitLookupFunction(PartitionedBroadcast<MatrixBlock> pbc, double initValue, long rlen, int brlen) {
+		public RDDCumSplitLookupFunction(PartitionedBroadcast<MatrixBlock> pbc, double initValue, long rlen, int blen) {
 			_pbc = pbc;
 			_initValue = initValue;
-			_brlen = brlen;
+			_blen = blen;
 		}
 		
 		@Override
@@ -197,8 +197,8 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			MatrixBlock blkIn = arg0._2();
 			
 			//compute block and row indexes
-			long brix = UtilFunctions.computeBlockIndex(ixIn.getRowIndex()-1, _brlen);
-			int rix = UtilFunctions.computeCellInBlock(ixIn.getRowIndex()-1, _brlen);
+			long brix = UtilFunctions.computeBlockIndex(ixIn.getRowIndex()-1, _blen);
+			int rix = UtilFunctions.computeCellInBlock(ixIn.getRowIndex()-1, _blen);
 			
 			//lookup offset row and return joined output
 			MatrixBlock off = (ixIn.getRowIndex() == 1) ? new MatrixBlock(1, blkIn.getNumColumns(), _initValue) :

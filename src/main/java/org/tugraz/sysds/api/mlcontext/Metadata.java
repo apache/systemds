@@ -32,11 +32,10 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
  */
 public abstract class Metadata {
 
-	protected Long numColumns = null;
-	protected Integer numColumnsPerBlock = null;
-	protected Long numNonZeros = null;
 	protected Long numRows = null;
-	protected Integer numRowsPerBlock = null;
+	protected Long numColumns = null;
+	protected Integer blockSize = null;
+	protected Long numNonZeros = null;
 
 	/**
 	 * Convert the metadata to a DataCharacteristics object. If all field
@@ -47,17 +46,15 @@ public abstract class Metadata {
 	 */
 	public MatrixCharacteristics asMatrixCharacteristics() {
 
-		if ((numRows == null) && (numColumns == null) && (numRowsPerBlock == null) && (numColumnsPerBlock == null)
-				&& (numNonZeros == null)) {
+		if (numRows == null && numColumns == null && blockSize == null && numNonZeros == null) {
 			return null;
 		}
 
 		long nr = (numRows == null) ? -1 : numRows;
 		long nc = (numColumns == null) ? -1 : numColumns;
-		int nrpb = (numRowsPerBlock == null) ? ConfigurationManager.getBlocksize() : numRowsPerBlock;
-		int ncpb = (numColumnsPerBlock == null) ? ConfigurationManager.getBlocksize() : numColumnsPerBlock;
+		int blen = (blockSize == null) ? ConfigurationManager.getBlocksize() : blockSize;
 		long nnz = (numNonZeros == null) ? -1 : numNonZeros;
-		return new MatrixCharacteristics(nr, nc, nrpb, ncpb, nnz);
+		return new MatrixCharacteristics(nr, nc, blen, nnz);
 	}
 
 	protected String fieldDisplay(Object field) {
@@ -75,15 +72,6 @@ public abstract class Metadata {
 	 */
 	public Long getNumColumns() {
 		return numColumns;
-	}
-
-	/**
-	 * Obtain the number of columns per block
-	 *
-	 * @return the number of columns per block
-	 */
-	public Integer getNumColumnsPerBlock() {
-		return numColumnsPerBlock;
 	}
 
 	/**
@@ -105,12 +93,12 @@ public abstract class Metadata {
 	}
 
 	/**
-	 * Obtain the number of rows per block
+	 * Obtain the number of rows/cols per block
 	 *
-	 * @return the number of rows per block
+	 * @return the number of rows/cols per block
 	 */
-	public Integer getNumRowsPerBlock() {
-		return numRowsPerBlock;
+	public Integer getBlocksize() {
+		return blockSize;
 	}
 
 	/**
@@ -123,8 +111,7 @@ public abstract class Metadata {
 		this.numRows = matrixCharacteristics.getRows();
 		this.numColumns = matrixCharacteristics.getCols();
 		this.numNonZeros = matrixCharacteristics.getNonZeros();
-		this.numRowsPerBlock = matrixCharacteristics.getRowsPerBlock();
-		this.numColumnsPerBlock = matrixCharacteristics.getColsPerBlock();
+		this.blockSize = matrixCharacteristics.getBlocksize();
 	}
 
 	/**
@@ -135,16 +122,6 @@ public abstract class Metadata {
 	 */
 	public void setNumColumns(Long numColumns) {
 		this.numColumns = numColumns;
-	}
-
-	/**
-	 * Set the number of columns per block
-	 *
-	 * @param numColumnsPerBlock
-	 *            the number of columns per block
-	 */
-	public void setNumColumnsPerBlock(Integer numColumnsPerBlock) {
-		this.numColumnsPerBlock = numColumnsPerBlock;
 	}
 
 	/**
@@ -173,15 +150,14 @@ public abstract class Metadata {
 	 * @param numRowsPerBlock
 	 *            the number of rows per block
 	 */
-	public void setNumRowsPerBlock(Integer numRowsPerBlock) {
-		this.numRowsPerBlock = numRowsPerBlock;
+	public void setBlocksize(Integer blen) {
+		this.blockSize = blen;
 	}
 
 	@Override
 	public String toString() {
 		return "rows: " + fieldDisplay(numRows) + ", columns: " + fieldDisplay(numColumns) + ", non-zeros: "
-				+ fieldDisplay(numNonZeros) + ", rows per block: " + fieldDisplay(numRowsPerBlock)
-				+ ", columns per block: " + fieldDisplay(numColumnsPerBlock);
+			+ fieldDisplay(numNonZeros) + ", blocksize: " + fieldDisplay(blockSize);
 	}
 
 }

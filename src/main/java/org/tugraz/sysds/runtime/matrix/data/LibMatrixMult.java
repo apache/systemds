@@ -2038,15 +2038,15 @@ public class LibMatrixMult
 		DenseBlock c = ret1.getDenseBlock();
 
 		final int n = m2.clen;
-		final int brlen = ret1.getNumRows();
+		final int blen = ret1.getNumRows();
 		int lastblk = -1;
 		
 		for( int i=rl; i<ru; i++ ) {
 			//compute block index and in-block indexes
 			int pos = UtilFunctions.toInt( a[ i ]); //safe cast
 			if( pos > 0 ) { //selected row
-				int bpos = (pos-1) % brlen;
-				int blk = (pos-1) / brlen;
+				int bpos = (pos-1) % blen;
+				int blk = (pos-1) / blen;
 				//allocate and switch to second output block
 				//(never happens in cp, correct for multi-threaded usage)
 				if( lastblk!=-1 && lastblk<blk ) {
@@ -2068,7 +2068,7 @@ public class LibMatrixMult
 		SparseBlock c = ret1.sparseBlock;
 
 		final int n = m2.clen;
-		final int brlen = ret1.getNumRows();
+		final int blen = ret1.getNumRows();
 		
 		int lastblk = -1;
 		for( int i=rl; i<ru; i++ ) {
@@ -2077,8 +2077,8 @@ public class LibMatrixMult
 			if( pos > 0 ) { //selected row
 				double[] bvals = b.values(i);
 				int bix = b.pos(i);
-				int bpos = (pos-1) % brlen;
-				int blk = (pos-1) / brlen;
+				int bpos = (pos-1) % blen;
+				int blk = (pos-1) / blen;
 				//allocate and switch to second output block
 				//(never happens in cp, correct for multi-threaded usage)
 				if( lastblk!=-1 && lastblk<blk ){ 
@@ -2101,15 +2101,15 @@ public class LibMatrixMult
 		SparseBlock b = m2.sparseBlock;
 		SparseBlock c = ret1.sparseBlock;
 
-		final int brlen = ret1.getNumRows();
+		final int blen = ret1.getNumRows();
 		
 		int lastblk = -1;
 		for( int i=rl; i<ru; i++ )  {
 			//compute block index and in-block indexes
 			int pos = UtilFunctions.toInt( a[ i ]); //safe cast
 			if( pos > 0 ) { //selected row
-				int bpos = (pos-1) % brlen;
-				int blk = (pos-1) / brlen;
+				int bpos = (pos-1) % blen;
+				int blk = (pos-1) / blen;
 				//allocate and switch to second output block
 				//(never happens in cp, correct for multi-threaded usage)
 				if( lastblk!=-1 && lastblk<blk ){ 

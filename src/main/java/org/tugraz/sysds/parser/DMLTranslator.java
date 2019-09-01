@@ -966,7 +966,7 @@ public class DMLTranslator
 					DataIdentifier var = liveIn.getVariables().get(varName);
 					long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 					long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
-					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
+					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getBlocksize());
 					read.setParseInfo(var);
 					ids.put(varName, read);
 				}
@@ -994,7 +994,7 @@ public class DMLTranslator
 				ae.setInputFormatType(Expression.convertFormatType(formatName));
 
 				if (ae.getDataType() == DataType.SCALAR ) {
-					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1, -1);
+					ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 				}
 				else {
 					switch(ae.getInputFormatType()) {
@@ -1003,13 +1003,13 @@ public class DMLTranslator
 					case CSV:
 					case LIBSVM:
 						// write output in textcell format
-						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1, -1);
+						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1);
 						break;
 						
 					case BINARY:
 						// write output in binary block format
-					    ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-					    break;
+						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ConfigurationManager.getBlocksize());
+						break;
 						
 						default:
 							throw new LanguageException("Unrecognized file format: " + ae.getInputFormatType());
@@ -1111,7 +1111,7 @@ public class DMLTranslator
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
-							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getRowsInBlock(), ae.getColsInBlock());
+							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
 							transientwrite.setParseInfo(target);
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
@@ -1135,13 +1135,13 @@ public class DMLTranslator
 						if( target.getDataType() != DataType.MATRIX ) {
 							target.setDataType(DataType.MATRIX);
 							target.setValueType(ValueType.FP64);
-							target.setBlockDimensions(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
+							target.setBlocksize(ConfigurationManager.getBlocksize());
 						}
 						
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
 							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
-							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.getUpdateType(), ae.getRowsInBlock(), ae.getColsInBlock());
+							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
 							transientwrite.setParseInfo(target);
 							updatedLiveOut.addVariable(target.getName(), target);
 							output.add(transientwrite);
@@ -1355,7 +1355,7 @@ public class DMLTranslator
 				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 				
 				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
-						null, actualDim1, actualDim2, var.getNnz(), var.getRowsInBlock(), var.getColumnsInBlock());
+						null, actualDim1, actualDim2, var.getNnz(), var.getBlocksize());
 				read.setParseInfo(var);
 			}
 			_ids.put(varName, read);
@@ -1441,7 +1441,7 @@ public class DMLTranslator
 						long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 						long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 						read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
-								null, actualDim1, actualDim2,  var.getNnz(), var.getRowsInBlock(),  var.getColumnsInBlock());
+								null, actualDim1, actualDim2,  var.getNnz(), var.getBlocksize());
 						read.setParseInfo(var);
 					}
 					_ids.put(varName, read);
@@ -2068,7 +2068,7 @@ public class DMLTranslator
 		//set identifier meta data (incl dimensions and blocksizes)
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		if( source.getOpCode()==DataExpression.DataOp.READ )
-			((DataOp)currBuiltinOp).setInputBlockSizes(target.getRowsInBlock(), target.getColumnsInBlock());
+			((DataOp)currBuiltinOp).setInputBlocksize(target.getBlocksize());
 		currBuiltinOp.setParseInfo(source);
 		
 		return currBuiltinOp;
@@ -2362,8 +2362,7 @@ public class DMLTranslator
 				weightHop.setDim1(0);
 				weightHop.setDim2(0);
 				weightHop.setNnz(-1);
-				weightHop.setRowsInBlock(0);
-				weightHop.setColsInBlock(0);
+				weightHop.setBlocksize(0);
 				
 				if ( numTableArgs == 2 )
 					currBuiltinOp = new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp3.CTABLE, expr, expr2, weightHop);
@@ -2636,7 +2635,7 @@ public class DMLTranslator
 	}
 	
 	private static void setBlockSizeAndRefreshSizeInfo(Hop in, Hop out) {
-		out.setOutputBlocksizes(in.getRowsInBlock(), in.getColsInBlock());
+		out.setBlocksize(in.getBlocksize());
 		out.refreshSizeInformation();
 		HopRewriteUtils.copyLineNumbers(in, out);
 	}
@@ -2725,8 +2724,7 @@ public class DMLTranslator
 			h.setDim2(id.getDim2());
 		if( id.getNnz()>= 0 )
 			h.setNnz(id.getNnz());
-		h.setRowsInBlock(id.getRowsInBlock());
-		h.setColsInBlock(id.getColumnsInBlock());
+		h.setBlocksize(id.getBlocksize());
 	}
 
 	private boolean prepareReadAfterWrite( DMLProgram prog, HashMap<String, DataIdentifier> pWrites ) {

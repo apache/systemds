@@ -366,7 +366,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else if (parts.length >= 11) {
 					// matrix characteristics
 					mc.setDimension(Long.parseLong(parts[6]), Long.parseLong(parts[7]));
-					mc.setBlockSize(Integer.parseInt(parts[8]), Integer.parseInt(parts[9]));
+					mc.setBlockSize(Integer.parseInt(parts[8]));
 					mc.setNonZeros(Long.parseLong(parts[10]));
 				}
 				else {
@@ -383,8 +383,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					// TODO correct sizes
 					tc.setDim(0, Long.parseLong(parts[6]));
 					tc.setDim(1, Long.parseLong(parts[7]));
-					tc.setBlockSize(0, Integer.parseInt(parts[8]));
-					tc.setBlockSize(1, Integer.parseInt(parts[9]));
+					tc.setBlockSize(Integer.parseInt(parts[8]));
 				}
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
@@ -838,7 +837,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			else
 				if(object instanceof MatrixObject)
 					throw new DMLRuntimeException("Unexpected formats while copying: from matrix blocks ["
-							+ ((MatrixObject)object).getNumRowsPerBlock() + "," + ((MatrixObject)object).getNumColumnsPerBlock() + "] to " + getInput3().getName());
+							+ ((MatrixObject)object).getBlocksize() + "] to " + getInput3().getName());
 				else if (object instanceof FrameObject)
 					throw new DMLRuntimeException("Unexpected formats while copying: from fram object ["
 							+ ((FrameObject)object).getNumColumns() + "," + ((FrameObject)object).getNumColumns() + "] to " + getInput3().getName());
@@ -1125,9 +1124,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getCols());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRowsPerBlock());
+		sb.append(mc.getBlocksize());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getColsPerBlock());
+		sb.append(mc.getBlocksize());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -1147,9 +1146,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getCols());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getRowsPerBlock());
+		sb.append(mc.getBlocksize());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getColsPerBlock());
+		sb.append(mc.getBlocksize());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
 		sb.append(Lop.OPERAND_DELIMITOR);

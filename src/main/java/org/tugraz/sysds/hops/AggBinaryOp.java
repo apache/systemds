@@ -205,8 +205,8 @@ public class AggBinaryOp extends MultiThreadedHop
 				//matrix mult operation selection part 3 (SPARK type)
 				boolean tmmRewrite = HopRewriteUtils.isTransposeOperation(input1);
 				_method = optFindMMultMethodSpark ( 
-						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),
-						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), input2.getNnz(),
+						input1.getDim1(), input1.getDim2(), input1.getBlocksize(), input1.getNnz(),
+						input2.getDim1(), input2.getDim2(), input2.getBlocksize(), input2.getNnz(),
 						mmtsj, chain, _hasLeftPMInput, tmmRewrite );
 			
 				//dispatch SPARK lops construction 
@@ -534,7 +534,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		Lop matmultCP = new MMTSJ(getInput().get(mmtsj.isLeft()?1:0).constructLops(),
 			getDataType(), getValueType(), et, mmtsj, false, k);
-		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), getNnz());
 		setLineNumbers( matmultCP );
 		setLops(matmultCP);
 	}
@@ -577,7 +577,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		Hop rightInput = getInput().get(1);
 		
 		Hop nrow = HopRewriteUtils.createValueHop(pmInput, true); //NROW
-		nrow.setOutputBlocksizes(0, 0);
+		nrow.setBlocksize(0);
 		nrow.setForcedExecType(ExecType.CP);
 		HopRewriteUtils.copyLineNumbers(this, nrow);
 		Lop lnrow = nrow.constructLops();
@@ -588,7 +588,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		pmm.setNumThreads(k);
 		
-		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		pmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(pmm);
 		
 		setLops(pmm);
@@ -644,12 +644,12 @@ public class AggBinaryOp extends MultiThreadedHop
 		Lop tY = (lY instanceof Transform && ((Transform)lY).getOperationType()==OperationTypes.Transpose ) ?
 				lY.getInputs().get(0) : //if input is already a transpose, avoid redundant transpose ops
 				new Transform(lY, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP, k);
-		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getBlocksize(), Y.getNnz());
 		setLineNumbers(tY);
 		
 		//matrix mult
 		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);	
-		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(mult);
 		
 		//result transpose (dimensions set outside)
@@ -703,7 +703,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//right vector transpose
 		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getBlocksize(), Y.getNnz());
 		setLineNumbers(tY);
 		
 		//matrix mult spark
@@ -713,7 +713,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		Lop mult = new MapMult( tY, X.constructLops(), getDataType(), getValueType(), 
 				      false, false, _outputEmptyBlocks, aggtype);	
-		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(mult);
 		
 		//result transpose (dimensions set outside)
@@ -778,18 +778,18 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//right vector transpose CP
 		Lop tY = new Transform(Y.constructLops(), OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), getRowsInBlock(), getColsInBlock(), Y.getNnz());
+		tY.getOutputParameters().setDimensions(Y.getDim2(), Y.getDim1(), Y.getBlocksize(), Y.getNnz());
 		setLineNumbers(tY);
 		
 		//matrix multiply
 		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
 		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), _outputEmptyBlocks, aggtype, ExecType.SPARK);
-		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(mmcj);
 
 		//result transpose CP 
 		Lop out = new Transform(mmcj, OperationTypes.Transpose, getDataType(), getValueType(), ExecType.CP);
-		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		out.getOutputParameters().setDimensions(X.getDim2(), Y.getDim2(), getBlocksize(), getNnz());
 		
 		return out;
 	}
@@ -833,7 +833,7 @@ public class AggBinaryOp extends MultiThreadedHop
 			
 			//compute NROW target via nrow(m)
 			nrow = HopRewriteUtils.createValueHop(pmInput, true);
-			nrow.setOutputBlocksizes(0, 0);
+			nrow.setBlocksize(0);
 			nrow.setForcedExecType(ExecType.CP);
 			HopRewriteUtils.copyLineNumbers(this, nrow);
 			
@@ -844,7 +844,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		{
 			//compute NROW target via max(v)
 			nrow = HopRewriteUtils.createAggUnaryOp(pmInput, AggOp.MAX, Direction.RowCol); 
-			nrow.setOutputBlocksizes(0, 0);
+			nrow.setBlocksize(0);
 			nrow.setForcedExecType(etVect);
 			HopRewriteUtils.copyLineNumbers(this, nrow);
 		}
@@ -957,7 +957,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		if( !agg )
 			return SparkAggType.NONE;
 		
-		if( dimsKnown() && getDim1()<=getRowsInBlock() && getDim2()<=getColsInBlock() )
+		if( dimsKnown() && getDim1()<=getBlocksize() && getDim2()<=getBlocksize() )
 			return SparkAggType.SINGLE_BLOCK;
 		else
 			return SparkAggType.MULTI_BLOCK;
@@ -970,14 +970,14 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//right side cached (no agg if left has just one column block)
 		if(  method == MMultMethod.MAPMM_R && getInput().get(0).getDim2() >= 0 //known num columns
-	         && getInput().get(0).getDim2() <= getInput().get(0).getColsInBlock() ) 
+	         && getInput().get(0).getDim2() <= getInput().get(0).getBlocksize() ) 
         {
             ret = false;
         }
         
 		//left side cached (no agg if right has just one row block)
         if(  method == MMultMethod.MAPMM_L && getInput().get(1).getDim1() >= 0 //known num rows
-             && getInput().get(1).getDim1() <= getInput().get(1).getRowsInBlock() ) 
+             && getInput().get(1).getDim1() <= getInput().get(1).getBlocksize() ) 
         {
        	    ret = false;
         }
@@ -1004,18 +1004,18 @@ public class AggBinaryOp extends MultiThreadedHop
 	 * @param pmm true if permutation matrix multiply
 	 * @return map mm memory estimate
 	 */
-	public static double getMapmmMemEstimate(long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz,
-			long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz, int cachedInputIndex, boolean pmm) 
+	public static double getMapmmMemEstimate(long m1_rows, long m1_cols, long m1_blen, long m1_nnz,
+			long m2_rows, long m2_cols, long m2_blen, long m2_nnz, int cachedInputIndex, boolean pmm) 
 	{
 		// If the size of one input is small, choose a method that uses distributed cache
 		// NOTE: be aware of output size because one input block might generate many output blocks
-		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz); //m1 partitioned 
-		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz); //m2 partitioned
+		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_blen, m1_nnz); //m1 partitioned 
+		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_blen, m2_nnz); //m2 partitioned
 		
-		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), Math.min(m1_cols, m1_cpb));
-		double m2BlockSize = OptimizerUtils.estimateSize(Math.min(m2_rows, m2_rpb), Math.min(m2_cols, m2_cpb));
-		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_rpb), m2_cols); //output per m1 block if m2 in cache
-		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_cpb)); //output per m2 block if m1 in cache
+		double m1BlockSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_blen), Math.min(m1_cols, m1_blen));
+		double m2BlockSize = OptimizerUtils.estimateSize(Math.min(m2_rows, m2_blen), Math.min(m2_cols, m2_blen));
+		double m3m1OutSize = OptimizerUtils.estimateSize(Math.min(m1_rows, m1_blen), m2_cols); //output per m1 block if m2 in cache
+		double m3m2OutSize = OptimizerUtils.estimateSize(m1_rows, Math.min(m2_cols, m2_blen)); //output per m2 block if m1 in cache
 	
 		double footprint = 0;
 		if( pmm )
@@ -1058,8 +1058,8 @@ public class AggBinaryOp extends MultiThreadedHop
 		return MMultMethod.MM; 
 	}
 	
-	private MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz, 
-		long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz,
+	private MMultMethod optFindMMultMethodSpark( long m1_rows, long m1_cols, long m1_blen, long m1_nnz, 
+		long m2_rows, long m2_cols, long m2_blen, long m2_nnz,
 		MMTSJType mmtsj, ChainType chainType, boolean leftPMInput, boolean tmmRewrite ) 
 	{
 		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
@@ -1079,8 +1079,8 @@ public class AggBinaryOp extends MultiThreadedHop
 		// Step 1: check TSMM
 		// If transpose self pattern and result is single block:
 		// use specialized TSMM method (always better than generic jobs)
-		if(    ( mmtsj == MMTSJType.LEFT && m2_cols>=0 && m2_cols <= m2_cpb )
-			|| ( mmtsj == MMTSJType.RIGHT && m1_rows>=0 && m1_rows <= m1_rpb ) )
+		if(    ( mmtsj == MMTSJType.LEFT && m2_cols>=0 && m2_cols <= m2_blen )
+			|| ( mmtsj == MMTSJType.RIGHT && m1_rows>=0 && m1_rows <= m1_blen ) )
 		{
 			return MMultMethod.TSMM;
 		}
@@ -1093,7 +1093,7 @@ public class AggBinaryOp extends MultiThreadedHop
 			//matmultchain if dim2(X)<=blocksize and all vectors fit in mappers
 			//(X: m1_cols x m1_rows, v: m1_rows x m2_cols, w: m1_cols x m2_cols) 
 			//NOTE: generalization possibe: m2_cols>=0 && m2_cols<=m2_cpb
-			if( chainType!=ChainType.NONE && m1_rows >=0 && m1_rows <= m1_rpb && m2_cols==1 )
+			if( chainType!=ChainType.NONE && m1_rows >=0 && m1_rows <= m1_blen && m2_cols==1 )
 			{
 				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
 					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudgetExec )
@@ -1116,8 +1116,8 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
 		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
-		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
-		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
+		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_blen, m1_nnz, m2_rows, m2_cols, m2_blen, m2_nnz, 1, true);
+		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_blen, m1_nnz, m2_rows, m2_cols, m2_blen, m2_nnz, 1, true);
 		if( (footprintPM1 < memBudgetExec && m1_rows>=0 || footprintPM2 < memBudgetExec && m2_rows>=0)
 			&& 2*OptimizerUtils.estimateSize(m1_rows, 1) < memBudgetLocal
 			&& leftPMInput ) 
@@ -1132,12 +1132,12 @@ public class AggBinaryOp extends MultiThreadedHop
 		//memory estimates for local partitioning (mb -> partitioned mb)
 		double m1Size = OptimizerUtils.estimateSizeExactSparsity(m1_rows, m1_cols, m1_nnz); //m1 single block
 		double m2Size = OptimizerUtils.estimateSizeExactSparsity(m2_rows, m2_cols, m2_nnz); //m2 single block
-		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz); //m1 partitioned 
-		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz); //m2 partitioned
+		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_blen, m1_nnz); //m1 partitioned 
+		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_blen, m2_nnz); //m2 partitioned
 		
 		//memory estimates for remote execution (broadcast and outputs)
-		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, false);
-		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 2, false);		
+		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_blen, m1_nnz, m2_rows, m2_cols, m2_blen, m2_nnz, 1, false);
+		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_blen, m1_nnz, m2_rows, m2_cols, m2_blen, m2_nnz, 2, false);		
 		
 		if (   (footprint1 < memBudgetExec && m1Size+m1SizeP < memBudgetLocal && m1_rows>=0 && m1_cols>=0)
 			|| (footprint2 < memBudgetExec && m2Size+m2SizeP < memBudgetLocal && m2_rows>=0 && m2_cols>=0) ) 
@@ -1164,13 +1164,13 @@ public class AggBinaryOp extends MultiThreadedHop
 			&& m2_rows >= 0 && m2_cols>=0 )
 		{
 			double mSize = (mmtsj == MMTSJType.LEFT) ? 
-					OptimizerUtils.estimateSizeExactSparsity(m2_rows, m2_cols-m2_cpb, 1.0) : 
-					OptimizerUtils.estimateSizeExactSparsity(m1_rows-m1_rpb, m1_cols, 1.0);	
+					OptimizerUtils.estimateSizeExactSparsity(m2_rows, m2_cols-m2_blen, 1.0) : 
+					OptimizerUtils.estimateSizeExactSparsity(m1_rows-m1_blen, m1_cols, 1.0);
 			double mSizeP = (mmtsj == MMTSJType.LEFT) ? 
-					OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols-m2_cpb, m2_rpb, m2_cpb, 1.0) : 
-					OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows-m1_rpb, m1_cols, m1_rpb, m1_cpb, 1.0); 
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols-m2_blen, m2_blen, 1.0) : 
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows-m1_blen, m1_cols, m1_blen, 1.0); 
 			if( mSizeP < memBudgetExec && mSize+mSizeP < memBudgetLocal 
-				&& ((mmtsj == MMTSJType.LEFT) ? m2_cols<=2*m2_cpb : m1_rows<=2*m1_rpb) //4 output blocks
+				&& ((mmtsj == MMTSJType.LEFT) ? m2_cols<=2*m2_blen : m1_rows<=2*m1_blen) //4 output blocks
 				&& mSizeP < 2L*1024*1024*1024) { //2GB limitation as single broadcast
 				return MMultMethod.TSMM2;
 			}
@@ -1184,8 +1184,8 @@ public class AggBinaryOp extends MultiThreadedHop
 
 		// Step 7: check for ZIPMM
 		// If t(X)%*%y -> t(t(y)%*%X) rewrite and ncol(X)<blocksize
-		if( tmmRewrite && m1_rows >= 0 && m1_rows <= m1_rpb  //blocksize constraint left
-			&& m2_cols >= 0 && m2_cols <= m2_cpb )           //blocksize constraint right
+		if( tmmRewrite && m1_rows >= 0 && m1_rows <= m1_blen  //blocksize constraint left
+			&& m2_cols >= 0 && m2_cols <= m2_blen )           //blocksize constraint right
 		{
 			return MMultMethod.ZIPMM;
 		}
@@ -1193,8 +1193,8 @@ public class AggBinaryOp extends MultiThreadedHop
 		// Step 8: Decide CPMM vs RMM based on io costs
 		//estimate shuffle costs weighted by parallelism
 		//TODO currently we reuse the mr estimates, these need to be fine-tune for our spark operators
-		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
-		double cpmm_costs = getCPMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
+		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_blen, m2_rows, m2_cols, m2_blen);
+		double cpmm_costs = getCPMMCostEstimate(m1_rows, m1_cols, m1_blen, m2_rows, m2_cols, m2_blen);
 		
 		//final mmult method decision 
 		if ( cpmm_costs < rmm_costs ) 
@@ -1203,11 +1203,11 @@ public class AggBinaryOp extends MultiThreadedHop
 			return MMultMethod.RMM;
 	}
 
-	private static double getRMMCostEstimate( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-			long m2_rows, long m2_cols, long m2_rpb, long m2_cpb )
+	private static double getRMMCostEstimate( long m1_rows, long m1_cols, long m1_blen, 
+			long m2_rows, long m2_cols, long m2_blen )
 	{
-		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
-		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
+		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_blen); // number of row blocks in m1
+		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_blen); // number of column blocks in m2
 
 		// TODO: we must factor in the "sparsity"
 		double m1_size = m1_rows * m1_cols;
@@ -1229,12 +1229,12 @@ public class AggBinaryOp extends MultiThreadedHop
 		return rmm_costs;
 	}
 
-	private static double getCPMMCostEstimate( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-		long m2_rows, long m2_cols, long m2_rpb, long m2_cpb )
+	private static double getCPMMCostEstimate( long m1_rows, long m1_cols, long m1_blen, 
+		long m2_rows, long m2_cols, long m2_blen )
 	{
-		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
-		long m1_ncb = (long) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
-		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_cpb); // number of column blocks in m2
+		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_blen); // number of row blocks in m1
+		long m1_ncb = (long) Math.ceil((double)m1_cols/m1_blen); // number of column blocks in m1
+		long m2_ncb = (long) Math.ceil((double)m2_cols/m2_blen); // number of column blocks in m2
 
 		// TODO: we must factor in the "sparsity"
 		double m1_size = m1_rows * m1_cols;

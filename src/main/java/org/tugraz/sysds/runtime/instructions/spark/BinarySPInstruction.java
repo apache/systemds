@@ -319,12 +319,12 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		if(!mcOut.dimsKnown()) { 
 			if( !mc1.dimsKnown() || !mc2.dimsKnown() )
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
-			else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock())
+			else if(mc1.getBlocksize() != mc2.getBlocksize() || mc1.getBlocksize() != mc2.getBlocksize())
 				throw new DMLRuntimeException("Incompatible block sizes for BinarySPInstruction.");
 			else if(checkCommonDim && mc1.getCols() != mc2.getRows())
 				throw new DMLRuntimeException("Incompatible dimensions for BinarySPInstruction");
 			else {
-				mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(mc1.getRows(), mc2.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 			}
 		}
 		return mcOut;
@@ -342,9 +342,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
 			
 			if( cbind )
-				mcOut.set(mc1.getRows(), mc1.getCols()+mc2.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(mc1.getRows(), mc1.getCols()+mc2.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 			else //rbind
-				mcOut.set(mc1.getRows()+mc2.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(mc1.getRows()+mc2.getRows(), mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 		}	
 		
 		//infer initially unknown nnz from inputs
@@ -398,9 +398,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 					+ "[" + mc1.getRows() + "x" + mc1.getCols()  + " vs " + mc2.getRows() + "x" + mc2.getCols() + "]");
 		}	
 		
-		if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() ||  mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+		if(mc1.getBlocksize() != mc2.getBlocksize() ||  mc1.getBlocksize() != mc2.getBlocksize()) {
 			throw new DMLRuntimeException("Blocksize mismatch matrix-matrix binary operations: "
-					+ "[" + mc1.getRowsPerBlock() + "x" + mc1.getColsPerBlock()  + " vs " + mc2.getRowsPerBlock() + "x" + mc2.getColsPerBlock() + "]");
+					+ "[" + mc1.getBlocksize() + "x" + mc1.getBlocksize()  + " vs " + mc2.getBlocksize() + "x" + mc2.getBlocksize() + "]");
 		}	
 	}
 
@@ -454,17 +454,17 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		else if(!cbind && mc1.getCols() != mc2.getCols()) {
 			throw new DMLRuntimeException("The number of columns of inputs should match for append-rbind instruction");
 		}
-		else if(mc1.getRowsPerBlock() != mc2.getRowsPerBlock() || mc1.getColsPerBlock() != mc2.getColsPerBlock()) {
+		else if(mc1.getBlocksize() != mc2.getBlocksize() || mc1.getBlocksize() != mc2.getBlocksize()) {
 			throw new DMLRuntimeException("The block sizes donot match for input matrices");
 		}
 		
 		if( checkSingleBlk ) {
-			if(mc1.getCols() + mc2.getCols() > mc1.getColsPerBlock())
+			if(mc1.getCols() + mc2.getCols() > mc1.getBlocksize())
 				throw new DMLRuntimeException("Output must have at most one column block"); 
 		}
 		
 		if( checkAligned ) {
-			if( mc1.getCols() % mc1.getColsPerBlock() != 0 )
+			if( mc1.getCols() % mc1.getBlocksize() != 0 )
 				throw new DMLRuntimeException("Input matrices are not aligned to blocksize boundaries. Wrong append selected");
 		}
 	}

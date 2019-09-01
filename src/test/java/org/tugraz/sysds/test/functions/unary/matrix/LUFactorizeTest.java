@@ -92,13 +92,13 @@ public class LUFactorizeTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", input("A"), output("D") };
 			
 			double[][] A = getRandomMatrix(rows, rows, 0, 1, sparsity, 10);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, rows, -1, -1, -1);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, rows, -1, -1);
 			writeInputMatrixWithMTD("A", A, false, mc);
 			
 			// Expected matrix = 1x1 zero matrix 
 			double[][] D  = new double[1][1];
 			D[0][0] = 0.0;
-			writeExpectedMatrix("D", D);		
+			writeExpectedMatrix("D", D);
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1);

@@ -58,7 +58,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
+	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int blen)
 	{
 		String jobname = "ParFor-DPSP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -89,36 +89,34 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 		}
 		
 		//maintain statistics
-	    Statistics.incrementNoOfCompiledSPInst();
-	    Statistics.incrementNoOfExecutedSPInst();
-	    if( DMLScript.STATISTICS ){
+		Statistics.incrementNoOfCompiledSPInst();
+		Statistics.incrementNoOfExecutedSPInst();
+		if( DMLScript.STATISTICS ){
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		}
 	}
 
-	private long determineNumReducers(JavaPairRDD<MatrixIndexes,MatrixBlock> in,
-	                                  DataCharacteristics mc, long numRed)
+	private long determineNumReducers(JavaPairRDD<MatrixIndexes,MatrixBlock> in, DataCharacteristics mc, long numRed)
 	{
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
-		int brlen = mc.getRowsPerBlock();
-		int bclen = mc.getColsPerBlock();
+		int blen = mc.getBlocksize();
 		
 		//determine number of reducer groups 
-	    long reducerGroups = -1;
-	    switch( _format ) {
-		    case ROW_WISE: reducerGroups = rlen; break;
-		    case COLUMN_WISE: reducerGroups = clen; break;
-		    case ROW_BLOCK_WISE: reducerGroups = (rlen/brlen)+((rlen%brlen==0)?0:1); break;
-		    case COLUMN_BLOCK_WISE: reducerGroups = (clen/bclen)+((clen%bclen==0)?0:1); break;
-		    case ROW_BLOCK_WISE_N: reducerGroups = (rlen/_n)+((rlen%_n==0)?0:1); break;
-		    case COLUMN_BLOCK_WISE_N: reducerGroups = (clen/_n)+((clen%_n==0)?0:1); break;
-		    default:
+		long reducerGroups = -1;
+		switch( _format ) {
+			case ROW_WISE: reducerGroups = rlen; break;
+			case COLUMN_WISE: reducerGroups = clen; break;
+			case ROW_BLOCK_WISE: reducerGroups = (rlen/blen)+((rlen%blen==0)?0:1); break;
+			case COLUMN_BLOCK_WISE: reducerGroups = (clen/blen)+((clen%blen==0)?0:1); break;
+			case ROW_BLOCK_WISE_N: reducerGroups = (rlen/_n)+((rlen%_n==0)?0:1); break;
+			case COLUMN_BLOCK_WISE_N: reducerGroups = (clen/_n)+((clen%_n==0)?0:1); break;
+			default:
 				//do nothing
-	    }
-	    
-	  //compute number of reducers (to avoid OOMs and reduce memory pressure)
-	  int numParts = SparkUtils.getNumPreferredPartitions(mc, in);
-	  return Math.max(numRed, Math.min(numParts, reducerGroups));
+		}
+	
+		//compute number of reducers (to avoid OOMs and reduce memory pressure)
+		int numParts = SparkUtils.getNumPreferredPartitions(mc, in);
+		return Math.max(numRed, Math.min(numParts, reducerGroups));
 	}
 }

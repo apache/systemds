@@ -156,10 +156,10 @@ public class ProgramConverter
 	
 	//exception msgs
 	public static final String NOT_SUPPORTED_EXTERNALFUNCTION_PB = "Not supported: ExternalFunctionProgramBlock contains MR instructions. " +
-			                                                       "(ExternalFunctionPRogramBlockCP can be used)";
+																	"(ExternalFunctionPRogramBlockCP can be used)";
 	public static final String NOT_SUPPORTED_SPARK_INSTRUCTION   = "Not supported: Instructions of type other than CP instructions";
 	public static final String NOT_SUPPORTED_SPARK_PARFOR        = "Not supported: Nested ParFOR REMOTE_SPARK due to possible deadlocks." +
-			                                                       "(LOCAL can be used for innner ParFOR)";
+																	"(LOCAL can be used for innner ParFOR)";
 	public static final String NOT_SUPPORTED_PB                  = "Not supported: type of program block";
 	
 	////////////////////////////////
@@ -851,8 +851,8 @@ public class ProgramConverter
 				metaData = new String[11];
 				metaData[0] = String.valueOf( dc.getRows() );
 				metaData[1] = String.valueOf( dc.getCols() );
-				metaData[2] = String.valueOf( dc.getRowsPerBlock() );
-				metaData[3] = String.valueOf( dc.getColsPerBlock() );
+				metaData[2] = String.valueOf( dc.getBlocksize() );
+				metaData[3] = String.valueOf( dc.getBlocksize() );
 				metaData[4] = String.valueOf( dc.getNonZeros() );
 				metaData[5] = InputInfo.inputInfoToString( md.getInputInfo() );
 				metaData[6] = OutputInfo.outputInfoToString( md.getOutputInfo() );
@@ -1544,14 +1544,13 @@ public class ProgramConverter
 				MatrixObject mo = new MatrixObject(valuetype,valString);
 				long rows = Long.parseLong( st.nextToken() );
 				long cols = Long.parseLong( st.nextToken() );
-				int brows = Integer.parseInt( st.nextToken() );
-				int bcols = Integer.parseInt( st.nextToken() );
+				int blen = Integer.parseInt( st.nextToken() );
 				long nnz = Long.parseLong( st.nextToken() );
 				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
 				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );
 				PartitionFormat partFormat = PartitionFormat.valueOf( st.nextToken() );
 				UpdateType inplace = UpdateType.valueOf( st.nextToken() );
-				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
+				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blen, nnz);
 				MetaDataFormat md = new MetaDataFormat( mc, oin, iin );
 				mo.setMetaData( md );
 				if( partFormat._dpf != PDataPartitionFormat.NONE )

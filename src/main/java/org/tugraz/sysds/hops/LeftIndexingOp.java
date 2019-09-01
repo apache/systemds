@@ -117,16 +117,17 @@ public class LeftIndexingOp  extends Hop
 				Hop right = getInput().get(1);
 				
 				LeftIndexingMethod method = getOptMethodLeftIndexingMethod( 
-						left.getDim1(), left.getDim2(), left.getRowsInBlock(), left.getColsInBlock(), left.getNnz(),
+						left.getDim1(), left.getDim2(), left.getBlocksize(), left.getNnz(),
 						right.getDim1(), right.getDim2(), right.getNnz(), right.getDataType() );
 
 				//insert cast to matrix if necessary (for reuse broadcast runtime)
 				Lop rightInput = right.constructLops();
 				if (isRightHandSideScalar()) {
-					rightInput = new UnaryCP(rightInput, (left.getDataType()==DataType.MATRIX?OperationTypes.CAST_AS_MATRIX:OperationTypes.CAST_AS_FRAME), 
-											left.getDataType(), right.getValueType());
+					rightInput = new UnaryCP(rightInput,
+						(left.getDataType()==DataType.MATRIX?OperationTypes.CAST_AS_MATRIX:OperationTypes.CAST_AS_FRAME), 
+						left.getDataType(), right.getValueType());
 					long bsize = ConfigurationManager.getBlocksize();
-					rightInput.getOutputParameters().setDimensions( 1, 1, bsize, bsize, -1);
+					rightInput.getOutputParameters().setDimensions( 1, 1, bsize, -1);
 				} 
 
 				LeftIndex leftIndexLop = new LeftIndex(
@@ -328,7 +329,7 @@ public class LeftIndexingOp  extends Hop
 	}
 
 	private static LeftIndexingMethod getOptMethodLeftIndexingMethod( 
-			long m1_dim1, long m1_dim2, long m1_rpb, long m1_cpb, long m1_nnz,
+			long m1_dim1, long m1_dim2, long m1_blen, long m1_nnz,
 			long m2_dim1, long m2_dim2, long m2_nnz, DataType rhsDt) 
 	{
 		if(FORCED_LEFT_INDEXING != null) {
@@ -343,10 +344,10 @@ public class LeftIndexingOp  extends Hop
 		// broadcast-based left indexing w/o shuffle for small left/right inputs
 		if( m2_dim1 >= 1 && m2_dim2 >= 1 && m2_dim1 >= 1 && m2_dim2 >= 1 ) { //lhs/rhs known
 			boolean isAligned = (rhsDt == DataType.MATRIX) &&
-					((m1_dim1 == m2_dim1 && m1_dim2 <= m1_cpb) || (m1_dim2 == m2_dim2 && m1_dim1 <= m1_rpb));
-			boolean broadcastRhs = OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz);
-			double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_dim1, m1_dim2, m1_rpb, m1_cpb, m1_nnz);
-			double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_dim1, m2_dim2, m1_rpb, m1_cpb, m2_nnz);
+					((m1_dim1 == m2_dim1 && m1_dim2 <= m1_blen) || (m1_dim2 == m2_dim2 && m1_dim1 <= m1_blen));
+			boolean broadcastRhs = OptimizerUtils.checkSparkBroadcastMemoryBudget(m2_dim1, m2_dim2, m1_blen, m2_nnz);
+			double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_dim1, m1_dim2, m1_blen, m1_nnz);
+			double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_dim1, m2_dim2, m1_blen, m2_nnz);
 			
 			if( broadcastRhs ) {
 				if( isAligned && m1SizeP<m2SizeP ) //e.g., sparse-dense lix

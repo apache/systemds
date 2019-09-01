@@ -35,16 +35,14 @@ public class RandomMatrixGenerator {
 	}
 
 	PDF _pdf;
-	int _rows, _cols, _rowsPerBlock, _colsPerBlock;
+	int _rows, _cols, _blocksize;
 	double _sparsity, _mean; 
 	double _min, _max; 
 	PRNGenerator _valuePRNG;
-	//Well1024a _bigrand; Long _bSeed;
 
-	public RandomMatrixGenerator() 
-	{
+	public RandomMatrixGenerator() {
 		_pdf = PDF.UNIFORM;
-		_rows = _cols = _rowsPerBlock = _colsPerBlock = -1;
+		_rows = _cols = _blocksize = -1;
 		_sparsity = 0.0;
 		_min = _max = Double.NaN;
 		_valuePRNG = null;
@@ -60,8 +58,8 @@ public class RandomMatrixGenerator {
 	 * @param cpb    columns per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 */
-	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp) {
-		this(pdf, r, c, rpb, cpb, sp, Double.NaN, Double.NaN);
+	public RandomMatrixGenerator(PDF pdf, int r, int c, int blen, double sp) {
+		this(pdf, r, c, blen, sp, Double.NaN, Double.NaN);
 	}
 
 	/**
@@ -75,8 +73,8 @@ public class RandomMatrixGenerator {
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 */
-	public RandomMatrixGenerator(String pdfStr, int r, int c, int rpb, int cpb, double sp, double min, double max) {
-		init(PDF.valueOf(pdfStr.toUpperCase()), r, c, rpb, cpb, sp, min, max);
+	public RandomMatrixGenerator(String pdfStr, int r, int c, int blen, double sp, double min, double max) {
+		init(PDF.valueOf(pdfStr.toUpperCase()), r, c, blen, sp, min, max);
 	}
 
 	/**
@@ -84,14 +82,13 @@ public class RandomMatrixGenerator {
 	 * @param pdf    probability density function
 	 * @param r      number of rows
 	 * @param c      number of columns
-	 * @param rpb    rows per block
-	 * @param cpb    columns per block
+	 * @param blen   rows/cols per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 */
-	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max) {
-		init(pdf, r, c, rpb, cpb, sp, min, max);
+	public RandomMatrixGenerator(PDF pdf, int r, int c, int blen, double sp, double min, double max) {
+		init(pdf, r, c, blen, sp, min, max);
 	}
 
 	/**
@@ -105,12 +102,11 @@ public class RandomMatrixGenerator {
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 */
-	public void init(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max) {
+	public void init(PDF pdf, int r, int c, int blen, double sp, double min, double max) {
 		_pdf = pdf;
 		_rows = r;
 		_cols = c;
-		_rowsPerBlock = rpb;
-		_colsPerBlock = cpb;
+		_blocksize = blen;
 		_sparsity = sp;
 		_min = min;
 		_max = max;
@@ -123,15 +119,14 @@ public class RandomMatrixGenerator {
 	 * @param pdf    probability density function
 	 * @param r      number of rows
 	 * @param c      number of columns
-	 * @param rpb    rows per block
-	 * @param cpb    columns per block
+	 * @param blen   rows/cols per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 * @param mean   the poisson mean
 	 */
-	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) {
-		init(pdf, r, c, rpb, cpb, sp, min, max, mean);
+	public RandomMatrixGenerator(PDF pdf, int r, int c, int blen, double sp, double min, double max, double mean) {
+		init(pdf, r, c, blen, sp, min, max, mean);
 	}
 
 	/**
@@ -139,19 +134,17 @@ public class RandomMatrixGenerator {
 	 * @param pdf    probability density function
 	 * @param r      number of rows
 	 * @param c      number of columns
-	 * @param rpb    rows per block
-	 * @param cpb    columns per block
+	 * @param blen   rows/cols per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 * @param mean   the poisson mean
 	 */
-	public void init(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) {
+	public void init(PDF pdf, int r, int c, int blen, double sp, double min, double max, double mean) {
 		_pdf = pdf;
 		_rows = r;
 		_cols = c;
-		_rowsPerBlock = rpb;
-		_colsPerBlock = cpb;
+		_blocksize = blen;
 		_sparsity = sp;
 		_min = min;
 		_max = max;

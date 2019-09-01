@@ -92,8 +92,7 @@ public class DataGen extends Lop
 		this.getOutputParameters().setNumRows(id.getDim1());
 		this.getOutputParameters().setNumCols(id.getDim2());
 		this.getOutputParameters().setNnz(-1);
-		this.getOutputParameters().setRowsInBlock(id.getRowsInBlock());
-		this.getOutputParameters().setColsInBlock(id.getColumnsInBlock());
+		this.getOutputParameters().setBlocksize(id.getBlocksize());
 		lps.setProperties( inputs, et);
 	}
 
@@ -159,10 +158,10 @@ public class DataGen extends Lop
 		sb.append(iLop.prepScalarInputOperand(getExecType()));
 		sb.append(OPERAND_DELIMITOR);
 
-		sb.append(getOutputParameters().getRowsInBlock());
+		sb.append(getOutputParameters().getBlocksize());
 		sb.append(OPERAND_DELIMITOR);
 
-		sb.append(getOutputParameters().getColsInBlock());
+		sb.append(getOutputParameters().getBlocksize());
 		sb.append(OPERAND_DELIMITOR);
 
 		iLop = _inputParams.get(DataExpression.RAND_MIN);
@@ -227,10 +226,7 @@ public class DataGen extends Lop
 		iLop = _inputParams.get(DataExpression.RAND_DIMS);
 		String dimsString = iLop.prepScalarLabel();
 
-		String rowsInBlockString = String.valueOf(this
-				.getOutputParameters().getRowsInBlock());
-		String colsInBlockString = String.valueOf(this
-				.getOutputParameters().getColsInBlock());
+		String blen = String.valueOf(getOutputParameters().getBlocksize());
 
 		iLop = _inputParams.get(DataExpression.RAND_MIN);
 		String minString = iLop.getOutputParameters().getLabel();
@@ -239,7 +235,7 @@ public class DataGen extends Lop
 					+ "Parameter " + DataExpression.RAND_MIN
 					+ " must be a literal for a Rand operation.");
 
-		//generate instruction		
+		//generate instruction
 		StringBuilder sb = new StringBuilder( );
 		ExecType et = getExecType();
 		
@@ -253,9 +249,9 @@ public class DataGen extends Lop
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(dimsString);
 		sb.append(OPERAND_DELIMITOR);
-		sb.append(rowsInBlockString);
+		sb.append(blen);
 		sb.append(OPERAND_DELIMITOR);
-		sb.append(colsInBlockString);
+		sb.append(blen);
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(minString);
 		sb.append(OPERAND_DELIMITOR);
@@ -281,8 +277,8 @@ public class DataGen extends Lop
 			lsize.prepScalarInputOperand(getExecType()),
 			lreplace.prepScalarLabel(),
 			lseed.prepScalarLabel(),
-			String.valueOf(getOutputParameters().getRowsInBlock()),
-			String.valueOf(getOutputParameters().getColsInBlock()),
+			String.valueOf(getOutputParameters().getBlocksize()),
+			String.valueOf(getOutputParameters().getBlocksize()),
 			prepOutputOperand(output));
 	}
 	
@@ -328,8 +324,7 @@ public class DataGen extends Lop
 		
 		String rowsString = String.valueOf(this.getOutputParameters().getNumRows());
 		String colsString = String.valueOf(this.getOutputParameters().getNumCols());
-		String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
-		String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
+		String blen = String.valueOf(this.getOutputParameters().getBlocksize());
 		
 		sb.append( DataGen.SEQ_OPCODE );
 		sb.append( OPERAND_DELIMITOR );
@@ -337,9 +332,9 @@ public class DataGen extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( colsString );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( rowsInBlockString );
+		sb.append( blen );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( colsInBlockString );
+		sb.append( blen );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( fromString );
 		sb.append( OPERAND_DELIMITOR );
@@ -360,8 +355,7 @@ public class DataGen extends Lop
 		sb.append(" ; num_rows=" + this.getOutputParameters().getNumRows());
 		sb.append(" ; num_cols=" + this.getOutputParameters().getNumCols());
 		sb.append(" ; nnz=" + this.getOutputParameters().getNnz());
-		sb.append(" ; num_rows_per_block=" + this.getOutputParameters().getRowsInBlock());
-		sb.append(" ; num_cols_per_block=" + this.getOutputParameters().getColsInBlock());
+		sb.append(" ; blocksize=" + this.getOutputParameters().getBlocksize());
 		sb.append(" ; format=" + this.getOutputParameters().getFormat());
 		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked());
 		sb.append(" ; dir=" + this.baseDir);

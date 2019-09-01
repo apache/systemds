@@ -64,7 +64,7 @@ public class ReduceAll extends IndexFunction
 
 	@Override
 	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
-		out.set(1, 1, in.getRowsPerBlock(), in.getColsPerBlock());
+		out.set(1, 1, in.getBlocksize());
 		return true;
 	}
 }

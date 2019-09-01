@@ -53,16 +53,14 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	
 	private final long _rlen;
 	private final long _clen;
-	private final long _brlen;
-	private final long _bclen;
+	private final long _blen;
 	private PDataPartitionFormat _dpf;
 	private final long _n;
 	
 	public DataPartitionerRemoteSparkMapper(DataCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n) {
 		_rlen = mc.getRows();
 		_clen = mc.getCols();
-		_brlen = mc.getRowsPerBlock();
-		_bclen = mc.getColsPerBlock();
+		_blen = mc.getBlocksize();
 		_dpf = dpf;
 		_n = n;
 	}
@@ -75,8 +73,8 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 		
 		MatrixIndexes key2 =  arg0._1();
 		MatrixBlock value2 = arg0._2();
-		long row_offset = (key2.getRowIndex()-1)*_brlen;
-		long col_offset = (key2.getColumnIndex()-1)*_bclen;
+		long row_offset = (key2.getRowIndex()-1)*_blen;
+		long col_offset = (key2.getColumnIndex()-1)*_blen;
 		long rows = value2.getNumRows();
 		long cols = value2.getNumColumns();
 		
@@ -94,7 +92,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 				MatrixBlock[] blks = DataConverter.convertToMatrixBlockPartitions(value2, false);
 				for( int i=0; i<rows; i++ ) {
 					PairWritableBlock tmp = new PairWritableBlock();
-					tmp.indexes = new MatrixIndexes(1, col_offset/_bclen+1);
+					tmp.indexes = new MatrixIndexes(1, col_offset/_blen+1);
 					tmp.block = blks[i];
 					ret.add(new Tuple2<Long,Writable>(new Long(row_offset+1+i),tmp));
 				}
@@ -102,22 +100,22 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 			}
 			case ROW_BLOCK_WISE: { 
 				PairWritableBlock tmp = new PairWritableBlock();
-				tmp.indexes = new MatrixIndexes(1, col_offset/_bclen+1);
+				tmp.indexes = new MatrixIndexes(1, col_offset/_blen+1);
 				tmp.block = new MatrixBlock(value2);
-				ret.add(new Tuple2<Long,Writable>(new Long(row_offset/_brlen+1),tmp));
+				ret.add(new Tuple2<Long,Writable>(new Long(row_offset/_blen+1),tmp));
 				break;
 			}
 			case ROW_BLOCK_WISE_N:{ 
-				if( _n >= _brlen ) {
+				if( _n >= _blen ) {
 					PairWritableBlock tmp = new PairWritableBlock();
-					tmp.indexes = new MatrixIndexes(((row_offset%_n)/_brlen)+1, col_offset/_bclen+1);
+					tmp.indexes = new MatrixIndexes(((row_offset%_n)/_blen)+1, col_offset/_blen+1);
 					tmp.block = new MatrixBlock(value2);
 					ret.add(new Tuple2<Long,Writable>(new Long(row_offset/_n+1),tmp));
 				}
 				else {
 					for( int i=0; i<rows; i+=_n ) {
 						PairWritableBlock tmp = new PairWritableBlock();
-						tmp.indexes = new MatrixIndexes(1, col_offset/_bclen+1);
+						tmp.indexes = new MatrixIndexes(1, col_offset/_blen+1);
 						tmp.block = value2.slice(i, Math.min(i+(int)_n-1, value2.getNumRows()-1));
 						ret.add(new Tuple2<Long,Writable>(new Long((row_offset+i)/_n+1),tmp));
 					}
@@ -128,7 +126,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 				MatrixBlock[] blks = DataConverter.convertToMatrixBlockPartitions(value2, true);
 				for( int i=0; i<cols; i++ ) {
 					PairWritableBlock tmp = new PairWritableBlock();
-					tmp.indexes = new MatrixIndexes(row_offset/_brlen+1, 1);
+					tmp.indexes = new MatrixIndexes(row_offset/_blen+1, 1);
 					tmp.block = blks[i];
 					ret.add(new Tuple2<Long,Writable>(new Long(col_offset+1+i),tmp));
 				}
@@ -136,22 +134,22 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 			}
 			case COLUMN_BLOCK_WISE: {
 				PairWritableBlock tmp = new PairWritableBlock();
-				tmp.indexes = new MatrixIndexes(row_offset/_brlen+1, 1);
+				tmp.indexes = new MatrixIndexes(row_offset/_blen+1, 1);
 				tmp.block = new MatrixBlock(value2);
-				ret.add(new Tuple2<Long,Writable>(new Long(col_offset/_bclen+1),tmp));
+				ret.add(new Tuple2<Long,Writable>(new Long(col_offset/_blen+1),tmp));
 				break;
 			}
 			case COLUMN_BLOCK_WISE_N: {
-				if( _n >= _bclen ) {
+				if( _n >= _blen ) {
 					PairWritableBlock tmp = new PairWritableBlock();
-					tmp.indexes = new MatrixIndexes(row_offset/_brlen+1, ((col_offset%_n)/_bclen)+1);
+					tmp.indexes = new MatrixIndexes(row_offset/_blen+1, ((col_offset%_n)/_blen)+1);
 					tmp.block = new MatrixBlock(value2);
 					ret.add(new Tuple2<Long,Writable>(new Long(col_offset/_n+1),tmp));
 				}
 				else {
 					for( int i=0; i<cols; i+=_n ) {
 						PairWritableBlock tmp = new PairWritableBlock();
-						tmp.indexes = new MatrixIndexes(row_offset/_brlen+1, 1);
+						tmp.indexes = new MatrixIndexes(row_offset/_blen+1, 1);
 						tmp.block = value2.slice(0, value2.getNumRows()-1, 
 								i, Math.min(i+(int)_n-1, value2.getNumColumns()-1), new MatrixBlock());
 						ret.add(new Tuple2<Long,Writable>(new Long((col_offset+i)/_n+1),tmp));

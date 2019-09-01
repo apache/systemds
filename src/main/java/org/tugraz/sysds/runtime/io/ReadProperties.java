@@ -26,7 +26,7 @@ public class ReadProperties
 	// Properties common to all file formats 
 	public String path;
 	public long rlen, clen;
-	public int brlen, bclen;
+	public int blen;
 	public long expectedNnz;
 	public InputInfo inputInfo;
 	public boolean localFS;
@@ -37,8 +37,7 @@ public class ReadProperties
 	public ReadProperties() {
 		rlen = -1;
 		clen = -1;
-		brlen = -1;
-		bclen = -1;
+		blen = -1;
 		expectedNnz = -1;
 		inputInfo = null;
 		localFS = false;

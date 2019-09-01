@@ -328,7 +328,7 @@ public class Data extends Lop
 				else if (oparams.getFormat() == Format.LIBSVM)
 					fmt = "libsvm";
 				else if ( oparams.getFormat() == Format.BINARY ){
-					if ( oparams.getRowsInBlock() > 0 || oparams.getColsInBlock() > 0 )
+					if ( oparams.getBlocksize() > 0 || oparams.getBlocksize() > 0 )
 						fmt = "binaryblock"; 
 					else
 						fmt = "binarycell" ;
@@ -436,8 +436,8 @@ public class Data extends Lop
 			else if ( oparams.getFormat() == Format.LIBSVM )
 				fmt = "libsvm";
 			else { //binary
-				fmt = ( getDataType() == DataType.FRAME || oparams.getRowsInBlock() > 0 
-					|| oparams.getColsInBlock() > 0 ) ? "binaryblock" : "binarycell";
+				fmt = ( getDataType() == DataType.FRAME || oparams.getBlocksize() > 0 
+					|| oparams.getBlocksize() > 0 ) ? "binaryblock" : "binarycell";
 			}
 			
 			StringBuilder sb = new StringBuilder();
@@ -459,9 +459,9 @@ public class Data extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getNumCols() );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( oparams.getRowsInBlock() );
+			sb.append( oparams.getBlocksize() );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( oparams.getColsInBlock() );
+			sb.append( oparams.getBlocksize() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getNnz() );
 			sb.append( OPERAND_DELIMITOR );

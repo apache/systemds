@@ -211,22 +211,19 @@ public class PartialAggregate extends Lop
 		return loc;
 	}
 
-	public void setDimensionsBasedOnDirection(long dim1, long dim2,  
-			long rowsPerBlock, long colsPerBlock)
-	{
-		setDimensionsBasedOnDirection(this, dim1, dim2, rowsPerBlock, colsPerBlock, direction);
+	public void setDimensionsBasedOnDirection(long dim1, long dim2, long blen) {
+		setDimensionsBasedOnDirection(this, dim1, dim2, blen, direction);
 	}
 
-	public static void setDimensionsBasedOnDirection(Lop lop, long dim1, long dim2,  
-			long rowsPerBlock, long colsPerBlock, DirectionTypes dir)
+	public static void setDimensionsBasedOnDirection(Lop lop, long dim1, long dim2,  long blen, DirectionTypes dir)
 	{
 		try {
 			if (dir == DirectionTypes.Row)
-				lop.outParams.setDimensions(dim1, 1, rowsPerBlock, colsPerBlock, -1);
+				lop.outParams.setDimensions(dim1, 1, blen, -1);
 			else if (dir == DirectionTypes.Col)
-				lop.outParams.setDimensions(1, dim2, rowsPerBlock, colsPerBlock, -1);
+				lop.outParams.setDimensions(1, dim2, blen, -1);
 			else if (dir == DirectionTypes.RowCol)
-				lop.outParams.setDimensions(1, 1, rowsPerBlock, colsPerBlock, -1);
+				lop.outParams.setDimensions(1, 1, blen, -1);
 			else
 				throw new LopsException("In PartialAggregate Lop, Unknown aggregate direction " + dir);
 		} catch (HopsException e) {

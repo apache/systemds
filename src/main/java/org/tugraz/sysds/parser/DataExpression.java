@@ -1015,7 +1015,7 @@ public class DataExpression extends DataIdentifier
 				}
 				
 				// initialize block dimensions to UNKNOWN 
-				getOutput().setBlockDimensions(-1, -1);
+				getOutput().setBlocksize(-1);
 				
 				// find "format": 1=text, 2=binary
 				int format = 1; // default is "text"
@@ -1046,27 +1046,16 @@ public class DataExpression extends DataIdentifier
 				}
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
-				
 					Integer rowBlockCount = (getVarParam(ROWBLOCKCOUNTPARAM) == null) ?
 						null : Integer.valueOf(getVarParam(ROWBLOCKCOUNTPARAM).toString());
-					Integer columnBlockCount = (getVarParam(COLUMNBLOCKCOUNTPARAM) == null) ?
-						null : Integer.valueOf(getVarParam(COLUMNBLOCKCOUNTPARAM).toString());
-					if ((rowBlockCount != null) && (columnBlockCount != null)) {
-						getOutput().setBlockDimensions(rowBlockCount, columnBlockCount);
-					} else if ((rowBlockCount != null) || (columnBlockCount != null)) {
-						raiseValidateError("Partial block dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-					} else {
-						 getOutput().setBlockDimensions(-1, -1);
-					}
+					getOutput().setBlocksize(rowBlockCount != null ? rowBlockCount : -1);
 				}
 				
 				// block dimensions must be -1x-1 when format="text"
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
-				if ( ( (format == 1 || !isMatrix) 
-						&& (getOutput().getRowsInBlock() != -1 || getOutput().getColumnsInBlock() != -1)
-					 ) ){
-					raiseValidateError("Invalid block dimensions (" + getOutput().getRowsInBlock() + "," + getOutput().getColumnsInBlock() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
+				if ( (format == 1 || !isMatrix)  && getOutput().getBlocksize() != -1 ){
+					raiseValidateError("Invalid block dimensions (" + getOutput().getBlocksize() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
 				}
 			
 			}
@@ -1155,13 +1144,13 @@ public class DataExpression extends DataIdentifier
 			
 			//validate read filename
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
-				getOutput().setBlockDimensions(-1, -1);
+				getOutput().setBlocksize(-1);
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
-				getOutput().setBlockDimensions(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
+				getOutput().setBlocksize(ConfigurationManager.getBlocksize());
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || 
 					(getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) ||
 					 getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM))
-				getOutput().setBlockDimensions(-1, -1);
+				getOutput().setBlocksize(-1);
 			
 			else{
 				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE) +  " in statement: " + this.toString(), conditional);

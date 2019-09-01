@@ -46,8 +46,7 @@ import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.utils.Statistics;
 
 public class CSVReblockSPInstruction extends UnarySPInstruction {
-	private int _brlen;
-	private int _bclen;
+	private int _blen;
 	private boolean _hasHeader;
 	private String _delim;
 	private boolean _fill;
@@ -56,8 +55,8 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	protected CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean hasHeader,
 			String delim, boolean fill, double fillValue, String opcode, String instr) {
 		super(SPType.CSVReblock, op, in, out, opcode, instr);
-		_brlen = br;
-		_bclen = bc;
+		_blen = br;
+		_blen = bc;
 		_hasHeader = hasHeader;
 		_delim = delim;
 		_fill = fill;
@@ -76,14 +75,13 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		int brlen = Integer.parseInt(parts[3]);
-		int bclen = Integer.parseInt(parts[4]);
+		int blen = Integer.parseInt(parts[3]);
 		boolean hasHeader = Boolean.parseBoolean(parts[5]);
 		String delim = parts[6];
 		boolean fill = Boolean.parseBoolean(parts[7]);
 		double fillValue = Double.parseDouble(parts[8]);
 
-		return new CSVReblockSPInstruction(null, in, out, brlen, bclen,
+		return new CSVReblockSPInstruction(null, in, out, blen, blen,
 				hasHeader, delim, fill, fillValue, opcode, str);
 	}
 
@@ -102,7 +100,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//set output characteristics
 		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-		mcOut.set(mcIn.getRows(), mcIn.getCols(), _brlen, _bclen);
+		mcOut.set(mcIn.getRows(), mcIn.getCols(), _blen);
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
 		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {

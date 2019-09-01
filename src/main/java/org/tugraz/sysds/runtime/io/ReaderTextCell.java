@@ -59,7 +59,7 @@ public class ReaderTextCell extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
@@ -76,14 +76,14 @@ public class ReaderTextCell extends MatrixReader
 		
 		//allocate output matrix block
 		if( estnnz < 0 )
-			estnnz = HDFSTool.estimateNnzBasedOnFileSize(path, rlen, clen, brlen, bclen, 3);
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
+			estnnz = HDFSTool.estimateNnzBasedOnFileSize(path, rlen, clen, blen, 3);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 		
 		//core read 
 		if( fs.isDirectory(path) || !_allowRawRead )
-			readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen);
+			readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, blen);
 		else
-			readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, _isMMFile);
+			readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen, _isMMFile);
 		
 		//finally check if change of sparse/dense block representation required
 		if( !AGGREGATE_BLOCK_NNZ )
@@ -94,14 +94,14 @@ public class ReaderTextCell extends MatrixReader
 	}
 
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, brlen, bclen, estnnz, true, false);
+		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, blen, estnnz, true, false);
 	
 		//core read 
-		readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, brlen, bclen, _isMMFile);
+		readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, blen, _isMMFile);
 		
 		//finally check if change of sparse/dense block representation required
 		if( !AGGREGATE_BLOCK_NNZ )
@@ -111,7 +111,7 @@ public class ReaderTextCell extends MatrixReader
 		return ret;
 	}
 
-	protected void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	protected void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int blen )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
@@ -194,17 +194,17 @@ public class ReaderTextCell extends MatrixReader
 		return 1;
 	}
 
-	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int blen, boolean matrixMarket )
 		throws IOException
 	{
 		//create input stream for path
 		InputStream inputStream = fs.open(path);
 		
 		//actual read
-		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, brlen, bclen, matrixMarket);
+		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, blen, matrixMarket);
 	}
 
-	private static void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	private static void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int blen, boolean matrixMarket )
 			throws IOException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader( is ));

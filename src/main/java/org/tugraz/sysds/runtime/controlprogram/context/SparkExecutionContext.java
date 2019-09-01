@@ -403,7 +403,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock(), numParts, inclEmpty);
+				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getBlocksize(), numParts, inclEmpty);
 				mo.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(dc), true);
 			}
@@ -478,7 +478,7 @@ public class SparkExecutionContext extends ExecutionContext
 				fromFile = true;*/
 			} else { //default case
 				TensorBlock tb = to.acquireRead(); //pin matrix in memory
-				int[] blen = dc.getBlockSizes();
+				int blen = dc.getBlockSize();
 				rdd = toTensorJavaPairRDD(sc, tb, blen, numParts, inclEmpty);
 				to.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(dc), true);
@@ -671,16 +671,15 @@ public class SparkExecutionContext extends ExecutionContext
 				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getPartitionedBroadcastSize());
 
 			//obtain meta data for matrix
-			int brlen = (int) mo.getNumRowsPerBlock();
-			int bclen = (int) mo.getNumColumnsPerBlock();
+			int blen = (int) mo.getBlocksize();
 
 			//create partitioned matrix block and release memory consumed by input
 			MatrixBlock mb = mo.acquireRead();
-			PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(mb, brlen, bclen);
+			PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(mb, blen);
 			mo.release();
 
 			//determine coarse-grained partitioning
-			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
+			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), blen);
 			int numParts = (int) Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart);
 			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
 
@@ -731,7 +730,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//obtain meta data for matrix
 			DataCharacteristics dc = to.getDataCharacteristics();
 			long[] dims = dc.getDims();
-			int[] blen = dc.getBlockSizes();
+			int blen = dc.getBlocksize();
 
 			//create partitioned matrix block and release memory consumed by input
 			PartitionedBlock<TensorBlock> pmb = new PartitionedBlock<>(to.acquireReadAndRelease(), dims, blen);
@@ -796,16 +795,15 @@ public class SparkExecutionContext extends ExecutionContext
 				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getPartitionedBroadcastSize());
 
 			//obtain meta data for frame
-			int bclen = (int) fo.getNumColumns();
-			int brlen = OptimizerUtils.getDefaultFrameSize();
+			int blen = OptimizerUtils.getDefaultFrameSize();
 
 			//create partitioned frame block and release memory consumed by input
 			FrameBlock mb = fo.acquireRead();
-			PartitionedBlock<FrameBlock> pmb = new PartitionedBlock<>(mb, brlen, bclen);
+			PartitionedBlock<FrameBlock> pmb = new PartitionedBlock<>(mb, blen);
 			fo.release();
 
 			//determine coarse-grained partitioning
-			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
+			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), blen);
 			int numParts = (int) Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart);
 			Broadcast<PartitionedBlock<FrameBlock>>[] ret = new Broadcast[numParts];
 
@@ -819,7 +817,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			
 			bret = new PartitionedBroadcast<>(ret, new MatrixCharacteristics(
-				fo.getDataCharacteristics()).setBlockSize(brlen, bclen));
+				fo.getDataCharacteristics()).setBlockSize(blen));
 			if (fo.getBroadcastHandle() == null)
 				fo.setBroadcastHandle(new BroadcastObject<FrameBlock>());
 			
@@ -860,21 +858,21 @@ public class SparkExecutionContext extends ExecutionContext
 		obj.setRDDHandle( rddhandle );
 	}
 
-	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen) {
-		return toMatrixJavaPairRDD(sc, src, brlen, bclen, -1, true);
+	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int blen) {
+		return toMatrixJavaPairRDD(sc, src, blen, -1, true);
 	}
 	
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src,
-			int brlen, int bclen, int numParts, boolean inclEmpty) {
+			int blen, int numParts, boolean inclEmpty) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = null;
 
-		if( src.getNumRows() <= brlen && src.getNumColumns() <= bclen ) {
+		if( src.getNumRows() <= blen && src.getNumColumns() <= blen ) {
 			list = Arrays.asList(new Tuple2<>(new MatrixIndexes(1,1), src));
 		}
 		else {
 			MatrixCharacteristics mc = new MatrixCharacteristics(
-				src.getNumRows(), src.getNumColumns(), brlen, bclen, src.getNonZeros());
+				src.getNumRows(), src.getNumColumns(), blen, src.getNonZeros());
 			list = LongStream.range(0, mc.getNumBlocks()).parallel()
 				.mapToObj(i -> createIndexedMatrixBlock(src, mc, i))
 				.filter(kv -> inclEmpty || !kv._2.isEmptyBlock(false))
@@ -892,25 +890,25 @@ public class SparkExecutionContext extends ExecutionContext
 		return result;
 	}
 
-	public static JavaPairRDD<TensorIndexes, TensorBlock> toTensorJavaPairRDD(JavaSparkContext sc, TensorBlock src,
-			int[] blen) {
+	public static JavaPairRDD<TensorIndexes, TensorBlock> toTensorJavaPairRDD(JavaSparkContext sc, TensorBlock src, int blen) {
 		return toTensorJavaPairRDD(sc, src, blen, -1, true);
 	}
 
 	public static JavaPairRDD<TensorIndexes, TensorBlock> toTensorJavaPairRDD(JavaSparkContext sc, TensorBlock src,
-			int[] blen, int numParts, boolean inclEmpty) {
+			int blen, int numParts, boolean inclEmpty) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		List<Tuple2<TensorIndexes, TensorBlock>> list;
 
+		int numDims = src.getNumDims();
 		boolean singleBlock = true;
-		for (int i = 0; i < blen.length; i++) {
-			if (blen[i] > src.getDim(i)) {
+		for (int i = 0; i < numDims; i++) {
+			if (blen > src.getDim(i)) {
 				singleBlock = false;
 				break;
 			}
 		}
 		if (singleBlock) {
-			long[] ix = new long[blen.length];
+			long[] ix = new long[numDims];
 			Arrays.fill(ix, 1);
 			list = Arrays.asList(new Tuple2<>(new TensorIndexes(ix), src));
 		} else {
@@ -942,12 +940,12 @@ public class SparkExecutionContext extends ExecutionContext
 			long blockRow = ix / mc.getNumColBlocks();
 			long blockCol = ix % mc.getNumColBlocks();
 			//compute block sizes
-			int maxRow = UtilFunctions.computeBlockSize(mc.getRows(), blockRow+1, mc.getRowsPerBlock());
-			int maxCol = UtilFunctions.computeBlockSize(mc.getCols(), blockCol+1, mc.getColsPerBlock());
+			int maxRow = UtilFunctions.computeBlockSize(mc.getRows(), blockRow+1, mc.getBlocksize());
+			int maxCol = UtilFunctions.computeBlockSize(mc.getCols(), blockCol+1, mc.getBlocksize());
 			//copy sub-matrix to block
 			MatrixBlock block = new MatrixBlock(maxRow, maxCol, mb.isInSparseFormat());
-			int row_offset = (int)blockRow*mc.getRowsPerBlock();
-			int col_offset = (int)blockCol*mc.getColsPerBlock();
+			int row_offset = (int)blockRow*mc.getBlocksize();
+			int col_offset = (int)blockCol*mc.getBlocksize();
 			block = mb.slice( row_offset, row_offset+maxRow-1,
 				col_offset, col_offset+maxCol-1, block );
 			//create key-value pair
@@ -962,13 +960,13 @@ public class SparkExecutionContext extends ExecutionContext
 		try {
 			//compute block indexes
 			long[] blockIx = new long[tc.getNumDims()];
-			int[] blkSize = tc.getBlockSizes();
+			int blocksize = tc.getBlockSize();
 			int[] outDims = new int[tc.getNumDims()];
 			int[] offset = new int[tc.getNumDims()];
 			for (int i = tc.getNumDims() - 1; i >= 0; i--) {
 				blockIx[i] = ix % tc.getNumBlocks(i);
-				outDims[i] = UtilFunctions.computeBlockSize(tc.getDim(i), blockIx[i] + 1, blkSize[i]);
-				offset[i] = (int) (blockIx[i] * blkSize[i]);
+				outDims[i] = UtilFunctions.computeBlockSize(tc.getDim(i), blockIx[i] + 1, blocksize);
+				offset[i] = (int) (blockIx[i] * blocksize);
 				ix /= tc.getNumBlocks(i);
 			}
 			// TODO: sparse
@@ -1024,16 +1022,16 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param rdd rdd object
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param brlen number of rows in a block
-	 * @param bclen number of columns in a block
+	 * @param blen number of rows in a block
+	 * @param blen number of columns in a block
 	 * @param nnz number of non-zeros
 	 * @return matrix block
 	 */
 	@SuppressWarnings("unchecked")
-	public static MatrixBlock toMatrixBlock(RDDObject rdd, int rlen, int clen, int brlen, int bclen, long nnz) {
+	public static MatrixBlock toMatrixBlock(RDDObject rdd, int rlen, int clen, int blen, long nnz) {
 		return toMatrixBlock(
-				(JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD(),
-				rlen, clen, brlen, bclen, nnz);
+			(JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD(),
+			rlen, clen, blen, nnz);
 	}
 
 	/**
@@ -1046,17 +1044,17 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param rdd JavaPairRDD for matrix block
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param brlen number of rows in a block
-	 * @param bclen number of columns in a block
+	 * @param blen number of rows in a block
+	 * @param blen number of columns in a block
 	 * @param nnz number of non-zeros
 	 * @return matrix block
 	 */
-	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz) {
+	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int blen, long nnz) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		MatrixBlock out = null;
 
-		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
+		if( rlen <= blen && clen <= blen ) //SINGLE BLOCK
 		{
 			//special case without copy and nnz maintenance
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
@@ -1094,8 +1092,8 @@ public class SparkExecutionContext extends ExecutionContext
 				MatrixBlock block = keyval._2();
 				
 				//compute row/column block offsets
-				int row_offset = (int)(ix.getRowIndex()-1)*brlen;
-				int col_offset = (int)(ix.getColumnIndex()-1)*bclen;
+				int row_offset = (int)(ix.getRowIndex()-1)*blen;
+				int col_offset = (int)(ix.getColumnIndex()-1)*blen;
 				int rows = block.getNumRows();
 				int cols = block.getNumColumns();
 				
@@ -1104,7 +1102,7 @@ public class SparkExecutionContext extends ExecutionContext
 					//append block to sparse target in order to avoid shifting, where
 					//we use a shallow row copy in case of MCSR and single column blocks
 					//note: this append requires, for multiple column blocks, a final sort
-					out.appendToSparse(block, row_offset, col_offset, clen>bclen);
+					out.appendToSparse(block, row_offset, col_offset, clen>blen);
 				}
 				else { //DENSE OUTPUT
 					out.copy( row_offset, row_offset+rows-1,
@@ -1116,7 +1114,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 
 			//post-processing output matrix
-			if( sparse && clen>bclen )
+			if( sparse && clen>blen )
 				out.sortSparseRows();
 			out.setNonZeros(aNnz);
 			out.examSparsity();
@@ -1214,7 +1212,7 @@ public class SparkExecutionContext extends ExecutionContext
 			int[] lower = new int[ix.getNumDims()];
 			int[] upper = new int[ix.getNumDims()];
 			for (int i = 0; i < lower.length; i++) {
-				lower[i] = (int) ((ix.getIndex(i) - 1) * dc.getBlockSize(i));
+				lower[i] = (int) ((ix.getIndex(i) - 1) * dc.getBlockSize());
 				upper[i] = lower[i] + block.getDim(i) - 1;
 			}
 			upper[upper.length - 1]++;
@@ -1239,17 +1237,15 @@ public class SparkExecutionContext extends ExecutionContext
 		return out;
 	}
 
-	public static PartitionedBlock<MatrixBlock> toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int brlen, int bclen, long nnz)
+	public static PartitionedBlock<MatrixBlock> toPartitionedMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int blen, long nnz)
 	{
-
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
-		PartitionedBlock<MatrixBlock> out = new PartitionedBlock<>(rlen, clen, brlen, bclen);
+		PartitionedBlock<MatrixBlock> out = new PartitionedBlock<>(rlen, clen, blen);
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 
 		//copy blocks one-at-a-time into output matrix block
-		for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
-		{
+		for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list ) {
 			//unpack index-block pair
 			MatrixIndexes ix = keyval._1();
 			MatrixBlock block = keyval._2();

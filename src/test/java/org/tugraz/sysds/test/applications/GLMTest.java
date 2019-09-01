@@ -286,10 +286,10 @@ public class GLMTest extends AutomatedTestBase
 		
 		int defaultBlockSize = OptimizerUtils.DEFAULT_BLOCKSIZE;
 
-		MatrixCharacteristics mc_X = new MatrixCharacteristics(rows, cols, defaultBlockSize, defaultBlockSize, nnz_in_X);
+		MatrixCharacteristics mc_X = new MatrixCharacteristics(rows, cols, defaultBlockSize, nnz_in_X);
 		writeInputMatrixWithMTD ("X", X, true, mc_X);
 
-		MatrixCharacteristics mc_y = new MatrixCharacteristics(rows, y[0].length, defaultBlockSize, defaultBlockSize, nnz_in_y);
+		MatrixCharacteristics mc_y = new MatrixCharacteristics(rows, y[0].length, defaultBlockSize, nnz_in_y);
 		writeInputMatrixWithMTD ("Y", y, true, mc_y);
 		
 		List<String> proArgs = new ArrayList<String>();

@@ -82,8 +82,9 @@ public class FrameRDDConverterUtils
 	// CSV <--> Binary block
 
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
-	                                                             JavaPairRDD<LongWritable, Text> input, DataCharacteristics mc, ValueType[] schema,
-	                                                             boolean hasHeader, String delim, boolean fill, double fillValue) {
+		JavaPairRDD<LongWritable, Text> input, DataCharacteristics mc, ValueType[] schema,
+		boolean hasHeader, String delim, boolean fill, double fillValue)
+	{
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown() ) { //nnz irrelevant here
  			JavaRDD<String> tmp = input.values()
@@ -94,7 +95,7 @@ public class FrameRDDConverterUtils
 			tmpStr = (metaHeader) ? tmpStr.substring(tmpStr.indexOf(delim)+1) : tmpStr;
 			long rlen = tmp.count() - (hasHeader ? 1 : 0) - (metaHeader ? 2 : 0);
 			long clen = IOUtilFunctions.splitCSV(tmpStr, delim).length;
-			mc.set(rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), -1);
+			mc.set(rlen, clen, mc.getBlocksize(), -1);
 		}
 		
 		//prepare csv w/ row indexes (sorted by filenames)
@@ -113,8 +114,9 @@ public class FrameRDDConverterUtils
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
-	                                                             JavaRDD<String> input, DataCharacteristics mcOut, ValueType[] schema,
-	                                                             boolean hasHeader, String delim, boolean fill, double fillValue) {
+		JavaRDD<String> input, DataCharacteristics mcOut, ValueType[] schema,
+		boolean hasHeader, String delim, boolean fill, double fillValue)
+	{
 		//convert string rdd to serializable longwritable/text
 		JavaPairRDD<LongWritable, Text> prepinput =
 				input.mapToPair(new StringToSerTextFunction());
@@ -143,7 +145,8 @@ public class FrameRDDConverterUtils
 	// Text cell <--> Binary block
 
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
-	                                                                  JavaPairRDD<LongWritable, Text> in, DataCharacteristics mcOut, ValueType[] schema ) {
+		JavaPairRDD<LongWritable, Text> in, DataCharacteristics mcOut, ValueType[] schema )
+	{
 		//convert input rdd to serializable long/frame block
 		JavaPairRDD<Long,Text> input = 
 				in.mapToPair(new LongWritableTextToLongTextFunction());
@@ -152,7 +155,8 @@ public class FrameRDDConverterUtils
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
-	                                                                           JavaPairRDD<Long, Text> input, DataCharacteristics mc, ValueType[] schema ) {
+			JavaPairRDD<Long, Text> input, DataCharacteristics mc, ValueType[] schema )
+	{
 		//prepare default schema if needed
 		if( schema == null || schema.length==1 ) {
 			schema = UtilFunctions.nCopies((int)mc.getCols(), 
@@ -188,10 +192,10 @@ public class FrameRDDConverterUtils
 		DataCharacteristics mc = new MatrixCharacteristics(dcIn);
 		
 		//reblock matrix blocks if required (multiple column blocks)
-		if(dcIn.getCols() > dcIn.getColsPerBlock()) {
+		if(dcIn.getCols() > dcIn.getBlocksize()) {
 			//split matrix blocks into extended matrix blocks 
 			in = in.flatMapToPair(new MatrixFrameReblockFunction(dcIn));
-			mc.setBlockSize(MatrixFrameReblockFunction.computeBlockSize(mc), (int)mc.getCols());
+			mc.setBlockSize(MatrixFrameReblockFunction.computeBlockSize(mc));
 			
 			//shuffle matrix blocks (instead of frame blocks) in order to exploit 
 			//sparse formats (for sparse or wide matrices) during shuffle
@@ -203,26 +207,27 @@ public class FrameRDDConverterUtils
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockToMatrixBlock(JavaPairRDD<Long,FrameBlock> input,
-	                                                                               DataCharacteristics mcIn, DataCharacteristics mcOut)
+		DataCharacteristics mcIn, DataCharacteristics mcOut)
 	{
 		//convert binary block to matrix block
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input
-				.flatMapToPair(new BinaryBlockToMatrixBlockFunction(mcIn, mcOut));
+			.flatMapToPair(new BinaryBlockToMatrixBlockFunction(mcIn, mcOut));
 	
 		//aggregate partial matrix blocks
-		return RDDAggregateUtils.mergeByKey(out, false); 	
+		return RDDAggregateUtils.mergeByKey(out, false); 
 	}
 	
 	//=====================================
 	// DataFrame <--> Binary block
 
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-	                                                                   Dataset<Row> df, DataCharacteristics mc, boolean containsID) {
+			Dataset<Row> df, DataCharacteristics mc, boolean containsID) {
 		return dataFrameToBinaryBlock(sc, df, mc, containsID, new Pair<String[], ValueType[]>());
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-	                                                                   Dataset<Row> df, DataCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out) {
+		Dataset<Row> df, DataCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out)
+	{
 		//determine unknown dimensions if required
 		if( !mc.dimsKnown() ) { //nnz are irrelevant here
 			int colVect = getColVectFromDFSchema(df.schema(), containsID);
@@ -230,7 +235,7 @@ public class FrameRDDConverterUtils
 			long rlen = df.count();
 			long clen = df.columns().length - off + ((colVect >= 0) ? 
 					((Vector)df.first().get(off+colVect)).size() - 1 : 0);
-			mc.set(rlen, clen, mc.getRowsPerBlock(), mc.getColsPerBlock(), -1);
+			mc.set(rlen, clen, mc.getBlocksize(), -1);
 		}
 		
 		//append or reuse row index column
@@ -250,8 +255,8 @@ public class FrameRDDConverterUtils
 				new DataFrameToBinaryBlockFunction(mc, colnames, fschema, containsID, colVect));
 	}
 
-	public static Dataset<Row> binaryBlockToDataFrame(SparkSession sparkSession, JavaPairRDD<Long,FrameBlock> in,
-	                                                  DataCharacteristics mc, ValueType[] schema)
+	public static Dataset<Row> binaryBlockToDataFrame(SparkSession sparkSession,
+		JavaPairRDD<Long,FrameBlock> in, DataCharacteristics mc, ValueType[] schema)
 	{
 		if( !mc.colsKnown() )
 			throw new RuntimeException("Number of columns needed to convert binary block to data frame.");
@@ -270,8 +275,8 @@ public class FrameRDDConverterUtils
 	}
 	
 	@Deprecated
-	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlContext, JavaPairRDD<Long,FrameBlock> in,
-	                                                  DataCharacteristics mc, ValueType[] schema)
+	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlContext,
+		JavaPairRDD<Long,FrameBlock> in, DataCharacteristics mc, ValueType[] schema)
 	{
 		SparkSession sparkSession = sqlContext.sparkSession();
 		return binaryBlockToDataFrame(sparkSession, in, mc, schema);
@@ -881,19 +886,18 @@ public class FrameRDDConverterUtils
 	{
 		private static final long serialVersionUID = 6205071301074768437L;
 
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private int _blen = -1;
 		private long _clen = -1;
 		private int _maxRowsPerBlock = -1;
 		private boolean _sparse = false;
 		
 		public MatrixFrameReblockFunction(DataCharacteristics dc) {
-			_brlen = dc.getRowsPerBlock();
-			_bclen = dc.getColsPerBlock();
+			_blen = dc.getBlocksize();
+			_blen = dc.getBlocksize();
 			_clen = dc.getCols();
 			_maxRowsPerBlock = computeBlockSize(dc);
 			_sparse = dc.dimsKnown() && MatrixBlock.evalSparseFormatInMemory(
-					dc.getRows(), dc.getCols(), dc.getNonZeros()/(_clen/_bclen));
+					dc.getRows(), dc.getCols(), dc.getNonZeros()/(_clen/_blen));
 		}
 
 		@Override
@@ -907,10 +911,10 @@ public class FrameRDDConverterUtils
 			boolean sparse = _sparse || mb.isInSparseFormat();
 			
 			//frame index (row id, 1-based)
-			long rowix = (ix.getRowIndex()-1)*_brlen+1;
+			long rowix = (ix.getRowIndex()-1)*_blen+1;
 
 			//global index within frame block (0-based)
-			long cl = (int)((ix.getColumnIndex()-1)*_bclen);
+			long cl = (int)((ix.getColumnIndex()-1)*_blen);
 			long cu = Math.min(cl+mb.getNumColumns()-1, _clen);
 
 			//prepare output frame blocks 
@@ -936,12 +940,12 @@ public class FrameRDDConverterUtils
 		 * @return block size
 		 */
 		public static int computeBlockSize(DataCharacteristics dc) {
-			int brlen = dc.getRowsPerBlock();
+			int blen = dc.getBlocksize();
 			int basic = Math.max((int)(FrameBlock.BUFFER_SIZE/dc.getCols()), 1);
-			int div = (int)Math.ceil((double)brlen/basic);
-			while( brlen % div != 0 ) 
+			int div = (int)Math.ceil((double)blen/basic);
+			while( blen % div != 0 ) 
 				div++;
-			return brlen / div;
+			return blen / div;
 		}
 	}
 
@@ -949,10 +953,10 @@ public class FrameRDDConverterUtils
 	{
 		private static final long serialVersionUID = 3716019666116660815L;
 
-		private int _brlen = -1;
+		private int _blen = -1;
 			
 		public MatrixToFrameBlockFunction(DataCharacteristics mc) {
-			_brlen = mc.getRowsPerBlock();
+			_blen = mc.getBlocksize();
 		}
 
 		@Override
@@ -961,7 +965,7 @@ public class FrameRDDConverterUtils
 		{
 			FrameBlock fb = DataConverter.convertToFrameBlock(arg0._2());
 			return  new Tuple2<>(
-				(arg0._1().getRowIndex()-1)*_brlen+1, fb);
+				(arg0._1().getRowIndex()-1)*_blen+1, fb);
 		}
 	}
 
@@ -987,23 +991,22 @@ public class FrameRDDConverterUtils
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			long rlen = _mcIn.getRows();
 			long clen = _mcIn.getCols();
-			int brlen = _mcOut.getRowsPerBlock();
-			int bclen = _mcOut.getColsPerBlock();
+			int blen = _mcOut.getBlocksize();
 			
 			//slice aligned matrix blocks out of given frame block
-			long rstartix = UtilFunctions.computeBlockIndex(rowIndex, brlen);
-			long rendix = UtilFunctions.computeBlockIndex(rowIndex+blk.getNumRows()-1, brlen);
-			long cendix = UtilFunctions.computeBlockIndex(blk.getNumColumns(), bclen);
+			long rstartix = UtilFunctions.computeBlockIndex(rowIndex, blen);
+			long rendix = UtilFunctions.computeBlockIndex(rowIndex+blk.getNumRows()-1, blen);
+			long cendix = UtilFunctions.computeBlockIndex(blk.getNumColumns(), blen);
 			for( long rix=rstartix; rix<=rendix; rix++ ) { //for all row blocks
-				long rpos = UtilFunctions.computeCellIndex(rix, brlen, 0);
-				int lrlen = UtilFunctions.computeBlockSize(rlen, rix, brlen);
+				long rpos = UtilFunctions.computeCellIndex(rix, blen, 0);
+				int lrlen = UtilFunctions.computeBlockSize(rlen, rix, blen);
 				int fix = (int)((rpos-rowIndex>=0) ? rpos-rowIndex : 0);
 				int fix2 = (int)Math.min(rpos+lrlen-rowIndex-1,blk.getNumRows()-1);
-				int mix = UtilFunctions.computeCellInBlock(rowIndex+fix, brlen);
+				int mix = UtilFunctions.computeCellInBlock(rowIndex+fix, blen);
 				int mix2 = mix + (fix2-fix);
 				for( long cix=1; cix<=cendix; cix++ ) { //for all column blocks
-					long cpos = UtilFunctions.computeCellIndex(cix, bclen, 0);
-					int lclen = UtilFunctions.computeBlockSize(clen, cix, bclen);
+					long cpos = UtilFunctions.computeCellIndex(cix, blen, 0);
+					int lclen = UtilFunctions.computeBlockSize(clen, cix, blen);
 					MatrixBlock matrix = new MatrixBlock(lrlen, lclen, false);
 					FrameBlock frame = blk.slice(fix, fix2, 
 							(int)cpos-1, (int)cpos+lclen-2, new FrameBlock());

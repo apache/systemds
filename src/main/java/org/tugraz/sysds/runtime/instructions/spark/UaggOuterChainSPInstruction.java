@@ -177,9 +177,9 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 	protected static boolean preservesPartitioning(DataCharacteristics mcIn, IndexFunction ixfun )
 	{
 		if( ixfun instanceof ReduceCol ) //rowSums
-			return mcIn.dimsKnown() && mcIn.getCols() <= mcIn.getColsPerBlock();
+			return mcIn.dimsKnown() && mcIn.getCols() <= mcIn.getBlocksize();
 		else // colsSums
-			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();
+			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getBlocksize();
 	}
 
 	protected void updateUnaryAggOutputDataCharacteristics(SparkExecutionContext sec) {
@@ -202,11 +202,11 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			else {
 				//infer statistics from input based on operator
 				if( _uaggOp.indexFn instanceof ReduceAll )
-					mcOut.set(1, 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+					mcOut.set(1, 1, mc1.getBlocksize());
 				else if (_uaggOp.indexFn instanceof ReduceCol)
-					mcOut.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+					mcOut.set(mc1.getRows(), 1, mc1.getBlocksize());
 				else if (_uaggOp.indexFn instanceof ReduceRow)
-					mcOut.set(1, mc2.getCols(), mc1.getRowsPerBlock(), mc2.getColsPerBlock());
+					mcOut.set(1, mc2.getCols(), mc1.getBlocksize());
 			}
 		}
 	}
@@ -279,7 +279,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		private AggregateOperator _aggOp = null;
 		private BinaryOperator _bOp = null;
 
-		private int _brlen, _bclen;
+		private int _blen;
 		
 		//reused intermediates  
 		private MatrixValue _tmpVal1 = null;
@@ -296,8 +296,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			_bOp = bOp;
 			
 			//Matrix dimension (row, column)
-			_brlen = mc.getRowsPerBlock();
-			_bclen = mc.getColsPerBlock();
+			_blen = mc.getBlocksize();
 			
 			_tmpVal1 = new MatrixBlock();
 			_tmpVal2 = new MatrixBlock();
@@ -338,7 +337,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 					OperationsOnMatrixValues.performBinaryIgnoreIndexes(in1Val, in2Val, _tmpVal1, _bOp);
 						
 					//unary aggregate operation
-					OperationsOnMatrixValues.performAggregateUnary( in1Ix, _tmpVal1, outIx, _tmpVal2, _uaggOp, _brlen, _bclen);
+					OperationsOnMatrixValues.performAggregateUnary( in1Ix, _tmpVal1, outIx, _tmpVal2, _uaggOp, _blen);
 					
 					//aggregate over all rhs blocks
 					if( corr == null ) {

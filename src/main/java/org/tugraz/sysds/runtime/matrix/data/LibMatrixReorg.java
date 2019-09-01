@@ -241,30 +241,30 @@ public class LibMatrixReorg
 		return out;
 	}
 
-	public static void rev( IndexedMatrixValue in, long rlen, int brlen, ArrayList<IndexedMatrixValue> out ) {
+	public static void rev( IndexedMatrixValue in, long rlen, int blen, ArrayList<IndexedMatrixValue> out ) {
 		//input block reverse 
 		MatrixIndexes inix = in.getIndexes();
 		MatrixBlock inblk = (MatrixBlock) in.getValue(); 
 		MatrixBlock tmpblk = rev(inblk, new MatrixBlock(inblk.getNumRows(), inblk.getNumColumns(), inblk.isInSparseFormat()));
 		
 		//split and expand block if necessary (at most 2 blocks)
-		if( rlen % brlen == 0 ) //special case: aligned blocks 
+		if( rlen % blen == 0 ) //special case: aligned blocks 
 		{
-			int nrblks = (int)Math.ceil((double)rlen/brlen);
+			int nrblks = (int)Math.ceil((double)rlen/blen);
 			out.add(new IndexedMatrixValue(
 					new MatrixIndexes(nrblks-inix.getRowIndex()+1, inix.getColumnIndex()), tmpblk));
 		}
 		else //general case: unaligned blocks
 		{
 			//compute target positions and sizes
-			long pos1 = rlen - UtilFunctions.computeCellIndex(inix.getRowIndex(), brlen, tmpblk.getNumRows()-1) + 1;
+			long pos1 = rlen - UtilFunctions.computeCellIndex(inix.getRowIndex(), blen, tmpblk.getNumRows()-1) + 1;
 			long pos2 = pos1 + tmpblk.getNumRows() - 1;
-			int ipos1 = UtilFunctions.computeCellInBlock(pos1, brlen);
+			int ipos1 = UtilFunctions.computeCellInBlock(pos1, blen);
 			int iposCut = tmpblk.getNumRows() - ipos1 - 1;
-			int blkix1 = (int)UtilFunctions.computeBlockIndex(pos1, brlen);
-			int blkix2 = (int)UtilFunctions.computeBlockIndex(pos2, brlen);
-			int blklen1 = (int)UtilFunctions.computeBlockSize(rlen, blkix1, brlen);
-			int blklen2 = (int)UtilFunctions.computeBlockSize(rlen, blkix2, brlen);
+			int blkix1 = (int)UtilFunctions.computeBlockIndex(pos1, blen);
+			int blkix2 = (int)UtilFunctions.computeBlockIndex(pos2, blen);
+			int blklen1 = (int)UtilFunctions.computeBlockSize(rlen, blkix1, blen);
+			int blklen2 = (int)UtilFunctions.computeBlockSize(rlen, blkix2, blen);
 			
 			//slice first block
 			MatrixIndexes outix1 = new MatrixIndexes(blkix1, inix.getColumnIndex());
@@ -479,8 +479,8 @@ public class LibMatrixReorg
 		Map<MatrixIndexes, MatrixBlock> rblk = createAllResultBlocks(rix, mbIn.nonZeros, mcOut);
 		
 		//basic algorithm
-		long row_offset = (ixIn.getRowIndex()-1)*mcIn.getRowsPerBlock();
-		long col_offset = (ixIn.getColumnIndex()-1)*mcIn.getColsPerBlock();
+		long row_offset = (ixIn.getRowIndex()-1)*mcIn.getBlocksize();
+		long col_offset = (ixIn.getColumnIndex()-1)*mcIn.getBlocksize();
 		if( mbIn.sparse )
 			reshapeSparse(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
 		else //dense
@@ -530,11 +530,11 @@ public class LibMatrixReorg
 	 * @param offset ?
 	 * @param rmRows ?
 	 * @param len ?
-	 * @param brlen number of rows in a block
-	 * @param bclen number of columns in a block
+	 * @param blen number of rows in a block
+	 * @param blen number of columns in a block
 	 * @param outList list of indexed matrix values
 	 */
-	public static void rmempty(IndexedMatrixValue data, IndexedMatrixValue offset, boolean rmRows, long len, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) {
+	public static void rmempty(IndexedMatrixValue data, IndexedMatrixValue offset, boolean rmRows, long len, long blen, ArrayList<IndexedMatrixValue> outList) {
 		//sanity check inputs
 		if( !(data.getValue() instanceof MatrixBlock && offset.getValue() instanceof MatrixBlock) )
 			throw new DMLRuntimeException("Unsupported input data: expected "+MatrixBlock.class.getName()+" but got "+data.getValue().getClass().getName()+" and "+offset.getValue().getClass().getName());
@@ -561,14 +561,14 @@ public class LibMatrixReorg
 					//get single row from source block
 					MatrixBlock src = (MatrixBlock) linData.slice(
 							  i, i, 0, (int)(clen-1), new MatrixBlock());
-					long brix = (rix-1)/brlen+1;
-					long lbrix = (rix-1)%brlen;
+					long brix = (rix-1)/blen+1;
+					long lbrix = (rix-1)%blen;
 					tmpIx.setIndexes(brix, data.getIndexes().getColumnIndex());
 					 //create target block if necessary
 					if( !out.containsKey(tmpIx) ) {
 						IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
 						tmpIMV.getIndexes().setIndexes(tmpIx);
-						((MatrixBlock)tmpIMV.getValue()).reset((int)Math.min(brlen, rlen-((brix-1)*brlen)), (int)clen);
+						((MatrixBlock)tmpIMV.getValue()).reset((int)Math.min(blen, rlen-((brix-1)*blen)), (int)clen);
 						out.put(tmpIMV.getIndexes(), tmpIMV);
 					}
 					//put single row into target block
@@ -589,14 +589,14 @@ public class LibMatrixReorg
 					//get single row from source block
 					MatrixBlock src = (MatrixBlock) linData.slice(
 							  0, (int)(rlen-1), i, i, new MatrixBlock());
-					long bcix = (cix-1)/bclen+1;
-					long lbcix = (cix-1)%bclen;
+					long bcix = (cix-1)/blen+1;
+					long lbcix = (cix-1)%blen;
 					tmpIx.setIndexes(data.getIndexes().getRowIndex(), bcix);
 					 //create target block if necessary
 					if( !out.containsKey(tmpIx) ) {
 						IndexedMatrixValue tmpIMV = new IndexedMatrixValue(new MatrixIndexes(),new MatrixBlock());
 						tmpIMV.getIndexes().setIndexes(tmpIx);
-						((MatrixBlock)tmpIMV.getValue()).reset((int)rlen,(int)Math.min(bclen, clen-((bcix-1)*bclen)));
+						((MatrixBlock)tmpIMV.getValue()).reset((int)rlen,(int)Math.min(blen, clen-((bcix-1)*blen)));
 						out.put(tmpIMV.getIndexes(), tmpIMV);
 					}
 					//put single row into target block
@@ -658,11 +658,11 @@ public class LibMatrixReorg
 	 * @param rows ?
 	 * @param cast ?
 	 * @param ignore ?
-	 * @param brlen number of rows in a block
-	 * @param bclen number of columns in a block
+	 * @param blen number of rows in a block
+	 * @param blen number of columns in a block
 	 * @param outList list of indexed matrix values
 	 */
-	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) {
+	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long blen, ArrayList<IndexedMatrixValue> outList) {
 		//prepare parameters
 		MatrixIndexes ix = data.getIndexes();
 		MatrixBlock in = (MatrixBlock)data.getValue();
@@ -674,21 +674,21 @@ public class LibMatrixReorg
 		//prepare outputs blocks (slice tmp block into output blocks ) 
 		if( rows ) //expanded vertically
 		{
-			for( int rl=0; rl<tmp.getNumRows(); rl+=brlen ) {
+			for( int rl=0; rl<tmp.getNumRows(); rl+=blen ) {
 				MatrixBlock mb = tmp.slice(
-						rl, (int)(Math.min(rl+brlen, tmp.getNumRows())-1));
+						rl, (int)(Math.min(rl+blen, tmp.getNumRows())-1));
 				outList.add(new IndexedMatrixValue(
-						new MatrixIndexes(rl/brlen+1, ix.getRowIndex()), mb));
+						new MatrixIndexes(rl/blen+1, ix.getRowIndex()), mb));
 			}
 		}
 		else //expanded horizontally
 		{
-			for( int cl=0; cl<tmp.getNumColumns(); cl+=bclen ) {
+			for( int cl=0; cl<tmp.getNumColumns(); cl+=blen ) {
 				MatrixBlock mb = tmp.slice(
 						0, tmp.getNumRows()-1,
-						cl, (int)(Math.min(cl+bclen, tmp.getNumColumns())-1), new MatrixBlock());
+						cl, (int)(Math.min(cl+blen, tmp.getNumColumns())-1), new MatrixBlock());
 				outList.add(new IndexedMatrixValue(
-						new MatrixIndexes(ix.getRowIndex(), cl/bclen+1), mb));
+						new MatrixIndexes(ix.getRowIndex(), cl/blen+1), mb));
 			}
 		}
 	}
@@ -1449,14 +1449,14 @@ public class LibMatrixReorg
 	///////////////////////////////
 
 	private static Collection<MatrixIndexes> computeAllResultBlockIndexes(MatrixIndexes ixin,
-	                                                                      DataCharacteristics mcIn, DataCharacteristics mcOut, MatrixBlock in, boolean rowwise, boolean outputEmpty )
+		DataCharacteristics mcIn, DataCharacteristics mcOut, MatrixBlock in, boolean rowwise, boolean outputEmpty )
 	{
 		HashSet<MatrixIndexes> ret = new HashSet<>();
 		
-		long row_offset = (ixin.getRowIndex()-1)*mcOut.getRowsPerBlock();
-		long col_offset = (ixin.getColumnIndex()-1)*mcOut.getColsPerBlock();
-		long max_row_offset = Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1;
-		long max_col_offset = Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1;
+		long row_offset = (ixin.getRowIndex()-1)*mcOut.getBlocksize();
+		long col_offset = (ixin.getColumnIndex()-1)*mcOut.getBlocksize();
+		long max_row_offset = Math.min(mcIn.getRows(),row_offset+mcIn.getBlocksize())-1;
+		long max_col_offset = Math.min(mcIn.getCols(),col_offset+mcIn.getBlocksize())-1;
 		
 		if( rowwise ) {
 			if( mcIn.getCols() == 1 ) {
@@ -1559,8 +1559,8 @@ public class LibMatrixReorg
 		//compute indexes
 		long bi = ix.getRowIndex();
 		long bj = ix.getColumnIndex();
-		int lbrlen = UtilFunctions.computeBlockSize(mcOut.getRows(), bi, mcOut.getRowsPerBlock());
-		int lbclen = UtilFunctions.computeBlockSize(mcOut.getCols(), bj, mcOut.getColsPerBlock());
+		int lbrlen = UtilFunctions.computeBlockSize(mcOut.getRows(), bi, mcOut.getBlocksize());
+		int lbclen = UtilFunctions.computeBlockSize(mcOut.getCols(), bj, mcOut.getBlocksize());
 		if( lbrlen<1 || lbclen<1 )
 			throw new DMLRuntimeException("Computed block dimensions ("+bi+","+bj+" -> "+lbrlen+","+lbclen+") are invalid!");
 		//create result block
@@ -1657,13 +1657,13 @@ public class LibMatrixReorg
 	 * @return matrix indexes
 	 */
 	private static MatrixIndexes computeResultBlockIndex(MatrixIndexes ixout, long ai, long aj,
-	                                                     DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise )
+		DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise )
 	{
 		long tempc = computeGlobalCellIndex(mcIn, ai, aj, rowwise);
 		long ci = rowwise ? tempc/mcOut.getCols() : tempc%mcOut.getRows();
 		long cj = rowwise ? tempc%mcOut.getCols() : tempc/mcOut.getRows();
-		long bci = ci/mcOut.getRowsPerBlock() + 1;
-		long bcj = cj/mcOut.getColsPerBlock() + 1;
+		long bci = ci/mcOut.getBlocksize() + 1;
+		long bcj = cj/mcOut.getBlocksize() + 1;
 		return ixout.setIndexes(bci, bcj);
 	}
 	
@@ -1671,10 +1671,10 @@ public class LibMatrixReorg
 	                                                 DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise )
 	{
 		long tempc = computeGlobalCellIndex(mcIn, ai, aj, rowwise);
-		long ci = rowwise ? (tempc/mcOut.getCols())%mcOut.getRowsPerBlock() : 
-			(tempc%mcOut.getRows())%mcOut.getRowsPerBlock();
-		long cj = rowwise ? (tempc%mcOut.getCols())%mcOut.getColsPerBlock() : 
-			(tempc/mcOut.getRows())%mcOut.getColsPerBlock();
+		long ci = rowwise ? (tempc/mcOut.getCols())%mcOut.getBlocksize() : 
+			(tempc%mcOut.getRows())%mcOut.getBlocksize();
+		long cj = rowwise ? (tempc%mcOut.getCols())%mcOut.getBlocksize() : 
+			(tempc/mcOut.getRows())%mcOut.getBlocksize();
 		return ixout.setIndexes(ci, cj);
 	}
 	

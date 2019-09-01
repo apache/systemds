@@ -72,10 +72,10 @@ public class MLContextOutputBlocksizeTest extends MLContextTestBase
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 76543);
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
 			int blksz = ConfigurationManager.getBlocksize();
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blksz, blksz, mbA.getNonZeros());
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blksz, mbA.getNonZeros());
 
 			//create input dataset
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz, blksz);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = SparkExecutionContext.toMatrixJavaPairRDD(sc, mbA, blksz);
 			Matrix m = new Matrix(in, new MatrixMetadata(mc));
 
 			ml.setExplain(true);
@@ -92,13 +92,11 @@ public class MLContextOutputBlocksizeTest extends MLContextTestBase
 			//compare output matrix characteristics
 			MatrixCharacteristics mcOut = results.getMatrix("R")
 				.getMatrixMetadata().asMatrixCharacteristics();
-			Assert.assertEquals(blksz, mcOut.getRowsPerBlock());
-			Assert.assertEquals(blksz, mcOut.getColsPerBlock());
+			Assert.assertEquals(blksz, mcOut.getBlocksize());
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 	}
-
 }

@@ -95,9 +95,8 @@ public class MemoTable
 		}
 	}
 
-	public void memoizeStatistics( long hopID, long dim1, long dim2, long nnz )
-	{
-		_memo.put(hopID, new MatrixCharacteristics(dim1, dim2, -1, -1, nnz));
+	public void memoizeStatistics( long hopID, long dim1, long dim2, long nnz ) {
+		_memo.put(hopID, new MatrixCharacteristics(dim1, dim2, -1, nnz));
 	}
 
 	public DataCharacteristics[] getAllInputStats(ArrayList<Hop> inputs )
@@ -116,7 +115,7 @@ public class MemoTable
 			
 			if( input.dimsKnown() ) //all dims known
 			{
-				ret[i] = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
+				ret[i] = new MatrixCharacteristics(dim1, dim2, -1, nnz);
 			}
 			else
 			{
@@ -128,7 +127,7 @@ public class MemoTable
 					dim2 = (dim2<=0) ? tmp.getCols() : dim2;
 					nnz = (nnz<=0) ? tmp.getNonZeros() : nnz;
 				}
-				ret[i] = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
+				ret[i] = new MatrixCharacteristics(dim1, dim2, -1, nnz);
 			}
 		}
 		
@@ -148,7 +147,7 @@ public class MemoTable
 		
 		if( input.dimsKnown(true) ) //all dims known
 		{
-			ret = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
+			ret = new MatrixCharacteristics(dim1, dim2, -1, nnz);
 		}
 		else //enrich exact information with worst-case stats
 		{
@@ -158,7 +157,7 @@ public class MemoTable
 				dim2 = (dim2<=0) ? tmp.getCols() : dim2;
 				nnz = (nnz<0) ? tmp.getNonZeros() : nnz;
 			}
-			ret = new MatrixCharacteristics(dim1, dim2, -1, -1, nnz);
+			ret = new MatrixCharacteristics(dim1, dim2, -1, nnz);
 		}
 		
 		return ret;

@@ -614,14 +614,14 @@ public class SpoofCompiler
 			
 			//modify output parameters 
 			HopRewriteUtils.setOutputParameters(hnew, hop.getDim1(), hop.getDim2(), 
-					hop.getRowsInBlock(), hop.getColsInBlock(), hop.getNnz());
+					hop.getBlocksize(), hop.getNnz());
 			if(tmpCNode instanceof CNodeOuterProduct && ((CNodeOuterProduct)tmpCNode).isTransposeOutput() )
 				hnew = HopRewriteUtils.createTranspose(hnew);
 			else if( tmpCNode instanceof CNodeMultiAgg ) {
 				ArrayList<Hop> roots = ((CNodeMultiAgg)tmpCNode).getRootNodes();
 				hnew.setDataType(DataType.MATRIX);
 				HopRewriteUtils.setOutputParameters(hnew, 1, roots.size(), 
-					inHops[0].getRowsInBlock(), inHops[0].getColsInBlock(), -1);
+					inHops[0].getBlocksize(), -1);
 				//inject artificial right indexing operations for all parents of all nodes
 				for( int i=0; i<roots.size(); i++ ) {
 					Hop hnewi = (roots.get(i) instanceof AggUnaryOp) ? 
@@ -727,10 +727,10 @@ public class SpoofCompiler
 						|| OptimizerUtils.getTotalMemEstimate(inHops, hop, true)
 							> OptimizerUtils.getLocalMemBudget();
 					boolean invalidNcol = hop.getDataType().isMatrix() && (HopRewriteUtils.isTransposeOperation(hop) ?
-						hop.getDim1() > hop.getRowsInBlock() : hop.getDim2() > hop.getColsInBlock());
+						hop.getDim1() > hop.getBlocksize() : hop.getDim2() > hop.getBlocksize());
 					for( Hop in : inHops )
 						invalidNcol |= (in.getDataType().isMatrix() 
-							&& in.getDim2() > in.getColsInBlock());
+							&& in.getDim2() > in.getBlocksize());
 					if( isSpark && invalidNcol ) {
 						cplans2.remove(e.getKey());
 						if( LOG.isTraceEnabled() )

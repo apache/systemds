@@ -31,16 +31,15 @@ public class ConvertMatrixBlockToIJVLines implements FlatMapFunction<Tuple2<Matr
 
 	private static final long serialVersionUID = 3555147684480763957L;
 	
-	int brlen; int bclen;
-	public ConvertMatrixBlockToIJVLines(int brlen, int bclen) {
-		this.brlen = brlen;
-		this.bclen = bclen;
+	int blen;
+	public ConvertMatrixBlockToIJVLines(int blen) {
+		this.blen = blen;
 	}
 	
 	@Override
 	public Iterator<String> call(Tuple2<MatrixIndexes, MatrixBlock> kv) {
 		final BinaryBlockToTextCellConverter converter = new BinaryBlockToTextCellConverter();
-		converter.setBlockSize(brlen, bclen);
+		converter.setBlockSize(blen, blen);
 		converter.convert(kv._1, kv._2);
 		
 		Iterable<String> ret = new Iterable<String>() {

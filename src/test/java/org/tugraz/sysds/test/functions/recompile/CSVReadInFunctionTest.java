@@ -89,12 +89,12 @@ public class CSVReadInFunctionTest extends AutomatedTestBase {
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1.0d, 7);
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo);
-			writer.writeMatrixToHDFS(mbA, input("A"), rows, cols, -1, -1, mbA.getNonZeros());
+			writer.writeMatrixToHDFS(mbA, input("A"), rows, cols, -1, mbA.getNonZeros());
 			
 			double[][] B = getRandomMatrix(rows, 1, -1, 1, 1.0d, 7);
 			MatrixBlock mbB = DataConverter.convertToMatrixBlock(B);
 			MatrixWriter writer2 = MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo);
-			writer2.writeMatrixToHDFS(mbB, input("B"), rows, 1, -1, -1, mbB.getNonZeros());
+			writer2.writeMatrixToHDFS(mbB, input("B"), rows, 1, -1, mbB.getNonZeros());
 			
 			if( withMtD ) {
 				HDFSTool.writeMetaDataFile(input("A")+".mtd", ValueType.FP64,

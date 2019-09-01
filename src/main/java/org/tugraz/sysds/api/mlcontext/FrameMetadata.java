@@ -145,14 +145,13 @@ public class FrameMetadata extends Metadata {
 	 *            The number of columns per block in the frame.
 	 */
 	public FrameMetadata(FrameFormat frameFormat, FrameSchema frameSchema, Long numRows, Long numColumns,
-			Long numNonZeros, Integer numRowsPerBlock, Integer numColumnsPerBlock) {
+			Long numNonZeros, Integer blen) {
 		this.frameFormat = frameFormat;
 		this.frameSchema = frameSchema;
 		this.numRows = numRows;
 		this.numColumns = numColumns;
 		this.numNonZeros = numNonZeros;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
+		this.blockSize = blen;
 	}
 
 	/**
@@ -176,15 +175,13 @@ public class FrameMetadata extends Metadata {
 	 * @param numColumnsPerBlock
 	 *            The number of columns per block in the frame.
 	 */
-	public FrameMetadata(FrameFormat frameFormat, FrameSchema frameSchema, int numRows, int numColumns, int numNonZeros,
-			int numRowsPerBlock, int numColumnsPerBlock) {
+	public FrameMetadata(FrameFormat frameFormat, FrameSchema frameSchema, int numRows, int numColumns, int numNonZeros, int blen) {
 		this.frameFormat = frameFormat;
 		this.frameSchema = frameSchema;
 		this.numRows = (long) numRows;
 		this.numColumns = (long) numColumns;
 		this.numNonZeros = (long) numNonZeros;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
+		this.blockSize = blen;
 	}
 
 	/**
@@ -281,14 +278,12 @@ public class FrameMetadata extends Metadata {
 	 * @param numColumnsPerBlock
 	 *            The number of columns per block in the frame.
 	 */
-	public FrameMetadata(FrameFormat frameFormat, Long numRows, Long numColumns, Long numNonZeros,
-			Integer numRowsPerBlock, Integer numColumnsPerBlock) {
+	public FrameMetadata(FrameFormat frameFormat, Long numRows, Long numColumns, Long numNonZeros, Integer blen) {
 		this.frameFormat = frameFormat;
 		this.numRows = numRows;
 		this.numColumns = numColumns;
 		this.numNonZeros = numNonZeros;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
+		this.blockSize = blen;
 	}
 
 	/**
@@ -309,14 +304,12 @@ public class FrameMetadata extends Metadata {
 	 * @param numColumnsPerBlock
 	 *            The number of columns per block in the frame.
 	 */
-	public FrameMetadata(FrameFormat frameFormat, int numRows, int numColumns, int numNonZeros, int numRowsPerBlock,
-			int numColumnsPerBlock) {
+	public FrameMetadata(FrameFormat frameFormat, int numRows, int numColumns, int numNonZeros, int blen) {
 		this.frameFormat = frameFormat;
 		this.numRows = (long) numRows;
 		this.numColumns = (long) numColumns;
 		this.numNonZeros = (long) numNonZeros;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
+		this.blockSize = blen;
 	}
 
 	/**
@@ -395,32 +388,10 @@ public class FrameMetadata extends Metadata {
 	 * @param numColumnsPerBlock
 	 *            The number of columns per block in the frame.
 	 */
-	public FrameMetadata(Long numRows, Long numColumns, Integer numRowsPerBlock, Integer numColumnsPerBlock) {
+	public FrameMetadata(Long numRows, Long numColumns, Integer blen) {
 		this.numRows = numRows;
 		this.numColumns = numColumns;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
-	}
-
-	/**
-	 * Constructor to create a FrameMetadata object based on the number of rows,
-	 * the number of columns, the number of rows per block, and the number of
-	 * columns per block in a frame.
-	 *
-	 * @param numRows
-	 *            The number of rows in the frame.
-	 * @param numColumns
-	 *            The number of columns in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
-	 */
-	public FrameMetadata(int numRows, int numColumns, int numRowsPerBlock, int numColumnsPerBlock) {
-		this.numRows = (long) numRows;
-		this.numColumns = (long) numColumns;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
+		this.blockSize = blen;
 	}
 
 	/**
@@ -439,13 +410,11 @@ public class FrameMetadata extends Metadata {
 	 * @param numColumnsPerBlock
 	 *            The number of columns per block in the frame.
 	 */
-	public FrameMetadata(Long numRows, Long numColumns, Long numNonZeros, Integer numRowsPerBlock,
-			Integer numColumnsPerBlock) {
+	public FrameMetadata(Long numRows, Long numColumns, Long numNonZeros, Integer blen) {
 		this.numRows = numRows;
 		this.numColumns = numColumns;
 		this.numNonZeros = numNonZeros;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
+		this.blockSize = blen;
 	}
 
 	/**
@@ -464,12 +433,11 @@ public class FrameMetadata extends Metadata {
 	 * @param numColumnsPerBlock
 	 *            The number of columns per block in the frame.
 	 */
-	public FrameMetadata(int numRows, int numColumns, int numNonZeros, int numRowsPerBlock, int numColumnsPerBlock) {
+	public FrameMetadata(int numRows, int numColumns, int numNonZeros, int blen) {
 		this.numRows = (long) numRows;
 		this.numColumns = (long) numColumns;
 		this.numNonZeros = (long) numNonZeros;
-		this.numRowsPerBlock = numRowsPerBlock;
-		this.numColumnsPerBlock = numColumnsPerBlock;
+		this.blockSize = blen;
 	}
 
 	/**
@@ -483,8 +451,7 @@ public class FrameMetadata extends Metadata {
 		this.numRows = dataCharacteristics.getRows();
 		this.numColumns = dataCharacteristics.getCols();
 		this.numNonZeros = dataCharacteristics.getNonZeros();
-		this.numRowsPerBlock = dataCharacteristics.getRowsPerBlock();
-		this.numColumnsPerBlock = dataCharacteristics.getColsPerBlock();
+		this.blockSize = dataCharacteristics.getBlocksize();
 	}
 
 	/**
@@ -501,8 +468,7 @@ public class FrameMetadata extends Metadata {
 		this.numRows = matrixCharacteristics.getRows();
 		this.numColumns = matrixCharacteristics.getCols();
 		this.numNonZeros = matrixCharacteristics.getNonZeros();
-		this.numRowsPerBlock = matrixCharacteristics.getRowsPerBlock();
-		this.numColumnsPerBlock = matrixCharacteristics.getColsPerBlock();
+		this.blockSize = matrixCharacteristics.getBlocksize();
 	}
 
 	/**

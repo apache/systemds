@@ -191,7 +191,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		else {
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(OutputInfo.BinaryBlockOutputInfo);
-			writer.writeMatrixToHDFS(mb, fname, (long)rows, (long)cols, blksize, blksize, -1);
+			writer.writeMatrixToHDFS(mb, fname, (long)rows, (long)cols, blksize, -1);
 		}
 		
 		//write meta data
@@ -214,7 +214,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		else {
 			int blksize = ConfigurationManager.getBlocksize();
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.BinaryBlockInputInfo);
-			ret = reader.readMatrixFromHDFS(fname, rows, cols, blksize, blksize, -1);
+			ret = reader.readMatrixFromHDFS(fname, rows, cols, blksize, -1);
 		}
 		
 		return DataConverter.convertToDoubleMatrix(ret);

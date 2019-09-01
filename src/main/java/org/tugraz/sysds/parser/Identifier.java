@@ -31,8 +31,7 @@ public abstract class Identifier extends Expression
 	protected ValueType _valueType;
 	protected long _dim1;
 	protected long _dim2;
-	protected int _rows_in_block;
-	protected int _columns_in_block;
+	protected int _blocksize;
 	protected long _nnz;
 	protected FormatType _formatType;
 
@@ -41,8 +40,7 @@ public abstract class Identifier extends Expression
 		_dim2 = -1;
 		_dataType = DataType.UNKNOWN;
 		_valueType = ValueType.UNKNOWN;
-		_rows_in_block = -1;
-		_columns_in_block = -1;
+		_blocksize = -1;
 		_nnz = -1;
 		setOutput(this);
 		_formatType = null;
@@ -61,8 +59,7 @@ public abstract class Identifier extends Expression
 			_dim1 = i.getDim1();
 			_dim2 = i.getDim2();
 		}
-		_rows_in_block = i.getRowsInBlock();
-		_columns_in_block = i.getColumnsInBlock();
+		_blocksize = i.getBlocksize();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
 	}
@@ -98,11 +95,6 @@ public abstract class Identifier extends Expression
 		_dim1 = dim1;
 		_dim2 = dim2;
 	}
-		
-	public void setBlockDimensions(int dim1, int dim2){
-		 _rows_in_block = dim1;
-		 _columns_in_block = dim2;
-	}
 	
 	public void setNnz(long nnzs){
 		_nnz = nnzs;
@@ -128,12 +120,12 @@ public abstract class Identifier extends Expression
 		return _formatType;
 	}
 	
-	public int getRowsInBlock(){
-		return _rows_in_block;
+	public int getBlocksize(){
+		return _blocksize;
 	}
 	
-	public int getColumnsInBlock(){
-		return _columns_in_block;
+	public void setBlocksize(int blen){
+		_blocksize = blen;
 	}
 	
 	public long getNnz(){
@@ -196,8 +188,7 @@ public abstract class Identifier extends Expression
 		_valueType = ValueType.BOOLEAN;
 		_dim1 = 0;
 		_dim2 = 0;
-		_rows_in_block = 0;
-		_columns_in_block = 0;
+		_blocksize = 0;
 		_nnz = -1;
 		_formatType = null;
 	}
@@ -207,8 +198,7 @@ public abstract class Identifier extends Expression
 		_valueType = ValueType.INT64;
 		_dim1 = 0;
 		_dim2 = 0;
-		_rows_in_block = 0;
-		_columns_in_block = 0;
+		_blocksize = 0;
 		_nnz = -1;
 		_formatType = null;
 	}

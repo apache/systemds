@@ -93,7 +93,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 			DoubleObject ret = new DoubleObject(tmp.getValue(0, 0));
 			sec.setVariable(output.getName(), ret);	
 		}
-		else if( mcIn.dimsKnown() && mcIn.getCols()<=mcIn.getColsPerBlock() ) //tack+* single block
+		else if( mcIn.dimsKnown() && mcIn.getCols()<=mcIn.getBlocksize() ) //tack+* single block
 		{
 			//single block aggregation and drop correction
 			MatrixBlock ret = RDDAggregateUtils.aggStable(out, aggop.aggOp);

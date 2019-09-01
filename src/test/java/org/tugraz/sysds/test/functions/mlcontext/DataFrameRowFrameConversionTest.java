@@ -214,7 +214,7 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A); 
 			FrameBlock fbA = DataConverter.convertToFrameBlock(mbA, vt);
 			int blksz = ConfigurationManager.getBlocksize();
-			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, cols, blksz, blksz, mbA.getNonZeros());
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows1, cols, blksz, mbA.getNonZeros());
 			MatrixCharacteristics mc2 = unknownDims ? new MatrixCharacteristics() : new MatrixCharacteristics(mc1);
 			ValueType[] schema = UtilFunctions.nCopies(cols, vt);
 

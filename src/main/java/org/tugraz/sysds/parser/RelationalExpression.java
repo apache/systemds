@@ -151,7 +151,7 @@ public class RelationalExpression extends Expression
 			MatrixCharacteristics dims = getBinaryMatrixCharacteristics(_left, _right);
 			output.setDataType(DataType.MATRIX);
 			output.setDimensions(dims.getRows(), dims.getCols());
-			output.setBlockDimensions(dims.getRowsPerBlock(), dims.getColsPerBlock());
+			output.setBlocksize(dims.getBlocksize());
 			
 			//since SystemDS only supports double matrices, the value type is forced to
 			//double; once we support boolean matrices this needs to change
@@ -162,7 +162,7 @@ public class RelationalExpression extends Expression
 		}
 		
 		this.setOutput(output);
-	}		
+	}
 	
 	/**
 	 * This is same as the function from BuiltinFunctionExpression which is called by ppred

@@ -61,8 +61,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final OutputInfo _oinfo;
 	private final int _rlen;
 	private final int _clen;
-	private final int _brlen;
-	private final int _bclen;
+	private final int _blen;
 	private final boolean _tSparseCol;
 	private final PDataPartitionFormat _dpf;
 	
@@ -70,8 +69,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final LongAccumulator _aIters;
 	
 	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar,
-	                                 boolean cpCaching, DataCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, OutputInfo oinfo,
-	                                 LongAccumulator atasks, LongAccumulator aiters)
+		boolean cpCaching, DataCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, OutputInfo oinfo,
+		LongAccumulator atasks, LongAccumulator aiters)
 	{
 		_prog = program;
 		_clsMap = clsMap;
@@ -87,8 +86,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		//setup matrix block partition meta data
 		_rlen = (int)dpf.getNumRows(mc);
 		_clen = (int)dpf.getNumColumns(mc);
-		_brlen = mc.getRowsPerBlock();
-		_bclen = mc.getColsPerBlock();
+		_blen = mc.getBlocksize();
 		_tSparseCol = tSparseCol;
 		_dpf = dpf._dpf;
 	}
@@ -200,8 +198,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			long lnnz = 0;
 			for( Writable val : valueList ) {
 				PairWritableBlock pval = (PairWritableBlock) val;
-				int row_offset = (int)(pval.indexes.getRowIndex()-1)*_brlen;
-				int col_offset = (int)(pval.indexes.getColumnIndex()-1)*_bclen;
+				int row_offset = (int)(pval.indexes.getRowIndex()-1)*_blen;
+				int col_offset = (int)(pval.indexes.getColumnIndex()-1)*_blen;
 				if( !partition.isInSparseFormat() ) //DENSE
 					partition.copy( row_offset, row_offset+pval.block.getNumRows()-1, 
 						col_offset, col_offset+pval.block.getNumColumns()-1,
@@ -212,7 +210,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			}
 
 			//post-processing: cleanups if required
-			if( partition.isInSparseFormat() && _clen>_bclen )
+			if( partition.isInSparseFormat() && _clen>_blen )
 				partition.sortSparseRows();
 			partition.setNonZeros(lnnz);
 			partition.examSparsity();

@@ -90,7 +90,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			
 			// if block size does not match
 			if( canReblock && 
-				( (dop.getDataType() == DataType.MATRIX && (dop.getRowsInBlock() != blocksize || dop.getColsInBlock() != blocksize))
+				( (dop.getDataType() == DataType.MATRIX && (dop.getBlocksize() != blocksize))
 				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && (dop.getInputFormatType()==FileFormatTypes.TEXT
 						  || dop.getInputFormatType()==FileFormatTypes.CSV))) ) 
 			{
@@ -98,11 +98,11 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				{
 					// insert reblock after the hop
 					dop.setRequiresReblock(true);
-					dop.setOutputBlocksizes(blocksize, blocksize);
+					dop.setBlocksize(blocksize);
 				} 
 				else if( dop.getDataOpType() == DataOp.DataOpTypes.PERSISTENTWRITE ) 
 				{
-					if (dop.getRowsInBlock() == -1 && dop.getColsInBlock() == -1) 
+					if (dop.getBlocksize() == -1) 
 					{
 						// if this dataop is for cell output, then no reblock is needed 
 						// as (A) all jobtypes can produce block2cell and cell2cell and 
@@ -113,26 +113,24 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 					{
 						// if a reblock is feeding into this, then use it if this is
 						// the only parent, otherwise new Reblock
-						dop.getInput().get(0).setOutputBlocksizes(dop.getRowsInBlock(),dop.getColsInBlock());
+						dop.getInput().get(0).setBlocksize(dop.getBlocksize());
 					} 
 					else 
 					{
 						// insert reblock after the hop
 						dop.setRequiresReblock(true);
-						dop.setOutputBlocksizes(blocksize, blocksize);
+						dop.setBlocksize(blocksize);
 					}
 				} 
 				else if (dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTWRITE
 						|| dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTREAD) {
 					if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
 						// simply copy the values from its input
-						dop.setRowsInBlock(hop.getInput().get(0).getRowsInBlock());
-						dop.setColsInBlock(hop.getInput().get(0).getColsInBlock());
+						dop.setBlocksize(hop.getInput().get(0).getBlocksize());
 					}
 					else {
 						// by default, all transient reads and writes are in blocked format
-						dop.setRowsInBlock(blocksize);
-						dop.setColsInBlock(blocksize);
+						dop.setBlocksize(blocksize);
 					}
 
 				} else {
@@ -164,27 +162,23 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			 */
 			
 			if ( hop.requiresReblock() ) {
-				hop.setRowsInBlock(blocksize);
-				hop.setColsInBlock(blocksize);
+				hop.setBlocksize(blocksize);
 			}
 			
 			// Constraint C1:
 			
 			// Constraint C2:
 			else if ( hop.getDataType() == DataType.SCALAR ) {
-				hop.setRowsInBlock(-1);
-				hop.setColsInBlock(-1);
+				hop.setBlocksize(-1);
 			}
 
 			// Constraint C3:
 			else {
 				if ( !canReblock ) {
-					hop.setRowsInBlock(-1);
-					hop.setColsInBlock(-1);
+					hop.setBlocksize(-1);
 				}
 				else {
-					hop.setRowsInBlock(blocksize);
-					hop.setColsInBlock(blocksize);
+					hop.setBlocksize(blocksize);
 					
 					// Functions may return multiple outputs, as defined in array of outputs in FunctionOp.
 					// Reblock properties need to be set for each output.
@@ -192,8 +186,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						FunctionOp fop = (FunctionOp) hop;
 						if ( fop.getOutputs() != null) {
 							for(Hop out : fop.getOutputs()) {
-								out.setRowsInBlock(blocksize);
-								out.setColsInBlock(blocksize);
+								out.setBlocksize(blocksize);
 							}
 						}
 					}
@@ -201,9 +194,8 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				
 				// if any input is not blocked then the output of current Hop should not be blocked
 				for ( Hop h : hop.getInput() ) {
-					if ( h.getDataType() == DataType.MATRIX && h.getRowsInBlock() == -1 && h.getColsInBlock() == -1 ) {
-						hop.setRowsInBlock(-1);
-						hop.setColsInBlock(-1);
+					if ( h.getDataType() == DataType.MATRIX && h.getBlocksize() == -1) {
+						hop.setBlocksize(-1);
 						break;
 					}
 				}

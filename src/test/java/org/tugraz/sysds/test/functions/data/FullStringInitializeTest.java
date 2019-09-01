@@ -336,7 +336,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 			if( !expectExcept ) {
 				//compare matrices 
 				MatrixBlock ret = DataConverter.readMatrixFromHDFS(output("A"), InputInfo.TextCellInputInfo,
-					rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz, null);
+					rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz, null);
 				double[][] dret = DataConverter.convertToDoubleMatrix(ret);
 				TestUtils.compareMatrices(A, dret, rows, cols, eps);
 			}

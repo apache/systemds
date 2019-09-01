@@ -93,7 +93,7 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			
 			//generate input data
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, OptimizerUtils.getSparsity(rows, cols, nnz), -1, 1, "uniform", 7);
-			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,1000,1000,nnz);
+			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,1000,nnz);
 			DataConverter.writeMatrixToHDFS(mb, output("X"), OutputInfo.BinaryBlockOutputInfo, mc1);
 			HDFSTool.writeMetaDataFile(output("X.mtd"), ValueType.FP64, mc1, OutputInfo.BinaryBlockOutputInfo);
 			

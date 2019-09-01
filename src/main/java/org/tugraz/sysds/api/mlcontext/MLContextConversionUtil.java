@@ -262,8 +262,7 @@ public class MLContextConversionUtil {
 		try {
 			MatrixBlock matrixBlock = SparkExecutionContext.toMatrixBlock(binaryBlocks,
 					matrixMetadata.getNumRows().intValue(), matrixMetadata.getNumColumns().intValue(),
-					matrixMetadata.getNumRowsPerBlock(), matrixMetadata.getNumColumnsPerBlock(),
-					matrixMetadata.getNumNonZeros());
+					matrixMetadata.getBlocksize(), matrixMetadata.getNumNonZeros());
 			return matrixBlock;
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception converting binary blocks to MatrixBlock", e);

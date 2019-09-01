@@ -136,7 +136,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		{
 			//execute reverse reorg operation
 			out = in1.flatMapToPair(new RDDRevFunction(mcIn));
-			if( mcIn.getRows() % mcIn.getRowsPerBlock() != 0 )
+			if( mcIn.getRows() % mcIn.getBlocksize() != 0 )
 				out = RDDAggregateUtils.mergeByKey(out, false);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) // DIAG
@@ -162,24 +162,24 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			boolean singleCol = (mcIn.getCols() == 1);
 			out = in1;
 			
-			if( cols.length > mcIn.getColsPerBlock() ) 
+			if( cols.length > mcIn.getBlocksize() ) 
 				LOG.warn("Unsupported sort with number of order-by columns large than blocksize: "+cols.length);
 			
 			if( singleCol || cols.length==1 ) {
 				// extract column (if necessary) and sort 
 				if( !singleCol )
 					out = out.filter(new IsBlockInRange(1, mcIn.getRows(), cols[0], cols[0], mcIn))
-						.mapValues(new ExtractColumn((int)UtilFunctions.computeCellInBlock(cols[0], mcIn.getColsPerBlock())));
+						.mapValues(new ExtractColumn((int)UtilFunctions.computeCellInBlock(cols[0], mcIn.getBlocksize())));
 				
 				//actual index/data sort operation
 				if( ixret ) //sort indexes 
-					out = RDDSortUtils.sortIndexesByVal(out, !desc, mcIn.getRows(), mcIn.getRowsPerBlock());
+					out = RDDSortUtils.sortIndexesByVal(out, !desc, mcIn.getRows(), mcIn.getBlocksize());
 				else if( singleCol && !desc) //sort single-column matrix
-					out = RDDSortUtils.sortByVal(out, mcIn.getRows(), mcIn.getRowsPerBlock());
+					out = RDDSortUtils.sortByVal(out, mcIn.getRows(), mcIn.getBlocksize());
 				else if( !_bSortIndInMem ) //sort multi-column matrix w/ rewrite
-					out = RDDSortUtils.sortDataByVal(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+					out = RDDSortUtils.sortDataByVal(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getBlocksize());
 				else //sort multi-column matrix
-					out = RDDSortUtils.sortDataByValMemSort(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), sec, (ReorgOperator) _optr);
+					out = RDDSortUtils.sortDataByValMemSort(out, in1, !desc, mcIn.getRows(), mcIn.getCols(), mcIn.getBlocksize(), sec, (ReorgOperator) _optr);
 			}
 			else { //general case: multi-column sort
 				// extract columns (if necessary)
@@ -188,17 +188,17 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 						.mapToPair(new ExtractColumns(cols, mcIn));
 				
 				// append extracted columns (if necessary)
-				if( mcIn.getCols() > mcIn.getColsPerBlock() )
+				if( mcIn.getCols() > mcIn.getBlocksize() )
 					out = RDDAggregateUtils.mergeByKey(out);
 				
 				//actual index/data sort operation
 				if( ixret ) //sort indexes 
-					out = RDDSortUtils.sortIndexesByVals(out, !desc, mcIn.getRows(), (long)cols.length, mcIn.getRowsPerBlock());
+					out = RDDSortUtils.sortIndexesByVals(out, !desc, mcIn.getRows(), (long)cols.length, mcIn.getBlocksize());
 				else if( cols.length==mcIn.getCols() && !desc) //sort single-column matrix
-					out = RDDSortUtils.sortByVals(out, mcIn.getRows(), cols.length, mcIn.getRowsPerBlock());
+					out = RDDSortUtils.sortByVals(out, mcIn.getRows(), cols.length, mcIn.getBlocksize());
 				else //sort multi-column matrix
-					out = RDDSortUtils.sortDataByVals(out, in1, !desc, mcIn.getRows(), mcIn.getCols(),
-						cols.length, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+					out = RDDSortUtils.sortDataByVals(out, in1, !desc, mcIn.getRows(),
+						mcIn.getCols(), cols.length, mcIn.getBlocksize());
 			}
 		}
 		else {
@@ -224,12 +224,12 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 				throw new DMLRuntimeException("Unable to compute output matrix characteristics from input.");
 			
 			if ( getOpcode().equalsIgnoreCase("r'") ) 
-				mcOut.set(mc1.getCols(), mc1.getRows(), mc1.getColsPerBlock(), mc1.getRowsPerBlock());
+				mcOut.set(mc1.getCols(), mc1.getRows(), mc1.getBlocksize(), mc1.getBlocksize());
 			else if ( getOpcode().equalsIgnoreCase("rdiag") )
-				mcOut.set(mc1.getRows(), (mc1.getCols()>1)?1:mc1.getRows(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(mc1.getRows(), (mc1.getCols()>1)?1:mc1.getRows(), mc1.getBlocksize(), mc1.getBlocksize());
 			else if ( getOpcode().equalsIgnoreCase("rsort") ) {
 				boolean ixret = sec.getScalarInput(_ixret).getBooleanValue();
-				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 			}
 		}
 		
@@ -268,11 +268,11 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			ret.add(new Tuple2<>(ixOut,blkOut));
 			
 			// insert newly created empty blocks for entire row
-			int numBlocks = (int) Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock());
+			int numBlocks = (int) Math.ceil((double)_mcIn.getRows()/_mcIn.getBlocksize());
 			for(int i = 1; i <= numBlocks; i++) {
 				if(i != ixOut.getColumnIndex()) {
-					int lrlen = UtilFunctions.computeBlockSize(_mcIn.getRows(), rix, _mcIn.getRowsPerBlock());
-					int lclen = UtilFunctions.computeBlockSize(_mcIn.getRows(), i, _mcIn.getRowsPerBlock());
+					int lrlen = UtilFunctions.computeBlockSize(_mcIn.getRows(), rix, _mcIn.getBlocksize());
+					int lclen = UtilFunctions.computeBlockSize(_mcIn.getRows(), i, _mcIn.getBlocksize());
 					MatrixBlock emptyBlk = new MatrixBlock(lrlen, lclen, true);
 					ret.add(new Tuple2<>(new MatrixIndexes(rix, i), emptyBlk));
 				}
@@ -299,7 +299,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			
 			//execute reverse operation
 			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
-			LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getRowsPerBlock(), out);
+			LibMatrixReorg.rev(in, _mcIn.getRows(), _mcIn.getBlocksize(), out);
 			
 			//construct output
 			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
@@ -329,12 +329,11 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = 2902729186431711506L;
 		
 		private final long[] _cols;
-		private final int _brlen, _bclen;
+		private final int _blen;
 		
 		public ExtractColumns(long[] cols, DataCharacteristics mc) {
 			_cols = cols;
-			_brlen = mc.getRowsPerBlock();
-			_bclen = mc.getColsPerBlock();
+			_blen = mc.getBlocksize();
 		}
 		
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) {
@@ -342,8 +341,8 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			MatrixBlock in = arg0._2();
 			MatrixBlock out = new MatrixBlock(in.getNumRows(), _cols.length, true);
 			for(int i=0; i<_cols.length; i++)
-				if( UtilFunctions.isInBlockRange(ix, _brlen, _bclen, new IndexRange(1, Long.MAX_VALUE, _cols[i], _cols[i])) ) {
-					int index = UtilFunctions.computeCellInBlock(_cols[i], _bclen);
+				if( UtilFunctions.isInBlockRange(ix, _blen, new IndexRange(1, Long.MAX_VALUE, _cols[i], _cols[i])) ) {
+					int index = UtilFunctions.computeCellInBlock(_cols[i], _blen);
 					out.leftIndexingOperations(in.slice(0, in.getNumRows()-1, index, index, new MatrixBlock()),
 						0, in.getNumRows()-1, i, i, out, UpdateType.INPLACE);
 				}

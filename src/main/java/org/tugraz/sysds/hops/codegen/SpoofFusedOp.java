@@ -85,7 +85,7 @@ public class SpoofFusedOp extends MultiThreadedHop
 		return _class.getGenericSuperclass().equals(SpoofRowwise.class) ?
 			OptimizerUtils.estimateSize(dim1, dim2) :
 			OptimizerUtils.estimatePartitionedSizeExactSparsity(
-				dim1, dim2, getRowsInBlock(), getColsInBlock(), nnz);
+				dim1, dim2, getBlocksize(), nnz);
 	}
 
 	@Override

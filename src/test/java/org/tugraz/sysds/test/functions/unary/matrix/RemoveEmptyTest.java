@@ -446,8 +446,8 @@ public class RemoveEmptyTest extends AutomatedTestBase
         	}
         }
         
-        MatrixCharacteristics imc = new MatrixCharacteristics(margin.equals("rows")?rows:1, margin.equals("rows")?1:cols, 1000, 1000, innz);
-        MatrixCharacteristics vmc = new MatrixCharacteristics(rows, cols, 1000, 1000, vnnz);
+        MatrixCharacteristics imc = new MatrixCharacteristics(margin.equals("rows")?rows:1, margin.equals("rows")?1:cols, 1000, innz);
+        MatrixCharacteristics vmc = new MatrixCharacteristics(rows, cols, 1000, vnnz);
         
 		writeInputMatrixWithMTD("V", V, false, vmc); //always text
 		writeExpectedMatrix("V", Vp);

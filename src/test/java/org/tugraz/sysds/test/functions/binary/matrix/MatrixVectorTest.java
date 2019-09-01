@@ -117,10 +117,10 @@ public class MatrixVectorTest extends AutomatedTestBase
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10); 
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 			writeInputMatrixWithMTD("A", A, true, mc);
 			double[][] x = getRandomMatrix(cols, 1, 0, 1, 1.0, 10); 
-			mc = new MatrixCharacteristics(cols, 1, -1, -1, cols);
+			mc = new MatrixCharacteristics(cols, 1, -1, cols);
 			writeInputMatrixWithMTD("x", x, true, mc);
 	
 			boolean exceptionExpected = false;
@@ -130,8 +130,7 @@ public class MatrixVectorTest extends AutomatedTestBase
 			compareResultsWithR(eps);
 			
 		}
-		finally
-		{
+		finally {
 			rtplatform = rtold;
 		}
 	}

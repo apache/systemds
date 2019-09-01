@@ -679,8 +679,7 @@ public class IndexedIdentifier extends DataIdentifier
 		_valueType = i.getValueType();
 		_dim1 = i.getDim1();
 		_dim2 = i.getDim2();
-		_rows_in_block = i.getRowsInBlock();
-		_columns_in_block = i.getColumnsInBlock();
+		_blocksize = i.getBlocksize();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
 		

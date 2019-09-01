@@ -104,7 +104,7 @@ public class CholeskyTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", input("A"), output("D") };
 			
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 			writeInputMatrixWithMTD("A", A, false, mc);
 			
 			//run tests and compare results

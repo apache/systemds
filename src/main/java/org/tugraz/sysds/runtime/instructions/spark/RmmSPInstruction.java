@@ -85,9 +85,9 @@ public class RmmSPInstruction extends BinarySPInstruction {
 		//execute Spark RMM instruction
 		//step 1: prepare join keys (w/ shallow replication), i/j/k
 		JavaPairRDD<TripleIndexes,MatrixBlock> tmp1 = in1.flatMapToPair(
-			new RmmReplicateFunction(mc2.getCols(), mc2.getColsPerBlock(), true)); 
+			new RmmReplicateFunction(mc2.getCols(), mc2.getBlocksize(), true)); 
 		JavaPairRDD<TripleIndexes,MatrixBlock> tmp2 = in2.flatMapToPair(
-			new RmmReplicateFunction(mc1.getRows(), mc1.getRowsPerBlock(), false));
+			new RmmReplicateFunction(mc1.getRows(), mc1.getBlocksize(), false));
 		
 		//step 2: join prepared datasets, multiply, and aggregate
 		int numPartJoin = Math.max(getNumJoinPartitions(mc1, mc2),
@@ -111,9 +111,9 @@ public class RmmSPInstruction extends BinarySPInstruction {
 		//compute data size of replicated inputs
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		double matrix1PSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc1)
-			* ((long) Math.ceil((double)mc2.getCols()/mc2.getColsPerBlock()));
+			* ((long) Math.ceil((double)mc2.getCols()/mc2.getBlocksize()));
 		double matrix2PSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc2)
-			* ((long) Math.ceil((double)mc1.getRows()/mc1.getRowsPerBlock()));
+			* ((long) Math.ceil((double)mc1.getRows()/mc1.getBlocksize()));
 		return (int) Math.max(Math.ceil((matrix1PSize+matrix2PSize)/hdfsBlockSize), 1);
 	}
 

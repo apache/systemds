@@ -58,7 +58,7 @@ public class MatrixInverseTest extends AutomatedTestBase
 		    expected(config.getOutputFiles()[0]);
 		
 		double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
-		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1, -1);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 		writeInputMatrixWithMTD("A", A, true, mc);
 	}
 	

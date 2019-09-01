@@ -81,14 +81,14 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		return (int)_dc.getNumColBlocks();
 	}
 
-	public static int computeBlocksPerPartition(long rlen, long clen, long brlen, long bclen) {
-		return (int) (BROADCAST_PARTSIZE / Math.min(rlen, brlen) / Math.min(clen, bclen));
+	public static int computeBlocksPerPartition(long rlen, long clen, long blen) {
+		return (int) (BROADCAST_PARTSIZE / Math.min(rlen, blen) / Math.min(clen, blen));
 	}
 
-	public static int computeBlocksPerPartition(long[] dims, int[] blen) {
+	public static int computeBlocksPerPartition(long[] dims, int blen) {
 		long blocksPerPartition = BROADCAST_PARTSIZE;
 		for (int i = 0; i < dims.length; i++) {
-			blocksPerPartition /= Math.min(dims[i], blen[i]);
+			blocksPerPartition /= Math.min(dims[i], blen);
 		}
 		return (int) blocksPerPartition;
 	}
@@ -97,7 +97,7 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		int pix = 0;
 		if( _pbc.length > 1 ) { //compute partition index
 			int numPerPart = computeBlocksPerPartition(_dc.getRows(),
-				_dc.getCols(),_dc.getRowsPerBlock(), _dc.getColsPerBlock());
+				_dc.getCols(),_dc.getBlocksize());
 			int ix = (rowIndex-1)*getNumColumnBlocks()+(colIndex-1);
 			pix = ix / numPerPart;
 		}
@@ -109,8 +109,8 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		int pix = 0;
 		if( _pbc.length > 1 ) { //compute partition index
 			long[] dims = _dc.getDims();
-			int[] blen = _dc.getBlockSizes();
-			int numPerPart = computeBlocksPerPartition(dims, _dc.getBlockSizes());
+			int blen = _dc.getBlockSize();
+			int numPerPart = computeBlocksPerPartition(dims, _dc.getBlockSize());
 			pix = (int) (UtilFunctions.computeBlockNumber(ix, dims, blen) / numPerPart);
 		}
 
@@ -137,16 +137,16 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		int lcu = (int) cu;
 		
 		ArrayList<Pair<?, ?>> allBlks = (ArrayList<Pair<?, ?>>) CacheBlockFactory.getPairList(block);
-		int start_iix = (lrl-1)/_dc.getRowsPerBlock()+1;
-		int end_iix = (lru-1)/_dc.getRowsPerBlock()+1;
-		int start_jix = (lcl-1)/_dc.getColsPerBlock()+1;
-		int end_jix = (lcu-1)/_dc.getColsPerBlock()+1;
+		int start_iix = (lrl-1)/_dc.getBlocksize()+1;
+		int end_iix = (lru-1)/_dc.getBlocksize()+1;
+		int start_jix = (lcl-1)/_dc.getBlocksize()+1;
+		int end_jix = (lcu-1)/_dc.getBlocksize()+1;
 		
 		for( int iix = start_iix; iix <= end_iix; iix++ )
 			for(int jix = start_jix; jix <= end_jix; jix++) {
 				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 				allBlks.addAll(OperationsOnMatrixValues.performSlice(
-					ixrange, _dc.getRowsPerBlock(), _dc.getColsPerBlock(), iix, jix, getBlock(iix, jix)));
+					ixrange, _dc.getBlocksize(), iix, jix, getBlock(iix, jix)));
 			}
 		
 		T ret = (T) allBlks.get(0).getValue();

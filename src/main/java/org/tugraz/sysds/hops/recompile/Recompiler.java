@@ -774,7 +774,7 @@ public class Recompiler
 						requiresRecompile = true;
 					}
 					
-					DataCharacteristics moNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
+					DataCharacteristics moNew = new MatrixCharacteristics(ldim1, ldim2, -1, lnnz);
 					callStatus.getTWriteStats().put(varname, moNew);
 				}
 			}
@@ -885,7 +885,7 @@ public class Recompiler
 					long lnnz = (dcOld.getNonZeros()>=0 && dc.getNonZeros()>=0) ?
 							Math.max( dcOld.getNonZeros(), dc.getNonZeros() ) : -1;
 					
-					DataCharacteristics mcNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
+					DataCharacteristics mcNew = new MatrixCharacteristics(ldim1, ldim2, -1, lnnz);
 					callStatusIf.getTWriteStats().put(varname, mcNew);
 				}
 			}
@@ -904,15 +904,13 @@ public class Recompiler
 		return ret;
 	}
 	
-	private static MatrixObject createOutputMatrix( long dim1, long dim2, long nnz )
-	{
+	private static MatrixObject createOutputMatrix(long dim1, long dim2, long nnz) {
 		MatrixObject moOut = new MatrixObject(ValueType.FP64, null);
 		int blksz = ConfigurationManager.getBlocksize();
 		DataCharacteristics mc = new MatrixCharacteristics(
-				dim1, dim2, blksz, blksz, nnz);
+				dim1, dim2, blksz, nnz);
 		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 		moOut.setMetaData(meta);
-		
 		return moOut;
 	}
 	
@@ -1131,15 +1129,15 @@ public class Recompiler
 				if( hop.getDataType()==DataType.MATRIX )
 				{
 					MatrixObject mo = new MatrixObject(ValueType.FP64, null);
-					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(),
-						ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), hop.getNnz());
+					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(),
+						hop.getDim2(), ConfigurationManager.getBlocksize(), hop.getNnz());
 					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 					mo.setMetaData(meta);	
 					vars.put(varName, mo);
 				} else if( hop.getDataType()==DataType.TENSOR ) {
 					TensorObject to = new TensorObject(hop.getValueType(), null);
-					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(),
-							ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), hop.getNnz());
+					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(),
+						hop.getDim2(), ConfigurationManager.getBlocksize(), hop.getNnz());
 					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 					to.setMetaData(meta);
 					vars.put(varName, to);

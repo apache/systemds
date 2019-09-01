@@ -535,9 +535,9 @@ public class MLContext implements ConfigurableAPI
 										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT, source));
 							} else if (metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
 								exp.addVarParam(DataExpression.ROWBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getNumRowsPerBlock(), source));
+										new IntIdentifier(mo.getBlocksize(), source));
 								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getNumColumnsPerBlock(), source));
+										new IntIdentifier(mo.getBlocksize(), source));
 								exp.addVarParam(DataExpression.FORMAT_TYPE,
 										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY, source));
 							} else {

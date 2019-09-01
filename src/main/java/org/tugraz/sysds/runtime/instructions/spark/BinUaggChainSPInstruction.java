@@ -90,12 +90,11 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 		public MatrixBlock call(MatrixBlock arg0) 
 			throws Exception 
 		{
-			int brlen = arg0.getNumRows();
-			int bclen = arg0.getNumColumns();
+			int blen = arg0.getNumRows();
 			
 			//perform unary aggregate operation
 			MatrixBlock out1 = new MatrixBlock();
-			arg0.aggregateUnaryOperations(_uaggOp, out1, brlen, bclen, null);
+			arg0.aggregateUnaryOperations(_uaggOp, out1, blen, null);
 			
 			//strip-off correction
 			out1.dropLastRowsOrColumns(_uaggOp.aggOp.correctionLocation);
@@ -103,6 +102,6 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 			//perform binary operation
 			MatrixBlock out2 = new MatrixBlock();
 			return (MatrixBlock) arg0.binaryOperations(_bOp, out1, out2);
-		}		
+		}
 	}
 }

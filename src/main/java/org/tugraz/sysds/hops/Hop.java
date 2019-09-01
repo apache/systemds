@@ -78,8 +78,7 @@ public abstract class Hop implements ParseInfo
 	protected boolean _visited = false;
 	protected long _dim1 = -1;
 	protected long _dim2 = -1;
-	protected int _rows_in_block = -1;
-	protected int _cols_in_block = -1;
+	protected int _blocksize = -1;
 	protected long _nnz = -1;
 	protected UpdateType _updateType = UpdateType.COPY;
 
@@ -228,23 +227,16 @@ public abstract class Hop implements ParseInfo
 		return !invalid;
 	}
 
-	public boolean hasMatrixInputWithDifferentBlocksizes()
-	{
+	public boolean hasMatrixInputWithDifferentBlocksizes() {
 		for( Hop c : getInput() ) {
-			if(    c.getDataType()==DataType.MATRIX
-			    &&(getRowsInBlock() != c.getRowsInBlock()
-			    || getColsInBlock() != c.getColsInBlock()) )
+			if( c.getDataType()==DataType.MATRIX
+				&& getBlocksize() != c.getBlocksize() )
 			{
 				return true;
 			}
 		}
 		
 		return false;
-	}
-	
-	public void setOutputBlocksizes(int brlen, int bclen) {
-		setRowsInBlock( brlen );
-		setColsInBlock( bclen );
 	}
 	
 	public void setRequiresReblock(boolean flag) {
@@ -293,12 +285,12 @@ public abstract class Hop implements ParseInfo
 					&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
 					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV  )
 				{
-					reblock = new CSVReBlock( input, getRowsInBlock(), getColsInBlock(), 
+					reblock = new CSVReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), et);
 				}
 				else //TEXT / MM / BINARYBLOCK / BINARYCELL
 				{
-					reblock = new ReBlock( input, getRowsInBlock(), getColsInBlock(), 
+					reblock = new ReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), _outputEmptyBlocks, et);
 				}
 			}
@@ -330,7 +322,7 @@ public abstract class Hop implements ParseInfo
 				//(compile- instead of runtime-level for better debugging)
 				boolean serializedStorage = false;
 				if( getDataType()==DataType.MATRIX && dimsKnown(true) ) {
-					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
+					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _blocksize, _nnz);
 					double dataCache = SparkExecutionContext.getDataMemoryBudget(true, true);
 					serializedStorage = MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)
 						&& matrixPSize > dataCache //sparse in-memory does not fit in agg mem 
@@ -371,11 +363,11 @@ public abstract class Hop implements ParseInfo
 		else
 		{
 			offset = new UnaryCP(hop.constructLops(), 
-					      repCols ? UnaryCP.OperationTypes.NCOL : UnaryCP.OperationTypes.NROW, 
-					      DataType.SCALAR, ValueType.INT64);
+				repCols ? UnaryCP.OperationTypes.NCOL : UnaryCP.OperationTypes.NROW, 
+				DataType.SCALAR, ValueType.INT64);
 		}
 		
-		offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		offset.getOutputParameters().setDimensions(0, 0, 0, -1);
 		offset.setAllPositions(hop.getFilename(), hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
 		
 		return offset;
@@ -710,22 +702,14 @@ public abstract class Hop implements ParseInfo
 			addInput(h);
 	}
 
-	public int getRowsInBlock() {
-		return _rows_in_block;
+	public int getBlocksize() {
+		return _blocksize;
 	}
 
-	public void setRowsInBlock(int rowsInBlock) {
-		_rows_in_block = rowsInBlock;
+	public void setBlocksize(int blen) {
+		_blocksize = blen;
 	}
-
-	public int getColsInBlock() {
-		return _cols_in_block;
-	}
-
-	public void setColsInBlock(int colsInBlock) {
-		_cols_in_block = colsInBlock;
-	}
-
+	
 	public void setNnz(long nnz){
 		_nnz = nnz;
 	}
@@ -924,12 +908,12 @@ public abstract class Hop implements ParseInfo
 	
 	public DataCharacteristics getDataCharacteristics() {
 		return new MatrixCharacteristics(
-			_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
+			_dim1, _dim2, _blocksize, _nnz);
 	}
 	
 	protected void setOutputDimensions(Lop lop) {
 		lop.getOutputParameters().setDimensions(
-			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz(), getUpdateType());
+			getDim1(), getDim2(), getBlocksize(), getNnz(), getUpdateType());
 	}
 	
 	public Lop getLops() {
@@ -1834,8 +1818,7 @@ public abstract class Hop implements ParseInfo
 		_visited = that._visited;
 		_dim1 = that._dim1;
 		_dim2 = that._dim2;
-		_rows_in_block = that._rows_in_block;
-		_cols_in_block = that._cols_in_block;
+		_blocksize = that._blocksize;
 		_nnz = that._nnz;
 		_updateType = that._updateType;
 

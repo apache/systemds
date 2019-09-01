@@ -441,12 +441,12 @@ public class OptimizerUtils
 		return ( size < memBudgetExec && 2*size < memBudgetLocal );
 	}
 
-	public static boolean checkSparkBroadcastMemoryBudget( long rlen, long clen, long brlen, long bclen, long nnz ) {
+	public static boolean checkSparkBroadcastMemoryBudget( long rlen, long clen, long blen, long nnz ) {
 		double memBudgetExec = SparkExecutionContext.getBroadcastMemoryBudget();
 		double memBudgetLocal = OptimizerUtils.getLocalMemBudget();
 		double sp = getSparsity(rlen, clen, nnz);
 		double size = estimateSizeExactSparsity(rlen, clen, sp);
-		double sizeP = estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
+		double sizeP = estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp);
 		//basic requirement: the broadcast needs to to fit once in the remote broadcast memory 
 		//and twice into the local memory budget because we have to create a partitioned broadcast
 		//memory and hand it over to the spark context as in-memory object
@@ -456,8 +456,8 @@ public class OptimizerUtils
 
 	public static boolean checkSparkCollectMemoryBudget(DataCharacteristics dc, long memPinned ) {
 		if (dc instanceof MatrixCharacteristics) {
-			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(), dc.getRowsPerBlock(),
-					dc.getColsPerBlock(), dc.getNonZerosBound(), memPinned, false);
+			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(),
+				dc.getBlocksize(), dc.getNonZerosBound(), memPinned, false);
 		} else {
 			long[] dims = new long[dc.getNumDims()];
 			for (int i = 0; i < dims.length; i++) {
@@ -469,8 +469,8 @@ public class OptimizerUtils
 	
 	public static boolean checkSparkCollectMemoryBudget(DataCharacteristics dc, long memPinned, boolean checkBP ) {
 		if (dc instanceof MatrixCharacteristics) {
-			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(), dc.getRowsPerBlock(),
-					dc.getColsPerBlock(), dc.getNonZerosBound(), memPinned, checkBP);
+			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(),
+				dc.getBlocksize(), dc.getNonZerosBound(), memPinned, checkBP);
 		} else {
 			long[] dims = new long[dc.getNumDims()];
 			for (int i = 0; i < dims.length; i++) {
@@ -480,11 +480,11 @@ public class OptimizerUtils
 		}
 	}
 	
-	private static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int brlen, int bclen, long nnz, long memPinned, boolean checkBP ) {
+	private static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int blen, long nnz, long memPinned, boolean checkBP ) {
 		//compute size of output matrix and its blocked representation
 		double sp = getSparsity(rlen, clen, nnz);
 		double memMatrix = estimateSizeExactSparsity(rlen, clen, sp);
-		double memPMatrix = estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
+		double memPMatrix = estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp);
 		//check if both output matrix and partitioned matrix fit into local mem budget
 		return (memPinned + memMatrix + memPMatrix < getLocalMemBudget())
 		//check if the output matrix fits into the write buffer to avoid unnecessary evictions
@@ -691,11 +691,8 @@ public class OptimizerUtils
 	{
 		if (dc instanceof MatrixCharacteristics) {
 			return estimatePartitionedSizeExactSparsity(
-					dc.getRows(),
-					dc.getCols(),
-					dc.getRowsPerBlock(),
-					dc.getColsPerBlock(),
-					dc.getNonZerosBound());
+				dc.getRows(), dc.getCols(),
+				dc.getBlocksize(), dc.getNonZerosBound());
 		}
 		else {
 			// TODO estimate partitioned size exact for tensor
@@ -713,15 +710,13 @@ public class OptimizerUtils
 	 * 
 	 * @param rlen number of rows
 	 * @param clen number of cols
-	 * @param brlen rows per block
-	 * @param bclen cols per block
+	 * @param blen rows/cols per block
 	 * @param nnz number of non-zeros
 	 * @return memory estimate
 	 */
-	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long brlen, long bclen, long nnz) 
-	{
+	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, long nnz)  {
 		double sp = getSparsity(rlen, clen, nnz);
-		return estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, sp);
+		return estimatePartitionedSizeExactSparsity(rlen, clen, blen, sp);
 	}
 	
 	/**
@@ -730,41 +725,40 @@ public class OptimizerUtils
 	 * 
 	 * @param rlen number of rows
 	 * @param clen number of cols
-	 * @param brlen rows per block
-	 * @param bclen cols per block
+	 * @param blen rows/cols per block
 	 * @param sp sparsity
 	 * @return memory estimate
 	 */
-	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long brlen, long bclen, double sp) 
+	public static long estimatePartitionedSizeExactSparsity(long rlen, long clen, long blen, double sp) 
 	{
 		long ret = 0;
 
 		//check for guaranteed existence of empty blocks (less nnz than total number of blocks)
-		long tnrblks = (long)Math.ceil((double)rlen/brlen);
-		long tncblks = (long)Math.ceil((double)clen/bclen);
+		long tnrblks = (long)Math.ceil((double)rlen/blen);
+		long tncblks = (long)Math.ceil((double)clen/blen);
 		long nnz = (long) Math.ceil(sp * rlen * clen);
 		if( nnz <= tnrblks * tncblks ) {
-			long lrlen = Math.min(rlen, brlen);
-			long lclen = Math.min(clen, bclen);
+			long lrlen = Math.min(rlen, blen);
+			long lclen = Math.min(clen, blen);
 			return nnz * estimateSizeExactSparsity(lrlen, lclen, 1)
 				 + (tnrblks * tncblks - nnz) * estimateSizeEmptyBlock(lrlen, lclen);
 		}
 		
-		//estimate size of full brlen x bclen blocks
-		long nrblks = rlen / brlen;
-		long ncblks = clen / bclen;
+		//estimate size of full blen x blen blocks
+		long nrblks = rlen / blen;
+		long ncblks = clen / blen;
 		if( nrblks * ncblks > 0 )
-			ret += nrblks * ncblks * estimateSizeExactSparsity(brlen, bclen, sp);
+			ret += nrblks * ncblks * estimateSizeExactSparsity(blen, blen, sp);
 
 		//estimate size of bottom boundary blocks 
-		long lrlen = rlen % brlen;
+		long lrlen = rlen % blen;
 		if( ncblks > 0 && lrlen >= 0 )
-			ret += ncblks * estimateSizeExactSparsity(lrlen, bclen, sp);
+			ret += ncblks * estimateSizeExactSparsity(lrlen, blen, sp);
 		
 		//estimate size of right boundary blocks
-		long lclen = clen % bclen;
+		long lclen = clen % blen;
 		if( nrblks > 0 && lclen >= 0 )
-			ret += nrblks * estimateSizeExactSparsity(brlen, lclen, sp);
+			ret += nrblks * estimateSizeExactSparsity(blen, lclen, sp);
 		
 		//estimate size of bottom right boundary block
 		if( lrlen >= 0 && lclen >= 0  )
@@ -829,9 +823,8 @@ public class OptimizerUtils
 		long ru = ixrange.rowEnd;
 		long cl = ixrange.colStart;
 		long cu = ixrange.colEnd;
-		long brlen = mc.getRowsPerBlock();
-		long bclen = mc.getColsPerBlock();
-		return isIndexingRangeBlockAligned(rl, ru, cl, cu, brlen, bclen);
+		long blen = mc.getBlocksize();
+		return isIndexingRangeBlockAligned(rl, ru, cl, cu, blen);
 	}
 	
 	/**
@@ -842,15 +835,15 @@ public class OptimizerUtils
 	 * @param ru rows upper
 	 * @param cl cols lower
 	 * @param cu cols upper
-	 * @param brlen rows per block
-	 * @param bclen cols per block
+	 * @param blen rows per block
+	 * @param blen cols per block
 	 * @return true if indexing range is block aligned
 	 */
-	public static boolean isIndexingRangeBlockAligned(long rl, long ru, long cl, long cu, long brlen, long bclen) {
+	public static boolean isIndexingRangeBlockAligned(long rl, long ru, long cl, long cu, long blen) {
 		return rl != -1 && ru != -1 && cl != -1 && cu != -1
-				&&((rl-1)%brlen == 0 && (cl-1)%bclen == 0 
-				|| (rl-1)/brlen == (ru-1)/brlen && (cl-1)%bclen == 0 
-				|| (rl-1)%brlen == 0 && (cl-1)/bclen == (cu-1)/bclen);
+				&&((rl-1)%blen == 0 && (cl-1)%blen == 0 
+				|| (rl-1)/blen == (ru-1)/blen && (cl-1)%blen == 0 
+				|| (rl-1)%blen == 0 && (cl-1)/blen == (cu-1)/blen);
 	}
 	
 	public static boolean isValidCPDimensions( DataCharacteristics mc ) {

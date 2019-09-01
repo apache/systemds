@@ -92,7 +92,7 @@ public class PmmSPInstruction extends BinarySPInstruction {
 		
 		//execute pmm instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.flatMapToPair( new RDDPMMFunction(_type, in2, rlen, mc.getRowsPerBlock()) );
+				.flatMapToPair( new RDDPMMFunction(_type, in2, rlen, mc.getBlocksize()) );
 		out = RDDAggregateUtils.sumByKeyStable(out, false);
 		
 		//put output RDD handle into symbol table
@@ -110,10 +110,10 @@ public class PmmSPInstruction extends BinarySPInstruction {
 		
 		private PartitionedBroadcast<MatrixBlock> _pmV = null;
 		private long _rlen = -1;
-		private int _brlen = -1;
+		private int _blen = -1;
 		
-		public RDDPMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput, long rlen, int brlen ) {
-			_brlen = brlen;
+		public RDDPMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput, long rlen, int blen ) {
+			_blen = blen;
 			_rlen = rlen;
 			_pmV = binput;
 		}
@@ -130,8 +130,8 @@ public class PmmSPInstruction extends BinarySPInstruction {
 			//compute target block indexes
 			long minPos = UtilFunctions.toLong( mb1.minNonZero() );
 			long maxPos = UtilFunctions.toLong( mb1.max() );
-			long rowIX1 = (minPos-1)/_brlen+1;
-			long rowIX2 = (maxPos-1)/_brlen+1;
+			long rowIX1 = (minPos-1)/_blen+1;
+			long rowIX2 = (maxPos-1)/_blen+1;
 			boolean multipleOuts = (rowIX1 != rowIX2);
 			
 			if( minPos >= 1 ) //at least one row selected
@@ -139,19 +139,19 @@ public class PmmSPInstruction extends BinarySPInstruction {
 				//output sparsity estimate
 				double spmb1 = OptimizerUtils.getSparsity(mb1.getNumRows(), 1, mb1.getNonZeros());
 				long estnnz = (long) (spmb1 * mb2.getNonZeros());
-				boolean sparse = MatrixBlock.evalSparseFormatInMemory(_brlen, mb2.getNumColumns(), estnnz);
+				boolean sparse = MatrixBlock.evalSparseFormatInMemory(_blen, mb2.getNumColumns(), estnnz);
 				
 				//compute and allocate output blocks
 				MatrixBlock out1 = new MatrixBlock();
 				MatrixBlock out2 = multipleOuts ? new MatrixBlock() : null;
-				out1.reset(_brlen, mb2.getNumColumns(), sparse);
+				out1.reset(_blen, mb2.getNumColumns(), sparse);
 				if( out2 != null )
-					out2.reset(UtilFunctions.computeBlockSize(_rlen, rowIX2, _brlen), mb2.getNumColumns(), sparse);
+					out2.reset(UtilFunctions.computeBlockSize(_rlen, rowIX2, _blen), mb2.getNumColumns(), sparse);
 				
 				//compute core matrix permutation (assumes that out1 has default blocksize, 
 				//hence we do a meta data correction afterwards)
 				mb1.permutationMatrixMultOperations(mb2, out1, out2);
-				out1.setNumRows(UtilFunctions.computeBlockSize(_rlen, rowIX1, _brlen));
+				out1.setNumRows(UtilFunctions.computeBlockSize(_rlen, rowIX1, _blen));
 				ret.add(new Tuple2<>(new MatrixIndexes(rowIX1, ixIn.getColumnIndex()), out1));
 				if( out2 != null )
 					ret.add(new Tuple2<>(new MatrixIndexes(rowIX2, ixIn.getColumnIndex()), out2));

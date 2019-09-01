@@ -44,8 +44,7 @@ public class FrameReblockBuffer
 	
 	private long _rlen = -1;
 	private long _clen = -1;
-	private int _brlen = -1;
-	private int _bclen = -1;
+	private int _blen = -1;
 	
 	private ValueType[] _schema;
 
@@ -60,8 +59,8 @@ public class FrameReblockBuffer
 		
 		_rlen = rlen;
 		_clen = clen;
-		_brlen = Math.max((int)(_bufflen/_clen), 1);
-		_bclen = (int)clen;
+		_blen = Math.max((int)(_bufflen/_clen), 1);
+		_blen = (int)clen;
 		
 		_schema = schema;
 	}
@@ -102,8 +101,8 @@ public class FrameReblockBuffer
 		for( int i=0; i<_count; i++ )
 		{
 			//compute block indexes (w/ robustness for meta data handling)
-			long bi = Math.max(UtilFunctions.computeBlockIndex(_buff[i].getRow(), _brlen), 1);
-			long bj = UtilFunctions.computeBlockIndex(_buff[i].getCol(), _bclen);
+			long bi = Math.max(UtilFunctions.computeBlockIndex(_buff[i].getRow(), _blen), 1);
+			long bj = UtilFunctions.computeBlockIndex(_buff[i].getCol(), _blen);
 			
 			//output block and switch to next index pair
 			if( bi != cbi || bj != cbj ) {
@@ -111,13 +110,13 @@ public class FrameReblockBuffer
 					outputBlock(outList, tmpIx, tmpBlock);
 				cbi = bi;
 				cbj = bj;					
-				tmpIx = (bi-1)*_brlen+1;
+				tmpIx = (bi-1)*_blen+1;
 				tmpBlock = new FrameBlock(_schema);
-				tmpBlock.ensureAllocatedColumns(Math.min(_brlen, (int)(_rlen-(bi-1)*_brlen)));				
+				tmpBlock.ensureAllocatedColumns(Math.min(_blen, (int)(_rlen-(bi-1)*_blen)));				
 			}
 			
-			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _brlen);
-			int cj = UtilFunctions.computeCellInBlock(_buff[i].getCol(), _bclen);
+			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _blen);
+			int cj = UtilFunctions.computeCellInBlock(_buff[i].getCol(), _blen);
 			if( ci == -3 )
 				tmpBlock.getColumnMetadata(cj).setMvValue(_buff[i].getObjVal().toString());
 			else if( ci == -2 )

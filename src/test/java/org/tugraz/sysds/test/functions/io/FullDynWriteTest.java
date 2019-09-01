@@ -111,14 +111,14 @@ public class FullDynWriteTest extends AutomatedTestBase
 			input("A"), getFormatString(fmt), outputDir()};
 		
 		try 
-		{		
+		{
 			long seed1 = System.nanoTime();
-		    double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, seed1);
-		    writeMatrix(A, input("A"), fmt, rows, cols, 1000, 1000, rows*cols);
-		    
-		    //run testcase
+			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, seed1);
+			writeMatrix(A, input("A"), fmt, rows, cols, 1000, rows*cols);
+		
+			//run testcase
 			runTest(true, false, null, -1);
-		    
+		
 			//check existing file and compare results
 			long sum =  computeSum(A);
 			String fname = output(Long.toString(sum));
@@ -128,12 +128,12 @@ public class FullDynWriteTest extends AutomatedTestBase
 				Assert.assertEquals(val, sum);
 			}
 			else{
-				double[][] B = readMatrix(fname, OutputInfo.getMatchingInputInfo(fmt), rows, cols, 1000, 1000);
-			    TestUtils.compareMatrices(A, B, rows, cols, eps);
+				double[][] B = readMatrix(fname, OutputInfo.getMatchingInputInfo(fmt), rows, cols, 1000);
+				TestUtils.compareMatrices(A, B, rows, cols, eps);
 			}
-		    
-		    HDFSTool.deleteFileIfExistOnHDFS(fname);
-		    HDFSTool.deleteFileIfExistOnHDFS(fname+".mtd");
+		
+			HDFSTool.deleteFileIfExistOnHDFS(fname);
+			HDFSTool.deleteFileIfExistOnHDFS(fname+".mtd");
 		} 
 		catch (Exception e) 
 		{
@@ -146,31 +146,21 @@ public class FullDynWriteTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param ii
-	 * @param rows
-	 * @param cols
-	 * @param brows
-	 * @param bcols
-	 * @return
-	 * @throws IOException 
-	 */
-	private static double[][] readMatrix( String fname, InputInfo ii, long rows, long cols, int brows, int bcols ) 
+	private static double[][] readMatrix( String fname, InputInfo ii, long rows, long cols, int blen ) 
 		throws IOException
 	{
-		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, ii, rows, cols, brows, bcols);
+		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, ii, rows, cols, blen);
 		double[][] C = DataConverter.convertToDoubleMatrix(mb);
 		return C;
 	}
 	
-	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
+	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int blen, long nnz ) 
 		throws IOException
 	{
 		HDFSTool.deleteFileIfExistOnHDFS(fname);
 		HDFSTool.deleteFileIfExistOnHDFS(fname+".mtd");
 		
-		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
+		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blen, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
 		if( oi != OutputInfo.MatrixMarketOutputInfo )

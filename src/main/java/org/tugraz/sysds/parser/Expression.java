@@ -423,8 +423,8 @@ public abstract class Expression implements ParseInfo
 	 * @param expression1 The first expression
 	 * @param expression2 The second expression
 	 * @return matrix characteristics
-	 * [1] is the number of columns (clen), [2] is the number of rows in a block (brlen),
-	 * and [3] is the number of columns in a block (bclen). Default (unknown) values are
+	 * [1] is the number of columns (clen), [2] is the number of rows in a block (blen),
+	 * and [3] is the number of columns in a block (blen). Default (unknown) values are
 	 * -1. Scalar values are all 0.
 	 */
 	public static MatrixCharacteristics getBinaryMatrixCharacteristics(Expression expression1, Expression expression2) {
@@ -434,14 +434,14 @@ public abstract class Expression implements ParseInfo
 			return new MatrixCharacteristics(0, 0, 0, 0);
 		}
 		else if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.MATRIX ) {
-			return new MatrixCharacteristics(idright.getDim1(), idright.getDim2(), idright.getRowsInBlock(), idright.getColumnsInBlock());
+			return new MatrixCharacteristics(idright.getDim1(), idright.getDim2(), idright.getBlocksize());
 		}
 		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.SCALAR ) {
-			return new MatrixCharacteristics(idleft.getDim1(), idleft.getDim2(), idleft.getRowsInBlock(), idleft.getColumnsInBlock());
+			return new MatrixCharacteristics(idleft.getDim1(), idleft.getDim2(), idleft.getBlocksize());
 		}
 		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.MATRIX ) {
 			MatrixCharacteristics mc = new MatrixCharacteristics(
-				idleft.getDim1(), idleft.getDim2(), idleft.getRowsInBlock(), idleft.getColumnsInBlock());
+				idleft.getDim1(), idleft.getDim2(), idleft.getBlocksize());
 			if( mc.getRows() < 0 && idright.getDim1() > 1 ) //robustness for row vectors
 				mc.setRows(idright.getDim1());
 			if( mc.getCols() < 0 && idright.getDim2() > 1 ) //robustness for row vectors

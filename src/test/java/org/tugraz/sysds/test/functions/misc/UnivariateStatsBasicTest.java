@@ -75,20 +75,20 @@ public class UnivariateStatsBasicTest extends AutomatedTestBase
 			//run univariate stats data generator
 			fullDMLScriptName = "./scripts/datagen/"+TEST_NAME_DATAGEN+".dml";
 			programArgs = new String[]{ "-args", "100000", "100", "10", "1", "2", "3", "4", input("uni.mtx") };
-			runTest(true, false, null, -1); 						
+			runTest(true, false, null, -1);
 			
 			//write input types
 			MatrixBlock mb = new MatrixBlock(1d);
 			MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo)
-				.writeMatrixToHDFS(mb, input("uni-types.csv"), 1, 1, 1, 1, 1);
+				.writeMatrixToHDFS(mb, input("uni-types.csv"), 1, 1, 1, 1);
 			HDFSTool.writeMetaDataFile(input("uni-types.csv.mtd"), ValueType.FP64, 
-					new MatrixCharacteristics(1,1,1,1,1), OutputInfo.CSVOutputInfo);
+					new MatrixCharacteristics(1,1,1,1), OutputInfo.CSVOutputInfo);
 			
 			//run univariate stats 
 			fullDMLScriptName = "./scripts/algorithms/"+TEST_NAME+".dml";
 			programArgs = new String[]{ "-explain", "-nvargs", "X="+input("uni.mtx"), 
 				"TYPES="+input("uni-types.csv"), "STATS="+output("uni-stats.txt"), "CONSOLE_OUTPUT=TRUE" };
-			runTest(true, false, null, -1); 						
+			runTest(true, false, null, -1);
 		}
 		catch (Exception e) {
 			throw new RuntimeException(e);

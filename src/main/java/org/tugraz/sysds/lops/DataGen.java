@@ -29,6 +29,7 @@ import org.tugraz.sysds.lops.OutputParameters.Format;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.Statement;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -263,47 +264,26 @@ public class DataGen extends Lop
 		return sb.toString();
 	}
 	
-	private String getSampleInstructionCPSpark(String output) 
-	{
+	private String getSampleInstructionCPSpark(String output) {
 		if ( method != DataGenMethod.SAMPLE )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
 		
 		//prepare instruction parameters
 		Lop lsize = _inputParams.get(DataExpression.RAND_ROWS.toString());
-		String size = lsize.prepScalarInputOperand(getExecType());
-		
 		Lop lrange = _inputParams.get(DataExpression.RAND_MAX.toString());
-		String range = lrange.prepScalarLabel();
-		
 		Lop lreplace = _inputParams.get(DataExpression.RAND_PDF.toString());
-		String replace = lreplace.prepScalarLabel();
-		
 		Lop lseed = _inputParams.get(DataExpression.RAND_SEED.toString());
-		String seed = lseed.prepScalarLabel();
 		
-		String rowsInBlockString = String.valueOf(this.getOutputParameters().getRowsInBlock());
-		String colsInBlockString = String.valueOf(this.getOutputParameters().getColsInBlock());
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "sample" );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( range );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( size );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( replace );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( seed );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( rowsInBlockString );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( colsInBlockString );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			"sample",
+			lrange.prepScalarLabel(),
+			lsize.prepScalarInputOperand(getExecType()),
+			lreplace.prepScalarLabel(),
+			lseed.prepScalarLabel(),
+			String.valueOf(getOutputParameters().getRowsInBlock()),
+			String.valueOf(getOutputParameters().getColsInBlock()),
+			prepOutputOperand(output));
 	}
 	
 	private String getTimeInstructionCP(String output)

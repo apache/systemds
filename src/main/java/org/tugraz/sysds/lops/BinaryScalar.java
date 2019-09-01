@@ -21,6 +21,7 @@ package org.tugraz.sysds.lops;
 
 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -66,27 +67,6 @@ public class BinaryScalar extends Lop
 	
 	public OperationTypes getOperationType() {
 		return operation;
-	}
-
-	@Override
-	public String getInstructions(String input1, String input2, String output) {
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		sb.append( getOpcode(operation) );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(0).prepScalarInputOperand(getExecType()) );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(1).prepScalarInputOperand(getExecType()));
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( prepOutputOperand(output));
-
-		return sb.toString();
 	}
 	
 	@Override
@@ -169,5 +149,15 @@ public class BinaryScalar extends Lop
 				throw new UnsupportedOperationException("Instruction "
 					+ "is not defined for BinaryScalar operator: " + op);
 		}
+	}
+	
+	@Override
+	public String getInstructions(String input1, String input2, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpcode(operation),
+			getInputs().get(0).prepScalarInputOperand(getExecType()),
+			getInputs().get(1).prepScalarInputOperand(getExecType()),
+			prepOutputOperand(output));
 	}
 }

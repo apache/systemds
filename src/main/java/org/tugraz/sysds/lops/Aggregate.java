@@ -23,6 +23,7 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 
 
 /**
@@ -67,8 +68,7 @@ public class Aggregate extends Lop
 	 * 
 	 * @return operator type
 	 */
-	public OperationTypes getOperationType()
-	{
+	public OperationTypes getOperationType() {
 		return operation;
 	}
 	
@@ -103,19 +103,11 @@ public class Aggregate extends Lop
 	}
 
 	@Override
-	public String getInstructions(String input1, String output) 
-	{	
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		sb.append( OPERAND_DELIMITOR );
-
-		sb.append( this.prepOutputOperand(output));
-		
-		return sb.toString();
+	public String getInstructions(String input1, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			prepOutputOperand(output));
 	}
 }

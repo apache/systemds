@@ -22,7 +22,7 @@ package org.tugraz.sysds.lops;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
-
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -57,36 +57,16 @@ public class WeightedSigmoidR extends Lop
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append(getExecType());
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input3));
-	
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( prepOutputOperand(output));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_wsType);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_cacheU);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_cacheV);
-		
-		return sb.toString();
+	public String getInstructions(String input1, String input2, String input3, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			getInputs().get(2).prepInputOperand(input3),
+			prepOutputOperand(output),
+			_wsType.name(),
+			String.valueOf(_cacheU),
+			String.valueOf(_cacheV));
 	}
 }

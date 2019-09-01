@@ -25,6 +25,7 @@ import java.util.HashMap;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
 import org.tugraz.sysds.parser.Statement;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -47,7 +48,7 @@ public class GroupedAggregateM extends Lop
 	private CacheType _cacheType = null;
 		
 	public GroupedAggregateM(HashMap<String, Lop> inputParameterLops, 
-			DataType dt, ValueType vt, boolean partitioned, ExecType et) {		
+			DataType dt, ValueType vt, boolean partitioned, ExecType et) {
 		super(Lop.Type.GroupedAggM, dt, vt);
 		init(inputParameterLops, dt, vt, et);
 		_inputParams = inputParameterLops;
@@ -71,31 +72,14 @@ public class GroupedAggregateM extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String output) 
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		sb.append( getExecType() );
-		
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-	
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-	
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _inputParams.get(Statement.GAGG_NUM_GROUPS)
-				.prepScalarInputOperand(getExecType()) );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _cacheType.toString() );
-	
-		return sb.toString();
+	public String getInstructions(String input1, String input2, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			prepOutputOperand(output),
+			_inputParams.get(Statement.GAGG_NUM_GROUPS).prepScalarInputOperand(getExecType()),
+			_cacheType.name());
 	}
 }

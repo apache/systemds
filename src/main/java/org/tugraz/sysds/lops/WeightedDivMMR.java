@@ -22,7 +22,7 @@ package org.tugraz.sysds.lops;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
-
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -56,43 +56,18 @@ public class WeightedDivMMR extends Lop
 		return "Operation = WeightedDivMMR";
 	}
 	
-	/* CP/SPARK instruction generation */
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String input4, String output)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		final ExecType et = getExecType();
-		
-		sb.append(et);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(OPCODE);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(2).prepInputOperand(input3));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(3).prepInputOperand(input4));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( prepOutputOperand(output));
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_weightsType);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_cacheU);
-		
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(_cacheV);
-		
-		return sb.toString();
+	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			getInputs().get(2).prepInputOperand(input3),
+			getInputs().get(3).prepInputOperand(input4),
+			prepOutputOperand(output),
+			String.valueOf(_weightsType),
+			String.valueOf(_cacheU),
+			String.valueOf(_cacheV));
 	}
 }

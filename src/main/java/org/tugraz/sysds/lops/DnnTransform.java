@@ -20,6 +20,7 @@
 package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -158,7 +159,6 @@ public class DnnTransform extends Lop
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
-				
 		}
 	}
 	
@@ -195,54 +195,31 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String C, String HW, String output) {
-		if(operation == OperationTypes.CHANNEL_SUMS) {
-			StringBuilder sb = new StringBuilder();
-			sb.append( getExecType() );
-			
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getOpcode() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(0).prepInputOperand(input));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(1).prepInputOperand(C));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(2).prepInputOperand(HW));
-			//output
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( this.prepOutputOperand(output));
-			
-			return sb.toString();
-		}
-		else {
+		if(operation != OperationTypes.CHANNEL_SUMS)
 			throw new LopsException("The operation is not supported with three operands:" + operation.name());
-		}
+		
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpcode(),
+			getInputs().get(0).prepInputOperand(input),
+			getInputs().get(1).prepInputOperand(C),
+			getInputs().get(2).prepInputOperand(HW),
+			prepOutputOperand(output));
 	}
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
-		if(operation == OperationTypes.UPDATE_NESTEROV_X) {
-			StringBuilder sb = new StringBuilder();
-			sb.append( getExecType() );
-			
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getOpcode() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(0).prepInputOperand(input1));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(1).prepInputOperand(input2));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(2).prepInputOperand(input3));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(3).prepInputOperand(input4));
-			//output
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( this.prepOutputOperand(output));
-			
-			return sb.toString();
-		}
-		else {
+		if(operation != OperationTypes.UPDATE_NESTEROV_X)
 			throw new LopsException("The operation is not supported with three operands:" + operation.name());
-		}
+			
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			getInputs().get(2).prepInputOperand(input3),
+			getInputs().get(3).prepInputOperand(input4),
+			prepOutputOperand(output));
 	}
 	
 	@Override
@@ -261,33 +238,19 @@ public class DnnTransform extends Lop
 	}
 	
 	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String output) {
-		if(operation == OperationTypes.BATCH_NORM2D_TEST) {
-			StringBuilder sb = new StringBuilder();
-			sb.append( getExecType() );
-			
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getOpcode() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(0).prepInputOperand(input1));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(1).prepInputOperand(input2));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(2).prepInputOperand(input3));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(3).prepInputOperand(input4));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(4).prepInputOperand(input5));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(5).prepInputOperand(input6));
-			//output
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( this.prepOutputOperand(output));
-			
-			return sb.toString();
-		}
-		else {
+		if(operation != OperationTypes.BATCH_NORM2D_TEST)
 			throw new LopsException("The operation is not supported with six operands:" + operation.name());
-		}
+		
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			getInputs().get(2).prepInputOperand(input3),
+			getInputs().get(3).prepInputOperand(input4),
+			getInputs().get(4).prepInputOperand(input5),
+			getInputs().get(5).prepInputOperand(input6),
+			prepOutputOperand(output));
 	}
 
 	public void appendOpcode(StringBuilder sb) {
@@ -317,5 +280,4 @@ public class DnnTransform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( intermediateMemBudget );
 	}
-
 }

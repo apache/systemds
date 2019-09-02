@@ -66,7 +66,6 @@ public class ReBlock extends Lop
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output),
 			String.valueOf(_blocksize),
-			String.valueOf(_blocksize),
 			String.valueOf(_outputEmptyBlocks));
 	}
 	
@@ -96,7 +95,7 @@ public class ReBlock extends Lop
 			 *    => the input lop (if it is other than Data) is always executed in a different job
 			 */
 			// return getChildFormat(node.getInputs().get(0));
-			return node.getInputs().get(0).getOutputParameters().getFormat();		}
-		
-	} 
+			return node.getInputs().get(0).getOutputParameters().getFormat();
+		}
+	}
 }

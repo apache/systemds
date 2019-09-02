@@ -848,18 +848,17 @@ public class ProgramConverter
 				value = mo.getFileName();
 				PartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? new PartitionFormat(
 						mo.getPartitionFormat(),mo.getPartitionSize()) : PartitionFormat.NONE;
-				metaData = new String[11];
+				metaData = new String[10];
 				metaData[0] = String.valueOf( dc.getRows() );
 				metaData[1] = String.valueOf( dc.getCols() );
 				metaData[2] = String.valueOf( dc.getBlocksize() );
-				metaData[3] = String.valueOf( dc.getBlocksize() );
-				metaData[4] = String.valueOf( dc.getNonZeros() );
-				metaData[5] = InputInfo.inputInfoToString( md.getInputInfo() );
-				metaData[6] = OutputInfo.outputInfoToString( md.getOutputInfo() );
-				metaData[7] = String.valueOf( partFormat );
-				metaData[8] = String.valueOf( mo.getUpdateType() );
-				metaData[9] = String.valueOf(mo.isHDFSFileExists());
-				metaData[10] = String.valueOf(mo.isCleanupEnabled());
+				metaData[3] = String.valueOf( dc.getNonZeros() );
+				metaData[4] = InputInfo.inputInfoToString( md.getInputInfo() );
+				metaData[5] = OutputInfo.outputInfoToString( md.getOutputInfo() );
+				metaData[6] = String.valueOf( partFormat );
+				metaData[7] = String.valueOf( mo.getUpdateType() );
+				metaData[8] = String.valueOf(mo.isHDFSFileExists());
+				metaData[9] = String.valueOf(mo.isCleanupEnabled());
 				break;
 			case LIST:
 				// SCHEMA: <name>|<datatype>|<valuetype>|value|<metadata>|<tab>element1<tab>element2<tab>element3 (this is the list)

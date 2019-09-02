@@ -187,17 +187,17 @@ public class RandSPInstruction extends UnarySPInstruction {
 		DataGenMethod method = DataGenMethod.INVALID;
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 13 );
+			InstructionUtils.checkNumFields ( str, 12 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
-			// 8 operands: rows, cols, rpb, cpb, from, to, incr, outvar
-			InstructionUtils.checkNumFields ( str, 8 ); 
+			// 8 operands: rows, cols, blen, from, to, incr, outvar
+			InstructionUtils.checkNumFields ( str, 7 ); 
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
 			method = DataGenMethod.SAMPLE;
-			// 7 operands: range, size, replace, seed, rpb, cpb, outvar
-			InstructionUtils.checkNumFields ( str, 7 ); 
+			// 7 operands: range, size, replace, seed, blen, outvar
+			InstructionUtils.checkNumFields ( str, 6 ); 
 		}
 		
 		Operator op = null;
@@ -209,23 +209,23 @@ public class RandSPInstruction extends UnarySPInstruction {
 			CPOperand cols = new CPOperand(s[2]);
 			CPOperand dims = new CPOperand(s[3]);
 			int blen = Integer.parseInt(s[4]);
-			double sparsity = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Double.valueOf(s[8]).doubleValue() : -1;
-			long seed = !s[9].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Long.valueOf(s[9]).longValue() : -1;
-			String dir = s[10];
-			String pdf = s[11];
-			String pdfParams = !s[12].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				s[12] : null;
+			double sparsity = !s[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				Double.valueOf(s[7]).doubleValue() : -1;
+			long seed = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				Long.valueOf(s[8]).longValue() : -1;
+			String dir = s[9];
+			String pdf = s[10];
+			String pdfParams = !s[11].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				s[11] : null;
 			
 			return new RandSPInstruction(op, method, null, out, rows, cols, dims,
-				blen, s[6], s[7], sparsity, seed, dir, pdf, pdfParams, opcode, str);
+				blen, s[5], s[6], sparsity, seed, dir, pdf, pdfParams, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) {
 			int blen = Integer.parseInt(s[3]);
-			CPOperand from = new CPOperand(s[5]);
-			CPOperand to = new CPOperand(s[6]);
-			CPOperand incr = new CPOperand(s[7]);
+			CPOperand from = new CPOperand(s[4]);
+			CPOperand to = new CPOperand(s[5]);
+			CPOperand incr = new CPOperand(s[6]);
 			
 			CPOperand in = null;
 			return new RandSPInstruction(op, method, in, out, null,

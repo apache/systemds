@@ -308,7 +308,7 @@ public class Data extends Lop
 		else
 			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
 		
-		sb.append( OPERAND_DELIMITOR );			
+		sb.append( OPERAND_DELIMITOR );	
 		Lop fnameLop = _inputParams.get(DataExpression.IO_FILENAME);
 		boolean literal = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral());
 		sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING, literal) ); 
@@ -458,8 +458,6 @@ public class Data extends Lop
 			sb.append( oparams.getNumRows() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getNumCols() );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( oparams.getBlocksize() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getBlocksize() );
 			sb.append( OPERAND_DELIMITOR );

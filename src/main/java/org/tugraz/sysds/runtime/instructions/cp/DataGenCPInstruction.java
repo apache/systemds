@@ -61,7 +61,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	private final int numThreads;
 
 	// seed positions
-	private static final int SEED_POSITION_RAND = 9;
+	private static final int SEED_POSITION_RAND = 8;
 	private static final int SEED_POSITION_SAMPLE = 4;
 
 	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
@@ -176,17 +176,17 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( s, 13 );
+			InstructionUtils.checkNumFields ( s, 12 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
-			// 8 operands: rows, cols, rpb, cpb, from, to, incr, outvar
-			InstructionUtils.checkNumFields ( s, 8 ); 
+			// 8 operands: rows, cols, blen, from, to, incr, outvar
+			InstructionUtils.checkNumFields ( s, 7 ); 
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
 			method = DataGenMethod.SAMPLE;
-			// 7 operands: range, size, replace, seed, rpb, cpb, outvar
-			InstructionUtils.checkNumFields ( s, 7 ); 
+			// 7 operands: range, size, replace, seed, blen, outvar
+			InstructionUtils.checkNumFields ( s, 6 ); 
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.TIME_OPCODE) ) {
 			method = DataGenMethod.TIME;
@@ -203,24 +203,24 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			CPOperand cols = new CPOperand(s[2]);
 			CPOperand dims = new CPOperand(s[3]);
 			int blen = Integer.parseInt(s[4]);
-			double sparsity = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-					Double.valueOf(s[8]) : -1;
+			double sparsity = !s[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Double.valueOf(s[7]) : -1;
 			long seed = !s[SEED_POSITION_RAND].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
 					Long.valueOf(s[SEED_POSITION_RAND]) : -1;
-			String pdf = s[10];
-			String pdfParams = !s[11].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				s[11] : null;
-			int k = Integer.parseInt(s[12]);
+			String pdf = s[9];
+			String pdfParams = !s[10].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				s[10] : null;
+			int k = Integer.parseInt(s[11]);
 			
-			return new DataGenCPInstruction(op, method, null, out, rows, cols, dims, blen, s[6], s[7],
-					sparsity, seed, pdf, pdfParams, k, opcode, str);
+			return new DataGenCPInstruction(op, method, null, out, rows, cols, dims, blen,
+				s[5], s[6], sparsity, seed, pdf, pdfParams, k, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) 
 		{
 			int blen = Integer.parseInt(s[3]);
-			CPOperand from = new CPOperand(s[5]);
-			CPOperand to = new CPOperand(s[6]);
-			CPOperand incr = new CPOperand(s[7]);
+			CPOperand from = new CPOperand(s[4]);
+			CPOperand to = new CPOperand(s[5]);
+			CPOperand incr = new CPOperand(s[6]);
 			
 			return new DataGenCPInstruction(op, method, null, out, null, null, null, blen, from, to, incr, opcode, str);
 		}

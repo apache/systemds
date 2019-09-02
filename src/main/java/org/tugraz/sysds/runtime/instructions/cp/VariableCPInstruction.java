@@ -334,7 +334,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// variable name
 			DataType dt = DataType.valueOf(parts[4]);
 			ValueType vt = dt==DataType.MATRIX ? ValueType.FP64 : ValueType.STRING;
-			int extSchema = (dt==DataType.FRAME && parts.length>=13) ? 1 : 0;
+			int extSchema = (dt==DataType.FRAME && parts.length>=12) ? 1 : 0;
 			in1 = new CPOperand(parts[1], vt, dt);
 			// file name
 			in2 = new CPOperand(parts[2], ValueType.STRING, DataType.SCALAR);
@@ -347,11 +347,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.
 				// 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
 				// 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
-				if ( parts.length < 15+extSchema || parts.length > 17+extSchema )
+				if ( parts.length < 14+extSchema || parts.length > 16+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
-				if ( parts.length != 6 && parts.length != 12+extSchema )
+				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
@@ -363,11 +363,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if (parts.length == 6) {
 					// do nothing
 				}
-				else if (parts.length >= 11) {
+				else if (parts.length >= 10) {
 					// matrix characteristics
 					mc.setDimension(Long.parseLong(parts[6]), Long.parseLong(parts[7]));
 					mc.setBlocksize(Integer.parseInt(parts[8]));
-					mc.setNonZeros(Long.parseLong(parts[10]));
+					mc.setNonZeros(Long.parseLong(parts[9]));
 				}
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
@@ -379,7 +379,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if (parts.length == 6) {
 					// do nothing
 				}
-				else if (parts.length >= 11) {
+				else if (parts.length >= 10) {
 					// TODO correct sizes
 					tc.setDim(0, Long.parseLong(parts[6]));
 					tc.setDim(1, Long.parseLong(parts[7]));
@@ -391,31 +391,32 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				iimd = new MetaDataFormat(tc, oi, ii);
 			}
 			UpdateType updateType = UpdateType.COPY;
-			if ( parts.length >= 12 )
-				updateType = UpdateType.valueOf(parts[11].toUpperCase());
+			if ( parts.length >= 11 )
+				updateType = UpdateType.valueOf(parts[10].toUpperCase());
 			
 			//handle frame schema
-			String schema = (dt==DataType.FRAME && parts.length>=13) ? parts[parts.length-1] : null;
+			String schema = (dt==DataType.FRAME && parts.length>=12) ? parts[parts.length-1] : null;
 			
 			if ( fmt.equalsIgnoreCase("csv") ) {
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.
 				// 13 inputs: createvar corresponding to WRITE -- includes properties hasHeader, delim, and sparse
 				// 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
 				FileFormatProperties fmtProperties = null;
-				if ( parts.length == 15+extSchema ) {
-					boolean hasHeader = Boolean.parseBoolean(parts[12]);
-					String delim = parts[13];
-					boolean sparse = Boolean.parseBoolean(parts[14]);
+				int curPos = 11;
+				if ( parts.length == 14+extSchema ) {
+					boolean hasHeader = Boolean.parseBoolean(parts[curPos]);
+					String delim = parts[curPos+1];
+					boolean sparse = Boolean.parseBoolean(parts[curPos+2]);
 					fmtProperties = new FileFormatPropertiesCSV(hasHeader, delim, sparse) ;
 				}
 				else {
-					boolean hasHeader = Boolean.parseBoolean(parts[12]);
-					String delim = parts[13];
-					boolean fill = Boolean.parseBoolean(parts[14]);
-					double fillValue = UtilFunctions.parseToDouble(parts[15]);
+					boolean hasHeader = Boolean.parseBoolean(parts[curPos]);
+					String delim = parts[curPos+1];
+					boolean fill = Boolean.parseBoolean(parts[curPos+2]);
+					double fillValue = UtilFunctions.parseToDouble(parts[curPos+3]);
 					String naStrings = null;
-					if ( parts.length == 17+extSchema )
-						naStrings = parts[16];
+					if ( parts.length == 16+extSchema )
+						naStrings = parts[curPos+4];
 					fmtProperties = new FileFormatPropertiesCSV(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
@@ -1126,8 +1127,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getBlocksize());
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getBlocksize());
-		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getNonZeros());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(update.toString().toLowerCase());
@@ -1145,8 +1144,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(mc.getRows());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getCols());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(mc.getBlocksize());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getBlocksize());
 		sb.append(Lop.OPERAND_DELIMITOR);

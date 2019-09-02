@@ -74,7 +74,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		int blen=Integer.parseInt(parts[3]);
-		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[5]);
+		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
 		
 		Operator op = null; // no operator for ReblockSPInstruction
 		return new ReblockSPInstruction(op, in, out, blen, blen, outputEmptyBlocks, opcode, str);

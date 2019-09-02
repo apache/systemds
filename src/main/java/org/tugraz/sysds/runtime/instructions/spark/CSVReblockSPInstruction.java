@@ -76,13 +76,13 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		int blen = Integer.parseInt(parts[3]);
-		boolean hasHeader = Boolean.parseBoolean(parts[5]);
-		String delim = parts[6];
-		boolean fill = Boolean.parseBoolean(parts[7]);
-		double fillValue = Double.parseDouble(parts[8]);
+		boolean hasHeader = Boolean.parseBoolean(parts[4]);
+		String delim = parts[5];
+		boolean fill = Boolean.parseBoolean(parts[6]);
+		double fillValue = Double.parseDouble(parts[7]);
 
 		return new CSVReblockSPInstruction(null, in, out, blen, blen,
-				hasHeader, delim, fill, fillValue, opcode, str);
+			hasHeader, delim, fill, fillValue, opcode, str);
 	}
 
 	@Override

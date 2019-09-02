@@ -108,7 +108,6 @@ public class CSVReBlock extends Lop
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output),
 			String.valueOf(_blocksize),
-			String.valueOf(_blocksize),
 			prepCSVProperties());
 	}
 }

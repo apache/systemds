@@ -46,7 +46,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class MLContextParforDatasetTest extends MLContextTestBase
 {
-
 	private final static int rows = 100;
 	private final static int cols = 1600;
 	private final static double sparsity = 0.7;
@@ -143,7 +142,7 @@ public class MLContextParforDatasetTest extends MLContextTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);	
+			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);
 		}
 	}
 }

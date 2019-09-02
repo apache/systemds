@@ -65,7 +65,7 @@ public class DataGen extends Lop
 	 * @param et Execution type
 	 */
 	public DataGen(DataGenMethod mthd, DataIdentifier id, HashMap<String, Lop> 
-				inputParametersLops, String baseDir, DataType dt, ValueType vt, ExecType et)
+		inputParametersLops, String baseDir, DataType dt, ValueType vt, ExecType et)
 	{
 		super(Type.DataGen, dt, vt);
 		method = mthd;
@@ -84,15 +84,14 @@ public class DataGen extends Lop
 		return method;
 	}
 	
-	public void init(DataIdentifier id, String baseDir, ExecType et)
-	{
-		this.getOutputParameters().setFormat(Format.BINARY);
-		this.getOutputParameters().setBlocked(true);
+	public void init(DataIdentifier id, String baseDir, ExecType et) {
+		getOutputParameters().setFormat(Format.BINARY);
+		getOutputParameters().setBlocked(true);
 		// TODO size for tensor
-		this.getOutputParameters().setNumRows(id.getDim1());
-		this.getOutputParameters().setNumCols(id.getDim2());
-		this.getOutputParameters().setNnz(-1);
-		this.getOutputParameters().setBlocksize(id.getBlocksize());
+		getOutputParameters().setNumRows(id.getDim1());
+		getOutputParameters().setNumCols(id.getDim2());
+		getOutputParameters().setNnz(-1);
+		getOutputParameters().setBlocksize(id.getBlocksize());
 		lps.setProperties( inputs, et);
 	}
 
@@ -156,9 +155,6 @@ public class DataGen extends Lop
 
 		iLop = _inputParams.get(DataExpression.RAND_DIMS);
 		sb.append(iLop.prepScalarInputOperand(getExecType()));
-		sb.append(OPERAND_DELIMITOR);
-
-		sb.append(getOutputParameters().getBlocksize());
 		sb.append(OPERAND_DELIMITOR);
 
 		sb.append(getOutputParameters().getBlocksize());
@@ -251,8 +247,6 @@ public class DataGen extends Lop
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(blen);
 		sb.append(OPERAND_DELIMITOR);
-		sb.append(blen);
-		sb.append(OPERAND_DELIMITOR);
 		sb.append(minString);
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(prepOutputOperand(output));
@@ -277,7 +271,6 @@ public class DataGen extends Lop
 			lsize.prepScalarInputOperand(getExecType()),
 			lreplace.prepScalarLabel(),
 			lseed.prepScalarLabel(),
-			String.valueOf(getOutputParameters().getBlocksize()),
 			String.valueOf(getOutputParameters().getBlocksize()),
 			prepOutputOperand(output));
 	}
@@ -334,8 +327,6 @@ public class DataGen extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( blen );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( blen );
-		sb.append( OPERAND_DELIMITOR );
 		sb.append( fromString );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( toString );
@@ -348,17 +339,16 @@ public class DataGen extends Lop
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(method.toString());
-		sb.append(" ; num_rows=" + this.getOutputParameters().getNumRows());
-		sb.append(" ; num_cols=" + this.getOutputParameters().getNumCols());
-		sb.append(" ; nnz=" + this.getOutputParameters().getNnz());
-		sb.append(" ; blocksize=" + this.getOutputParameters().getBlocksize());
-		sb.append(" ; format=" + this.getOutputParameters().getFormat());
-		sb.append(" ; blocked=" + this.getOutputParameters().isBlocked());
-		sb.append(" ; dir=" + this.baseDir);
+		sb.append(" ; num_rows=" + getOutputParameters().getNumRows());
+		sb.append(" ; num_cols=" + getOutputParameters().getNumCols());
+		sb.append(" ; nnz=" + getOutputParameters().getNnz());
+		sb.append(" ; blocksize=" + getOutputParameters().getBlocksize());
+		sb.append(" ; format=" + getOutputParameters().getFormat());
+		sb.append(" ; blocked=" + getOutputParameters().isBlocked());
+		sb.append(" ; dir=" + baseDir);
 		return sb.toString();
 	}
 	

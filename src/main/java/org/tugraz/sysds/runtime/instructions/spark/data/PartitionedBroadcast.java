@@ -109,8 +109,8 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		int pix = 0;
 		if( _pbc.length > 1 ) { //compute partition index
 			long[] dims = _dc.getDims();
-			int blen = _dc.getBlockSize();
-			int numPerPart = computeBlocksPerPartition(dims, _dc.getBlockSize());
+			int blen = _dc.getBlocksize();
+			int numPerPart = computeBlocksPerPartition(dims, _dc.getBlocksize());
 			pix = (int) (UtilFunctions.computeBlockNumber(ix, dims, blen) / numPerPart);
 		}
 

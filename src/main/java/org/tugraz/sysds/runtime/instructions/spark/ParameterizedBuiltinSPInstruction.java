@@ -927,7 +927,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			else {
 				out = SparkUtils.cacheBinaryCellRDD(out);
 				mcOut.set(SparkUtils.computeDataCharacteristics(out));
-				mcOut.setBlockSize(-1); //grouped aggregate with cell output
+				mcOut.setBlocksize(-1); //grouped aggregate with cell output
 			}
 		}
 	}

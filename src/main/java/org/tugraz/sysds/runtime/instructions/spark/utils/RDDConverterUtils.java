@@ -223,7 +223,7 @@ public class RDDConverterUtils
 		
 		//ensure valid blocksizes
 		if( mc.getBlocksize()<=1 || mc.getBlocksize()<=1 ) {
-			mc.setBlockSize(ConfigurationManager.getBlocksize());
+			mc.setBlocksize(ConfigurationManager.getBlocksize());
 		}
 		
 		//construct or reuse row ids

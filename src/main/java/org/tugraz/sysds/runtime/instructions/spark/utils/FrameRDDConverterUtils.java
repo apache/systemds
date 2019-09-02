@@ -195,7 +195,7 @@ public class FrameRDDConverterUtils
 		if(dcIn.getCols() > dcIn.getBlocksize()) {
 			//split matrix blocks into extended matrix blocks 
 			in = in.flatMapToPair(new MatrixFrameReblockFunction(dcIn));
-			mc.setBlockSize(MatrixFrameReblockFunction.computeBlockSize(mc));
+			mc.setBlocksize(MatrixFrameReblockFunction.computeBlockSize(mc));
 			
 			//shuffle matrix blocks (instead of frame blocks) in order to exploit 
 			//sparse formats (for sparse or wide matrices) during shuffle

@@ -69,7 +69,7 @@ public class CastSPInstruction extends UnarySPInstruction {
 		//convert frame-matrix / matrix-frame and set output
 		if( opcode.equals(UnaryCP.CAST_AS_MATRIX_OPCODE) ) {
 			DataCharacteristics mcOut = new MatrixCharacteristics(mcIn);
-			mcOut.setBlockSize(ConfigurationManager.getBlocksize());
+			mcOut.setBlocksize(ConfigurationManager.getBlocksize());
 			out = FrameRDDConverterUtils.binaryBlockToMatrixBlock(
 				(JavaPairRDD<Long, FrameBlock>)in, mcIn, mcOut);
 		}

@@ -64,7 +64,7 @@ public class TensorCharacteristics extends DataCharacteristics
 	@Override
 	public DataCharacteristics set(DataCharacteristics that) {
 		long[] dims = that.getDims().clone();
-		set(dims, that.getBlockSize(), that.getNonZeros());
+		set(dims, that.getBlocksize(), that.getNonZeros());
 		return this;
 	}
 
@@ -134,7 +134,7 @@ public class TensorCharacteristics extends DataCharacteristics
 
 	@Override
 	public long getNumBlocks(int i) {
-		return Math.max((long) Math.ceil((double)getDim(i) / getBlockSize()), 1);
+		return Math.max((long) Math.ceil((double)getDim(i) / getBlocksize()), 1);
 	}
 
 	@Override

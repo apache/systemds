@@ -478,7 +478,7 @@ public class SparkExecutionContext extends ExecutionContext
 				fromFile = true;*/
 			} else { //default case
 				TensorBlock tb = to.acquireRead(); //pin matrix in memory
-				int blen = dc.getBlockSize();
+				int blen = dc.getBlocksize();
 				rdd = toTensorJavaPairRDD(sc, tb, blen, numParts, inclEmpty);
 				to.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(dc), true);
@@ -817,7 +817,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			
 			bret = new PartitionedBroadcast<>(ret, new MatrixCharacteristics(
-				fo.getDataCharacteristics()).setBlockSize(blen));
+				fo.getDataCharacteristics()).setBlocksize(blen));
 			if (fo.getBroadcastHandle() == null)
 				fo.setBroadcastHandle(new BroadcastObject<FrameBlock>());
 			
@@ -960,7 +960,7 @@ public class SparkExecutionContext extends ExecutionContext
 		try {
 			//compute block indexes
 			long[] blockIx = new long[tc.getNumDims()];
-			int blocksize = tc.getBlockSize();
+			int blocksize = tc.getBlocksize();
 			int[] outDims = new int[tc.getNumDims()];
 			int[] offset = new int[tc.getNumDims()];
 			for (int i = tc.getNumDims() - 1; i >= 0; i--) {
@@ -1212,7 +1212,7 @@ public class SparkExecutionContext extends ExecutionContext
 			int[] lower = new int[ix.getNumDims()];
 			int[] upper = new int[ix.getNumDims()];
 			for (int i = 0; i < lower.length; i++) {
-				lower[i] = (int) ((ix.getIndex(i) - 1) * dc.getBlockSize());
+				lower[i] = (int) ((ix.getIndex(i) - 1) * dc.getBlocksize());
 				upper[i] = lower[i] + block.getDim(i) - 1;
 			}
 			upper[upper.length - 1]++;

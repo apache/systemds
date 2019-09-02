@@ -337,7 +337,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				//write matrix data to hdfs
 				MatrixWriter matWriter = MatrixWriterFactory.createMatrixWriter(oinfo);
 				matWriter.writeMatrixToHDFS(matrixBlock1, input("A"), rows, schema.length, 
-						mcMatrix.getBlockSize(), mcMatrix.getNonZeros());
+					mcMatrix.getBlocksize(), mcMatrix.getNonZeros());
 			} 
 			else {
 				//initialize the frame data.

@@ -366,7 +366,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else if (parts.length >= 11) {
 					// matrix characteristics
 					mc.setDimension(Long.parseLong(parts[6]), Long.parseLong(parts[7]));
-					mc.setBlockSize(Integer.parseInt(parts[8]));
+					mc.setBlocksize(Integer.parseInt(parts[8]));
 					mc.setNonZeros(Long.parseLong(parts[10]));
 				}
 				else {
@@ -383,7 +383,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					// TODO correct sizes
 					tc.setDim(0, Long.parseLong(parts[6]));
 					tc.setDim(1, Long.parseLong(parts[7]));
-					tc.setBlockSize(Integer.parseInt(parts[8]));
+					tc.setBlocksize(Integer.parseInt(parts[8]));
 				}
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);

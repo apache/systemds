@@ -327,15 +327,10 @@ public class Data extends Lop
 					fmt = "csv";
 				else if (oparams.getFormat() == Format.LIBSVM)
 					fmt = "libsvm";
-				else if ( oparams.getFormat() == Format.BINARY ){
-					if ( oparams.getBlocksize() > 0 || oparams.getBlocksize() > 0 )
-						fmt = "binaryblock"; 
-					else
-						fmt = "binarycell" ;
-				}
-				else {
+				else if ( oparams.getFormat() == Format.BINARY )
+					fmt = oparams.getBlocksize() > 0 ? "binaryblock" : "binarycell" ;
+				else
 					throw new LopsException("Unexpected format: " + oparams.getFormat());
-				}
 			}
 			else {
 				// scalars will always be written in text format

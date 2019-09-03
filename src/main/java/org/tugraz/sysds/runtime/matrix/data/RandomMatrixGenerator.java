@@ -169,4 +169,16 @@ public class RandomMatrixGenerator {
 			throw new DMLRuntimeException("Unsupported probability density function");
 		}
 	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder("PRNG[");
+		sb.append("pdf = "+_pdf.name()+", ");
+		sb.append("rows = "+_rows+", ");
+		sb.append("cols = "+_cols+", ");
+		sb.append("blen = "+_blocksize+", ");
+		sb.append("sparsity = "+_sparsity+", ");
+		sb.append("min = "+_min+", ");
+		sb.append("max = "+_max+"]");
+		return sb.toString();
+	}
 }

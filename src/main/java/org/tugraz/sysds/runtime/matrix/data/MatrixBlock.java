@@ -3702,7 +3702,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			int rl, int ru, int cl, int cu, MatrixBlock ret, UpdateType update) {
 		// Check the validity of bounds
 		if( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
-			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			|| cl < 0 || cl >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
 			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," 
 				+ (cl+1)+":"+(cu+1)+"] " + "must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"].");
 		}
@@ -3849,9 +3849,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
 		// check the validity of bounds
 		if ( rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
-				|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
-			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " +
-							"must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"]");
+				|| cl < 0 || cl >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
+			throw new DMLRuntimeException("Invalid values for matrix indexing: ["+(rl+1)+":"+(ru+1)+"," + (cl+1)+":"+(cu+1)+"] " 
+				+ "must be within matrix dimensions ["+getNumRows()+","+getNumColumns()+"]");
 		}
 		
 		// Output matrix will have the same sparsity as that of the input matrix.

@@ -833,7 +833,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			MatrixBlock blk = new MatrixBlock();
 			RandomMatrixGenerator rgen = LibMatrixDatagen
 				.createRandomMatrixGenerator(_pdf, lrlen, lclen,
-					lrlen, _sparsity, _min, _max, _pdfParams);
+					_blen, _sparsity, _min, _max, _pdfParams);
 			blk.randOperationsInPlace(rgen, null, seed);
 			blk.examSparsity();
 			return new Tuple2<>(kv._1, blk);

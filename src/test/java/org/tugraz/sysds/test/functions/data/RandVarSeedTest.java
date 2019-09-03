@@ -66,14 +66,7 @@ public class RandVarSeedTest extends AutomatedTestBase
 		runRandVarMinMaxTest(TEST_NAME_DML1, ExecType.SPARK);
 	}
 	
-
-	/**
-	 * 
-	 * @param TEST_NAME
-	 * @param instType
-	 */
-	private void runRandVarMinMaxTest( String TEST_NAME, ExecType instType )
-	{
+	private void runRandVarMinMaxTest( String TEST_NAME, ExecType instType ) {
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
 		switch( instType ){
@@ -96,7 +89,7 @@ public class RandVarSeedTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", 
 				Integer.toString(rows), Integer.toString(cols), fnameSeed, output("R") };
 			
-			//write seed as input scalar (to force treatment as variable)			
+			//write seed as input scalar (to force treatment as variable)
 			HDFSTool.writeIntToHDFS(seed, fnameSeed);
 			HDFSTool.writeScalarMetaDataFile(fnameSeed+".mtd", ValueType.INT64);
 			

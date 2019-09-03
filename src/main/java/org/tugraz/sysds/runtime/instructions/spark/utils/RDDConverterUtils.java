@@ -222,9 +222,8 @@ public class RDDConverterUtils
 		}
 		
 		//ensure valid blocksizes
-		if( mc.getBlocksize()<=1 || mc.getBlocksize()<=1 ) {
+		if( mc.getBlocksize()<=1 )
 			mc.setBlocksize(ConfigurationManager.getBlocksize());
-		}
 		
 		//construct or reuse row ids
 		JavaPairRDD<Row, Long> prepinput = containsID ?
@@ -462,7 +461,6 @@ public class RDDConverterUtils
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_blen = mc.getBlocksize();
-			_blen = mc.getBlocksize();
 			
 			//determine upper bounded buffer len
 			_bufflen = (int) Math.min(_rlen*_clen, BUFFER_SIZE);
@@ -665,7 +663,6 @@ public class RDDConverterUtils
 		{
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
-			_blen = mc.getBlocksize();
 			_blen = mc.getBlocksize();
 			_sparsity = OptimizerUtils.getSparsity(mc);
 			_sparse = sparse && (!fill || fillValue==0);

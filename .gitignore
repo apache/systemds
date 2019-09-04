@@ -44,6 +44,11 @@ docs/api
 
 # Excluded sources
 # (we're including the generated files to simply IDE setup w/o mvn build)
+# Since the gitignore file does not ignore tracked files, the auto-generated
+# parser files need to be ignored by the following command:
+# git update-index --assume-unchanged [<file> ...]
+# This can be undone by git update-index --no-assume-unchanged [<file> ...]
+# Use the command above on these files:
 # src/main/java/Dml.tokens
 # src/main/java/DmlLexer.tokens
 # src/main/java/org/tugraz/sysds/parser/dml/DmlBaseListener.java

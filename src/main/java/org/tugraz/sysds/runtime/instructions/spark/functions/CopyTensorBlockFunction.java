@@ -21,13 +21,13 @@
 package org.tugraz.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.BasicTensorBlock;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in
  * mapValues (copy tensor blocks). It supports both deep and shallow copies of values.
  */
-public class CopyTensorBlockFunction implements Function<BasicTensor, BasicTensor> {
+public class CopyTensorBlockFunction implements Function<BasicTensorBlock, BasicTensorBlock> {
 	private static final long serialVersionUID = 707987326466592670L;
 	private boolean _deepCopy;
 
@@ -40,10 +40,10 @@ public class CopyTensorBlockFunction implements Function<BasicTensor, BasicTenso
 	}
 
 	@Override
-	public BasicTensor call(BasicTensor arg0)
+	public BasicTensorBlock call(BasicTensorBlock arg0)
 			throws Exception {
 		if (_deepCopy)
-			return new BasicTensor(arg0);
+			return new BasicTensorBlock(arg0);
 		else
 			return arg0;
 	}

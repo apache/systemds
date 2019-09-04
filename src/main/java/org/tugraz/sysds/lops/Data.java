@@ -308,7 +308,7 @@ public class Data extends Lop
 		else
 			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
 		
-		sb.append( OPERAND_DELIMITOR );	
+		sb.append( OPERAND_DELIMITOR );
 		Lop fnameLop = _inputParams.get(DataExpression.IO_FILENAME);
 		boolean literal = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral());
 		sb.append ( prepOperand(input2, DataType.SCALAR,  ValueType.STRING, literal) ); 
@@ -431,7 +431,7 @@ public class Data extends Lop
 			else if ( oparams.getFormat() == Format.LIBSVM )
 				fmt = "libsvm";
 			else { //binary
-				fmt = ( getDataType() == DataType.FRAME || oparams.getBlocksize() > 0 
+				fmt = ( getDataType() == DataType.FRAME || oparams.getBlocksize() > 0
 					|| oparams.getBlocksize() > 0 ) ? "binaryblock" : "binarycell";
 			}
 			

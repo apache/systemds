@@ -30,7 +30,7 @@ import org.tugraz.sysds.lops.DataGen;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDatagen;
@@ -248,7 +248,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public void processInstruction( ExecutionContext ec )
 	{
 		MatrixBlock soresBlock = null;
-		BasicTensor basicTensor = null;
+		TensorBlock tensorBlock = null;
 		ScalarObject soresScalar = null;
 		
 		//process specific datagen operator
@@ -269,14 +269,14 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				LOG.trace("Process DataGenCPInstruction rand with seed = "+lSeed+".");
 
 			if (output.isTensor()) {
+				// TODO data tensor
 				int[] tDims = DataConverter.getTensorDimensions(ec, dims);
-				basicTensor = new BasicTensor(output.getValueType(), tDims);
-				basicTensor.allocateDenseBlock();
+				tensorBlock = new TensorBlock(output.getValueType(), tDims).allocateBlock();
 				if (minValueStr.equals(maxValueStr)) {
 					if (minMaxAreDoubles)
-						basicTensor.set(minValue);
+						tensorBlock.set(minValue);
 					else if (output.getValueType() == ValueType.STRING || output.getValueType() == ValueType.BOOLEAN)
-							basicTensor.set(minValueStr);
+							tensorBlock.set(minValueStr);
 					else {
 						throw new DMLRuntimeException("Rand instruction cannot fill numeric "
 							+ "tensor with non numeric elements.");
@@ -284,15 +284,15 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				}
 				else {
 					// TODO random fill tensor
-					lrows = basicTensor.getDim(0);
+					lrows = tensorBlock.getDim(0);
 					lcols = 1;
-					for (int d = 1; d < basicTensor.getNumDims(); d++) {
-						lcols *= basicTensor.getDim(d);
+					for (int d = 1; d < tensorBlock.getNumDims(); d++) {
+						lcols *= tensorBlock.getDim(d);
 					}
 					RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
 							pdf, (int) lrows, (int) lcols, blocksize, sparsity, minValue, maxValue, pdfParams);
 					soresBlock = MatrixBlock.randOperations(rgen, lSeed, numThreads);
-					basicTensor.set(soresBlock);
+					tensorBlock.set(soresBlock);
 				}
 			} else {
 				RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
@@ -344,7 +344,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			ec.setMatrixOutput(output.getName(), soresBlock);
 		} else if(output.isTensor()) {
 			// TODO memory optimization
-			ec.setTensorOutput(output.getName(), basicTensor);
+			ec.setTensorOutput(output.getName(), tensorBlock);
 		} else if( output.isScalar() )
 			ec.setScalarOutput(output.getName(), soresScalar);
 	}

@@ -158,12 +158,14 @@ public class DenseBlockString extends DenseBlockDRB {
 
 	@Override
 	public double get(int r, int c) {
-		return Double.parseDouble(_data[pos(r, c)]);
+		String s = _data[pos(r, c)];
+		return s == null || s.isEmpty() ? 0 : Double.parseDouble(s);
 	}
 
 	@Override
 	public double get(int[] ix) {
-		return Double.parseDouble(_data[pos(ix)]);
+		String s = _data[pos(ix)];
+		return s == null || s.isEmpty() ? 0 : Double.parseDouble(s);
 	}
 
 	@Override
@@ -179,6 +181,7 @@ public class DenseBlockString extends DenseBlockDRB {
 
 	@Override
 	public long getLong(int[] ix) {
-		return Long.parseLong(_data[pos(ix)]);
+		String s = _data[pos(ix)];
+		return s == null || s.isEmpty() ? 0 : Long.parseLong(s);
 	}
 }

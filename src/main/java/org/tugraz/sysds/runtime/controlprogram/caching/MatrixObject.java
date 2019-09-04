@@ -309,7 +309,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				
 				//read the 
 				if( HDFSTool.existsFileOnHDFS(fname) )
-					mb = readBlobFromHDFS( fname, rows, cols );
+					mb = readBlobFromHDFS( fname, new long[]{rows, cols} );
 				else
 				{
 					mb = new MatrixBlock((int)rows, (int)cols, true);
@@ -415,9 +415,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	
 
 	@Override
-	protected MatrixBlock readBlobFromHDFS(String fname, long rlen, long clen)
+	protected MatrixBlock readBlobFromHDFS(String fname, long[] dims)
 		throws IOException
 	{
+		long rlen = dims[0];
+		long clen = dims[1];
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics mc = iimd.getDataCharacteristics();
 		long begin = 0;

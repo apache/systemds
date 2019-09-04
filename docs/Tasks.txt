@@ -22,7 +22,8 @@ SYSTEMDS-20 New Data Model
  * 25 Initial data tensor implementation
  * 26 Non-zero default value for sparse (row/col)
  * 27 Tensor buffer pool integration
- * 28 Tensor local readers and writers
+ * 28 Tensor local readers and writers (textcell, binary)             OK
+ * 29 Tensor local readers and writers (linearize csv)
 
 SYSTEMDS-30 Builtin and Packaging
  * 31 Shell script for local runs                                     OK

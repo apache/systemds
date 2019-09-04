@@ -447,8 +447,8 @@ public class HDFSTool
 
 		return mtd.toString(4); // indent with 4 spaces	
 	}
-	
-	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen) 
+
+	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen)
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
@@ -457,7 +457,7 @@ public class HDFSTool
 		return DataConverter.convertToDoubleMatrix(mb);
 	}
 	
-	public static double[] readColumnVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen) 
+	public static double[] readColumnVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen)
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);

@@ -53,7 +53,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
+import org.junit.Assert;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.io.FrameWriter;
 import org.tugraz.sysds.runtime.io.FrameWriterFactory;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
@@ -354,6 +356,27 @@ public class TestUtils
 		} catch (IOException e) {
 			fail("unable to read file: " + e.getMessage());
 		}
+	}
+	
+	public static void compareTensorBlocks(TensorBlock tb1, TensorBlock tb2) {
+		Assert.assertEquals(tb1.getValueType(), tb2.getValueType());
+		Assert.assertArrayEquals(tb1.getSchema(), tb2.getSchema());
+		Assert.assertEquals(tb1.getNumRows(), tb2.getNumRows());
+		Assert.assertEquals(tb1.getNumColumns(), tb2.getNumColumns());
+		for (int i = 0; i < tb1.getNumRows(); i++)
+			for (int j = 0; j < tb1.getNumColumns(); j++)
+				Assert.assertEquals(Double.valueOf(tb1.get(i, j)),
+						Double.valueOf(tb2.get(i, j)));
+	}
+	
+	public static TensorBlock createBasicTensor(ValueType vt, int rows, int cols, double sparsity) {
+		return DataConverter.convertToTensorBlock(TestUtils.round(
+				MatrixBlock.randOperations(rows, cols, sparsity, 0, 10, "uniform", 7)), vt, true);
+	}
+	
+	public static TensorBlock createDataTensor(ValueType vt, int rows, int cols, double sparsity) {
+		return DataConverter.convertToTensorBlock(TestUtils.round(
+				MatrixBlock.randOperations(rows, cols, sparsity, 0, 10, "uniform", 7)), vt, false);
 	}
 
 	/**

@@ -18,7 +18,6 @@
 package org.tugraz.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
@@ -76,7 +75,7 @@ public class TensorTensorBinaryOpPartitionFunction implements PairFlatMapFunctio
 			TensorBlock in2 = _ptV.getBlock(index);
 
 			//execute the binary operation
-			TensorBlock ret = in1.binaryOperations(_op, in2, new BasicTensor());
+			TensorBlock ret = in1.binaryOperations(_op, in2, new TensorBlock());
 			return new Tuple2<>(ix, ret);
 		}
 	}

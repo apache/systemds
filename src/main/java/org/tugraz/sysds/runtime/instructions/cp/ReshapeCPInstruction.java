@@ -26,7 +26,7 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.LibTensorReorg;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -68,20 +68,20 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		if (output.getDataType() == Types.DataType.TENSOR) {
 			int[] dims = DataConverter.getTensorDimensions(ec, _opDims);
-			BasicTensor out = new BasicTensor(output.getValueType(), dims);
+			TensorBlock out = new TensorBlock(output.getValueType(), dims);
 			if (input1.getDataType() == Types.DataType.TENSOR) {
 				//get Tensor-data from tensor (reshape)
 				// TODO support DataTensor
-				BasicTensor data = (BasicTensor) ec.getTensorInput(input1.getName());
-				LibTensorReorg.reshape(data, out, dims);
+				TensorBlock data = ec.getTensorInput(input1.getName());
+				LibTensorReorg.reshape(data.getBasicTensor(), out.getBasicTensor(), dims);
 				ec.releaseTensorInput(input1.getName());
 			}
 			else if (input1.getDataType() == Types.DataType.MATRIX) {
-				out.allocateDenseBlock();
+				out.allocateBlock();
 				//get Tensor-data from matrix
 				MatrixBlock data = ec.getMatrixInput(input1.getName());
 				// TODO metadata operation
-				out.set(data);
+				out.getBasicTensor().set(data);
 				ec.releaseMatrixInput(input1.getName());
 			}
 			else {

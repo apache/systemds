@@ -23,6 +23,7 @@
 package org.tugraz.sysds.runtime.meta;
 
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.Arrays;
@@ -133,6 +134,30 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 	
 	@Override
+	public long getDim(int i) {
+		if (i == 0)
+			return numRows;
+		else if (i == 1)
+			return numColumns;
+		throw new DMLRuntimeException("Matrices have only 2 dimensions");
+	}
+	
+	@Override
+	public long[] getLongDims() {
+		return new long[]{numRows, numColumns};
+	}
+	
+	@Override
+	public int[] getIntDims() {
+		return new int[]{(int) numRows, (int) numColumns};
+	}
+	
+	@Override
+	public int getNumDims() {
+		return 2;
+	}
+	
+	@Override
 	public void setNonZeros(long nnz) {
 		ubNnz = false;
 		nonZero = nnz;
@@ -193,7 +218,7 @@ public class MatrixCharacteristics extends DataCharacteristics
 
 	@Override
 	public boolean mightHaveEmptyBlocks() {
-		long singleBlk = Math.max(Math.min(numRows, _blocksize),1) 
+		long singleBlk = Math.max(Math.min(numRows, _blocksize),1)
 				* Math.max(Math.min(numColumns, _blocksize),1);
 		return !nnzKnown() || numRows==0 || numColumns==0
 			|| (nonZero < numRows*numColumns - singleBlk);

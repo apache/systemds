@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -25,7 +27,6 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
@@ -176,7 +177,7 @@ public class RDDAggregateUtils
 		//reduce-all aggregate via fold instead of reduce to allow
 		//for update in-place w/o deep copy of left-hand-side blocks
 		return in.fold(
-				new BasicTensor(),
+				new TensorBlock(),
 				new AggregateSingleTensorBlockFunction(aop) );
 	}
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in,
@@ -679,7 +680,7 @@ public class RDDAggregateUtils
 
 			//aggregate second input (in-place)
 			// TODO support DataTensor
-			((BasicTensor)arg0).incrementalAggregate(_op, (BasicTensor)arg1);
+			arg0.getBasicTensor().incrementalAggregate(_op, arg1.getBasicTensor());
 
 			return arg0;
 		}

@@ -51,7 +51,6 @@ import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
@@ -913,9 +912,7 @@ public class SparkExecutionContext extends ExecutionContext
 			list = Arrays.asList(new Tuple2<>(new TensorIndexes(ix), src));
 		} else {
 			// TODO rows and columns for matrix characteristics
-			long[] dims = new long[src.getNumDims()];
-			for (int i = 0; i < src.getNumDims(); i++)
-				dims[i] = src.getDim(i);
+			long[] dims = src.getLongDims();
 			TensorCharacteristics mc = new TensorCharacteristics(dims, src.getNonZeros());
 			list = LongStream.range(0, mc.getNumBlocks()).parallel()
 					.mapToObj(i -> createIndexedTensorBlock(src, mc, i))
@@ -969,11 +966,8 @@ public class SparkExecutionContext extends ExecutionContext
 				offset[i] = (int) (blockIx[i] * blocksize);
 				ix /= tc.getNumBlocks(i);
 			}
-			// TODO: sparse
-			// TODO support DataTensor
-			BasicTensor bt = (BasicTensor) mb;
-			BasicTensor outBlock = new BasicTensor(bt.getValueType(), outDims, false);
-			outBlock = bt.slice(offset, outBlock);
+			TensorBlock outBlock = new TensorBlock(mb.getValueType(), outDims);
+			outBlock = mb.slice(offset, outBlock);
 			//create key-value pair
 			for (int i = 0; i < blockIx.length; i++) {
 				blockIx[i]++;
@@ -1022,8 +1016,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param rdd rdd object
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param blen number of rows in a block
-	 * @param blen number of columns in a block
+	 * @param blen block length
 	 * @param nnz number of non-zeros
 	 * @return matrix block
 	 */
@@ -1044,8 +1037,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param rdd JavaPairRDD for matrix block
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param blen number of rows in a block
-	 * @param blen number of columns in a block
+	 * @param blen block length
 	 * @param nnz number of non-zeros
 	 * @return matrix block
 	 */
@@ -1187,26 +1179,21 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	public static TensorBlock toTensorBlock(JavaPairRDD<TensorIndexes, TensorBlock> rdd, DataCharacteristics dc) {
-		// TODO support DataTensors
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		// TODO special case single block
-		int[] idims = new int[dc.getNumDims()];
-		for (int i = 0; i < idims.length; i++) {
-			idims[i] = (int)dc.getDim(i);
-		}
+		int[] idims = dc.getIntDims();
 		// TODO asynchronous allocation
 		List<Tuple2<TensorIndexes, TensorBlock>> list = rdd.collect();
-		ValueType vt = ((BasicTensor) list.get(0)._2).getValueType();
-		BasicTensor out = new BasicTensor(vt, idims);
-		out.allocateDenseBlock();
+		ValueType vt = (list.get(0)._2).getValueType();
+		TensorBlock out = new TensorBlock(vt, idims).allocateBlock();
 
 		//copy blocks one-at-a-time into output matrix block
 		for( Tuple2<TensorIndexes, TensorBlock> keyval : list )
 		{
 			//unpack index-block pair
 			TensorIndexes ix = keyval._1();
-			BasicTensor block = (BasicTensor) keyval._2();
+			TensorBlock block = keyval._2();
 
 			//compute row/column block offsets
 			int[] lower = new int[ix.getNumDims()];

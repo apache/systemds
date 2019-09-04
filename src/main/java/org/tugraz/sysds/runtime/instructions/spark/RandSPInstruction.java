@@ -45,7 +45,8 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.BasicTensorBlock;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -192,12 +193,12 @@ public class RandSPInstruction extends UnarySPInstruction {
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
 			// 8 operands: rows, cols, blen, from, to, incr, outvar
-			InstructionUtils.checkNumFields ( str, 7 ); 
+			InstructionUtils.checkNumFields ( str, 7 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
 			method = DataGenMethod.SAMPLE;
 			// 7 operands: range, size, replace, seed, blen, outvar
-			InstructionUtils.checkNumFields ( str, 6 ); 
+			InstructionUtils.checkNumFields ( str, 6 );
 		}
 		
 		Operator op = null;
@@ -463,7 +464,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 
 		//step 4: execute rand instruction over seed input
 		// TODO getDimLengthPerBlock accurate for each dimension
-		JavaPairRDD<TensorIndexes, BasicTensor> out = seedsRDD
+		JavaPairRDD<TensorIndexes, TensorBlock> out = seedsRDD
 				.mapToPair(new GenerateRandomTensorBlock(output.getValueType(), tDims, blocksize,
 						sparsity, minValueStr, maxValueStr, pdf, pdfParams));
 
@@ -494,7 +495,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		//step 1: offset generation 
 		JavaRDD<Double> offsetsRDD = null;
 		long nnz = UtilFunctions.getSeqLength(lfrom, lto, lincr);
-		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( nnz, 1, blocksize, 
+		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( nnz, 1, blocksize,
 			nnz); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long numBlocks = (long)Math.ceil(((double)nnz)/blocksize);
@@ -840,7 +841,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class GenerateRandomTensorBlock implements PairFunction<Tuple2<TensorIndexes, Long>, TensorIndexes, BasicTensor>
+	private static class GenerateRandomTensorBlock implements PairFunction<Tuple2<TensorIndexes, Long>, TensorIndexes, TensorBlock>
 	{
 		private static final long serialVersionUID = -512119897654170462L;
 
@@ -867,7 +868,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public Tuple2<TensorIndexes, BasicTensor> call(Tuple2<TensorIndexes, Long> kv)
+		public Tuple2<TensorIndexes, TensorBlock> call(Tuple2<TensorIndexes, Long> kv)
 				throws Exception
 		{
 			//compute local block size:
@@ -881,7 +882,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			int clen = (int) UtilFunctions.prod(blockDims, 1);
 			long seed = kv._2;
 
-			BasicTensor tb = new BasicTensor(_vt, blockDims);
+			BasicTensorBlock tb = new BasicTensorBlock(_vt, blockDims);
 			// TODO implement sparse support
 			tb.allocateDenseBlock();
 			if (!_min.equals(_max)) {
@@ -911,7 +912,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 				}
 			}
 
-			return new Tuple2<>(kv._1, tb);
+			return new Tuple2<>(kv._1, new TensorBlock(tb));
 		}
 	}
 

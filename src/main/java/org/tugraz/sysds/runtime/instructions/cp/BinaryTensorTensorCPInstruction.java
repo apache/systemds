@@ -18,7 +18,6 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
@@ -38,7 +37,7 @@ public class BinaryTensorTensorCPInstruction extends BinaryCPInstruction {
 
 		// Perform computation using input tensors, and produce the result tensor
 		BinaryOperator bop = (BinaryOperator) _optr;
-		BasicTensor retBlock = (BasicTensor) (inBlock1.binaryOperations (bop, inBlock2, null));
+		TensorBlock retBlock = inBlock1.binaryOperations(bop, inBlock2, null);
 		
 		// Release the memory occupied by input matrices
 		ec.releaseTensorInput(input1.getName(), input2.getName());

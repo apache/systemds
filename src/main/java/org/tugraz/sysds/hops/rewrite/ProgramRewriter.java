@@ -60,7 +60,7 @@ public class ProgramRewriter
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.hops.rewrite")
-				  .setLevel((Level) Level.DEBUG);
+				  .setLevel(Level.DEBUG);
 		}
 	}
 	

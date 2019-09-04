@@ -23,7 +23,6 @@ package org.tugraz.sysds.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
@@ -835,21 +834,18 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			
-			configObject = null;
-			
 			if (shouldReadMTD){
 				configObject = readMetadataFile(mtdFileName, conditional);
-		        		    
-		        // if the MTD file exists, check the values specified in read statement match values in metadata MTD file
-		        if (configObject != null){
-		        	parseMetaDataFileParameters(mtdFileName, configObject, conditional);
-		        	inferredFormatType = true;
-		        }
-		        else {
-		        	LOG.warn("Metadata file: " + new Path(mtdFileName) + " not provided");
-		        }
-			} 
-	        
+				// if the MTD file exists, check the values specified in read statement match values in metadata MTD file
+				if (configObject != null){
+					parseMetaDataFileParameters(mtdFileName, configObject, conditional);
+					inferredFormatType = true;
+				}
+				else {
+					LOG.warn("Metadata file: " + new Path(mtdFileName) + " not provided");
+				}
+			}
+			
 			boolean isCSV = false;
 			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV));
 			if (isCSV){
@@ -1988,45 +1984,36 @@ public class DataExpression extends DataIdentifier
 				Path childPath = stat.getPath(); // gives directory name
 				if( !childPath.getName().startsWith("part") )
 					continue;
-				BufferedReader br = null;
-				try {
-					FileSystem fs = IOUtilFunctions.getFileSystem(childPath);
-					br = new BufferedReader(new InputStreamReader(fs.open(childPath)));
+				try (BufferedReader br = new BufferedReader(new InputStreamReader(
+					IOUtilFunctions.getFileSystem(childPath).open(childPath))))
+				{
 					JSONObject childObj = JSONHelper.parse(br);
 					for( Object obj : childObj.entrySet() ){
 						@SuppressWarnings("unchecked")
 						Entry<Object,Object> e = (Entry<Object, Object>) obj;
-			    		Object key = e.getKey();
-			    		Object val = e.getValue();
-			    		retVal.put(key, val);
-					}						
+						Object key = e.getKey();
+						Object val = e.getValue();
+						retVal.put(key, val);
+					}
 				}
 				catch(Exception e){
 					raiseValidateError("for MTD file in directory, error parting part of MTD file with path " + childPath.toString() + ": " + e.getMessage(), conditional);
 				}
-				finally {
-					IOUtilFunctions.closeSilently(br);
-				}
 			} 
 		}
 		// CASE: filename points to a file
-		else if (exists) 
-		{
-			BufferedReader br = null;
-			try {
-				Path path = new Path(filename);
-				FileSystem fs = IOUtilFunctions.getFileSystem(path);
-				br = new BufferedReader(new InputStreamReader(fs.open(path)));
+		else if (exists) {
+			Path path = new Path(filename);
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(
+				IOUtilFunctions.getFileSystem(path).open(path))))
+			{
 				retVal = new JSONObject(br);
 			} 
 			catch (Exception e){
 				raiseValidateError("error parsing MTD file with path " + filename + ": " + e.getMessage(), conditional);
 			}
-			finally {
-				IOUtilFunctions.closeSilently(br);
-			}
 		}
-			
+		
 		return retVal;
 	}
 	
@@ -2040,11 +2027,10 @@ public class DataExpression extends DataIdentifier
 		if( HDFSTool.existsFileOnHDFS(inputFileName) 
 			&& !HDFSTool.isDirectory(inputFileName)  )
 		{
-			BufferedReader in = null;
-			try {
-				Path path = new Path(inputFileName);
-				FileSystem fs = IOUtilFunctions.getFileSystem(path);
-				in = new BufferedReader(new InputStreamReader(fs.open(path)));
+			Path path = new Path(inputFileName);
+			try( BufferedReader in = new BufferedReader(new InputStreamReader(
+				IOUtilFunctions.getFileSystem(path).open(path))))
+			{
 				String headerLine = new String("");
 				if (in.ready())
 					headerLine = in.readLine();
@@ -2053,11 +2039,7 @@ public class DataExpression extends DataIdentifier
 			catch(Exception ex) {
 				throw new LanguageException("Failed to read matrix market header.", ex);
 			}
-			finally {
-				IOUtilFunctions.closeSilently(in);
-			}
 		}
-		
 		return false;
 	}
 	

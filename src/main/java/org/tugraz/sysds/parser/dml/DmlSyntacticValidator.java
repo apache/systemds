@@ -746,7 +746,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		return retVal;
 	}
 	
-	private ArrayList<Expression> getFunctionDefaults(List<TypedArgAssignContext> ctx) {
+	private static ArrayList<Expression> getFunctionDefaults(List<TypedArgAssignContext> ctx) {
 		return new ArrayList<>(ctx.stream().map(arg -> 
 			(arg.paramVal!=null)?arg.paramVal.info.expr:null).collect(Collectors.toList()));
 	}

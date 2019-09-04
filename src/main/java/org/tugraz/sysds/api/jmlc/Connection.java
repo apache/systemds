@@ -310,8 +310,9 @@ public class Connection implements Closeable
 				|| IOUtilFunctions.isObjectStoreFileScheme(new Path(fname)) ) 
 			{ 
 				Path scriptPath = new Path(fname);
-				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
-				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
+				try(FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath) ) {
+					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
+				}
 			}
 			// from local file system
 			else { 

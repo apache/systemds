@@ -53,7 +53,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.hops.rewrite.RewriteMatrixMultChainOptimization")
-				  .setLevel((Level) Level.TRACE);
+				.setLevel(Level.TRACE);
 		}
 	}
 	

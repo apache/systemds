@@ -204,7 +204,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			m1Map.getNumRowsOrig(), _b, m1Map._scaled);
 	}
 	
-	private DensityMap estimInternReshape(DensityMap m1Map) {
+	private static DensityMap estimInternReshape(DensityMap m1Map) {
 		MatrixBlock out = new MatrixBlock(1,1,(double)m1Map.getNonZeros());
 		int b = Math.max(m1Map.getNumRowsOrig(), m1Map.getNumColumnsOrig());
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
@@ -270,7 +270,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		
 		public long getNonZeros() {
 			if( _scaled ) toNnz();
-			return (long)Math.round(_map.sum());
+			return Math.round(_map.sum());
 		}
 		
 		public int getRowBlockize(int r) {
@@ -363,7 +363,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			return out;
 		}
 		
-		private boolean isPow2(int value) {
+		private static boolean isPow2(int value) {
 			double tmp = (Math.log(value) / Math.log(2));
 			return Math.floor(tmp) == Math.ceil(tmp);
 		}

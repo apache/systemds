@@ -24,8 +24,7 @@ M = $1;
 N = $2;
 s = read($3);
 
+print("seed="+s)
 R = rand(rows=M, cols=N, seed=s);
 
 write(R, $4);
-
-

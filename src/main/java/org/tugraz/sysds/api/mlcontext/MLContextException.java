@@ -64,11 +64,9 @@ public class MLContextException extends RuntimeException {
 
 	@Override
 	public String toString() {
-		if (suppressStacktrace) {
+		if (suppressStacktrace)
 			return getLocalizedMessage();
-		} else {
-			return super.toString();
-		}
+		return super.toString();
 	}
 
 }

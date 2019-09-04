@@ -58,11 +58,9 @@ public abstract class Metadata {
 	}
 
 	protected String fieldDisplay(Object field) {
-		if (field == null) {
+		if (field == null)
 			return "None";
-		} else {
-			return field.toString();
-		}
+		return field.toString();
 	}
 
 	/**

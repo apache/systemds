@@ -274,13 +274,14 @@ public class ScriptFactory {
 				try( FSDataInputStream fsdis = fs.open(path) ) {
 					return IOUtils.toString(fsdis);
 				}
-			} else {// from local file system
-				File scriptFile = new File(scriptFilePath);
-				return FileUtils.readFileToString(scriptFile);
 			}
-		} catch (IllegalArgumentException | IOException e) {
+			// from local file system
+			File scriptFile = new File(scriptFilePath);
+			return FileUtils.readFileToString(scriptFile);
+		}
+		catch (IllegalArgumentException | IOException e) {
 			throw new MLContextException("Error trying to read script string from file: " + scriptFilePath, e);
-		} 
+		}
 	}
 
 	/**

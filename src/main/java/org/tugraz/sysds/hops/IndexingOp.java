@@ -315,7 +315,7 @@ public class IndexingOp extends Hop
 		long ru = (input3 instanceof LiteralOp) ? (HopRewriteUtils.getIntValueSafe((LiteralOp)input3)) : -1;
 		long cl = (input4 instanceof LiteralOp) ? (HopRewriteUtils.getIntValueSafe((LiteralOp)input4)) : -1;
 		long cu = (input5 instanceof LiteralOp) ? (HopRewriteUtils.getIntValueSafe((LiteralOp)input5)) : -1;
-		int blen = (int)input1.getBlocksize();
+		int blen = input1.getBlocksize();
 		
 		return OptimizerUtils.isIndexingRangeBlockAligned(rl, ru, cl, cu, blen);
 	}

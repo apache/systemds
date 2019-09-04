@@ -550,7 +550,7 @@ public class TemplateRow extends TemplateBase
 		tmp.put(hop.getHopID(), out);
 	}
 	
-	private CNodeBinary getVectorBinary(CNode cdata1, CNode cdata2, String name) {
+	private static CNodeBinary getVectorBinary(CNode cdata1, CNode cdata2, String name) {
 		if( TemplateUtils.isMatrix(cdata1) && (TemplateUtils.isMatrix(cdata2) 
 				|| TemplateUtils.isRowVector(cdata2)) ) {
 			return new CNodeBinary(cdata1, cdata2, BinType.valueOf("VECT_"+name));

@@ -81,6 +81,7 @@ public abstract class ParserWrapper {
 	}
 	
 	
+	@SuppressWarnings("resource")
 	public static String readDMLScript( String script, Log LOG) 
 			throws IOException, LanguageException
 	{
@@ -101,8 +102,9 @@ public abstract class ParserWrapper {
 				Path scriptPath = new Path(script);
 				String scheme = (scriptPath.toUri()!=null) ? scriptPath.toUri().getScheme() : null;
 				LOG.debug("Looking for the following file in "+scheme+": " + script);
-				FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
-				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
+				try( FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath) ) {
+					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
+				}
 			}
 			// from local file system
 			else 
@@ -116,8 +118,7 @@ public abstract class ParserWrapper {
 			
 			//core script reading
 			String tmp = null;
-			while ((tmp = in.readLine()) != null)
-			{
+			while ((tmp = in.readLine()) != null) {
 				sb.append( tmp );
 				sb.append( "\n" );
 			}
@@ -144,8 +145,7 @@ public abstract class ParserWrapper {
 						}
 					}
 				}
-				String s = IOUtils.toString(is);
-				return s;
+				return IOUtils.toString(is);
 			}
 			finally {
 				IOUtilFunctions.closeSilently(is);

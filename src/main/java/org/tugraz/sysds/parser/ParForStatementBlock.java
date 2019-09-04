@@ -151,7 +151,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.parser.ParForStatementBlock")
-				  .setLevel((Level) Level.TRACE);
+				.setLevel(Level.TRACE);
 		}
 	}
 	
@@ -523,7 +523,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 	}
 	
-	private Hop resetVisitStatus(Hop hop) {
+	private static Hop resetVisitStatus(Hop hop) {
 		return hop == null ? hop :
 			hop.resetVisitStatus();
 	}
@@ -861,7 +861,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		return direads;
 	}
 	
-	private boolean isDataIdentifier(Hop hop) {
+	private static boolean isDataIdentifier(Hop hop) {
 		return HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD)
 			|| (hop instanceof IndexingOp && HopRewriteUtils.isData(
 			hop.getInput().get(0), DataOpTypes.TRANSIENTREAD))
@@ -1581,7 +1581,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	{
 		// note: using dat.hashCode can be different for same functions, 
 		// hence, we use a custom String ID
-		IndexedIdentifier idat = (IndexedIdentifier) dat;
+		IndexedIdentifier idat = dat;
 		Expression ex1a = idat.getRowLowerBound();
 		Expression ex1b = idat.getRowUpperBound();
 		Expression ex2a = idat.getColLowerBound();
@@ -1595,7 +1595,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		sb.append(String.valueOf(ex2a));
 		sb.append(',');
 		sb.append(String.valueOf(ex2b));
-		
 		return sb.toString();
 	}
 	

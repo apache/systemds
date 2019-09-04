@@ -132,15 +132,13 @@ public class MLContextConversionUtil {
 	 * @return the matrix at a URL converted to a {@code MatrixObject}
 	 */
 	public static MatrixObject urlToMatrixObject(URL url, MatrixMetadata matrixMetadata) {
-		try {
-			InputStream is = url.openStream();
+		try (InputStream is = url.openStream()) {
 			List<String> lines = IOUtils.readLines(is);
 			JavaRDD<String> javaRDD = jsc().parallelize(lines);
-			if ((matrixMetadata == null) || (matrixMetadata.getMatrixFormat() == MatrixFormat.CSV)) {
+			if ((matrixMetadata == null) || (matrixMetadata.getMatrixFormat() == MatrixFormat.CSV))
 				return javaRDDStringCSVToMatrixObject(javaRDD, matrixMetadata);
-			} else if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
+			if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)
 				return javaRDDStringIJVToMatrixObject(javaRDD, matrixMetadata);
-			}
 			return null;
 		} catch (Exception e) {
 			throw new MLContextException("Exception converting URL to MatrixObject", e);
@@ -184,8 +182,7 @@ public class MLContextConversionUtil {
 	 *            the frame metadata
 	 * @return the {@code FrameBlock} converted to a {@code FrameObject}
 	 */
-	public static FrameObject frameBlockToFrameObject(String variableName, FrameBlock frameBlock,
-			FrameMetadata frameMetadata) {
+	public static FrameObject frameBlockToFrameObject(String variableName, FrameBlock frameBlock, FrameMetadata frameMetadata) {
 		try {
 			MatrixCharacteristics mc = (frameMetadata != null) ? frameMetadata.asMatrixCharacteristics()
 					: new MatrixCharacteristics();
@@ -688,9 +685,7 @@ public class MLContextConversionUtil {
 				frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
 		JavaPairRDD<Long, FrameBlock> rdd;
 		try {
-			ValueType[] lschema = null;
-			if (lschema == null)
-				lschema = UtilFunctions.nCopies((int) mc.getCols(), ValueType.STRING);
+			ValueType[] lschema = UtilFunctions.nCopies((int) mc.getCols(), ValueType.STRING);
 			rdd = FrameRDDConverterUtils.textCellToBinaryBlock(jsc(), javaPairRDDText, mc, lschema);
 		} catch (DMLRuntimeException e) {
 			e.printStackTrace();

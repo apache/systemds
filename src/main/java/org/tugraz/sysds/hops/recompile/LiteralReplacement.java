@@ -53,6 +53,7 @@ public class LiteralReplacement
 	private static final long REPLACE_LITERALS_MAX_MATRIX_SIZE = 1000000; //10^6 cells (8MB)
 	private static final boolean REPORT_LITERAL_REPLACE_OPS_STATS = true;
 	
+	@SuppressWarnings("null")
 	protected static void rReplaceLiterals( Hop hop, LocalVariableMap vars, boolean scalarsOnly )
 	{
 		if( hop.isVisited() )

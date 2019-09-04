@@ -102,7 +102,7 @@ public class MMNode
 	}
 	
 	public DataCharacteristics setDataCharacteristics(DataCharacteristics mc) {
-		return (DataCharacteristics) _mc.set(mc); //implicit copy
+		return _mc.set(mc); //implicit copy
 	}
 	
 	public MMNode getLeft() {

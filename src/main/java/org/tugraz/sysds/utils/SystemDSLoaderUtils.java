@@ -23,19 +23,21 @@ package org.tugraz.sysds.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL; 
 import java.net.URLClassLoader;
 import java.io.File;
+import java.io.IOException;
 
 public class SystemDSLoaderUtils  {
 	
-	public void loadSystemDS(String filePath) throws MalformedURLException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+	public void loadSystemDS(String filePath) 
+		throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException {
 		URL url = new File(filePath).toURI().toURL();
-		URLClassLoader classLoader = (URLClassLoader)ClassLoader.getSystemClassLoader();
-		Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-		method.setAccessible(true);
-	    method.invoke(classLoader, url);
+		try( URLClassLoader classLoader = (URLClassLoader)ClassLoader.getSystemClassLoader() ) {
+			Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+			method.setAccessible(true);
+			method.invoke(classLoader, url);
+		}
 	}
 
 }

@@ -283,19 +283,18 @@ public class DMLScript
 					|| IOUtilFunctions.isObjectStoreFileScheme(new Path(fileName)) )
 				{ 
 					Path scriptPath = new Path(fileName);
-					FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
-					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
+					try(FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath) ) {
+						in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
+					}
 				}
 				// from local file system
-				else 
-				{ 
+				else { 
 					in = new BufferedReader(new FileReader(fileName));
 				}
 				
 				//core script reading
 				String tmp = null;
-				while ((tmp = in.readLine()) != null)
-				{
+				while ((tmp = in.readLine()) != null) {
 					sb.append( tmp );
 					sb.append( "\n" );
 				}
@@ -318,9 +317,9 @@ public class DMLScript
 				throw new LanguageException("DML script was not specified!");
 			
 			InputStream is = new ByteArrayInputStream(scriptString.getBytes());
-			Scanner scan = new Scanner(is);
-			dmlScriptStr = scan.useDelimiter("\\A").next();	
-			scan.close();
+			try( Scanner scan = new Scanner(is) ) {
+				dmlScriptStr = scan.useDelimiter("\\A").next();	
+			}
 		}
 		
 		return dmlScriptStr;
@@ -438,7 +437,7 @@ public class DMLScript
 			double shadowBufferSize = dmlconf.getDoubleValue(DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
 			if(shadowBufferSize < 0 || shadowBufferSize > 1) 
 				throw new RuntimeException("Incorrect value (" + shadowBufferSize + ") for the configuration:" + DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
-			DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES = (long) (((double)InfrastructureAnalyzer.getLocalMaxMemory())*shadowBufferSize);
+			DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES = (long) (InfrastructureAnalyzer.getLocalMaxMemory()*shadowBufferSize);
 			if(DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES > 0 && 
 					DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES > DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES) {
 				// This will be printed in a very rare situation when:
@@ -474,7 +473,7 @@ public class DMLScript
 	}
 	
 	private static void checkSecuritySetup(DMLConfig config) 
-		throws IOException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//analyze local configuration
 		String userName = System.getProperty( "user.name" );

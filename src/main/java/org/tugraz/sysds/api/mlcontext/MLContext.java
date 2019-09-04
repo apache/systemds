@@ -564,13 +564,10 @@ public class MLContext implements ConfigurableAPI
 				LocalVariableMap symbolTable = executionScript.getSymbolTable();
 				if (symbolTable != null) {
 					Data data = symbolTable.get(parameterName);
-					if (data instanceof MatrixObject) {
+					if (data instanceof MatrixObject)
 						return (MatrixObject) data;
-					} else {
-						if (data instanceof ScalarObject) {
-							return null;
-						}
-					}
+					if (data instanceof ScalarObject)
+						return null;
 				}
 			}
 			throw new MLContextException("getMatrixObject not set for parameter: " + parameterName);

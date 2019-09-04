@@ -186,8 +186,9 @@ public class DMLConfig
 			|| IOUtilFunctions.isObjectStoreFileScheme(new Path(_fileName)) )
 		{
 			Path configFilePath = new Path(_fileName);
-			FileSystem DFS = IOUtilFunctions.getFileSystem(configFilePath);
-			_document = builder.parse(DFS.open(configFilePath));
+			try( FileSystem DFS = IOUtilFunctions.getFileSystem(configFilePath) ) {
+				_document = builder.parse(DFS.open(configFilePath));
+			}
 		}
 		else  // config from local file system
 		{

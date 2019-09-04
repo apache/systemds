@@ -2291,7 +2291,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				boolean notBinaryMV = HopRewriteUtils.isNotMatrixVectorBinaryOperation(bop);
 				
 				switch( bop.getOp() ){
-				    //X * Y -> matrix(0,nrow(X),ncol(X));
+					//X * Y -> matrix(0,nrow(X),ncol(X));
 					case MULT: {
 						if( HopRewriteUtils.isEmpty(left) ) //empty left and size known
 							hnew = HopRewriteUtils.createDataGenOp(left, left, 0);
@@ -2323,7 +2323,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						break;
 					}
 					default:
-						hnew = null;
+						//do nothing (hnew = null)
 				}
 				
 				if( hnew != null ) {

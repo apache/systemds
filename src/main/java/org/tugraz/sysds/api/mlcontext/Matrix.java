@@ -33,7 +33,6 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Matrix encapsulates a SystemDS matrix. It allows for easy conversion to
@@ -52,7 +51,7 @@ public class Matrix {
 	public Matrix(MatrixObject matrixObject, SparkExecutionContext sparkExecutionContext) {
 		this.matrixObject = matrixObject;
 		this.sparkExecutionContext = sparkExecutionContext;
-		this.matrixMetadata = new MatrixMetadata((MatrixCharacteristics) matrixObject.getDataCharacteristics());
+		this.matrixMetadata = new MatrixMetadata(matrixObject.getDataCharacteristics());
 	}
 
 	/**

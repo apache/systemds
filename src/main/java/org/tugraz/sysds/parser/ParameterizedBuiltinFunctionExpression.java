@@ -411,12 +411,13 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output2.setDimensions(-1, -1);
 	}
 	
+	@SuppressWarnings("unused")
 	private void validateTransformSpec(String pname, boolean conditional) {
 		Expression data = getVarParam(pname);
 		if( data instanceof StringIdentifier ) {
 			try {
 				StringIdentifier spec = (StringIdentifier)data;
-				new JSONObject(spec.getValue());
+				new JSONObject(spec.getValue()); //for validate
 			}
 			catch(Exception ex) {
 				raiseValidateError("Transform specification parsing issue: ", 
@@ -489,7 +490,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			orderby = new IntIdentifier(1);
 			addVarParam("by", orderby);
 		}
-		else if( orderby !=null && !(orderby.getOutput().getDataType().isScalar() 
+		else if( !(orderby.getOutput().getDataType().isScalar() 
 			|| orderby.getOutput().getDataType().isMatrix()) ) {
 			raiseValidateError("Orderby column 'by' is of type '"+orderby.getOutput().getDataType()+"'. Please, use a scalar or row vector to specify column indexes.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -498,7 +499,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		if( decreasing == null ) { //default: ascending
 			addVarParam("decreasing", new BooleanIdentifier(false));
 		}
-		else if( decreasing!=null && decreasing.getOutput().getDataType() != DataType.SCALAR ){
+		else if( decreasing.getOutput().getDataType() != DataType.SCALAR ){
 			raiseValidateError("Ordering 'decreasing' is of type '"+decreasing.getOutput().getDataType()+"', '"+decreasing.getOutput().getValueType()+"'. Please, specify 'decreasing' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		
@@ -507,7 +508,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			indexreturn = new BooleanIdentifier(false);
 			addVarParam("index.return", indexreturn);
 		}
-		else if( indexreturn!=null && indexreturn.getOutput().getDataType() != DataType.SCALAR ){
+		else if( indexreturn.getOutput().getDataType() != DataType.SCALAR ){
 			raiseValidateError("Return type 'index.return' is of type '"+indexreturn.getOutput().getDataType()+"', '"+indexreturn.getOutput().getValueType()+"'. Please, specify 'indexreturn' as a scalar boolean.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		long dim2 = ( indexreturn instanceof BooleanIdentifier ) ? 
@@ -646,7 +647,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		if( exprNGroups != null && exprNGroups instanceof Identifier ) 
 		{
 			Identifier numGroups = (Identifier) exprNGroups;
-			if ( numGroups != null && numGroups instanceof ConstIdentifier) {
+			if ( numGroups instanceof ConstIdentifier) {
 				long ngroups = ((ConstIdentifier)numGroups).getLongValue();
 				if ( colwise ) {
 					outputDim1 = ngroups;

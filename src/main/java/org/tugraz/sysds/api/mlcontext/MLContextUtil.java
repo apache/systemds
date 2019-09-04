@@ -113,8 +113,7 @@ public final class MLContextUtil {
 	 * All data types supported by the MLContext API.
 	 */
 	@SuppressWarnings("rawtypes")
-	public static final Class[] ALL_SUPPORTED_DATA_TYPES = (Class[]) ArrayUtils.addAll(BASIC_DATA_TYPES,
-			COMPLEX_DATA_TYPES);
+	public static final Class[] ALL_SUPPORTED_DATA_TYPES = ArrayUtils.addAll(BASIC_DATA_TYPES, COMPLEX_DATA_TYPES);
 
 	/**
 	 * Compare two version strings (ie, "1.4.0" and "1.4.1").
@@ -137,14 +136,11 @@ public final class MLContextUtil {
 			throw new MLContextException("Second version argument to compareVersion() is null");
 		}
 
-		Scanner scanner1 = null;
-		Scanner scanner2 = null;
-		try {
-			scanner1 = new Scanner(versionStr1);
-			scanner2 = new Scanner(versionStr2);
+		try(Scanner scanner1 = new Scanner(versionStr1);
+			Scanner scanner2 = new Scanner(versionStr2))
+		{
 			scanner1.useDelimiter("\\.");
 			scanner2.useDelimiter("\\.");
-
 			while (scanner1.hasNextInt() && scanner2.hasNextInt()) {
 				int version1 = scanner1.nextInt();
 				int version2 = scanner2.nextInt();
@@ -154,11 +150,7 @@ public final class MLContextUtil {
 					return 1;
 				}
 			}
-
 			return scanner1.hasNextInt() ? 1 : 0;
-		} finally {
-			scanner1.close();
-			scanner2.close();
 		}
 	}
 
@@ -459,19 +451,18 @@ public final class MLContextUtil {
 		for (Entry<String, Object> entry : basicInputParameterMap.entrySet()) {
 			String key = entry.getKey();
 			Object value = entry.getValue();
-			if (value == null) {
+			if (value == null)
 				throw new MLContextException("Input parameter value is null for: " + entry.getKey());
-			} else if (value instanceof Integer) {
+			else if (value instanceof Integer)
 				convertedMap.put(key, Integer.toString((Integer) value));
-			} else if (value instanceof Boolean) {
-				convertedMap.put(key, String.valueOf((Boolean) value).toUpperCase());
-			} else if (value instanceof Double) {
+			else if (value instanceof Boolean)
+				convertedMap.put(key, String.valueOf(value).toUpperCase());
+			else if (value instanceof Double)
 				convertedMap.put(key, Double.toString((Double) value));
-			} else if (value instanceof String) {
+			else if (value instanceof String)
 				convertedMap.put(key, (String) value);
-			} else {
+			else
 				throw new MLContextException("Incorrect type for input parameters");
-			}
 		}
 		return convertedMap;
 	}
@@ -516,26 +507,20 @@ public final class MLContextUtil {
 
 			if (hasMatrixMetadata) {
 				MatrixMetadata matrixMetadata = (MatrixMetadata) metadata;
-				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
+				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)
 					return MLContextConversionUtil.javaRDDStringIJVToMatrixObject(javaRDD, matrixMetadata);
-				} else {
-					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(javaRDD, matrixMetadata);
-				}
+				return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(javaRDD, matrixMetadata);
 			} else if (hasFrameMetadata) {
 				FrameMetadata frameMetadata = (FrameMetadata) metadata;
-				if (frameMetadata.getFrameFormat() == FrameFormat.IJV) {
+				if (frameMetadata.getFrameFormat() == FrameFormat.IJV)
 					return MLContextConversionUtil.javaRDDStringIJVToFrameObject(javaRDD, frameMetadata);
-				} else {
-					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(javaRDD, frameMetadata);
-				}
+				return MLContextConversionUtil.javaRDDStringCSVToFrameObject(javaRDD, frameMetadata);
 			} else if (!hasMetadata) {
 				String firstLine = javaRDD.first();
 				boolean isAllNumbers = isCSVLineAllNumbers(firstLine);
-				if (isAllNumbers) {
+				if (isAllNumbers)
 					return MLContextConversionUtil.javaRDDStringCSVToMatrixObject(javaRDD);
-				} else {
-					return MLContextConversionUtil.javaRDDStringCSVToFrameObject(javaRDD);
-				}
+				return MLContextConversionUtil.javaRDDStringCSVToFrameObject(javaRDD);
 			}
 
 		} else if (value instanceof RDD<?>) {
@@ -544,26 +529,20 @@ public final class MLContextUtil {
 
 			if (hasMatrixMetadata) {
 				MatrixMetadata matrixMetadata = (MatrixMetadata) metadata;
-				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV) {
+				if (matrixMetadata.getMatrixFormat() == MatrixFormat.IJV)
 					return MLContextConversionUtil.rddStringIJVToMatrixObject(rdd, matrixMetadata);
-				} else {
-					return MLContextConversionUtil.rddStringCSVToMatrixObject(rdd, matrixMetadata);
-				}
+				return MLContextConversionUtil.rddStringCSVToMatrixObject(rdd, matrixMetadata);
 			} else if (hasFrameMetadata) {
 				FrameMetadata frameMetadata = (FrameMetadata) metadata;
-				if (frameMetadata.getFrameFormat() == FrameFormat.IJV) {
+				if (frameMetadata.getFrameFormat() == FrameFormat.IJV)
 					return MLContextConversionUtil.rddStringIJVToFrameObject(rdd, frameMetadata);
-				} else {
-					return MLContextConversionUtil.rddStringCSVToFrameObject(rdd, frameMetadata);
-				}
+				return MLContextConversionUtil.rddStringCSVToFrameObject(rdd, frameMetadata);
 			} else if (!hasMetadata) {
 				String firstLine = rdd.first();
 				boolean isAllNumbers = isCSVLineAllNumbers(firstLine);
-				if (isAllNumbers) {
+				if (isAllNumbers)
 					return MLContextConversionUtil.rddStringCSVToMatrixObject(rdd);
-				} else {
-					return MLContextConversionUtil.rddStringCSVToFrameObject(rdd);
-				}
+				return MLContextConversionUtil.rddStringCSVToFrameObject(rdd);
 			}
 		} else if (value instanceof MatrixBlock) {
 			MatrixBlock matrixBlock = (MatrixBlock) value;
@@ -582,11 +561,9 @@ public final class MLContextUtil {
 				return MLContextConversionUtil.dataFrameToFrameObject(dataFrame, (FrameMetadata) metadata);
 			} else if (!hasMetadata) {
 				boolean looksLikeMatrix = doesDataFrameLookLikeMatrix(dataFrame);
-				if (looksLikeMatrix) {
+				if (looksLikeMatrix)
 					return MLContextConversionUtil.dataFrameToMatrixObject(dataFrame);
-				} else {
-					return MLContextConversionUtil.dataFrameToFrameObject(dataFrame);
-				}
+				return MLContextConversionUtil.dataFrameToFrameObject(dataFrame);
 			}
 		} else if (value instanceof Matrix) {
 			Matrix matrix = (Matrix) value;
@@ -597,9 +574,8 @@ public final class MLContextUtil {
 				JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = matrix.toBinaryBlocks();
 				return MLContextConversionUtil.binaryBlocksToMatrixObject(binaryBlocks,
 						(MatrixMetadata) metadata);
-			} else {
-				return matrix.toMatrixObject();
 			}
+			return matrix.toMatrixObject();
 		} else if (value instanceof Frame) {
 			Frame frame = (Frame) value;
 			if ((frame.hasBinaryBlocks()) && (!frame.hasFrameObject())) {
@@ -608,9 +584,8 @@ public final class MLContextUtil {
 				}
 				JavaPairRDD<Long, FrameBlock> binaryBlocks = frame.toBinaryBlocks();
 				return MLContextConversionUtil.binaryBlocksToFrameObject(binaryBlocks, (FrameMetadata) metadata);
-			} else {
-				return frame.toFrameObject();
 			}
+			return frame.toFrameObject();
 		} else if (value instanceof double[][]) {
 			double[][] doubleMatrix = (double[][]) value;
 			return MLContextConversionUtil.doubleMatrixToMatrixObject(name, doubleMatrix, (MatrixMetadata) metadata);

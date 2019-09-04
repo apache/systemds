@@ -88,7 +88,7 @@ public class EstimatorBasicWorst extends SparsityEstimator
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
-				return (DataCharacteristics) estimExactMetaData(mc1, mc2, op);
+				return estimExactMetaData(mc1, mc2, op);
 			default:
 				throw new NotImplementedException();
 		}

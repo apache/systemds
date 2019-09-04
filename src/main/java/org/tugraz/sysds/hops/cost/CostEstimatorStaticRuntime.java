@@ -75,7 +75,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			ltime += getHDFSReadTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() );
 			//eviction costs
 			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
-				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[0]._rlen, vs[0]._clen, (long)((vs[0]._nnz<0)? vs[0]._rlen*vs[0]._clen:vs[0]._nnz)) )
+				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? vs[0]._rlen*vs[0]._clen:vs[0]._nnz) )
 			{
 				ltime += Math.abs( getFSWriteTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() ));
 			}
@@ -85,7 +85,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			ltime += getHDFSReadTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity() );
 			//eviction costs
 			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
-				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[1]._rlen, vs[1]._clen, (long)((vs[1]._nnz<0)? vs[1]._rlen*vs[1]._clen:vs[1]._nnz)) )
+				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? vs[1]._rlen*vs[1]._clen:vs[1]._nnz) )
 			{
 				ltime += Math.abs( getFSWriteTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity()) );
 			}
@@ -134,7 +134,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static double getHDFSReadTime( long dm, long dn, double ds )
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
-		double ret = ((double)MatrixBlock.estimateSizeOnDisk((long)dm, (long)dn, (long)(ds*dm*dn))) / (1024*1024);  		
+		double ret = ((double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn))) / (1024*1024);
 		
 		if( sparse )
 			ret /= DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE;
@@ -148,7 +148,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double bytes = (double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn));
+		double bytes = MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn));
 		double mbytes = bytes / (1024*1024);
 		
 		double ret = -1;
@@ -168,7 +168,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
-		double bytes = (double)MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn));
+		double bytes = MatrixBlock.estimateSizeOnDisk(dm, dn, (long)(ds*dm*dn));
 		double mbytes = bytes / (1024*1024);
 		
 		double ret = -1;

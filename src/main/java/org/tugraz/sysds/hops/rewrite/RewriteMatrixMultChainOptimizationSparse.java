@@ -126,7 +126,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		return split;
 	}
 	
-	private boolean getInputMatrices(Hop hop, ArrayList<Hop> chain, MMNode[] sketchArray, ProgramRewriteStatus state) {
+	private static boolean getInputMatrices(Hop hop, ArrayList<Hop> chain, MMNode[] sketchArray, ProgramRewriteStatus state) {
 		boolean inputsAvail = true;
 		LocalVariableMap vars = state.getVariables();
 		

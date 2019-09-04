@@ -513,6 +513,9 @@ public abstract class DenseBlock implements Serializable
 							data[ix1 + ix] = db.getString(otherIx);
 							getNextIndexes(otherIx);
 						}
+						otherIx[0] = i - rl + 1;
+						otherIx[1] = 0;
+						Arrays.fill(otherIx, 2, otherIx.length, 0);
 					}
 				}
 				rl = 0;

@@ -34,7 +34,7 @@ import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.data.IndexedTensorBlock;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.BasicTensorBlock;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
@@ -175,8 +175,8 @@ public class SparkUtils
 	 * @param in tensor as {@code JavaPairRDD<TensorIndexes,HomogTensor>}
 	 * @return tensor as {@code JavaPairRDD<TensorIndexes,HomogTensor>}
 	 */
-	public static JavaPairRDD<TensorIndexes, BasicTensor> copyBinaryBlockTensor(
-			JavaPairRDD<TensorIndexes, BasicTensor> in) {
+	public static JavaPairRDD<TensorIndexes, BasicTensorBlock> copyBinaryBlockTensor(
+			JavaPairRDD<TensorIndexes, BasicTensorBlock> in) {
 		return copyBinaryBlockTensor(in, true);
 	}
 
@@ -188,8 +188,8 @@ public class SparkUtils
 	 * @param deep if true, perform deep copy
 	 * @return tensor as {@code JavaPairRDD<TensorIndexes,HomogTensor>}
 	 */
-	public static JavaPairRDD<TensorIndexes, BasicTensor> copyBinaryBlockTensor(
-			JavaPairRDD<TensorIndexes, BasicTensor> in, boolean deep) {
+	public static JavaPairRDD<TensorIndexes, BasicTensorBlock> copyBinaryBlockTensor(
+			JavaPairRDD<TensorIndexes, BasicTensorBlock> in, boolean deep) {
 		if (!deep) //pass through of indexes and blocks
 			return in.mapValues(new CopyTensorBlockFunction(false));
 		else //requires key access, so use mappartitions

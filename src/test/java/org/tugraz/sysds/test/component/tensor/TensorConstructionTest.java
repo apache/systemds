@@ -19,8 +19,9 @@ package org.tugraz.sysds.test.component.tensor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.data.DataTensor;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.DataTensorBlock;
+import org.tugraz.sysds.runtime.data.BasicTensorBlock;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 
 import java.util.Arrays;
 
@@ -28,31 +29,29 @@ import java.util.Arrays;
 public class TensorConstructionTest {
 	@Test
 	public void testMetaDefaultBasicTensor() {
-		BasicTensor tb = new BasicTensor();
+		BasicTensorBlock tb = new BasicTensorBlock();
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumColumns());
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaValueBasicTensor() {
-		BasicTensor tb = new BasicTensor(7.3);
+		BasicTensorBlock tb = new BasicTensorBlock(7.3);
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumColumns());
 		Assert.assertEquals(1, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaTypedBasicTensor() {
-		BasicTensor tb = new BasicTensor(ValueType.INT64, new int[]{11, 12, 13});
+		BasicTensorBlock tb = new BasicTensorBlock(ValueType.INT64, new int[]{11, 12, 13});
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -60,12 +59,11 @@ public class TensorConstructionTest {
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaTypedBasicTensor2() {
-		BasicTensor tb = new BasicTensor(ValueType.INT64, new int[]{11, 12, 13}, false);
+		BasicTensorBlock tb = new BasicTensorBlock(ValueType.INT64, new int[]{11, 12, 13}, false);
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -73,12 +71,11 @@ public class TensorConstructionTest {
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaTypedBasicTensor3() {
-		BasicTensor tb = new BasicTensor(ValueType.BOOLEAN, new int[]{11, 12}, true);
+		BasicTensorBlock tb = new BasicTensorBlock(ValueType.BOOLEAN, new int[]{11, 12}, true);
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -86,36 +83,33 @@ public class TensorConstructionTest {
 		Assert.assertEquals(12, tb.getDim(1));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
-		Assert.assertTrue(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyDefaultBasicTensor() {
-		BasicTensor tb = new BasicTensor(new BasicTensor());
+		BasicTensorBlock tb = new BasicTensorBlock(new BasicTensorBlock());
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumColumns());
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyValueBasicTensor() {
-		BasicTensor tb = new BasicTensor(new BasicTensor(7.3));
+		BasicTensorBlock tb = new BasicTensorBlock(new BasicTensorBlock(7.3));
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumColumns());
 		Assert.assertEquals(1, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyTypedBasicTensor() {
-		BasicTensor tb = new BasicTensor(new BasicTensor(ValueType.INT64, new int[]{11, 12, 13}));
+		BasicTensorBlock tb = new BasicTensorBlock(new BasicTensorBlock(ValueType.INT64, new int[]{11, 12, 13}));
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -123,12 +117,11 @@ public class TensorConstructionTest {
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyTypedBasicTensor2() {
-		BasicTensor tb = new BasicTensor(new BasicTensor(ValueType.INT64, new int[]{11, 12, 13}, false));
+		BasicTensorBlock tb = new BasicTensorBlock(new BasicTensorBlock(ValueType.INT64, new int[]{11, 12, 13}, false));
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -136,12 +129,11 @@ public class TensorConstructionTest {
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyTypedBasicTensor3() {
-		BasicTensor tb = new BasicTensor(new BasicTensor(ValueType.BOOLEAN, new int[]{11, 12}, true));
+		BasicTensorBlock tb = new BasicTensorBlock(new BasicTensorBlock(ValueType.BOOLEAN, new int[]{11, 12}, true));
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -149,32 +141,29 @@ public class TensorConstructionTest {
 		Assert.assertEquals(12, tb.getDim(1));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
-		Assert.assertTrue(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaDefaultDataTensor() {
-		DataTensor tb = new DataTensor();
+		DataTensorBlock tb = new DataTensorBlock();
 		Assert.assertArrayEquals(new ValueType[0], tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumColumns());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaValueDataTensor() {
-		DataTensor tb = new DataTensor(7.3);
+		DataTensorBlock tb = new DataTensorBlock(7.3);
 		Assert.assertArrayEquals(new ValueType[]{ValueType.FP64}, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumColumns());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaTypedDataTensor() {
-		DataTensor tb = new DataTensor(ValueType.INT64, new int[]{11, 12, 13});
+		DataTensorBlock tb = new DataTensorBlock(ValueType.INT64, new int[]{11, 12, 13});
 		ValueType[] schema = new ValueType[12];
 		Arrays.fill(schema, ValueType.INT64);
 		Assert.assertArrayEquals(schema, tb.getSchema());
@@ -182,81 +171,74 @@ public class TensorConstructionTest {
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(12, tb.getNumColumns());
 		Assert.assertEquals(13, tb.getDim(2));
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaSchemaTypedDataTensor() {
 		ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.STRING};
-		DataTensor tb = new DataTensor(schema);
+		DataTensorBlock tb = new DataTensorBlock(schema);
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(schema.length, tb.getNumColumns());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaNColsTypedDataTensor() {
-		DataTensor tb = new DataTensor(10, ValueType.BOOLEAN);
+		DataTensorBlock tb = new DataTensorBlock(10, ValueType.BOOLEAN);
 		ValueType[] schema = new ValueType[10];
 		Arrays.fill(schema, ValueType.BOOLEAN);
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(10, tb.getNumColumns());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyDefaultDataTensor() {
-		DataTensor tb = new DataTensor(new DataTensor());
+		DataTensorBlock tb = new DataTensorBlock(new DataTensorBlock());
 		Assert.assertArrayEquals(new ValueType[0], tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumColumns());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyValueDataTensor() {
-		DataTensor tb = new DataTensor(new DataTensor(7.3));
+		DataTensorBlock tb = new DataTensorBlock(new DataTensorBlock(7.3));
 		Assert.assertArrayEquals(new ValueType[]{ValueType.FP64}, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumColumns());
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyTypedDataTensor() {
 		ValueType[] schema = {ValueType.INT32, ValueType.INT64, ValueType.BOOLEAN};
-		DataTensor tb = new DataTensor(new DataTensor(schema, new int[]{11, 3, 13}));
+		DataTensorBlock tb = new DataTensorBlock(new DataTensorBlock(schema, new int[]{11, 3, 13}));
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(3, tb.getNumColumns());
 		Assert.assertEquals(13, tb.getDim(2));
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyTypedDataTensor2() {
 		ValueType[] schema = {ValueType.FP64, ValueType.FP32, ValueType.STRING};
-		DataTensor tb = new DataTensor(new DataTensor(schema, new int[]{11, 3, 13}));
+		DataTensorBlock tb = new DataTensorBlock(new DataTensorBlock(schema, new int[]{11, 3, 13}));
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(3, tb.getNumColumns());
 		Assert.assertEquals(13, tb.getDim(2));
-		Assert.assertFalse(tb.isMatrix());
 	}
 
 	@Test
 	public void testMetaCopyTypedDataTensor3() {
 		ValueType[] schema = {ValueType.FP64, ValueType.FP32, ValueType.INT64, ValueType.INT32, ValueType.BOOLEAN,
 				ValueType.STRING};
-		DataTensor tb = new DataTensor(new DataTensor(schema, new int[]{2, schema.length, 2}, new String[][]{
+		DataTensorBlock tb = new DataTensorBlock(new DataTensorBlock(schema, new int[]{2, schema.length, 2}, new String[][]{
 				new String[]{"1.4", "-5.34", "4.5", "-100000.1"},
 				new String[]{"1.4", "-5.34", "4.5", "-100000.1"},
 				new String[]{"1", "-5", "4", "-100000"},
@@ -269,6 +251,167 @@ public class TensorConstructionTest {
 		Assert.assertEquals(2, tb.getNumRows());
 		Assert.assertEquals(schema.length, tb.getNumColumns());
 		Assert.assertEquals(2, tb.getDim(2));
+	}
+
+	@Test
+	public void testMetaDefaultTensorBlock() {
+		TensorBlock tb = new TensorBlock();
+		Assert.assertArrayEquals(null, tb.getSchema());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
+		Assert.assertTrue(tb.isBasic());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertFalse(tb.isAllocated());
+		Assert.assertEquals(2, tb.getNumDims());
+		Assert.assertEquals(0, tb.getNumRows());
+		Assert.assertEquals(0, tb.getNumColumns());
 		Assert.assertFalse(tb.isMatrix());
+		Assert.assertFalse(tb.isVector());
+	}
+
+	@Test
+	public void testMetaHeterogeneousTensorBlock() {
+		TensorBlock tb = new TensorBlock(new int[]{1, 1}, false);
+		Assert.assertArrayEquals(new ValueType[]{ValueType.FP64}, tb.getSchema());
+		Assert.assertNull(tb.getValueType());
+		Assert.assertFalse(tb.isBasic());
+		Assert.assertNull(tb.getBasicTensor());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertFalse(tb.isAllocated());
+		Assert.assertEquals(2, tb.getNumDims());
+		Assert.assertEquals(1, tb.getNumRows());
+		Assert.assertEquals(1, tb.getNumColumns());
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertTrue(tb.isVector());
+	}
+
+	@Test
+	public void testMetaHomogeneousTensorBlock() {
+		TensorBlock tb = new TensorBlock(new int[]{1, 1}, true);
+		Assert.assertNull(tb.getSchema());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
+		Assert.assertTrue(tb.isBasic());
+		Assert.assertNull(tb.getBasicTensor());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertFalse(tb.isAllocated());
+		Assert.assertEquals(2, tb.getNumDims());
+		Assert.assertEquals(1, tb.getNumRows());
+		Assert.assertEquals(1, tb.getNumColumns());
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertTrue(tb.isVector());
+	}
+
+	@Test
+	public void testMetaValueTensorBlock() {
+		double val = 7.3;
+		TensorBlock tb = new TensorBlock(val);
+		Assert.assertArrayEquals(null, tb.getSchema());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
+		Assert.assertTrue(tb.isBasic());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertTrue(tb.isAllocated());
+		Assert.assertEquals(2, tb.getNumDims());
+		Assert.assertEquals(1, tb.getNumRows());
+		Assert.assertEquals(1, tb.getNumColumns());
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertTrue(tb.isVector());
+		Assert.assertEquals(val, tb.get(0, 0), 0);
+	}
+
+	@Test
+	public void testMetaTypedTensorBlock() {
+		TensorBlock tb = new TensorBlock(ValueType.INT64, new int[]{11, 12, 13});
+		Assert.assertArrayEquals(null, tb.getSchema());
+		Assert.assertEquals(ValueType.INT64, tb.getValueType());
+		Assert.assertTrue(tb.isBasic());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertTrue(tb.isAllocated());
+		Assert.assertEquals(3, tb.getNumDims());
+		Assert.assertEquals(11, tb.getNumRows());
+		Assert.assertEquals(12, tb.getNumColumns());
+		Assert.assertEquals(13, tb.getDim(2));
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertFalse(tb.isVector());
+	}
+
+	@Test
+	public void testMetaSchemaTypedTensorBlock() {
+		ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.STRING};
+		TensorBlock tb = new TensorBlock(schema, new int[]{4, 3, 2});
+		Assert.assertArrayEquals(schema, tb.getSchema());
+		Assert.assertNull(tb.getValueType());
+		Assert.assertFalse(tb.isBasic());
+		Assert.assertNull(tb.getBasicTensor());
+		Assert.assertTrue(tb.isAllocated());
+		Assert.assertEquals(3, tb.getNumDims());
+		Assert.assertEquals(4, tb.getNumRows());
+		Assert.assertEquals(3, tb.getNumColumns());
+		Assert.assertEquals(2, tb.getDim(2));
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertFalse(tb.isVector());
+	}
+
+	@Test
+	public void testMetaCopyDefaultTensorBlock() {
+		TensorBlock tb = new TensorBlock(new TensorBlock());
+		Assert.assertArrayEquals(null, tb.getSchema());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
+		Assert.assertTrue(tb.isBasic());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertFalse(tb.isAllocated());
+		Assert.assertEquals(2, tb.getNumDims());
+		Assert.assertEquals(0, tb.getNumRows());
+		Assert.assertEquals(0, tb.getNumColumns());
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertFalse(tb.isVector());
+	}
+
+	@Test
+	public void testMetaCopyValueTensorBlock() {
+		double val = 7.3;
+		TensorBlock tb = new TensorBlock(new TensorBlock(val));
+		Assert.assertArrayEquals(null, tb.getSchema());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
+		Assert.assertTrue(tb.isBasic());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertTrue(tb.isAllocated());
+		Assert.assertEquals(2, tb.getNumDims());
+		Assert.assertEquals(1, tb.getNumRows());
+		Assert.assertEquals(1, tb.getNumColumns());
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertTrue(tb.isVector());
+		Assert.assertEquals(val, tb.get(0, 0), 0);
+	}
+
+	@Test
+	public void testMetaCopyTypedTensorBlock() {
+		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.INT64, new int[]{11, 12, 13}));
+		Assert.assertArrayEquals(null, tb.getSchema());
+		Assert.assertEquals(ValueType.INT64, tb.getValueType());
+		Assert.assertTrue(tb.isBasic());
+		Assert.assertNull(tb.getDataTensor());
+		Assert.assertTrue(tb.isAllocated());
+		Assert.assertEquals(3, tb.getNumDims());
+		Assert.assertEquals(11, tb.getNumRows());
+		Assert.assertEquals(12, tb.getNumColumns());
+		Assert.assertEquals(13, tb.getDim(2));
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertFalse(tb.isVector());
+	}
+
+	@Test
+	public void testMetaCopySchemaTypedTensorBlock() {
+		ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.STRING};
+		TensorBlock tb = new TensorBlock(new TensorBlock(schema, new int[]{4, 3, 2}));
+		Assert.assertArrayEquals(schema, tb.getSchema());
+		Assert.assertNull(tb.getValueType());
+		Assert.assertFalse(tb.isBasic());
+		Assert.assertNull(tb.getBasicTensor());
+		Assert.assertTrue(tb.isAllocated());
+		Assert.assertEquals(3, tb.getNumDims());
+		Assert.assertEquals(4, tb.getNumRows());
+		Assert.assertEquals(3, tb.getNumColumns());
+		Assert.assertEquals(2, tb.getDim(2));
+		Assert.assertFalse(tb.isMatrix());
+		Assert.assertFalse(tb.isVector());
 	}
 }

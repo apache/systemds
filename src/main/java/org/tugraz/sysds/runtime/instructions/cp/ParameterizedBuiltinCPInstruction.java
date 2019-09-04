@@ -39,7 +39,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
@@ -331,7 +331,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				out = DataConverter.toString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
 			}
 			else if( data instanceof TensorObject ) {
-				BasicTensor tensor = (BasicTensor) data.acquireRead();
+				TensorBlock tensor = (TensorBlock) data.acquireRead();
 				// TODO improve truncation to check all dimensions
 				warnOnTrunction(tensor, rows, cols);
 				out = DataConverter.toString(tensor, sparse, separator,
@@ -376,10 +376,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 	}
 
-	private void warnOnTrunction(BasicTensor data, int rows, int cols) {
+	private void warnOnTrunction(TensorBlock data, int rows, int cols) {
 		//warn on truncation because users might not be aware and use toString for verification
-		if( (getParam("rows")==null && data.getNumRows()>rows)
-			|| (getParam("cols")==null && data.getNumColumns()>cols) )
+		if( (getParam("rows")==null && data.getDim(0)>rows)
+			|| (getParam("cols")==null && data.getDim(1)>cols) )
 		{
 			StringBuilder sb = new StringBuilder();
 			IntStream.range(0, data.getNumDims()).forEach((i) -> {

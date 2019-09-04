@@ -26,6 +26,7 @@ public class TensorCharacteristics extends DataCharacteristics
 {
 	private static final long serialVersionUID = 8300479822915546000L;
 
+	// TODO move block size to `ConfigurationManager`
 	public static final int[] DEFAULT_BLOCK_SIZE = {1024, 128, 32, 16, 8, 8};
 	private long[] _dims;
 	private long _nnz = -1;
@@ -103,8 +104,13 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public long[] getDims() {
+	public long[] getLongDims() {
 		return _dims;
+	}
+
+	@Override
+	public int[] getIntDims() {
+		return Arrays.stream(getLongDims()).mapToInt(i -> (int) i).toArray();
 	}
 
 	@Override

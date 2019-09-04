@@ -163,9 +163,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
-	protected FrameBlock readBlobFromHDFS(String fname, long rlen, long clen)
+	protected FrameBlock readBlobFromHDFS(String fname, long[] dims)
 		throws IOException 
 	{
+		long clen = dims[1];
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();
 		

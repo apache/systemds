@@ -31,9 +31,9 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.DenseBlockFactory;
-import org.tugraz.sysds.runtime.data.DataTensor;
+import org.tugraz.sysds.runtime.data.DataTensorBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.BasicTensorBlock;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -46,6 +46,10 @@ import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
 import org.tugraz.sysds.runtime.io.MatrixWriter;
 import org.tugraz.sysds.runtime.io.MatrixWriterFactory;
 import org.tugraz.sysds.runtime.io.ReadProperties;
+import org.tugraz.sysds.runtime.io.TensorReader;
+import org.tugraz.sysds.runtime.io.TensorReaderFactory;
+import org.tugraz.sysds.runtime.io.TensorWriter;
+import org.tugraz.sysds.runtime.io.TensorWriterFactory;
 import org.tugraz.sysds.runtime.matrix.data.CTableMap;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.IJV;
@@ -98,7 +102,15 @@ public class DataConverter
 		writer.writeMatrixToHDFS(mat, dir, dc.getRows(), dc.getCols(), dc.getBlocksize(), dc.getNonZeros(), diag);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, boolean localFS) 
+	public static void writeTensorToHDFS(TensorBlock tensor, String dir, OutputInfo outputinfo, DataCharacteristics dc)
+			throws IOException {
+		TensorWriter writer = TensorWriterFactory.createTensorWriter(outputinfo);
+		long[] dims = dc.getDims();
+		int blen = dc.getBlocksize();
+		writer.writeTensorToHDFS(tensor, dir, dims, blen);
+	}
+
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, boolean localFS)
 		throws IOException
 	{	
 		ReadProperties prop = new ReadProperties();
@@ -113,7 +125,7 @@ public class DataConverter
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen) 
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen)
 		throws IOException
 	{	
 		ReadProperties prop = new ReadProperties();
@@ -127,7 +139,7 @@ public class DataConverter
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, long expectedNnz) 
+	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, long expectedNnz)
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
@@ -143,7 +155,7 @@ public class DataConverter
 	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int blen, long expectedNnz, boolean localFS) 
+			int blen, long expectedNnz, boolean localFS)
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
@@ -160,7 +172,7 @@ public class DataConverter
 	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
-			int blen, long expectedNnz, FileFormatProperties formatProperties) 
+			int blen, long expectedNnz, FileFormatProperties formatProperties)
 	throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
@@ -174,6 +186,20 @@ public class DataConverter
 		prop.formatProperties = formatProperties;
 		
 		return readMatrixFromHDFS(prop);
+	}
+
+	public static TensorBlock readTensorFromHDFS(String dir, InputInfo inputinfo, long[] dims, int blen,
+			ValueType[] schema) throws IOException {
+		TensorBlock ret;
+		try {
+			TensorReader reader = TensorReaderFactory.createTensorReader(inputinfo);
+			ret = reader.readTensorFromHDFS(dir, dims, blen, schema);
+		}
+		catch(DMLRuntimeException rex)
+		{
+			throw new IOException(rex);
+		}
+		return ret;
 	}
 	
 	/**
@@ -735,16 +761,11 @@ public class DataConverter
 	
 	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt, boolean toBasicTensor) {
 		TensorBlock ret;
-		if (toBasicTensor) {
-			BasicTensor bt = new BasicTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
-			bt.allocateDenseBlock(true);
-			ret = bt;
-		}
-		else {
-			DataTensor dt = new DataTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
-			dt.allocateBlock();
-			ret = dt;
-		}
+		if (toBasicTensor)
+			ret = new TensorBlock(new BasicTensorBlock(vt, new int[] {mb.getNumRows(), mb.getNumColumns()}, false));
+		else
+			ret = new TensorBlock(new DataTensorBlock(vt, new int[] {mb.getNumRows(), mb.getNumColumns()}));
+		ret.allocateBlock();
 		if( mb.getNonZeros() > 0 ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -972,8 +993,8 @@ public class DataConverter
 		return sb.toString();
 	}
 
-	public static String toString(BasicTensor mb) {
-		return toString(mb, false, " ", "\n", "[", "]", mb.getNumRows(), mb.getNumColumns(), 3);
+	public static String toString(TensorBlock tb) {
+		return toString(tb, false, " ", "\n", "[", "]", tb.getDim(0), tb.getDim(1), 3);
 	}
 
 	/**
@@ -990,13 +1011,13 @@ public class DataConverter
 	 * @param decimal number of decimal places to print, -1 for default
 	 * @return tensor as a string
 	 */
-	public static String toString(BasicTensor tb, boolean sparse, String separator, String lineseparator,
+	public static String toString(TensorBlock tb, boolean sparse, String separator, String lineseparator,
 	                              String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
 		StringBuilder sb = new StringBuilder();
 
 		// Setup number of rows and columns to print
-		int rlen = tb.getNumRows();
-		int clen = tb.getNumColumns();
+		int rlen = tb.getDim(0);
+		int clen = tb.getDim(1);
 		int rowLength = rlen;
 		int colLength = clen;
 		if (rowsToPrint >= 0)
@@ -1022,7 +1043,7 @@ public class DataConverter
 					concatenateTensorValue(tb, sb, df, ix);
 					sb.append(lineseparator);
 				}
-				tb.getNextIndexes(ix);
+				TensorBlock.getNextIndexes(tb.getDims(), ix);
 				if (ix[0] >= rowLength) {
 					break;
 				}
@@ -1083,7 +1104,7 @@ public class DataConverter
 	 * @param df DecimalFormat with the correct settings for double or float values
 	 * @param ix the index of the TensorBlock value
 	 */
-	private static void concatenateTensorValue(BasicTensor tb, StringBuilder sb, DecimalFormat df, int[] ix) {
+	private static void concatenateTensorValue(TensorBlock tb, StringBuilder sb, DecimalFormat df, int[] ix) {
 		switch (tb.getValueType()) {
 			case FP32:
 				Float valuef = (Float) tb.get(ix);
@@ -1279,7 +1300,7 @@ public class DataConverter
 	public static double[] toDouble(String[] data) {
 		double[] ret = new double[data.length];
 		for(int i=0; i<data.length; i++)
-			ret[i] = Double.parseDouble(data[i]);
+			ret[i] = data[i] == null || data[i].isEmpty() ? 0 : Double.parseDouble(data[i]);
 		return ret;
 	}
 

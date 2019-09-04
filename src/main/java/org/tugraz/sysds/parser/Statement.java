@@ -249,8 +249,6 @@ public abstract class Statement implements ParseInfo
 	 *            parse information, such as beginning line position, beginning
 	 *            column position, ending line position, ending column position,
 	 *            text, and filename
-	 * @param filename
-	 *            the DML/PYDML filename (if it exists)
 	 */
 	public void setParseInfo(ParseInfo parseInfo) {
 		_beginLine = parseInfo.getBeginLine();

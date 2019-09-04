@@ -27,7 +27,8 @@ import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.BasicTensorBlock;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
@@ -175,16 +176,16 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				} 
 				else if (input1.getDataType() == DataType.TENSOR) {
 					// TODO support DataTensor
-					BasicTensor basicTensor = (BasicTensor) ec.getTensorInput(input1.getName());
+					BasicTensorBlock basicTensor = ec.getTensorInput(input1.getName()).getBasicTensor();
 
-					BasicTensor resultBlock = basicTensor.aggregateUnaryOperations(au_op, new BasicTensor());
+					BasicTensorBlock resultBlock = basicTensor.aggregateUnaryOperations(au_op, new BasicTensorBlock());
 
 					ec.releaseTensorInput(input1.getName());
 					if(output.getDataType() == DataType.SCALAR)
 						ec.setScalarOutput(output_name, ScalarObjectFactory.createScalarObject(
 							input1.getValueType(), resultBlock.get(new int[]{0, 0})));
 					else
-						ec.setTensorOutput(output_name, resultBlock);
+						ec.setTensorOutput(output_name, new TensorBlock(resultBlock));
 				}
 				else {
 					throw new DMLRuntimeException(opcode + " only supported on matrix or tensor.");

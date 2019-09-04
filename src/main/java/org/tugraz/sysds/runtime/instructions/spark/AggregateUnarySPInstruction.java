@@ -31,7 +31,7 @@ import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.BasicTensorBlock;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
@@ -168,7 +168,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			//this also includes implicit maintenance of data characteristics
 			// TODO generalize to drop depending on location of correction
 			// TODO support DataTensor
-			BasicTensor out4 = new BasicTensor(((BasicTensor)out3).getValueType(), new int[]{1, 1}, false);
+			TensorBlock out4 = new TensorBlock(out3.getValueType(), new int[]{1, 1});
 			out4.set(0, 0, out3.get(0, 0));
 			sec.setTensorOutput(output.getName(), out4);
 		}
@@ -272,12 +272,12 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public BasicTensor call(Tuple2<TensorIndexes, TensorBlock> arg0 )
+		public TensorBlock call(Tuple2<TensorIndexes, TensorBlock> arg0 )
 				throws Exception
 		{
 			//unary aggregate operation (always keep the correction)
 			// TODO support DataTensor
-			return ((BasicTensor)arg0._2).aggregateUnaryOperations(_op, new BasicTensor());
+			return new TensorBlock(arg0._2.getBasicTensor().aggregateUnaryOperations(_op, new BasicTensorBlock()));
 		}
 	}
 
@@ -330,14 +330,14 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 				throws Exception
 		{
 			// TODO support DataTensor
-			BasicTensor blkOut = new BasicTensor();
+			BasicTensorBlock blkOut = new BasicTensorBlock();
 
 			//unary aggregate operation
-			((BasicTensor)arg0).aggregateUnaryOperations(_op, blkOut);
+			arg0.getBasicTensor().aggregateUnaryOperations(_op, blkOut);
 
 			//always drop correction since no aggregation
 			// TODO generalize to drop depending on location of correction
-			BasicTensor out = new BasicTensor(blkOut.getValueType(), new int[]{1, 1}, false);
+			TensorBlock out = new TensorBlock(blkOut.getValueType(), new int[]{1, 1});
 			out.set(0, 0, blkOut.get(0, 0));
 
 			//output new tuple

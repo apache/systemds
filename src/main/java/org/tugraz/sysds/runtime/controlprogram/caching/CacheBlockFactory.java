@@ -23,8 +23,7 @@ package org.tugraz.sysds.runtime.controlprogram.caching;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.runtime.data.BasicTensor;
-import org.tugraz.sysds.runtime.data.DataTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -42,8 +41,7 @@ public class CacheBlockFactory
 		switch( code ) {
 			case 0: return new MatrixBlock();
 			case 1: return new FrameBlock();
-			case 2: return new BasicTensor();
-			case 3: return new DataTensor();
+			case 2: return new TensorBlock();
 		}
 		throw new RuntimeException("Unsupported cache block type: "+code);
 	}
@@ -53,10 +51,8 @@ public class CacheBlockFactory
 			return 0;
 		else if (block instanceof FrameBlock)
 			return 1;
-		else if (block instanceof BasicTensor)
+		else if (block instanceof TensorBlock)
 			return 2;
-		else if (block instanceof DataTensor)
-			return 3;
 		throw new RuntimeException("Unsupported cache block type: " + block.getClass().getName());
 	}
 
@@ -65,8 +61,7 @@ public class CacheBlockFactory
 		switch (code) {
 			case 0: return new ArrayList<Pair<MatrixIndexes, MatrixBlock>>();
 			case 1: return new ArrayList<Pair<Long, FrameBlock>>();
-			case 2: return new ArrayList<Pair<TensorIndexes, BasicTensor>>();
-			case 3: return new ArrayList<Pair<TensorIndexes, DataTensor>>();
+			case 2: return new ArrayList<Pair<TensorIndexes, TensorBlock>>();
 		}
 		throw new RuntimeException("Unsupported cache block type: "+code);
 	}

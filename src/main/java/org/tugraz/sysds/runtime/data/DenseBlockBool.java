@@ -165,7 +165,7 @@ public class DenseBlockBool extends DenseBlockDRB
 		for (int r = rl; r < ru; r++) {
 			for (int c = cl; c < cu; c++) {
 				int i = r * _odims[0] + c;
-				_data.set(i, db.get(r, c) != 0);
+				_data.set(i, db.get(r - rl, c - cl) != 0);
 			}
 		}
 		return this;

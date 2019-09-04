@@ -166,7 +166,7 @@ public class ReaderTextCell extends MatrixReader
 	}
 	
 	protected static IJV parseCell(String line, FastStringTokenizer st, IJV cell, FileFormatPropertiesMM mmProps) {
-		st.reset( line.toString() ); //reinit tokenizer
+		st.reset( line ); //reinit tokenizer
 		int row = st.nextInt() - 1;
 		int col = st.nextInt() - 1;
 		double value = (mmProps == null) ? st.nextDouble() : 

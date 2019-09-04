@@ -21,7 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -41,8 +40,6 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.data.BasicTensor;
-import org.tugraz.sysds.runtime.data.DataTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
@@ -333,6 +330,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		case CreateVariable:
 			// variable name
 			DataType dt = DataType.valueOf(parts[4]);
+			//TODO choose correct value type for tensor
 			ValueType vt = dt==DataType.MATRIX ? ValueType.FP64 : ValueType.STRING;
 			int extSchema = (dt==DataType.FRAME && parts.length>=12) ? 1 : 0;
 			in1 = new CPOperand(parts[1], vt, dt);
@@ -643,8 +641,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				TensorBlock tBlock = ec.getTensorInput(getInput1().getName());
 				if (tBlock.getNumDims() != 2 || tBlock.getNumRows() != 1 || tBlock.getNumColumns() != 1)
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast tensor '" + getInput1().getName() + "' to scalar.");
-				ValueType vt = tBlock instanceof BasicTensor ?
-					((BasicTensor) tBlock).getValueType() : ((DataTensor) tBlock).getColValueType(0);
+				ValueType vt = !tBlock.isBasic() ? tBlock.getSchema()[0] : tBlock.getValueType();
 				ec.setScalarOutput(output.getName(), ScalarObjectFactory
 					.createScalarObject(vt, tBlock.get(new int[] {0, 0})));
 				ec.releaseTensorInput(getInput1().getName());
@@ -909,7 +906,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else if( getInput1().getDataType() == DataType.TENSOR ) {
 			// TODO write tensor
-			throw new NotImplementedException();
+			String outFmt = getInput3().getName();
+			TensorObject to = ec.getTensorObject(getInput1().getName());
+			to.exportData(fname, outFmt, _formatProperties);
 		}
 	}
 	

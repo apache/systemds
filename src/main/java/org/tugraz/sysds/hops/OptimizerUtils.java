@@ -459,10 +459,7 @@ public class OptimizerUtils
 			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(),
 				dc.getBlocksize(), dc.getNonZerosBound(), memPinned, false);
 		} else {
-			long[] dims = new long[dc.getNumDims()];
-			for (int i = 0; i < dims.length; i++) {
-				dims[i] = dc.getDim(i);
-			}
+			long[] dims = dc.getDims();
 			return checkSparkCollectMemoryBudget(dims, dc.getNonZeros(), memPinned, false);
 		}
 	}
@@ -472,10 +469,7 @@ public class OptimizerUtils
 			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(),
 				dc.getBlocksize(), dc.getNonZerosBound(), memPinned, checkBP);
 		} else {
-			long[] dims = new long[dc.getNumDims()];
-			for (int i = 0; i < dims.length; i++) {
-				dims[i] = dc.getDim(i);
-			}
+			long[] dims = dc.getDims();
 			return checkSparkCollectMemoryBudget(dims, dc.getNonZeros(), memPinned, checkBP);
 		}
 	}

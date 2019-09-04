@@ -34,6 +34,7 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
@@ -729,5 +730,21 @@ public class UtilFunctions
 		for(int i=off; i<arr.length; i++)
 			ret *= arr[i];
 		return ret;
+	}
+
+	public static void getBlockBounds(TensorIndexes ix, long[] dims, int blen, int[] lower, int[] upper) {
+		for (int i = 0; i < dims.length; i++) {
+			lower[i] = (int) (ix.getIndex(i) - 1) * blen;
+			upper[i] = (int) (lower[i] + dims[i] - 1);
+		}
+		upper[upper.length - 1]++;
+		for (int i = upper.length - 1; i > 0; i--) {
+			if (upper[i] == dims[i]) {
+				upper[i] = 0;
+				upper[i - 1]++;
+			}
+			else
+				break;
+		}
 	}
 }

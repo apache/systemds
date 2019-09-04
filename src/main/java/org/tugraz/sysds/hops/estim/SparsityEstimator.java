@@ -96,7 +96,7 @@ public abstract class SparsityEstimator
 		switch( op ) {
 			case EQZERO:
 				return new MatrixCharacteristics(dc1.getRows(), dc1.getCols(),
-					(long) dc1.getRows() * dc1.getCols() - dc1.getNonZeros());
+					dc1.getRows() * dc1.getCols() - dc1.getNonZeros());
 			case DIAG:
 				return (dc1.getCols() == 1) ?
 					new MatrixCharacteristics(dc1.getRows(), dc1.getRows(), dc1.getNonZeros()) :

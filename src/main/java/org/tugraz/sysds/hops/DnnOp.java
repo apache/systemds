@@ -596,6 +596,7 @@ public class DnnOp extends MultiThreadedHop
 	// Parameters recomputed in refreshSizeInformation and passed across many calls of getDim
 	private DnnParameters _cachedParams = new DnnParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
 	
+	@SuppressWarnings("null")
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
@@ -680,7 +681,7 @@ public class DnnOp extends MultiThreadedHop
 	 * @param dim2 given shape
 	 * @param paramType string denoting the parameter for pretty printing of the error message
 	 */
-	private void throwExceptionIfNotEqual(int dim1, int dim2, String paramType) {
+	private static void throwExceptionIfNotEqual(int dim1, int dim2, String paramType) {
 		if(dim1 >= 0 && dim2 >= 0 && dim1 != dim2) {
 			throw new DMLRuntimeException("Inferred " + paramType + " from parent doesn't match with given " + paramType + ":" + dim1 + " != " + dim2);
 		}

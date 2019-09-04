@@ -194,7 +194,7 @@ public class Dag<N extends Lop>
 		return cleanupInstructions(inst);
 	}
 	
-	private List<Lop> doTopologicalSortTwoLevelOrder(List<Lop> v) {
+	private static List<Lop> doTopologicalSortTwoLevelOrder(List<Lop> v) {
 		//partition nodes into leaf/inner nodes and dag root nodes,
 		//+ sort leaf/inner nodes by ID to force depth-first scheduling
 		//+ append root nodes in order of their original definition 
@@ -233,7 +233,7 @@ public class Dag<N extends Lop>
 		return inst;
 	}
 	
-	private boolean isTransientWriteRead(Data dnode) {
+	private static boolean isTransientWriteRead(Data dnode) {
 		Lop input = dnode.getInputs().get(0);
 		return dnode.isTransient() 
 			&& input.isDataExecLocation() && ((Data)input).isTransient() 

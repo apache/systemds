@@ -717,12 +717,12 @@ public class YarnClusterAnalyzer
 	}
 	
 
-	public static double phyToBudget(long physical) throws IOException {
-		return (double)physical / 1.0 * OptimizerUtils.MEM_UTIL_FACTOR;
+	public static double phyToBudget(long physical) {
+		return physical / 1.0 * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 	
 	public static long jvmToPhy(long jvm, boolean mrRealRun) {
-		long ret = (long) Math.ceil((double)jvm * 1.0);
+		long ret = (long) Math.ceil(jvm * 1.0);
 		if (mrRealRun) {
 			long lowerBound = (long)YarnClusterAnalyzer.getMinMRContarinerPhyMB() * 1024 * 1024;
 			if (ret < lowerBound)

@@ -52,7 +52,7 @@ public class CostEstimationWrapper
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.hops.cost")
-				  .setLevel((Level) Level.DEBUG);
+				.setLevel(Level.DEBUG);
 		}
 		
 		//create cost estimator

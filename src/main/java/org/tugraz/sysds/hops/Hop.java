@@ -1681,11 +1681,11 @@ public abstract class Hop implements ParseInfo
 		return ret;
 	}
 	
-	public final double computeBoundsInformation( Hop input, LocalVariableMap vars ) {
+	public static double computeBoundsInformation( Hop input, LocalVariableMap vars ) {
 		return computeBoundsInformation(input, vars, new HashMap<Long, Double>());
 	}
 	
-	public final double computeBoundsInformation( Hop input, LocalVariableMap vars, HashMap<Long, Double> memo ) {
+	public static double computeBoundsInformation( Hop input, LocalVariableMap vars, HashMap<Long, Double> memo ) {
 		double ret = Double.MAX_VALUE;
 		try {
 			ret = OptimizerUtils.rEvalSimpleDoubleExpression(input, memo, vars);

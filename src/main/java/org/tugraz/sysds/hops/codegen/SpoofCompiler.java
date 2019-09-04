@@ -160,7 +160,7 @@ public class SpoofCompiler
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.hops.codegen")
-				  .setLevel((Level) Level.TRACE);
+				.setLevel(Level.TRACE);
 		}
 	}
 	

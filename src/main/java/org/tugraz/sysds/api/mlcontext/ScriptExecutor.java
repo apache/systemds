@@ -195,7 +195,7 @@ public class ScriptExecutor {
 	protected void generateRuntimeProgram() {
 		try {
 			runtimeProgram = dmlTranslator.getRuntimeProgram(dmlProgram, config);
-		} catch (LanguageException | DMLRuntimeException | LopsException | IOException | HopsException e) {
+		} catch (LanguageException | DMLRuntimeException | LopsException | HopsException e) {
 			throw new MLContextException("Exception occurred while generating runtime program", e);
 		}
 	}

@@ -21,7 +21,6 @@
  
 package org.tugraz.sysds.api.mlcontext;
 
-import java.io.IOException;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -53,10 +52,8 @@ public class ProjectInfo {
 	}
 
 	private ProjectInfo() {
-		JarFile systemDsJar = null;
-		try {
-			String path = this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-			systemDsJar = new JarFile(path);
+		String path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+		try(JarFile systemDsJar = new JarFile(path)) {
 			Manifest manifest = systemDsJar.getManifest();
 			Attributes mainAttributes = manifest.getMainAttributes();
 			properties = new TreeMap<>();
@@ -66,14 +63,6 @@ public class ProjectInfo {
 			}
 		} catch (Exception e) {
 			throw new MLContextException("Error trying to read from manifest in SystemDS jar file", e);
-		} finally {
-			if (systemDsJar != null) {
-				try {
-					systemDsJar.close();
-				} catch (IOException e) {
-					throw new MLContextException("Error closing SystemDS jar file", e);
-				}
-			}
 		}
 	}
 

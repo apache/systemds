@@ -97,7 +97,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		return (BitsetMatrix) node.getSynopsis();
 	}
 	
-	private BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {
+	private static BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {
 		switch(op) {
 			case MM:      return m1Map.matMult(m2Map);
 			case MULT:    return m1Map.and(m2Map);

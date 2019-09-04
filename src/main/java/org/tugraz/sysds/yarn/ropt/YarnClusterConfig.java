@@ -20,63 +20,52 @@
 package org.tugraz.sysds.yarn.ropt;
 
 public class YarnClusterConfig 
-{	
-		
+{
 	private long _minAllocMB = -1;
 	private long _maxAllocMB = -1;
 	private long _numNodes = -1;
 	private long _numCores = -1;
 	
-	public YarnClusterConfig()
-	{
+	public YarnClusterConfig() {
 		_minAllocMB = -1;
 		_maxAllocMB = -1;
 		_numNodes = -1;
 		_numCores = -1;
 	}
 	
-	public long getMinAllocationMB()
-	{
+	public long getMinAllocationMB() {
 		return _minAllocMB;
 	}
 	
-	public void setMinAllocationMB(long min)
-	{
+	public void setMinAllocationMB(long min) {
 		_minAllocMB = min;
 	}
 	
-	public long getMaxAllocationMB()
-	{
+	public long getMaxAllocationMB() {
 		return _maxAllocMB;
 	}
 	
-	public void setMaxAllocationMB(long max)
-	{
+	public void setMaxAllocationMB(long max) {
 		_maxAllocMB = max;
 	}
 	
-	public long getNumCores()
-	{
+	public long getNumCores() {
 		return _numCores;
 	}
 	
-	public void setNumCores(long ncores)
-	{
+	public void setNumCores(long ncores) {
 		_numCores = ncores;
 	}
 	
-	public long getNumNodes()
-	{
+	public long getNumNodes() {
 		return _numNodes;
 	}
 	
-	public void setNumNodes(long nnodes)
-	{
+	public void setNumNodes(long nnodes) {
 		_numNodes = nnodes;
 	}
 	
-	public long getAvgNumCores()
-	{
-		return (long)Math.round((double)_numCores / _numNodes);
+	public long getAvgNumCores() {
+		return Math.round((double)_numCores / _numNodes);
 	}
 }

@@ -180,7 +180,7 @@ public class RewriteHoistLoopInvariantOperations extends StatementBlockRewriteRu
 		hop.setVisited();
 	}
 	
-	private StatementBlock createStatementBlock(StatementBlock sb, Map<String, Hop> invariantOps) {
+	private static StatementBlock createStatementBlock(StatementBlock sb, Map<String, Hop> invariantOps) {
 		//create empty last-level statement block
 		StatementBlock ret = new StatementBlock();
 		ret.setDMLProg(sb.getDMLProg());

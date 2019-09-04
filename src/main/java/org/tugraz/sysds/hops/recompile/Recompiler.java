@@ -667,7 +667,7 @@ public class Recompiler
 		{
 			//do nothing
 		}
-		else if( pb instanceof ProgramBlock ) {
+		else if( pb instanceof BasicProgramBlock ) {
 			StatementBlock sb = pb.getStatementBlock();
 			BasicProgramBlock bpb = (BasicProgramBlock) pb;
 			ArrayList<Instruction> tmp = bpb.getInstructions();
@@ -1341,9 +1341,9 @@ public class Recompiler
 				int ix2 = params.get(Statement.SEQ_TO);
 				int ix3 = params.get(Statement.SEQ_INCR);
 				HashMap<Long, Double> memo = new HashMap<>();
-				double from = d.computeBoundsInformation(d.getInput().get(ix1), vars, memo);
-				double to = d.computeBoundsInformation(d.getInput().get(ix2), vars, memo);
-				double incr = d.computeBoundsInformation(d.getInput().get(ix3), vars, memo);
+				double from = Hop.computeBoundsInformation(d.getInput().get(ix1), vars, memo);
+				double to = Hop.computeBoundsInformation(d.getInput().get(ix2), vars, memo);
+				double incr = Hop.computeBoundsInformation(d.getInput().get(ix3), vars, memo);
 				
 				//special case increment 
 				if ( from!=Double.MAX_VALUE && to!=Double.MAX_VALUE ) {
@@ -1383,10 +1383,10 @@ public class Recompiler
 			hop.refreshSizeInformation(); //update, incl reset
 			if( !hop.dimsKnown() ) {
 				HashMap<Long, Double> memo = new HashMap<>();
-				double rl = hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
-				double ru = hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
-				double cl = hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
-				double cu = hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
+				double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
+				double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
+				double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
+				double cu = Hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
 				if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
 					hop.setDim1( (long)(ru-rl+1) );
 				if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
@@ -1568,23 +1568,17 @@ public class Recompiler
 			//get meta data filename
 			String mtdname = DataExpression.getMTDFileName(dop.getFileName());
 			Path path = new Path(mtdname);
-			FileSystem fs = IOUtilFunctions.getFileSystem(mtdname);
-			if( fs.exists(path) ){
-				BufferedReader br = null;
-				try
-				{
-					br = new BufferedReader(new InputStreamReader(fs.open(path)));
-					JSONObject mtd = JSONHelper.parse(br);
-					
-					DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
-					dop.setDataType(dt);
-					if(dt != DataType.FRAME)
-						dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
-					dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
-					dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
-				}
-				finally {
-					IOUtilFunctions.closeSilently(br);
+			try( FileSystem fs = IOUtilFunctions.getFileSystem(mtdname) ) {
+				if( fs.exists(path) ){
+					try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+						JSONObject mtd = JSONHelper.parse(br);
+						DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
+						dop.setDataType(dt);
+						if(dt != DataType.FRAME)
+							dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
+						dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
+						dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
+					}
 				}
 			}
 		}

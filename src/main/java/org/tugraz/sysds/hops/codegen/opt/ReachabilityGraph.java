@@ -263,7 +263,7 @@ public class ReachabilityGraph
 		return cutSets;
 	}
 	
-	private InterestingPoint[] sortBySize(InterestingPoint[] points, CPlanMemoTable memo, boolean asc) {
+	private static InterestingPoint[] sortBySize(InterestingPoint[] points, CPlanMemoTable memo, boolean asc) {
 		return Arrays.stream(points)
 			.sorted(Comparator.comparing(p -> (asc ? 1 : -1) *
 				getSize(memo.getHopRefs().get(p.getToHopID()))))

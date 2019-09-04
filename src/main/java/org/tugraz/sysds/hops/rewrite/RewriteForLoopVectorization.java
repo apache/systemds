@@ -71,7 +71,7 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 			
 			if( fs.getBody()!=null && fs.getBody().size()==1 ) //single child block
 			{
-				StatementBlock csb = (StatementBlock) fs.getBody().get(0);
+				StatementBlock csb = fs.getBody().get(0);
 				if( !(   csb instanceof WhileStatementBlock  //last level block
 					  || csb instanceof IfStatementBlock 
 					  || csb instanceof ForStatementBlock ) )

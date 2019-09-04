@@ -21,7 +21,6 @@
 
 package org.tugraz.sysds.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -413,7 +412,7 @@ public class DMLTranslator
 	
 	
 	public Program getRuntimeProgram(DMLProgram prog, DMLConfig config) 
-		throws IOException, LanguageException, DMLRuntimeException, LopsException, HopsException 
+		throws LanguageException, DMLRuntimeException, LopsException, HopsException 
 	{	
 		// constructor resets the set of registered functions
 		Program rtprog = new Program();
@@ -568,7 +567,7 @@ public class DMLTranslator
 				rtpb = new ParForProgramBlock(prog, iterPred.getIterVar().getName(),
 					iterPred.getParForParams(), ((ParForStatementBlock)sb).getResultVariables());
 				ParForProgramBlock pfrtpb = (ParForProgramBlock)rtpb;
-				pfrtpb.setStatementBlock((ParForStatementBlock)sb); //used for optimization and creating unscoped variables
+				pfrtpb.setStatementBlock(sb); //used for optimization and creating unscoped variables
 			}
 			else {//ForStatementBlock
 				rtpb = new ForProgramBlock(prog, iterPred.getIterVar().getName());
@@ -1487,7 +1486,7 @@ public class DMLTranslator
 			else if( source instanceof ParameterizedBuiltinFunctionExpression )
 				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
 			else if( source instanceof DataExpression ) {
-				Hop ae = (Hop)processDataExpression((DataExpression)source, target, hops);
+				Hop ae = processDataExpression((DataExpression)source, target, hops);
 				if (ae instanceof DataOp){
 					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
 					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
@@ -1883,8 +1882,8 @@ public class DMLTranslator
 				inputs.add( processExpression(source.getVarParam("target"), null, hops) );
 				inputs.add( processExpression(source.getVarParam("spec"), null, hops) );
 				String[] outputNames = new String[targetList.size()]; 
-				outputNames[0] = ((DataIdentifier)targetList.get(0)).getName();
-				outputNames[1] = ((DataIdentifier)targetList.get(1)).getName();
+				outputNames[0] = targetList.get(0).getName();
+				outputNames[1] = targetList.get(1).getName();
 				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.FP64, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
 				outputs.add(new DataOp(outputNames[1], DataType.FRAME, ValueType.STRING, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
 				
@@ -2119,7 +2118,7 @@ public class DMLTranslator
 				// Number of outputs = size of targetList = #of identifiers in source.getOutputs
 				String[] outputNames = new String[targetList.size()]; 
 				for ( int i=0; i < targetList.size(); i++ ) {
-					outputNames[i] = ((DataIdentifier)targetList.get(i)).getName();
+					outputNames[i] = targetList.get(i).getName();
 					Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.FP64, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
 					outputs.add(output);
 				}

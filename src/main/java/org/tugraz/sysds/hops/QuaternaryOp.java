@@ -705,8 +705,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		
 		switch( _op ) {
 			case WSLOSS: //always scalar output
-				ret = null;
-				break;
+				break; //null
 			
 			case WSIGMOID: 
 			case WUMM: {
@@ -734,7 +733,7 @@ public class QuaternaryOp extends MultiThreadedHop
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}
-				
+		
 		return ret;
 	}
 	

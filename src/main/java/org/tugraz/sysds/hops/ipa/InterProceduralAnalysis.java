@@ -101,7 +101,7 @@ public class InterProceduralAnalysis
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.hops.ipa")
-				.setLevel((Level) Level.DEBUG);
+				.setLevel(Level.DEBUG);
 		}
 	}
 	
@@ -167,6 +167,7 @@ public class InterProceduralAnalysis
 	 * 
 	 * @param repetitions number of IPA rounds 
 	 */
+	@SuppressWarnings("null")
 	public void analyzeProgram(int repetitions) {
 		//sanity check for valid number of repetitions
 		if( repetitions <= 0 )

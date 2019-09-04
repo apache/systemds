@@ -154,11 +154,12 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _splitDag;
 	}
 
-	private boolean isMergeablePrintStatement(Statement stmt) {
-		return ( stmt instanceof PrintStatement && (((PrintStatement)stmt).getType() == PRINTTYPE.STOP || ((PrintStatement)stmt).getType() == PRINTTYPE.ASSERT) );
+	private static boolean isMergeablePrintStatement(Statement stmt) {
+		return ( stmt instanceof PrintStatement &&
+			(((PrintStatement)stmt).getType() == PRINTTYPE.STOP || ((PrintStatement)stmt).getType() == PRINTTYPE.ASSERT) );
 	}
 
-    public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) {
+	public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) {
 		// check whether targetIndex stmt block is for a mergable function call
 		Statement stmt = this.getStatement(0);
 
@@ -762,7 +763,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			if (current instanceof OutputStatement) {
 				OutputStatement os = (OutputStatement)current;
 				// validate variable being written by output statement exists
-				DataIdentifier target = (DataIdentifier)os.getIdentifier();
+				DataIdentifier target = os.getIdentifier();
 				if (ids.getVariable(target.getName()) == null) {
 					//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
 					raiseValidateError("Undefined Variable (" + target.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);

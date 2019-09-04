@@ -113,15 +113,15 @@ public class EstimatorSample extends SparsityEstimator
 					int[] cnnz1 = computeColumnNnz(m1, ix);
 					int[] cnnz2 = computeColumnNnz(m2, ix);
 					for(int i=0; i<ix.length; i++)
-						spOut += (double)cnnz1[i]/m1.getNumRows() 
-							* (double)cnnz2[i]/m1.getNumRows();
+						spOut += ((double)cnnz1[i]/m1.getNumRows()) 
+							* ((double)cnnz2[i]/m1.getNumRows());
 				}
 				else {
 					int[] rnnz1 = computeRowNnz(m1, ix);
 					int[] rnnz2 = computeRowNnz(m2, ix);
 					for(int i=0; i<ix.length; i++)
-						spOut += (double)rnnz1[i]/m1.getNumColumns() 
-							* (double)rnnz2[i]/m1.getNumColumns();
+						spOut += ((double)rnnz1[i]/m1.getNumColumns()) 
+							* ((double)rnnz2[i]/m1.getNumColumns());
 				}
 				return spOut/ix.length;
 			}
@@ -134,20 +134,20 @@ public class EstimatorSample extends SparsityEstimator
 					int[] cnnz1 = computeColumnNnz(m1, ix);
 					int[] cnnz2 = computeColumnNnz(m2, ix);
 					for(int i=0; i<ix.length; i++) {
-						spOut += (double)cnnz1[i]/m1.getNumRows() 
-							+ (double)cnnz2[i]/m1.getNumRows()
-							- (double)cnnz1[i]/m1.getNumRows() 
-							* (double)cnnz2[i]/m1.getNumRows();
+						spOut += ((double)cnnz1[i]/m1.getNumRows()) 
+							+ ((double)cnnz2[i]/m1.getNumRows())
+							- ((double)cnnz1[i]/m1.getNumRows())
+							* ((double)cnnz2[i]/m1.getNumRows());
 					}
 				}
 				else {
 					int[] rnnz1 = computeRowNnz(m1, ix);
 					int[] rnnz2 = computeRowNnz(m2, ix);
 					for(int i=0; i<ix.length; i++) {
-						spOut += (double)rnnz1[i]/m1.getNumColumns() 
-							+ (double)rnnz2[i]/m1.getNumColumns()
-							- (double)rnnz1[i]/m1.getNumColumns() 
-							* (double)rnnz2[i]/m1.getNumColumns();
+						spOut += ((double)rnnz1[i]/m1.getNumColumns()) 
+							+ ((double)rnnz2[i]/m1.getNumColumns())
+							- ((double)rnnz1[i]/m1.getNumColumns()) 
+							* ((double)rnnz2[i]/m1.getNumColumns());
 					}
 				}
 				return spOut/ix.length;
@@ -172,7 +172,7 @@ public class EstimatorSample extends SparsityEstimator
 		return estim(m, null, op);
 	}
 	
-	private int[] computeColumnNnz(MatrixBlock in, int[] ix) {
+	private static int[] computeColumnNnz(MatrixBlock in, int[] ix) {
 		int[] nnz = new int[in.getNumColumns()];
 		//count column nnz brute force or selective
 		if( in.isInSparseFormat() ) {
@@ -200,7 +200,7 @@ public class EstimatorSample extends SparsityEstimator
 		return ret;
 	}
 	
-	private int[] computeRowNnz(MatrixBlock in, int[] ix) {
+	private static int[] computeRowNnz(MatrixBlock in, int[] ix) {
 		//copy nnz into reduced vector
 		int[] ret = new int[ix.length];
 		for(int i=0; i<ix.length; i++)

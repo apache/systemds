@@ -59,6 +59,6 @@ public class VarStats
 	
 	@Override
 	public Object clone() {
-		return new VarStats(_rlen, _clen, _blen, (long)_nnz, _inmem );
+		return new VarStats(_rlen, _clen, _blen, _nnz, _inmem );
 	}
 }

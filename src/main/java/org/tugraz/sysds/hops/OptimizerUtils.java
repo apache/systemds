@@ -785,7 +785,7 @@ public class OptimizerUtils
 		if( oinfo == OutputInfo.TextCellOutputInfo || oinfo == OutputInfo.MatrixMarketOutputInfo )
 			return bsize * 3;
 		else if( oinfo == OutputInfo.LIBSVMOutputInfo )
-			return (long)Math.round(bsize * 2.5);
+			return Math.round(bsize * 2.5);
 		else if( oinfo == OutputInfo.CSVOutputInfo )
 			return bsize * 2;
 		
@@ -1169,7 +1169,7 @@ public class OptimizerUtils
 	}
 	
 	public static long getNnz(long dim1, long dim2, double sp) {
-		return (long) Math.round(sp * dim1 * dim2);
+		return Math.round(sp * dim1 * dim2);
 	}
 	
 	public static double getSparsity( DataCharacteristics dc ) {
@@ -1187,7 +1187,7 @@ public class OptimizerUtils
 			if (dim <= 0) {
 				return 1.0;
 			}
-			sparsity /= (double) dim;
+			sparsity /= dim;
 		}
 		return Math.min(sparsity, 1.0);
 	}

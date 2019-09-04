@@ -687,7 +687,7 @@ public class Statistics
 			Entry<String, InstStats> hh = tmp[len - 1 - i];
 			String instruction = hh.getKey();
 			long timeNs = hh.getValue().time.longValue();
-			double timeS = (double) timeNs / 1000000000.0;
+			double timeS = timeNs / 1000000000d;
 
 			maxInstLen = Math.max(maxInstLen, instruction.length());
 
@@ -705,7 +705,7 @@ public class Statistics
 			String [] wrappedInstruction = wrap(instruction, maxInstLen);
 
 			long timeNs = tmp[len - 1 - i].getValue().time.longValue();
-			double timeS = (double) timeNs / 1000000000.0;
+			double timeS = timeNs / 1000000000d;
 			String timeSString = sFormat.format(timeS);
 
 			long count = tmp[len - 1 - i].getValue().count.longValue();
@@ -777,7 +777,7 @@ public class Statistics
 		}
 		else {
 			int exp = (int) (Math.log(numBytes) / 6.931471805599453);
-			return String.format("%.3f %sB", ((double)numBytes) / Math.pow(1024, exp), "KMGTP".charAt(exp-1));
+			return String.format("%.3f %sB", numBytes / Math.pow(1024, exp), "KMGTP".charAt(exp-1));
 		}
 	}
 
@@ -956,15 +956,15 @@ public class Statistics
 			if( OptimizerUtils.isSparkExecutionMode() ){
 				String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
 				sb.append("Spark ctx create time "+lazy+":\t"+
-						String.format("%.3f", ((double)sparkCtxCreateTime)*1e-9)  + " sec.\n" ); // nanoSec --> sec
+						String.format("%.3f", sparkCtxCreateTime*1e-9)  + " sec.\n" ); // nanoSec --> sec
 				sb.append("Spark trans counts (par,bc,col):" +
 						String.format("%d/%d/%d.\n", sparkParallelizeCount.longValue(),
 								sparkBroadcastCount.longValue(), sparkCollectCount.longValue()));
 				sb.append("Spark trans times (par,bc,col):\t" +
 						String.format("%.3f/%.3f/%.3f secs.\n",
-								((double)sparkParallelize.longValue())*1e-9,
-								((double)sparkBroadcast.longValue())*1e-9,
-								((double)sparkCollect.longValue())*1e-9));
+								sparkParallelize.longValue()*1e-9,
+								sparkBroadcast.longValue()*1e-9,
+								sparkCollect.longValue()*1e-9));
 			}
 			if (psNumWorkers.longValue() > 0) {
 				sb.append(String.format("Paramserv total num workers:\t%d.\n", psNumWorkers.longValue()));

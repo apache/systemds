@@ -125,7 +125,7 @@ public class SparkExecutionContext extends ExecutionContext
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.context")
-				  .setLevel((Level) Level.DEBUG);
+				.setLevel(Level.DEBUG);
 		}
 	}
 
@@ -367,7 +367,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return getRDDHandleForMatrixObject(mo, inputInfo, -1, true);
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo, int numParts, boolean inclEmpty ) {
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are
@@ -445,6 +445,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return rdd;
 	}
 
+	@SuppressWarnings("resource")
 	public JavaPairRDD<?, ?> getRDDHandleForTensorObject(TensorObject to, InputInfo inputInfo, int numParts, boolean inclEmpty) {
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are
@@ -524,7 +525,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param inputInfo input info
 	 * @return JavaPairRDD handle for a frame object
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	public JavaPairRDD<?,?> getRDDHandleForFrameObject( FrameObject fo, InputInfo inputInfo )
 	{
 		//NOTE: MB this logic should be integrated into FrameObject
@@ -1492,7 +1493,7 @@ public class SparkExecutionContext extends ExecutionContext
 		DataCharacteristics dcIn = mo.getDataCharacteristics();
 
 		//double check size to avoid unnecessary spark context creation
-		if( !OptimizerUtils.exceedsCachingThreshold(mo.getNumColumns(), (double)
+		if( !OptimizerUtils.exceedsCachingThreshold(mo.getNumColumns(),
 				OptimizerUtils.estimateSizeExactSparsity(dcIn)) )
 			return;
 
@@ -1539,7 +1540,7 @@ public class SparkExecutionContext extends ExecutionContext
 		MatrixObject mo = getMatrixObject(var);
 
 		//double check size to avoid unnecessary spark context creation
-		if( !OptimizerUtils.exceedsCachingThreshold(mo.getNumColumns(), (double)
+		if( !OptimizerUtils.exceedsCachingThreshold(mo.getNumColumns(),
 				OptimizerUtils.estimateSizeExactSparsity(mo.getDataCharacteristics())) )
 			return;
 
@@ -1586,11 +1587,13 @@ public class SparkExecutionContext extends ExecutionContext
 		_poolBuff[pool] = false;
 	}
 
+	@SuppressWarnings("resource")
 	private boolean isRDDMarkedForCaching( int rddID ) {
 		JavaSparkContext jsc = getSparkContext();
 		return jsc.sc().getPersistentRDDs().contains(rddID);
 	}
 
+	@SuppressWarnings("resource")
 	public boolean isRDDCached( int rddID ) {
 		//check that rdd is marked for caching
 		JavaSparkContext jsc = getSparkContext();
@@ -1723,8 +1726,8 @@ public class SparkExecutionContext extends ExecutionContext
 			//change if not all executors are initially allocated and it is plan-relevant
 			int numExec = _numExecutors;
 			if( (refresh && !_confOnly) || isSparkContextCreated() ) {
-				JavaSparkContext jsc = getSparkContextStatic();
-				numExec = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
+				numExec = Math.max(getSparkContextStatic().sc()
+					.getExecutorMemoryStatus().size() - 1, 1);
 			}
 
 			//compute data memory budget
@@ -1802,6 +1805,7 @@ public class SparkExecutionContext extends ExecutionContext
 				//get default parallelism (total number of executors and cores)
 				//note: spark context provides this information while conf does not
 				//(for num executors we need to correct for driver and local mode)
+				@SuppressWarnings("resource")
 				JavaSparkContext jsc = getSparkContextStatic();
 				_numExecutors = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
 				_defaultPar = jsc.defaultParallelism();

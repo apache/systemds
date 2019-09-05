@@ -79,8 +79,8 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 	
 	public Object[] getMappedProg( long id ) {
 		Object[] ret = new Object[2];
-		ret[0] = (StatementBlock)_id_hlprog.get( id );
-		ret[1] = (ProgramBlock)_id_rtprog.get( id );
+		ret[0] = _id_hlprog.get(id);
+		ret[1] = _id_rtprog.get(id);
 		return ret;
 	}
 	

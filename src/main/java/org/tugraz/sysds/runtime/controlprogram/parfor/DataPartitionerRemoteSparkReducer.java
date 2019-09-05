@@ -51,7 +51,7 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "resource" })
 	public void call(Tuple2<Long, Iterable<Writable>> arg0)
 		throws Exception 
 	{
@@ -60,13 +60,13 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 		Iterator<Writable> valueList = arg0._2().iterator();
 		
 		//write entire partition to binary block sequence file
+		//create sequence file writer
+		Configuration job = new Configuration(ConfigurationManager.getCachedJobConf());
+		job.setInt(MRConfigurationNames.DFS_REPLICATION, _replication);
+		Path path = new Path(_fnameNew + File.separator + key);
+		
 		SequenceFile.Writer writer = null;
 		try {
-			//create sequence file writer
-			Configuration job = new Configuration(ConfigurationManager.getCachedJobConf());
-			job.setInt(MRConfigurationNames.DFS_REPLICATION, _replication);
-			
-			Path path = new Path(_fnameNew + File.separator + key);
 			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class);
 			

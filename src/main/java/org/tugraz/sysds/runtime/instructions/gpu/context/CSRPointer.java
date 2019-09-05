@@ -112,11 +112,11 @@ public class CSRPointer {
 	}
 
 	private static long getDataTypeSizeOf(long numElems) {
-		return numElems * ((long) LibMatrixCUDA.sizeOfDataType);
+		return numElems * LibMatrixCUDA.sizeOfDataType;
 	}
 
 	private static long getIntSizeOf(long numElems) {
-		return numElems * ((long) Sizeof.INT);
+		return numElems * Sizeof.INT;
 	}
 
 	public static int toIntExact(long l) {
@@ -459,7 +459,7 @@ public class CSRPointer {
 			int cols, String instName) {
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
-		long size = ((long) rows) * getDataTypeSizeOf((long) cols);
+		long size = rows * getDataTypeSizeOf(cols);
 		Pointer A = allocate(size);
 		// If this sparse block is empty, the allocated dense matrix, initialized to zeroes, will be returned.
 		if (val != null && rowPtr != null && colInd != null && nnz > 0) {

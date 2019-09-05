@@ -89,7 +89,7 @@ public class FrameTest extends MLContextTestBase
 		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
 		schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
-		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
+		schemaMixedLarge = schemaMixedLargeList.toArray(schemaMixedLarge);
 	}
 
 	@Override

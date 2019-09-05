@@ -209,39 +209,36 @@ public class CodegenUtils
 		
 			//prepare file manager
 			DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>(); 
-			StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
+			try(StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null))
+			{
+				//prepare input source code
+				Iterable<? extends JavaFileObject> sources = fileManager
+						.getJavaFileObjectsFromFiles(Arrays.asList(ftmp));
+				
+				//prepare class path 
+				URL runDir = CodegenUtils.class.getProtectionDomain().getCodeSource().getLocation(); 
+				String classpath = System.getProperty("java.class.path") + 
+						File.pathSeparator + runDir.getPath();
+				List<String> options = Arrays.asList("-classpath",classpath);
+				
+				//compile source code
+				CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, sources);
+				Boolean success = task.call();
+				
+				//output diagnostics and error handling
+				for(Diagnostic<? extends JavaFileObject> tmp : diagnostics.getDiagnostics())
+					if( tmp.getKind()==Kind.ERROR )
+						System.err.println("ERROR: "+tmp.toString());
+				if( success == null || !success )
+					throw new RuntimeException("Failed to compile class "+name);
 			
-			//prepare input source code
-			Iterable<? extends JavaFileObject> sources = fileManager
-					.getJavaFileObjectsFromFiles(Arrays.asList(ftmp));
-			
-			//prepare class path 
-			URL runDir = CodegenUtils.class.getProtectionDomain().getCodeSource().getLocation(); 
-			String classpath = System.getProperty("java.class.path") + 
-					File.pathSeparator + runDir.getPath();
-			List<String> options = Arrays.asList("-classpath",classpath);
-			
-			//compile source code
-			CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, sources);
-			Boolean success = task.call();
-			
-			//output diagnostics and error handling
-			for(Diagnostic<? extends JavaFileObject> tmp : diagnostics.getDiagnostics())
-				if( tmp.getKind()==Kind.ERROR )
-					System.err.println("ERROR: "+tmp.toString());				
-			if( success == null || !success )
-				throw new RuntimeException("Failed to compile class "+name);
-			
-			//dynamically load compiled class
-			URLClassLoader classLoader = null;
-			try {
-				classLoader = new URLClassLoader(
+				//dynamically load compiled class
+				try (URLClassLoader classLoader = new URLClassLoader(
 					new URL[]{new File(_workingDir).toURI().toURL(), runDir}, 
-					CodegenUtils.class.getClassLoader());
-				return classLoader.loadClass(name);
-			}
-			finally {
-				IOUtilFunctions.closeSilently(classLoader);
+					CodegenUtils.class.getClassLoader()))
+				{
+					return classLoader.loadClass(name);
+				}
 			}
 		}
 		catch(Exception ex) {
@@ -276,6 +273,7 @@ public class CodegenUtils
 		}	
 	}
 	
+	@SuppressWarnings("resource")
 	private static byte[] getClassAsByteArray(String name) {
 		String classAsPath = name.replace('.', '/') + ".class";
 		

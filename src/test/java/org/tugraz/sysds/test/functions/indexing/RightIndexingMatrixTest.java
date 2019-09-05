@@ -87,11 +87,10 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	
 	public void runRightIndexingTest( ExecType et, boolean sparse ) {
 		Random rand = new Random(System.currentTimeMillis());
-		long rl = (long)(rand.nextDouble()*((double)rows))+1;
-		long ru = (long)(rand.nextDouble()*((double)(rows-rl+1)))+rl;
-		long cl = (long)(rand.nextDouble()*((double)cols))+1;
-		long cu = (long)(rand.nextDouble()*((double)(cols-cl+1)))+cl;
-		
+		long rl = (long)(rand.nextDouble()*rows)+1;
+		long ru = (long)(rand.nextDouble()*(rows-rl+1))+rl;
+		long cl = (long)(rand.nextDouble()*cols)+1;
+		long cu = (long)(rand.nextDouble()*(cols-cl+1))+cl;
 		runRightIndexingTest(et, sparse, rl, ru, cl, cu);
 	}
 	

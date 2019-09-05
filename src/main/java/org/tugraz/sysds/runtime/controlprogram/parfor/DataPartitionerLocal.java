@@ -224,47 +224,35 @@ public class DataPartitionerLocal extends DataPartitioner
 		long row = -1;
 		long col = -1;
 		
-		try 
-		{
-			//STEP 1: read matrix from HDFS and write blocks to local staging area
-			//check and add input path
-			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-			Path path = new Path(fname);
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-			
+		//STEP 1: read matrix from HDFS and write blocks to local staging area
+		//check and add input path
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		Path path = new Path(fname);
+		try (FileSystem fs = IOUtilFunctions.getFileSystem(path, job)) {
 			//prepare sequence file reader, and write to local staging area	
 			LinkedList<Cell> buffer = new LinkedList<>();
 			MatrixIndexes key = new MatrixIndexes();
 			MatrixCell value = new MatrixCell();
 	
-			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
-			{
-				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
-				try
+			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) {
+				try (SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job))
 				{
-					while(reader.next(key, value))
-					{
+					while(reader.next(key, value)) {
 						row = key.getRowIndex();
 						col = key.getColumnIndex();
-						Cell tmp = new Cell( row, col, value.getValue() ); 
-		
+						Cell tmp = new Cell( row, col, value.getValue() );
 						buffer.addLast( tmp );
-						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
-						{
+						if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) { //periodic flush
 							appendCellBufferToStagingArea(fnameStaging, buffer, blen);
 							buffer.clear();
 						}
 					}
 					
 					//final flush
-					if( !buffer.isEmpty() )
-					{
+					if( !buffer.isEmpty() ) {
 						appendCellBufferToStagingArea(fnameStaging, buffer, blen);
 						buffer.clear();
 					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 			
@@ -308,16 +296,14 @@ public class DataPartitionerLocal extends DataPartitioner
 	@SuppressWarnings("deprecation")
 	private void partitionBinaryBlock( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int blen ) 
 	{
-		try 
-		{	
+		//STEP 1: read matrix from HDFS and write blocks to local staging area	
+		//check and add input path
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		Path path = new Path(fname);
+		
+		try(FileSystem fs = IOUtilFunctions.getFileSystem(path, job)) {
 			//create reuse object
 			_reuseBlk = DataPartitioner.createReuseMatrixBlock(_format, blen, blen);
-			
-			//STEP 1: read matrix from HDFS and write blocks to local staging area	
-			//check and add input path
-			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-			Path path = new Path(fname);
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 			
 			//prepare sequence file reader, and write to local staging area
 			MatrixIndexes key = new MatrixIndexes(); 
@@ -325,9 +311,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			
 			for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 			{
-				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
-				try
-				{
+				try(SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job)) {
 					while(reader.next(key, value)) //for each block
 					{
 						long row_offset = (key.getRowIndex()-1)*blen;
@@ -344,9 +328,6 @@ public class DataPartitionerLocal extends DataPartitioner
 						
 					    appendBlockToStagingArea(fnameStaging, value, row_offset, col_offset, blen);
 					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
 				}
 			}
 
@@ -368,23 +349,20 @@ public class DataPartitionerLocal extends DataPartitioner
 				for( Thread t : threads )
 					t.join();
 			}
-			else
-			{
+			else {
 				for( String pdir : fnamesPartitions  )
 					writeBinaryBlockSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir, false );
 			}
 		} 
-		catch (Exception e) 
-		{
+		catch (Exception e)  {
 			throw new DMLRuntimeException("Unable to partition binary block matrix.", e);
 		}
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "resource" })
 	private void partitionBinaryBlock2BinaryCell( String fname, String fnameStaging, String fnameNew, long rlen, long clen, int blen ) 
 	{
-		try 
-		{
+		try {
 			//STEP 1: read matrix from HDFS and write blocks to local staging area	
 			//check and add input path
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -399,9 +377,7 @@ public class DataPartitionerLocal extends DataPartitioner
 			
 			for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) )
 			{
-				SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
-				try
-				{
+				try(SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job)) {
 					while(reader.next(key, value)) //for each block
 					{
 						long row_offset = (key.getRowIndex()-1)*blen;
@@ -420,8 +396,7 @@ public class DataPartitionerLocal extends DataPartitioner
 						if( sparse ) //SPARSE
 						{
 							Iterator<IJV> iter = value.getSparseBlockIterator();
-							while( iter.hasNext() )
-							{
+							while( iter.hasNext() ) {
 								IJV lcell = iter.next();
 								Cell tmp = new Cell( row_offset + lcell.getI() + 1, 
 													 col_offset + lcell.getJ() + 1,
@@ -450,9 +425,6 @@ public class DataPartitionerLocal extends DataPartitioner
 						buffer.clear();
 					}
 				}
-				finally {
-					IOUtilFunctions.closeSilently(reader);
-				}
 			}
 
 			//STEP 2: read matrix blocks from staging area and write matrix to HDFS
@@ -479,8 +451,7 @@ public class DataPartitionerLocal extends DataPartitioner
 					writeBinaryCellSequenceFileToHDFS( job, fnameNew, fnameStaging+"/"+pdir );	
 			}
 		} 
-		catch (Exception e) 
-		{
+		catch (Exception e) {
 			throw new DMLRuntimeException("Unable to partition binary block matrix.", e);
 		}
 	}
@@ -586,17 +557,17 @@ public class DataPartitionerLocal extends DataPartitioner
 	// read/write in different formats //
 	/////////////////////////////////////
 	
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "resource" })
 	public void writeBinaryBlockSequenceFileToHDFS( JobConf job, String dir, String lpdir, boolean threadsafe ) 
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
 		Path path =  new Path(dir+"/"+key);
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class); //beware ca 50ms
-
-		try
-		{
+		SequenceFile.Writer writer = null;
+		
+		try {
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class); //beware ca 50ms
 			String[] fnameBlocks = new File( lpdir ).list();
 			for( String fnameBlock : fnameBlocks  )
 			{
@@ -622,17 +593,18 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 	
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "resource" })
 	public void writeBinaryCellSequenceFileToHDFS( JobConf job, String dir, String lpdir ) 
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
 		Path path =  new Path(dir+"/"+key);
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
-	
-		try
-		{
+		SequenceFile.Writer writer = null;
+		
+		try {
+			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
+			
 			MatrixIndexes indexes = new MatrixIndexes();
 			MatrixCell cell = new MatrixCell();
 			
@@ -653,14 +625,14 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 	
+	@SuppressWarnings("resource")
 	public void writeTextCellFileToHDFS( JobConf job, String dir, String lpdir ) 
 		throws IOException
 	{
 		long key = getKeyFromFilePath(lpdir);
 		Path path = new Path(dir+"/"+key);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-		try
+		try(BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))))
 		{
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
@@ -677,13 +649,10 @@ public class DataPartitionerLocal extends DataPartitioner
 					sb.append(' ');
 					sb.append(c.getValue());
 					sb.append('\n');
-					out.write( sb.toString() );		
+					out.write( sb.toString() );
 					sb.setLength(0);
 				}
 			}
-		}
-		finally {
-			IOUtilFunctions.closeSilently(out);
 		}
 	}
 	

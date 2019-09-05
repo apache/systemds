@@ -481,8 +481,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				if( !HDFSTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
 					long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
 					_metaData.getDataCharacteristics().setNonZeros(newnnz);
-					((RDDObject)rdd).setPending(false); //mark rdd as non-pending (for export)
-					((RDDObject)rdd).setHDFSFile(true); //mark rdd as hdfs file (for restore)
+					rdd.setPending(false); //mark rdd as non-pending (for export)
+					rdd.setHDFSFile(true); //mark rdd as hdfs file (for restore)
 					writeStatus.setValue(true);         //mark for no cache-write on read
 					//note: the flag hdfsFile is actually not entirely correct because we still hold an rdd 
 					//reference to the input not to an rdd of the hdfs file but the resulting behavior is correct

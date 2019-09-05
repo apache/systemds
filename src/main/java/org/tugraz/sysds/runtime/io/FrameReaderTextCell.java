@@ -152,26 +152,21 @@ public class FrameReaderTextCell extends FrameReader
 			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
-		//create input stream for path
-		InputStream inputStream = fs.open(path);
-		
-		//actual read
-		readRawTextCellFrameFromInputStream(inputStream, dest, schema, names, rlen, clen);
+		try(InputStream inputStream = fs.open(path)) {
+			readRawTextCellFrameFromInputStream(inputStream, dest, schema, names, rlen, clen);
+		}
 	}
 
 	protected static void readRawTextCellFrameFromInputStream( InputStream is, FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
-		//create buffered reader
-		BufferedReader br = new BufferedReader(new InputStreamReader( is ));	
-		
 		String value = null;
 		FastStringTokenizer st = new FastStringTokenizer(' ');
 		int row = -1;
 		int col = -1;
 		
-		try
-		{			
+		try (BufferedReader br = new BufferedReader(new InputStreamReader( is )))
+		{
 			while( (value=br.readLine())!=null ) {
 				st.reset( value ); //reinit tokenizer
 				row = st.nextInt()-1;
@@ -184,8 +179,7 @@ public class FrameReaderTextCell extends FrameReader
 					dest.set(row, col, UtilFunctions.stringToObject(schema[col], st.nextToken()));
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			//post-mortem error handling and bounds checking
 			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) {
 				throw new IOException("Frame cell ["+(row+1)+","+(col+1)+"] " +
@@ -194,9 +188,6 @@ public class FrameReaderTextCell extends FrameReader
 			else {
 				throw new IOException( "Unable to read frame in raw text cell format.", ex );
 			}
-		}
-		finally {
-			IOUtilFunctions.closeSilently(br);
 		}
 	}
 }

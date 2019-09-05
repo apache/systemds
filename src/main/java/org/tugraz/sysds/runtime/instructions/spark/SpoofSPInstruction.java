@@ -172,7 +172,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		else if(_class.getSuperclass() == SpoofOuterProduct.class) //OUTER
 		{
 			if( _out.getDataType()==DataType.MATRIX ) {
-				SpoofOperator op = (SpoofOperator) CodegenUtils.createInstance(_class);
+				SpoofOperator op = CodegenUtils.createInstance(_class);
 				OutProdType type = ((SpoofOuterProduct)op).getOuterProdType();
 
 				//update matrix characteristics
@@ -501,7 +501,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				else {
 					if( _op.getCellType()==CellType.ROW_AGG )
 						ixOut = new MatrixIndexes(ixOut.getRowIndex(), 1);
-					else if(((SpoofCellwise)_op).getCellType()==CellType.COL_AGG)
+					else if(_op.getCellType()==CellType.COL_AGG)
 						ixOut = new MatrixIndexes(1, ixOut.getColumnIndex());
 					blkOut = _op.execute(inputs, _scalars, blkOut, 1, rix);
 				}
@@ -592,7 +592,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			//lazy load of shipped class
 			if( _op == null ) {
 				Class<?> loadedClass = CodegenUtils.getClassSync(_className, _classBytes);
-				_op = (SpoofOperator) CodegenUtils.createInstance(loadedClass); 
+				_op = CodegenUtils.createInstance(loadedClass); 
 			}
 			
 			List<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();

@@ -84,7 +84,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
 		schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
-		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
+		schemaMixedLarge = schemaMixedLargeList.toArray(schemaMixedLarge);
 	}
 	 
 	@Override

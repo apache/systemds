@@ -494,14 +494,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		case Read:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
-			out = null;
 			break;
 			
 		case SetFileName:
 			in1 = new CPOperand(parts[1]); // variable name
 			in2 = new CPOperand(parts[2], ValueType.UNKNOWN, DataType.UNKNOWN); // file name
 			in3 = new CPOperand(parts[3], ValueType.UNKNOWN, DataType.UNKNOWN); // option: remote or local
-			//return new VariableCPInstruction(getVariableOperationCode(opcode), in1, in2, in3, str);
 			break;
 		
 		}
@@ -734,24 +732,21 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			ScalarObject res = null;
 			try {
 				switch(getInput1().getValueType()) {
-				case FP64:
-					double d = HDFSTool.readDoubleFromHDFSFile(getInput2().getName());
-					res = (ScalarObject) new DoubleObject(d);
-					break;
-				case INT64:
-					long i = HDFSTool.readIntegerFromHDFSFile(getInput2().getName());
-					res = (ScalarObject) new IntObject(i);
-					break;
-				case BOOLEAN:
-					boolean b = HDFSTool.readBooleanFromHDFSFile(getInput2().getName());
-					res = (ScalarObject) new BooleanObject(b);
-					break;
-				case STRING:
-					String s = HDFSTool.readStringFromHDFSFile(getInput2().getName());
-					res = (ScalarObject) new StringObject(s);
-					break;
+					case FP64:
+						res = new DoubleObject(HDFSTool.readDoubleFromHDFSFile(getInput2().getName()));
+						break;
+					case INT64:
+						res = new IntObject(HDFSTool.readIntegerFromHDFSFile(getInput2().getName()));
+						break;
+					case BOOLEAN:
+						res = new BooleanObject(HDFSTool.readBooleanFromHDFSFile(getInput2().getName()));
+						break;
+					case STRING:
+						res = new StringObject(HDFSTool.readStringFromHDFSFile(getInput2().getName()));
+						break;
 					default:
-						throw new DMLRuntimeException("Invalid value type (" + getInput1().getValueType() + ") while processing readScalar instruction.");
+						throw new DMLRuntimeException("Invalid value type (" 
+							+ getInput1().getValueType() + ") while processing readScalar instruction.");
 				}
 			} catch ( IOException e ) {
 				throw new DMLRuntimeException(e);

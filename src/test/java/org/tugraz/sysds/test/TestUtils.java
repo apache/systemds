@@ -1151,6 +1151,7 @@ public class TestUtils
 	 * @param outDir
 	 *            directory
 	 */
+	@SuppressWarnings("resource")
 	public static void checkForOutputExistence(String outDir) {
 		try {
 			Path outDirectory = new Path(outDir);
@@ -1813,6 +1814,7 @@ public class TestUtils
 	 * 
 	 * @return true if temporary files or directories are available
 	 */
+	@SuppressWarnings("resource")
 	public static boolean checkForTemporaryFiles() {
 		try {
 			Path workingDir = new Path(".");

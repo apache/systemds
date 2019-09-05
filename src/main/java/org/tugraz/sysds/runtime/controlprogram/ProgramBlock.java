@@ -176,7 +176,7 @@ public abstract class ProgramBlock implements ParseInfo
 		}
 		
 		//get scalar return
-		ScalarObject ret = (ScalarObject) ec.getScalarInput(PRED_VAR, retType, false);
+		ScalarObject ret = ec.getScalarInput(PRED_VAR, retType, false);
 
 		//check and correct scalar ret type (incl save double to int)
 		if( ret.getValueType() != retType )

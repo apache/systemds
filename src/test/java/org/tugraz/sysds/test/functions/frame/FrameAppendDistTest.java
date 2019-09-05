@@ -171,7 +171,7 @@ public class FrameAppendDistTest extends AutomatedTestBase
 				FrameBlock frameBlock = readDMLFrameFromHDFS(file, InputInfo.BinaryBlockInputInfo);
 				MatrixCharacteristics md = new MatrixCharacteristics(frameBlock.getNumRows(), frameBlock.getNumColumns(), -1, -1);
 				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", InputInfo.CSVInputInfo, md);
-				verifyFrameData(frameBlock, frameRBlock, (ValueType[]) lschemaAB);
+				verifyFrameData(frameBlock, frameRBlock, lschemaAB);
 				System.out.println("File processed is " + file);
 			}
 		}
@@ -200,7 +200,7 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
 		ValueType[] schemaMixedLarge = new ValueType[schemaMixedLargeList.size()];
-		schemaMixedLarge = (ValueType[]) schemaMixedLargeList.toArray(schemaMixedLarge);
+		schemaMixedLarge = schemaMixedLargeList.toArray(schemaMixedLarge);
 		
 		return schemaMixedLarge;
 	}

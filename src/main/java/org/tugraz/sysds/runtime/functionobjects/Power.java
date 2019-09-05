@@ -45,7 +45,7 @@ public class Power extends ValueFunction
 
 	@Override
 	public double execute(long in1, long in2) {
-		return Math.pow((double)in1, (double)in2);
+		return Math.pow(in1, in2);
 	}
 
 }

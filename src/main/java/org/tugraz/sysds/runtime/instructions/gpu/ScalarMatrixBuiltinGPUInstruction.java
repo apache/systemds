@@ -47,7 +47,7 @@ public class ScalarMatrixBuiltinGPUInstruction extends BuiltinBinaryGPUInstructi
     CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
 	CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 	MatrixObject in1 = getMatrixInputForGPUInstruction(ec, mat.getName());
-	ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar);
+	ScalarObject constant = ec.getScalarInput(scalar);
     
     if(opcode.equals("max")) {
     	ec.setMetaData(output.getName(), in1.getNumRows(), in1.getNumColumns());

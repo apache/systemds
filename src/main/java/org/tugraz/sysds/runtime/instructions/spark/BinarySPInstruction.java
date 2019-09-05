@@ -298,7 +298,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		
 		//get operator and scalar
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
-		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar);
+		ScalarObject constant = ec.getScalarInput(scalar);
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op = sc_op.setConstant(constant.getDoubleValue());
 		

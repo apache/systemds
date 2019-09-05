@@ -32,7 +32,6 @@ import java.util.LinkedList;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
 
@@ -45,14 +44,10 @@ public class StagingFileUtils
 		throws IOException
 	{
 		FileOutputStream fos = new FileOutputStream( fname, true );
-		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fos));	
-		try 
-		{
+		try(BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fos))) {
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
-			
-			for( Cell c : buffer )
-			{
+			for( Cell c : buffer ) {
 				sb.append(c.getRow());
 				sb.append(' ');
 				sb.append(c.getCol());
@@ -63,18 +58,13 @@ public class StagingFileUtils
 				sb.setLength(0);
 			}
 		}
-		finally {
-			IOUtilFunctions.closeSilently(out);
-		}	
 	}
 
 	public static void writeKeyMappingToLocal( String fname, long[][] keys ) 
 		throws IOException
 	{
 		FileOutputStream fos = new FileOutputStream( fname, true );
-		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fos));	
-		try 
-		{
+		try( BufferedWriter out = new BufferedWriter(new OutputStreamWriter(fos)) ) {
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
@@ -88,9 +78,6 @@ public class StagingFileUtils
 				sb.setLength(0);
 			}
 		}
-		finally {
-			IOUtilFunctions.closeSilently(out);
-		}	
 	}
 
 	public static BufferedReader openKeyMap( String name ) 
@@ -154,14 +141,11 @@ public class StagingFileUtils
 		throws IOException
 	{
 		FileInputStream fis = new FileInputStream( fname );
-		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	
 		LinkedList<Cell> buffer = new LinkedList<>();
-		try 
-		{
+		try(BufferedReader in = new BufferedReader(new InputStreamReader(fis)))  {
 			String value = null;
 			FastStringTokenizer st = new FastStringTokenizer(' '); 
-			while( (value=in.readLine())!=null )
-			{
+			while( (value=in.readLine())!=null ) {
 				st.reset( value ); //reset tokenizer
 				long row = st.nextLong();
 				long col = st.nextLong();
@@ -170,10 +154,6 @@ public class StagingFileUtils
 				buffer.addLast( c );
 			}
 		}
-		finally {
-			IOUtilFunctions.closeSilently(in);
-		}
-   		
 		return buffer;
 	}
 
@@ -191,15 +171,11 @@ public class StagingFileUtils
 			tmp.allocateDenseBlockUnsafe(blen, blen);
 		
 		FileInputStream fis = new FileInputStream( fname );
-		BufferedReader in = new BufferedReader(new InputStreamReader(fis));	
 		FastStringTokenizer st = new FastStringTokenizer(' ');
-		try 
-		{
+		try(BufferedReader in = new BufferedReader(new InputStreamReader(fis))) {
 			String value = null;
-			if( sparse )
-			{
-				while( (value=in.readLine())!=null )
-				{
+			if( sparse ) {
+				while( (value=in.readLine())!=null ) {
 					st.reset( value ); //reset tokenizer
 					int row = st.nextInt();
 					int col = st.nextInt();
@@ -207,8 +183,7 @@ public class StagingFileUtils
 					tmp.quickSetValue(row, col, lvalue);
 				}
 			}
-			else
-			{
+			else {
 				DenseBlock a = tmp.getDenseBlock();
 				while( (value=in.readLine())!=null ) {
 					st.reset( value ); //reset tokenizer
@@ -219,9 +194,6 @@ public class StagingFileUtils
 				}
 				tmp.recomputeNonZeros();
 			}
-		}
-		finally {
-			IOUtilFunctions.closeSilently(in);
 		}
 		
 		//finally change internal representation if required

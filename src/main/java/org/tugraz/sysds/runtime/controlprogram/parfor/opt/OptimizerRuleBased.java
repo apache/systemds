@@ -344,7 +344,7 @@ public class OptimizerRuleBased extends Optimizer
 			//we get all required cluster characteristics from spark's configuration
 			//to avoid invoking yarns cluster status
 			_rnk = SparkExecutionContext.getNumExecutors(); 
-			_rk  = (int) SparkExecutionContext.getDefaultParallelism(true);
+			_rk  = SparkExecutionContext.getDefaultParallelism(true);
 			_rk2 = _rk; //equal map/reduce unless we find counter-examples 
 			int cores = SparkExecutionContext.getDefaultParallelism(true)
 					/ SparkExecutionContext.getNumExecutors();
@@ -1031,11 +1031,10 @@ public class OptimizerRuleBased extends Optimizer
 			replication = (int)Math.min( _N, _rnk );
 			
 			//account for internal max constraint (note hadoop will warn if max > 10)
-			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_PARTITIONING );
+			replication = Math.min( replication, MAX_REPLICATION_FACTOR_PARTITIONING );
 			
 			//account for remaining hdfs capacity
-			try {
-				FileSystem fs = IOUtilFunctions.getFileSystem(ConfigurationManager.getCachedJobConf());
+			try( FileSystem fs = IOUtilFunctions.getFileSystem(ConfigurationManager.getCachedJobConf()) ) {
 				long hdfsCapacityRemain = fs.getStatus().getRemaining();
 				long sizeInputs = 0; //sum of all input sizes (w/o replication)
 				for( String var : partitionedMatrices.keySet() ) {
@@ -1050,8 +1049,7 @@ public class OptimizerRuleBased extends Optimizer
 				replication = Math.max( replication, ParForProgramBlock.WRITE_REPLICATION_FACTOR);
 				sizeReplicated = replication * sizeInputs;
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				throw new DMLRuntimeException("Failed to analyze remaining hdfs capacity.", ex);
 			}
 		}
@@ -1096,7 +1094,7 @@ public class OptimizerRuleBased extends Optimizer
 			replication = (int)Math.min( _N, _rnk );
 			
 			//account for internal max constraint (note hadoop will warn if max > 10)
-			replication = (int)Math.min( replication, MAX_REPLICATION_FACTOR_EXPORT );
+			replication = Math.min( replication, MAX_REPLICATION_FACTOR_EXPORT );
 		}
 		
 		//modify the runtime plan 
@@ -1239,7 +1237,7 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug(getOptMode()+" OPT: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
 	}
 	
-	private int computeMaxK(double M, double memNonShared, double memShared, double memBudget) {
+	private static int computeMaxK(double M, double memNonShared, double memShared, double memBudget) {
 		//note: we compute max K for both w/o and w/ shared reads and take the max, because
 		//the latter might reduce the degree of parallelism if shared reads don't dominate
 		int k1 = (int)Math.floor(memBudget / M);

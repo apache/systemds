@@ -150,7 +150,7 @@ public abstract class DataPartitioner
 		//create output matrix object
 		out.setPartitioned( _format, _n ); 
 		
-		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, (int)blen );
+		MatrixCharacteristics mcNew = new MatrixCharacteristics(rows, cols, blen);
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;
@@ -169,24 +169,20 @@ public abstract class DataPartitioner
 	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int blen );
 
 	
-	public static MatrixBlock createReuseMatrixBlock( PDataPartitionFormat dpf, int rows, int cols ) 
-	{
+	public static MatrixBlock createReuseMatrixBlock( PDataPartitionFormat dpf, int rows, int cols ) {
 		MatrixBlock tmp = null;
-		
-		switch( dpf )
-		{
+		switch( dpf ) {
 			case ROW_WISE:
 				//default assumption sparse, but reset per input block anyway
-				tmp = new MatrixBlock( 1, (int)cols, true, (int)(cols*0.1) );
+				tmp = new MatrixBlock(1, cols, true, (int)(cols*0.1));
 				break;
 			case COLUMN_WISE:
 				//default dense because single column alwyas below SKINNY_MATRIX_TURN_POINT
-				tmp = new MatrixBlock( (int)rows, 1, false );
+				tmp = new MatrixBlock(rows, 1, false);
 				break;
 			default:
 				//do nothing
 		}
-		
 		return tmp;
 	}
 }

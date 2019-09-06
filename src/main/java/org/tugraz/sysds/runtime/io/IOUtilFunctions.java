@@ -356,7 +356,8 @@ public class IOUtilFunctions
 		return FileFormatPropertiesMM.parse(header[0]);
 	}
 	
-	public static String[] readMatrixMarketHeader(String filename) throws DMLRuntimeException {
+	@SuppressWarnings("resource")
+	public static String[] readMatrixMarketHeader(String filename) {
 		String[] retVal = new String[2];
 		retVal[0] = new String("");
 		retVal[1] = new String("");
@@ -447,7 +448,7 @@ public class IOUtilFunctions
 		return size;
 	}
 
-	public static InputStream toInputStream(String input) throws IOException {
+	public static InputStream toInputStream(String input) {
 		if( input == null ) 
 			return null;
 		return new ReaderInputStream(new StringReader(input), "UTF-8");

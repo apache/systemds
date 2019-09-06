@@ -67,7 +67,7 @@ public abstract class DenseBlockLDRB extends DenseBlock
 		if (_blen == newBlockSize && dataLength <= capacity()) {
 			IntStream.range(0, numBlocks)
 					.forEach((bi) -> {
-						int toIndex = (int)Math.min((long)newBlockSize, dataLength - bi * newBlockSize) * _odims[0];
+						int toIndex = (int)Math.min(newBlockSize, dataLength - bi * newBlockSize) * _odims[0];
 						fillBlock(bi, 0, toIndex, v);
 					});
 		} else {

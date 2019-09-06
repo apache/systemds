@@ -200,7 +200,7 @@ public class FrameTest extends MLContextTestBase
 		writeInputFrameWithMTD("A", A, true, schema, oinfo);
 
 		sparsity = sparsity2;
-		double[][] B = getRandomMatrix((int) (bRows), (int) (bCols), min, max, sparsity, 2345);
+		double[][] B = getRandomMatrix(bRows, bCols, min, max, sparsity, 2345);
 
 		ValueType[] schemaB = new ValueType[bCols];
 		for (int i = 0; i < bCols; ++i)

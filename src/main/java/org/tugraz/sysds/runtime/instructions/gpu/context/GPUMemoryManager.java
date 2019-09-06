@@ -207,7 +207,7 @@ public class GPUMemoryManager {
 	 * @param index call depth
 	 * @return pretty printed string
 	 */
-	private String getCallerInfo(StackTraceElement [] stackTrace, int index) {
+	private static String getCallerInfo(StackTraceElement [] stackTrace, int index) {
 		if(stackTrace.length <= index)
 			return "->";
 		else
@@ -220,15 +220,15 @@ public class GPUMemoryManager {
 	 * @param numBytes number of bytes
 	 * @return a human-readable display value
 	 */
-	private String byteCountToDisplaySize(long numBytes) {
+	private static String byteCountToDisplaySize(long numBytes) {
 		// return org.apache.commons.io.FileUtils.byteCountToDisplaySize(bytes); // performs rounding
-	    if (numBytes < 1024) { 
-	    	return numBytes + " bytes";
-	    }
-	    else {
-		    int exp = (int) (Math.log(numBytes) / 6.931471805599453);
-		    return String.format("%.3f %sB", ((double)numBytes) / Math.pow(1024, exp), "KMGTP".charAt(exp-1));
-	    }
+		if (numBytes < 1024) { 
+			return numBytes + " bytes";
+		}
+		else {
+			int exp = (int) (Math.log(numBytes) / 6.931471805599453);
+			return String.format("%.3f %sB", numBytes / Math.pow(1024, exp), "KMGTP".charAt(exp-1));
+		}
 	}
 	
 	
@@ -359,7 +359,7 @@ public class GPUMemoryManager {
 		return ret < 0 ? -1 : (ret == 0 ? 0 : 1);
 	}
 	
-	private void evictOrClear(GPUObject gpuObj, String opcode) {
+	private static void evictOrClear(GPUObject gpuObj, String opcode) {
 		boolean eagerDelete = true;
 		if(gpuObj.isDirty()) {
 			// Eviction
@@ -485,7 +485,7 @@ public class GPUMemoryManager {
 	 * @param subset subset of pointer
 	 * @return pointers such that: superset - subset
 	 */
-	private Set<Pointer> nonIn(Set<Pointer> superset, Set<Pointer> subset) {
+	private static Set<Pointer> nonIn(Set<Pointer> superset, Set<Pointer> subset) {
 		Set<Pointer> ret = new HashSet<Pointer>();
 		for(Pointer superPtr : superset) {
 			if(!subset.contains(superPtr)) {
@@ -516,7 +516,7 @@ public class GPUMemoryManager {
 	 * @param instructionLevelTimer member of GPUInstruction
 	 * @param startTime start time
 	 */
-	private void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {
+	private static void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {
 		if(DMLScript.STATISTICS) {
 			long totalTime = System.nanoTime() - startTime;
 			globalGPUTimer.add(totalTime);

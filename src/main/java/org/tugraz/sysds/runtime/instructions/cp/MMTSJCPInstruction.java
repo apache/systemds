@@ -59,7 +59,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction {
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 
 		//execute operations 
-		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type, _numThreads );
+		MatrixBlock ret = matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type, _numThreads );
 		
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), ret);

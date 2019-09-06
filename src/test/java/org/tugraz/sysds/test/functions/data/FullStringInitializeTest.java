@@ -297,7 +297,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 			int cols = (intype==InputType.COL_VECTOR) ? 1 : colsMatrix;
 			int rows = (intype==InputType.ROW_VECTOR) ? 1 : rowsMatrix;
 			double sparsity = (sparse) ? spSparse : spDense;
-			long nnz = (long)Math.round(sparsity * rows * cols);
+			long nnz = Math.round(sparsity * rows * cols);
 			
 			//generate data
 			double[][] A = getRandomMatrix(rows, cols, -5, 5, sparsity, 7); 

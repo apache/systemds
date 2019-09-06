@@ -115,17 +115,16 @@ public class CTable extends ValueFunction
 		}
 		
 		// safe casts to long for consistent behavior with indexing
-		long col = UtilFunctions.toLong( v2 );
-				
+		int col = UtilFunctions.toInt( v2 );
 		if( col <= 0 ) {
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): "+v2);
 		} 
 		
 		//set weight as value (expand is guaranteed to address different cells)
-		ctableResult.quickSetValue((int)row-1, (int)col-1, w);
+		ctableResult.quickSetValue(row-1, col-1, w);
 		
 		//maintain max seen col 
-		return Math.max(maxCol, (int)col);
+		return Math.max(maxCol, col);
 	}
 
 	public Pair<MatrixIndexes,Double> execute( long row, double v2, double w ) 

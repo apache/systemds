@@ -111,7 +111,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//process instruction
-			AggregateUnaryOperator aop = (AggregateUnaryOperator)_op;
+			AggregateUnaryOperator aop = _op;
 			if( aop.aggOp.increOp.fn instanceof PlusMultiply ) { //cumsumprod
 				aop.indexFn.execute(ixIn, ixOut);
 				if( _uop == null )

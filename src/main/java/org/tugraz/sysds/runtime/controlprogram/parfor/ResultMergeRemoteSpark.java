@@ -26,7 +26,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -123,7 +122,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		RDDObject ret = null;
 		
 		//determine degree of parallelism
-		int numRed = (int)determineNumReducers(rlen, clen, blen, _numReducers);
+		int numRed = determineNumReducers(rlen, clen, blen, _numReducers);
 		
 		//sanity check for empty src files
 		if( inputs == null || inputs.length==0  )
@@ -206,9 +205,8 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	@SuppressWarnings("unchecked")
 	private static void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
 		InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
-		JavaSparkContext sc = sec.getSparkContext();
-		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) 
-			sc.hadoopFile( mo.getFileName(), iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = sec.getSparkContext().hadoopFile(
+			mo.getFileName(), iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 		RDDObject rddhandle = new RDDObject(rdd);
 		rddhandle.setHDFSFile(true);
 		mo.setRDDHandle(rddhandle);

@@ -28,7 +28,6 @@ import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.matrix.data.CTableMap;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap.EntryType;
 
@@ -121,13 +120,13 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				// F=ctable(A,B,W)
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				wtBlock = ec.getMatrixInput(input3.getName());
-				matBlock1.ctableOperations((SimpleOperator)_optr, matBlock2, wtBlock, resultMap, resultBlock);
+				matBlock1.ctableOperations(_optr, matBlock2, wtBlock, resultMap, resultBlock);
 				break;
 			case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
 				// F = ctable(A,B) or F = ctable(A,B,1)
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				matBlock1.ctableOperations((SimpleOperator)_optr, matBlock2, cst1, _ignoreZeros, resultMap, resultBlock);
+				matBlock1.ctableOperations(_optr, matBlock2, cst1, _ignoreZeros, resultMap, resultBlock);
 				break;
 			case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 				// F = ctable(seq,A) or F = ctable(seq,B,1)
@@ -140,13 +139,13 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				// F=ctable(A,1) or F = ctable(A,1,1)
 				cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
 				cst2 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				matBlock1.ctableOperations((SimpleOperator)_optr, cst1, cst2, resultMap, resultBlock);
+				matBlock1.ctableOperations(_optr, cst1, cst2, resultMap, resultBlock);
 				break;
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1,W)
 				wtBlock = ec.getMatrixInput(input3.getName());
 				cst1 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
-				matBlock1.ctableOperations((SimpleOperator)_optr, cst1, wtBlock, resultMap, resultBlock);
+				matBlock1.ctableOperations(_optr, cst1, wtBlock, resultMap, resultBlock);
 				break;
 			
 			default:

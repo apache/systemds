@@ -32,7 +32,7 @@ import org.tugraz.sysds.runtime.instructions.cp.ListObject;
 
 public class RpcObjectTest {
 
-	private ListObject generateData() {
+	private static ListObject generateData() {
 		MatrixObject mo1 = SerializationTest.generateDummyMatrix(10);
 		MatrixObject mo2 = SerializationTest.generateDummyMatrix(20);
 		return new ListObject(Arrays.asList(mo1, mo2));

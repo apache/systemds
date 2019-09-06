@@ -263,8 +263,8 @@ public class LibMatrixReorg
 			int iposCut = tmpblk.getNumRows() - ipos1 - 1;
 			int blkix1 = (int)UtilFunctions.computeBlockIndex(pos1, blen);
 			int blkix2 = (int)UtilFunctions.computeBlockIndex(pos2, blen);
-			int blklen1 = (int)UtilFunctions.computeBlockSize(rlen, blkix1, blen);
-			int blklen2 = (int)UtilFunctions.computeBlockSize(rlen, blkix2, blen);
+			int blklen1 = UtilFunctions.computeBlockSize(rlen, blkix1, blen);
+			int blklen2 = UtilFunctions.computeBlockSize(rlen, blkix2, blen);
 			
 			//slice first block
 			MatrixIndexes outix1 = new MatrixIndexes(blkix1, inix.getColumnIndex());
@@ -559,8 +559,7 @@ public class LibMatrixReorg
 				if( rix > 0 ) //otherwise empty row
 				{
 					//get single row from source block
-					MatrixBlock src = (MatrixBlock) linData.slice(
-							  i, i, 0, (int)(clen-1), new MatrixBlock());
+					MatrixBlock src = linData.slice(i, i, 0, (int)(clen-1), new MatrixBlock());
 					long brix = (rix-1)/blen+1;
 					long lbrix = (rix-1)%blen;
 					tmpIx.setIndexes(brix, data.getIndexes().getColumnIndex());
@@ -587,8 +586,7 @@ public class LibMatrixReorg
 				if( cix > 0 ) //otherwise empty row
 				{
 					//get single row from source block
-					MatrixBlock src = (MatrixBlock) linData.slice(
-							  0, (int)(rlen-1), i, i, new MatrixBlock());
+					MatrixBlock src = linData.slice(0, (int)(rlen-1), i, i, new MatrixBlock());
 					long bcix = (cix-1)/blen+1;
 					long lbcix = (cix-1)%blen;
 					tmpIx.setIndexes(data.getIndexes().getRowIndex(), bcix);

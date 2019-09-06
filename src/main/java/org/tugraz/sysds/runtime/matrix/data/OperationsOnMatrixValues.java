@@ -248,7 +248,7 @@ public class OperationsOnMatrixValues
 	
 	@SuppressWarnings("rawtypes")
 	public static List performSlice(IndexRange ixrange, int blen, int iix, int jix, MatrixBlock in) {
-		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), (MatrixBlock)in);
+		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), in);
 		ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 		performSlice(imv, ixrange, blen, outlist);
 		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
@@ -489,8 +489,8 @@ public class OperationsOnMatrixValues
 			long rhs_cu = rhs_cl + (lhs_cu - lhs_cl);
 			
 			// local indices are 0 (zero) based.
-			int rhs_lrl = (int) (UtilFunctions.computeCellInBlock(rhs_rl, fb.getNumRows()));
-			int rhs_lru = (int) (UtilFunctions.computeCellInBlock(rhs_ru, fb.getNumRows()));
+			int rhs_lrl = UtilFunctions.computeCellInBlock(rhs_rl, fb.getNumRows());
+			int rhs_lru = UtilFunctions.computeCellInBlock(rhs_ru, fb.getNumRows());
 			int rhs_lcl = (int)rhs_cl-1;
 			int rhs_lcu = (int)rhs_cu-1;
 			
@@ -499,7 +499,7 @@ public class OperationsOnMatrixValues
 			int lblen = blenLeft;
 			
 			ValueType[] schemaPartialLeft = UtilFunctions.nCopies(lhs_lcl, ValueType.STRING);
-			ValueType[] schemaRHS = Arrays.copyOfRange(fb.getSchema(), (int)(rhs_lcl), (int)(rhs_lcl-lhs_lcl+lhs_lcu+1));
+			ValueType[] schemaRHS = Arrays.copyOfRange(fb.getSchema(), rhs_lcl, rhs_lcl-lhs_lcl+lhs_lcu+1);
 			ValueType[] schema = UtilFunctions.copyOf(schemaPartialLeft, schemaRHS);
 			ValueType[] schemaPartialRight = UtilFunctions.nCopies(lblen-schema.length, ValueType.STRING);
 			schema = UtilFunctions.copyOf(schema, schemaPartialRight);

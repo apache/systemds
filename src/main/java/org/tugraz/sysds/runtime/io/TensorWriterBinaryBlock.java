@@ -53,7 +53,7 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 	}
 
 	@SuppressWarnings("deprecation")
-	private void writeBinaryBlockMatrixToHDFS(Path path, JobConf job, FileSystem fs, TensorBlock src, long[] dims,
+	private static void writeBinaryBlockMatrixToHDFS(Path path, JobConf job, FileSystem fs, TensorBlock src, long[] dims,
 			int blen) throws IOException {
 		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, TensorIndexes.class, TensorBlock.class);
 

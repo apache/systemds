@@ -1440,8 +1440,8 @@ public class LibMatrixMult
 			{
 				//block sizes for best-effort blocking w/ sufficient row reuse in B yet small overhead
 				final int blocksizeI = 32;
-				final int blocksizeK = (int)Math.max(32, UtilFunctions.nextIntPow2(
-						(int)Math.pow((double)m*cd/m1.nonZeros,2)));
+				final int blocksizeK = Math.max(32, UtilFunctions.nextIntPow2(
+					(int)Math.pow((double)m*cd/m1.nonZeros,2)));
 				
 				//temporary array of current sparse positions
 				int[] curk = new int[Math.min(blocksizeI, ru-rl)];

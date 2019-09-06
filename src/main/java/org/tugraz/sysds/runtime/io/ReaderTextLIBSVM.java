@@ -155,8 +155,7 @@ public class ReaderTextLIBSVM extends MatrixReader
 		}
 		
 		// allocate target matrix block based on given size; 
-		return createOutputMatrixBlock(nrow, ncol, 
-			nrow, (long)nrow*ncol, true, false);
+		return createOutputMatrixBlock(nrow, ncol, nrow, nrow*ncol, true, false);
 	}
 	
 	protected static int parseLibsvmRow(String rowStr, SparseRowVector vect, int clen) {

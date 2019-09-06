@@ -19,7 +19,6 @@
 
 package org.tugraz.sysds.test.functions.jmlc;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -71,28 +70,26 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSinglePreparedScript1T128() throws IOException {
+	public void testSinglePreparedScript1T128() {
 		runJMLCClonedTest(SCRIPT1, 128, false);
 	}
 	
 	@Test
-	public void testClonedPreparedScript1T128() throws IOException {
+	public void testClonedPreparedScript1T128() {
 		runJMLCClonedTest(SCRIPT1, 128, true);
 	}
 	
 	@Test
-	public void testSinglePreparedScript2T128() throws IOException {
+	public void testSinglePreparedScript2T128() {
 		runJMLCClonedTest(SCRIPT2, 128, false);
 	}
 	
 	@Test
-	public void testClonedPreparedScript2T128() throws IOException {
+	public void testClonedPreparedScript2T128() {
 		runJMLCClonedTest(SCRIPT2, 128, true);
 	}
 
-	private void runJMLCClonedTest(String script, int num, boolean clone) 
-		throws IOException
-	{
+	private static void runJMLCClonedTest(String script, int num, boolean clone) {
 		int k = InfrastructureAnalyzer.getLocalParallelism();
 		
 		boolean failed = false;

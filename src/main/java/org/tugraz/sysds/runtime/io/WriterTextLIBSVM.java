@@ -35,6 +35,7 @@ public class WriterTextLIBSVM extends MatrixWriter
 	
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
@@ -70,7 +71,7 @@ public class WriterTextLIBSVM extends MatrixWriter
 		throws IOException 
 	{
 		//sequential write libsvm file
-		writeLIBSVMMatrixToFile(path, job, fs, src, 0, (int)src.getNumRows());
+		writeLIBSVMMatrixToFile(path, job, fs, src, 0, src.getNumRows());
 	}
 	
 	protected static void writeLIBSVMMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int rlen )

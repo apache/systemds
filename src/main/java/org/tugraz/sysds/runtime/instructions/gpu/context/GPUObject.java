@@ -221,7 +221,7 @@ public class GPUObject {
 		Pointer alpha = LibMatrixCUDA.one();
 		Pointer beta = LibMatrixCUDA.zero();
 		Pointer A = densePtr;
-		Pointer C = gCtx.allocate(null, ((long) m) * getDatatypeSizeOf(n));
+		Pointer C = gCtx.allocate(null, m * getDatatypeSizeOf(n));
 
 		// Transpose the matrix to get a dense matrix
 		LibMatrixCUDA.cudaSupportFunctions.cublasgeam(gCtx.getCublasHandle(), CUBLAS_OP_T, CUBLAS_OP_T, m, n, alpha, A, lda, beta, new Pointer(),
@@ -450,7 +450,7 @@ public class GPUObject {
 	}
 
 	private static long getIntSizeOf(long numElems) {
-		return numElems * ((long) jcuda.Sizeof.INT);
+		return numElems * jcuda.Sizeof.INT;
 	}
 
 	public boolean isAllocated() {

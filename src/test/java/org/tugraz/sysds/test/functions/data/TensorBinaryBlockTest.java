@@ -100,7 +100,7 @@ public class TensorBinaryBlockTest {
 		compareTensorBlocks(tb1, tb2);
 	}
 
-	private TensorBlock writeAndReadBasicTensorBinaryBlock(TensorBlock tb1) {
+	private static TensorBlock writeAndReadBasicTensorBinaryBlock(TensorBlock tb1) {
 		try {
 			long[] dims = tb1.getLongDims();
 			TensorWriterBinaryBlock writer = new TensorWriterBinaryBlock();
@@ -113,7 +113,7 @@ public class TensorBinaryBlockTest {
 		}
 	}
 
-	private TensorBlock writeAndReadDataTensorBinaryBlock(TensorBlock tb1) {
+	private static TensorBlock writeAndReadDataTensorBinaryBlock(TensorBlock tb1) {
 		try {
 			long[] dims = tb1.getLongDims();
 			TensorWriterBinaryBlock writer = new TensorWriterBinaryBlock();

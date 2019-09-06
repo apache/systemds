@@ -223,7 +223,7 @@ public class DenseBlockCountNonZeroTest {
 		}
 	}
 
-	private void checkFullNnz2(DenseBlock db) {
+	private static void checkFullNnz2(DenseBlock db) {
 		Assert.assertEquals(0, db.countNonZeros());
 		for (int r = 0; r < 3; r++) {
 			Assert.assertEquals(0, db.countNonZeros(r));

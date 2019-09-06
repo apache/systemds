@@ -231,7 +231,7 @@ public class OpSingleTest extends AutomatedTestBase
 //		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, reshape);
 //	}
 	
-	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
+	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
 		MatrixBlock m2 = new MatrixBlock();
 		double est = 0;

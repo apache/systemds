@@ -89,7 +89,6 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
 import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -878,9 +877,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 	
-	private void executeRemoteSparkParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws IOException
-	{
+	private void executeRemoteSparkParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) {
 		Timing time = ( _monitor ? new Timing(true) : null );
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
@@ -1299,7 +1296,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				rm = new ResultMergeLocalAutomatic( out, in, fname, accum );
 				break;
 			case REMOTE_SPARK:
-				int numMap = (int) Math.max(_numThreads,
+				int numMap = Math.max(_numThreads,
 					SparkExecutionContext.getDefaultParallelism(true));
 				int numRed = numMap; //equal map/reduce
 				rm = new ResultMergeRemoteSpark( out, in,
@@ -1570,7 +1567,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void setMemoryBudget() {
 		if( _recompileMemoryBudget > 0 ) {
 			// store old budget for reset after exec
-			_oldMemoryBudget = (double)InfrastructureAnalyzer.getLocalMaxMemory();
+			_oldMemoryBudget = InfrastructureAnalyzer.getLocalMaxMemory();
 			
 			// scale budget with applied mem util factor (inverted during getMemBudget() )
 			long newMaxMem = (long) (_recompileMemoryBudget / OptimizerUtils.MEM_UTIL_FACTOR);

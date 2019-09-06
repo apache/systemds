@@ -191,7 +191,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		else {
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(OutputInfo.BinaryBlockOutputInfo);
-			writer.writeMatrixToHDFS(mb, fname, (long)rows, (long)cols, blksize, -1);
+			writer.writeMatrixToHDFS(mb, fname, rows, cols, blksize, -1);
 		}
 		
 		//write meta data

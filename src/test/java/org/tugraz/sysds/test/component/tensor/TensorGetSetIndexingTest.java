@@ -89,17 +89,17 @@ public class TensorGetSetIndexingTest
 		checkSequence(setSequence(tb));
 	}
 
-	private TensorBlock getBasicTensor2(ValueType vt) {
+	private static TensorBlock getBasicTensor2(ValueType vt) {
 		// Todo: implement sparse for Tensor
 		return new TensorBlock(vt, new int[] {DIM0,DIM1});
 	}
 
-	private TensorBlock getBasicTensor3(ValueType vt) {
+	private static TensorBlock getBasicTensor3(ValueType vt) {
 		// Todo: implement sparse for Tensor
 		return new TensorBlock(vt, new int[] {DIM0,DIM1,DIM2});
 	}
 
-	private TensorBlock setSequence(TensorBlock tb) {
+	private static TensorBlock setSequence(TensorBlock tb) {
 		if( tb.getNumDims() == DIM0 ) {
 			int dim12 = DIM1*DIM2;
 			for(int i=0; i<tb.getNumRows(); i++)
@@ -115,7 +115,7 @@ public class TensorGetSetIndexingTest
 		return tb;
 	}
 
-	private void checkSequence(TensorBlock tb) {
+	private static void checkSequence(TensorBlock tb) {
 		boolean isBool = (tb.isBasic() ? tb.getValueType() : tb.getSchema()[0]) == ValueType.BOOLEAN;
 		if( tb.getNumDims() == DIM0 ) {
 			int dim12 = DIM1 * DIM2;
@@ -203,13 +203,13 @@ public class TensorGetSetIndexingTest
 		checkSequence(setSequence(tb));
 	}
 
-	private TensorBlock getDataTensor2(ValueType vt) {
+	private static TensorBlock getDataTensor2(ValueType vt) {
 		ValueType[] schema = new ValueType[DIM1];
 		Arrays.fill(schema, vt);
 		return new TensorBlock(schema, new int[] {DIM0,DIM1});
 	}
 
-	private TensorBlock getDataTensor3(ValueType vt) {
+	private static TensorBlock getDataTensor3(ValueType vt) {
 		ValueType[] schema = new ValueType[DIM1];
 		Arrays.fill(schema, vt);
 		return new TensorBlock(schema, new int[] {DIM0,DIM1,DIM2});

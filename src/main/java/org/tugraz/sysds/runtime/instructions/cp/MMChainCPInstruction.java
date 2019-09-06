@@ -73,7 +73,7 @@ public class MMChainCPInstruction extends UnaryCPInstruction {
 		MatrixBlock w = (_type==ChainType.XtwXv || _type==ChainType.XtXvy) ? 
 			ec.getMatrixInput(input3.getName()) : null;
 		//execute mmchain operation 
-		 MatrixBlock out = (MatrixBlock) X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type, _numThreads);
+		 MatrixBlock out = X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type, _numThreads);
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), out);
 		ec.releaseMatrixInput(input1.getName(), input2.getName());

@@ -69,7 +69,7 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 		}
 	}
 
-	private List<MatrixBlock> generateExpectedDataDR(MatrixBlock mb, MatrixBlock perm) {
+	private static List<MatrixBlock> generateExpectedDataDR(MatrixBlock mb, MatrixBlock perm) {
 		int batchSize = (int) Math.ceil((double) ROW_SIZE / WORKER_NUM);
 		return IntStream.range(0, WORKER_NUM).mapToObj(i -> {
 			int begin = i * batchSize;
@@ -91,13 +91,13 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 		}
 	}
 
-	private void assertDRRResult(DataPartitionLocalScheme.Result result, int workerID) {
+	private static void assertDRRResult(DataPartitionLocalScheme.Result result, int workerID) {
 		Tuple2<double[], double[]> expected = generateExpectedData(workerID, WORKER_NUM, ROW_SIZE / WORKER_NUM);
 		Assert.assertArrayEquals(expected._1, result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
 		Assert.assertArrayEquals(expected._2, result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
 	}
 
-	private Tuple2<double[], double[]> generateExpectedData(int start, int step, int rowSize) {
+	private static Tuple2<double[], double[]> generateExpectedData(int start, int step, int rowSize) {
 		double[] features = new double[rowSize * COL_SIZE];
 		int fIndex = 0;
 		double[] labels = new double[rowSize];

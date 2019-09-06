@@ -212,7 +212,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		public ZeroOutLHS(boolean complement, IndexRange range, DataCharacteristics mcLeft) {
 			_complement = complement;
 			_ixrange = range;
-			_blen = (int) OptimizerUtils.getDefaultFrameSize();
+			_blen = OptimizerUtils.getDefaultFrameSize();
 			_blen = (int) mcLeft.getCols();
 			_rlen = mcLeft.getRows();
 		}
@@ -246,7 +246,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				iMaxRowsToCopy = Math.min(iMaxRowsToCopy, iMaxRows-iRowStartDest);
 				
 				// Zero out the applicable range in this block
-				zeroBlk = (FrameBlock) kv._2.zeroOutOperations(new FrameBlock(), range, _complement, iRowStartSrc, iRowStartDest, iMaxRows, iMaxRowsToCopy);
+				zeroBlk = kv._2.zeroOutOperations(new FrameBlock(), range, _complement, iRowStartSrc, iRowStartDest, iMaxRows, iMaxRowsToCopy);
 				out.add(new Pair<>(lGblStartRow, zeroBlk));
 				curBlockRange.rowStart =  lGblStartRow + _blen;
 				iRowStartDest = UtilFunctions.computeCellInBlock(iRowStartDest+iMaxRowsToCopy+1, _blen);

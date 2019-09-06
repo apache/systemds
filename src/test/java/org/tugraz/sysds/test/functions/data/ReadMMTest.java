@@ -298,7 +298,7 @@ public class ReadMMTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testBinaryWrongFormat() throws IOException {
+	public void testBinaryWrongFormat() {
 		int rows = 10;
 		int cols = 10;
 

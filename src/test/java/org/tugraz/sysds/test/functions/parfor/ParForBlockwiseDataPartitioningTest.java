@@ -47,8 +47,8 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	//moderate data size, force spark rix via unknowns 
-	private final static int rows = (int)1014; 
-	private final static int cols = (int)2024;
+	private final static int rows = 1014; 
+	private final static int cols = 2024;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.01;
 	

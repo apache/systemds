@@ -68,6 +68,6 @@ public class PoissonPRNGenerator extends PRNGenerator
 	
 	@Override
 	public double nextDouble() {
-		return (double) _pdist.sample();
+		return _pdist.sample();
 	}
 }

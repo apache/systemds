@@ -229,7 +229,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			boolean lower = opcode.equals("lowertri");
 			boolean diag = Boolean.parseBoolean(params.get("diag"));
 			boolean values = Boolean.parseBoolean(params.get("values"));
-			MatrixBlock ret = (MatrixBlock) target.extractTriangular(new MatrixBlock(), lower, diag, values);
+			MatrixBlock ret = target.extractTriangular(new MatrixBlock(), lower, diag, values);
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
@@ -243,7 +243,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			boolean cast = Boolean.parseBoolean(params.get("cast"));
 			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
 			int numThreads = Integer.parseInt(params.get("k"));
-			MatrixBlock ret = (MatrixBlock) target.rexpandOperations(
+			MatrixBlock ret = target.rexpandOperations(
 				new MatrixBlock(), maxVal, dirVal, cast, ignore, numThreads);
 			
 			//release locks

@@ -100,7 +100,7 @@ public class TensorTextCellTest {
 		compareTensorBlocks(tb1, tb2);
 	}
 
-	private TensorBlock writeAndReadBasicTensorTextCell(TensorBlock tb1) {
+	private static TensorBlock writeAndReadBasicTensorTextCell(TensorBlock tb1) {
 		try {
 			long[] dims = tb1.getLongDims();
 			TensorWriterTextCell writer = new TensorWriterTextCell();
@@ -113,7 +113,7 @@ public class TensorTextCellTest {
 		}
 	}
 
-	private TensorBlock writeAndReadDataTensorTextCell(TensorBlock tb1) {
+	private static TensorBlock writeAndReadDataTensorTextCell(TensorBlock tb1) {
 		try {
 			long[] dims = tb1.getLongDims();
 			TensorWriterTextCell writer = new TensorWriterTextCell();

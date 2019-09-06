@@ -623,7 +623,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 
 		@Override
 		public Boolean apply(Object partIndex) {
-			return _filterFlags.contains((Integer)partIndex);
+			return _filterFlags.contains(partIndex);
 		}
 	}
 }

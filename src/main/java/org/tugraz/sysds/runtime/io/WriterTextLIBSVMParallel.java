@@ -72,7 +72,7 @@ public class WriterTextLIBSVMParallel extends WriterTextLIBSVM
 			int blklen = (int)Math.ceil((double)rlen / numThreads);
 			for(int i=0; i<numThreads & i*blklen<rlen; i++) {
 				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));
-				tasks.add(new WriteLIBSVMTask(newPath, job, fs, src, i*blklen, (int)Math.min((i+1)*blklen, rlen)));
+				tasks.add(new WriteLIBSVMTask(newPath, job, fs, src, i*blklen, Math.min((i+1)*blklen, rlen)));
 			}
 
 			//wait until all tasks have been executed

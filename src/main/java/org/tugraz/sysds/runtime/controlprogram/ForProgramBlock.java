@@ -193,7 +193,7 @@ public class ForProgramBlock extends ProgramBlock
 				tmp = executePredicate(instructions, predHops, recompile, ValueType.INT64, ec);
 			}
 			else
-				tmp = (IntObject) executePredicate(instructions, null, false, ValueType.INT64, ec);
+				tmp = executePredicate(instructions, null, false, ValueType.INT64, ec);
 		}
 		catch(Exception ex) {
 			String predNameStr = null;

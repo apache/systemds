@@ -169,7 +169,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 				// extract column (if necessary) and sort 
 				if( !singleCol )
 					out = out.filter(new IsBlockInRange(1, mcIn.getRows(), cols[0], cols[0], mcIn))
-						.mapValues(new ExtractColumn((int)UtilFunctions.computeCellInBlock(cols[0], mcIn.getBlocksize())));
+						.mapValues(new ExtractColumn(UtilFunctions.computeCellInBlock(cols[0], mcIn.getBlocksize())));
 				
 				//actual index/data sort operation
 				if( ixret ) //sort indexes 
@@ -193,7 +193,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 				
 				//actual index/data sort operation
 				if( ixret ) //sort indexes 
-					out = RDDSortUtils.sortIndexesByVals(out, !desc, mcIn.getRows(), (long)cols.length, mcIn.getBlocksize());
+					out = RDDSortUtils.sortIndexesByVals(out, !desc, mcIn.getRows(), cols.length, mcIn.getBlocksize());
 				else if( cols.length==mcIn.getCols() && !desc) //sort single-column matrix
 					out = RDDSortUtils.sortByVals(out, mcIn.getRows(), cols.length, mcIn.getBlocksize());
 				else //sort multi-column matrix

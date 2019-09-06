@@ -243,7 +243,7 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 		}
 	}
 	
-	private void generateAndWriteMMInput(String fname, MMFormat fmt, MMField field, MMSymmetry symmetry) 
+	private static void generateAndWriteMMInput(String fname, MMFormat fmt, MMField field, MMSymmetry symmetry) 
 		throws IOException 
 	{
 		int rows = dim;

@@ -928,10 +928,10 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		Iterator<Pair<Long,FrameBlock>> p=outlist.iterator();
 		
 		if(range.rowStart<rowCut)
-			top=(FrameBlock) p.next().getValue();
+			top = p.next().getValue();
 		
 		if(range.rowEnd>=rowCut)
-			bottom=(FrameBlock) p.next().getValue();
+			bottom = p.next().getValue();
 		
 		if(getNumRows() > 0)
 		{
@@ -1284,7 +1284,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		
 		protected int _size = 0;
 		protected int newSize() {
-			return (int) Math.max(_size*2, 4); 
+			return Math.max(_size*2, 4); 
 		}
 		public abstract T get(int index);
 		public abstract void set(int index, T value);

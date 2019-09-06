@@ -74,7 +74,7 @@ public class PSRpcCall extends PSRpcObject {
 		return ByteBuffer.wrap(dos.getBytes());
 	}
 	
-	private void validateMethod(int method) {
+	private static void validateMethod(int method) {
 		switch (method) {
 			case PUSH:
 			case PULL:

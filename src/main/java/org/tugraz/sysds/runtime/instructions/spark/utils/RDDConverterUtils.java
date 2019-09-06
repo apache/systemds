@@ -271,10 +271,9 @@ public class RDDConverterUtils
 
 	@Deprecated
 	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlContext,
-	                                                  JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mc, boolean toVector)
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mc, boolean toVector)
 	{
-		SparkSession sparkSession = sqlContext.sparkSession();
-		return binaryBlockToDataFrame(sparkSession, in, mc, toVector);
+		return binaryBlockToDataFrame(sqlContext.sparkSession(), in, mc, toVector);
 	}
 
 	/**
@@ -708,7 +707,7 @@ public class RDDConverterUtils
 				boolean emptyFound = false;
 				for( int cix=1, pix=0; cix<=ncblks; cix++ ) 
 				{
-					int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _blen);
+					int lclen = UtilFunctions.computeBlockSize(_clen, cix, _blen);
 					if( mb[cix-1].isInSparseFormat() ) {
 						//allocate row once (avoid re-allocations)
 						int lnnz = IOUtilFunctions.countNnz(parts, pix, lclen);
@@ -742,7 +741,7 @@ public class RDDConverterUtils
 			
 			//create all column blocks (assume dense since csv is dense text format)
 			for( int cix=1; cix<=ncblks; cix++ ) {
-				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _blen);				
+				int lclen = UtilFunctions.computeBlockSize(_clen, cix, _blen);
 				ix[cix-1] = new MatrixIndexes(rix, cix);
 				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse, (int)(lrlen*lclen*_sparsity));
 				mb[cix-1].allocateBlock();
@@ -831,7 +830,7 @@ public class RDDConverterUtils
 					}
 					else { //dense
 						for( int cix=1, pix=0; cix<=ncblks; cix++ ) {
-							int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _blen);
+							int lclen = UtilFunctions.computeBlockSize(_clen, cix, _blen);
 							for( int j=0; j<lclen; j++ )
 								mb[cix-1].appendValue(pos, j, row.features().apply(pix++));
 						}
@@ -855,7 +854,7 @@ public class RDDConverterUtils
 			
 			//create all column blocks (assume dense since csv is dense text format)
 			for( int cix=1; cix<=ncblks; cix++ ) {
-				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _blen);
+				int lclen = UtilFunctions.computeBlockSize(_clen, cix, _blen);
 				ix[cix-1] = new MatrixIndexes(rix, cix);
 				mb[cix-1] = new MatrixBlock(lrlen, lclen, lsparse);
 				mb[cix-1].allocateBlock();
@@ -1039,7 +1038,7 @@ public class RDDConverterUtils
 				int off = _containsID ? 1 : 0;
 				Object obj = _isVector ? tmp._1().get(off) : tmp._1();
 				for( int cix=1, pix=_isVector?0:off; cix<=ncblks; cix++ ) {
-					int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _blen);
+					int lclen = UtilFunctions.computeBlockSize(_clen, cix, _blen);
 					int cu = (int) Math.min(_clen, cix*_blen) + (_isVector?0:off);
 					//allocate sparse row once (avoid re-allocations)
 					if( mb[cix-1].isInSparseFormat() ) {
@@ -1085,7 +1084,7 @@ public class RDDConverterUtils
 			
 			//create all column blocks (assume dense since csv is dense text format)
 			for( int cix=1; cix<=ncblks; cix++ ) {
-				int lclen = (int)UtilFunctions.computeBlockSize(_clen, cix, _blen);
+				int lclen = UtilFunctions.computeBlockSize(_clen, cix, _blen);
 				ix[cix-1] = new MatrixIndexes(rix, cix);
 				mb[cix-1] = new MatrixBlock(lrlen, lclen, _sparse,(int)(lrlen*lclen*_sparsity));
 				mb[cix-1].allocateBlock();

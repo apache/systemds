@@ -414,7 +414,7 @@ public class FrameConverterTest extends AutomatedTestBase
 			}
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "resource" })
 	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix,
 	                                 List<ValueType> schema, String fnameIn, String fnameOut)
 		throws IOException
@@ -429,7 +429,7 @@ public class FrameConverterTest extends AutomatedTestBase
 			case CSV2BIN: {
 				InputInfo iinfo = InputInfo.CSVInputInfo;
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-				JavaPairRDD<LongWritable,Text> rddIn = (JavaPairRDD<LongWritable,Text>) sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.csvToBinaryBlock(sc, rddIn, mc, null, false, separator, false, 0)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
@@ -448,7 +448,7 @@ public class FrameConverterTest extends AutomatedTestBase
 			case TXTCELL2BIN: {
 				InputInfo iinfo = InputInfo.TextCellInputInfo;
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-				JavaPairRDD<LongWritable,Text> rddIn = (JavaPairRDD<LongWritable,Text>) sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.textCellToBinaryBlock(sc, rddIn, mc, lschema)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
@@ -466,7 +466,7 @@ public class FrameConverterTest extends AutomatedTestBase
 			case MAT2BIN: {
 				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-				JavaPairRDD<MatrixIndexes,MatrixBlock> rddIn = (JavaPairRDD<MatrixIndexes,MatrixBlock>) sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<MatrixIndexes,MatrixBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils.matrixBlockToBinaryBlock(sc, rddIn, mcMatrix);
 				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 				break;

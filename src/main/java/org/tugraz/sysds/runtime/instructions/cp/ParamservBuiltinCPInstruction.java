@@ -118,6 +118,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 	}
 
+	@SuppressWarnings("resource")
 	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 

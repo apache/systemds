@@ -37,21 +37,21 @@ public class WriteLIBSVMTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testLIBSVM1_CP() throws IOException {
+	public void testLIBSVM1_CP() {
 		runWriteLIBSVMTest(ExecMode.SINGLE_NODE, 1, 1, false);
 	}
 
 	@Test
-	public void testLIBSVM2_CP() throws IOException {
+	public void testLIBSVM2_CP() {
 		runWriteLIBSVMTest(ExecMode.SINGLE_NODE, 1, 2, true);
 	}
 
 	@Test
-	public void testLIBSVM3_CP() throws IOException {
+	public void testLIBSVM3_CP() {
 		runWriteLIBSVMTest(ExecMode.SINGLE_NODE, 2, 3, true);
 	}
 	
-	private void runWriteLIBSVMTest(ExecMode platform, int tno, int mno, boolean sparse) throws IOException {
+	private void runWriteLIBSVMTest(ExecMode platform, int tno, int mno, boolean sparse) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 		

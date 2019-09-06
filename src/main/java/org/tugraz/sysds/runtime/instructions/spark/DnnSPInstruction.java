@@ -225,7 +225,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 		return in1;
 	}
 	
-	private Broadcast<MatrixBlock> getBroadcast(SparkExecutionContext sec, String name) {
+	private static Broadcast<MatrixBlock> getBroadcast(SparkExecutionContext sec, String name) {
 		MatrixBlock mb = sec.getMatrixInput(name);
 		sec.releaseMatrixInput(name);
 		return sec.getSparkContext().broadcast(mb);
@@ -279,9 +279,9 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			sec.addLineageRDD(output.getName(), rddVar);
 			
 			long nnz = -1; // TODO: Handle nnz
-			long numCols = ((long)K)*((long)P)*((long)Q);
+			long numCols = ((long)K)*((long)P)*Q;
 			if(instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
-				numCols = ((long)C)*((long)P)*((long)Q);
+				numCols = ((long)C)*((long)P)*Q;
 			}
 			if(numCols > Integer.MAX_VALUE) {
 				throw new DMLRuntimeException("The current operator doesnot support large outputs.");

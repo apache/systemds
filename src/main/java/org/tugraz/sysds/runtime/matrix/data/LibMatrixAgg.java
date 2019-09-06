@@ -917,7 +917,7 @@ public class LibMatrixAgg
 	}
 
 	private static void groupedAggregateCM( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, CMOperator cmOp, int cl, int cu ) {
-		CM cmFn = CM.getCMFnObject(((CMOperator) cmOp).getAggOpType());
+		CM cmFn = CM.getCMFnObject(cmOp.getAggOpType());
 		double w = 1; //default weight
 		
 		//init group buffers
@@ -2542,7 +2542,7 @@ public class LibMatrixAgg
 		
 		//init count arrays (helper, see correction)
 		//due to missing correction guaranteed to be single block
-		double[] c = (dc!=null) ? dc.valuesAt(0) : null;
+		double[] c = dc.valuesAt(0);
 		int[] cnt = new int[ n ]; 
 
 		//compute column aggregates min/max

@@ -102,7 +102,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				if(!ixrange.isScalar())
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
 				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.FP64, input2.isLiteral());
-				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, 
+				resultBlock = matBlock.leftIndexingOperations(scalar, 
 					(int)ixrange.rowStart, (int)ixrange.colStart, new MatrixBlock(), updateType);
 			}
 

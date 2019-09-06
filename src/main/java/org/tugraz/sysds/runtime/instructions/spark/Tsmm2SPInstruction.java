@@ -99,7 +99,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		if( OptimizerUtils.estimateSize(outputDim, outputDim) <= 32*1024*1024 ) { //default: <=32MB
 			//output large blocks and reduceAll to avoid skew on combineByKey
 			JavaRDD<MatrixBlock> tmp2 = in.map(
-					new RDDTSMM2ExtFunction(bpmb, _type, outputDim, (int)mc.getBlocksize()));
+				new RDDTSMM2ExtFunction(bpmb, _type, outputDim, mc.getBlocksize()));
 			MatrixBlock out = RDDAggregateUtils.sumStable(tmp2);
 
 			//put output block into symbol table (no lineage because single block)
@@ -155,7 +155,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 						(int)(_type.isLeft()?1:ixin.getColumnIndex()));
 				MatrixBlock mbin2t = transpose(mbin2, new MatrixBlock()); //prep for transpose rewrite mm
 				
-				MatrixBlock out2 = (MatrixBlock) OperationsOnMatrixValues.matMult( //mm
+				MatrixBlock out2 = OperationsOnMatrixValues.matMult( //mm
 						_type.isLeft() ? mbin2t : mbin, _type.isLeft() ? mbin : mbin2t, new MatrixBlock(), _op);
 				MatrixIndexes ixout2 = _type.isLeft() ? new MatrixIndexes(2,1) : new MatrixIndexes(1,2);
 				ret.add(new Tuple2<>(ixout2, out2));

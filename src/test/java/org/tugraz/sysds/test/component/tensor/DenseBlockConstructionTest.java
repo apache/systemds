@@ -392,15 +392,15 @@ public class DenseBlockConstructionTest
 				DenseBlockFactory.getDenseBlockType(db));
 	}
 
-	private DenseBlock getDenseBlock2(ValueType vt) {
+	private static DenseBlock getDenseBlock2(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[] {3,5});
 	}
 	
-	private DenseBlock getDenseBlock3(ValueType vt) {
+	private static DenseBlock getDenseBlock3(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[] {3,5,7});
 	}
 
-	private DenseBlock getDenseBlockLarge2(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge2(ValueType vt) {
 		int[] dims = {3,5};
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
@@ -413,7 +413,7 @@ public class DenseBlockConstructionTest
 		}
 	}
 
-	private DenseBlock getDenseBlockLarge3(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge3(ValueType vt) {
 		int[] dims = {3,5,7};
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);

@@ -59,7 +59,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 		assertResult(localResult, sparkResult);
 	}
 
-	private void assertResult(DataPartitionLocalScheme.Result local, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> spark) {
+	private static void assertResult(DataPartitionLocalScheme.Result local, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> spark) {
 		IntStream.range(0, WORKER_NUM).forEach(w -> {
 			Assert.assertArrayEquals(local.pFeatures.get(w).acquireRead().getDenseBlockValues(), spark.get(w)._1.getDenseBlockValues(), 0);
 			Assert.assertArrayEquals(local.pLabels.get(w).acquireRead().getDenseBlockValues(), spark.get(w)._2.getDenseBlockValues(), 0);

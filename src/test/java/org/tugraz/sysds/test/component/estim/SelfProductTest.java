@@ -129,7 +129,7 @@ public class SelfProductTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorSample(0.2), m, sparsity2);
 	}
 	
-	private void runSparsityEstimateTest(SparsityEstimator estim, int n, double sp) {
+	private static void runSparsityEstimateTest(SparsityEstimator estim, int n, double sp) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp, 1, 1, "uniform", 3);
 		MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m1, 
 			new MatrixBlock(), InstructionUtils.getMatMultOperator(1));

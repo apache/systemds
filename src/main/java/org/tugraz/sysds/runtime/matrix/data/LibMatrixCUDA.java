@@ -636,7 +636,7 @@ public class LibMatrixCUDA {
 			case MAXINDEX: opIndex = OP_MAXINDEX; break;
 			case MININDEX: opIndex = OP_MININDEX;break;
 			default:
-				new DMLRuntimeException("Internal Error - Unsupported Builtin Function for Aggregate unary being done on GPU");
+				throw new DMLRuntimeException("Internal Error - Unsupported Builtin Function for Aggregate unary being done on GPU");
 			}
 		} else {
 			throw new DMLRuntimeException("Internal Error - Aggregate operator has invalid Value function");
@@ -2261,7 +2261,7 @@ public class LibMatrixCUDA {
 			// becomes
 			// C <- A
 			// C <- alpha*B + C
-			cudaMemcpy(C, A, n*((long)sizeOfDataType), cudaMemcpyDeviceToDevice);
+			cudaMemcpy(C, A, n*sizeOfDataType, cudaMemcpyDeviceToDevice);
 			cudaSupportFunctions.cublasaxpy(getCublasHandle(gCtx), toInt(n), alphaPtr, B, 1, C, 1);
 		}
 		else {

@@ -175,15 +175,15 @@ public class DenseBlockSetRowTest {
 		checkRow(setRow(db));
 	}
 
-	private DenseBlock getDenseBlock2(ValueType vt) {
+	private static DenseBlock getDenseBlock2(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[]{3, 5});
 	}
 
-	private DenseBlock getDenseBlock3(ValueType vt) {
+	private static DenseBlock getDenseBlock3(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[]{3, 5, 7});
 	}
 
-	private DenseBlock getDenseBlockLarge2(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge2(ValueType vt) {
 		int[] dims = {3, 5};
 		switch (vt) {
 			case FP32:
@@ -203,7 +203,7 @@ public class DenseBlockSetRowTest {
 		}
 	}
 
-	private DenseBlock getDenseBlockLarge3(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge3(ValueType vt) {
 		int[] dims = {3, 5, 7};
 		switch (vt) {
 			case FP32:
@@ -223,26 +223,26 @@ public class DenseBlockSetRowTest {
 		}
 	}
 
-	private DenseBlock setRow(DenseBlock db) {
+	private static DenseBlock setRow(DenseBlock db) {
 		if (db.numDims() == 3) {
 			int dim12 = 5 * 7;
 			double[] row = new double[dim12];
 			for (int i = 0; i < dim12; i++) {
-				row[i] = (double) i;
+				row[i] = i;
 			}
 			db.set(1, row);
 		} else { //num dims = 2
 			int dim1 = 5;
 			double[] row = new double[dim1];
 			for (int i = 0; i < dim1; i++) {
-				row[i] = (double) i;
+				row[i] = i;
 			}
 			db.set(1, row);
 		}
 		return db;
 	}
 
-	private void checkRow(DenseBlock db) {
+	private static void checkRow(DenseBlock db) {
 		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool);
 		if (db.numDims() == 3) {
 			int dim1 = 5, dim2 = 7;

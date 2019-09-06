@@ -73,7 +73,7 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 			Integer.toString(rows), Integer.toString(cols), output("V"), outputFormat };
 
 		long seed = System.nanoTime();
-		long nnz = (long)Math.round(sparsity * rows * cols);
+		long nnz = Math.round(sparsity * rows * cols);
 		double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 		writeInputMatrix("V", V, true); //always text
 		writeExpectedMatrix("V", V);

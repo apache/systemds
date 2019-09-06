@@ -76,7 +76,7 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 		runRewriteMapMultChain(TEST_NAME2, false, ExecType.CP);
 	}
 	
-	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) throws IOException {
+	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) {
 		ExecMode platformOld = rtplatform;
 		
 		try

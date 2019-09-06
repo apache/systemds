@@ -19,8 +19,6 @@
 
 package org.tugraz.sysds.test.functions.jmlc;
 
-import java.io.IOException;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
@@ -38,18 +36,17 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testParfor2ParforCompile() throws IOException {
+	public void testParfor2ParforCompile() {
 		runJMLCParFor2ForTest(true);
 	}
 	
 	@Test
-	public void testParfor2ForCompile() throws IOException {
+	public void testParfor2ForCompile() {
 		runJMLCParFor2ForTest(false);
 	}
 
-	private void runJMLCParFor2ForTest(boolean par) 
-		throws IOException
-	{
+	@SuppressWarnings("resource")
+	private static void runJMLCParFor2ForTest(boolean par) {
 		try {
 			Connection conn = !par ? new Connection() :
 				new Connection(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);

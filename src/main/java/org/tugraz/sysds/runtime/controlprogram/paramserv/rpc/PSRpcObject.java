@@ -96,7 +96,7 @@ public abstract class PSRpcObject {
 		return (int) result;
 	}
 
-	private void validateListObject(ListObject lo) {
+	private static void validateListObject(ListObject lo) {
 		for (Data d : lo.getData()) {
 			if (!(d instanceof MatrixObject)) {
 				throw new DMLRuntimeException(String.format("Paramserv func:"

@@ -188,17 +188,17 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 		        
 		        sparsity=sparsity3;//rand.nextDouble();
 		        double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
-		        ValueType[] lschemaB = Arrays.copyOfRange(schema, (int)colstart-1, (int)colend); 
-		        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
+		        ValueType[] lschemaB = Arrays.copyOfRange(schema, (int)colstart-1, (int)colend);
+		        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);
 	
 		        sparsity=sparsity2;//rand.nextDouble();
 		        double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, 3267 /*System.currentTimeMillis()*/);
-		        ValueType[] lschemaC = Arrays.copyOfRange(schema, (int)colstart-1, (int)cols); 
-		        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockOutputInfo);	        
+		        ValueType[] lschemaC = Arrays.copyOfRange(schema, (int)colstart-1, cols);
+		        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockOutputInfo);
 	
 		        sparsity=sparsity4;//rand.nextDoublBe();
 		        double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, 4856 /*System.currentTimeMillis()*/);
-		        writeInputFrameWithMTD("D", D, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
+		        writeInputFrameWithMTD("D", D, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);
 		
 		        boolean exceptionExpected = false;
 				int expectedNumberOfJobs = -1;

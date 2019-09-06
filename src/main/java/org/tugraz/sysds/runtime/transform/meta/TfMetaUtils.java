@@ -294,7 +294,7 @@ public class TfMetaUtils
 				String tmp = pair.getKey() + Lop.DATATYPE_PREFIX + pair.getValue();
 				ret.set(rpos++, colID-1, tmp);
 			}
-			ret.getColumnMetadata(colID-1).setNumDistinct((long)rpos);
+			ret.getColumnMetadata(colID-1).setNumDistinct(rpos);
 		}
 		
 		//encode bin maps (binning) into frame
@@ -313,7 +313,7 @@ public class TfMetaUtils
 				String ubound = String.valueOf(min+(i+1)*binwidth);
 				ret.set(i, colID-1, lbound+Lop.DATATYPE_PREFIX+ubound);
 			}
-			ret.getColumnMetadata(colID-1).setNumDistinct((long)nbins);
+			ret.getColumnMetadata(colID-1).setNumDistinct(nbins);
 		}
 		
 		//encode impute meta data into frame

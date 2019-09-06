@@ -178,25 +178,12 @@ public class FullCummaxTest extends AutomatedTestBase
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
 	}
 
-	
-	/**
-	 * 
-	 * @param type
-	 * @param sparse
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType)
 	{
 		//by default we apply algebraic simplification rewrites
 		runColAggregateOperationTest(type, sparse, instType, true);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType, boolean rewrites)
 	{
 		ExecMode platformOld = rtplatform;

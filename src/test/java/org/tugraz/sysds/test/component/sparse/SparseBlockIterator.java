@@ -143,13 +143,6 @@ public class SparseBlockIterator extends AutomatedTestBase
 		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, true);
 	}
 	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runSparseBlockIteratorTest( SparseBlock.Type btype, double sparsity, boolean partial)
 	{
 		try

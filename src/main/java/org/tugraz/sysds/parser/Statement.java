@@ -26,17 +26,15 @@ import org.apache.commons.logging.LogFactory;
 
 public abstract class Statement implements ParseInfo
 {
-
-	
 	protected static final Log LOG = LogFactory.getLog(Statement.class.getName());
 	
 	public static final String OUTPUTSTATEMENT = "WRITE";
-					
+	
 	// parameter names for seq()
 	public static final String SEQ_FROM = "from"; 
 	public static final String SEQ_TO   = "to";
 	public static final String SEQ_INCR	= "incr";
-		
+	
 	public static final String SOURCE  	= "source";
 	public static final String SETWD 	= "setwd";
 
@@ -270,5 +268,4 @@ public abstract class Statement implements ParseInfo
 		_text = parseInfo.getText();
 		_filename = parseInfo.getFilename();
 	}
-
 }

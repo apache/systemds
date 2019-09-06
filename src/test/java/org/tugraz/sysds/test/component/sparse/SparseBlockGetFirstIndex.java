@@ -190,12 +190,6 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 		runSparseBlockGetFirstIndexTest(SparseBlock.Type.COO, sparsity3, IndexType.LTE);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runSparseBlockGetFirstIndexTest( SparseBlock.Type btype, double sparsity, IndexType itype)
 	{
 		try

@@ -118,12 +118,6 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.SPARK, true);
 	}
 	
-	/**
-	 * 
-	 * @param type
-	 * @param instType
-	 * @param sparse
-	 */
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
 		ExecMode platformOld = rtplatform;

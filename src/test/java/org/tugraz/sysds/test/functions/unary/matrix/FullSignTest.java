@@ -116,12 +116,6 @@ public class FullSignTest extends AutomatedTestBase
 		runSignTest(TEST_NAME2, true, ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runSignTest( String testname, boolean sparse, ExecType instType)
 	{
 		ExecMode platformOld = rtplatform;
@@ -176,10 +170,9 @@ public class FullSignTest extends AutomatedTestBase
 			else if ( instType == ExecType.SPARK )
 				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"sign", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"sign"));	
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}	
+	}
 }

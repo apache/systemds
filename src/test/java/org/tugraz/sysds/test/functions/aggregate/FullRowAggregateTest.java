@@ -722,12 +722,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		runRowAggregateOperationTest(type, sparse, vector, instType, specialData, true); //by default apply algebraic simplification
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runRowAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean specialData, boolean rewrites)
 	{
 		ExecMode platformOld = rtplatform;

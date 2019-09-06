@@ -356,7 +356,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	
 
 	public boolean isMatrixMultiply() {
-		return ( this.innerOp == OpOp2.MULT && this.outerOp == AggOp.SUM );			
+		return ( this.innerOp == OpOp2.MULT && this.outerOp == AggOp.SUM );
 	}
 	
 	private boolean isOuterProduct() {
@@ -989,13 +989,11 @@ public class AggBinaryOp extends MultiThreadedHop
 	 * 
 	 * @param m1_rows m1 rows
 	 * @param m1_cols m1 cols
-	 * @param m1_rpb m1 rows per block
-	 * @param m1_cpb m1 cols per block
+	 * @param m1_blen m1 rows/cols per block
 	 * @param m1_nnz m1 num non-zeros
 	 * @param m2_rows m2 rows
 	 * @param m2_cols m2 cols
-	 * @param m2_rpb m2 rows per block
-	 * @param m2_cpb m2 cols per block
+	 * @param m2_blen m2 rows/cols per block
 	 * @param m2_nnz m2 num non-zeros
 	 * @param cachedInputIndex true if cached input index
 	 * @param pmm true if permutation matrix multiply

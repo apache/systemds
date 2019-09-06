@@ -35,7 +35,7 @@ public abstract class EstimationUtils
 	 * of a self matrix product without need to materialize
 	 * the output.
 	 * 
-	 * @param m dense or sparse input matrix
+	 * @param m1 dense or sparse input matrix
 	 * @return exact output number of non-zeros.
 	 */
 	public static long getSelfProductOutputNnz(MatrixBlock m1) {

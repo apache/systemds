@@ -122,12 +122,6 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 		runTransformTest(ExecMode.HYBRID, "csv", TransformType.DUMMY, true);
 	}
 	
-	/**
-	 * 
-	 * @param rt
-	 * @param ofmt
-	 * @param dataset
-	 */
 	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )
 	{
 		//set runtime platform

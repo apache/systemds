@@ -139,10 +139,8 @@ public class FrameMetadata extends Metadata {
 	 *            The number of columns in the frame.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
+	 * @param blen
+	 *            The number of rows/cols per block in the frame.
 	 */
 	public FrameMetadata(FrameFormat frameFormat, FrameSchema frameSchema, Long numRows, Long numColumns,
 			Long numNonZeros, Integer blen) {
@@ -170,10 +168,8 @@ public class FrameMetadata extends Metadata {
 	 *            The number of columns in the frame.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
+	 * @param blen
+	 *            The number of rows/cols per block in the frame.
 	 */
 	public FrameMetadata(FrameFormat frameFormat, FrameSchema frameSchema, int numRows, int numColumns, int numNonZeros, int blen) {
 		this.frameFormat = frameFormat;
@@ -273,10 +269,8 @@ public class FrameMetadata extends Metadata {
 	 *            The number of columns in the frame.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
+	 * @param blen
+	 *            The number of rows/cols per block in the frame.
 	 */
 	public FrameMetadata(FrameFormat frameFormat, Long numRows, Long numColumns, Long numNonZeros, Integer blen) {
 		this.frameFormat = frameFormat;
@@ -299,10 +293,8 @@ public class FrameMetadata extends Metadata {
 	 *            The number of columns in the frame.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
+	 * @param blen
+	 *            The number of rows/cols per block in the frame.
 	 */
 	public FrameMetadata(FrameFormat frameFormat, int numRows, int numColumns, int numNonZeros, int blen) {
 		this.frameFormat = frameFormat;
@@ -383,10 +375,8 @@ public class FrameMetadata extends Metadata {
 	 *            The number of rows in the frame.
 	 * @param numColumns
 	 *            The number of columns in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
+	 * @param blen
+	 *            The number of rows/cols per block in the frame.
 	 */
 	public FrameMetadata(Long numRows, Long numColumns, Integer blen) {
 		this.numRows = numRows;
@@ -405,10 +395,8 @@ public class FrameMetadata extends Metadata {
 	 *            The number of columns in the frame.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
+	 * @param blen
+	 *            The number of rows/cols per block in the frame.
 	 */
 	public FrameMetadata(Long numRows, Long numColumns, Long numNonZeros, Integer blen) {
 		this.numRows = numRows;
@@ -428,10 +416,8 @@ public class FrameMetadata extends Metadata {
 	 *            The number of columns in the frame.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the frame.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the frame.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the frame.
+	 * @param blen
+	 *            The number of rows/cols per block in the frame.
 	 */
 	public FrameMetadata(int numRows, int numColumns, int numNonZeros, int blen) {
 		this.numRows = (long) numRows;

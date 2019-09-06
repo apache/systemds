@@ -69,10 +69,6 @@ public class FrameFunctionTest extends AutomatedTestBase
 		runFrameFunctionTest(ExecType.SPARK, false);
 	}
 
-	/**
-	 * 
-	 * @param et
-	 */
 	private void runFrameFunctionTest( ExecType et, boolean IPA )
 	{
 		//rtplatform for MR
@@ -115,7 +111,7 @@ public class FrameFunctionTest extends AutomatedTestBase
 					.readFrameFromHDFS(output("F2"), rows, cols);
 			String[][] R1 = DataConverter.convertToStringFrame(fA);
 			String[][] R2 = DataConverter.convertToStringFrame(fB);
-			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
+			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

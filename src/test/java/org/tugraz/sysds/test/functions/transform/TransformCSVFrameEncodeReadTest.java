@@ -107,14 +107,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	public void testFrameParReadSubMetaHybridCSV() {
 		runTransformTest(ExecMode.HYBRID, "csv", true, true);
 	}
-
 	
-	/**
-	 * 
-	 * @param rt
-	 * @param ofmt
-	 * @param dataset
-	 */
 	private void runTransformTest( ExecMode rt, String ofmt, boolean subset, boolean parRead )
 	{
 		//set runtime platform

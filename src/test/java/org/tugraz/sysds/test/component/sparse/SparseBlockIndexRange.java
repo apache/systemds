@@ -149,12 +149,7 @@ public class SparseBlockIndexRange extends AutomatedTestBase
 	public void testSparseBlockCOO3Insert()  {
 		runSparseBlockIndexRangeTest(SparseBlock.Type.COO, sparsity3, UpdateType.INSERT);
 	}
-		
-	/**
-	 * 
-	 * @param btype
-	 * @param sparsity
-	 */
+	
 	private void runSparseBlockIndexRangeTest( SparseBlock.Type btype, double sparsity, UpdateType utype)
 	{
 		try

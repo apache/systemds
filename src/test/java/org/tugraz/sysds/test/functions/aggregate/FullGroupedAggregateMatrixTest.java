@@ -253,13 +253,6 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 		runGroupedAggregateOperationTest(testname, type, sparse, instType, cols);
 	}
 	
-	/**
-	 * 
-	 * @param testname
-	 * @param type
-	 * @param sparse
-	 * @param instType
-	 */
 	@SuppressWarnings("rawtypes")
 	private void runGroupedAggregateOperationTest( String testname, OpType type, boolean sparse, ExecType instType, int numCols) 
 	{

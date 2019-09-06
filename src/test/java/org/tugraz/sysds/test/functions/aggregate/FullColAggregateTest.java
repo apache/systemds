@@ -380,25 +380,11 @@ public class FullColAggregateTest extends AutomatedTestBase
 		runColAggregateOperationTest(OpType.COL_MIN, true, true, ExecType.SPARK, false);
 	}
 	
-	/**
-	 * 
-	 * @param type
-	 * @param sparse
-	 * @param vector
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType)
 	{
 		runColAggregateOperationTest(type, sparse, vector, instType, true); //by default apply algebraic simplification
 	}
 	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType, boolean rewrites)
 	{
 		ExecMode platformOld = rtplatform;
@@ -467,6 +453,4 @@ public class FullColAggregateTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewritesFlag;
 		}
 	}
-	
-		
 }

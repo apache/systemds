@@ -139,12 +139,6 @@ public class SparseBlockAlignment extends AutomatedTestBase
 		runSparseBlockScanTest(SparseBlock.Type.COO, sparsity3, false);
 	}
 	
-	/**
-	 * 
-	 * @param btype
-	 * @param sparsity
-	 * @param positive
-	 */
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity, boolean positive)
 	{
 		try

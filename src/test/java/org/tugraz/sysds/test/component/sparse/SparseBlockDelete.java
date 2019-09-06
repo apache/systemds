@@ -98,12 +98,7 @@ public class SparseBlockDelete extends AutomatedTestBase
 	public void testSparseBlockCOO3()  {
 		runSparseBlockDeleteTest(SparseBlock.Type.COO, sparsity3);
 	}
-		
-	/**
-	 * 
-	 * @param btype
-	 * @param sparsity
-	 */
+	
 	private void runSparseBlockDeleteTest( SparseBlock.Type btype, double sparsity)
 	{
 		try

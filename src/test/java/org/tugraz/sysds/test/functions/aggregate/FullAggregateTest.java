@@ -383,13 +383,6 @@ public class FullAggregateTest extends AutomatedTestBase
 		runColAggregateOperationTest(OpType.TRACE, true, true, ExecType.SPARK);
 	}
 	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( OpType type, boolean sparse, boolean vector, ExecType instType)
 	{
 		ExecMode platformOld = rtplatform;

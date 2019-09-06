@@ -51,7 +51,7 @@ public class HITSTest extends AutomatedTestBase
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-args");
 		proArgs.add(input("G"));
 		proArgs.add(Integer.toString(maxiter));

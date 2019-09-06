@@ -41,10 +41,10 @@ public class LibMatrixNative
 	//   note: since we anyway have to convert from double to float, we use
 	//   preallocated direct buffers (with thread-local reuse and resizing on demand)
 	//   to ensure there are no additional copies created by the transfer over jni
-	private static ThreadLocal<FloatBuffer> inBuff = new ThreadLocal<FloatBuffer>();
-	private static ThreadLocal<FloatBuffer> biasBuff = new ThreadLocal<FloatBuffer>();
-	private static ThreadLocal<FloatBuffer> filterBuff = new ThreadLocal<FloatBuffer>();
-	private static ThreadLocal<FloatBuffer> outBuff = new ThreadLocal<FloatBuffer>();
+	private static ThreadLocal<FloatBuffer> inBuff = new ThreadLocal<>();
+	private static ThreadLocal<FloatBuffer> biasBuff = new ThreadLocal<>();
+	private static ThreadLocal<FloatBuffer> filterBuff = new ThreadLocal<>();
+	private static ThreadLocal<FloatBuffer> outBuff = new ThreadLocal<>();
 	
 	// We could encapsulate heuristics in this function
 	// For now, we only consider matrix-vector operation to be memory bound

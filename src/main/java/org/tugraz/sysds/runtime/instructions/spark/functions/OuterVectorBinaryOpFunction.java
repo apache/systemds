@@ -59,6 +59,7 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 			_currPos = 1;
 		}
 
+		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> iterator() {
 			return this;
 		}

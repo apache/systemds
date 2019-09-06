@@ -1601,6 +1601,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
+	@Override
 	public void merge(CacheBlock that, boolean appendOnly) {
 		merge((MatrixBlock)that, appendOnly);
 	}
@@ -2262,6 +2263,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param is object input
 	 * @throws IOException if IOException occurs
 	 */
+	@Override
 	public void readExternal(ObjectInput is) 
 		throws IOException
 	{
@@ -2287,6 +2289,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param os object output
 	 * @throws IOException if IOException occurs
 	 */
+	@Override
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{

@@ -77,6 +77,7 @@ public class CorrMatrixBlock implements Externalizable
 	 * @param is object input
 	 * @throws IOException if IOException occurs
 	 */
+	@Override
 	public void readExternal(ObjectInput is) 
 		throws IOException
 	{
@@ -98,6 +99,7 @@ public class CorrMatrixBlock implements Externalizable
 	 * @param os object output
 	 * @throws IOException if IOException occurs
 	 */
+	@Override
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{

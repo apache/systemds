@@ -87,7 +87,7 @@ public class NaiveBayesParforTest  extends AutomatedTestBase{
 
 		 getAndLoadTestConfiguration(TEST_NAME);
 
-		 List<String> proArgs = new ArrayList<String>();
+		 List<String> proArgs = new ArrayList<>();
 		 proArgs.add("-stats");
 		 proArgs.add("-nvargs");
 		 proArgs.add("X=" + input("X"));

@@ -103,7 +103,7 @@ public class FrameEncodeTest extends AutomatedTestBase
 	{
 		Timing time = new Timing(true);
 		
-		ArrayList<String[][]> ret = new ArrayList<String[][]>();
+		ArrayList<String[][]> ret = new ArrayList<>();
 		
 		//establish connection to SystemDS
 		Connection conn = new Connection();
@@ -111,7 +111,7 @@ public class FrameEncodeTest extends AutomatedTestBase
 		try
 		{
 			//prepare input arguments
-			HashMap<String,String> args = new HashMap<String,String>();
+			HashMap<String,String> args = new HashMap<>();
 			args.put("$TRANSFORM_SPEC", "{ \"ids\": true ,\"recode\": [ 1, 2, 3] }");
 			
 			//read and precompile script

@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -46,7 +44,6 @@ import org.tugraz.sysds.utils.Explain;
  */
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
-	protected static final Log LOG = LogFactory.getLog(RewriteMatrixMultChainOptimization.class.getName());
 	private static final boolean LDEBUG = false;
 	
 	static {

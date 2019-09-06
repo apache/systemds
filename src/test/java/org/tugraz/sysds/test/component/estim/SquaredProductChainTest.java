@@ -126,7 +126,7 @@ public class SquaredProductChainTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorMatrixHistogram(true), m, k, n, n2, case2);
 	}
 	
-	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, int n2, double[] sp) {
+	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, int n2, double[] sp) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 1);
 		MatrixBlock m2 = MatrixBlock.randOperations(k, n, sp[1], 1, 1, "uniform", 2);
 		MatrixBlock m3 = MatrixBlock.randOperations(n, n2, sp[2], 1, 1, "uniform", 3);

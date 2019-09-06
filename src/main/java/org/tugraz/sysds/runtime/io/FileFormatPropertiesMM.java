@@ -31,6 +31,7 @@ public class FileFormatPropertiesMM extends FileFormatProperties implements Seri
 	public enum MMFormat {
 		COORDINATE,
 		ARRAY;
+		@Override
 		public String toString() {
 			return this.name().toLowerCase();
 		}
@@ -41,6 +42,7 @@ public class FileFormatPropertiesMM extends FileFormatProperties implements Seri
 		INTEGER,
 		COMPLEX,
 		PATTERN;
+		@Override
 		public String toString() {
 			return this.name().toLowerCase();
 		}
@@ -50,6 +52,7 @@ public class FileFormatPropertiesMM extends FileFormatProperties implements Seri
 		GENERAL,
 		SYMMETRIC,
 		SKEW_SYMMETRIC;
+		@Override
 		public String toString() {
 			return this.name().toLowerCase().replaceAll("_", "-");
 		}

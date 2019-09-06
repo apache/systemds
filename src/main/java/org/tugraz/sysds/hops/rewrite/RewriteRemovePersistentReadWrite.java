@@ -21,8 +21,6 @@
 
 package org.tugraz.sysds.hops.rewrite;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
@@ -47,8 +45,6 @@ import java.util.HashSet;
  */
 public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 {
-	private static final Log LOG = LogFactory.getLog(RewriteRemovePersistentReadWrite.class.getName());
-	
 	private HashSet<String> _inputs = null;
 	private HashSet<String> _outputs = null;
 	private HashMap<String,MetaData> _inputsMeta = null;

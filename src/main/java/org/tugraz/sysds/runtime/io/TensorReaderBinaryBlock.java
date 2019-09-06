@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class TensorReaderBinaryBlock extends TensorReader {
+	@SuppressWarnings("resource")
 	@Override
 	public TensorBlock readTensorFromHDFS(String fname, long[] dims,
 			int blen, ValueType[] schema) throws IOException, DMLRuntimeException {
@@ -47,7 +48,7 @@ public class TensorReaderBinaryBlock extends TensorReader {
 		return readBinaryBlockTensorFromHDFS(path, job, fs, dims, blen, schema);
 	}
 
-	private TensorBlock readBinaryBlockTensorFromHDFS(Path path, JobConf job, FileSystem fs, long[] dims,
+	private static TensorBlock readBinaryBlockTensorFromHDFS(Path path, JobConf job, FileSystem fs, long[] dims,
 			int blen, ValueType[] schema) throws IOException {
 		int[] idims = Arrays.stream(dims).mapToInt(i -> (int) i).toArray();
 		TensorBlock ret;
@@ -59,23 +60,17 @@ public class TensorReaderBinaryBlock extends TensorReader {
 		// TODO reuse blocks
 
 		for (Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path)) {
-			SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(lpath));
 			TensorBlock value = new TensorBlock();
 
-			try {
+			try (SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(lpath))) {
 				while (reader.next(key, value)) {
 					if (value.isEmpty(false))
 						continue;
-
 					int[] lower = new int[dims.length];
 					int[] upper = new int[lower.length];
 					UtilFunctions.getBlockBounds(key, value.getLongDims(), blen, lower, upper);
-
 					ret.copy(lower, upper, value);
 				}
-			}
-			finally {
-				IOUtilFunctions.closeSilently(reader);
 			}
 		}
 		return ret;

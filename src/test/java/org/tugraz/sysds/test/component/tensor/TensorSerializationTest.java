@@ -56,12 +56,6 @@ public class TensorSerializationTest
 		testSerializeBasicTensor(ValueType.BOOLEAN);
 	}
 
-	private void testSerializeBasicTensor(ValueType vt) {
-		TensorBlock tb1 = createBasicTensor(vt, 70, 30, 0.7);
-		TensorBlock tb2 = serializeAndDeserializeTensorBlock(tb1);
-		compareTensorBlocks(tb1, tb2);
-	}
-
 	@Test
 	public void testSerializeDataTensorFP32() {
 		testSerializeDataTensor(ValueType.FP32);
@@ -87,13 +81,19 @@ public class TensorSerializationTest
 		testSerializeDataTensor(ValueType.BOOLEAN);
 	}
 
-	private void testSerializeDataTensor(ValueType vt) {
+	private static void testSerializeBasicTensor(ValueType vt) {
+		TensorBlock tb1 = createBasicTensor(vt, 70, 30, 0.7);
+		TensorBlock tb2 = serializeAndDeserializeTensorBlock(tb1);
+		compareTensorBlocks(tb1, tb2);
+	}
+
+	private static void testSerializeDataTensor(ValueType vt) {
 		TensorBlock tb1 = createDataTensor(vt, 70, 30, 0.7);
 		TensorBlock tb2 = serializeAndDeserializeTensorBlock(tb1);
 		compareTensorBlocks(tb1, tb2);
 	}
 
-	private TensorBlock serializeAndDeserializeTensorBlock(TensorBlock tb1) {
+	private static TensorBlock serializeAndDeserializeTensorBlock(TensorBlock tb1) {
 		try {
 			//serialize and deserialize tensor block
 			byte[] bdata = new byte[(int)tb1.getExactSerializedSize()];

@@ -968,6 +968,7 @@ public abstract class Hop implements ParseInfo
 		_valueType = vt;
 	}
 
+	@SuppressWarnings("hiding")
 	public enum OpOp1 {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
@@ -982,6 +983,7 @@ public abstract class Hop implements ParseInfo
 	}
 
 	// Operations that require two operands
+	@SuppressWarnings("hiding")
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, XOR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM,
@@ -1855,18 +1857,30 @@ public abstract class Hop implements ParseInfo
 	public String _filename;
 	public String _text;
 	
+	@Override
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
+	@Override
 	public void setBeginColumn(int passed)  { _beginColumn = passed; }
+	@Override
 	public void setEndLine(int passed)      { _endLine = passed;   }
+	@Override
 	public void setEndColumn(int passed)    { _endColumn = passed; }
+	@Override
 	public void setFilename(String passed)  { _filename = passed; }
+	@Override
 	public void setText(String text)        { _text = text; }
 
+	@Override
 	public int getBeginLine()   { return _beginLine;   }
+	@Override
 	public int getBeginColumn() { return _beginColumn; }
+	@Override
 	public int getEndLine()     { return _endLine;   }
+	@Override
 	public int getEndColumn()   { return _endColumn; }
+	@Override
 	public String getFilename() { return _filename; }
+	@Override
 	public String getText()     { return _text; }
 	
 	public String printErrorLocation(){

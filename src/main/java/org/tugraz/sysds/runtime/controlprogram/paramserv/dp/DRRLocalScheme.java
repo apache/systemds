@@ -43,7 +43,7 @@ public class DRRLocalScheme extends DataPartitionLocalScheme {
 		return mb.removeEmptyOperations(new MatrixBlock(), true, true, select);
 	}
 
-	private MatrixObject internalRemoveEmpty(MatrixBlock mb, int k, int workerId) {
+	private static MatrixObject internalRemoveEmpty(MatrixBlock mb, int k, int workerId) {
 		MatrixObject result = ParamservUtils.newMatrixObject(removeEmpty(mb, k, workerId));
 		result.enableCleanup(false);
 		return result;

@@ -31,6 +31,7 @@ import org.tugraz.sysds.common.Types.ValueType;
  */
 public class BinaryScalar extends Lop 
 {
+	@SuppressWarnings("hiding")
 	public enum OperationTypes {
 		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,

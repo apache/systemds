@@ -203,7 +203,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			//lookup offset row and return joined output
 			MatrixBlock off = (ixIn.getRowIndex() == 1) ? new MatrixBlock(1, blkIn.getNumColumns(), _initValue) :
 				_pbc.getBlock((int)brix, (int)ixIn.getColumnIndex()).slice(rix, rix);
-			return new Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>>(ixIn, new Tuple2<>(blkIn,off));
+			return new Tuple2<>(ixIn, new Tuple2<>(blkIn,off));
 		}
 	}
 

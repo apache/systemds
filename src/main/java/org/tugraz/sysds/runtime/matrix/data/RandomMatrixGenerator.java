@@ -170,6 +170,7 @@ public class RandomMatrixGenerator {
 		}
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("PRNG[");
 		sb.append("pdf = "+_pdf.name()+", ");

@@ -253,15 +253,15 @@ public class DenseBlockSetDenseBlockTest
 		compareDenseBlocks(db, dbSet);
 	}
 
-	private DenseBlock getDenseBlock2(ValueType vt) {
+	private static DenseBlock getDenseBlock2(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[] {3,5});
 	}
 	
-	private DenseBlock getDenseBlock3(ValueType vt) {
+	private static DenseBlock getDenseBlock3(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[] {3,5,7});
 	}
 
-	private DenseBlock getDenseBlockLarge2(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge2(ValueType vt) {
 		int[] dims = {3,5};
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
@@ -274,7 +274,7 @@ public class DenseBlockSetDenseBlockTest
 		}
 	}
 
-	private DenseBlock getDenseBlockLarge3(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge3(ValueType vt) {
 		int[] dims = {3,5,7};
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
@@ -287,12 +287,12 @@ public class DenseBlockSetDenseBlockTest
 		}
 	}
 
-	private void compareDenseBlocks(DenseBlock left, DenseBlock right) {
-	    Assert.assertEquals(left.numDims(), right.numDims());
+	private static void compareDenseBlocks(DenseBlock left, DenseBlock right) {
+		Assert.assertEquals(left.numDims(), right.numDims());
 		for (long i = 0; i < left.size(); i++) {
 			int[] index = new int[left.numDims()];
 			for (int ix = 0; ix < left.numDims() - 1; ix++) {
-			    Assert.assertEquals(left.getDim(ix), right.getDim(ix));
+				Assert.assertEquals(left.getDim(ix), right.getDim(ix));
 				index[ix] = (int)((i % left.getDim(ix)) / right.getDim(ix + 1));
 			}
 			Assert.assertEquals(left.getDim(left.numDims() - 1), right.getDim(left.numDims() - 1));

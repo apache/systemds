@@ -237,6 +237,7 @@ public class DnnTransform extends Lop
 		return sb.toString();
 	}
 	
+	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String output) {
 		if(operation != OperationTypes.BATCH_NORM2D_TEST)
 			throw new LopsException("The operation is not supported with six operands:" + operation.name());

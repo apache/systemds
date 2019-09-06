@@ -79,7 +79,7 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 
 	@Test
 	public void testStringDataFrameToVectorDataFrame() {
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("((1.2, 4.3, 3.4))");
 		list.add("(1.2, 3.4, 2.2)");
 		list.add("[[1.2, 34.3, 1.2, 1.25]]");
@@ -87,13 +87,13 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
 		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> inDF = sparkSession.createDataFrame(javaRddRow, schema);
 		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sparkSession, inDF);
 
-		List<String> expectedResults = new ArrayList<String>();
+		List<String> expectedResults = new ArrayList<>();
 		expectedResults.add("[[1.2,4.3,3.4]]");
 		expectedResults.add("[[1.2,3.4,2.2]]");
 		expectedResults.add("[[1.2,34.3,1.2,1.25]]");
@@ -107,19 +107,19 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 
 	@Test
 	public void testStringDataFrameToVectorDataFrameNull() {
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("[1.2, 3.4]");
 		list.add(null);
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
 		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> inDF = sparkSession.createDataFrame(javaRddRow, schema);
 		Dataset<Row> outDF = RDDConverterUtilsExt.stringDataFrameToVectorDataFrame(sparkSession, inDF);
 
-		List<String> expectedResults = new ArrayList<String>();
+		List<String> expectedResults = new ArrayList<>();
 		expectedResults.add("[[1.2,3.4]]");
 		expectedResults.add("[null]");
 
@@ -131,12 +131,12 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 
 	@Test(expected = SparkException.class)
 	public void testStringDataFrameToVectorDataFrameNonNumbers() {
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("[cheeseburger,fries]");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 		JavaRDD<Row> javaRddRow = javaRddString.map(new StringToRow());
 		SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> inDF = sparkSession.createDataFrame(javaRddRow, schema);
@@ -146,6 +146,7 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 	}
 
 	@After
+	@Override
 	public void tearDown() {
 		super.tearDown();
 	}

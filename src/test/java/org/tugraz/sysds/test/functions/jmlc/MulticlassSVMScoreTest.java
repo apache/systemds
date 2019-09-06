@@ -115,7 +115,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		throws IOException
 	{
 		Timing time = new Timing(true);
-		ArrayList<double[][]> ret = new ArrayList<double[][]>();
+		ArrayList<double[][]> ret = new ArrayList<>();
 		
 		try( Connection conn = !flags ? new Connection():
 			new Connection(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS,
@@ -155,7 +155,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 	}
 
 	private ArrayList<double[][]> generateInputs( int num, int rows, int cols, double sparsity, int seed ) {
-		ArrayList<double[][]> ret = new ArrayList<double[][]>();
+		ArrayList<double[][]> ret = new ArrayList<>();
 		for( int i=0; i<num; i++ )
 			ret.add(getRandomMatrix(rows, cols, -1, 1, sparsity, seed));
 		return ret;

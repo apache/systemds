@@ -44,6 +44,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarInputInt() throws IOException, DMLException {
 		Connection conn = new Connection();
@@ -59,6 +60,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarInputDouble() throws IOException, DMLException {
 		Connection conn = new Connection();
@@ -74,6 +76,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarInputBoolean() throws IOException, DMLException {
 		Connection conn = new Connection();
@@ -89,6 +92,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarInputLong() throws IOException, DMLException {
 		Connection conn = new Connection();
@@ -104,6 +108,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarInputString() throws IOException, DMLException {
 		Connection conn = new Connection();
@@ -119,6 +124,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarInputStringExplicitValueType() throws IOException, DMLException {
 		Connection conn = new Connection();
@@ -134,6 +140,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarOutputLong() throws DMLException {
 		Connection conn = new Connection();
@@ -145,6 +152,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarOutputDouble() throws DMLException {
 		Connection conn = new Connection();
@@ -156,6 +164,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarOutputString() throws DMLException {
 		Connection conn = new Connection();
@@ -167,6 +176,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarOutputBoolean() throws DMLException {
 		Connection conn = new Connection();
@@ -178,6 +188,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		conn.close();
 	}
 
+	@SuppressWarnings("resource")
 	@Test
 	public void testScalarOutputScalarObject() throws DMLException {
 		Connection conn = new Connection();
@@ -189,5 +200,4 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		Assert.assertEquals(1.23, result, 0);
 		conn.close();
 	}
-
 }

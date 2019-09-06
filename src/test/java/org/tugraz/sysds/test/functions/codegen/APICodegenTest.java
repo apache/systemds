@@ -67,6 +67,7 @@ public class APICodegenTest extends AutomatedTestBase
 		runMLContextParforDatasetTest(true);
 	}
 
+	@SuppressWarnings("resource")
 	private void runMLContextParforDatasetTest(boolean jmlc) 
 	{
 		try {
@@ -112,6 +113,7 @@ public class APICodegenTest extends AutomatedTestBase
 	}
 
 	@After
+	@Override
 	public void tearDown() {
 		super.tearDown();
 	}

@@ -42,7 +42,7 @@ public class GPULazyCudaFreeMemoryManager {
 	/**
 	 * Map of free blocks allocate on GPU. maps size_of_block -> pointer on GPU
 	 */
-	private HashMap<Long, Set<Pointer>> rmvarGPUPointers = new HashMap<Long, Set<Pointer>>();
+	private HashMap<Long, Set<Pointer>> rmvarGPUPointers = new HashMap<>();
 	
 	/**
 	 * Get any pointer of the given size from rmvar-ed pointers (applicable if eager cudaFree is set to false)
@@ -70,7 +70,7 @@ public class GPULazyCudaFreeMemoryManager {
 	}
 	
 	public void clearAll() {
-		Set<Pointer> toFree = new HashSet<Pointer>();
+		Set<Pointer> toFree = new HashSet<>();
 		for(Set<Pointer> ptrs : rmvarGPUPointers.values()) {
 			toFree.addAll(ptrs);
 		}
@@ -100,7 +100,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 * @param size size in bytes
 	 * @return the pointer that was removed
 	 */
-	private Pointer remove(HashMap<Long, Set<Pointer>> hm, long size) {
+	private static Pointer remove(HashMap<Long, Set<Pointer>> hm, long size) {
 		Pointer A = hm.get(size).iterator().next();
 		remove(hm, size, A);
 		return A;
@@ -113,7 +113,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 * @param size size in bytes
 	 * @param ptr pointer to be removed
 	 */
-	private void remove(HashMap<Long, Set<Pointer>> hm, long size, Pointer ptr) {
+	private static void remove(HashMap<Long, Set<Pointer>> hm, long size, Pointer ptr) {
 		hm.get(size).remove(ptr);
 		if (hm.get(size).isEmpty())
 			hm.remove(size);
@@ -148,7 +148,7 @@ public class GPULazyCudaFreeMemoryManager {
 	public void add(long size, Pointer toFree) {
 		Set<Pointer> freeList = rmvarGPUPointers.get(size);
 		if (freeList == null) {
-			freeList = new HashSet<Pointer>();
+			freeList = new HashSet<>();
 			rmvarGPUPointers.put(size, freeList);
 		}
 		if (freeList.contains(toFree))

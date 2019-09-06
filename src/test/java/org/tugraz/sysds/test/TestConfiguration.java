@@ -44,7 +44,7 @@ public class TestConfiguration
 	private String[] outputFiles = null;
 
 	/** list of variables which can be replaced in the script */
-	private HashMap<String, String> variables = new HashMap<String, String>();
+	private HashMap<String, String> variables = new HashMap<>();
 
 	/**
      * <p>

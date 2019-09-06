@@ -29,6 +29,7 @@ public class RecomputeNnzFunction implements FlatMapFunction<Iterator<MatrixBloc
 {
 	private static final long serialVersionUID = -973429193604040011L;
 
+	@Override
 	public Iterator<Long> call(Iterator<MatrixBlock> iter) throws Exception {
 		long nnz = 0;
 		while( iter.hasNext() )

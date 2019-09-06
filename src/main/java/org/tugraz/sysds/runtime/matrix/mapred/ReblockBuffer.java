@@ -20,7 +20,6 @@
 
 package org.tugraz.sysds.runtime.matrix.mapred;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,7 +70,7 @@ public class ReblockBuffer
 	}
 
 	public List<IndexedMatrixValue> flushBufferToBinaryBlocks()
-		throws IOException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		if( _count == 0 )
 			return Collections.emptyList();
@@ -132,7 +131,7 @@ public class ReblockBuffer
 	}
 
 	private static void outputBlock( ArrayList<IndexedMatrixValue> out, MatrixIndexes key, MatrixBlock value )
-		throws IOException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//skip output of unassigned blocks
 		if( key.getRowIndex() == -1 || key.getColumnIndex() == -1 )

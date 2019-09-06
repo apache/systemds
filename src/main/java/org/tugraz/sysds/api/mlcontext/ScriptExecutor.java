@@ -220,7 +220,7 @@ public class ScriptExecutor {
 			executionContext.setVariables(symbolTable);
 		//attach registered outputs (for dynamic recompile)
 		executionContext.getVariables().setRegisteredOutputs(
-			new HashSet<String>(script.getOutputVariables()));
+			new HashSet<>(script.getOutputVariables()));
 	}
 
 	/**

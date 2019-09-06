@@ -268,11 +268,11 @@ public abstract class AutomatedTestBase
 
 	@Before
 	public final void setUpBase() {
-		availableTestConfigurations = new HashMap<String, TestConfiguration>();
-		testVariables = new HashMap<String, String>();
-		inputDirectories = new ArrayList<String>();
-		inputRFiles = new ArrayList<String>();
-		expectedFiles = new ArrayList<String>();
+		availableTestConfigurations = new HashMap<>();
+		testVariables = new HashMap<>();
+		inputDirectories = new ArrayList<>();
+		inputRFiles = new ArrayList<>();
+		expectedFiles = new ArrayList<>();
 		outputDirectories = new String[0];
 		setOutAndExpectedDeletionDisabled(false);
 		lTimeBeforeTest = System.currentTimeMillis();
@@ -1177,7 +1177,7 @@ public abstract class AutomatedTestBase
 		//cleanup scratch folder (prevent side effect between tests)
 		cleanupScratchSpace();
 
-		ArrayList<String> args = new ArrayList<String>();
+		ArrayList<String> args = new ArrayList<>();
 		// setup arguments to SystemDS
 
 		if (DEBUG) {
@@ -1191,10 +1191,8 @@ public abstract class AutomatedTestBase
 				args.add(fullDMLScriptName);
 			}
 		} else {
-			if (null != executionFile) {
-				args.add("-f");
-				args.add(executionFile);
-			}
+			args.add("-f");
+			args.add(executionFile);
 		}
 		// program-independent parameters
 		args.add("-exec");

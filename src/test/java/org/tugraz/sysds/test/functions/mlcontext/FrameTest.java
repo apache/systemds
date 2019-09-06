@@ -84,7 +84,7 @@ public class FrameTest extends MLContextTestBase
 	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(cols/4, ValueType.BOOLEAN);
 	private static ValueType[] schemaMixedLarge = null;
 	static {
-		final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
+		final List<ValueType> schemaMixedLargeList = new ArrayList<>(schemaMixedLargeListStr);
 		schemaMixedLargeList.addAll(schemaMixedLargeListDble);
 		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
@@ -158,14 +158,14 @@ public class FrameTest extends MLContextTestBase
 		int rowstartC = 124, rowendC = 1178, colstartC = 143, colendC = 368;
 		int cRows = rowendC-rowstartC+1, cCols = colendC-colstartC+1;
 		
-		HashMap<String, ValueType[]> outputSchema = new HashMap<String, ValueType[]>();
-		HashMap<String, MatrixCharacteristics> outputMC = new HashMap<String, MatrixCharacteristics>();
+		HashMap<String, ValueType[]> outputSchema = new HashMap<>();
+		HashMap<String, MatrixCharacteristics> outputMC = new HashMap<>();
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		
 		loadTestConfiguration(config);
 
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		proArgs.add(input("A"));
 		proArgs.add(Integer.toString(rows));
 		proArgs.add(Integer.toString(cols));

@@ -150,7 +150,7 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase {
 		}
 	}
 	
-	private double[][] randomizeArray(double[][]y){
+	private static double[][] randomizeArray(double[][]y){
 		Random rgen=new Random();
 		for(int i=0; i<y.length; i++){
 			int randomPosition=rgen.nextInt(y.length);
@@ -161,7 +161,7 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase {
 		return y;
 	}
 
-	private double[][] modifyValue(double[][] A, double[] Y, int value, int coll){
+	private static double[][] modifyValue(double[][] A, double[] Y, int value, int coll){
 		int counter = 0;
 		double nvec[][] = new double[rows][1];
 		for (int i = 0; i < rows; i++) {

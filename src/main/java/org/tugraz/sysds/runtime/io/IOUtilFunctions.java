@@ -61,13 +61,13 @@ public class IOUtilFunctions
 {
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
-
 	public static final PathFilter hiddenFileFilter = new PathFilter(){
-	      public boolean accept(Path p){
-	        String name = p.getName(); 
-	        return !name.startsWith("_") && !name.startsWith("."); 
-	      }
-	    }; 
+		@Override
+		public boolean accept(Path p){
+			String name = p.getName(); 
+			return !name.startsWith("_") && !name.startsWith("."); 
+		}
+	};
 	
 	//for empty text lines we use 0-0 despite for 1-based indexing in order
 	//to allow matrices with zero rows and columns (consistent with R)

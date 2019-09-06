@@ -51,6 +51,7 @@ public class PlusMultiply extends TernaryValueFunction implements ValueFunctionW
 		return in1 + in2 * in3;
 	}
 
+	@Override
 	public BinaryOperator setOp2Constant(double cnt) {
 		return new BinaryOperator(new PlusMultiply(cnt));
 	}

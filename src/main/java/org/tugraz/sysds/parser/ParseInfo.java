@@ -48,7 +48,7 @@ public interface ParseInfo {
 	
 	public String getFilename();
 
-	public static ParseInfo ctxAndFilenameToParseInfo(ParserRuleContext ctx, String filename) {
+	public static ParseInfo ctxAndFilenameToParseInfo(ParserRuleContext ctx, String fname) {
 		ParseInfo pi = new ParseInfo() {
 			private int beginLine;
 			private int beginColumn;
@@ -137,7 +137,7 @@ public interface ParseInfo {
 			}
 			pi.setText(text);
 		}
-		pi.setFilename(filename);
+		pi.setFilename(fname);
 		return pi;
 	}
 }

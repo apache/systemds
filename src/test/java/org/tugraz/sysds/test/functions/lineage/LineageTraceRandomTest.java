@@ -59,7 +59,7 @@ public class LineageTraceRandomTest extends AutomatedTestBase {
 			
 			getAndLoadTestConfiguration(testname);
 			
-			List<String> proArgs = new ArrayList<String>();
+			List<String> proArgs = new ArrayList<>();
 			
 			proArgs.add("-stats");
 			proArgs.add("-lineage");

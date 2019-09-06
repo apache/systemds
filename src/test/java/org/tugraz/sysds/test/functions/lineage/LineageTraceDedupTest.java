@@ -112,7 +112,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 			List<String> proArgs;
 
 			// w/o lineage deduplication
-			proArgs = new ArrayList<String>();
+			proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("-args");
@@ -127,7 +127,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 			LineageItem li = LineageParser.parseLineageTrace(trace);
 			
 			// w/ lineage deduplication
-			proArgs = new ArrayList<String>();
+			proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("dedup");

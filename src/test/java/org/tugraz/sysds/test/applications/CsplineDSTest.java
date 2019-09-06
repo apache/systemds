@@ -75,7 +75,7 @@ public class CsplineDSTest  extends AutomatedTestBase {
 
 		getAndLoadTestConfiguration(TEST_NAME);
 
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-nvargs");
 		proArgs.add("X=" + input("X"));
 		proArgs.add("Y=" + input("Y"));

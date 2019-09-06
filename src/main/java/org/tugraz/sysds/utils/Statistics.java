@@ -667,6 +667,7 @@ public class Statistics
 		// get top k via sort
 		Entry<String, InstStats>[] tmp = _instStats.entrySet().toArray(new Entry[len]);
 		Arrays.sort(tmp, new Comparator<Entry<String, InstStats>>() {
+			@Override
 			public int compare(Entry<String, InstStats> e1, Entry<String, InstStats> e2) {
 				return Long.compare(e1.getValue().time.longValue(), e2.getValue().time.longValue());
 			}

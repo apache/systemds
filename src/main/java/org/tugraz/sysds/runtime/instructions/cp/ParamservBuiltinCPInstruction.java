@@ -49,8 +49,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.network.server.TransportServer;
@@ -88,8 +86,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	//internal local debug level
 	private static final boolean LDEBUG = false;
-	protected static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
-
 
 	static {
 		// for internal debugging only
@@ -286,7 +282,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return epochs;
 	}
 
-	private int getParLevel(int workerNum) {
+	private static int getParLevel(int workerNum) {
 		return Math.max((int)Math.ceil((double)getRemainingCores()/workerNum), 1);
 	}
 
@@ -317,7 +313,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 	}
 
-	private int getRemainingCores() {
+	private static int getRemainingCores() {
 		return InfrastructureAnalyzer.getLocalParallelism();
 	}
 
@@ -345,7 +341,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 *
 	 * @return parameter server
 	 */
-	private ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
+	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
 		switch (mode) {
 			case LOCAL:
 			case REMOTE_SPARK:

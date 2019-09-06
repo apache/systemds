@@ -119,8 +119,8 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 		System.out.println("MLContextTest - Frame JavaRDD<String> for format: " + format + " Script: " + script_type);
 
-		List<String> listA = new ArrayList<String>();
-		List<String> listB = new ArrayList<String>();
+		List<String> listA = new ArrayList<>();
+		List<String> listB = new ArrayList<>();
 		FrameMetadata fmA = null, fmB = null;
 		Script script = null;
 		ValueType[] schemaA = { ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN };
@@ -365,14 +365,14 @@ public class MLContextFrameTest extends MLContextTestBase {
 	public void testInputFrameAndMatrixOutputMatrix() {
 		System.out.println("MLContextFrameTest - input frame and matrix, output matrix");
 
-		List<String> dataA = new ArrayList<String>();
+		List<String> dataA = new ArrayList<>();
 		dataA.add("Test1,4.0");
 		dataA.add("Test2,5.0");
 		dataA.add("Test3,6.0");
 		JavaRDD<String> javaRddStringA = sc.parallelize(dataA);
 		ValueType[] schema = { ValueType.STRING, ValueType.FP64 };
 
-		List<String> dataB = new ArrayList<String>();
+		List<String> dataB = new ArrayList<>();
 		dataB.add("1.0");
 		dataB.add("2.0");
 		JavaRDD<String> javaRddStringB = sc.parallelize(dataB);
@@ -380,13 +380,13 @@ public class MLContextFrameTest extends MLContextTestBase {
 		JavaRDD<Row> javaRddRowA = FrameRDDConverterUtils.csvToRowRDD(sc, javaRddStringA, CSV_DELIM, schema);
 		JavaRDD<Row> javaRddRowB = javaRddStringB.map(new CommaSeparatedValueStringToDoubleArrayRow());
 
-		List<StructField> fieldsA = new ArrayList<StructField>();
+		List<StructField> fieldsA = new ArrayList<>();
 		fieldsA.add(DataTypes.createStructField("1", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("2", DataTypes.DoubleType, true));
 		StructType schemaA = DataTypes.createStructType(fieldsA);
 		Dataset<Row> dataFrameA = spark.createDataFrame(javaRddRowA, schemaA);
 
-		List<StructField> fieldsB = new ArrayList<StructField>();
+		List<StructField> fieldsB = new ArrayList<>();
 		fieldsB.add(DataTypes.createStructField("1", DataTypes.DoubleType, true));
 		StructType schemaB = DataTypes.createStructType(fieldsB);
 		Dataset<Row> dataFrameB = spark.createDataFrame(javaRddRowB, schemaB);
@@ -415,7 +415,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 		JavaRDD<Row> javaRddRowA = sc. parallelize( Arrays.asList(rowsA)); 
 
-		List<StructField> fieldsA = new ArrayList<StructField>();
+		List<StructField> fieldsA = new ArrayList<>();
 		fieldsA.add(DataTypes.createStructField("myID", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("FeatureName", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("FeatureValue", DataTypes.IntegerType, true));
@@ -455,7 +455,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 		JavaRDD<Row> javaRddRowA = sc. parallelize( Arrays.asList(rowsA)); 
 
-		List<StructField> fieldsA = new ArrayList<StructField>();
+		List<StructField> fieldsA = new ArrayList<>();
 		fieldsA.add(DataTypes.createStructField("featureName", DataTypes.StringType, true));
 		fieldsA.add(DataTypes.createStructField("featureValue", DataTypes.IntegerType, true));
 		fieldsA.add(DataTypes.createStructField("id", DataTypes.StringType, true));

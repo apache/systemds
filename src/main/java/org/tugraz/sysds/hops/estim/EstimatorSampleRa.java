@@ -234,7 +234,7 @@ public class EstimatorSampleRa extends SparsityEstimator
 		return (a < 0) ? a + 1 : a;
 	}
 	
-	private class AdjacencyLists {
+	private static class AdjacencyLists {
 		private ArrayList<Integer>[] indexes;
 		
 		@SuppressWarnings("unchecked")
@@ -242,7 +242,7 @@ public class EstimatorSampleRa extends SparsityEstimator
 			int len = row ? mb.getNumRows() : mb.getNumColumns();
 			indexes = new ArrayList[len];
 			for(int i=0; i<len; i++)
-				indexes[i] = new ArrayList<Integer>();
+				indexes[i] = new ArrayList<>();
 			if( mb.isEmptyBlock(false) )
 				return; //early abort
 			if( mb.isInSparseFormat() ) {

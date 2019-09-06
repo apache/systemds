@@ -159,6 +159,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 			_mcOut = mcOut;
 		}
 
+		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock mb = arg0._2();

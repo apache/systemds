@@ -219,7 +219,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& HopRewriteUtils.isReorg(hop.getInput().get(0), ReOrgOp.RESHAPE) ) {
 				Hop colSumsInput = hop.getInput().get(0).getInput().get(0);
 				if(colSumsInput instanceof AggUnaryOp && ((AggUnaryOp)colSumsInput).getOp() == AggOp.SUM && ((AggUnaryOp)colSumsInput).getDirection() == Direction.Col) {
-					ArrayList<Hop> inHops = new ArrayList<Hop>();
+					ArrayList<Hop> inHops = new ArrayList<>();
 					inHops.add(colSumsInput.getInput().get(0));
 					long numChannels = Hop.computeSizeInformation(hop.getInput().get(0).getInput().get(1));
 					long HW = Hop.computeSizeInformation(hop.getInput().get(0).getInput().get(2));
@@ -740,7 +740,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				Hop v = getSecondInput(getSecondInput(hi));
 				Hop X = getFirstInput(getFirstInput(hi));
 				if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
-					ArrayList<Hop> inHops = new ArrayList<Hop>();
+					ArrayList<Hop> inHops = new ArrayList<>();
 					inHops.add(X);
 					inHops.add(v);
 					inHops.add(v_prev);
@@ -805,7 +805,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				if(!potentialForBatchNormTrain) {
 					Hop gamma = getSecondInput(getFirstInput(hi));
 					Hop beta = getSecondInput(hi);
-					ArrayList<Hop> inHops = new ArrayList<Hop>();
+					ArrayList<Hop> inHops = new ArrayList<>();
 					inHops.add(X);
 					inHops.add(gamma);
 					inHops.add(beta);

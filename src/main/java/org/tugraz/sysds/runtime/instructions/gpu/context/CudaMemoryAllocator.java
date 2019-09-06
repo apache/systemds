@@ -41,6 +41,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	 * @param size size in bytes
 	 * @throws jcuda.CudaException if unable to allocate
 	 */
+	@Override
 	public void allocate(Pointer devPtr, long size) throws CudaException {
 		int status = cudaMalloc(devPtr, size);
 		if(status != cudaSuccess) {
@@ -54,6 +55,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	 * @param devPtr Device pointer to memory to free
 	 * @throws jcuda.CudaException if error occurs
 	 */
+	@Override
 	public void free(Pointer devPtr) throws CudaException {
 		int status = cudaFree(devPtr);
 		if(status != cudaSuccess) {
@@ -67,6 +69,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	 * @param size size in bytes
 	 * @return true if there is enough available memory to allocate a pointer of the given size 
 	 */
+	@Override
 	public boolean canAllocate(long size) {
 		return size <= getAvailableMemory();
 	}
@@ -76,6 +79,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	 *
 	 * @return the available memory in bytes
 	 */
+	@Override
 	public long getAvailableMemory() {
 		long free[] = { 0 };
 		long total[] = { 0 };

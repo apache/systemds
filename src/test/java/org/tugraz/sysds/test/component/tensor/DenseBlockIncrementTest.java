@@ -109,11 +109,11 @@ public class DenseBlockIncrementTest {
 		}
 	}
 
-	private DenseBlock getDenseBlock2(ValueType vt) {
+	private static DenseBlock getDenseBlock2(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[]{3, 5});
 	}
 
-	private DenseBlock getDenseBlockLarge2(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge2(ValueType vt) {
 		int[] dims = {3, 5};
 		switch (vt) {
 			case FP32:
@@ -133,7 +133,7 @@ public class DenseBlockIncrementTest {
 		}
 	}
 
-	private void checkIncrement2(DenseBlock db) {
+	private static void checkIncrement2(DenseBlock db) {
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 5; j++) {
 				db.incr(i, j);

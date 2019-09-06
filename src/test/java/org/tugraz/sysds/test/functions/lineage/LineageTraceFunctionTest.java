@@ -69,7 +69,7 @@ public class LineageTraceFunctionTest extends AutomatedTestBase
 		System.out.println("------------ BEGIN " + testname + "------------");
 		
 		getAndLoadTestConfiguration(testname);
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		
 		proArgs.add("-explain");
 		proArgs.add("-lineage");

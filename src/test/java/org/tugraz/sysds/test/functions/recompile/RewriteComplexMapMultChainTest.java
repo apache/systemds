@@ -19,7 +19,6 @@
 
 package org.tugraz.sysds.test.functions.recompile;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 import org.junit.Test;
@@ -57,22 +56,22 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRewriteExpr1SingleColumnCP() throws IOException {
+	public void testRewriteExpr1SingleColumnCP() {
 		runRewriteMapMultChain(TEST_NAME1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteExpr1MultiColumnCP() throws IOException {
+	public void testRewriteExpr1MultiColumnCP() {
 		runRewriteMapMultChain(TEST_NAME1, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteExpr2SingleColumnCP() throws IOException {
+	public void testRewriteExpr2SingleColumnCP() {
 		runRewriteMapMultChain(TEST_NAME2, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteExpr2MultiColumnCP() throws IOException {
+	public void testRewriteExpr2MultiColumnCP() {
 		runRewriteMapMultChain(TEST_NAME2, false, ExecType.CP);
 	}
 	

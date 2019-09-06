@@ -308,7 +308,7 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	}
 	
 	private static HashMap<CellIndex,Double> readScalarMatrixFromHDFS(String name) {
-		HashMap<CellIndex,Double> dmlfile = new HashMap<CellIndex,Double>();
+		HashMap<CellIndex,Double> dmlfile = new HashMap<>();
 		try {
 			Double val = HDFSTool.readDoubleFromHDFSFile(baseDirectory + OUTPUT_DIR + name);
 			dmlfile.put(new CellIndex(1,1), val);

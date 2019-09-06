@@ -240,8 +240,7 @@ public class SparkUtils
 				.limit(par).boxed().collect(Collectors.toList());
 		
 		//parallelize offsets and generate all empty blocks
-		return (JavaPairRDD<MatrixIndexes,MatrixBlock>) sc.parallelize(offsets, par)
-				.flatMapToPair(new GenerateEmptyBlocks(mc, pNumBlocks));
+		return sc.parallelize(offsets, par).flatMapToPair(new GenerateEmptyBlocks(mc, pNumBlocks));
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixCell> cacheBinaryCellRDD(JavaPairRDD<MatrixIndexes, MatrixCell> input) {

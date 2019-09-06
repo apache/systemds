@@ -119,7 +119,7 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 	 */
 	private static HashMap<CellIndex, Double> replaceNaNValues(HashMap<CellIndex, Double> in) 
 	{
-		HashMap<CellIndex, Double> out = new HashMap<CellIndex, Double>();
+		HashMap<CellIndex, Double> out = new HashMap<>();
 		double NaN = 0d/0d;
 		
 		for( Entry<CellIndex,Double> e : in.entrySet() ) {

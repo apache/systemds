@@ -479,7 +479,7 @@ public class BasicTensorBlock implements Serializable {
 
 	////////
 	// Size estimation and format decisions
-	private boolean evalSparseFormatInMemory(int[] dims, long estnnz) {
+	private static boolean evalSparseFormatInMemory(int[] dims, long estnnz) {
 		// TODO Auto-generated method stub
 		return false;
 	}

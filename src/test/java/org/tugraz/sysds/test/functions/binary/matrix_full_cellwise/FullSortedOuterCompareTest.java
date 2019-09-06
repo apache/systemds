@@ -148,7 +148,7 @@ public class FullSortedOuterCompareTest extends AutomatedTestBase
 		}
 	}
 	
-	private String getSafeOp(String op) {
+	private static String getSafeOp(String op) {
 		switch(op) {
 			case "<": return "lt";
 			case "<=": return "lte";

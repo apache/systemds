@@ -647,8 +647,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		long clen = mc.getCols();
 		int blen = mc.getBlocksize();
 		
-		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class); //beware ca 50ms
-		try
+		try(SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class))
 		{
 			MatrixIndexes indexes = new MatrixIndexes();
 			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)blen); brow++)
@@ -716,11 +715,9 @@ public class ResultMergeLocalFile extends ResultMerge
 					writer.append(indexes, mb);
 				}
 		}
-		finally {
-			IOUtilFunctions.closeSilently(writer);
-		}
 	}
 
+	@SuppressWarnings("resource")
 	private void createTextCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{

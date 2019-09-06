@@ -234,7 +234,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			int iRowStartDest = UtilFunctions.computeCellInBlock(kv._1, _blen);
 			for(int iRowStartSrc = 0; iRowStartSrc<kv._2.getNumRows(); iRowStartSrc += iMaxRowsToCopy, lGblStartRow += _blen) {
 				IndexRange range = UtilFunctions.getSelectedRangeForZeroOut(
-					new Pair<Long,FrameBlock>(kv._1, kv._2), _blen, curBlockRange, lGblStartRow-1, lGblStartRow);
+					new Pair<>(kv._1, kv._2), _blen, curBlockRange, lGblStartRow-1, lGblStartRow);
 				if(range.rowStart == -1 && range.rowEnd == -1 && range.colStart == -1 && range.colEnd == -1) {
 					throw new Exception("Error while getting range for zero-out");
 				}

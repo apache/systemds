@@ -120,7 +120,7 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 	{
 		Timing time = new Timing(true);
 		
-		ArrayList<double[][]> ret = new ArrayList<double[][]>();
+		ArrayList<double[][]> ret = new ArrayList<>();
 		
 		//establish connection to SystemDS
 		Connection conn = new Connection();
@@ -170,7 +170,7 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 
 	private ArrayList<double[][]> generateInputs( int num, int rows, int cols, double sparsity )
 	{
-		ArrayList<double[][]> ret = new ArrayList<double[][]>();
+		ArrayList<double[][]> ret = new ArrayList<>();
 		
 		for( int i=0; i<num; i++ )
 		{

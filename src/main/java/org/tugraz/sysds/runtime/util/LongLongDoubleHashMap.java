@@ -170,9 +170,11 @@ public class LongLongDoubleHashMap
 			key1 = k1;
 			key2 = k2;
 		}
+		@Override
 		public long getKey1() {
 			return key1;
 		}
+		@Override
 		public long getKey2() {
 			return key2;
 		}
@@ -186,9 +188,11 @@ public class LongLongDoubleHashMap
 			key1 = (int)k1;
 			key2 = (int)k2;
 		}
+		@Override
 		public long getKey1() {
 			return key1;
 		}
+		@Override
 		public long getKey2() {
 			return key2;
 		}

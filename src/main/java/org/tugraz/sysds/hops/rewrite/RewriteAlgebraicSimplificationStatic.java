@@ -26,8 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.AggUnaryOp;
 import org.tugraz.sysds.hops.BinaryOp;
@@ -65,9 +63,7 @@ import org.tugraz.sysds.common.Types.ValueType;
  * 
  */
 public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
-{	
-	private static final Log LOG = LogFactory.getLog(RewriteAlgebraicSimplificationStatic.class.getName());
-	
+{
 	//valid aggregation operation types for rowOp to colOp conversions and vice versa
 	private static final AggOp[] LOOKUP_VALID_ROW_COL_AGGREGATE = new AggOp[] {
 		AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.MEAN, AggOp.VAR};
@@ -1480,7 +1476,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			
 			//find chain of order operations with same desc/ixret configuration and single consumers
 			Set<String> probe = new HashSet<>();
-			ArrayList<LiteralOp> byList = new ArrayList<LiteralOp>();
+			ArrayList<LiteralOp> byList = new ArrayList<>();
 			byList.add(by); probe.add(by.getStringValue());
 			Hop input = hi.getInput().get(0);
 			while( HopRewriteUtils.isReorg(input, ReOrgOp.SORT)

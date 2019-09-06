@@ -35,7 +35,7 @@ import org.tugraz.sysds.common.Types.ValueType;
 
 public class Unary extends Lop 
 {
-	
+	@SuppressWarnings("hiding")
 	public enum OperationTypes {
 		ADD, SUBTRACT, SUBTRACTRIGHT, MULTIPLY, MULTIPLY2, DIVIDE, MODULUS, INTDIV, MINUS1_MULTIPLY, 
 		POW, POW2, LOG, MAX, MIN, NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, EXP, Over, 

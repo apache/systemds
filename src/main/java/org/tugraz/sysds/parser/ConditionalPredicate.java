@@ -60,18 +60,29 @@ public class ConditionalPredicate implements ParseInfo
 	private int _endLine, _endColumn;
 	private String _text;
 	
+	@Override
 	public void setFilename(String fname)   { _filename = fname;   }
+	@Override
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
+	@Override
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
+	@Override
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
+	@Override
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
+	@Override
 	public void setText(String text) { _text = text; }
 
+	@Override
 	public String getFilename()	{ return _filename;   }
+	@Override
 	public int getBeginLine()	{ return _beginLine;   }
+	@Override
 	public int getBeginColumn() { return _beginColumn; }
+	@Override
 	public int getEndLine() 	{ return _endLine;   }
+	@Override
 	public int getEndColumn()	{ return _endColumn; }
+	@Override
 	public String getText() { return _text; }
-
 }

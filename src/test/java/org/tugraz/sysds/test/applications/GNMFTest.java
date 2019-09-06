@@ -72,7 +72,7 @@ public class GNMFTest extends AutomatedTestBase
 				
 		getAndLoadTestConfiguration(TEST_NAME);
 
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		
 		proArgs.add("-args");
 		proArgs.add(input("v"));

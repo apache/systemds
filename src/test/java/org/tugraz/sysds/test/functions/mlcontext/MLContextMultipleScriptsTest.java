@@ -122,6 +122,7 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 	}
 
 	@After
+	@Override
 	public void tearDown() {
 		super.tearDown();
 	}

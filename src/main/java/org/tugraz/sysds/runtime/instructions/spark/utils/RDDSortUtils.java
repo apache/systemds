@@ -435,12 +435,12 @@ public class RDDSortUtils
 		private long _rlen = -1;
 		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction(long rlen, int blen)
-		{
+		public ConvertToBinaryBlockFunction(long rlen, int blen) {
 			_rlen = rlen;
 			_blen = blen;
 		}
 		
+		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Double,Long>> arg0) 
 			throws Exception 
 		{
@@ -481,12 +481,12 @@ public class RDDSortUtils
 		private long _rlen = -1;
 		private int _blen = -1;
 		
-		public ConvertToBinaryBlockFunction2(long rlen, int blen)
-		{
+		public ConvertToBinaryBlockFunction2(long rlen, int blen) {
 			_rlen = rlen;
 			_blen = blen;
 		}
 		
+		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<DoublePair,Long>> arg0) 
 			throws Exception
 		{
@@ -536,6 +536,7 @@ public class RDDSortUtils
 			_blen = blen;
 		}
 		
+		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValueIndexPair,Long>> arg0) 
 			throws Exception
 		{
@@ -584,6 +585,7 @@ public class RDDSortUtils
 			_blen = blen;
 		}
 		
+		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Long,Long>> arg0) 
 			throws Exception
 		{
@@ -632,6 +634,7 @@ public class RDDSortUtils
 			_blen = blen;
 		}
 		
+		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixBlock,Long>> arg0) 
 			throws Exception 
 		{
@@ -677,6 +680,7 @@ public class RDDSortUtils
 			_blen = blen;
 		}
 		
+		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<ValuesIndexPair,Long>> arg0) 
 			throws Exception
 		{
@@ -745,6 +749,7 @@ public class RDDSortUtils
 				_inIter = in;
 			}
 
+			@Override
 			public Iterator<Tuple2<MatrixIndexes, RowMatrixBlock>> iterator() {
 				return this;
 			}
@@ -834,6 +839,7 @@ public class RDDSortUtils
 				_inIter = in;
 			}
 
+			@Override
 			public Iterator<Tuple2<MatrixIndexes, RowMatrixBlock>> iterator() {
 				return this;
 			}

@@ -20,8 +20,6 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -36,7 +34,6 @@ import org.tugraz.sysds.runtime.util.DnnUtils;
 import org.tugraz.sysds.utils.NativeHelper;
 
 public class DnnCPInstruction extends UnaryCPInstruction {
-	private static final Log LOG = LogFactory.getLog(DnnCPInstruction.class.getName());
 	private static boolean warnedUnderUtilitization = false;
 	
 	private final CPOperand _in2;

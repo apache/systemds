@@ -45,7 +45,7 @@ public class ORLocalScheme extends DataPartitionLocalScheme {
 		}).collect(Collectors.toList());
 	}
 
-	private List<MatrixObject> doPartitioning(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
+	private static List<MatrixObject> doPartitioning(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
 		return partition(k, mb, permutations).stream().map(ParamservUtils::newMatrixObject).collect(Collectors.toList());
 	}
 

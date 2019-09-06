@@ -46,7 +46,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 	
 	private void testRewrite(String testname) {
 		getAndLoadTestConfiguration(testname);
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		
 		proArgs.add("-explain");
 		proArgs.add("-lineage");

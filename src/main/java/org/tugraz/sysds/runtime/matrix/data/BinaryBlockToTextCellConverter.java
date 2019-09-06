@@ -137,6 +137,7 @@ Converter<MatrixIndexes, MatrixBlock, NullWritable, Text>
 		return pair;
 	}
 
+	@Override
 	public void setBlockSize(int nr, int nc) {
 		brow=nr;
 		bcolumn=nc;

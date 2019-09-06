@@ -191,7 +191,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testJavaRDDCSVSumDML() {
 		System.out.println("MLContextTest - JavaRDD<String> CSV sum DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
 		list.add("4,5,6");
 		list.add("7,8,9");
@@ -206,7 +206,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testJavaRDDIJVSumDML() {
 		System.out.println("MLContextTest - JavaRDD<String> IJV sum DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1 1 5");
 		list.add("2 2 5");
 		list.add("3 3 5");
@@ -223,7 +223,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testJavaRDDAndInputParameterDML() {
 		System.out.println("MLContextTest - JavaRDD<String> and input parameter DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,2");
 		list.add("3,4");
 		JavaRDD<String> javaRDD = sc.parallelize(list);
@@ -238,7 +238,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testInputMapDML() {
 		System.out.println("MLContextTest - input map DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("10,20");
 		list.add("30,40");
 		final JavaRDD<String> javaRDD = sc.parallelize(list);
@@ -275,7 +275,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testRDDSumCSVDML() {
 		System.out.println("MLContextTest - RDD<String> CSV sum DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,1,1");
 		list.add("2,2,2");
 		list.add("3,3,3");
@@ -291,7 +291,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testRDDSumIJVDML() {
 		System.out.println("MLContextTest - RDD<String> IJV sum DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1 1 1");
 		list.add("2 1 2");
 		list.add("1 2 3");
@@ -310,14 +310,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLDoublesWithNoIDColumn() {
 		System.out.println("MLContextTest - DataFrame sum DML, doubles with no ID column");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("10,20,30");
 		list.add("40,50,60");
 		list.add("70,80,90");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
@@ -335,14 +335,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLDoublesWithIDColumn() {
 		System.out.println("MLContextTest - DataFrame sum DML, doubles with ID column");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,1,2,3");
 		list.add("2,4,5,6");
 		list.add("3,7,8,9");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
@@ -361,14 +361,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLDoublesWithIDColumnSortCheck() {
 		System.out.println("MLContextTest - DataFrame sum DML, doubles with ID column sort check");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("3,7,8,9");
 		list.add("1,1,2,3");
 		list.add("2,4,5,6");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
@@ -387,14 +387,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLVectorWithIDColumn() {
 		System.out.println("MLContextTest - DataFrame sum DML, vector with ID column");
 
-		List<Tuple2<Double, Vector>> list = new ArrayList<Tuple2<Double, Vector>>();
-		list.add(new Tuple2<Double, Vector>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
-		list.add(new Tuple2<Double, Vector>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
-		list.add(new Tuple2<Double, Vector>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
+		List<Tuple2<Double, Vector>> list = new ArrayList<>();
+		list.add(new Tuple2<>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
 		JavaRDD<Tuple2<Double, Vector>> javaRddTuple = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
@@ -411,17 +411,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLMllibVectorWithIDColumn() {
 		System.out.println("MLContextTest - DataFrame sum DML, mllib vector with ID column");
 
-		List<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> list = new ArrayList<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>>();
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(1.0,
-				org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0)));
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(2.0,
-				org.apache.spark.mllib.linalg.Vectors.dense(4.0, 5.0, 6.0)));
-		list.add(new Tuple2<Double, org.apache.spark.mllib.linalg.Vector>(3.0,
-				org.apache.spark.mllib.linalg.Vectors.dense(7.0, 8.0, 9.0)));
+		List<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> list = new ArrayList<>();
+		list.add(new Tuple2<>(1.0, org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<>(2.0, org.apache.spark.mllib.linalg.Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<>(3.0, org.apache.spark.mllib.linalg.Vectors.dense(7.0, 8.0, 9.0)));
 		JavaRDD<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> javaRddTuple = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleMllibVectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new org.apache.spark.mllib.linalg.VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
@@ -438,14 +435,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLVectorWithNoIDColumn() {
 		System.out.println("MLContextTest - DataFrame sum DML, vector with no ID column");
 
-		List<Vector> list = new ArrayList<Vector>();
+		List<Vector> list = new ArrayList<>();
 		list.add(Vectors.dense(1.0, 2.0, 3.0));
 		list.add(Vectors.dense(4.0, 5.0, 6.0));
 		list.add(Vectors.dense(7.0, 8.0, 9.0));
 		JavaRDD<Vector> javaRddVector = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddVector.map(new VectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
@@ -461,14 +458,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLMllibVectorWithNoIDColumn() {
 		System.out.println("MLContextTest - DataFrame sum DML, mllib vector with no ID column");
 
-		List<org.apache.spark.mllib.linalg.Vector> list = new ArrayList<org.apache.spark.mllib.linalg.Vector>();
+		List<org.apache.spark.mllib.linalg.Vector> list = new ArrayList<>();
 		list.add(org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0));
 		list.add(org.apache.spark.mllib.linalg.Vectors.dense(4.0, 5.0, 6.0));
 		list.add(org.apache.spark.mllib.linalg.Vectors.dense(7.0, 8.0, 9.0));
 		JavaRDD<org.apache.spark.mllib.linalg.Vector> javaRddVector = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddVector.map(new MllibVectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", new org.apache.spark.mllib.linalg.VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
@@ -588,7 +585,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testInputScalaMapDML() {
 		System.out.println("MLContextTest - input Scala map DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("10,20");
 		list.add("30,40");
 		final JavaRDD<String> javaRDD = sc.parallelize(list);
@@ -920,14 +917,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testInputMatrixBlockDML() {
 		System.out.println("MLContextTest - input MatrixBlock DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("10,20,30");
 		list.add("40,50,60");
 		list.add("70,80,90");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.StringType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.StringType, true));
 		fields.add(DataTypes.createStructField("C3", DataTypes.StringType, true));
@@ -1019,7 +1016,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testJavaRDDGoodMetadataDML() {
 		System.out.println("MLContextTest - JavaRDD<String> good metadata DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
 		list.add("4,5,6");
 		list.add("7,8,9");
@@ -1036,7 +1033,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testJavaRDDBadMetadataDML() {
 		System.out.println("MLContextTest - JavaRDD<String> bad metadata DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
 		list.add("4,5,6");
 		list.add("7,8,9");
@@ -1052,7 +1049,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testJavaRDDBadMetadataPYDML() {
 		System.out.println("MLContextTest - JavaRDD<String> bad metadata PYML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
 		list.add("4,5,6");
 		list.add("7,8,9");
@@ -1068,7 +1065,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testRDDGoodMetadataDML() {
 		System.out.println("MLContextTest - RDD<String> good metadata DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,1,1");
 		list.add("2,2,2");
 		list.add("3,3,3");
@@ -1086,14 +1083,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameGoodMetadataDML() {
 		System.out.println("MLContextTest - DataFrame good metadata DML");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("10,20,30");
 		list.add("40,50,60");
 		list.add("70,80,90");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
@@ -1112,13 +1109,13 @@ public class MLContextTest extends MLContextTestBase {
 	public void testInputTupleSeqNoMetadataDML() {
 		System.out.println("MLContextTest - Tuple sequence no metadata DML");
 
-		List<String> list1 = new ArrayList<String>();
+		List<String> list1 = new ArrayList<>();
 		list1.add("1,2");
 		list1.add("3,4");
 		JavaRDD<String> javaRDD1 = sc.parallelize(list1);
 		RDD<String> rdd1 = JavaRDD.toRDD(javaRDD1);
 
-		List<String> list2 = new ArrayList<String>();
+		List<String> list2 = new ArrayList<>();
 		list2.add("5,6");
 		list2.add("7,8");
 		JavaRDD<String> javaRDD2 = sc.parallelize(list2);
@@ -1141,13 +1138,13 @@ public class MLContextTest extends MLContextTestBase {
 	public void testInputTupleSeqWithMetadataDML() {
 		System.out.println("MLContextTest - Tuple sequence with metadata DML");
 
-		List<String> list1 = new ArrayList<String>();
+		List<String> list1 = new ArrayList<>();
 		list1.add("1,2");
 		list1.add("3,4");
 		JavaRDD<String> javaRDD1 = sc.parallelize(list1);
 		RDD<String> rdd1 = JavaRDD.toRDD(javaRDD1);
 
-		List<String> list2 = new ArrayList<String>();
+		List<String> list2 = new ArrayList<>();
 		list2.add("5,6");
 		list2.add("7,8");
 		JavaRDD<String> javaRDD2 = sc.parallelize(list2);
@@ -1193,14 +1190,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLDoublesWithNoIDColumnNoFormatSpecified() {
 		System.out.println("MLContextTest - DataFrame sum DML, doubles with no ID column, no format specified");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("2,2,2");
 		list.add("3,3,3");
 		list.add("4,4,4");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
@@ -1216,14 +1213,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLDoublesWithIDColumnNoFormatSpecified() {
 		System.out.println("MLContextTest - DataFrame sum DML, doubles with ID column, no format specified");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,2,2,2");
 		list.add("2,3,3,3");
 		list.add("3,4,4,4");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
@@ -1240,14 +1237,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLVectorWithIDColumnNoFormatSpecified() {
 		System.out.println("MLContextTest - DataFrame sum DML, vector with ID column, no format specified");
 
-		List<Tuple2<Double, Vector>> list = new ArrayList<Tuple2<Double, Vector>>();
-		list.add(new Tuple2<Double, Vector>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
-		list.add(new Tuple2<Double, Vector>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
-		list.add(new Tuple2<Double, Vector>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
+		List<Tuple2<Double, Vector>> list = new ArrayList<>();
+		list.add(new Tuple2<>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
 		JavaRDD<Tuple2<Double, Vector>> javaRddTuple = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
@@ -1262,14 +1259,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumPYDMLVectorWithIDColumnNoFormatSpecified() {
 		System.out.println("MLContextTest - DataFrame sum PYDML, vector with ID column, no format specified");
 
-		List<Tuple2<Double, Vector>> list = new ArrayList<Tuple2<Double, Vector>>();
-		list.add(new Tuple2<Double, Vector>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
-		list.add(new Tuple2<Double, Vector>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
-		list.add(new Tuple2<Double, Vector>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
+		List<Tuple2<Double, Vector>> list = new ArrayList<>();
+		list.add(new Tuple2<>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
+		list.add(new Tuple2<>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
+		list.add(new Tuple2<>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
 		JavaRDD<Tuple2<Double, Vector>> javaRddTuple = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
@@ -1284,14 +1281,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumDMLVectorWithNoIDColumnNoFormatSpecified() {
 		System.out.println("MLContextTest - DataFrame sum DML, vector with no ID column, no format specified");
 
-		List<Vector> list = new ArrayList<Vector>();
+		List<Vector> list = new ArrayList<>();
 		list.add(Vectors.dense(1.0, 2.0, 3.0));
 		list.add(Vectors.dense(4.0, 5.0, 6.0));
 		list.add(Vectors.dense(7.0, 8.0, 9.0));
 		JavaRDD<Vector> javaRddVector = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddVector.map(new VectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
@@ -1305,14 +1302,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameSumPYDMLVectorWithNoIDColumnNoFormatSpecified() {
 		System.out.println("MLContextTest - DataFrame sum PYDML, vector with no ID column, no format specified");
 
-		List<Vector> list = new ArrayList<Vector>();
+		List<Vector> list = new ArrayList<>();
 		list.add(Vectors.dense(1.0, 2.0, 3.0));
 		list.add(Vectors.dense(4.0, 5.0, 6.0));
 		list.add(Vectors.dense(7.0, 8.0, 9.0));
 		JavaRDD<Vector> javaRddVector = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddVector.map(new VectorRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
 		StructType schema = DataTypes.createStructType(fields);
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
@@ -1833,14 +1830,14 @@ public class MLContextTest extends MLContextTestBase {
 	public void testDataFrameToBinaryBlocks() {
 		System.out.println("MLContextTest - DataFrame to binary blocks");
 
-		List<String> list = new ArrayList<String>();
+		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
 		list.add("4,5,6");
 		list.add("7,8,9");
 		JavaRDD<String> javaRddString = sc.parallelize(list);
 
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));
@@ -1863,7 +1860,7 @@ public class MLContextTest extends MLContextTestBase {
 		JavaRDD<String> javaRddString = sc
 				.parallelize(Stream.of("1,2,3", "4,5,6", "7,8,9").collect(Collectors.toList()));
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C2", DataTypes.DoubleType, true));
 		fields.add(DataTypes.createStructField("C3", DataTypes.DoubleType, true));

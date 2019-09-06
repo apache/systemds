@@ -22,8 +22,6 @@
 package org.tugraz.sysds.runtime.controlprogram.context;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
@@ -97,7 +95,6 @@ import java.util.stream.LongStream;
 
 public class SparkExecutionContext extends ExecutionContext
 {
-	private static final Log LOG = LogFactory.getLog(SparkExecutionContext.class.getName());
 	private static final boolean LDEBUG = false; //local debug flag
 
 	//internal configurations

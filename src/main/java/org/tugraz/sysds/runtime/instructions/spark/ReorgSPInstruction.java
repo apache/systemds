@@ -336,6 +336,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			_blen = mc.getBlocksize();
 		}
 		
+		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) {
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock in = arg0._2();

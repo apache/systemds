@@ -273,6 +273,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
+	@SuppressWarnings("resource")
 	private void generateRandDataMatrix(SparkExecutionContext sec) {
 		long lrows = sec.getScalarInput(rows).getLongValue();
 		long lcols = sec.getScalarInput(cols).getLongValue();
@@ -380,6 +381,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
 
+	@SuppressWarnings("resource")
 	private void generateRandDataTensor(SparkExecutionContext sec) {
 		int[] tDims = DataConverter.getTensorDimensions(sec, dims);
 
@@ -476,6 +478,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
 
+	@SuppressWarnings("resource")
 	private void generateSequence(SparkExecutionContext sec) {
 		double lfrom = sec.getScalarInput(seq_from).getDoubleValue();
 		double lto = sec.getScalarInput(seq_to).getDoubleValue();
@@ -578,7 +581,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		// divide the population range across numPartitions by creating SampleTasks
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long outputSize = MatrixBlock.estimateSizeDenseInMemory(lrows,1);
-		int numPartitions = (int) Math.ceil((double)outputSize/hdfsBlockSize);
+		int numPartitions = (int) Math.ceil(outputSize/hdfsBlockSize);
 		long partitionSize = (long) Math.ceil(maxValue /numPartitions);
 
 		ArrayList<SampleTask> offsets = new ArrayList<>();
@@ -939,7 +942,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			double seq_to = (_seq_incr > 0) ?
 				Math.min(_global_seq_end, seq_from + _seq_incr*(_blen-1)) :
 				Math.max(_global_seq_end, seq_from + _seq_incr*(_blen+1));
-			long globalRow = (long)Math.round((seq_from-_global_seq_start)/_seq_incr)+1;
+			long globalRow = Math.round((seq_from-_global_seq_start)/_seq_incr)+1;
 			long rowIndex = UtilFunctions.computeBlockIndex(globalRow, _blen);
 			
 			MatrixIndexes indx = new MatrixIndexes(rowIndex, 1);

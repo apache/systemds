@@ -1330,7 +1330,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 	}
 	
-	private class PartitionSignature {
+	private static class PartitionSignature {
 		private final int partNodes, inputNodes, rootNodes, matPoints;
 		private final double cCompute, cRead, cWrite, cPlan0, cPlanN;
 		

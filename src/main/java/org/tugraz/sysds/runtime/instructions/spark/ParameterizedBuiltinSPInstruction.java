@@ -550,20 +550,20 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				//handle cases of pass-through and reset block
 				if( (_lower && ix.getRowIndex() > ix.getColumnIndex())
 					|| (!_lower && ix.getRowIndex() < ix.getColumnIndex()) ) {
-					return _values ? arg : new Tuple2<MatrixIndexes,MatrixBlock>(
+					return _values ? arg : new Tuple2<>(
 						ix, new MatrixBlock(mb.getNumRows(), mb.getNumColumns(), 1d));
 				}
 				
 				//handle cases of empty blocks
 				if( (_lower && ix.getRowIndex() < ix.getColumnIndex())
 					|| (!_lower && ix.getRowIndex() > ix.getColumnIndex()) ) {
-					return new Tuple2<MatrixIndexes,MatrixBlock>(ix,
+					return new Tuple2<>(ix,
 						new MatrixBlock(mb.getNumRows(), mb.getNumColumns(), true));
 				}
 				
 				//extract triangular blocks for blocks on diagonal
 				assert(ix.getRowIndex() == ix.getColumnIndex());
-				return new Tuple2<MatrixIndexes,MatrixBlock>(ix,
+				return new Tuple2<>(ix,
 					mb.extractTriangular(new MatrixBlock(), _lower, _diag, _values));
 			}
 		}

@@ -123,7 +123,7 @@ public class OpBindChainTest extends AutomatedTestBase
 	}*/
 	
 	
-	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {
+	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {
 		MatrixBlock m1;
 		MatrixBlock m2;
 		MatrixBlock m3 = new MatrixBlock();

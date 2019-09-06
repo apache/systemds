@@ -79,7 +79,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	private final static List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(cols/4, ValueType.BOOLEAN);
 	private static ValueType[] schemaMixedLarge = null;
 	static {
-		final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
+		final List<ValueType> schemaMixedLargeList = new ArrayList<>(schemaMixedLargeListStr);
 		schemaMixedLargeList.addAll(schemaMixedLargeListDble);
 		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);
@@ -127,7 +127,7 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 		ExecMode oldRTP = rtplatform;
 		TestConfiguration config = null;
 		
-		HashMap<String, ValueType[]> outputSchema = new HashMap<String, ValueType[]>();
+		HashMap<String, ValueType[]> outputSchema = new HashMap<>();
 		
 		if (itype == IXType.LIX) 
 			config = getTestConfiguration("FrameLeftIndexing");

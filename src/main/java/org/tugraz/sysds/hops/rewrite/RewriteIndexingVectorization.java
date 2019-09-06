@@ -22,8 +22,6 @@ package org.tugraz.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp;
@@ -42,9 +40,6 @@ import org.tugraz.sysds.hops.Hop.OpOp2;
  */
 public class RewriteIndexingVectorization extends HopRewriteRule
 {
-	
-	private static final Log LOG = LogFactory.getLog(RewriteIndexingVectorization.class.getName());
-	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )

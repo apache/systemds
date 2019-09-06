@@ -123,6 +123,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 	}
 
 	@After
+	@Override
 	public void tearDown() {
 		super.tearDown();
 	}

@@ -72,14 +72,14 @@ public abstract class FrameReader
 	}
 
 	public ValueType[] getDefSchema( long clen )
-		throws IOException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		int lclen = Math.max((int)clen, 1);
 		return UtilFunctions.nCopies(lclen, ValueType.STRING);
 	}
 
 	public String[] getDefColNames( long clen )
-		throws IOException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		return (clen < 0) ? new String[0] : 
 			FrameBlock.createColNames((int)clen);

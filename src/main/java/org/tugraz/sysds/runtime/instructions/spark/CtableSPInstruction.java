@@ -44,7 +44,6 @@ import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 import scala.Tuple2;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -274,7 +273,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		}
 	
 		protected void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
-			throws IOException, DMLRuntimeException
+			throws DMLRuntimeException
 		{
 			rbuff.flushBufferToBinaryBlocks().stream() // prevent library dependencies
 				.map(b -> SparkUtils.fromIndexedMatrixBlock(b)).forEach(b -> ret.add(b));

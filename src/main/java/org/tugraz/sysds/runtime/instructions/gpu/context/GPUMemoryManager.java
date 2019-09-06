@@ -486,7 +486,7 @@ public class GPUMemoryManager {
 	 * @return pointers such that: superset - subset
 	 */
 	private static Set<Pointer> nonIn(Set<Pointer> superset, Set<Pointer> subset) {
-		Set<Pointer> ret = new HashSet<Pointer>();
+		Set<Pointer> ret = new HashSet<>();
 		for(Pointer superPtr : superset) {
 			if(!subset.contains(superPtr)) {
 				ret.add(superPtr);
@@ -527,6 +527,7 @@ public class GPUMemoryManager {
 	/**
 	 * Print debugging information
 	 */
+	@Override
 	@SuppressWarnings("unused")
 	public String toString() {
 		long sizeOfLockedGPUObjects = 0; int numLockedGPUObjects = 0; int numLockedPointers = 0;

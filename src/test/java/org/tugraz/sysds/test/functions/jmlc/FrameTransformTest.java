@@ -105,7 +105,7 @@ public class FrameTransformTest extends AutomatedTestBase
 	{
 		Timing time = new Timing(true);
 		
-		ArrayList<double[][]> ret = new ArrayList<double[][]>();
+		ArrayList<double[][]> ret = new ArrayList<>();
 		
 		//establish connection to SystemDS
 		Connection conn = new Connection();
@@ -113,7 +113,7 @@ public class FrameTransformTest extends AutomatedTestBase
 		try
 		{
 			//prepare input arguments
-			HashMap<String,String> args = new HashMap<String,String>();
+			HashMap<String,String> args = new HashMap<>();
 			args.put("$TRANSFORM_SPEC", "{ \"ids\": true ,\"recode\": [ 1, 2, 3] }");
 			
 			//read and precompile script
@@ -171,7 +171,7 @@ public class FrameTransformTest extends AutomatedTestBase
 	
 	protected static String[][] createRecodeMaps(String[][] data) {
 		//create maps per column
-		ArrayList<HashMap<String,Integer>> map = new ArrayList<HashMap<String,Integer>>(); 
+		ArrayList<HashMap<String,Integer>> map = new ArrayList<>(); 
 		for( int j=0; j<data[0].length; j++ )
 			map.add(new HashMap<String,Integer>());
 		//create recode maps per column

@@ -139,7 +139,7 @@ public class OuterProductTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorSample(0.2), m, k, n, case2);
 	}
 	
-	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {
+	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
 		MatrixBlock m2 = MatrixBlock.randOperations(k, n, sp[1], 1, 1, "uniform", 3);
 		MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m2, 

@@ -195,7 +195,7 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		List<ValueType> schemaMixedLargeListInt  = Collections.nCopies(cols/4, ValueType.INT64);
 		List<ValueType> schemaMixedLargeListBool  = Collections.nCopies(cols-(cols/4)*3, ValueType.BOOLEAN);
 
-		final List<ValueType> schemaMixedLargeList = new ArrayList<ValueType>(schemaMixedLargeListStr);
+		final List<ValueType> schemaMixedLargeList = new ArrayList<>(schemaMixedLargeListStr);
 		schemaMixedLargeList.addAll(schemaMixedLargeListDble);
 		schemaMixedLargeList.addAll(schemaMixedLargeListInt);
 		schemaMixedLargeList.addAll(schemaMixedLargeListBool);

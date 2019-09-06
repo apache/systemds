@@ -140,8 +140,8 @@ public class TensorIndexes implements WritableComparable<TensorIndexes>, Externa
 	 * @param is object input
 	 * @throws IOException if IOException occurs
 	 */
-	public void readExternal(ObjectInput is)
-			throws IOException {
+	@Override
+	public void readExternal(ObjectInput is) throws IOException {
 		//default deserialize (general case)
 		readFields(is);
 	}
@@ -153,8 +153,8 @@ public class TensorIndexes implements WritableComparable<TensorIndexes>, Externa
 	 * @param os object output
 	 * @throws IOException if IOException occurs
 	 */
-	public void writeExternal(ObjectOutput os)
-			throws IOException {
+	@Override
+	public void writeExternal(ObjectOutput os) throws IOException {
 		//default serialize (general case)
 		write(os);
 	}

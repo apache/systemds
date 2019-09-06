@@ -129,6 +129,7 @@ public abstract class DenseBlockLDRB extends DenseBlock
 		return nnz + computeNnz(numBlocks() - 1, 0, blockSize(numBlocks() - 1) * _odims[0]);
 	}
 
+	@Override
 	public int countNonZeros(int r) {
 		return (int) computeNnz(index(r), pos(r), _odims[0]);
 	}

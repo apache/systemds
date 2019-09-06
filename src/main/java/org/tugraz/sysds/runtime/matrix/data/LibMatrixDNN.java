@@ -496,7 +496,7 @@ public class LibMatrixDNN {
 		// Normalize, shift, and scale
 		double [] retArr = ret.getDenseBlockValues();
 		copy(image, retArr);
-		if(resultSaveMean != null && resultSaveInvVariance != null && biasArr != null && scaleArr != null) {
+		if(biasArr != null && scaleArr != null) {
 			// Common scenario:
 			int index = 0;
 			for(int n = 0; n < N; n++) {

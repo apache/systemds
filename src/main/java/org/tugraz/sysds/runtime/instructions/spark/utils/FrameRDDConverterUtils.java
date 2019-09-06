@@ -65,7 +65,6 @@ import org.tugraz.sysds.runtime.util.FastStringTokenizer;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -278,8 +277,7 @@ public class FrameRDDConverterUtils
 	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlContext,
 		JavaPairRDD<Long,FrameBlock> in, DataCharacteristics mc, ValueType[] schema)
 	{
-		SparkSession sparkSession = sqlContext.sparkSession();
-		return binaryBlockToDataFrame(sparkSession, in, mc, schema);
+		return binaryBlockToDataFrame(sqlContext.sparkSession(), in, mc, schema);
 	}
 	
 	
@@ -826,7 +824,7 @@ public class FrameRDDConverterUtils
 		}
 
 		protected void flushBufferToList( FrameReblockBuffer rbuff,  ArrayList<Tuple2<Long,FrameBlock>> ret ) 
-			throws IOException, DMLRuntimeException
+			throws DMLRuntimeException
 		{
 			//temporary list of indexed matrix values to prevent library dependencies
 			ArrayList<Pair<Long, FrameBlock>> rettmp = new ArrayList<>();

@@ -111,10 +111,10 @@ public class UtilsTest {
 				+ "<E>5.01</E>"
 				+ "</root>";
 		File temp = File.createTempFile("tempfile", null);
-		BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
-		bw.write(testStr);
-		bw.close();
-
+		try( BufferedWriter bw = new BufferedWriter(new FileWriter(temp)) ) {
+			bw.write(testStr);
+		}
+		
 		DMLConfig dmlConfig = new DMLConfig(temp.getAbsolutePath());
 
 		Assert.assertEquals("a", dmlConfig.getTextValue("A"));

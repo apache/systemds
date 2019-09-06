@@ -112,7 +112,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 			String[][] F = null;
 			
 			//prepare input arguments
-			HashMap<String,String> args = new HashMap<String,String>();
+			HashMap<String,String> args = new HashMap<>();
 			args.put("$TRANSFORM_SPEC", spec);
 			
 			//read and precompile script
@@ -168,7 +168,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 			for( int j=0; j<tmp.length; j++ ) 
 				if( collist.contains(j+1) && tmp[j] != null ) {
 					if( ret[j] == null )
-						ret[j] = new HashMap<String,Long>();
+						ret[j] = new HashMap<>();
 					String[] parts = IOUtilFunctions.splitCSV(
 							tmp[j].toString(), Lop.DATATYPE_PREFIX);
 					ret[j].put(parts[0], Long.parseLong(parts[1]));

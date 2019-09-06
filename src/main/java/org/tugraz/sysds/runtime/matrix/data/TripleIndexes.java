@@ -62,41 +62,39 @@ public class TripleIndexes implements WritableComparable<TripleIndexes>, Seriali
 		return "("+first+", "+second+") k: "+third;
 	}
 	
-	public long getFirstIndex()
-	{
+	public long getFirstIndex() {
 		return first;
 	}
-	public long getSecondIndex()
-	{
+	public long getSecondIndex() {
 		return second;
 	}
 	
-	public long getThirdIndex()
-	{
+	public long getThirdIndex() {
 		return third;
 	}
 	
-	public void setIndexes(long i1, long i2, long i3)
-	{
+	public void setIndexes(long i1, long i2, long i3) {
 		first=i1;
 		second=i2;
 		third=i3;
 	}
 	
+	@Override
 	public void readFields(DataInput in) throws IOException {
 		first=in.readLong();
 		second=in.readLong();
 		third=in.readLong();
 	}
 	
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeLong(first);
 		out.writeLong(second);
 		out.writeLong(third);
 	}
 	
-	public int compareTo(TripleIndexes other)
-	{
+	@Override
+	public int compareTo(TripleIndexes other) {
 		if(this.first!=other.first)
 			return (this.first>other.first? 1:-1);
 		else if(this.second!=other.second)

@@ -205,7 +205,7 @@ public class WriteSPInstruction extends SPInstruction {
 			customSaveTextFile(out, fname, false);
 			
 			if( !mc.nnzKnown() )
-				mc.setNonZeros((long)aNnz.value().longValue());
+				mc.setNonZeros(aNnz.value().longValue());
 		}
 		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
 			//piggyback nnz computation on actual write
@@ -219,7 +219,7 @@ public class WriteSPInstruction extends SPInstruction {
 			in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			
 			if( !mc.nnzKnown() )
-				mc.setNonZeros((long)aNnz.value().longValue());
+				mc.setNonZeros(aNnz.value().longValue());
 		}
 		else {
 			//unsupported formats: binarycell (not externalized)

@@ -98,7 +98,7 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		}
 	}
 
-	private class WriteCSVTask implements Callable<Object> 
+	private static class WriteCSVTask implements Callable<Object> 
 	{
 		private final JobConf _job;
 		private final FileSystem _fs;

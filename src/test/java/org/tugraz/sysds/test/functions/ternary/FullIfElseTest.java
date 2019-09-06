@@ -263,7 +263,7 @@ public class FullIfElseTest extends AutomatedTestBase
 		}
 	}
 	
-	private double[][] getScalar(int input) {
+	private static double[][] getScalar(int input) {
 		return new double[][]{{7d*input}};
 	}
 }

@@ -177,15 +177,15 @@ public class DenseBlockGetSetIndexingTest
 		checkSequence(setSequence(db));
 	}
 
-	private DenseBlock getDenseBlock2(ValueType vt) {
+	private static DenseBlock getDenseBlock2(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[] {3,5});
 	}
 	
-	private DenseBlock getDenseBlock3(ValueType vt) {
+	private static DenseBlock getDenseBlock3(ValueType vt) {
 		return DenseBlockFactory.createDenseBlock(vt, new int[] {3,5,7});
 	}
 
-	private DenseBlock getDenseBlockLarge2(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge2(ValueType vt) {
 		int[] dims = {3,5};
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
@@ -198,7 +198,7 @@ public class DenseBlockGetSetIndexingTest
 		}
 	}
 
-	private DenseBlock getDenseBlockLarge3(ValueType vt) {
+	private static DenseBlock getDenseBlockLarge3(ValueType vt) {
 		int[] dims = {3,5,7};
 		switch (vt) {
 			case FP32: return new DenseBlockLFP32(dims);
@@ -211,7 +211,7 @@ public class DenseBlockGetSetIndexingTest
 		}
 	}
 
-	private DenseBlock setSequence(DenseBlock db) {
+	private static DenseBlock setSequence(DenseBlock db) {
 		if( db.numDims() == 3 ) {
 			int dim12 = 5*7;
 			int dim1 =5, dim2 = 7;
@@ -230,7 +230,7 @@ public class DenseBlockGetSetIndexingTest
 		return db;
 	}
 	
-	private void checkSequence(DenseBlock db) {
+	private static void checkSequence(DenseBlock db) {
 		boolean isBool = (db instanceof DenseBlockBool) || (db instanceof DenseBlockLBool);
 		if( db.numDims() == 3 ) {
 			int dim12 = 5*7;

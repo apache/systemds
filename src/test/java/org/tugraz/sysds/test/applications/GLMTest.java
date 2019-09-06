@@ -292,7 +292,7 @@ public class GLMTest extends AutomatedTestBase
 		MatrixCharacteristics mc_y = new MatrixCharacteristics(rows, y[0].length, defaultBlockSize, nnz_in_y);
 		writeInputMatrixWithMTD ("Y", y, true, mc_y);
 		
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-nvargs");
 		proArgs.add("dfam=" + String.format ("%d", distFamilyType));
 		proArgs.add(((distFamilyType == 2 && distParam != 1.0) ? "yneg=" : "vpow=") + String.format ("%f", distParam));
@@ -321,7 +321,7 @@ public class GLMTest extends AutomatedTestBase
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
 
 		double max_abs_beta = 0.0;
-		HashMap<CellIndex, Double> wTRUE = new HashMap <CellIndex, Double> ();
+		HashMap<CellIndex, Double> wTRUE = new HashMap<> ();
 		for (int j = 0; j < cols; j ++)
 		{
 			wTRUE.put (new CellIndex (j + 1, 1), Double.valueOf(beta [j]));
@@ -329,7 +329,7 @@ public class GLMTest extends AutomatedTestBase
 		}
 
 		HashMap<CellIndex, Double> wSYSTEMDS_raw = readDMLMatrixFromHDFS ("betas_SYSTEMDS");
-		HashMap<CellIndex, Double> wSYSTEMDS = new HashMap <CellIndex, Double> ();
+		HashMap<CellIndex, Double> wSYSTEMDS = new HashMap<> ();
 		for (CellIndex key : wSYSTEMDS_raw.keySet())
 			if (key.column == 1)
 				wSYSTEMDS.put (key, wSYSTEMDS_raw.get (key));
@@ -431,6 +431,7 @@ public class GLMTest extends AutomatedTestBase
 		final double param;	 // GLM parameter, typically variance power of the mean
 		final int link;		 // GLM link function type
 		final double link_pow;  // GLM link function as power of the mean
+		@SuppressWarnings("hiding")
 		double dispersion = 1.0;
 		long binom_n = 1;
 		

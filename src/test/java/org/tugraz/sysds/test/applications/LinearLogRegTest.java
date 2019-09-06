@@ -81,7 +81,7 @@ public class LinearLogRegTest extends AutomatedTestBase
 
         getAndLoadTestConfiguration(TEST_NAME);
            
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(input("X"));

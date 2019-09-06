@@ -125,9 +125,9 @@ public class ParForSampleTest extends AutomatedTestBase
 			Assert.assertEquals(new Long(cols), new Long(B2mc.getCols())); //full coverage cols
 			Assert.assertNotEquals(new Long(rows), new Long(B1mc.getRows())); //no sample contains all rows
 			Assert.assertNotEquals(new Long(rows), new Long(B2mc.getRows())); //no sample contains all rows
-				
+			
 			//compare data
-			HashSet<Integer> probe = new HashSet<Integer>(rows);
+			HashSet<Integer> probe = new HashSet<>(rows);
 			for( int i=0; i<rows; i++ )
 				probe.add(i+1);
 			for( HashMap<CellIndex, Double> B : new HashMap[]{ B1, B2 } )

@@ -282,7 +282,7 @@ public class DataFrameVectorScriptTest extends MLContextTestBase
 	@SuppressWarnings("resource")
 	private static Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) {
 		//create in-memory list of rows
-		List<Row> list = new ArrayList<Row>();
+		List<Row> list = new ArrayList<>();
 		int off = (containsID ? 1 : 0);
 		int clen = mb.getNumColumns() + off - colsVector + 1;
 
@@ -306,7 +306,7 @@ public class DataFrameVectorScriptTest extends MLContextTestBase
 		}
 
 		//create data frame schema
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<>();
 		if( containsID )
 			fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN,
 					DataTypes.DoubleType, true));

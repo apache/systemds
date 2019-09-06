@@ -116,7 +116,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		{
 			MatrixBlock mo = DataConverter.readMatrixFromHDFS(output("R"), InputInfo.BinaryBlockInputInfo,
 				rows, 1, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
-			HashMap<CellIndex, Double> dmlfile = new HashMap<CellIndex,Double>();
+			HashMap<CellIndex, Double> dmlfile = new HashMap<>();
 			for( int i=0; i<mo.getNumRows(); i++ )
 				for( int j=0; j<mo.getNumColumns(); j++ )
 					dmlfile.put(new CellIndex(i+1,j+1), mo.getValue(i, j));

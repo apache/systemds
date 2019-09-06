@@ -181,7 +181,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 			ConfigurationManager.setLocalConfig(conf);
 			
 			String dmlScriptString="";
-			HashMap<String, String> argVals = new HashMap<String,String>();
+			HashMap<String, String> argVals = new HashMap<>();
 			
 			//read script
 			try( BufferedReader in = new BufferedReader(new FileReader(fullTestName)) ) {

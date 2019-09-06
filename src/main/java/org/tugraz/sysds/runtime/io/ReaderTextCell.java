@@ -58,6 +58,7 @@ public class ReaderTextCell extends MatrixReader
 		_isMMFile = (info == InputInfo.MatrixMarketInputInfo);
 	}
 	
+	@SuppressWarnings("resource")
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
@@ -197,11 +198,10 @@ public class ReaderTextCell extends MatrixReader
 	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int blen, boolean matrixMarket )
 		throws IOException
 	{
-		//create input stream for path
-		InputStream inputStream = fs.open(path);
-		
-		//actual read
-		readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, blen, matrixMarket);
+		//create input stream for path and read
+		try(InputStream inputStream = fs.open(path)) {
+			readRawTextCellMatrixFromInputStream(inputStream, dest, rlen, clen, blen, matrixMarket);
+		}
 	}
 
 	private static void readRawTextCellMatrixFromInputStream( InputStream is, MatrixBlock dest, long rlen, long clen, int blen, boolean matrixMarket )

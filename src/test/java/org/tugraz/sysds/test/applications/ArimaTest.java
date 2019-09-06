@@ -90,7 +90,7 @@ public class ArimaTest extends AutomatedTestBase {
 			include_mean + ", " + 
 			useJacobi+ "} ------------");
 		
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		getAndLoadTestConfiguration(TEST_NAME2);
 		
 		proArgs.add("-args");

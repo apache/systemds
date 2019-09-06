@@ -19,8 +19,6 @@
 
 package org.tugraz.sysds.runtime.instructions.gpu;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -47,8 +45,6 @@ public abstract class GPUInstruction extends Instruction {
 		Builtin,
 		MatrixIndexing
 	}
-	
-	private static final Log LOG = LogFactory.getLog(GPUInstruction.class.getName());
 
 	// Memory/conversions
 	public final static String MISC_TIMER_HOST_TO_DEVICE =          "H2D";	// time spent in bringing data to gpu (from host)

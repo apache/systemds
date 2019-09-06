@@ -16,8 +16,6 @@
 
 package org.tugraz.sysds.test.functions.io.libsvm;
 
-import java.io.IOException;
-
 import org.junit.Test;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.test.AutomatedTestBase;

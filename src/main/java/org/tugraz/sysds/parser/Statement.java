@@ -132,10 +132,15 @@ public abstract class Statement implements ParseInfo
 	private int _endLine,   _endColumn;
 	private String _text;
 	
+	@Override
 	public void setFilename(String passed)  { _filename = passed;	}
+	@Override
 	public void setBeginLine(int passed)    { _beginLine = passed;	}
+	@Override
 	public void setBeginColumn(int passed) 	{ _beginColumn = passed;}
+	@Override
 	public void setEndLine(int passed) 		{ _endLine = passed;   }
+	@Override
 	public void setEndColumn(int passed)	{ _endColumn = passed; }
 
 	/**
@@ -183,10 +188,15 @@ public abstract class Statement implements ParseInfo
 		setFilename(filename);
 	}
 
+	@Override
 	public int getBeginLine()	{ return _beginLine;   }
+	@Override
 	public int getBeginColumn() { return _beginColumn; }
+	@Override
 	public int getEndLine() 	{ return _endLine;   }
+	@Override
 	public int getEndColumn()	{ return _endColumn; }
+	@Override
 	public String getFilename() { return _filename;  }
 
 	public String printErrorLocation() {
@@ -234,10 +244,12 @@ public abstract class Statement implements ParseInfo
 		}
 	}
 
+	@Override
 	public String getText() {
 		return _text;
 	}
 
+	@Override
 	public void setText(String text) {
 		this._text = text;
 	}

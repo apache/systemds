@@ -1259,7 +1259,7 @@ public class DMLTranslator
 		
 		if( fstmt.getInputParams().size() == inputs.size() )
 			return;
-		HashSet<String> probeNames = new HashSet<String>(inputNames);
+		HashSet<String> probeNames = new HashSet<>(inputNames);
 		for( DataIdentifier di : fstmt.getInputParams() ) {
 			if( probeNames.contains(di.getName()) ) continue;
 			Expression exp = fstmt.getInputDefault(di.getName());

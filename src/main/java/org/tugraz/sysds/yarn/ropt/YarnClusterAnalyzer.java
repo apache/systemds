@@ -514,6 +514,7 @@ public class YarnClusterAnalyzer
 		_localJVMMaxMem = Runtime.getRuntime().maxMemory();
 	}
 	
+	@SuppressWarnings("resource")
 	public static void analyzeYarnCluster(boolean verbose) {
 		YarnConfiguration conf = new YarnConfiguration();
 		YarnClient yarnClient = YarnClient.createYarnClient();

@@ -123,6 +123,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @return number of rows
 	 */
+	@Override
 	public int getNumRows() {
 		return _numRows;
 	}
@@ -137,6 +138,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @return number of columns
 	 */
+	@Override
 	public int getNumColumns() {
 		return (_schema != null) ? _schema.length : 0;
 	}
@@ -869,6 +871,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param retCache cache block
 	 * @return frame block
 	 */
+	@Override
 	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) {
 		FrameBlock ret = (FrameBlock)retCache;
 		// check the validity of bounds
@@ -1083,6 +1086,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return map;
 	}
 
+	@Override
 	public void merge(CacheBlock that, boolean bDummy) {
 		merge((FrameBlock)that);
 	}
@@ -1335,10 +1339,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = value;
 		}
+		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeUTF((_data[i]!=null)?_data[i]:"");
 		}
+		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ ) {
@@ -1402,10 +1408,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = (value!=null) ? value : false;
 		}
+		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeBoolean(_data[i]);
 		}
+		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ )
@@ -1467,10 +1475,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = (value!=null) ? value : 0L;
 		}
+		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeLong(_data[i]);
 		}
+		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ )
@@ -1532,10 +1542,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				_data = Arrays.copyOf(_data, newSize());
 			_data[_size++] = (value!=null) ? value : 0d;
 		}
+		@Override
 		public void write(DataOutput out) throws IOException {
 			for( int i=0; i<_size; i++ )
 				out.writeDouble(_data[i]);
 		}
+		@Override
 		public void readFields(DataInput in) throws IOException {
 			_size = _data.length;
 			for( int i=0; i<_size; i++ )

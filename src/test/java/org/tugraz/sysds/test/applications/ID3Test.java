@@ -75,7 +75,7 @@ public class ID3Test extends AutomatedTestBase
 		
 		getAndLoadTestConfiguration(TEST_NAME);
 
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-explain");
 		proArgs.add("-args");
 		proArgs.add(input("X"));

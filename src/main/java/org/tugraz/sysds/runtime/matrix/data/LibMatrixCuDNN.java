@@ -610,11 +610,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				cudnnPoolingHelper(gCtx, instName, x, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
 			}
 			else {
-				LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
-				for(int n = 0; n < N; n++) {
-					cudnnPoolingHelper(gCtx, instName, imgFetcher.getNthRow(n), y.withByteOffset(n*CPQ*sizeOfDataType), 1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
+				try( LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image) ) {
+					for(int n = 0; n < N; n++) {
+						cudnnPoolingHelper(gCtx, instName, imgFetcher.getNthRow(n), y.withByteOffset(n*CPQ*sizeOfDataType), 1, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
+					}
 				}
-				imgFetcher.close();
 			}
 		}
 		else {
@@ -667,6 +667,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param poolingType	type of pooling
 	 * @param intermediateMemoryBudget intermediate memory budget
 	 */
+	@SuppressWarnings("resource")
 	public static void poolingBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject maxpoolOutput, MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,

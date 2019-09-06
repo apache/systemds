@@ -123,7 +123,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	}
 	
 	@SuppressWarnings("unused")
-	private int getNumLinearLayers(String rnnMode) throws DMLRuntimeException {
+	private static int getNumLinearLayers(String rnnMode) throws DMLRuntimeException {
 		int ret = 0;
 		if(rnnMode.equalsIgnoreCase("rnn_relu") || rnnMode.equalsIgnoreCase("rnn_tanh")) {
 			ret = 2;
@@ -152,7 +152,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		return sizeInBytesArray[0];
 	}
 	
-	private int getCuDNNRnnMode(String rnnMode) throws DMLRuntimeException {
+	private static int getCuDNNRnnMode(String rnnMode) throws DMLRuntimeException {
 		int rnnModeVal = -1;
 		if(rnnMode.equalsIgnoreCase("rnn_relu")) {
 			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_RNN_RELU;
@@ -179,7 +179,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		return LibMatrixCUDA.toInt(weightSizeInBytesArray[0]/LibMatrixCUDA.sizeOfDataType);
 	}
 	
-	private cudnnFilterDescriptor allocateFilterDescriptor(int numWeights) {
+	private static cudnnFilterDescriptor allocateFilterDescriptor(int numWeights) {
 		cudnnFilterDescriptor filterDesc = new cudnnFilterDescriptor();
 		cudnnCreateFilterDescriptor(filterDesc);
 		JCudnn.cudnnSetFilterNdDescriptor(filterDesc, LibMatrixCUDA.CUDNN_DATA_TYPE, CUDNN_TENSOR_NCHW, 3, new int[] {numWeights, 1, 1});

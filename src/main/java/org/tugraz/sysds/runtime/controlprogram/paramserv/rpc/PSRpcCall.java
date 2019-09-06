@@ -55,6 +55,7 @@ public class PSRpcCall extends PSRpcObject {
 		return _data;
 	}
 	
+	@Override
 	public void deserialize(ByteBuffer buffer) throws IOException {
 		ByteBufferDataInput dis = new ByteBufferDataInput(buffer);
 		_method = dis.readInt();
@@ -64,6 +65,7 @@ public class PSRpcCall extends PSRpcObject {
 			_data = readAndDeserialize(dis);
 	}
 
+	@Override
 	public ByteBuffer serialize() throws IOException {
 		int len = 8 + getExactSerializedSize(_data);
 		CacheDataOutput dos = new CacheDataOutput(len);

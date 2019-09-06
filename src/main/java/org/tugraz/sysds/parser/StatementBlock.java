@@ -557,7 +557,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 	
 	private static List<StatementBlock> createStatementBlocks(StatementBlock sb, List<Statement> stmts) {
-		List<StatementBlock> ret = new ArrayList<StatementBlock>();
+		List<StatementBlock> ret = new ArrayList<>();
 		StatementBlock current = new StatementBlock(sb);
 		for(Statement stmt : stmts) {
 			current.addStatement(stmt);
@@ -1210,12 +1210,18 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private int _endLine = 0, _endColumn = 0;
 	private String _text;
 
-	public void setFilename (String fname)  { _filename = fname;	}
-	public void setBeginLine(int passed)    { _beginLine = passed;  }
-	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
-	public void setEndLine(int passed) 		{ _endLine = passed;   }
-	public void setEndColumn(int passed)	{ _endColumn = passed; }
-	public void setText(String text) { _text = text; }
+	@Override
+	public void setFilename (String fname)  { _filename = fname; }
+	@Override
+	public void setBeginLine(int passed)    { _beginLine = passed; }
+	@Override
+	public void setBeginColumn(int passed)  { _beginColumn = passed; }
+	@Override
+	public void setEndLine(int passed)      { _endLine = passed; }
+	@Override
+	public void setEndColumn(int passed)    { _endColumn = passed; }
+	@Override
+	public void setText(String text)        { _text = text; }
 
 	/**
 	 * Set parse information.
@@ -1236,13 +1242,20 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		_filename = parseInfo.getFilename();
 	}
 
-	public String getFilename() { return _filename;	   }
-	public int getBeginLine()	{ return _beginLine;   }
+	@Override
+	public String getFilename() { return _filename; }
+	@Override
+	public int getBeginLine() { return _beginLine; }
+	@Override
 	public int getBeginColumn() { return _beginColumn; }
-	public int getEndLine() 	{ return _endLine;   }
-	public int getEndColumn()	{ return _endColumn; }
+	@Override
+	public int getEndLine() { return _endLine; }
+	@Override
+	public int getEndColumn() { return _endColumn; }
+	@Override
 	public String getText() { return _text; }
 
+	
 	public String printErrorLocation(){
 		return "ERROR: " + _filename + " -- line " + _beginLine + ", column " + _beginColumn + " -- ";
 	}

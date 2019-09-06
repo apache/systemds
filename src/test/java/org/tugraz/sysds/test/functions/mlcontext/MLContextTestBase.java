@@ -74,6 +74,7 @@ public abstract class MLContextTestBase extends AutomatedTestBase {
 	}
 
 	@After
+	@Override
 	public void tearDown() {
 		super.tearDown();
 	}

@@ -33,6 +33,7 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 	//TODO replication
 
 	@Override
+	@SuppressWarnings("resource")
 	public void writeTensorToHDFS(TensorBlock src, String fname, long[] dims, int blen) throws IOException {
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -53,11 +54,10 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 	}
 
 	@SuppressWarnings("deprecation")
-	private static void writeBinaryBlockMatrixToHDFS(Path path, JobConf job, FileSystem fs, TensorBlock src, long[] dims,
-			int blen) throws IOException {
-		SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, TensorIndexes.class, TensorBlock.class);
-
-		try {
+	private static void writeBinaryBlockMatrixToHDFS(Path path, JobConf job, FileSystem fs, TensorBlock src, long[] dims, int blen)
+		throws IOException
+	{
+		try(SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, TensorIndexes.class, TensorBlock.class)) {
 			// bound check
 			for (int i = 0; i < dims.length; i++) {
 				if (src.getDim(i) > dims[i])
@@ -93,9 +93,6 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 
 				writer.append(indx, block);
 			}
-		}
-		finally {
-			IOUtilFunctions.closeSilently(writer);
 		}
 	}
 }

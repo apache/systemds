@@ -175,10 +175,12 @@ public class TensorBlock implements CacheBlock, Externalizable {
 		return _dims.length;
 	}
 
+	@Override
 	public int getNumRows() {
 		return getDim(0);
 	}
 
+	@Override
 	public int getNumColumns() {
 		return getDim(1);
 	}

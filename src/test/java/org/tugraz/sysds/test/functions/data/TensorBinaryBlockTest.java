@@ -58,7 +58,7 @@ public class TensorBinaryBlockTest {
 		testReadWriteBinaryBlockBasicTensor(ValueType.STRING);
 	}
 
-	private void testReadWriteBinaryBlockBasicTensor(ValueType vt) {
+	private static void testReadWriteBinaryBlockBasicTensor(ValueType vt) {
 		TensorBlock tb1 = createBasicTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadBasicTensorBinaryBlock(tb1);
 		compareTensorBlocks(tb1, tb2);
@@ -94,7 +94,7 @@ public class TensorBinaryBlockTest {
 		testReadWriteBinaryBlockDataTensor(ValueType.STRING);
 	}
 
-	private void testReadWriteBinaryBlockDataTensor(ValueType vt) {
+	private static void testReadWriteBinaryBlockDataTensor(ValueType vt) {
 		TensorBlock tb1 = createDataTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadDataTensorBinaryBlock(tb1);
 		compareTensorBlocks(tb1, tb2);

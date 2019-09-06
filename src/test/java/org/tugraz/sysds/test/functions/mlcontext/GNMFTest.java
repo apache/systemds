@@ -100,7 +100,7 @@ public class GNMFTest extends MLContextTestBase
 		
 		getAndLoadTestConfiguration(TEST_NAME);
 
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		proArgs.add(input("v"));
 		proArgs.add(input("w"));
 		proArgs.add(input("h"));

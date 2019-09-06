@@ -41,12 +41,12 @@ public class IntegerDivide extends ValueFunction
 
 	@Override
 	public double execute(double in1, double in2) {
-		return executeIntDiv( in1, in2 );
+		return executeIntDiv(in1, in2);
 	}
 
 	@Override
 	public double execute(long in1, long in2) {
-		return executeIntDiv( (double)in1, (double)in2 );
+		return executeIntDiv(in1, in2);
 	}
 
 	/**

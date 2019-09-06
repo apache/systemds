@@ -113,19 +113,15 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	// implementation of Writable read/write
 
 	@Override
-	public void readFields(DataInput in) 
-		throws IOException 
-	{
+	public void readFields(DataInput in) throws IOException {
 		_row = in.readLong();
-		_col = in.readLong();	
+		_col = in.readLong();
 	}
 
 	@Override
-	public void write(DataOutput out) 
-		throws IOException 
-	{
+	public void write(DataOutput out) throws IOException {
 		out.writeLong( _row );
-		out.writeLong( _col );	
+		out.writeLong( _col );
 	}
 	
 	
@@ -139,6 +135,7 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	 * @param is object input
 	 * @throws IOException if IOException occurs
 	 */
+	@Override
 	public void readExternal(ObjectInput is) 
 		throws IOException
 	{
@@ -153,6 +150,7 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	 * @param os object output
 	 * @throws IOException if IOException occurs
 	 */
+	@Override
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{

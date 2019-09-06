@@ -88,6 +88,7 @@ public class RDDConverterUtilsExt
 		return out;
 	}
 
+	@SuppressWarnings("resource")
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(SparkContext sc,
 			CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks) {
 		return coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), input, mcIn, true);
@@ -153,10 +154,10 @@ public class RDDConverterUtilsExt
 		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
 	}
 	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) {
-		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
+		copyRowBlocks(mb, rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
 	}
 	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) {
-		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
+		copyRowBlocks(mb, (long)rowIndex, ret, numRowsPerBlock, rlen, clen);
 	}
 	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) {
 		// TODO: Double-check if synchronization is required here.

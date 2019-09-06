@@ -38,7 +38,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class DRLocalScheme extends DataPartitionLocalScheme {
 
-	private List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
+	private static List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
 		int batchSize = (int) Math.ceil((double) mb.getNumRows() / k);
 		return IntStream.range(0, k).mapToObj(i -> {
 			int begin = i * batchSize;
@@ -48,7 +48,7 @@ public class DRLocalScheme extends DataPartitionLocalScheme {
 		}).collect(Collectors.toList());
 	}
 
-	private List<MatrixObject> internalDoPartitioning(int k, MatrixBlock mb, MatrixBlock permutation) {
+	private static List<MatrixObject> internalDoPartitioning(int k, MatrixBlock mb, MatrixBlock permutation) {
 		return partition(k, mb, permutation).stream().map(ParamservUtils::newMatrixObject).collect(Collectors.toList());
 	}
 

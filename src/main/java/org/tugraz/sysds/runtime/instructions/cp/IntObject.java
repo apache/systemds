@@ -46,7 +46,7 @@ public class IntObject extends ScalarObject
 	
 	@Override
 	public double getDoubleValue(){
-		return (double) _value;
+		return _value;
 	}
 
 	@Override

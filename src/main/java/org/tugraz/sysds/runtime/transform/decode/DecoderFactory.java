@@ -86,8 +86,7 @@ public class DecoderFactory
 			//and initialize with given meta data (recode, dummy, bin)
 			decoder = new DecoderComposite(schema, ldecoders);
 			decoder.setColnames(colnames);
-			if( meta != null )
-				decoder.initMetaData(meta);
+			decoder.initMetaData(meta);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

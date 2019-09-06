@@ -27,8 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -65,7 +63,6 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 public class ParForStatementBlock extends ForStatementBlock 
 {
 	private static final boolean LDEBUG = false; //internal local debug level
-	private static final Log LOG = LogFactory.getLog(ParForStatementBlock.class.getName());
 	
 	//external parameter names 
 	private static HashSet<String> _paramNames;

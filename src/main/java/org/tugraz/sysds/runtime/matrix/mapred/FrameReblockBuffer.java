@@ -20,7 +20,6 @@
 
 package org.tugraz.sysds.runtime.matrix.mapred;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -65,18 +64,15 @@ public class FrameReblockBuffer
 		_schema = schema;
 	}
 	
-	public int getSize()
-	{
+	public int getSize() {
 		return _count;
 	}
 	
-	public int getCapacity()
-	{
+	public int getCapacity() {
 		return _bufflen;
 	}
 
-	public void appendCell( long r, long c, Object obj )
-	{
+	public void appendCell( long r, long c, Object obj ) {
 		_buff[_count].setRow((int)r);
 		_buff[_count].setCol((int)c);
 		_buff[_count].setObjVal(obj);
@@ -84,7 +80,7 @@ public class FrameReblockBuffer
 	}
 
 	public void flushBufferToBinaryBlocks( ArrayList<Pair<Long, FrameBlock>> outList ) 
-		throws IOException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		if( _count == 0 )
 			return;
@@ -133,7 +129,7 @@ public class FrameReblockBuffer
 	}
 
 	private static void outputBlock( ArrayList<Pair<Long, FrameBlock>> out, Long key, FrameBlock value ) 
-		throws IOException, DMLRuntimeException
+		throws DMLRuntimeException
 	{
 		//skip output of unassigned blocks
 		if( key == -1 )

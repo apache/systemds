@@ -190,7 +190,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 							Assert.fail("Expected parse issue not detected.");
 					}
 					else if (TEST_NAME13.equals(TEST_NAME)) {
-						if (stdErrString != null && !stdErrString.contains("Function Name Conflict"))
+						if (!stdErrString.contains("Function Name Conflict"))
 							Assert.fail("Expected parse issue not detected.");
 					}
 					else {

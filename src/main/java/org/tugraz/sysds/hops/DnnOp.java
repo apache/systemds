@@ -33,6 +33,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.matrix.data.DnnParameters;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 
@@ -296,7 +297,7 @@ public class DnnOp extends MultiThreadedHop
 		// Compute intermediate memory budget that can be passed to GPU operators 
 		// for better CuDNN operator selection at runtime
 		double intermediateMemEstimate = computeIntermediateMemEstimate(-1, -1, -1 );
-		if(et == ExecType.GPU && _dim1 >= 0 && _dim2 >= 0) {
+		if(et == ExecType.GPU && getDim1() >= 0 && getDim2() >= 0) {
 			// This enables us to compile more efficient matrix-matrix CuDNN operation instead of 
 			// row-by-row invocation of multiple vector-matrix CuDNN operations.
 			// This is possible as the operations on GPU are single-threaded
@@ -528,33 +529,29 @@ public class DnnOp extends MultiThreadedHop
 	
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
 		// [numRows, numCols, NNZ] 
-		long[] ret = new long[3];
+		DataCharacteristics ret = new MatrixCharacteristics();
 		
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
 			op == OpOpDnn.UPDATE_NESTEROV_X) {
 			// Same dimension as the first input
 			DataCharacteristics[] mc = memo.getAllInputStats(getInput());
-			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
-			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
-			ret[2] = -1;
-			return (ret[0]>=0 && ret[1]>=0) ? ret : null;
+			ret = new MatrixCharacteristics(
+				mc[0].rowsKnown() ? mc[0].getRows() : -1,
+				mc[0].colsKnown() ? mc[0].getCols() : -1, -1, -1);
+			return ret.dimsKnown() ? ret : null;
 		}
 		else if(op == OpOpDnn.CHANNEL_SUMS) {
 			long numChannels = Hop.computeSizeInformation(getInput().get(1));
-			ret[0] = numChannels;
-			ret[1] = 1;
-			ret[2] = -1;
-			return ret;
+			return new MatrixCharacteristics(numChannels, 1, -1, -1);
 		}
 		
-		refreshSizeInformation();
-		ret[0] = _dim1; ret[1] = _dim2; ret[2] = _nnz;
-		
 		//safe return (create entry only if at least dims known)
-		return (ret[0]>0 && ret[1]>0) ? ret : null;
+		refreshSizeInformation();
+		ret = _dc;
+		return ret.dimsKnown() ? ret : null;
 	}
 	
 
@@ -745,14 +742,14 @@ public class DnnOp extends MultiThreadedHop
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
-			_nnz = -1; // cannot infer stats
+			setNnz(-1); // cannot infer stats
 			return;
 		}
 		else if(op == OpOpDnn.CHANNEL_SUMS) {
 			long numChannels = Hop.computeSizeInformation(getInput().get(1));
 			setDim1(numChannels);
 			setDim2(1);
-			_nnz = -1; // cannot infer stats
+			setNnz(-1); // cannot infer stats
 			return;
 		}
 		
@@ -762,40 +759,35 @@ public class DnnOp extends MultiThreadedHop
 		switch(op) 
 		{
 			case MAX_POOL:
-			case AVG_POOL:
-			{	
-				_dim1 = getDim("N");
-				_dim2 = getDim("CPQ");
-				_nnz = -1; // cannot infer stats
+			case AVG_POOL: {
+				setDim1(getDim("N"));
+				setDim2(getDim("CPQ"));
+				setNnz(-1); // cannot infer stats
 				break;
 			}
 			case MAX_POOL_BACKWARD:
-			case AVG_POOL_BACKWARD:
-			{
-				_dim1 = getDim("N");
-				_dim2 = getDim("CHW");
-				_nnz = -1;
+			case AVG_POOL_BACKWARD: {
+				setDim1(getDim("N"));
+				setDim2(getDim("CHW"));
+				setNnz(-1);
 				break;
 			}
-			case CONV2D:
-			{
-				_dim1 = getDim("N");
-				_dim2 = getDim("KPQ");
-				_nnz = -1; // cannot infer stats
+			case CONV2D: {
+				setDim1(getDim("N"));
+				setDim2(getDim("KPQ"));
+				setNnz(-1); // cannot infer stats
 				break;
 			}
-			case CONV2D_BACKWARD_DATA:
-			{
-				_dim1 = getDim("N");
-				_dim2 = getDim("CHW");
-				_nnz = -1; // cannot infer stats
+			case CONV2D_BACKWARD_DATA: {
+				setDim1(getDim("N"));
+				setDim2(getDim("CHW"));
+				setNnz(-1); // cannot infer stats
 				break;
 			}
-			case CONV2D_BACKWARD_FILTER:
-			{
-				_dim1 = getDim("K");
-				_dim2 = getDim("CRS");
-				_nnz = -1; // cannot infer stats
+			case CONV2D_BACKWARD_FILTER: {
+				setDim1(getDim("K"));
+				setDim2(getDim("CRS"));
+				setNnz(-1); // cannot infer stats
 				break;
 			}
 			default:
@@ -804,9 +796,8 @@ public class DnnOp extends MultiThreadedHop
 	}
 	
 	@Override
-	public Object clone() throws CloneNotSupportedException 
-	{
-		DnnOp ret = new DnnOp();	
+	public Object clone() throws CloneNotSupportedException {
+		DnnOp ret = new DnnOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -883,28 +874,28 @@ public class DnnOp extends MultiThreadedHop
 		
 		long ret = -1;
 		if(dimString.equals("K") && filter != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.K, filter._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.K, filter.getDim1()));
 		}
 		else if(dimString.equals("CRS") && filter != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S), filter._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.R, _cachedParams.S), filter.getDim2()));
 		}
 		else if(dimString.equals("N") && input != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, input._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, input.getDim1()));
 		}
 		else if(dimString.equals("CHW") && input != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W), input._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.H, _cachedParams.W), input.getDim2()));
 		}
 		else if(dimString.equals("N") && dout != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout.getDim1()));
 		}
 		else if(dimString.equals("KPQ") && dout != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q), dout._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.K, _cachedParams.P, _cachedParams.Q), dout.getDim2()));
 		}
 		else if(dimString.equals("N") && dout1 != null) {
-			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout1._dim1));
+			ret = getNonNegative(ret, getNonNegative(_cachedParams.N, dout1.getDim1()));
 		}
 		else if(dimString.equals("CPQ") && dout1 != null) {
-			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q), dout1._dim2));
+			ret = getNonNegative(ret, getNonNegative(nonNegativeMultiply(_cachedParams.C, _cachedParams.P, _cachedParams.Q), dout1.getDim2()));
 		}
 		else if(dimString.equals("K")) {
 			ret = getNonNegative(ret, _cachedParams.K >= 0 ? _cachedParams.K : -1);

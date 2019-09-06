@@ -36,6 +36,8 @@ import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -174,9 +176,9 @@ public class DataGenOp extends MultiThreadedHop
 		HashMap<String, Lop> inputLops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
 			if( cur.getKey().equals(DataExpression.RAND_ROWS) && rowsKnown() )
-				inputLops.put(cur.getKey(), new LiteralOp(_dim1).constructLops());
+				inputLops.put(cur.getKey(), new LiteralOp(getDim1()).constructLops());
 			else if( cur.getKey().equals(DataExpression.RAND_COLS) && colsKnown() )
-				inputLops.put(cur.getKey(), new LiteralOp(_dim2).constructLops());
+				inputLops.put(cur.getKey(), new LiteralOp(getDim2()).constructLops());
 			else
 				inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 		}
@@ -245,7 +247,7 @@ public class DataGenOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
 		//infer rows and 
 		if( (_op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ) &&
@@ -255,7 +257,7 @@ public class DataGenOp extends MultiThreadedHop
 			long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
 			long nnz = _sparsity >= 0 ? (long)(_sparsity * dim1 * dim2) : -1;
 			if( dim1>=0 && dim2>=0 )
-				return new long[]{ dim1, dim2, nnz };
+				return new MatrixCharacteristics(dim1, dim2, -1, nnz);
 		}
 		else if ( _op == DataGenMethod.SEQ )
 		{
@@ -268,8 +270,8 @@ public class DataGenOp extends MultiThreadedHop
 				&& incr instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)incr)==1 )
 			{
 				long toVal = computeDimParameterInformation(to, memo);
-				if( toVal > 0 )	
-					return new long[]{ toVal, 1, -1 };
+				if( toVal > 0 )
+					return new MatrixCharacteristics(toVal, 1, -1, -1);
 			}
 			//here, we check for the common case of seq(x,1,-1), i.e. from=x, to=1 incr=-1
 			if(    to instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)to)==1
@@ -277,7 +279,7 @@ public class DataGenOp extends MultiThreadedHop
 			{
 				long fromVal = computeDimParameterInformation(from, memo);
 				if( fromVal > 0 )	
-					return new long[]{ fromVal, 1, -1 };
+					return new MatrixCharacteristics(fromVal, 1, -1, -1);
 			}
 		}
 		
@@ -371,11 +373,11 @@ public class DataGenOp extends MultiThreadedHop
 		
 		//refresh nnz information (for seq, sparsity is always -1)
 		if( _op == DataGenMethod.RAND && hasConstantValue(0.0) )
-			_nnz = 0;
+			setNnz(0);
 		else if ( dimsKnown() && _sparsity>=0 ) //general case
-			_nnz = (long) (_sparsity * _dim1 * _dim2);
+			setNnz((long) (_sparsity * getLength()));
 		else
-			_nnz = -1;
+			setNnz(-1);
 	}
 	
 

@@ -44,6 +44,7 @@ import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
 import org.tugraz.sysds.lops.WeightedUnaryMMR;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /** 
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;
@@ -699,9 +700,9 @@ public class QuaternaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
+		DataCharacteristics ret = null;
 		
 		switch( _op ) {
 			case WSLOSS: //always scalar output
@@ -710,22 +711,21 @@ public class QuaternaryOp extends MultiThreadedHop
 			case WSIGMOID: 
 			case WUMM: {
 				DataCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
-				ret = new long[]{mcW.getRows(), mcW.getCols(), mcW.getNonZeros()};
+				ret = new MatrixCharacteristics(mcW.getRows(), mcW.getCols(), -1, mcW.getNonZeros());
 				break;
 			}
 			
 			case WDIVMM: {
-				if( _baseType == 0 ){ //basic 
-					DataCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
-					ret = new long[]{mcW.getRows(), mcW.getCols(), mcW.getNonZeros()};	
+				if( _baseType == 0 ){ //basic
+					ret = memo.getAllInputStats(getInput().get(0));
 				}
 				else if( _baseType == 1 || _baseType == 3 ) { //left (w/ transpose or w/ epsilon)
 					DataCharacteristics mcV = memo.getAllInputStats(getInput().get(2));
-					ret = new long[]{mcV.getRows(), mcV.getCols(), -1};
+					ret = mcV.setNonZeros(-1);
 				}
 				else { //right
 					DataCharacteristics mcU = memo.getAllInputStats(getInput().get(1));
-					ret = new long[]{mcU.getRows(), mcU.getCols(), -1};
+					ret = mcU.setNonZeros(-1);
 				}
 				break;
 			}

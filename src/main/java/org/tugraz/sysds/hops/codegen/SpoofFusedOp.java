@@ -32,6 +32,7 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.SpoofFused;
 import org.tugraz.sysds.runtime.codegen.SpoofRowwise;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 
@@ -135,63 +136,62 @@ public class SpoofFusedOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
-	
 		//get statistics of main input
 		DataCharacteristics mc = memo.getAllInputStats(getInput().get(0));
+		DataCharacteristics ret = null;
 		
 		if( mc.dimsKnown() ) {
 			switch(_dimsType)
 			{
 				case ROW_DIMS:
-					ret = new long[]{mc.getRows(), 1, -1};
+					ret = new MatrixCharacteristics(mc.getRows(), 1, -1, -1);
 					break;
 				case COLUMN_DIMS_ROWS:
-					ret = new long[]{mc.getCols(), 1, -1};
+					ret = new MatrixCharacteristics(mc.getCols(), 1, -1, -1);
 					break;
 				case COLUMN_DIMS_COLS:
-					ret = new long[]{1, mc.getCols(), -1};
+					ret = new MatrixCharacteristics(1, mc.getCols(), -1, -1);
 					break;
 				case RANK_DIMS_COLS: {
 					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
 					if( dc2.dimsKnown() )
-						ret = new long[]{1, dc2.getCols(), -1};
+						ret = new MatrixCharacteristics(1, dc2.getCols(), -1, -1);
 					break;
 				}
 				case INPUT_DIMS:
-					ret = new long[]{mc.getRows(), mc.getCols(), -1};
+					ret = new MatrixCharacteristics(mc.getRows(), mc.getCols(), -1, -1);
 					break;
 				case INPUT_DIMS_CONST2:
-					ret = new long[]{mc.getRows(), _constDim2, -1};
+					ret = new MatrixCharacteristics(mc.getRows(), _constDim2, -1, -1);
 					break;
 				case VECT_CONST2:
-					ret = new long[]{1, _constDim2, -1};
+					ret = new MatrixCharacteristics(1, _constDim2, -1, -1);
 					break;	
 				case SCALAR:
-					ret = new long[]{0, 0, -1};
+					ret = new MatrixCharacteristics(0, 0, -1, -1);
 					break;
 				case MULTI_SCALAR:
 					//dim2 statically set from outside
-					ret = new long[]{1, _dim2, -1};
+					ret = new MatrixCharacteristics(1, _dc.getCols(), -1, -1);
 					break;
 				case ROW_RANK_DIMS: {
 					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
 					if( dc2.dimsKnown() )
-						ret = new long[]{mc.getRows(), dc2.getCols(), -1};
+						ret = new MatrixCharacteristics(mc.getRows(), dc2.getCols(), -1, -1);
 					break;
 				}
 				case COLUMN_RANK_DIMS: {
 					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
 					if( dc2.dimsKnown() )
-						ret = new long[]{mc.getCols(), dc2.getCols(), -1};
+						ret = new MatrixCharacteristics(mc.getCols(), dc2.getCols(), -1, -1);
 					break;
 				}
 				case COLUMN_RANK_DIMS_T: {
 					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
 					if( dc2.dimsKnown() )
-						ret = new long[]{dc2.getCols(), mc.getCols(), -1};
+						ret = new MatrixCharacteristics(dc2.getCols(), mc.getCols(), -1, -1);
 					break;
 				}
 				default:
@@ -199,7 +199,6 @@ public class SpoofFusedOp extends MultiThreadedHop
 							+ "for type: "+_dimsType.toString());
 			}
 		}
-		
 		return ret;
 	}
 	

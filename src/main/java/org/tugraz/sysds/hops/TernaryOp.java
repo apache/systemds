@@ -37,6 +37,7 @@ import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Ternary;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /** Primary use cases for now, are
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)
@@ -310,11 +311,11 @@ public class TernaryOp extends Hop
 		
 		Ctable ternary = new Ctable(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
 		
-		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getBlocksize(), -1);
+		ternary.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), -1);
 		setLineNumbers(ternary);
 		
 		//force blocked output in CP and SPARK
-		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getBlocksize(), -1);
+		ternary.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), -1);
 		
 		//ternary opt, w/o reblock in CP
 		setLops(ternary);
@@ -382,35 +383,32 @@ public class TernaryOp extends Hop
 	}
 	
 	@Override
-	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
-	{
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz ) {
 		double ret = 0;
 		if( _op == OpOp3.CTABLE ) {
-			if ( _dim1 >= 0 && _dim2 >= 0 ) {
+			if ( dimsKnown() ) {
 				// output dimensions are known, and hence a MatrixBlock is allocated
-				double sp = OptimizerUtils.getSparsity(_dim1, _dim2, Math.min(nnz, _dim1));
-				ret = OptimizerUtils.estimateSizeExactSparsity(_dim1, _dim2, sp );
+				double sp = OptimizerUtils.getSparsity(getDim1(), getDim2(), Math.min(nnz, getDim1()));
+				ret = OptimizerUtils.estimateSizeExactSparsity(getDim1(), getDim2(), sp );
 			}
 			else {
 				ret =  2*4 * dim1 + //hash table (worst-case overhead 2x)
-						  32 * dim1; //values: 2xint,1xObject
+					32 * dim1; //values: 2xint,1xObject
 			}
 		}
 		else if ( _op == OpOp3.QUANTILE ) {
 			// buffer (=2*input_size) and output (=2*input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
-			ret = getInput().get(0).getMemEstimate() * 4;  
+			ret = getInput().get(0).getMemEstimate() * 4;
 		}
-		
 		return ret;
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
-	
 		DataCharacteristics[] mc = memo.getAllInputStats(getInput());
+		DataCharacteristics ret = null;
 		
 		switch( _op ) 
 		{
@@ -425,9 +423,9 @@ public class TernaryOp extends Hop
 					// #categories in each attribute = #rows (e.g., an ID column, say EmployeeID).
 					// both inputs are one-dimensional matrices with exact same dimensions, m = size of longer dimension
 					worstCaseDim = (mc[0].dimsKnown())
-					          ? (mc[0].getRows() > 1 ? mc[0].getRows() : mc[0].getCols() )
-							  : (mc[1].getRows() > 1 ? mc[1].getRows() : mc[1].getCols() );
-					//note: for ctable histogram dim2 known but automatically replaces m         
+						? (mc[0].getRows() > 1 ? mc[0].getRows() : mc[0].getCols() )
+						: (mc[1].getRows() > 1 ? mc[1].getRows() : mc[1].getCols() );
+					//note: for ctable histogram dim2 known but automatically replaces m
 					//ret = new long[]{m, m, m};
 				}
 				
@@ -437,34 +435,34 @@ public class TernaryOp extends Hop
 					long outputDim1 = HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(3));
 					long outputDim2 = HopRewriteUtils.getIntValueSafe((LiteralOp)getInput().get(4));
 					long outputNNZ = ( outputDim1*outputDim2 > outputDim1 ? outputDim1 : outputDim1*outputDim2 );
-					_dim1 = outputDim1;
-					_dim2 = outputDim2;
-					return new long[]{outputDim1, outputDim2, outputNNZ};
+					setDim1(outputDim1);
+					setDim2(outputDim2);
+					return new MatrixCharacteristics(outputDim1, outputDim2, -1, outputNNZ);
 				}
 				
 				// Step 3: general case
-				//note: for ctable histogram dim2 known but automatically replaces m         
-				return new long[]{worstCaseDim, worstCaseDim, worstCaseDim};
+				//note: for ctable histogram dim2 known but automatically replaces m
+				return new MatrixCharacteristics(worstCaseDim, worstCaseDim, -1, worstCaseDim);
 			
 			case QUANTILE:
 				if( mc[2].dimsKnown() )
-					return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
+					return new MatrixCharacteristics(mc[2].getRows(), 1, -1, mc[2].getRows());
 				break;
 			case IFELSE:
 				for(DataCharacteristics lmc : mc)
 					if( lmc.dimsKnown() && lmc.getRows() >= 0 ) //known matrix
-						return new long[]{lmc.getRows(), lmc.getCols(), -1};
+						return new MatrixCharacteristics(lmc.getRows(), lmc.getCols(), -1, -1);
 				break;
 			case PLUS_MULT:
 			case MINUS_MULT:
 				//compute back NNz
 				double sp1 = OptimizerUtils.getSparsity(mc[0].getRows(), mc[0].getRows(), mc[0].getNonZeros()); 
 				double sp2 = OptimizerUtils.getSparsity(mc[2].getRows(), mc[2].getRows(), mc[2].getNonZeros());
-				return new long[]{mc[0].getRows(), mc[0].getCols(), (long) Math.min(sp1+sp2,1)};
+				return new MatrixCharacteristics(mc[0].getRows(), mc[0].getCols(), -1, (long) Math.min(sp1+sp2,1));
 			default:
 				throw new RuntimeException("Memory for operation (" + _op + ") can not be estimated.");
 		}
-				
+		
 		return ret;
 	}
 	
@@ -523,12 +521,12 @@ public class TernaryOp extends Hop
 					Hop input3 = getInput().get(2);
 					
 					//TODO double check reset (dimsInputPresent?)
-					if ( _dim1 == -1 || _dim2 == -1 ) { 
+					if ( !dimsKnown() ) { 
 						//for ctable_expand at least one dimension is known
 						if( isSequenceRewriteApplicable(true) )
-							setDim1( input1._dim1 );
+							setDim1( input1.getDim1() );
 						else if( isSequenceRewriteApplicable(false) )
-							setDim2( input2._dim1 );
+							setDim2( input2.getDim1() );
 						//for ctable_histogram also one dimension is known
 						Ctable.OperationTypes ternaryOp = Ctable.findCtableOperationByInputDataTypes(
 							input1.getDataType(), input2.getDataType(), input3.getDataType());

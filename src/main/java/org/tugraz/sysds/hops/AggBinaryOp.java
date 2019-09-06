@@ -44,6 +44,7 @@ import org.tugraz.sysds.lops.Transform.OperationTypes;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
@@ -340,20 +341,16 @@ public class AggBinaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
-	
 		DataCharacteristics[] dc = memo.getAllInputStats(getInput());
+		DataCharacteristics ret = null;
 		if( dc[0].rowsKnown() && dc[1].colsKnown() ) {
-			ret = new long[3];
-			ret[0] = dc[0].getRows();
-			ret[1] = dc[1].getCols();
+			ret = new MatrixCharacteristics(dc[0].getRows(), dc[1].getCols());
 			double sp1 = (dc[0].getNonZeros()>0) ? OptimizerUtils.getSparsity(dc[0].getRows(), dc[0].getCols(), dc[0].getNonZeros()) : 1.0;
 			double sp2 = (dc[1].getNonZeros()>0) ? OptimizerUtils.getSparsity(dc[1].getRows(), dc[1].getCols(), dc[1].getNonZeros()) : 1.0;
-			ret[2] = (long) ( ret[0] * ret[1] * OptimizerUtils.getMatMultSparsity(sp1, sp2, ret[0], dc[0].getCols(), ret[1], true));
+			ret.setNonZeros((long)(ret.getLength() * OptimizerUtils.getMatMultSparsity(sp1, sp2, ret.getRows(), dc[0].getCols(), ret.getCols(), true)));
 		}
-		
 		return ret;
 	}
 	

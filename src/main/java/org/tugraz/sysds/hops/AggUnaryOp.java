@@ -38,6 +38,7 @@ import org.tugraz.sysds.lops.UAggOuterChain;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 
 // Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
@@ -323,31 +324,28 @@ public class AggUnaryOp extends MultiThreadedHop
 			case MININDEX:
 				Hop hop = getInput().get(0);
 				if(isUnaryAggregateOuterCPRewriteApplicable())
-					val = 3 * OptimizerUtils.estimateSizeExactSparsity(1, hop._dim2, 1.0);
+					val = 3 * OptimizerUtils.estimateSizeExactSparsity(1, hop.getDim2(), 1.0);
 				else
 					//worst-case correction LASTCOLUMN 
 					val = OptimizerUtils.estimateSizeExactSparsity(dim1, 2, 1.0);
 				break;
 			default:
 				//no intermediate memory consumption
-				val = 0;				
+				val = 0;
 		}
 		
 		return val;
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
-	{
-		long[] ret = null;
-	
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo ) {
+		DataCharacteristics ret = null;
 		Hop input = getInput().get(0);
 		DataCharacteristics dc = memo.getAllInputStats(input);
 		if( _direction == Direction.Col && dc.colsKnown() )
-			ret = new long[]{1, dc.getCols(), -1};
+			ret = new MatrixCharacteristics(1, dc.getCols(), -1, -1);
 		else if( _direction == Direction.Row && dc.rowsKnown() )
-			ret = new long[]{dc.getRows(), 1, -1};
-		
+			ret = new MatrixCharacteristics(dc.getRows(), 1, -1 -1);
 		return ret;
 	}
 	

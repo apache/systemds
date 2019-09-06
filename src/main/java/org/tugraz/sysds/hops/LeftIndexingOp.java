@@ -31,6 +31,7 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.lops.UnaryCP.OperationTypes;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public class LeftIndexingOp  extends Hop 
 {	
@@ -208,11 +209,11 @@ public class LeftIndexingOp  extends Hop
 			// use worst-case memory estimate for second input (it cannot be larger than overall matrix)
 			double subSize = -1;	
 			if( _rowLowerEqualsUpper && _colLowerEqualsUpper )
-				subSize = OptimizerUtils.estimateSize(1, 1);	
+				subSize = OptimizerUtils.estimateSize(1, 1);
 			else if( _rowLowerEqualsUpper )
-				subSize = OptimizerUtils.estimateSize(1, _dim2);
+				subSize = OptimizerUtils.estimateSize(1, getDim2());
 			else if( _colLowerEqualsUpper )
-				subSize = OptimizerUtils.estimateSize(_dim1, 1);
+				subSize = OptimizerUtils.estimateSize(getDim1(), 1);
 			else 
 				subSize = _outputMemEstimate; //worstcase
 
@@ -220,7 +221,7 @@ public class LeftIndexingOp  extends Hop
 			               + subSize // new submatrix (right)
 			               + _outputMemEstimate; //output size (output)
 		}
-		else if ( dimsKnown() && _nnz<0 &&
+		else if ( dimsKnown() && getNnz()<0 &&
 				  _memEstimate>=OptimizerUtils.DEFAULT_SIZE)
 		{
 			//try a last attempt to infer a reasonable estimate wrt output sparsity
@@ -231,10 +232,10 @@ public class LeftIndexingOp  extends Hop
 				&& hasConstantIndexingRange() ) 
 			{
 				long lnnz = dcM1.getNonZeros() + dcM2.getNonZeros();
-				_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+				_outputMemEstimate = computeOutputMemEstimate(getDim1(), getDim2(), lnnz);
 				_memEstimate = getInputSize(0) //original matrix (left)
-			                 + getInputSize(1) // new submatrix (right)
-			                 + _outputMemEstimate; //output size (output)
+					+ getInputSize(1) // new submatrix (right)
+					+ _outputMemEstimate; //output size (output)
 			}
 		}
 	}
@@ -249,12 +250,11 @@ public class LeftIndexingOp  extends Hop
 			Hop input2 = getInput().get(1);
 			if( input1.dimsKnown() && hasConstantIndexingRange() ) {
 				sparsity = OptimizerUtils.getLeftIndexingSparsity(
-						input1.getDim1(), input1.getDim2(), input1.getNnz(), 
-						input2.getDim1(), input2.getDim2(), input2.getNnz());
+					input1.getDim1(), input1.getDim2(), input1.getNnz(), 
+					input2.getDim1(), input2.getDim2(), input2.getNnz());
 			}
 		}
-		else
-		{
+		else {
 			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		}
 		
@@ -269,12 +269,12 @@ public class LeftIndexingOp  extends Hop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
+		DataCharacteristics ret = null;
 	
 		Hop input1 = getInput().get(0); //original matrix
-		Hop input2 = getInput().get(1); //right matrix		
+		Hop input2 = getInput().get(1); //right matrix
 		DataCharacteristics dc1 = memo.getAllInputStats(input1);
 		DataCharacteristics dc2 = memo.getAllInputStats(input2);
 		
@@ -284,7 +284,7 @@ public class LeftIndexingOp  extends Hop
 					dc2.getRows(), dc2.getCols(), dc2.getNonZeros());
 			long lnnz = !hasConstantIndexingRange() ? -1 :
 					(long)(sparsity * dc1.getRows() * dc1.getCols());
-			ret = new long[]{dc1.getRows(), dc1.getCols(), lnnz};
+			ret = new MatrixCharacteristics(dc1.getRows(), dc1.getCols(), -1, lnnz);
 		}
 		
 		return ret;

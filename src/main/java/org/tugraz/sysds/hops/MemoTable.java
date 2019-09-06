@@ -36,18 +36,15 @@ import java.util.HashMap;
  */
 public class MemoTable 
 {
-	
 	private HashMap<Long, DataCharacteristics> _memo = null;
 	
-	public MemoTable()
-	{
+	public MemoTable() {
 		_memo = new HashMap<>();
 	}
 
-	public void init( ArrayList<Hop> hops, RecompileStatus status)
-	{
+	public void init( ArrayList<Hop> hops, RecompileStatus status) {
 		//check existing status
-		if(    hops == null ||  hops.isEmpty() || status == null 
+		if( hops == null ||  hops.isEmpty() || status == null 
 			|| status.getTWriteStats().isEmpty() )
 		{
 			return; //nothing to do
@@ -59,10 +56,9 @@ public class MemoTable
 			rinit(hop, status);
 	}
 
-	public void init( Hop hop, RecompileStatus status)
-	{
+	public void init( Hop hop, RecompileStatus status) {
 		//check existing status
-		if(    hop == null || status == null 
+		if( hop == null || status == null 
 			|| status.getTWriteStats().isEmpty() )
 		{
 			return; //nothing to do
@@ -99,6 +95,10 @@ public class MemoTable
 		_memo.put(hopID, new MatrixCharacteristics(dim1, dim2, -1, nnz));
 	}
 
+	public void memoizeStatistics(long hopID, DataCharacteristics dc) {
+		_memo.put(hopID, dc);
+	}
+	
 	public DataCharacteristics[] getAllInputStats(ArrayList<Hop> inputs )
 	{
 		if( inputs == null )
@@ -205,6 +205,5 @@ public class MemoTable
 				rinit( c, status );
 			
 		hop.setVisited();
-	}	
-	
+	}
 }

@@ -46,6 +46,7 @@ import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 
 /* Binary (cell operations): aij + bij
@@ -495,7 +496,7 @@ public class BinaryOp extends MultiThreadedHop
 		double ret = 0;
 		
 		//preprocessing step (recognize unknowns)
-		if( dimsKnown() && _nnz<0 ) //never after inference
+		if( dimsKnown() && getNnz()<0 ) //never after inference
 			nnz = -1; 
 		
 		if((op==OpOp2.CBIND || op==OpOp2.RBIND) && !ConfigurationManager.isDynamicRecompilation() && !(getDataType()==DataType.SCALAR) ) {	
@@ -568,13 +569,13 @@ public class BinaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
+		DataCharacteristics ret = null;
 		
 		DataCharacteristics[] dc = memo.getAllInputStats(getInput());
 		Hop input1 = getInput().get(0);
-		Hop input2 = getInput().get(1);		
+		Hop input2 = getInput().get(1);
 		DataType dt1 = input1.getDataType();
 		DataType dt2 = input2.getDataType();
 		
@@ -589,7 +590,7 @@ public class BinaryOp extends MultiThreadedHop
 				lnnz = dc[0].getNonZeros() + dc[1].getNonZeros();
 			
 			if( ldim1 >= 0 || ldim2 >= 0 || lnnz >= 0 )
-				return new long[]{ldim1, ldim2, lnnz};
+				return new MatrixCharacteristics(ldim1, ldim2, -1, lnnz);
 		}
 		else if( op == OpOp2.RBIND ) {
 			long ldim1 = -1, ldim2 = -1, lnnz = -1;
@@ -602,12 +603,12 @@ public class BinaryOp extends MultiThreadedHop
 				lnnz = dc[0].getNonZeros() + dc[1].getNonZeros();
 			
 			if( ldim1 >= 0 || ldim2 >= 0 || lnnz >= 0 )
-				return new long[]{ldim1, ldim2, lnnz};
+				return new MatrixCharacteristics(ldim1, ldim2, -1, lnnz);
 		}
 		else if ( op == OpOp2.SOLVE ) {
 			// Output is a (likely to be dense) vector of size number of columns in the first input
 			if ( dc[0].getCols() >= 0 ) {
-				ret = new long[]{ dc[0].getCols(), 1, dc[0].getCols()};
+				ret = new MatrixCharacteristics(dc[0].getCols(), 1, -1, dc[0].getCols());
 			}
 		}
 		else //general case
@@ -639,26 +640,24 @@ public class BinaryOp extends MultiThreadedHop
 				else //GENERAL CASE
 				{
 					ldim1 = (dc[0].rowsKnown()) ? dc[0].getRows() :
-					        (dc[1].getRows()>1) ? dc[1].getRows() : -1;
+						(dc[1].getRows()>1) ? dc[1].getRows() : -1;
 					ldim2 = (dc[0].colsKnown()) ? dc[0].getCols() :
-						    (dc[1].getCols()>1) ? dc[1].getCols() : -1;
+						(dc[1].getCols()>1) ? dc[1].getCols() : -1;
 				}
 				sp1 = (dc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, dc[0].getNonZeros()):1.0;
 				sp2 = (dc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, dc[1].getNonZeros()):1.0;
 			}
 			
-			if( ldim1>=0 && ldim2>=0 )
-			{
+			if( ldim1>=0 && ldim2>=0 ) {
 				if( OptimizerUtils.isBinaryOpConditionalSparseSafe(op) && input2 instanceof LiteralOp ) {
 					long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsityConditionalSparseSafe(sp1, op,(LiteralOp)input2));
-					ret = new long[]{ldim1, ldim2, lnnz};
+					ret = new MatrixCharacteristics(ldim1, ldim2, -1, lnnz);
 				}
-				else
-				{
+				else {
 					//sparsity estimates are conservative in terms of the worstcase behavior, however,
 					//for outer vector operations the average case is equivalent to the worst case.
 					long lnnz = (long) (ldim1*ldim2*OptimizerUtils.getBinaryOpSparsity(sp1, sp2, op, !outer));
-					ret = new long[]{ldim1, ldim2, lnnz};
+					ret = new MatrixCharacteristics(ldim1, ldim2, -1, lnnz);
 				}
 			}
 		}

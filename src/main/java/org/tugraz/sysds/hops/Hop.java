@@ -76,10 +76,7 @@ public abstract class Hop implements ParseInfo
 	protected DataType _dataType;
 	protected ValueType _valueType;
 	protected boolean _visited = false;
-	protected long _dim1 = -1;
-	protected long _dim2 = -1;
-	protected int _blocksize = -1;
-	protected long _nnz = -1;
+	protected DataCharacteristics _dc = new MatrixCharacteristics();
 	protected UpdateType _updateType = UpdateType.COPY;
 
 	protected ArrayList<Hop> _parent = new ArrayList<>();
@@ -221,9 +218,9 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public boolean hasValidCPDimsAndSize() {
-		boolean invalid = !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
+		boolean invalid = !OptimizerUtils.isValidCPDimensions(_dc.getRows(), _dc.getCols());
 		for( Hop in : getInput() )
-			invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
+			invalid |= !OptimizerUtils.isValidCPDimensions(in._dc.getRows(), in._dc.getCols());
 		return !invalid;
 	}
 
@@ -322,11 +319,11 @@ public abstract class Hop implements ParseInfo
 				//(compile- instead of runtime-level for better debugging)
 				boolean serializedStorage = false;
 				if( getDataType()==DataType.MATRIX && dimsKnown(true) ) {
-					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dim1, _dim2, _blocksize, _nnz);
+					double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(_dc);
 					double dataCache = SparkExecutionContext.getDataMemoryBudget(true, true);
-					serializedStorage = MatrixBlock.evalSparseFormatInMemory(_dim1, _dim2, _nnz)
+					serializedStorage = MatrixBlock.evalSparseFormatInMemory(_dc)
 						&& matrixPSize > dataCache //sparse in-memory does not fit in agg mem 
-						&& (OptimizerUtils.getSparsity(_dim1, _dim2, _nnz) < MatrixBlock.ULTRA_SPARSITY_TURN_POINT
+						&& (OptimizerUtils.getSparsity(_dc) < MatrixBlock.ULTRA_SPARSITY_TURN_POINT
 							|| !Checkpoint.CHECKPOINT_SPARSE_CSR ); //ultra-sparse or sparse w/o csr
 				}
 				else if( !dimsKnown(true) ) {
@@ -454,8 +451,7 @@ public abstract class Hop implements ParseInfo
 	 * 
 	 * @return memory estimate
 	 */
-	public double getMemEstimate()
-	{
+	public double getMemEstimate() {
 		if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 			if ( ! isMemEstimated() ) {
 				//LOG.warn("Nonexisting memory estimate - reestimating w/o memo table.");
@@ -473,18 +469,15 @@ public abstract class Hop implements ParseInfo
 	 * 
 	 * @param mem memory estimate
 	 */
-	public void setMemEstimate( double mem )
-	{
+	public void setMemEstimate( double mem ) {
 		_memEstimate = mem;
 	}
 	
-	public void clearMemEstimate()
-	{
+	public void clearMemEstimate() {
 		_memEstimate = OptimizerUtils.INVALID_SIZE;
 	}
 
-	public boolean isMemEstimated() 
-	{
+	public boolean isMemEstimated() {
 		return (_memEstimate != OptimizerUtils.INVALID_SIZE);
 	}
 
@@ -522,9 +515,9 @@ public abstract class Hop implements ParseInfo
 	 * 
 	 * @param memo memory table
 	 */
-	public void computeMemEstimate( MemoTable memo )
+	public void computeMemEstimate(MemoTable memo)
 	{
-		long[] wstats = null; 
+		DataCharacteristics wdc = null; 
 		
 		////////
 		//Step 1) Compute hop output memory estimate (incl size inference) 
@@ -536,7 +529,7 @@ public abstract class Hop implements ParseInfo
 				if( getValueType()== ValueType.FP64) //default case
 					_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
 				else //literalops, dataops
-					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, _nnz );
+					_outputMemEstimate = computeOutputMemEstimate( getDim1(), getDim2(), getNnz() );
 				break;
 			}
 			case FRAME:
@@ -547,26 +540,26 @@ public abstract class Hop implements ParseInfo
 				//1a) mem estimate based on exactly known dimensions and sparsity
 				if( dimsKnown(true) ) { 
 					//nnz always exactly known (see dimsKnown(true))
-					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, _nnz );
+					_outputMemEstimate = computeOutputMemEstimate(getDim1(), getDim2(), getNnz());
 				}
 				//1b) infer output statistics and mem estimate based on worst-case statistics
 				else if( memo.hasInputStatistics(this) )
 				{
 					//infer the output stats
-					wstats = inferOutputCharacteristics(memo);
+					wdc = inferOutputCharacteristics(memo);
 					
-					if( wstats != null && wstats[0] >= 0 && wstats[1] >= 0 ) {
+					if( wdc != null && wdc.dimsKnown() ) {
 						//use worst case characteristics to estimate mem
-						long lnnz = ((wstats[2]>=0)?wstats[2]:wstats[0]*wstats[1]);
-						_outputMemEstimate = computeOutputMemEstimate( wstats[0], wstats[1], lnnz );
+						long lnnz = wdc.nnzKnown() ? wdc.getNonZeros() : wdc.getLength();
+						_outputMemEstimate = computeOutputMemEstimate(wdc.getRows(), wdc.getCols(), lnnz );
 						
 						//propagate worst-case estimate
-						memo.memoizeStatistics(getHopID(), wstats[0], wstats[1], wstats[2]);
+						memo.memoizeStatistics(getHopID(), wdc);
 					}
 					else if( dimsKnown() ) {
 						//nnz unknown, estimate mem as dense
-						long lnnz = _dim1*_dim2;
-						_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+						long lnnz = getLength();
+						_outputMemEstimate = computeOutputMemEstimate(getDim1(), getDim2(), lnnz );
 					}
 					else {
 						//unknown output size
@@ -577,8 +570,8 @@ public abstract class Hop implements ParseInfo
 				//(required e.g., for datagenops w/o any input statistics)
 				else if( dimsKnown() ) {
 					//nnz unknown, estimate mem as dense
-					long lnnz = _dim1*_dim2;
-					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+					long lnnz = getLength();
+					_outputMemEstimate = computeOutputMemEstimate(getDim1(), getDim2(), lnnz);
 				}
 				//1d) fallback: unknown output size
 				else {
@@ -601,22 +594,22 @@ public abstract class Hop implements ParseInfo
 		
 		if( dimsKnown(true) ) { //incl scalar output
 			//nnz always exactly known (see dimsKnown(true))
-			_processingMemEstimate = computeIntermediateMemEstimate( _dim1, _dim2, _nnz );
+			_processingMemEstimate = computeIntermediateMemEstimate(getDim1(), getDim2(), getNnz());
 		}
-		else if( wstats!=null ) {
+		else if( wdc != null ) {
 			//use worst case characteristics to estimate mem
-			long lnnz = ((wstats[2]>=0)?wstats[2]:wstats[0]*wstats[1]);
-			_processingMemEstimate = computeIntermediateMemEstimate( wstats[0], wstats[1], lnnz );
+			long lnnz = wdc.nnzKnown() ? wdc.getNonZeros() : wdc.getLength();
+			_processingMemEstimate = computeIntermediateMemEstimate(wdc.getRows(), wdc.getCols(), lnnz );
 		}
 		else if( dimsKnown() ){
 			//nnz unknown, estimate mem as dense
-			long lnnz = _dim1 * _dim2;
-			_processingMemEstimate = computeIntermediateMemEstimate(_dim1, _dim2, lnnz);
+			long lnnz = getLength();
+			_processingMemEstimate = computeIntermediateMemEstimate(getDim1(), getDim2(), lnnz);
 		}
 		
 		
 		////////
-		//Step 3) Compute final hop memory estimate  
+		//Step 3) Compute final hop memory estimate
 		
 		//final estimate (sum of inputs/intermediates/output)
 		_memEstimate = getInputOutputSize();
@@ -627,9 +620,9 @@ public abstract class Hop implements ParseInfo
 	 * and/or input estimates. Should return null if dimensions are unknown.
 	 * 
 	 * @param memo memory table
-	 * @return output characteristics as a long array
+	 * @return output characteristics
 	 */
-	protected abstract long[] inferOutputCharacteristics( MemoTable memo );
+	protected abstract DataCharacteristics inferOutputCharacteristics(MemoTable memo);
 
 	/**
 	 * Recursively computes memory estimates for all the Hops in the DAG rooted at the 
@@ -637,7 +630,7 @@ public abstract class Hop implements ParseInfo
 	 * 
 	 * @param memo memory table
 	 */
-	public void refreshMemEstimates( MemoTable memo ) {
+	public void refreshMemEstimates(MemoTable memo) {
 		if( isVisited() )
 			return;
 		for( Hop h : this.getInput() )
@@ -703,19 +696,19 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public int getBlocksize() {
-		return _blocksize;
+		return _dc.getBlocksize();
 	}
 
 	public void setBlocksize(int blen) {
-		_blocksize = blen;
+		_dc.setBlocksize(blen);
 	}
 	
 	public void setNnz(long nnz){
-		_nnz = nnz;
+		_dc.setNonZeros(nnz);
 	}
 	
 	public long getNnz(){
-		return _nnz;
+		return _dc.getNonZeros();
 	}
 
 	public void setUpdateType(UpdateType update){
@@ -758,7 +751,7 @@ public abstract class Hop implements ParseInfo
 	 * @return true if the Hop is eligible for GPU Exectype.
 	 */
 	public abstract boolean isGPUEnabled();
-	
+
 	/**
 	 * Computes the hop-specific output memory estimate in bytes. Should be 0 if not
 	 * applicable. 
@@ -785,22 +778,22 @@ public abstract class Hop implements ParseInfo
 
 	
 	protected boolean isVector() {
-		return (dimsKnown() && (_dim1 == 1 || _dim2 == 1) );
+		return (dimsKnown() && (_dc.getRows() == 1 || _dc.getCols() == 1) );
 	}
 	
 	protected boolean areDimsBelowThreshold() {
-		return (dimsKnown() && _dim1 <= Hop.CPThreshold && _dim2 <= Hop.CPThreshold );
+		return (dimsKnown() && _dc.getRows() <= Hop.CPThreshold && _dc.getCols() <= Hop.CPThreshold );
 	}
 	
 	public boolean dimsKnown() {
 		return ( _dataType == DataType.SCALAR 
 			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
-				&& _dim1 >= 0 && _dim2 >= 0) );
+				&& _dc.rowsKnown() && _dc.colsKnown()) );
 	}
 	
 	public boolean dimsKnown(boolean includeNnz) {
 		return rowsKnown() && colsKnown()
-			&& (_dataType.isScalar() || ((includeNnz) ? _nnz>=0 : true));
+			&& (_dataType.isScalar() || ((includeNnz) ? _dc.nnzKnown() : true));
 	}
 
 	public boolean dimsKnownAny() {
@@ -808,11 +801,11 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public boolean rowsKnown() {
-		return _dataType.isScalar() || _dim1 >= 0;
+		return _dataType.isScalar() || _dc.rowsKnown();
 	}
 	
 	public boolean colsKnown() {
-		return _dataType.isScalar() || _dim2 >= 0;
+		return _dataType.isScalar() || _dc.colsKnown();
 	}
 	
 	public static void resetVisitStatus( ArrayList<Hop> hops ) {
@@ -883,32 +876,39 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public long getDim1() {
-		return _dim1;
+		return _dc.getRows();
 	}
 
 	public void setDim1(long dim1) {
-		_dim1 = dim1;
+		_dc.setRows(dim1);
 	}
 
 	public long getDim2() {
-		return _dim2;
+		return _dc.getCols();
 	}
 
 	public void setDim2(long dim2) {
-		_dim2 = dim2;
+		_dc.setCols(dim2);
+	}
+	
+	public long getDim(int i) {
+		return _dc.getDim(i);
+	}
+	
+	public void setDim(int i, long dim) {
+		_dc.setDim(i, dim);
 	}
 	
 	public long getLength() {
-		return _dim1 * _dim2;
+		return _dc.getLength();
 	}
 	
 	public double getSparsity() {
-		return OptimizerUtils.getSparsity(_dim1, _dim2, _nnz);
+		return OptimizerUtils.getSparsity(_dc);
 	}
 	
 	public DataCharacteristics getDataCharacteristics() {
-		return new MatrixCharacteristics(
-			_dim1, _dim2, _blocksize, _nnz);
+		return _dc;
 	}
 	
 	protected void setOutputDimensions(Lop lop) {
@@ -1816,10 +1816,7 @@ public abstract class Hop implements ParseInfo
 		_dataType = that._dataType;
 		_valueType = that._valueType;
 		_visited = that._visited;
-		_dim1 = that._dim1;
-		_dim2 = that._dim2;
-		_blocksize = that._blocksize;
-		_nnz = that._nnz;
+		_dc.set(that._dc);
 		_updateType = that._updateType;
 
 		//no copy of lops (regenerated)
@@ -1859,18 +1856,18 @@ public abstract class Hop implements ParseInfo
 	public String _text;
 	
 	public void setBeginLine(int passed)    { _beginLine = passed;   }
-	public void setBeginColumn(int passed) 	{ _beginColumn = passed; }
-	public void setEndLine(int passed) 		{ _endLine = passed;   }
-	public void setEndColumn(int passed)	{ _endColumn = passed; }
-	public void setFilename(String passed) { _filename = passed; }
-	public void setText(String text) { _text = text; }
+	public void setBeginColumn(int passed)  { _beginColumn = passed; }
+	public void setEndLine(int passed)      { _endLine = passed;   }
+	public void setEndColumn(int passed)    { _endColumn = passed; }
+	public void setFilename(String passed)  { _filename = passed; }
+	public void setText(String text)        { _text = text; }
 
-	public int getBeginLine()	{ return _beginLine;   }
+	public int getBeginLine()   { return _beginLine;   }
 	public int getBeginColumn() { return _beginColumn; }
-	public int getEndLine() 	{ return _endLine;   }
-	public int getEndColumn()	{ return _endColumn; }
-	public String getFilename()	{ return _filename; }
-	public String getText() { return _text; }
+	public int getEndLine()     { return _endLine;   }
+	public int getEndColumn()   { return _endColumn; }
+	public String getFilename() { return _filename; }
+	public String getText()     { return _text; }
 	
 	public String printErrorLocation(){
 		if(_filename != null)
@@ -1884,9 +1881,8 @@ public abstract class Hop implements ParseInfo
 	 * 
 	 * @param lop low-level operator
 	 */
-	protected void setLineNumbers(Lop lop)
-	{
-		lop.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
+	protected void setLineNumbers(Lop lop) {
+		lop.setAllPositions(getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
 	}
 
 	/**

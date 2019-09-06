@@ -48,7 +48,7 @@ public class CostEstimationWrapper
 	
 	
 	static 
-	{	
+	{
 		// for internal debugging only
 		if( LDEBUG ) {
 			Logger.getLogger("org.tugraz.sysds.hops.cost")

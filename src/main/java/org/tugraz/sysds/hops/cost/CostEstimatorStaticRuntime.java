@@ -72,22 +72,23 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		//load time into mem
 		double ltime = 0;
 		if( !vs[0]._inmem ){
-			ltime += getHDFSReadTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() );
+			ltime += getHDFSReadTime( vs[0].getRows(), vs[0].getCols(), vs[0].getSparsity() );
 			//eviction costs
 			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
-				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? vs[0]._rlen*vs[0]._clen:vs[0]._nnz) )
+				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[0].getRows(), vs[0].getCols(), 
+					(vs[0]._dc.getNonZeros()<0)? vs[0].getRows()*vs[0].getCols():vs[0]._dc.getNonZeros()) )
 			{
-				ltime += Math.abs( getFSWriteTime( vs[0]._rlen, vs[0]._clen, vs[0].getSparsity() ));
+				ltime += Math.abs( getFSWriteTime( vs[0].getRows(), vs[0].getCols(), vs[0].getSparsity() ));
 			}
 			vs[0]._inmem = true;
 		}
 		if( !vs[1]._inmem ){
-			ltime += getHDFSReadTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity() );
+			ltime += getHDFSReadTime( vs[1].getRows(), vs[1].getCols(), vs[1].getSparsity() );
 			//eviction costs
 			if( CacheableData.CACHING_WRITE_CACHE_ON_READ &&
-				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? vs[1]._rlen*vs[1]._clen:vs[1]._nnz) )
+				LazyWriteBuffer.getWriteBufferLimit()<MatrixBlock.estimateSizeOnDisk(vs[1].getRows(), vs[1].getCols(), (vs[1]._dc.getNonZeros()<0)? vs[1].getRows()*vs[1].getCols():vs[1]._dc.getNonZeros()) )
 			{
-				ltime += Math.abs( getFSWriteTime( vs[1]._rlen, vs[1]._clen, vs[1].getSparsity()) );
+				ltime += Math.abs( getFSWriteTime( vs[1].getRows(), vs[1].getCols(), vs[1].getSparsity()) );
 			}
 			vs[1]._inmem = true;
 		}
@@ -103,7 +104,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		double wtime = 0;
 		//double wtime = getFSWriteTime( vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen );
 		if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).getOpcode().equals("write") )
-			wtime += getHDFSWriteTime(vs[2]._rlen, vs[2]._clen, vs[2].getSparsity(), ((VariableCPInstruction)inst).getInput3().getName() );
+			wtime += getHDFSWriteTime(vs[2].getRows(), vs[2].getCols(), vs[2].getSparsity(), ((VariableCPInstruction)inst).getInput3().getName() );
 		
 		if( LOG.isDebugEnabled() && wtime!=0 ) {
 			LOG.debug("Cost["+cpinst.getOpcode()+" - write] = "+wtime);
@@ -238,9 +239,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	
 	private static double getInstTimeEstimate(String opcode, VarStats[] vs, String[] args, ExecType et) {
 		return getInstTimeEstimate(opcode, false,
-			vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen,
-			vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen,
-			vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen,
+			vs[0].getRows(), vs[0].getCols(), !vs[0]._dc.nnzKnown() ? 1.0 : vs[0].getSparsity(),
+			vs[1].getRows(), vs[1].getCols(), !vs[1]._dc.nnzKnown() ? 1.0 : vs[1].getSparsity(),
+			vs[2].getRows(), vs[2].getCols(), !vs[2]._dc.nnzKnown() ? 1.0 : vs[2].getSparsity(),
 			args);
 	}
 	

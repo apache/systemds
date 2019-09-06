@@ -21,6 +21,7 @@ package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * class to maintain output parameters for a lop.
@@ -58,6 +59,10 @@ public class OutputParameters
 
 	public void setLabel(String label) {
 		_file_label = label;
+	}
+	
+	public void setDimensions(DataCharacteristics dc) {
+		setDimensions(dc.getRows(), dc.getCols(), dc.getBlocksize(), dc.getNonZeros());
 	}
 
 	public void setDimensions(long rows, long cols, long blen, long nnz) {

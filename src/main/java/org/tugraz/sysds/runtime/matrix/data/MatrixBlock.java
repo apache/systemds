@@ -1013,6 +1013,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			denseToSparse(allowCSR);
 	}
 	
+	public static boolean evalSparseFormatInMemory(DataCharacteristics dc) {
+		return evalSparseFormatInMemory(dc.getRows(), dc.getCols(), dc.getNonZeros());
+	}
+	
+	
 	/**
 	 * Evaluates if a matrix block with the given characteristics should be in sparse format 
 	 * in memory.

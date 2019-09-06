@@ -53,7 +53,7 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.getRows(): should never get called in the base class");
 	}
 
-	public void setRows(long rlen) {
+	public DataCharacteristics setRows(long rlen) {
 		throw new DMLRuntimeException("DataCharacteristics.setRows(long): should never get called in the base class");
 	}
 
@@ -61,7 +61,7 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.getCols(): should never get called in the base class");
 	}
 
-	public void setCols(long clen) {
+	public DataCharacteristics setCols(long clen) {
 		throw new DMLRuntimeException("DataCharacteristics.setCols(long): should never get called in the base class");
 	}
 
@@ -90,7 +90,7 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.getNumColBlocks(): should never get called in the base class");
 	}
 
-	public void setDimension(long nr, long nc) {
+	public DataCharacteristics setDimension(long nr, long nc) {
 		throw new DMLRuntimeException("DataCharacteristics.setDimension(long, long): should never get called in the base class");
 	}
 
@@ -114,11 +114,11 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.getIntDims(): should never get called in the base class");
 	}
 
-	public TensorCharacteristics setDim(int i, long dim) {
+	public DataCharacteristics setDim(int i, long dim) {
 		throw new DMLRuntimeException("DataCharacteristics.setDim(int, long): should never get called in the base class");
 	}
 
-	public TensorCharacteristics setDims(long[] dims) {
+	public DataCharacteristics setDims(long[] dims) {
 		throw new DMLRuntimeException("DataCharacteristics.setDims(long[]): should never get called in the base class");
 	}
 
@@ -126,7 +126,7 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.getNumBlocks(i): should never get called in the base class");
 	}
 
-	public void setNonZeros(long nnz) {
+	public DataCharacteristics setNonZeros(long nnz) {
 		throw new DMLRuntimeException("DataCharacteristics.setNonZeros(long): should never get called in the base class");
 	}
 
@@ -134,7 +134,7 @@ public abstract class DataCharacteristics implements Serializable {
 		throw new DMLRuntimeException("DataCharacteristics.getNonZeros(): should never get called in the base class");
 	}
 
-	public void setNonZerosBound(long nnz) {
+	public DataCharacteristics setNonZerosBound(long nnz) {
 		throw new DMLRuntimeException("DataCharacteristics.setNonZerosBound(long): should never get called in the base class");
 	}
 

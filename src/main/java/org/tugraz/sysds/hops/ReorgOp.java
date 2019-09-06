@@ -30,6 +30,7 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.Transform;
 import org.tugraz.sysds.lops.Transform.OperationTypes;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 
@@ -262,32 +263,29 @@ public class ReorgOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
+		DataCharacteristics ret = null;
 	
 		Hop input = getInput().get(0);
 		DataCharacteristics dc = memo.getAllInputStats(input);
-			
+	
 		switch(op) 
 		{
-			case TRANS:
-			{
+			case TRANS:{
 				// input is a [k1,k2] matrix and output is a [k2,k1] matrix
 				// #nnz in output is exactly the same as in input
 				if( dc.dimsKnown() )
-					ret = new long[]{ dc.getCols(), dc.getRows(), dc.getNonZeros() };
+					ret = new MatrixCharacteristics(dc.getCols(), dc.getRows(), -1, dc.getNonZeros());
 				break;
 			}
-			case REV:
-			{
+			case REV: {
 				// dims and nnz are exactly the same as in input
 				if( dc.dimsKnown() )
-					ret = new long[]{ dc.getRows(), dc.getCols(), dc.getNonZeros() };
+					ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getNonZeros());
 				break;
 			}
-			case DIAG:
-			{
+			case DIAG: {
 				// NOTE: diag is overloaded according to the number of columns of the input
 				
 				long k = dc.getRows();
@@ -296,33 +294,31 @@ public class ReorgOp extends MultiThreadedHop
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
 				// #nnz in output is in the worst case k => sparsity = 1/k
 				if( k == 1 )
-					ret = new long[]{k, k, ((dc.getNonZeros()>=0) ? dc.getNonZeros() : k)};
+					ret = new MatrixCharacteristics(k, k, -1, ((dc.getNonZeros()>=0) ? dc.getNonZeros() : k));
 				
 				// CASE b) DIAG M2V
 				// input is [k,k] matrix and output is [k,1] matrix
 				// #nnz in the output is likely to be k (a dense matrix)
 				if( k > 1 )
-					ret = new long[]{k, 1, ((dc.getNonZeros()>=0) ? Math.min(k,dc.getNonZeros()) : k) };
+					ret = new MatrixCharacteristics(k, 1, -1, ((dc.getNonZeros()>=0) ? Math.min(k,dc.getNonZeros()) : k));
 				
 				break;
 			}
-			case RESHAPE:
-			{
+			case RESHAPE: {
 				// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4, except for
 				// special cases where an input or output dimension is zero (i.e., 0x5 -> 1x0 is valid)
 				// #nnz in output is exactly the same as in input
 				if( dc.dimsKnown() ) {
-					if( _dim1 > 0  )
-						ret = new long[]{_dim1, dc.getRows()*dc.getCols()/_dim1, dc.getNonZeros()};
-					else if( _dim2 > 0 ) 
-						ret = new long[]{dc.getRows()*dc.getCols()/_dim2, _dim2, dc.getNonZeros()};
-					else if( _dim1 >= 0 && _dim2 >= 0 )
-						ret = new long[]{_dim1, _dim2, -1};
+					if( rowsKnown()  )
+						ret = new MatrixCharacteristics(getDim1(), dc.getRows()*dc.getCols()/getDim1(), -1, dc.getNonZeros());
+					else if( colsKnown() ) 
+						ret = new MatrixCharacteristics(dc.getRows()*dc.getCols()/getDim2(), getDim2(), -1, dc.getNonZeros());
+					else if( dimsKnown() )
+						ret = new MatrixCharacteristics(getDim1(), getDim2(), -1, -1);
 				}
 				break;
 			}
-			case SORT:
-			{
+			case SORT: {
 				// input is a [k1,k2] matrix and output is a [k1,k3] matrix, where k3=k2 if no index return;
 				// otherwise k3=1 (for the index vector)
 				Hop input4 = getInput().get(3); //indexreturn
@@ -332,13 +328,13 @@ public class ReorgOp extends MultiThreadedHop
 					boolean ixret = HopRewriteUtils.getBooleanValueSafe((LiteralOp)input4);
 					long dim2 = ixret ? 1 : dc.getCols();
 					long nnz = ixret ? dc.getRows() : dc.getNonZeros();
-					ret = new long[]{ dc.getRows(), dim2, nnz};
+					ret = new MatrixCharacteristics(dc.getRows(), dim2, -1, nnz);
 				}
 				else {
-					ret = new long[]{ dc.getRows(), -1, -1};
+					ret = new MatrixCharacteristics(dc.getRows(), -1, -1, -1);
 				}
 			}
-		}	
+		}
 		
 		return ret;
 	}
@@ -444,10 +440,10 @@ public class ReorgOp extends MultiThreadedHop
 					refreshColsParameterInformation(input3); //refresh cols
 					setNnz(input1.getNnz());
 					if (!dimsKnown() && input1.dimsKnown()) { //reshape allows to infer dims, if input and 1 dim known
-						if (_dim1 > 0)
-							_dim2 = (input1._dim1 * input1._dim2) / _dim1;
-						else if (_dim2 > 0)
-							_dim1 = (input1._dim1 * input1._dim2) / _dim2;
+						if (rowsKnown())
+							setDim2(input1.getLength() / getDim1());
+						else if (colsKnown())
+							setDim1(input1.getLength() / getDim2());
 					}
 				} else {
 					// TODO size information for tensor
@@ -463,25 +459,25 @@ public class ReorgOp extends MultiThreadedHop
 				Hop input4 = getInput().get(3); //indexreturn
 				boolean unknownIxRet = !(input4 instanceof LiteralOp);
 				
-				_dim1 = input1.getDim1();
+				setDim1(input1.getDim1());
 				if( !unknownIxRet ) {
 					boolean ixret = HopRewriteUtils.getBooleanValueSafe((LiteralOp)input4);
-					_dim2 = ixret ? 1 : input1.getDim2();
-					_nnz = ixret ? input1.getDim1() : input1.getNnz();
+					setDim2(ixret ? 1 : input1.getDim2());
+					setNnz(ixret ? input1.getDim1() : input1.getNnz());
 				}
 				else {
-					_dim2 = -1;
-					_nnz = -1;
+					setDim2(-1);
+					setNnz(-1);
 				}
 				break;
 			}
-		}	
+		}
 	}
 	
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		ReorgOp ret = new ReorgOp();	
+		ReorgOp ret = new ReorgOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -494,16 +490,15 @@ public class ReorgOp extends MultiThreadedHop
 	}
 	
 	@Override
-	public boolean compare( Hop that )
-	{
+	public boolean compare( Hop that ) {
 		if( !(that instanceof ReorgOp) )
 			return false;
 		
-		ReorgOp that2 = (ReorgOp)that;		
+		ReorgOp that2 = (ReorgOp)that;
 		boolean ret =  (op == that2.op)
-				    && (_maxNumThreads == that2._maxNumThreads)
-				    && (getInput().size()==that.getInput().size());
-				
+			&& (_maxNumThreads == that2._maxNumThreads)
+			&& (getInput().size()==that.getInput().size());
+		
 		//compare all childs (see reshape, sort)
 		if( ret ) //sizes matched
 			for( int i=0; i<_input.size(); i++ )

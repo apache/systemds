@@ -20,25 +20,29 @@
 package org.tugraz.sysds.hops.cost;
 
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public class VarStats 
 {
-	long _rlen = -1;
-	long _clen = -1;
-	int _blen = -1;
-	long _nnz = -1;
+	DataCharacteristics _dc;
 	boolean _inmem = false;
 	
 	public VarStats( long rlen, long clen, int blen, long nnz, boolean inmem ) {
-		_rlen = rlen;
-		_clen = clen;
-		_blen = blen;
-		_nnz = nnz;
+		_dc = new MatrixCharacteristics(rlen, clen, blen, nnz);
 		_inmem = inmem;
 	}
 	
+	public long getRows() {
+		return _dc.getRows();
+	}
+	
+	public long getCols() {
+		return _dc.getCols();
+	}
+	
 	public double getSparsity() {
-		return OptimizerUtils.getSparsity(_rlen, _clen, _nnz);
+		return OptimizerUtils.getSparsity(_dc);
 	}
 	
 	@Override
@@ -46,11 +50,11 @@ public class VarStats
 		StringBuilder sb = new StringBuilder();
 		sb.append("VarStats: [");
 		sb.append("rlen = ");
-		sb.append(_rlen);
+		sb.append(_dc.getRows());
 		sb.append(", clen = ");
-		sb.append(_clen);
+		sb.append(_dc.getCols());
 		sb.append(", nnz = ");
-		sb.append(_nnz);
+		sb.append(_dc.getNonZeros());
 		sb.append(", inmem = ");
 		sb.append(_inmem);
 		sb.append("]");
@@ -59,6 +63,7 @@ public class VarStats
 	
 	@Override
 	public Object clone() {
-		return new VarStats(_rlen, _clen, _blen, _nnz, _inmem );
+		return new VarStats(_dc.getRows(), _dc.getCols(),
+			_dc.getBlocksize(), _dc.getNonZeros(), _inmem );
 	}
 }

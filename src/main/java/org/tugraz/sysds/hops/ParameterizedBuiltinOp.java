@@ -32,6 +32,7 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.ParameterizedBuiltin;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 import java.util.HashMap;
@@ -373,7 +374,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			Hop cumsumOutput = cumsum;
 			if( !rmRows ){
 				cumsumOutput = HopRewriteUtils.createTranspose(cumsum);
-				HopRewriteUtils.updateHopCharacteristics(cumsumOutput, blen, this);	
+				HopRewriteUtils.updateHopCharacteristics(cumsumOutput, blen, this);
 			}
 			
 			Hop maxDim = HopRewriteUtils.createAggUnaryOp(cumsumOutput, AggOp.MAX, Direction.RowCol); //alternative: right indexing
@@ -566,11 +567,11 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
 		//Notes: CDF, TOSTRING always known because scalar outputs
 		
-		long[] ret = null;
+		DataCharacteristics ret = null;
 	
 		Hop input = getTargetHop();	
 		DataCharacteristics dc = memo.getAllInputStats(input);
@@ -583,7 +584,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				if(ngroups != null && ngroups instanceof LiteralOp) {
 					long m = HopRewriteUtils.getIntValueSafe((LiteralOp)ngroups);
 					long n = (dc.getRows()==1)?1:dc.getCols();
-					return new long[]{m, n, m};
+					return new MatrixCharacteristics(m, n, -1, m);
 				}
 			}
 			
@@ -594,7 +595,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			long m = dc.getRows();
 			long n = (dc.getRows()==1)?1:dc.getCols();
 			if ( m >= 1 ) {
-				ret = new long[]{m, n, m};
+				ret = new MatrixCharacteristics(m, n, -1, m);
 			}
 		}
 		else if(   _op == ParamBuiltinOp.RMEMPTY ) 
@@ -623,19 +624,16 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 					lDim1 = dc.getRows();
 					lDim2 = (dcSelect == null ||  !dcSelect.nnzKnown() ) ? dc.getCols(): dcSelect.getNonZeros();
 				}
-				ret = new long[]{lDim1, lDim2, dc.getNonZeros()};
+				ret = new MatrixCharacteristics(lDim1, lDim2, -1, dc.getNonZeros());
 			}
 		}
 		else if(   _op == ParamBuiltinOp.REPLACE ) 
 		{ 
 			// the worst-case estimate from the input directly propagates to the output 
 			// #nnz depends on the replacement pattern and value, same as input if non-zero
-			if ( dc.dimsKnown() )
-			{
-				if( isNonZeroReplaceArguments() )
-					ret = new long[]{dc.getRows(), dc.getCols(), dc.getNonZeros()};
-				else
-					ret = new long[]{dc.getRows(), dc.getCols(), -1};
+			if ( dc.dimsKnown() ) {
+				long lnnz = isNonZeroReplaceArguments() ? dc.getNonZeros() : -1;
+				ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, lnnz);
 			}
 		}
 		else if( _op == ParamBuiltinOp.REXPAND )
@@ -650,25 +648,25 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			if( dc.dimsKnown() ) {
 				long lnnz = dc.nnzKnown() ? dc.getNonZeros() : dc.getRows();
 				if( "cols".equals(dirVal) ) { //expand horizontally
-					ret = new long[]{dc.getRows(), maxVal, lnnz};
+					ret = new MatrixCharacteristics(dc.getRows(), maxVal, -1, lnnz);
 				}
 				else if( "rows".equals(dirVal) ){ //expand vertically
-					ret = new long[]{maxVal, dc.getRows(), lnnz};
-				}	
+					ret = new MatrixCharacteristics(maxVal, dc.getRows(), -1, lnnz);
+				}
 			}
 		}
 		else if( _op == ParamBuiltinOp.TRANSFORMDECODE ) {
 			if( dc.dimsKnown() ) {
 				//rows: remain unchanged
 				//cols: dummy coding might decrease never increase cols 
-				return new long[]{dc.getRows(), dc.getCols(), dc.getRows()*dc.getCols()};
+				return new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
 			}
 		}
 		else if( _op == ParamBuiltinOp.TRANSFORMAPPLY ) {
 			if( dc.dimsKnown() ) {
 				//rows: omitting might decrease but never increase rows
 				//cols: dummy coding and binning might increase cols but nnz stays constant
-				return new long[]{dc.getRows(), dc.getCols(), dc.getRows()*dc.getCols()};
+				return new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getLength());
 			}
 		}
 		

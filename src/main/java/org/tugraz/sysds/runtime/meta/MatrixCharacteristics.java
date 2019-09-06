@@ -40,12 +40,16 @@ public class MatrixCharacteristics extends DataCharacteristics
 	
 	public MatrixCharacteristics() {}
 	
+	public MatrixCharacteristics(long nr, long nc) {
+		set(nr, nc, -1, -1);
+	}
+	
 	public MatrixCharacteristics(long nr, long nc, long nnz) {
 		set(nr, nc, -1, nnz);
 	}
 	
 	public MatrixCharacteristics(long nr, long nc, int blen) {
-		set(nr, nc, blen);
+		set(nr, nc, blen, -1);
 	}
 
 	public MatrixCharacteristics(long nr, long nc, int blen, long nnz) {
@@ -85,8 +89,9 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public void setRows(long rlen) {
+	public DataCharacteristics setRows(long rlen) {
 		numRows = rlen;
+		return this;
 	}
 
 	@Override
@@ -95,8 +100,9 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public void setCols(long clen) {
+	public DataCharacteristics setCols(long clen) {
 		numColumns = clen;
+		return this;
 	}
 
 	@Override
@@ -128,9 +134,10 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public void setDimension(long nr, long nc) {
+	public DataCharacteristics setDimension(long nr, long nc) {
 		numRows = nr;
 		numColumns = nc;
+		return this;
 	}
 	
 	@Override
@@ -158,9 +165,10 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 	
 	@Override
-	public void setNonZeros(long nnz) {
+	public DataCharacteristics setNonZeros(long nnz) {
 		ubNnz = false;
 		nonZero = nnz;
+		return this;
 	}
 
 	@Override
@@ -169,9 +177,10 @@ public class MatrixCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public void setNonZerosBound(long nnz) {
+	public DataCharacteristics setNonZerosBound(long nnz) {
 		ubNnz = true;
 		nonZero = nnz;
+		return this;
 	}
 
 	@Override

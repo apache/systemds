@@ -396,35 +396,26 @@ public class DataOp extends Hop
 	}
 	
 	@Override
-	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
-	{
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz ) {
 		return LocalFileUtils.BUFFER_SIZE;
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
-	{
-		long[] ret = null;
-		
-		if(   _dataop == DataOpTypes.PERSISTENTWRITE
-			|| _dataop == DataOpTypes.TRANSIENTWRITE ) 
-		{
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo ) {
+		DataCharacteristics ret = null;
+		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )  {
 			DataCharacteristics dc = memo.getAllInputStats(getInput().get(0));
 			if( dc.dimsKnown() )
-				ret = new long[]{ dc.getRows(), dc.getCols(), dc.getNonZeros() };
+				ret = _dc;
 		}
-		else if( _dataop == DataOpTypes.TRANSIENTREAD )
-		{
+		else if( _dataop == DataOpTypes.TRANSIENTREAD ) {
 			//prepare statistics, passed from cross-dag transient writes
 			DataCharacteristics dc = memo.getAllInputStats(this);
 			if( dc.dimsKnown() )
-				ret = new long[]{ dc.getRows(), dc.getCols(), dc.getNonZeros() };
+				ret = _dc;
 		}
-		
 		return ret;
 	}
-	
-	
 	
 	@Override
 	protected ExecType optFindExecType() 

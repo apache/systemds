@@ -31,6 +31,7 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.Program;
 import org.tugraz.sysds.runtime.controlprogram.parfor.opt.CostEstimatorHops;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * This FunctionOp represents the call to a DML-bodied or external function.
@@ -146,9 +147,9 @@ public class FunctionOp extends Hop
 				outputDimsKnown &= out.dimsKnown();
 			}
 			if( outputDimsKnown ) { 
-				long lnnz = ((_nnz>=0)?_nnz:_dim1*_dim2); 
-				_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
-				_processingMemEstimate = computeIntermediateMemEstimate(_dim1, _dim2, lnnz);
+				long lnnz = (getNnz()>=0)?getNnz():getLength(); 
+				_outputMemEstimate = computeOutputMemEstimate(getDim1(), getDim2(), lnnz);
+				_processingMemEstimate = computeIntermediateMemEstimate(getDim1(), getDim2(), lnnz);
 			}
 			_memEstimate = getInputOutputSize();
 		}
@@ -245,8 +246,7 @@ public class FunctionOp extends Hop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
-	{
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo ) {
 		throw new RuntimeException("Invalid call of inferOutputCharacteristics in FunctionOp.");
 	}
 	

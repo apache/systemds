@@ -25,6 +25,7 @@ import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
@@ -168,27 +169,24 @@ public class LiteralOp extends Hop
 	}
 	
 	@Override
-	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
-	{
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz ) {
 		return 0;
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
-	{
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo ) {
 		return null;
 	}
 	
 	@Override
-	public boolean allowsAllExecTypes()
-	{
+	public boolean allowsAllExecTypes() {
 		return false;
-	}	
+	}
 	
 	@Override
 	protected ExecType optFindExecType() {
-		// Since a Literal hop does not represent any computation, 
-		// this function is not applicable. 
+		// Since a Literal hop does not represent any computation,
+		// this function is not applicable.
 		return null;
 	}
 	

@@ -38,6 +38,7 @@ import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
@@ -391,12 +392,9 @@ public class UnaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
-	{
-		long[] ret = null;
-	
-		Hop input = getInput().get(0);
-		DataCharacteristics dc = memo.getAllInputStats(input);
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo ) {
+		DataCharacteristics dc = memo.getAllInputStats(getInput().get(0));
+		DataCharacteristics ret = null;
 		if( dc.dimsKnown() ) {
 			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN 
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
@@ -404,17 +402,16 @@ public class UnaryOp extends MultiThreadedHop
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND  
 				|| _op==OpOp1.SPROP ) //sparsity preserving
 			{
-				ret = new long[]{dc.getRows(), dc.getCols(), dc.getNonZeros()};
+				ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getNonZeros());
 			}
 			else if( _op==OpOp1.CUMSUMPROD )
-				ret = new long[]{dc.getRows(), 1, -1};
+				ret = new MatrixCharacteristics(dc.getRows(), 1, -1, -1);
 			else 
-				ret = new long[]{dc.getRows(), dc.getCols(), -1};
+				ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, -1);
 		}
 		
 		return ret;
 	}
-	
 
 	@Override
 	public boolean allowsAllExecTypes()

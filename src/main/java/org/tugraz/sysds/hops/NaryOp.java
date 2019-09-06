@@ -28,6 +28,7 @@ import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.Nary;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * The NaryOp Hop allows for a variable number of operands. Functionality
@@ -185,29 +186,30 @@ public class NaryOp extends Hop {
 
 	@Override
 	@SuppressWarnings("incomplete-switch")
-	protected long[] inferOutputCharacteristics(MemoTable memo) {
+	protected DataCharacteristics inferOutputCharacteristics(MemoTable memo) {
 		if( !getDataType().isScalar() ) {
 			DataCharacteristics[] dc = memo.getAllInputStats(getInput());
 			
 			switch( _op ) {
-				case CBIND: return new long[]{
+				case CBIND: return new MatrixCharacteristics(
 					HopRewriteUtils.getMaxInputDim(dc, true),
-					HopRewriteUtils.getSumValidInputDims(dc, false),
-					HopRewriteUtils.getSumValidInputNnz(dc, true)};
-				case RBIND: return new long[]{
+					HopRewriteUtils.getSumValidInputDims(dc, false), -1,
+					HopRewriteUtils.getSumValidInputNnz(dc, true));
+				case RBIND: return new MatrixCharacteristics(
 					HopRewriteUtils.getSumValidInputDims(dc, true),
-					HopRewriteUtils.getMaxInputDim(dc, false),
-					HopRewriteUtils.getSumValidInputNnz(dc, true)};
+					HopRewriteUtils.getMaxInputDim(dc, false), -1,
+					HopRewriteUtils.getSumValidInputNnz(dc, true));
 				case MIN:
-				case MAX: return new long[]{
+				case MAX: return new MatrixCharacteristics(
 					HopRewriteUtils.getMaxInputDim(this, true),
-					HopRewriteUtils.getMaxInputDim(this, false), -1};
-				case LIST: return new long[]{getInput().size(), 1, -1};
+					HopRewriteUtils.getMaxInputDim(this, false), -1, -1);
+				case LIST:
+					return new MatrixCharacteristics(getInput().size(), 1, -1, -1);
 			}
 		}
 		return null; //do nothing
 	}
-	
+
 	@Override
 	public void refreshSizeInformation() {
 		switch( _op ) {

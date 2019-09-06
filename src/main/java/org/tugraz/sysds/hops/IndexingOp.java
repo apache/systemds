@@ -31,6 +31,7 @@ import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 //for now only works for range based indexing op
 public class IndexingOp extends Hop 
@@ -135,15 +136,15 @@ public class IndexingOp extends Hop
 				if( et == ExecType.SPARK )
 				{
 					IndexingMethod method = optFindIndexingMethod( _rowLowerEqualsUpper, _colLowerEqualsUpper,
-                            input._dim1, input._dim2, _dim1, _dim2);
+						input.getDim1(), input.getDim2(), getDim1(), getDim2());
 					SparkAggType aggtype = (method==IndexingMethod.MR_VRIX || isBlockAligned()) ? 
-							SparkAggType.NONE : SparkAggType.MULTI_BLOCK;
+						SparkAggType.NONE : SparkAggType.MULTI_BLOCK;
 					
 					Lop dummy = Data.createLiteralLop(ValueType.INT64, Integer.toString(-1));
 					RightIndex reindex = new RightIndex(
-							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-							getDataType(), getValueType(), aggtype, et);
+						input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
+						getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
+						getDataType(), getValueType(), aggtype, et);
 				
 					setOutputDimensions(reindex);
 					setLineNumbers(reindex);
@@ -196,17 +197,17 @@ public class IndexingOp extends Hop
 		DataCharacteristics dcM1 = memo.getAllInputStats(getInput().get(0));
 		if( dimsKnown() && dcM1.getNonZeros()>=0 ){
 			long lnnz = dcM1.getNonZeros(); //worst-case output nnz
-			double lOutMemEst = computeOutputMemEstimate( _dim1, _dim2, lnnz );
+			double lOutMemEst = computeOutputMemEstimate(getDim1(), getDim2(), lnnz);
 			if( lOutMemEst<_outputMemEstimate ){
 				_outputMemEstimate = lOutMemEst;
-				_memEstimate = getInputOutputSize();				
+				_memEstimate = getInputOutputSize();
 			}
-		}		
+		}
 	}
 	
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
-	{		
+	{
 		// only dense right indexing supported on GPU
 		double sparsity =  isGPUEnabled() ? 1.0 : OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
@@ -219,9 +220,9 @@ public class IndexingOp extends Hop
 	}
 	
 	@Override
-	protected long[] inferOutputCharacteristics( MemoTable memo )
+	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
-		long[] ret = null;
+		DataCharacteristics ret = null;
 		
 		Hop input = getInput().get(0); //original matrix
 		DataCharacteristics dc = memo.getAllInputStats(input);
@@ -229,11 +230,11 @@ public class IndexingOp extends Hop
 		{
 			long lnnz = dc.dimsKnown()?Math.min(dc.getRows()*dc.getCols(), dc.getNonZeros()):-1;
 			//worst-case is input size, but dense
-			ret = new long[]{dc.getRows(), dc.getCols(), lnnz};
+			ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, lnnz);
 			
 			//exploit column/row indexing information
-			if( _rowLowerEqualsUpper ) ret[0]=1;
-			if( _colLowerEqualsUpper ) ret[1]=1;	
+			if( _rowLowerEqualsUpper ) ret.setRows(1);
+			if( _colLowerEqualsUpper ) ret.setCols(1);
 			
 			//infer tight block indexing size
 			Hop rl = getInput().get(1);
@@ -241,9 +242,9 @@ public class IndexingOp extends Hop
 			Hop cl = getInput().get(3);
 			Hop cu = getInput().get(4);
 			if( isBlockIndexingExpression(rl, ru) )
-				ret[0] = getBlockIndexingExpressionSize(rl, ru);
+				ret.setRows(getBlockIndexingExpressionSize(rl, ru));
 			if( isBlockIndexingExpression(cl, cu) )
-				ret[1] = getBlockIndexingExpressionSize(cl, cu);
+				ret.setCols(getBlockIndexingExpressionSize(cl, cu));
 		}
 		
 		return ret;

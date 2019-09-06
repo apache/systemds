@@ -70,8 +70,9 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public void setNonZeros(long nnz) {
+	public DataCharacteristics setNonZeros(long nnz) {
 		_nnz = nnz;
+		return this;
 	}
 
 	@Override
@@ -114,13 +115,13 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public TensorCharacteristics setDim(int i, long dim) {
+	public DataCharacteristics setDim(int i, long dim) {
 		_dims[i] = dim;
 		return this;
 	}
 
 	@Override
-	public TensorCharacteristics setDims(long[] dims) {
+	public DataCharacteristics setDims(long[] dims) {
 		_dims = dims;
 		return this;
 	}

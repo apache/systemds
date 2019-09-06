@@ -194,12 +194,6 @@ public class SparseBlockGetSet extends AutomatedTestBase
 		runSparseBlockGetSetTest(SparseBlock.Type.COO, sparsity3, InitType.RAND_SET);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runSparseBlockGetSetTest( SparseBlock.Type btype, double sparsity, InitType itype)
 	{
 		try

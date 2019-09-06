@@ -94,12 +94,6 @@ public class SparseBlockScan extends AutomatedTestBase
 		runSparseBlockScanTest(SparseBlock.Type.COO, sparsity3);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity)
 	{
 		try

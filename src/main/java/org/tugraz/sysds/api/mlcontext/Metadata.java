@@ -145,8 +145,8 @@ public abstract class Metadata {
 	/**
 	 * Set the number of rows per block
 	 *
-	 * @param numRowsPerBlock
-	 *            the number of rows per block
+	 * @param blen
+	 *            the number of rows/cols per block
 	 */
 	public void setBlocksize(Integer blen) {
 		this.blockSize = blen;
@@ -157,5 +157,4 @@ public abstract class Metadata {
 		return "rows: " + fieldDisplay(numRows) + ", columns: " + fieldDisplay(numColumns) + ", non-zeros: "
 			+ fieldDisplay(numNonZeros) + ", blocksize: " + fieldDisplay(blockSize);
 	}
-
 }

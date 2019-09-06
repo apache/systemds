@@ -322,12 +322,6 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * Note: second matrix is always dense if vector.
-	 * 
-	 * @param sparseM1
-	 * @param instType
-	 */
 	private void runVectorVectorMultiplicationTest( boolean sparseM1, boolean outer, ExecType instType)
 	{
 		//setup exec type, rows, cols

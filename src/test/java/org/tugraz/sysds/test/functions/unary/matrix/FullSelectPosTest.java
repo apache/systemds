@@ -119,12 +119,6 @@ public class FullSelectPosTest extends AutomatedTestBase
 	}
 	
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runSelPosTest( boolean sparse, ExecType instType, boolean rewrites)
 	{
 		ExecMode platformOld = rtplatform;
@@ -190,5 +184,5 @@ public class FullSelectPosTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}
-	}	
+	}
 }

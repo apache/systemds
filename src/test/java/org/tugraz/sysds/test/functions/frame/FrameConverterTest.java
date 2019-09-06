@@ -68,8 +68,6 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
 
-
-
 public class FrameConverterTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
@@ -196,11 +194,6 @@ public class FrameConverterTest extends AutomatedTestBase
 		runFrameConverterTest(schemaMixedLargeDFrame, ConvType.BIN2DFRM);
 	}
 	
-	/**
-	 * 
-	 * @param schema
-	 * @param type
-	 */
 	private void runFrameConverterTest( ValueType[] schema, ConvType type)
 	{
 		ExecMode platformOld = rtplatform;
@@ -268,14 +261,6 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param schema
-	 * @param A
-	 * @param type
-	 * @param iinfo
-	 * @param oinfo
-	 */
 	private void runConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
 		throws IOException
 	{
@@ -310,14 +295,6 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 	}
 	
-	/**
-	 * 
-	 * @param schema
-	 * @param A
-	 * @param type
-	 * @param iinfo
-	 * @param oinfo
-	 */
 	private void runMatrixConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
 		throws IOException
 	{
@@ -393,7 +370,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	
 	private static void verifyFrameData(FrameBlock frame1, FrameBlock frame2) {
 		for ( int i=0; i<frame1.getNumRows(); i++ )
-			for( int j=0; j<frame1.getNumColumns(); j++ )	{
+			for( int j=0; j<frame1.getNumColumns(); j++ ) {
 				String val1 = UtilFunctions.objectToString(frame1.get(i, j));
 				String val2 = UtilFunctions.objectToString(frame2.get(i, j));
 				if( UtilFunctions.compareTo(ValueType.STRING, val1, val2) != 0)
@@ -404,7 +381,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	
 	private static void verifyFrameMatrixData(FrameBlock frame, MatrixBlock matrix) {
 		for ( int i=0; i<frame.getNumRows(); i++ )
-			for( int j=0; j<frame.getNumColumns(); j++ )	{
+			for( int j=0; j<frame.getNumColumns(); j++ ) {
 				Object val1 = UtilFunctions.doubleToObject(frame.getSchema()[j],
 								UtilFunctions.objectToDouble(frame.getSchema()[j], frame.get(i, j)));
 				Object val2 = UtilFunctions.doubleToObject(frame.getSchema()[j], matrix.getValue(i, j));
@@ -414,10 +391,9 @@ public class FrameConverterTest extends AutomatedTestBase
 			}
 	}
 	
-	@SuppressWarnings({ "unchecked", "resource" })
+	@SuppressWarnings({ "unchecked", "resource", "cast" })
 	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix,
-	                                 List<ValueType> schema, String fnameIn, String fnameOut)
-		throws IOException
+		List<ValueType> schema, String fnameIn, String fnameOut) throws IOException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();
 		JavaSparkContext sc = sec.getSparkContext();
@@ -429,7 +405,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			case CSV2BIN: {
 				InputInfo iinfo = InputInfo.CSVInputInfo;
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<LongWritable,Text> rddIn = (JavaPairRDD<LongWritable,Text>) sc
+					.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.csvToBinaryBlock(sc, rddIn, mc, null, false, separator, false, 0)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
@@ -448,7 +425,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			case TXTCELL2BIN: {
 				InputInfo iinfo = InputInfo.TextCellInputInfo;
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-				JavaPairRDD<LongWritable,Text> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<LongWritable,Text> rddIn = (JavaPairRDD<LongWritable,Text>)
+					sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.textCellToBinaryBlock(sc, rddIn, mc, lschema)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
@@ -466,7 +444,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			case MAT2BIN: {
 				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
 				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
-				JavaPairRDD<MatrixIndexes,MatrixBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+				JavaPairRDD<MatrixIndexes,MatrixBlock> rddIn = (JavaPairRDD<MatrixIndexes,MatrixBlock>) sc
+					.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils.matrixBlockToBinaryBlock(sc, rddIn, mcMatrix);
 				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 				break;

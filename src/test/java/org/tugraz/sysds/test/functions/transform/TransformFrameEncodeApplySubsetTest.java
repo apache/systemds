@@ -76,13 +76,6 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 		runTransformTest(TEST_NAME2, ExecMode.HYBRID, "csv", true);
 	}
 	
-	
-	/**
-	 * 
-	 * @param rt
-	 * @param ofmt
-	 * @param dataset
-	 */
 	private void runTransformTest(String testname, ExecMode rt, String ofmt, boolean colnames)
 	{
 		//set runtime platform

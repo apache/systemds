@@ -624,5 +624,4 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
-	
 }

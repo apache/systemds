@@ -60,7 +60,7 @@ public abstract class StatementBlockRewriteRule
 	 * should simply return the input block.
 	 * 
 	 * @param sb statement block
-	 * @param sate program rewrite status
+	 * @param state program rewrite status
 	 * @return list of statement blocks
 	 */
 	public abstract List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state);
@@ -71,7 +71,7 @@ public abstract class StatementBlockRewriteRule
 	 * should simply return the input list of statement blocks.
 	 * 
 	 * @param sbs list of statement blocks
-	 * @param sate program rewrite status
+	 * @param state program rewrite status
 	 * @return list of statement blocks
 	 */
 	public abstract List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state);

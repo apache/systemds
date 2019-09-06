@@ -79,12 +79,6 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runFrameReadWriteTest( OutputInfo oinfo, ExecType et)
 	{
 		//rtplatform for MR

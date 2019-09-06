@@ -148,13 +148,6 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 		runDistributedMatrixMatrixMultiplicationTest(true, true, MMultMethod.RMM, ExecType.SPARK);
 	}
 	
-
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runDistributedMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, MMultMethod method, ExecType instType)
 	{
 		//rtplatform for MR

@@ -54,8 +54,7 @@ public class RandomMatrixGenerator {
 	 * @param pdf    probability density function
 	 * @param r      number of rows
 	 * @param c      number of columns
-	 * @param rpb    rows per block
-	 * @param cpb    columns per block
+	 * @param blen   rows/cols per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 */
 	public RandomMatrixGenerator(PDF pdf, int r, int c, int blen, double sp) {
@@ -67,8 +66,7 @@ public class RandomMatrixGenerator {
 	 * @param pdfStr probability density function
 	 * @param r      number of rows
 	 * @param c      number of columns
-	 * @param rpb    rows per block
-	 * @param cpb    columns per block
+	 * @param blen   rows/cols per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
@@ -96,8 +94,7 @@ public class RandomMatrixGenerator {
 	 * @param pdf    probability density function
 	 * @param r      number of rows
 	 * @param c      number of columns
-	 * @param rpb    rows per block
-	 * @param cpb    columns per block
+	 * @param blen   rows/cols per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers

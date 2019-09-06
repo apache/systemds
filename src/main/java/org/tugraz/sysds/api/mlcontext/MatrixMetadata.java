@@ -136,10 +136,8 @@ public class MatrixMetadata extends Metadata {
 	 *            The number of columns in the matrix.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the matrix.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the matrix.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the matrix.
+	 * @param blen
+	 *            The number of rows/cols per block in the matrix.
 	 */
 	public MatrixMetadata(MatrixFormat matrixFormat, Long numRows, Long numColumns, Long numNonZeros, Integer blen) {
 		this.matrixFormat = matrixFormat;
@@ -163,10 +161,8 @@ public class MatrixMetadata extends Metadata {
 	 *            The number of columns in the matrix.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the matrix.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the matrix.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the matrix.
+	 * @param blen
+	 *            The number of rows/cols per block in the matrix.
 	 */
 	public MatrixMetadata(MatrixFormat matrixFormat, int numRows, int numColumns, int numNonZeros, int blen) {
 		this.matrixFormat = matrixFormat;
@@ -231,10 +227,8 @@ public class MatrixMetadata extends Metadata {
 	 *            The number of rows in the matrix.
 	 * @param numColumns
 	 *            The number of columns in the matrix.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the matrix.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the matrix.
+	 * @param blen
+	 *            The number of rows/cols per block in the matrix.
 	 */
 	public MatrixMetadata(Long numRows, Long numColumns, Integer blen) {
 		this.numRows = numRows;
@@ -251,10 +245,8 @@ public class MatrixMetadata extends Metadata {
 	 *            The number of rows in the matrix.
 	 * @param numColumns
 	 *            The number of columns in the matrix.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the matrix.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the matrix.
+	 * @param blen
+	 *            The number of rows/cols per block in the matrix.
 	 */
 	public MatrixMetadata(int numRows, int numColumns, int blen) {
 		this.numRows = (long) numRows;
@@ -273,10 +265,8 @@ public class MatrixMetadata extends Metadata {
 	 *            The number of columns in the matrix.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the matrix.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the matrix.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the matrix.
+	 * @param blen
+	 *            The number of rows/cols per block in the matrix.
 	 */
 	public MatrixMetadata(Long numRows, Long numColumns, Long numNonZeros, Integer blen) {
 		this.numRows = numRows;
@@ -296,10 +286,8 @@ public class MatrixMetadata extends Metadata {
 	 *            The number of columns in the matrix.
 	 * @param numNonZeros
 	 *            The number of non-zero values in the matrix.
-	 * @param numRowsPerBlock
-	 *            The number of rows per block in the matrix.
-	 * @param numColumnsPerBlock
-	 *            The number of columns per block in the matrix.
+	 * @param blen
+	 *            The number of rows/cols per block in the matrix.
 	 */
 	public MatrixMetadata(int numRows, int numColumns, int numNonZeros, int blen) {
 		this.numRows = (long) numRows;
@@ -340,5 +328,4 @@ public class MatrixMetadata extends Metadata {
 	public void setMatrixFormat(MatrixFormat matrixFormat) {
 		this.matrixFormat = matrixFormat;
 	}
-
 }

@@ -63,13 +63,6 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 		runCSVQuotesReadWriteTest(ExecMode.SPARK, "csv");
 	}
 	
-	
-	/**
-	 * 
-	 * @param rt
-	 * @param ofmt
-	 * @param dataset
-	 */
 	private void runCSVQuotesReadWriteTest( ExecMode rt, String ofmt )
 	{
 		//set runtime platform
@@ -102,7 +95,7 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);
 			String[][] R2 = DataConverter.convertToStringFrame(fb2);
-			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
+			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

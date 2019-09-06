@@ -98,12 +98,7 @@ public class SparseBlockSize extends AutomatedTestBase
 	public void testSparseBlockCOO3()  {
 		runSparseBlockSizeTest(SparseBlock.Type.COO, sparsity3);
 	}
-		
-	/**
-	 * 
-	 * @param btype
-	 * @param sparsity
-	 */
+	
 	private void runSparseBlockSizeTest( SparseBlock.Type btype, double sparsity)
 	{
 		try

@@ -20,6 +20,7 @@ import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.CacheType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -97,5 +98,21 @@ public class Lineage {
 	public static void resetInternalState() {
 		LineageItem.resetIDSequence();
 		LineageCache.resetCache();
+	}
+	
+	public static void setLinReusePartial() {
+		LineageCacheConfig.setConfigTsmmCbind(CacheType.PARTIAL);
+	}
+
+	public static void setLinReuseFull() {
+		LineageCacheConfig.setConfigTsmmCbind(CacheType.FULL);
+	}
+	
+	public static void setLinReuseFullAndPartial() {
+		LineageCacheConfig.setConfigTsmmCbind(CacheType.HYBRID_FULL_PARTIAL);
+	}
+
+	public static void setLinReuseNone() {
+		LineageCacheConfig.setConfigTsmmCbind(CacheType.NONE);
 	}
 }

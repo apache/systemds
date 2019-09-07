@@ -18,26 +18,32 @@
 
 X = read($1);
 
-# calculate and same the trans-mult of X
-Res1 = t(X) %*% X;
-while(FALSE) {}	
+tmp = X[,1];
+for (i in 2:ncol(X)) {
+  Res1 = t(tmp) %*% tmp;
+  tmp = cbind(tmp, X[,i]);
+  #while(FALSE) {}	
+  #print(sum(Res1));
+  print(toString(Res1));
+}
 
-# find vector V as the last column and matrix X1 as the rest
-nc = ncol(X);
-V = X[,nc];
-X1 = X[, 1:nc-1];
+tmp = X[,1];
+for (i in 2:ncol(X)) {
+  Res1 = t(tmp) %*% tmp;
 
-# use X1 and V to derive trans-mult of X
-r1 = cbind((t(X1) %*% X1), (t(X1) %*% V));
-r2 = cbind((t(V) %*% X1), (t(V) %*% V));
-Res2 = rbind(r1, r2);
+  if (i > 2) {
+  while (FALSE) {}
+  #tmp = tmp[,1:(i-2)];
+  r1 = cbind((t(tmp[,1:(i-2)]) %*% tmp[,1:(i-2)]), (t(tmp[,1:(i-2)]) %*% X[,i-1]));
+  r2 = cbind((t(X[,i-1]) %*% tmp[,1:(i-2)]), (t(X[,i-1]) %*% X[,i-1]));
+  Res1 = rbind(r1, r2);
+  while(FALSE) {}	
+  }
 
-# verify if the sums are same
-while(FALSE) {}	
-sum1 = sum(Res1);
-sum2 = sum(Res2);
-print("original matrix sum = " + sum1);
-print("rewritten matrix sum = " + sum2);
+  tmp = cbind(tmp, X[,i]);
+  while(FALSE) {}	
+  #print(sum(Res1));
+  print(toString(Res1));
+}
 
 write(Res1, $2, format="text");
-write(Res2, $3, format="text");

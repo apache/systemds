@@ -26,18 +26,31 @@ while(FALSE) {}
 nc = ncol(X);
 V = X[,nc];
 X1 = X[, 1:nc-1];
+while(FALSE) {}	
 
 # use X1 and V to derive trans-mult of X
-r1 = cbind((t(X1) %*% X1), (t(X1) %*% V));
-r2 = cbind((t(V) %*% X1), (t(V) %*% V));
+r1c1 = t(X1) %*% X1;
+while(FALSE) {}	
+r1c2 = t(X1) %*% V;
+while(FALSE) {}	
+r2c1 = t(V) %*% X1;
+while(FALSE) {}	
+r2c2 = t(V) %*% V;
+while(FALSE) {}	
+r1 = cbind(r1c1, r1c2);
+while(FALSE) {}	
+r2 = cbind(r2c1, r2c2);
+while(FALSE) {}	
+#r1 = cbind((t(X1) %*% X1), (t(X1) %*% V));
+#r2 = cbind((t(V) %*% X1), (t(V) %*% V));
 Res2 = rbind(r1, r2);
 
 # verify if the sums are same
 while(FALSE) {}	
 sum1 = sum(Res1);
 sum2 = sum(Res2);
-print("original matrix sum = " + sum1);
-print("rewritten matrix sum = " + sum2);
+#print("original matrix sum = " + sum1);
+#print("rewritten matrix sum = " + sum2);
 
 write(Res1, $2, format="text");
 write(Res2, $3, format="text");

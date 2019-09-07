@@ -1465,5 +1465,5 @@ public class OptimizerUtils
 		
 		valMemo.put(root.getHopID(), ret);
 		return ret;
-	}		
+	}
 }

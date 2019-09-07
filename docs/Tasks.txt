@@ -111,8 +111,8 @@ SYSTEMDS-160 Tensor Compiler/Runtime
  * 162 Spark binary tensor instructions
  
  SYSTEMDS-170 Lineage full and partial reuse 
- * 171 Initial version of partial rewrites
- * 172 Parfor integration (blocked waiting for results)
+ * 171 Initial version of partial rewrites                            OK
+ * 172 Parfor integration (blocked waiting for results)               OK
  * 173 Improved cost estimates and ba+* support
  * 174 Reuse rewrite for rbind-tsmm 
  * 175 Reuse rewrite for cbind/rbind-elementwise */+

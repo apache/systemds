@@ -48,7 +48,7 @@ public class BuiltinCVLmTest extends AutomatedTestBase
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		List<String> proArgs = new ArrayList<String>();
+		List<String> proArgs = new ArrayList<>();
 		
 		int k = 3;
 		proArgs.add("-explain");

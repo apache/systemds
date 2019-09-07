@@ -58,7 +58,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 	private void testRewrite(String testname) {
 		try {
 			getAndLoadTestConfiguration(testname);
-			List<String> proArgs = new ArrayList<String>();
+			List<String> proArgs = new ArrayList<>();
 			
 			proArgs.add("-explain");
 			proArgs.add("-stats");

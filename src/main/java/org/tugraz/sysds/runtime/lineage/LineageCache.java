@@ -47,47 +47,84 @@ public class LineageCache {
 	private static Entry _end = null;
 
 	//--------------------- CACHE LOGIC METHODS ----------------------
-
+	
+	public static boolean reuse(Instruction inst, ExecutionContext ec) {
+		if (!DMLScript.LINEAGE_REUSE)
+			return false;
+		
+		boolean reuse = false;
+		if (inst instanceof ComputationCPInstruction && LineageCache.isReusable(inst)) {
+			LineageItem item = ((ComputationCPInstruction) inst).getLineageItems(ec)[0];
+			
+			synchronized( _cache ) {
+				//try to reuse full or partial intermediates
+				if (LineageCacheConfig.getCacheType().isFullReuse())
+					reuse = fullReuse(item, (ComputationCPInstruction)inst, ec);
+				else if (LineageCacheConfig.getCacheType().isPartialReuse())
+					reuse = RewriteCPlans.executeRewrites(inst, ec);
+				
+				//create a placeholder if no reuse to avoid redundancy
+				//(e.g., concurrent threads that try to start the computation)
+				if( ! reuse )
+					putIntern(inst, item, null);
+			}
+		}
+		
+		return reuse;
+	}
+	
+	//NOTE: safe to pin the object in memory as coming from CPInstruction
+	
 	public static void put(Instruction inst, ExecutionContext ec) {
+		if (inst instanceof ComputationCPInstruction && isReusable(inst) ) {
+			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];
+			MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
+			synchronized( _cache ) {
+				putIntern(inst, item, mo.acquireReadAndRelease());
+			}
+		}
+	}
+	
+	public static void putValue(Instruction inst, ExecutionContext ec) {
 		if (!DMLScript.LINEAGE_REUSE)
 			return;
 		if (inst instanceof ComputationCPInstruction && isReusable(inst) ) {
-			LineageItem[] items = ((LineageTraceable) inst).getLineageItems(ec);
-			for (LineageItem item : items) {
-				MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
-				// Safe to pin the object in memory as coming from CPInstruction
-				LineageCache.put(inst, item, mo.acquireReadAndRelease());
+			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];
+			MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
+			MatrixBlock value = mo.acquireReadAndRelease();
+			_cache.get(item).setValue(value); //outside sync to prevent deadlocks
+			
+			synchronized( _cache ) {
+				if( !isBelowThreshold(value) ) 
+					makeSpace(inst, value);
+				updateSize(value, true);
 			}
 		}
 	}
 	
-	public static synchronized void put(Instruction inst, LineageItem key, MatrixBlock value) {
-		if (_cache.containsKey(key)) {
-			// Read from cache, replace value and place the entry at the head of the linkedlist.
-			Entry oldItem = _cache.get(key);
-			oldItem._value = value;
-			delete(oldItem);
-			setHead(oldItem);
-		}
-		else {
-			// Create a new entry.
-			Entry newItem = new Entry(key, value);
-			if (isBelowThreshold(value)) 
-				// Place the entry at head position.
-				setHead(newItem);
-			else {
-				// Make space by removing or spilling LRU entries.
+	private static void putIntern(Instruction inst, LineageItem key, MatrixBlock value) {
+		if (_cache.containsKey(key))
+			throw new DMLRuntimeException("Redundant lineage caching detected: "+inst);
+		
+		// Create a new entry.
+		Entry newItem = new Entry(key, value);
+		
+		// Make space by removing or spilling LRU entries.
+		if( value != null ) {
+			if( !isBelowThreshold(value) ) 
 				makeSpace(inst, value);
-				setHead(newItem);
-			}
-			_cache.put(key, newItem);
-			if (DMLScript.STATISTICS)
-				LineageCacheStatistics.incrementMemWrites();
 			updateSize(value, true);
 		}
+		
+		// Place the entry at head position.
+		setHead(newItem);
+		
+		_cache.put(key, newItem);
+		if (DMLScript.STATISTICS)
+			LineageCacheStatistics.incrementMemWrites();
 	}
 	
-	public static boolean probe(LineageItem key) {
+	protected static boolean probe(LineageItem key) {
 		boolean p = (_cache.containsKey(key) || _spillList.containsKey(key));
 		if (!p && DMLScript.STATISTICS && _removelist.contains(key))
 			// The sought entry was in cache but removed later 
@@ -102,33 +139,17 @@ public class LineageCache {
 			_removelist.clear();
 	}
 	
-	public static boolean reuse(Instruction inst, ExecutionContext ec) {
-		if (!DMLScript.LINEAGE_REUSE)
-			return false;
-		if (LineageCacheConfig.getCacheType().isFullReuse())
-			return fullReuse(inst, ec);
-		if (LineageCacheConfig.getCacheType().isPartialReuse())
-			return RewriteCPlans.executeRewrites(inst, ec);
+
+	private static boolean fullReuse (LineageItem item, ComputationCPInstruction inst, ExecutionContext ec) {
+		if (LineageCache.probe(item)) {
+			MatrixBlock d = LineageCache.get(inst, item);
+			ec.setMatrixOutput(inst.output.getName(), d);
+			return true;
+		}
 		return false;
 	}
 
-	private static boolean fullReuse (Instruction inst, ExecutionContext ec) {	
-		if (inst instanceof ComputationCPInstruction && LineageCache.isReusable(inst)) {
-			boolean reused = true;
-			LineageItem[] items = ((ComputationCPInstruction) inst).getLineageItems(ec);
-			for (LineageItem item : items) {
-				if (LineageCache.probe(item)) {
-					MatrixBlock d = LineageCache.get(inst, item);
-					ec.setMatrixOutput(((ComputationCPInstruction) inst).output.getName(), d);
-				} else
-					reused = false;
-			}
-			return reused && items.length > 0;
-		} else 
-			return false;
-	}
-
-	public static synchronized MatrixBlock get(Instruction inst, LineageItem key) {
+	protected static MatrixBlock get(Instruction inst, LineageItem key) {
 		// This method is called only when entry is present either in cache or in local FS.
 		if (_cache.containsKey(key)) {
 			// Read and put the entry at head.
@@ -137,13 +158,13 @@ public class LineageCache {
 			setHead(e);
 			if (DMLScript.STATISTICS)
 				LineageCacheStatistics.incrementMemHits();
-			return e._value;
+			return e.getValue();
 		}
 		else
 			return readFromLocalFS(inst, key);
 	}
 	
-	public static boolean isReusable (Instruction inst) {
+	private static boolean isReusable (Instruction inst) {
 		// TODO: Move this to the new class LineageCacheConfig and extend
 		return inst.getOpcode().equalsIgnoreCase("tsmm")
 			|| (LineageCacheConfig.getCacheType().isFullReuse() 
@@ -153,18 +174,19 @@ public class LineageCache {
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------
 	
-	public static boolean isBelowThreshold(MatrixBlock value) {
+	private static boolean isBelowThreshold(MatrixBlock value) {
+		//FIXME: we cannot throw such an exception here, instead need to gracefully ignore
 		if (value.getInMemorySize() > CACHELIMIT)
 			throw new RuntimeException("Single item larger than the size of lineage cache");
 		return ((value.getInMemorySize() + _cachesize) <= CACHELIMIT);
 	}
 	
-	public static void makeSpace(Instruction inst, MatrixBlock value) {
+	private static void makeSpace(Instruction inst, MatrixBlock value) {
 		double valSize = value.getInMemorySize();
 		// cost based eviction
 		while ((valSize+_cachesize) > CACHELIMIT)
 		{
-			double reduction = _cache.get(_end._key)._value.getInMemorySize();
+			double reduction = _cache.get(_end._key).getValue().getInMemorySize();
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			double spill = getDiskSpillEstimate();
 			double comp = getRecomputeEstimate(inst);
@@ -188,9 +210,9 @@ public class LineageCache {
 
 	//---------------- COSTING RELATED METHODS -----------------
 
-	public static double getDiskSpillEstimate() {
+	private static double getDiskSpillEstimate() {
 		// This includes sum of writing to and reading from disk
-		MatrixBlock mb = _cache.get(_end._key)._value;
+		MatrixBlock mb = _cache.get(_end._key).getValue();
 		long r = mb.getNumRows();
 		long c = mb.getNumColumns();
 		long nnz = mb.getNonZeros();
@@ -200,8 +222,8 @@ public class LineageCache {
 		return loadtime+writetime;
 	}
 	
-	public static double getRecomputeEstimate(Instruction inst) {
-		MatrixBlock mb = _cache.get(_end._key)._value;
+	private static double getRecomputeEstimate(Instruction inst) {
+		MatrixBlock mb = _cache.get(_end._key).getValue();
 		long r = mb.getNumRows();
 		long c = mb.getNumColumns();
 		long nnz = mb.getNonZeros();
@@ -238,7 +260,7 @@ public class LineageCache {
 		}
 		String outfile = outdir+"/"+_cache.get(_end._key)._key.getId();
 		try {
-			LocalFileUtils.writeMatrixBlockToLocal(outfile, _cache.get(_end._key)._value);
+			LocalFileUtils.writeMatrixBlockToLocal(outfile, _cache.get(_end._key).getValue());
 		} catch (IOException e) {
 			throw new DMLRuntimeException ("Write to " + outfile + " failed.", e);
 		}
@@ -263,7 +285,7 @@ public class LineageCache {
 		// Restore to cache
 		LocalFileUtils.deleteFileIfExists(_spillList.get(key), true);
 		_spillList.remove(key);
-		put(inst, key, mb);
+		putIntern(inst, key, mb);
 		if (DMLScript.STATISTICS) {
 			long t1 = System.nanoTime();
 			LineageCacheStatistics.incrementFSReadTime(t1-t0);
@@ -274,7 +296,7 @@ public class LineageCache {
 
 	//------------------ LINKEDLIST MAINTENANCE METHODS -------------------
 	
-	public static void delete(Entry entry) {
+	private static void delete(Entry entry) {
 		if (entry._prev != null)
 			entry._prev._next = entry._next;
 		else
@@ -285,7 +307,7 @@ public class LineageCache {
 			_end = entry._prev;
 	}
 	
-	public static void setHead(Entry entry) {
+	private static void setHead(Entry entry) {
 		entry._next = _head;
 		entry._prev = null;
 		if (_head != null)
@@ -304,14 +326,33 @@ public class LineageCache {
 	}
 	
 	private static class Entry {
-		LineageItem _key;
-		MatrixBlock _value;
-		Entry _prev;
-		Entry _next;
+		private final LineageItem _key;
+		private MatrixBlock _val;
+		private Entry _prev;
+		private Entry _next;
 		
 		public Entry(LineageItem key, MatrixBlock value) {
-			this._key = key;
-			this._value = value;
+			_key = key;
+			_val = value;
+		}
+
+		public synchronized MatrixBlock getValue() {
+			try {
+				//wait until other thread completes operation
+				//in order to avoid redundant computation
+				while( _val == null ) {
+					wait();
+				}
+				return _val;
+			}
+			catch( InterruptedException ex ) {
+				throw new DMLRuntimeException(ex);
+			}
+		}
+		
+		public synchronized void setValue(MatrixBlock val) {
+			_val = val;
+			notifyAll();
 		}
 	}
 }

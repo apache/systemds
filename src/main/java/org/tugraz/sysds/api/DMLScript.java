@@ -70,6 +70,8 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.CacheType;
 import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
 import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
@@ -217,6 +219,11 @@ public class DMLScript
 			if (dmlOptions.clean) {
 				cleanSystemDSWorkspace();
 				return true;
+			}
+			
+			if( LINEAGE_REUSE ) {
+				//TODO proper cmd line configuration (SYSTEMDS-79)
+				LineageCacheConfig.setConfig(CacheType.FULL);
 			}
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);

@@ -33,7 +33,7 @@ public class LineageCacheConfig {
 		}
 	}
 	
-	public ArrayList<String> _MMult = new ArrayList<String>();
+	public ArrayList<String> _MMult = new ArrayList<>();
 	
 	public enum CachedItemHead {
 		TSMM,
@@ -55,6 +55,10 @@ public class LineageCacheConfig {
 		_cacheType = ct;
 		_itemH = CachedItemHead.TSMM;
 		_itemT = CachedItemTail.CBIND;
+	}
+	
+	public static void setConfig(CacheType ct) {
+		_cacheType = ct;
 	}
 	
 	public static void setConfig(CacheType ct, CachedItemHead ith, CachedItemTail itt) {

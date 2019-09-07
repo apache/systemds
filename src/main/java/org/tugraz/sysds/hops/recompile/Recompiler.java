@@ -57,6 +57,7 @@ import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.IfStatementBlock;
+import org.tugraz.sysds.parser.ParseInfo;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatementBlock;
@@ -395,12 +396,13 @@ public class Recompiler
 	}
 	
 	private static void logExplainDAG(StatementBlock sb, ArrayList<Hop> hops, ArrayList<Instruction> inst) {
+		ParseInfo pi = (sb != null) ? sb : hops.get(0);
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ) {
-			System.out.println("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" +
-				Explain.explainHops(hops, 1));
+			System.out.println("EXPLAIN RECOMPILE \nGENERIC (lines "+pi.getBeginLine()+"-"+pi.getEndLine()+"):\n" +
+					Explain.explainHops(hops, 1));
 		}
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME ) {
-			System.out.println("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" +
+			System.out.println("EXPLAIN RECOMPILE \nGENERIC (lines "+pi.getBeginLine()+"-"+pi.getEndLine()+"):\n" +
 				Explain.explain(inst, 1));
 		}
 	}

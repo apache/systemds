@@ -61,6 +61,7 @@ SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
  * 76 Generate runtime plan from lineage trace                        OK
  * 77 New builtin function for obtaining lineage                      OK
  * 78 Extended lineage tracing (parfor, funs, codegen)                OK
+ * 79 Reuse cache configuration options
 
 SYSTEMDS-80 Improved distributed operations
  * 81 Avoid unnecessary replication on rmm
@@ -108,3 +109,11 @@ SYSTEMDS-150 Releases
 SYSTEMDS-160 Tensor Compiler/Runtime
  * 161 Local readers and writers for tensors (all formats)
  * 162 Spark binary tensor instructions
+ 
+ SYSTEMDS-170 Lineage full and partial reuse 
+ * 171 Initial version of partial rewrites
+ * 172 Parfor integration (blocked waiting for results)
+ * 173 Improved cost estimates and ba+* support
+ * 174 Reuse rewrite for rbind-tsmm 
+ * 175 Reuse rewrite for cbind/rbind-elementwise */+
+ * 176 Reuse rewrite for aggregate

@@ -105,7 +105,14 @@ public class LineageCache {
 	public static boolean reuse(Instruction inst, ExecutionContext ec) {
 		if (!DMLScript.LINEAGE_REUSE)
 			return false;
-		
+		if (LineageCacheConfig.getCacheType().isFullReuse())
+			return fullReuse(inst, ec);
+		if (LineageCacheConfig.getCacheType().isPartialReuse())
+			return RewriteCPlans.executeRewrites(inst, ec);
+		return false;
+	}
+
+	private static boolean fullReuse (Instruction inst, ExecutionContext ec) {	
 		if (inst instanceof ComputationCPInstruction && LineageCache.isReusable(inst)) {
 			boolean reused = true;
 			LineageItem[] items = ((ComputationCPInstruction) inst).getLineageItems(ec);
@@ -138,8 +145,9 @@ public class LineageCache {
 	
 	public static boolean isReusable (Instruction inst) {
 		// TODO: Move this to the new class LineageCacheConfig and extend
-		return (inst.getOpcode().equalsIgnoreCase("tsmm")
-			|| inst.getOpcode().equalsIgnoreCase("ba+*"));
+		return (inst.getOpcode().equalsIgnoreCase("tsmm"));
+			//|| inst.getOpcode().equalsIgnoreCase("ba+*"));
+		// TODO: Fix getRecomputeEstimate to support ba+* before enabling above code.
 	}
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------
@@ -205,6 +213,7 @@ public class LineageCache {
 		switch (cptype)
 		{
 			case MMTSJ:
+			//case AggregateBinary:
 				MMTSJType type = ((MMTSJCPInstruction)inst).getMMTSJType();
 				if (type.isLeft())
 					nflops = !sparse ? (r * c * s * c /2):(r * c * s * c * s /2);

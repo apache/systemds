@@ -18,26 +18,16 @@
 
 X = read($1);
 
-# calculate and same the trans-mult of X
-Res1 = t(X) %*% X;
-while(FALSE) {}	
+sum = 0;
+tmp = X[,1];
+R = matrix(0, 1, ncol(X));
 
-# find vector V as the last column and matrix X1 as the rest
-nc = ncol(X);
-V = X[,nc];
-X1 = X[, 1:nc-1];
+for (i in 2:ncol(X)) {
+  Res1 = t(tmp) %*% tmp;
+  tmp = cbind(tmp, X[,i]);
+  while(FALSE) {}	
+  R[1,i] = sum(Res1);
+  sum = sum + sum(Res1);
+}
 
-# use X1 and V to derive trans-mult of X
-r1 = cbind((t(X1) %*% X1), (t(X1) %*% V));
-r2 = cbind((t(V) %*% X1), (t(V) %*% V));
-Res2 = rbind(r1, r2);
-
-# verify if the sums are same
-while(FALSE) {}	
-sum1 = sum(Res1);
-sum2 = sum(Res2);
-print("original matrix sum = " + sum1);
-print("rewritten matrix sum = " + sum2);
-
-write(Res1, $2, format="text");
-write(Res2, $3, format="text");
+write(R, $2, format="text");

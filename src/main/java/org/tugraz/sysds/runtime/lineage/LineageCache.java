@@ -145,8 +145,9 @@ public class LineageCache {
 	
 	public static boolean isReusable (Instruction inst) {
 		// TODO: Move this to the new class LineageCacheConfig and extend
-		return (inst.getOpcode().equalsIgnoreCase("tsmm"));
-			//|| inst.getOpcode().equalsIgnoreCase("ba+*"));
+		return inst.getOpcode().equalsIgnoreCase("tsmm")
+			|| (LineageCacheConfig.getCacheType().isFullReuse() 
+				&& inst.getOpcode().equalsIgnoreCase("ba+*"));
 		// TODO: Fix getRecomputeEstimate to support ba+* before enabling above code.
 	}
 	

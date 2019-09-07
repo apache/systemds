@@ -2272,9 +2272,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		{
 			//fast deserialize of dense/sparse blocks
 			ObjectInputStream ois = (ObjectInputStream)is;
-			try(FastBufferedDataInputStream fis = new FastBufferedDataInputStream(ois)) {
-				readFields(fis);
-			}
+			FastBufferedDataInputStream fis = new FastBufferedDataInputStream(ois);
+			readFields(fis); //note: cannot close fos as this would close oos
 		}
 		else {
 			//default deserialize (general case)
@@ -2301,10 +2300,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			&& !(os instanceof MatrixBlockDataOutput) ) {
 			//fast serialize of dense/sparse blocks
 			ObjectOutputStream oos = (ObjectOutputStream)os;
-			try(FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos)) {
-				write(fos);
-				fos.flush();
-			}
+			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
+			write(fos); //note: cannot close fos as this would close oos
+			fos.flush();
 		}
 		else {
 			//default serialize (general case)

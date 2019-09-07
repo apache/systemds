@@ -404,15 +404,15 @@ public class DataOp extends Hop
 	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo ) {
 		DataCharacteristics ret = null;
 		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )  {
-			DataCharacteristics dc = memo.getAllInputStats(getInput().get(0));
-			if( dc.dimsKnown() )
-				ret = _dc;
+			DataCharacteristics tmp = memo.getAllInputStats(getInput().get(0));
+			if( tmp.dimsKnown() )
+				ret = tmp;
 		}
 		else if( _dataop == DataOpTypes.TRANSIENTREAD ) {
 			//prepare statistics, passed from cross-dag transient writes
-			DataCharacteristics dc = memo.getAllInputStats(this);
-			if( dc.dimsKnown() )
-				ret = _dc;
+			DataCharacteristics tmp = memo.getAllInputStats(this);
+			if( tmp.dimsKnown() )
+				ret = tmp;
 		}
 		return ret;
 	}

@@ -94,7 +94,7 @@ public class OptTreeConverter
 			case ABSTRACT_PLAN:
 				_hlMap.putRootProgram(pfsb.getDMLProg(), pfpb.getProgram());
 				Set<String> memo = new HashSet<>();
-				root = rCreateAbstractOptNode(pfsb, pfpb, ec.getVariables(), true, memo);	
+				root = rCreateAbstractOptNode(pfsb, pfpb, ec.getVariables(), true, memo);
 				root.checkAndCleanupRecursiveFunc(new HashSet<String>()); //create consistency between recursive info
 				root.checkAndCleanupLeafNodes(); //prune unnecessary nodes
 				break;

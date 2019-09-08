@@ -27,13 +27,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -44,8 +40,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.CompilerConfig;
@@ -72,8 +66,6 @@ import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.CacheType;
-import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Explain;
@@ -459,9 +451,6 @@ public class DMLScript
 	public static void initHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException, DMLRuntimeException
 	{
-		//check security aspects
-		checkSecuritySetup( config );
-		
 		//create scratch space with appropriate permissions
 		String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
 		HDFSTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
@@ -479,50 +468,6 @@ public class DMLScript
 			Statistics.reset();
 	}
 	
-	private static void checkSecuritySetup(DMLConfig config) 
-		throws DMLRuntimeException
-	{
-		//analyze local configuration
-		String userName = System.getProperty( "user.name" );
-		HashSet<String> groupNames = new HashSet<>();
-		try{
-			//check existence, for backwards compatibility to < hadoop 0.21
-			if( UserGroupInformation.class.getMethod("getCurrentUser") != null ){
-				String[] groups = UserGroupInformation.getCurrentUser().getGroupNames();
-				Collections.addAll(groupNames, groups);
-			}
-		}catch(Exception ex){}
-		
-		//analyze hadoop configuration
-		JobConf job = ConfigurationManager.getCachedJobConf();
-		boolean localMode     = InfrastructureAnalyzer.isLocalMode(job);
-		String taskController = job.get(MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER, "org.apache.hadoop.mapred.DefaultTaskController");
-		String ttGroupName    = job.get(MRConfigurationNames.MR_TASKTRACKER_GROUP,"null");
-		String perm           = job.get(MRConfigurationNames.DFS_PERMISSIONS_ENABLED,"null"); //note: job.get("dfs.permissions.supergroup",null);
-		URI fsURI             = FileSystem.getDefaultUri(job);
-
-		//determine security states
-		boolean flagDiffUser = !(   taskController.equals("org.apache.hadoop.mapred.LinuxTaskController") //runs map/reduce tasks as the current user
-							     || localMode  // run in the same JVM anyway
-							     || groupNames.contains( ttGroupName) ); //user in task tracker group 
-		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
-		boolean flagSecurity = perm.equals("yes"); 
-		
-		LOG.debug("SystemDS security check: "
-				+ "local.user.name = " + userName + ", "
-				+ "local.user.groups = " + Arrays.toString(groupNames.toArray()) + ", "
-				+ MRConfigurationNames.MR_JOBTRACKER_ADDRESS + " = " + job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS) + ", "
-				+ MRConfigurationNames.MR_TASKTRACKER_TASKCONTROLLER + " = " + taskController + ","
-				+ MRConfigurationNames.MR_TASKTRACKER_GROUP + " = " + ttGroupName + ", "
-				+ MRConfigurationNames.FS_DEFAULTFS + " = " + ((fsURI!=null) ? fsURI.getScheme() : "null") + ", "
-				+ MRConfigurationNames.DFS_PERMISSIONS_ENABLED + " = " + perm );
-
-		//print warning if permission issues possible
-		if( flagDiffUser && ( flagLocalFS || flagSecurity ) ) {
-			LOG.warn("Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'.");
-		}
-	}
-	
 	public static void cleanupHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException
 	{
@@ -537,24 +482,7 @@ public class DMLScript
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
 		HDFSTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
 		
-		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
-		//this implementation does not create job specific sub directories)
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		if( InfrastructureAnalyzer.isLocalMode(job) ) {
-			try {
-				LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + dirSuffix );
-				LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix(job) + dirSuffix );
-				HDFSTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix(job) + dirSuffix );
-				HDFSTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix(job) + dirSuffix );
-			}
-			catch(Exception ex) {
-				//we give only a warning because those directories are written by the mapred deamon 
-				//and hence, execution can still succeed
-				LOG.warn("Unable to cleanup hadoop working dirs: "+ex.getMessage());
-			}
-		}
-		
-		//3) cleanup systemds-internal working dirs
+		//2) cleanup systemds-internal working dirs
 		CacheableData.cleanupCacheDir(); //might be local/hdfs
 		LocalFileUtils.cleanupWorkingDirectory();
 	}

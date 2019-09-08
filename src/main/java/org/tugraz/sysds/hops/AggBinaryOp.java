@@ -434,7 +434,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		int index = left ? 0 : 1;
 		return !(getInput().get(index) instanceof DataOp && ((DataOp)getInput().get(index)).requiresCheckpoint())
 			&& (!HopRewriteUtils.isTransposeOperation(getInput().get(index))
-				|| (left && !isLeftTransposeRewriteApplicable(true, false)))
+				|| (left && !isLeftTransposeRewriteApplicable(true)))
 			&& getInput().get(index).getParent().size()==1 //bagg is only parent
 			&& !getInput().get(index).areDimsBelowThreshold() 
 			&& getInput().get(index).optFindExecType() == ExecType.SPARK
@@ -615,7 +615,7 @@ public class AggBinaryOp extends MultiThreadedHop
 			setOutputDimensions(matmultCP);
 		}
 		else {
-			if( isLeftTransposeRewriteApplicable(true, false) ) {
+			if( isLeftTransposeRewriteApplicable(true) ) {
 				matmultCP = constructCPLopsMMWithLeftTransposeRewrite();
 			}
 			else { 
@@ -671,7 +671,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	private void constructSparkLopsMapMM(MMultMethod method)
 	{
 		Lop mapmult = null;
-		if( isLeftTransposeRewriteApplicable(false, false) ) 
+		if( isLeftTransposeRewriteApplicable(false) ) 
 		{
 			mapmult = constructSparkLopsMapMMWithLeftTransposeRewrite();
 		}
@@ -685,8 +685,8 @@ public class AggBinaryOp extends MultiThreadedHop
 			
 			//core matrix mult
 			mapmult = new MapMult( getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-					                getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
-					                _outputEmptyBlocks, aggtype);	
+				getDataType(), getValueType(), (method==MMultMethod.MAPMM_R), false, 
+				_outputEmptyBlocks, aggtype);
 		}
 		setOutputDimensions(mapmult);
 		setLineNumbers(mapmult);
@@ -750,16 +750,13 @@ public class AggBinaryOp extends MultiThreadedHop
 	}
 
 	private void constructSparkLopsCPMM() {
-		if( isLeftTransposeRewriteApplicable(false, false) )
-		{
+		if( isLeftTransposeRewriteApplicable(false) ) {
 			setLops( constructSparkLopsCPMMWithLeftTransposeRewrite() );
 		} 
-		else
-		{
+		else {
 			SparkAggType aggtype = getSparkMMAggregationType(true);
-			_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
-			
-			Lop cpmm = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
+			_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this);
+			Lop cpmm = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(),
 				getDataType(), getValueType(), _outputEmptyBlocks, aggtype, ExecType.SPARK);
 			setOutputDimensions( cpmm );
 			setLineNumbers( cpmm );
@@ -881,10 +878,9 @@ public class AggBinaryOp extends MultiThreadedHop
 	 * the entire operation costs.
 	 * 
 	 * @param CP true if CP
-	 * @param checkMemMR true if check MR memory
 	 * @return true if left transpose rewrite applicable
 	 */
-	private boolean isLeftTransposeRewriteApplicable(boolean CP, boolean checkMemMR)
+	private boolean isLeftTransposeRewriteApplicable(boolean CP)
 	{
 		//check for forced MR or Spark execution modes, which prevent the introduction of
 		//additional CP operations and hence the rewrite application
@@ -938,8 +934,7 @@ public class AggBinaryOp extends MultiThreadedHop
 				//note: output size constraint for mapmult already checked by optfindmmultmethod
 				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
-					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&
-					(!checkMemMR || OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) < OptimizerUtils.getRemoteMemBudgetMap(true)) ) 
+					2 * OptimizerUtils.estimateSizeExactSparsity(m, n, 1.0) <  OptimizerUtils.getLocalMemBudget() ) 
 				{
 					ret = true;
 				}

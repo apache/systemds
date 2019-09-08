@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,6 +41,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.io.BinaryBlockSerialization;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.io.MatrixReader;
@@ -47,7 +49,6 @@ import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 import java.io.BufferedReader;
@@ -64,37 +65,30 @@ public class HDFSTool
 {
 	private static final int MAX_DELETE_RETRIES = 10;
 	
-	private static final Log LOG = LogFactory.getLog(HDFSTool.class.getName());
+	// non-deprecated properties
+	public static final String DFS_REPLICATION = "dfs.replication"; // hdfs-default.xml
+	public static final String IO_FILE_BUFFER_SIZE = "io.file.buffer.size"; // core-default.xml
+	public static final String IO_SERIALIZATIONS = "io.serializations"; // core-default.xml
 	
-	public static String getUniqueKeyPerTask(JobConf job, boolean inMapper) {
-		//TODO: investigate ID pattern, required for parallel jobs
-		/*String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
-		return String.valueOf(IDHandler.extractLongID(nodePrefix));*/
-		
-		String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
-		int i;
-		if (inMapper)
-			i = nodePrefix.indexOf("_m_");
-		else
-			i = nodePrefix.indexOf("_r_");
-		int j = nodePrefix.lastIndexOf("_");
-		nodePrefix = nodePrefix.substring(i + 3, j);
-		// remove all the leading 0s
-		return String.valueOf(Long.parseLong(nodePrefix));
-	}
+	// deprecated properties replaced by new props, new prop names used for constants
+	// see https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/DeprecatedProperties.html
+	public static final String DFS_BLOCKSIZE = "dfs.blocksize"; // hdfs-default.xml
+	// public static final String DFS_DATANODE_DATA_DIR; // hdfs-default.xml - currently not used
+	// public static final String DFS_METRICS_SESSION_ID; // N/A - currently not used
+	public static final String DFS_PERMISSIONS_ENABLED = "dfs.permissions.enabled"; // hdfs-default.xml
+	public static final String FS_DEFAULTFS = "fs.defaultFS"; // core-default.xml
 
-	public static int getUniqueTaskId(JobConf job) {
-		String nodePrefix = job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
-		int j = nodePrefix.lastIndexOf("_");
-		int i=nodePrefix.lastIndexOf("_", j-1);
-		nodePrefix = nodePrefix.substring(i+1, j);
-		return Integer.valueOf(nodePrefix);
-	}
+	//internal param: custom deserializer/serializer (usually 30% faster than WritableSerialization)
+	public static final boolean USE_BINARYBLOCK_SERIALIZATION = true;
+	
+	private static final Log LOG = LogFactory.getLog(HDFSTool.class.getName());
 
-	public static String getGloballyUniqueName(JobConf job) {
-		return job.get(MRConfigurationNames.MR_TASK_ATTEMPT_ID);
+	public static void addBinaryBlockSerializationFramework( Configuration job ) {
+		String frameworkList = job.get(IO_SERIALIZATIONS);
+		String frameworkClassBB = BinaryBlockSerialization.class.getCanonicalName();
+		job.set(IO_SERIALIZATIONS, frameworkClassBB+","+frameworkList);
 	}
-
+	
 	public static boolean existsFileOnHDFS(String fname) {
 		//robustness for empty strings (e.g., JMLC, MLContext)
 		if( fname == null || fname.isEmpty() || fname.trim().isEmpty() )

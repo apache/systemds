@@ -573,8 +573,7 @@ public class LibMatrixAgg
 	 * 
 	 * @param out matrix block
 	 * @param op aggregate unary operator
-	 * @param blen number of rows in a block
-	 * @param blen number of columns in a block
+	 * @param blen number of rows/cols in a block
 	 * @param ix matrix indexes
 	 */
 	public static void recomputeIndexes( MatrixBlock out, AggregateUnaryOperator op, int blen, MatrixIndexes ix )
@@ -1791,9 +1790,6 @@ public class LibMatrixAgg
 	 * @param a ?
 	 * @param agg ?
 	 * @param c ?
-	 * @param n ?
-	 * @param kbuff ?
-	 * @param kplus ?
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
@@ -2527,7 +2523,7 @@ public class LibMatrixAgg
 	 * COLMIN/COLMAX, opcode: uacmin/uacmax, sparse input.
 	 * 
 	 * @param a ?
-	 * @param c ?
+	 * @param dc ?
 	 * @param m ?
 	 * @param n ?
 	 * @param init ?

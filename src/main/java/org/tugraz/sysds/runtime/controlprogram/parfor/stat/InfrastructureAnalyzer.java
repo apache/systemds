@@ -28,7 +28,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -40,6 +40,8 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 public class InfrastructureAnalyzer 
 {
 	public static final long DEFAULT_JVM_SIZE = 512 * 1024 * 1024;
+	public static final String MR_FRAMEWORK_NAME = "mapreduce.framework.name"; // mapred-default.xml
+	public static final String MR_JOBTRACKER_ADDRESS = "mapreduce.jobtracker.address"; // mapred-default.xml
 	
 	//static local master node properties
 	private static int  _localPar        = -1;
@@ -50,12 +52,8 @@ public class InfrastructureAnalyzer
 	private static int  _remotePar       = -1;
 	private static int  _remoteParMap    = -1;
 	private static int  _remoteParReduce = -1;
-	private static long _remoteJVMMaxMemMap    = -1;
-	private static long _remoteJVMMaxMemReduce = -1;
-	private static long _remoteMRSortMem = -1;
 	private static boolean _localJT      = false;
 	private static long _blocksize       = -1;
-	private static boolean _yarnEnabled  = false;
 	
 	//static initialization, called for each JVM (on each node)
 	static {
@@ -97,7 +95,7 @@ public class InfrastructureAnalyzer
 	 * @return number of remote parallel map tasks
 	 */
 	public static int getRemoteParallelMapTasks() {
-		if( _remoteParMap == -1 )
+		if( _remotePar == -1 )
 			analyzeHadoopCluster();
 		return _remoteParMap;
 	}
@@ -112,7 +110,7 @@ public class InfrastructureAnalyzer
 	 * @return number of remote parallel reduce tasks
 	 */
 	public static int getRemoteParallelReduceTasks() {
-		if( _remoteParReduce == -1 )
+		if( _remotePar == -1 )
 			analyzeHadoopCluster();
 		return _remoteParReduce;
 	}
@@ -142,50 +140,9 @@ public class InfrastructureAnalyzer
 		//need access to the current fraction of total local memory
 		return (double)_localJVMMaxMem / _fLocalJVMMaxMem;
 	}
-	
-	/**
-	 * Gets the maximum memory [in bytes] of a hadoop map task JVM.
-	 * 
-	 * @return maximum memory of remote hadoop map task jvm
-	 */
-	public static long getRemoteMaxMemoryMap() {
-		if( _remoteJVMMaxMemMap == -1 )
-			analyzeHadoopConfiguration();
-		return _remoteJVMMaxMemMap;
-	}
-
-	public static void setRemoteMaxMemoryMap( long remoteMem ) {
-		_remoteJVMMaxMemMap = remoteMem;
-	}
-	
-	/**
-	 * Gets the maximum memory [in bytes] of a hadoop reduce task JVM.
-	 * 
-	 * @return maximum memory of remote hadoop reduce task jvm
-	 */
-	public static long getRemoteMaxMemoryReduce() {
-		if( _remoteJVMMaxMemReduce == -1 )
-			analyzeHadoopConfiguration();
-		return _remoteJVMMaxMemReduce;
-	}
-
-	public static void setRemoteMaxMemoryReduce( long remoteMem ) {
-		_remoteJVMMaxMemReduce = remoteMem;
-	}
-
-	/**
-	 * Gets the maximum sort buffer memory requirement [in bytes] of a hadoop task.
-	 * 
-	 * @return maximum sort buffer memory of hadoop task
-	 */
-	public static long getRemoteMaxMemorySortBuffer() {
-		if( _remoteMRSortMem == -1 )
-			analyzeHadoopConfiguration();
-		return _remoteMRSortMem;
-	}
 
 	public static boolean isLocalMode() {
-		if( _remoteJVMMaxMemMap == -1 )
+		if( _remotePar == -1 )
 			analyzeHadoopConfiguration();
 		return _localJT;
 	}
@@ -194,8 +151,8 @@ public class InfrastructureAnalyzer
 		// Due to a bug in HDP related to fetching the "mode" of execution within mappers,
 		// we explicitly probe the relevant properties instead of relying on results from 
 		// analyzeHadoopCluster().
-		String jobTracker = job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS, "local");
-		String framework = job.get(MRConfigurationNames.MR_FRAMEWORK_NAME, "local");
+		String jobTracker = job.get(MR_JOBTRACKER_ADDRESS, "local");
+		String framework = job.get(MR_FRAMEWORK_NAME, "local");
 		boolean isYarnEnabled = (framework!=null && framework.equals("yarn"));
 		
 		return ("local".equals(jobTracker) & !isYarnEnabled);
@@ -233,7 +190,8 @@ public class InfrastructureAnalyzer
 	 */
 	public static long getCmMax() {
 		//default value (if not specified)
-		return Math.min( getLocalMaxMemory(), getRemoteMaxMemoryMap() );
+		//TODO spark remote map task budget?
+		return getLocalMaxMemory();
 	}
 
 	/**
@@ -245,12 +203,6 @@ public class InfrastructureAnalyzer
 		if( _blocksize == -1 )
 			analyzeHadoopConfiguration();
 		return _blocksize;
-	}
-
-	public static boolean isYarnEnabled() {
-		if( _remoteJVMMaxMemMap == -1 )
-			analyzeHadoopConfiguration();
-		return _yarnEnabled;
 	}
 
 	public static long extractMaxMemoryOpt(String javaOpts)
@@ -382,29 +334,9 @@ public class InfrastructureAnalyzer
 	private static void analyzeHadoopConfiguration() {
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		
-		_remoteMRSortMem = (1024*1024) * job.getLong(MRConfigurationNames.MR_TASK_IO_SORT_MB,100); //1MB
-		
-		//handle jvm max mem (map mem budget is relevant for map-side distcache and parfor)
-		//(for robustness we probe both: child and map configuration parameters)
-		String javaOpts1 = job.get(MRConfigurationNames.MR_CHILD_JAVA_OPTS); //internally mapred/mapreduce synonym
-		String javaOpts2 = job.get(MRConfigurationNames.MR_MAP_JAVA_OPTS, null); //internally mapred/mapreduce synonym
-		String javaOpts3 = job.get(MRConfigurationNames.MR_REDUCE_JAVA_OPTS, null); //internally mapred/mapreduce synonym
-		if( javaOpts2 != null ) //specific value overrides generic
-			_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts2); 
-		else
-			_remoteJVMMaxMemMap = extractMaxMemoryOpt(javaOpts1);
-		if( javaOpts3 != null ) //specific value overrides generic
-			_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts3); 
-		else
-			_remoteJVMMaxMemReduce = extractMaxMemoryOpt(javaOpts1);
-		
 		//HDFS blocksize
-		String blocksize = job.get(MRConfigurationNames.DFS_BLOCKSIZE, "134217728");
+		String blocksize = job.get(HDFSTool.DFS_BLOCKSIZE, "134217728");
 		_blocksize = Long.parseLong(blocksize);
-		
-		//is yarn enabled
-		String framework = job.get(MRConfigurationNames.MR_FRAMEWORK_NAME);
-		_yarnEnabled = (framework!=null && framework.equals("yarn"));
 		
 		//analyze if local mode (internally requires yarn_enabled)
 		_localJT = analyzeLocalMode(job);
@@ -413,7 +345,7 @@ public class InfrastructureAnalyzer
 	private static boolean analyzeLocalMode(JobConf job) {
 		//analyze if local mode (if yarn enabled, we always assume cluster mode
 		//in order to workaround configuration issues on >=Hadoop 2.6)
-		String jobTracker = job.get(MRConfigurationNames.MR_JOBTRACKER_ADDRESS, "local");
-		return "local".equals(jobTracker) && !isYarnEnabled();
+		String jobTracker = job.get("mapreduce.jobtracker.address", "local");
+		return "local".equals(jobTracker);
 	}
 }

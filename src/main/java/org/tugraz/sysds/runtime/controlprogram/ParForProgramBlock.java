@@ -87,7 +87,6 @@ import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
-import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -1253,23 +1252,16 @@ public class ParForProgramBlock extends ForProgramBlock
 		DataPartitioner dp = null;
 		
 		//determine max degree of parallelism
-		int numReducers = OptimizerUtils.isSparkExecutionMode() ?
+		int numRed = OptimizerUtils.isSparkExecutionMode() ?
 			SparkExecutionContext.getDefaultParallelism(false) : 1;
-		int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-		//correction max number of reducers on yarn clusters
-		if( InfrastructureAnalyzer.isYarnEnabled() )
-			maxNumRed = (int)Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 );
-		int numRed = Math.min(numReducers,maxNumRed);
 		
 		//create data partitioner
-		switch( dataPartitioner )
-		{
+		switch( dataPartitioner ) {
 			case LOCAL:
 				dp = new DataPartitionerLocal(dpf, _numThreads);
 				break;
 			case REMOTE_SPARK:
-				dp = new DataPartitionerRemoteSpark( dpf, ec, numRed,
-					_replicationDP, false );
+				dp = new DataPartitionerRemoteSpark( dpf, ec, numRed, _replicationDP, false );
 				break;
 			default:
 				throw new DMLRuntimeException("Unknown data partitioner: '" +dataPartitioner.name()+"'.");
@@ -1367,8 +1359,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			int par = Math.min( _resultVars.size(), 
 					            InfrastructureAnalyzer.getLocalParallelism() );
 			if( InfrastructureAnalyzer.isLocalMode() ) {
-				int parmem = (int)Math.floor(OptimizerUtils.getLocalMemBudget() / 
-						InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer());
+				int parmem = (int)Math.floor(OptimizerUtils.getLocalMemBudget());
 				par = Math.min(par, Math.max(parmem, 1)); //reduce k if necessary
 			}
 			

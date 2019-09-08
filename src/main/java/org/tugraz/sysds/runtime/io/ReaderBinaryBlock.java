@@ -31,10 +31,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 public class ReaderBinaryBlock extends MatrixReader
 {
@@ -148,8 +148,8 @@ public class ReaderBinaryBlock extends MatrixReader
 		long lnnz = 0; //aggregate block nnz
 		
 		//set up preferred custom serialization framework for binary block format
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		if( HDFSTool.USE_BINARYBLOCK_SERIALIZATION )
+			HDFSTool.addBinaryBlockSerializationFramework( job );
 		
 		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 		{
@@ -217,8 +217,8 @@ public class ReaderBinaryBlock extends MatrixReader
 		MatrixBlock value = new MatrixBlock();
 			
 		//set up preferred custom serialization framework for binary block format
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		if( HDFSTool.USE_BINARYBLOCK_SERIALIZATION )
+			HDFSTool.addBinaryBlockSerializationFramework( job );
 		
 		for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) //1..N files 
 		{

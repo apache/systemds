@@ -35,10 +35,10 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
+import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
 
 public class UtilFunctions 
 {

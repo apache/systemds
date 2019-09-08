@@ -30,7 +30,7 @@ import org.apache.hadoop.io.WritableComparable;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.functionobjects.CTable;
 import org.tugraz.sysds.runtime.functionobjects.ReduceDiag;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
+import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;

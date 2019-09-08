@@ -90,7 +90,6 @@ public class DMLConfig
 	
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
-	public static String LOCAL_MR_MODE_STAGING_DIR = null;
 	
 	//configuration default values
 	private static HashMap<String, String> _defaultVals = null;
@@ -145,7 +144,6 @@ public class DMLConfig
 		try {
 			parseConfig();
 		} catch (FileNotFoundException fnfe) {
-			LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 			throw fnfe;
 		} catch (Exception e){
 			//log error, since signature of generated ParseException doesn't allow to pass it 
@@ -153,8 +151,6 @@ public class DMLConfig
 				LOG.error("Failed to parse DML config file ",e);
 			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
 		}
-		
-		LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 	}
 	
 	public DMLConfig( Element root ) {

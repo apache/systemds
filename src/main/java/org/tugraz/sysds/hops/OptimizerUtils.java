@@ -57,7 +57,6 @@ import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -379,9 +378,7 @@ public class OptimizerUtils
 	public static long getDefaultSize() {
 		//we need to set default_size larger than any execution context
 		//memory budget, however, it should not produce overflows on sum
-		return Math.max( InfrastructureAnalyzer.getLocalMaxMemory(),
-					Math.max(InfrastructureAnalyzer.getRemoteMaxMemoryMap(),
-				          InfrastructureAnalyzer.getRemoteMaxMemoryReduce()));
+		return InfrastructureAnalyzer.getLocalMaxMemory();
 	}
 	
 	public static void resetDefaultSize() {
@@ -389,8 +386,7 @@ public class OptimizerUtils
 	}
 	
 	
-	public static int getDefaultFrameSize()
-	{
+	public static int getDefaultFrameSize() {
 		return DEFAULT_FRAME_BLOCKSIZE;
 	}
 	
@@ -401,22 +397,6 @@ public class OptimizerUtils
 	 */
 	public static double getLocalMemBudget() {
 		double ret = InfrastructureAnalyzer.getLocalMaxMemory();
-		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
-	}
-	
-	public static double getRemoteMemBudgetMap() {
-		return getRemoteMemBudgetMap(false);
-	}
-	
-	public static double getRemoteMemBudgetMap(boolean substractSortBuffer) {
-		double ret = InfrastructureAnalyzer.getRemoteMaxMemoryMap();
-		if( substractSortBuffer )
-			ret -= InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
-		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
-	}
-
-	public static double getRemoteMemBudgetReduce() {
-		double ret = InfrastructureAnalyzer.getRemoteMaxMemoryReduce();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 	
@@ -511,35 +491,16 @@ public class OptimizerUtils
 	 * @param configOnly true if configured value
 	 * @return number of reducers
 	 */
-	public static int getNumReducers( boolean configOnly )
-	{
+	public static int getNumReducers( boolean configOnly ) {
 		if( isSparkExecutionMode() )
 			return SparkExecutionContext.getDefaultParallelism(false);
-		
-		int ret = 2 * InfrastructureAnalyzer.getLocalParallelism();
-		if( !configOnly ) {
-			ret = Math.min(ret,InfrastructureAnalyzer.getRemoteParallelReduceTasks());
-			
-			//correction max number of reducers on yarn clusters
-			if( InfrastructureAnalyzer.isYarnEnabled() )
-				ret = (int)Math.max( ret, YarnClusterAnalyzer.getNumCores()/2 );
-		}
-		
-		return ret;
+		return InfrastructureAnalyzer.getLocalParallelism();
 	}
 
-	public static int getNumMappers()
-	{
+	public static int getNumMappers() {
 		if( isSparkExecutionMode() )
 			return SparkExecutionContext.getDefaultParallelism(false);
-		
-		int ret = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-			
-		//correction max number of reducers on yarn clusters
-		if( InfrastructureAnalyzer.isYarnEnabled() )
-			ret = (int)Math.max( ret, YarnClusterAnalyzer.getNumCores() );
-		
-		return ret;
+		return InfrastructureAnalyzer.getLocalParallelism();
 	}
 
 	public static ExecMode getDefaultExecutionMode() {

@@ -23,7 +23,7 @@ package org.tugraz.sysds.runtime.matrix.data;
 import java.util.ArrayList;
 
 import org.apache.hadoop.io.WritableComparable;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
+import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;

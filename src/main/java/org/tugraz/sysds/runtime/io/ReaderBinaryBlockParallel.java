@@ -37,8 +37,8 @@ import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlockMCSR;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 
 public class ReaderBinaryBlockParallel extends ReaderBinaryBlock 
@@ -89,8 +89,8 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 		throws IOException, DMLRuntimeException
 	{
 		//set up preferred custom serialization framework for binary block format
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		if( HDFSTool.USE_BINARYBLOCK_SERIALIZATION )
+			HDFSTool.addBinaryBlockSerializationFramework( job );
 		
 		try 
 		{

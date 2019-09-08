@@ -93,7 +93,6 @@ import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.utils.NativeHelper;
-import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -352,23 +351,13 @@ public class OptimizerRuleBased extends Optimizer
 			_rm  = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 			_rm2 = SparkExecutionContext.getBroadcastMemoryBudget() / ccores;
 		}
-		//mr/yarn-specific cluster characteristics
+		//single node
 		else {
-			_rnk = InfrastructureAnalyzer.getRemoteParallelNodes();  
-			_rk  = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-			_rk2 = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-			_rm  = OptimizerUtils.getRemoteMemBudgetMap(false); 	
-			_rm2 = OptimizerUtils.getRemoteMemBudgetReduce(); 	
-		
-			//correction of max parallelism if yarn enabled because yarn
-			//does not have the notion of map/reduce slots and hence returns 
-			//small constants of map=10*nodes, reduce=2*nodes
-			//(not doing this correction would loose available degree of parallelism)
-			if( InfrastructureAnalyzer.isYarnEnabled() ) {
-				long tmprk = YarnClusterAnalyzer.getNumCores();
-				_rk  = (int) Math.max( _rk, tmprk );
-				_rk2 = (int) Math.max( _rk2, tmprk/2 );
-			}
+			_rnk = 1;
+			_rk  = InfrastructureAnalyzer.getLocalParallelism();
+			_rk2 = InfrastructureAnalyzer.getLocalParallelism();
+			_rm  = InfrastructureAnalyzer.getLocalMaxMemory()/_rk;
+			_rm2  = InfrastructureAnalyzer.getLocalMaxMemory()/_rk2;
 		}
 		
 		_rkmax   = (int) Math.ceil( PAR_K_FACTOR * _rk ); 
@@ -2056,7 +2045,7 @@ public class OptimizerRuleBased extends Optimizer
 		boolean flagLargeResult = hasLargeTotalResults( n, pfpb.getResultVariables(), vars, true );
 		boolean flagRemoteLeftIndexing = hasResultMRLeftIndexing( n, pfpb.getResultVariables(), vars, true );
 		boolean flagCellFormatWoCompare = determineFlagCellFormatWoCompare(pfpb.getResultVariables(), vars); 
-		boolean flagOnlyInMemResults = hasOnlyInMemoryResults(n, pfpb.getResultVariables(), vars, true );
+		boolean flagOnlyInMemResults = hasOnlyInMemoryResults(n, pfpb.getResultVariables(), vars );
 		
 		//optimimality decision on result merge
 		//MR, if remote exec, and w/compare (prevent huge transfer/merge costs)
@@ -2149,7 +2138,8 @@ public class OptimizerRuleBased extends Optimizer
 						MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).getName() );
 						long rows = mo.getNumRows();
 						long cols = mo.getNumColumns();
-						ret = !isInMemoryResultMerge(rows, cols, OptimizerUtils.getRemoteMemBudgetMap(false));
+						//TODO rework memory handling for spark
+						ret = !isInMemoryResultMerge(rows, cols, SparkExecutionContext.getBroadcastMemoryBudget());
 					}
 				}
 			}
@@ -2226,7 +2216,7 @@ public class OptimizerRuleBased extends Optimizer
 		return W;
 	}
 
-	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars, boolean inLocal ) 
+	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars ) 
 	{
 		boolean ret = true;
 		
@@ -2246,17 +2236,15 @@ public class OptimizerRuleBased extends Optimizer
 						MatrixObject mo = (MatrixObject) dat;
 						long rows = mo.getNumRows();
 						long cols = mo.getNumColumns();
-						double memBudget = inLocal ? OptimizerUtils.getLocalMemBudget() : 
-							                         OptimizerUtils.getRemoteMemBudgetMap();
+						double memBudget = OptimizerUtils.getLocalMemBudget();
 						ret &= isInMemoryResultMerge(rows, cols, memBudget);
 					}
 				}
 			}
 		}
-		else
-		{
+		else {
 			for( OptNode c : n.getChilds() )
-				ret &= hasOnlyInMemoryResults(c, resultVars, vars, inLocal);
+				ret &= hasOnlyInMemoryResults(c, resultVars, vars);
 		}
 		
 		return ret;

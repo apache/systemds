@@ -24,7 +24,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 
 import java.io.IOException;
@@ -44,8 +43,8 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 		HDFSTool.deleteFileIfExistOnHDFS(fname);
 
 		//set up preferred custom serialization framework for binary block format
-		if (MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION)
-			MRJobConfiguration.addBinaryBlockSerializationFramework(job);
+		if (HDFSTool.USE_BINARYBLOCK_SERIALIZATION)
+			HDFSTool.addBinaryBlockSerializationFramework(job);
 
 		//core write sequential
 		writeBinaryBlockMatrixToHDFS(path, job, fs, src, dims, blen);

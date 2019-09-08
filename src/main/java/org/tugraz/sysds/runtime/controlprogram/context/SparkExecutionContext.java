@@ -73,7 +73,6 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
@@ -240,8 +239,8 @@ public class SparkExecutionContext extends ExecutionContext
 
 		//globally add binaryblock serialization framework for all hdfs read/write operations
 		//TODO if spark context passed in from outside (mlcontext), we need to clean this up at the end
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( _spctx.hadoopConfiguration() );
+		if( HDFSTool.USE_BINARYBLOCK_SERIALIZATION )
+			HDFSTool.addBinaryBlockSerializationFramework( _spctx.hadoopConfiguration() );
 
 		//statistics maintenance
 		if( DMLScript.STATISTICS ){

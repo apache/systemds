@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.mapred;
+package org.tugraz.sysds.runtime.instructions.spark.data;
 
 import java.io.Serializable;
 
@@ -27,19 +27,16 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixValue;
 
 public class IndexedMatrixValue implements Serializable
 {
-
 	private static final long serialVersionUID = 6723389820806752110L;
 
 	private MatrixIndexes _indexes = null;
 	private MatrixValue   _value = null;
 	
-	public IndexedMatrixValue()
-	{
+	public IndexedMatrixValue() {
 		_indexes = new MatrixIndexes();
 	}
 	
-	public IndexedMatrixValue(Class<? extends MatrixValue> cls)
-	{
+	public IndexedMatrixValue(Class<? extends MatrixValue> cls) {
 		this();
 		
 		//create new value object for given class
@@ -51,27 +48,22 @@ public class IndexedMatrixValue implements Serializable
 		}
 	}
 	
-	public IndexedMatrixValue(MatrixIndexes ind, MatrixValue b)
-	{
+	public IndexedMatrixValue(MatrixIndexes ind, MatrixValue b) {
 		this();
-		
 		_indexes.setIndexes(ind);
 		_value = b;
 	}
 
-	public IndexedMatrixValue(IndexedMatrixValue that)
-	{
+	public IndexedMatrixValue(IndexedMatrixValue that) {
 		this(that._indexes, that._value); 
 	}
 
 	
-	public MatrixIndexes getIndexes()
-	{
+	public MatrixIndexes getIndexes() {
 		return _indexes;
 	}
 	
-	public MatrixValue getValue()
-	{
+	public MatrixValue getValue() {
 		return _value;
 	}
 	

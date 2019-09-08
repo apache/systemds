@@ -28,21 +28,12 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.tugraz.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 public class CostEstimatorHops extends CostEstimator
 {
 	public static final double DEFAULT_MEM_SP = 20*1024*1024;
-	public static final double DEFAULT_MEM_MR;
 	
 	private OptTreePlanMappingAbstract _map = null;
-	
-	static {
-		DEFAULT_MEM_MR = DEFAULT_MEM_ESTIMATE_MR //20MB
-			+ (InfrastructureAnalyzer.isLocalMode() ?
-			InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer() : 0);
-	}
-	
 	
 	public CostEstimatorHops( OptTreePlanMappingAbstract map ) {
 		_map = map;
@@ -66,8 +57,7 @@ public class CostEstimatorHops extends CostEstimator
 			h.getInputOutputSize(_exclVars) : value;
 		
 		//handle specific cases 
-		double DEFAULT_MEM_REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
-			DEFAULT_MEM_SP : DEFAULT_MEM_MR;
+		double DEFAULT_MEM_REMOTE = OptimizerUtils.isSparkExecutionMode() ? DEFAULT_MEM_SP : 0;
 		
 		if( value >= DEFAULT_MEM_REMOTE )
 		{
@@ -124,7 +114,7 @@ public class CostEstimatorHops extends CostEstimator
 		Hop h = _map.getMappedHop( node.getID() );
 		double value = h.getMemEstimate();
 		if( et != ExecType.CP ) //MR, null
-			value = DEFAULT_MEM_MR;
+			value = DEFAULT_MEM_SP;
 		if( value <= 0 ) //no mem estimate
 			value = CostEstimator.DEFAULT_MEM_ESTIMATE_CP;
 		

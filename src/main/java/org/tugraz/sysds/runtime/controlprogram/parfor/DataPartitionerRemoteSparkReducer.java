@@ -34,7 +34,7 @@ import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 import scala.Tuple2;
 
@@ -62,7 +62,7 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 		//write entire partition to binary block sequence file
 		//create sequence file writer
 		Configuration job = new Configuration(ConfigurationManager.getCachedJobConf());
-		job.setInt(MRConfigurationNames.DFS_REPLICATION, _replication);
+		job.setInt(HDFSTool.DFS_REPLICATION, _replication);
 		Path path = new Path(_fnameNew + File.separator + key);
 		
 		SequenceFile.Writer writer = null;

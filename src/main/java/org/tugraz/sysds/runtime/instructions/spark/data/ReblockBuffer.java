@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.mapred;
+package org.tugraz.sysds.runtime.instructions.spark.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.mapred;
+package org.tugraz.sysds.runtime.instructions.spark.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +32,6 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class FrameReblockBuffer
 {
-	
 	//default buffer size: 5M -> 5M * 3x8B = 120MB 
 	public static final int DEFAULT_BUFFER_SIZE = 5000000;
 	
@@ -105,10 +104,10 @@ public class FrameReblockBuffer
 				if( cbi != -1 && cbj != -1)
 					outputBlock(outList, tmpIx, tmpBlock);
 				cbi = bi;
-				cbj = bj;					
+				cbj = bj;
 				tmpIx = (bi-1)*_blen+1;
 				tmpBlock = new FrameBlock(_schema);
-				tmpBlock.ensureAllocatedColumns(Math.min(_blen, (int)(_rlen-(bi-1)*_blen)));				
+				tmpBlock.ensureAllocatedColumns(Math.min(_blen, (int)(_rlen-(bi-1)*_blen)));
 			}
 			
 			int ci = UtilFunctions.computeCellInBlock(_buff[i].getRow(), _blen);
@@ -139,8 +138,7 @@ public class FrameReblockBuffer
 		out.add(new Pair<>(new Long(key), value));
 	}
 	
-	private static class FrameCell 
-	{	
+	private static class FrameCell {
 		private int iRow;
 		private int iCol;
 		private Object objVal;
@@ -169,8 +167,7 @@ public class FrameReblockBuffer
 	 * compute the block indexes on-the-fly based on the given cell indexes.
 	 * 
 	 */
-	private static class FrameReblockBufferComparator implements Comparator<FrameCell> 
-	{	
+	private static class FrameReblockBufferComparator implements Comparator<FrameCell> {
 		@Override
 		public int compare(FrameCell arg0, FrameCell arg1) 
 		{
@@ -180,7 +177,7 @@ public class FrameReblockBuffer
 			long bj1 = arg1.getCol();
 			
 			return ( bi0 < bi1 || (bi0 == bi1 && bj0 < bj1) ) ? -1 :
-                   (( bi0 == bi1 && bj0 == bj1)? 0 : 1);		
-		}		
+				(( bi0 == bi1 && bj0 == bj1)? 0 : 1);
+		}
 	}
 }

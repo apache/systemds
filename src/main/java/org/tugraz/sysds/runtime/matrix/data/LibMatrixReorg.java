@@ -32,7 +32,7 @@ import org.tugraz.sysds.runtime.functionobjects.DiagIndex;
 import org.tugraz.sysds.runtime.functionobjects.RevIndex;
 import org.tugraz.sysds.runtime.functionobjects.SortIndex;
 import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
+import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;

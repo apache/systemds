@@ -140,7 +140,7 @@ public class FunctionOp extends Hop
 		if( _type == FunctionType.DML )
 			_memEstimate = 1; //minimal mem estimate
 		else if( _type == FunctionType.UNKNOWN )
-			_memEstimate = CostEstimatorHops.DEFAULT_MEM_MR;
+			_memEstimate = CostEstimatorHops.DEFAULT_MEM_SP;
 		else if ( _type == FunctionType.MULTIRETURN_BUILTIN ) {
 			boolean outputDimsKnown = true;
 			for(Hop out : getOutputs()){

@@ -29,8 +29,6 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 
 public class WriterBinaryBlock extends MatrixWriter
@@ -54,8 +52,8 @@ public class WriterBinaryBlock extends MatrixWriter
 		HDFSTool.deleteFileIfExistOnHDFS( fname );
 
 		//set up preferred custom serialization framework for binary block format
-		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )
-			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
+		if( HDFSTool.USE_BINARYBLOCK_SERIALIZATION )
+			HDFSTool.addBinaryBlockSerializationFramework( job );
 		
 		//core write sequential/parallel
 		if( diag )
@@ -112,8 +110,9 @@ public class WriterBinaryBlock extends MatrixWriter
 		if( _replication > 0 ) //if replication specified (otherwise default)
 		{
 			//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096),
-					                         (short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class,
+				job.getInt(HDFSTool.IO_FILE_BUFFER_SIZE, 4096),
+				(short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
 		}
 		else	
 		{
@@ -186,8 +185,9 @@ public class WriterBinaryBlock extends MatrixWriter
 		if( _replication > 0 ) //if replication specified (otherwise default)
 		{
 			//copy of SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class), except for replication
-			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class, job.getInt(MRConfigurationNames.IO_FILE_BUFFER_SIZE, 4096),
-					                         (short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());	
+			writer = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixBlock.class,
+				job.getInt(HDFSTool.IO_FILE_BUFFER_SIZE, 4096),
+				(short)_replication, fs.getDefaultBlockSize(), null, new SequenceFile.Metadata());
 		}
 		else	
 		{

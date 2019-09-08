@@ -67,10 +67,9 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
+import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateTernaryOperator;
@@ -91,6 +90,7 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.FastBufferedDataInputStream;
 import org.tugraz.sysds.runtime.util.FastBufferedDataOutputStream;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.NativeHelper;
@@ -1850,7 +1850,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			for( int i=0; i<a.numBlocks(); i++ )
 				nnz += mbin.readDoubleArray(a.size(i), a.valuesAt(i));
 		}
-		else if( in instanceof DataInputBuffer && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION ) {
+		else if( in instanceof DataInputBuffer && HDFSTool.USE_BINARYBLOCK_SERIALIZATION ) {
 			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
 			DataInputBuffer din = (DataInputBuffer)in;
 			try(FastBufferedDataInputStream mbin = new FastBufferedDataInputStream(din)) {
@@ -1879,7 +1879,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			MatrixBlockDataInput mbin = (MatrixBlockDataInput)in;
 			nonZeros = mbin.readSparseRows(rlen, nonZeros, sparseBlock);
 		}
-		else if( in instanceof DataInputBuffer && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION ) {
+		else if( in instanceof DataInputBuffer && HDFSTool.USE_BINARYBLOCK_SERIALIZATION ) {
 			//workaround because sequencefile.reader.next(key, value) does not yet support serialization framework
 			DataInputBuffer din = (DataInputBuffer)in;
 			FastBufferedDataInputStream mbin = null;

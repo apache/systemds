@@ -137,10 +137,7 @@ public class Explain
 			}
 		}
 		else {
-			sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetMap()) );
-			sb.append( "MB/" );
-			sb.append( OptimizerUtils.toMB(OptimizerUtils.getRemoteMemBudgetReduce()) );
-			sb.append( "MB" );
+			sb.append( "?MB/?MB" );
 		}
 
 		return sb.toString();

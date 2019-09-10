@@ -28,16 +28,23 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsDel      = new LongAdder();
 	private static final LongAdder _numWritesMem    = new LongAdder();
 	private static final LongAdder _numWritesFS     = new LongAdder();
+	private static final LongAdder _numRewrites     = new LongAdder();
 	private static final LongAdder _ctimeFSRead     = new LongAdder(); //in nano sec
 	private static final LongAdder _ctimeFSWrite    = new LongAdder(); //in nano sec
 	private static final LongAdder _ctimeCosting    = new LongAdder(); //in nano sec
+	private static final LongAdder _ctimeRewrite    = new LongAdder(); //in nano sec
 
 	public static void reset() {
 		_numHitsMem.reset();
 		_numHitsFS.reset();
+		_numHitsDel.reset();
+		_numWritesMem.reset();
 		_numWritesFS.reset();
+		_numRewrites.reset();
 		_ctimeFSRead.reset();
 		_ctimeFSWrite.reset();
+		_ctimeCosting.reset();
+		_ctimeRewrite.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -60,6 +67,11 @@ public class LineageCacheStatistics {
 		_numWritesMem.increment();
 	}
 
+	public static void incrementPRewrites() {
+		// Number of times written in local FS.
+		_numRewrites.increment();
+	}
+
 	public static void incrementFSWrites() {
 		// Number of times written in local FS.
 		_numWritesFS.increment();
@@ -79,6 +91,11 @@ public class LineageCacheStatistics {
 		// Total time spent estimating computation and disk spill costs.
 		_ctimeCosting.add(delta);
 	}
+
+	public static void incrementPRewriteTime(long delta) {
+		// Total time spent estimating computation and disk spill costs.
+		_ctimeRewrite.add(delta);
+	}
 	
 	public static String displayHits() {
 		StringBuilder sb = new StringBuilder();
@@ -97,6 +114,12 @@ public class LineageCacheStatistics {
 		sb.append(_numWritesFS.longValue());
 		return sb.toString();
 	}
+
+	public static String displayRewrites() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_numRewrites.longValue());
+		return sb.toString();
+	}
 	
 	public static String displayTime() {
 		StringBuilder sb = new StringBuilder();
@@ -109,6 +132,12 @@ public class LineageCacheStatistics {
 	public static String displayCostingTime() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%.3f", ((double)_ctimeCosting.longValue())/1000000000)); //in sec
+		return sb.toString();
+	}
+
+	public static String displayRewriteTime() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("%.3f", ((double)_ctimeRewrite.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
 }

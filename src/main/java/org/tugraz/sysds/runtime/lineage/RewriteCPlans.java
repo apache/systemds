@@ -59,7 +59,7 @@ public class RewriteCPlans
 		boolean oneappend = false;
 		boolean twoappend = false;
 		MatrixBlock lastResult = null;
-		if (curr.getOpcode().equalsIgnoreCase("tsmm"))
+		if (LineageCache.isReusable(curr))
 		{
 			// If the input to tsmm came from cbind, look for both the inputs in cache.
 			LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
@@ -109,8 +109,13 @@ public class RewriteCPlans
 		DMLScript.EXPLAIN = ExplainType.NONE;
 
 		try {
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			ArrayList<Instruction> newInst = oneappend ? rewriteCbindTsmm(curr, ec, lrwec, lastResult) : 
 					twoappend ? rewrite2CbindTsmm(curr, ec, lrwec, lastResult) : null;
+			if (DMLScript.STATISTICS) {
+				LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+				LineageCacheStatistics.incrementPRewrites();
+			}
 			//execute instructions
 			BasicProgramBlock pb = getProgramBlock();
 			pb.setInstructions(newInst);

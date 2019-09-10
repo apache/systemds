@@ -941,8 +941,10 @@ public class Statistics
 			if (DMLScript.LINEAGE && DMLScript.LINEAGE_REUSE) {
 				sb.append("LineageCache hits (Mem/FS/Del): " + LineageCacheStatistics.displayHits() + ".\n");
 				sb.append("LineageCache writes (Mem/FS): \t" + LineageCacheStatistics.displayWtrites() + ".\n");
+				sb.append("LineageCache Rewrites:   \t" + LineageCacheStatistics.displayRewrites() + ".\n");
 				sb.append("LineageCache FStimes (Rd/Wr): \t" + LineageCacheStatistics.displayTime() + " sec.\n");
 				sb.append("LineageCache costing time: \t" + LineageCacheStatistics.displayCostingTime() + " sec.\n");
+				sb.append("LineageCache rewrite time: \t" + LineageCacheStatistics.displayRewriteTime() + " sec.\n");
 			}
 			if( ConfigurationManager.isCodegenEnabled() ) {
 				sb.append("Codegen compile (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"

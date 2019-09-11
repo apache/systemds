@@ -23,10 +23,13 @@ import java.util.List;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
+import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 
-public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
+public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction implements LineageTraceable {
 
 	protected MatrixBuiltinNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand[] inputs) {
 		super(op, opcode, istr, output, inputs);
@@ -62,5 +65,11 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 			ec.setVariable(output.getName(), ScalarObjectFactory.createScalarObject(
 				output.getValueType(), outBlock.quickGetValue(0, 0)));
 		}
+	}
+	
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		return new LineageItem[]{new LineageItem(output.getName(),
+			getOpcode(), LineageItemUtils.getLineage(ec, inputs))};
 	}
 }

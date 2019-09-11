@@ -32,6 +32,7 @@ import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
+import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.compile.Dag;
@@ -58,6 +59,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class LineageItemUtils {
@@ -129,7 +131,7 @@ public class LineageItemUtils {
 		
 		//recursively construct hops 
 		root.resetVisitStatus();
-		HashMap<Long, Hop> operands = new HashMap<>();
+		Map<Long, Hop> operands = new HashMap<>();
 		rConstructHops(root, operands);
 		Hop out = HopRewriteUtils.createTransientWrite(
 			varname, operands.get(rootId));
@@ -155,7 +157,7 @@ public class LineageItemUtils {
 			.map(c -> ec.getLineage().getOrCreate(c)).toArray(LineageItem[]::new);
 	}
 	
-	private static void rConstructHops(LineageItem item, HashMap<Long, Hop> operands) {
+	private static void rConstructHops(LineageItem item, Map<Long, Hop> operands) {
 		if (item.isVisited())
 			return;
 		
@@ -237,6 +239,12 @@ public class LineageItemUtils {
 								operands.get(item.getInputs()[0].getId()), 
 								operands.get(item.getInputs()[1].getId()), 
 								operands.get(item.getInputs()[2].getId()), item.getOpcode()));
+							break;
+						}
+						case BuiltinNary: {
+							operands.put(item.getId(), HopRewriteUtils.createNary(
+								OpOpN.valueOf(item.getOpcode().toUpperCase()),
+								createNaryInputs(item, operands)));
 							break;
 						}
 						case MatrixIndexing: {
@@ -365,5 +373,13 @@ public class LineageItemUtils {
 				rReplace(tmp, liOld, liNew);
 		}
 		current.setVisited();
+	}
+	
+	private static Hop[] createNaryInputs(LineageItem item, Map<Long, Hop> operands) {
+		int len = item.getInputs().length;
+		Hop[] ret = new Hop[len];
+		for( int i=0; i<len; i++ )
+			ret[i] = operands.get(item.getInputs()[i].getId());
+		return ret;
 	}
 }

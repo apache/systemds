@@ -42,6 +42,7 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 	protected static final String TEST_NAME3 = "LineageTraceExec3"; //read - matrix result
 	protected static final String TEST_NAME4 = "LineageTraceExec4"; //rand - matrix result - unspecified seed
 	protected static final String TEST_NAME5 = "LineageTraceExec5"; //rand - scalar result - unspecified seed
+	protected static final String TEST_NAME6 = "LineageTraceExec6"; //nary rbind
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceExecTest.class.getSimpleName() + "/";
 	
@@ -60,6 +61,7 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}) );
 	}
 	
 	@Test
@@ -86,7 +88,12 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 	public void testLineageTraceExec5() {
 		testLineageTraceExec(TEST_NAME5);
 	}
-		
+	
+	@Test
+	public void testLineageTraceExec6() {
+		testLineageTraceExec(TEST_NAME6);
+	}
+	
 	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
 		
@@ -103,7 +110,7 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
 		
-		if( testname.equals(TEST_NAME3) ) {
+		if( testname.equals(TEST_NAME3) || testname.equals(TEST_NAME6) ) {
 			double[][] X = getRandomMatrix(numRecords, numFeatures, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("X", X, true);
 		}

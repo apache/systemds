@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLOptions;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.utils.Explain;
 
 
@@ -124,16 +125,16 @@ public class CLIOptionsParserTest {
 		Assert.assertEquals(true, o.stats);
 	}
 
-    @Test
-    public void testLineage() throws Exception {
-        String cl = "systemds -f test.dml -lineage";
-        String[] args = cl.split(" ");
-        DMLOptions o = DMLOptions.parseCLArguments(args);
-        Assert.assertEquals(true, o.lineage);
+	@Test
+	public void testLineage() throws Exception {
+		String cl = "systemds -f test.dml -lineage";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
 		Assert.assertEquals(false, o.lineage_dedup);
-		Assert.assertEquals(false, o.lineage_reuse);
-    }
-    
+		Assert.assertEquals(ReuseCacheType.NONE, o.linReuseType);
+	}
+
 	@Test
 	public void testLineageDedup() throws Exception {
 		String cl = "systemds -f test.dml -lineage dedup";
@@ -141,16 +142,35 @@ public class CLIOptionsParserTest {
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
 		Assert.assertEquals(true, o.lineage_dedup);
-		Assert.assertEquals(false, o.lineage_reuse);
+		Assert.assertEquals(ReuseCacheType.NONE, o.linReuseType);
 	}
 	
 	@Test
-	public void testLineageReuse() throws Exception {
+	public void testLineageReuseF() throws Exception {
 		String cl = "systemds -f test.dml -lineage reuse";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
-		Assert.assertEquals(true, o.lineage_reuse);
+		Assert.assertEquals(ReuseCacheType.REUSE_FULL, o.linReuseType);
+		Assert.assertEquals(false, o.lineage_dedup);
+	}
+
+	@Test
+	public void testLineageReuseP() throws Exception {
+		String cl = "systemds -f test.dml -lineage reuse";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(ReuseCacheType.REUSE_PARTIAL, o.linReuseType);
+		Assert.assertEquals(false, o.lineage_dedup);
+	}
+	@Test
+	public void testLineageReuseH() throws Exception {
+		String cl = "systemds -f test.dml -lineage reuse";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(ReuseCacheType.REUSE_HYBRID, o.linReuseType);
 		Assert.assertEquals(false, o.lineage_dedup);
 	}
 	
@@ -161,7 +181,37 @@ public class CLIOptionsParserTest {
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
 		Assert.assertEquals(true, o.lineage_dedup);
-		Assert.assertEquals(true, o.lineage_reuse);
+		Assert.assertEquals(ReuseCacheType.REUSE_FULL, o.linReuseType);
+	}
+
+	@Test
+	public void testLineageDedupAndReuseF() throws Exception {
+		String cl = "systemds -f test.dml -lineage dedup reuse";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(true, o.lineage_dedup);
+		Assert.assertEquals(ReuseCacheType.REUSE_FULL, o.linReuseType);
+	}
+
+	@Test
+	public void testLineageDedupAndReuseP() throws Exception {
+		String cl = "systemds -f test.dml -lineage dedup reuse";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(true, o.lineage_dedup);
+		Assert.assertEquals(ReuseCacheType.REUSE_PARTIAL, o.linReuseType);
+	}
+
+	@Test
+	public void testLineageDedupAndReusuH() throws Exception {
+		String cl = "systemds -f test.dml -lineage dedup reuse";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(true, o.lineage_dedup);
+		Assert.assertEquals(ReuseCacheType.REUSE_HYBRID, o.linReuseType);
 	}
 	
 	@Test(expected = ParseException.class)

@@ -28,6 +28,7 @@ import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.tugraz.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
 
@@ -49,7 +50,7 @@ public class LineageCache {
 	//--------------------- CACHE LOGIC METHODS ----------------------
 	
 	public static boolean reuse(Instruction inst, ExecutionContext ec) {
-		if (!DMLScript.LINEAGE_REUSE)
+		if (ReuseCacheType.isNone())
 			return false;
 		
 		boolean reuse = false;
@@ -86,7 +87,7 @@ public class LineageCache {
 	}
 	
 	public static void putValue(Instruction inst, ExecutionContext ec) {
-		if (!DMLScript.LINEAGE_REUSE)
+		if (ReuseCacheType.isNone())
 			return;
 		if (inst instanceof ComputationCPInstruction && isReusable(inst) ) {
 			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];

@@ -20,7 +20,7 @@ import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.CacheType;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -101,18 +101,18 @@ public class Lineage {
 	}
 	
 	public static void setLinReusePartial() {
-		LineageCacheConfig.setConfigTsmmCbind(CacheType.PARTIAL);
+		LineageCacheConfig.setConfigTsmmCbind(ReuseCacheType.REUSE_PARTIAL);
 	}
 
 	public static void setLinReuseFull() {
-		LineageCacheConfig.setConfigTsmmCbind(CacheType.FULL);
+		LineageCacheConfig.setConfigTsmmCbind(ReuseCacheType.REUSE_FULL);
 	}
 	
 	public static void setLinReuseFullAndPartial() {
-		LineageCacheConfig.setConfigTsmmCbind(CacheType.HYBRID_FULL_PARTIAL);
+		LineageCacheConfig.setConfigTsmmCbind(ReuseCacheType.REUSE_HYBRID);
 	}
 
 	public static void setLinReuseNone() {
-		LineageCacheConfig.setConfigTsmmCbind(CacheType.NONE);
+		LineageCacheConfig.setConfigTsmmCbind(ReuseCacheType.NONE);
 	}
 }

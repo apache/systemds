@@ -65,7 +65,7 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.CacheType;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Explain;
@@ -77,7 +77,7 @@ import org.tugraz.sysds.utils.Explain.ExplainType;
 
 public class DMLScript 
 {
-	private static ExecMode   EXEC_MODE          = DMLOptions.defaultOptions.execMode;    // the execution mode
+	private static ExecMode   EXEC_MODE          = DMLOptions.defaultOptions.execMode;     // the execution mode
 	public static boolean     STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
 	public static boolean     JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
 	public static int         STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
@@ -86,20 +86,20 @@ public class DMLScript
 	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 	public static String      FLOATING_POINT_PRECISION = "double";                         // data type to use internally
 	public static boolean     PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
-	public static long        EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                         // maximum number of bytes to use for shadow buffer
-	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
-	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                          // fraction of available GPU memory to use
-	public static String      GPU_MEMORY_ALLOCATOR = "cuda";                                // GPU memory allocator to use
-	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                  // whether compute lineage trace
-	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;      // whether deduplicate lineage items
-	public static boolean     LINEAGE_REUSE = DMLOptions.defaultOptions.lineage_reuse;      // whether lineage-based reuse
+	public static long        EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                        // maximum number of bytes to use for shadow buffer
+	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                       // number of bytes to use for shadow buffer
+	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                         // fraction of available GPU memory to use
+	public static String      GPU_MEMORY_ALLOCATOR = "cuda";                               // GPU memory allocator to use
+	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                 // whether compute lineage trace
+	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;     // whether deduplicate lineage items
+	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
 	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
 	// whether to synchronize GPU after every instruction
-	public static boolean           SYNCHRONIZE_GPU  	= true;
+	public static boolean           SYNCHRONIZE_GPU     = true;
 	// whether to perform eager CUDA free on rmvar
-	public static boolean           EAGER_CUDA_FREE  	= false;
+	public static boolean           EAGER_CUDA_FREE     = false;
 
 
 	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout
@@ -194,7 +194,7 @@ public class DMLScript
 			EXEC_MODE           = dmlOptions.execMode;
 			LINEAGE             = dmlOptions.lineage;
 			LINEAGE_DEDUP       = dmlOptions.lineage_dedup;
-			LINEAGE_REUSE       = dmlOptions.lineage_reuse;
+			LINEAGE_REUSE       = dmlOptions.linReuseType;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -213,10 +213,7 @@ public class DMLScript
 				return true;
 			}
 			
-			if( LINEAGE_REUSE ) {
-				//TODO proper cmd line configuration (SYSTEMDS-79)
-				LineageCacheConfig.setConfig(CacheType.FULL);
-			}
+			LineageCacheConfig.setConfig(LINEAGE_REUSE);
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;

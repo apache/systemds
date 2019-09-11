@@ -32,27 +32,34 @@ public class LineageRewriteTest extends AutomatedTestBase {
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "RewriteTest3";
 	protected static final String TEST_NAME2 = "RewriteTest2";
+	protected static final String TEST_NAME3 = "RewriteTest7";
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageRewriteTest.class.getSimpleName() + "/";
 	
-	protected static final int numRecords = 1000;
-	protected static final int numFeatures = 100;
+	protected static final int numRecords = 100;
+	protected static final int numFeatures = 30;
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
 	}
 	
 	@Test
-	public void testRewrite1() {
+	public void testtsmm2cbind() {
 		testRewrite(TEST_NAME1);
 	}
 
 	@Test
-	public void testRewrite2() {
+	public void testtsmmcbind() {
 		testRewrite(TEST_NAME2);
+	}
+
+	@Test
+	public void testtsmmrbind() {
+		testRewrite(TEST_NAME3);
 	}
 
 	private void testRewrite(String testname) {
@@ -75,10 +82,10 @@ public class LineageRewriteTest extends AutomatedTestBase {
 
 			proArgs.clear();
 			proArgs.add("-explain");
-			proArgs.add("recompile_hops");
+			//proArgs.add("recompile_runtime");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add("reuse");
+			proArgs.add("reuse_partial");
 			proArgs.add("-args");
 			proArgs.add(input("X"));
 			proArgs.add(output("Res"));

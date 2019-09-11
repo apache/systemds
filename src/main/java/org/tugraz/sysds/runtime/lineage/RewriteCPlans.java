@@ -42,6 +42,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.utils.Explain;
@@ -58,48 +59,17 @@ public class RewriteCPlans
 	{
 		boolean oneappend = false;
 		boolean twoappend = false;
+		boolean onerbind = false;
 		MatrixBlock lastResult = null;
-		if (LineageCache.isReusable(curr))
-		{
-			// If the input to tsmm came from cbind, look for both the inputs in cache.
-			LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
-			LineageItem item = items[0];
 
-			// TODO restructuring of rewrites to make them all 
-			// independent of each other and this opening condition here
-			for (LineageItem source : item.getInputs())
-				if (source.getOpcode().equalsIgnoreCase("append")) {
-					for (LineageItem input : source.getInputs()) {
-						// create tsmm lineage on top of the input of last append
-						LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input});
-						if (LineageCache.probe(tmp)) {
-							oneappend = true; // at least one entry to reuse
-							if (lastResult == null)
-								lastResult = LineageCache.get(curr, tmp);
-						}
-					}
-					if (oneappend)
-						break;   // no need to look for the next append
+		MatrixBlock mmc = isTsmmCbind(curr, ec);
+		if (mmc != null) {oneappend = true; lastResult = mmc;}
+		MatrixBlock mm2c = isTsmm2Cbind(curr, ec);
+		if (mm2c != null) {twoappend = true; lastResult = mm2c;}
+		MatrixBlock mmr = isTsmmRbind(curr, ec);
+		if (mmr != null) {onerbind = true; lastResult = mmr;}
 
-					// if not found in cache, look for two consecutive cbinds
-					LineageItem input = source.getInputs()[0];
-					if (input.getOpcode().equalsIgnoreCase("append")) {
-						for (LineageItem L2appin : input.getInputs()) {
-							LineageItem tmp = new LineageItem("comb", "append", new LineageItem[] {L2appin, source.getInputs()[1]});
-							LineageItem toProbe = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {tmp});
-							if (LineageCache.probe(toProbe)) {
-								twoappend = true;
-								if (lastResult == null)
-									lastResult = LineageCache.get(curr, toProbe);
-							}
-						}
-					}
-				}
-		}
-		else
-			return false;
-
-		if (!oneappend && !twoappend) 
+		if (!oneappend && !twoappend && !onerbind) 
 			return false;
 		
 		ExecutionContext lrwec = getExecutionContext();
@@ -111,7 +81,8 @@ public class RewriteCPlans
 		try {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			ArrayList<Instruction> newInst = oneappend ? rewriteCbindTsmm(curr, ec, lrwec, lastResult) : 
-					twoappend ? rewrite2CbindTsmm(curr, ec, lrwec, lastResult) : null;
+					twoappend ? rewrite2CbindTsmm(curr, ec, lrwec, lastResult) : 
+					onerbind ? rewriteRbindTsmm(curr, ec, lrwec, lastResult) : null;
 			if (DMLScript.STATISTICS) {
 				LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
 				LineageCacheStatistics.incrementPRewrites();
@@ -119,9 +90,10 @@ public class RewriteCPlans
 			//execute instructions
 			BasicProgramBlock pb = getProgramBlock();
 			pb.setInstructions(newInst);
+			ReuseCacheType oldReuseOption = DMLScript.LINEAGE_REUSE;
 			LineageCacheConfig.shutdownReuse();
 			pb.execute(lrwec);
-			LineageCacheConfig.restartReuse();
+			LineageCacheConfig.restartReuse(oldReuseOption);
 			ec.setVariable(((ComputationCPInstruction)curr).output.getName(), lrwec.getVariable(LR_VAR));
 			// add this to cache
 			LineageCache.put(curr, ec);
@@ -171,6 +143,33 @@ public class RewriteCPlans
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteCbindTsmm APPLIED");
+		return genInst(lrwWrite, lrwec);
+	}
+	
+	private static ArrayList<Instruction> rewriteRbindTsmm(Instruction curr, ExecutionContext ec, ExecutionContext lrwec, MatrixBlock lastResult)
+	{
+		// Create a transient read op over the last tsmm result
+		MetaData md = new MetaData(lastResult.getDataCharacteristics());
+		MatrixObject newmo = new MatrixObject(ValueType.FP64, "lastResult", md);
+		newmo.acquireModify(lastResult);
+		newmo.release();
+		lrwec.setVariable("lastResult", newmo);
+		DataOp lastRes = HopRewriteUtils.createTransientRead("lastResult", lastResult);
+		// Create rightIndex op to find the last appended rows 
+		//TODO: support for block of rows
+		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
+		lrwec.setVariable("oldMatrix", mo);
+		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
+		IndexingOp lastRow = HopRewriteUtils.createIndexingOp(newMatrix, new LiteralOp(mo.getNumRows()), 
+				new LiteralOp(mo.getNumRows()), new LiteralOp(1), new LiteralOp(mo.getNumColumns()));
+		// tsmm(X + lastRow) = tsmm(X) + tsmm(lastRow)
+		ReorgOp tlastRow = HopRewriteUtils.createTranspose(lastRow);
+		AggBinaryOp tsmm_lr = HopRewriteUtils.createMatrixMultiply(tlastRow, lastRow);
+		BinaryOp lrwHop = HopRewriteUtils.createBinary(lastRes, tsmm_lr, OpOp2.PLUS);
+		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+		
+		// generate runtime instructions
+		LOG.debug("LINEAGE REWRITE rewriteRbindTsmm APPLIED");
 		return genInst(lrwWrite, lrwec);
 	}
 
@@ -225,6 +224,85 @@ public class RewriteCPlans
 		return newInst;
 	}
 	
+	private static MatrixBlock isTsmmCbind(Instruction curr, ExecutionContext ec)
+	{
+		MatrixBlock lastResult = null;
+		if (!LineageCache.isReusable(curr))
+			return lastResult;
+
+		// If the input to tsmm came from cbind, look for both the inputs in cache.
+		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = items[0];
+
+		// TODO restructuring of rewrites to make them all 
+		// independent of each other and this opening condition here
+		for (LineageItem source : item.getInputs())
+			if (source.getOpcode().equalsIgnoreCase("cbind")) {
+				for (LineageItem input : source.getInputs()) {
+					// create tsmm lineage on top of the input of last append
+					LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input});
+					if (LineageCache.probe(tmp)) {
+						if (lastResult == null)
+							lastResult = LineageCache.get(curr, tmp);
+						}
+					}
+			}
+		return lastResult;
+	}
+
+	private static MatrixBlock isTsmmRbind(Instruction curr, ExecutionContext ec)
+	{
+		MatrixBlock lastResult = null;
+		if (!LineageCache.isReusable(curr))
+			return lastResult;
+
+		// If the input to tsmm came from rbind, look for both the inputs in cache.
+		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = items[0];
+
+		// TODO restructuring of rewrites to make them all 
+		// independent of each other and this opening condition here
+		for (LineageItem source : item.getInputs())
+			if (source.getOpcode().equalsIgnoreCase("rbind")) {
+				for (LineageItem input : source.getInputs()) {
+					// create tsmm lineage on top of the input of last append
+					LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input});
+					if (LineageCache.probe(tmp)) {
+						if (lastResult == null)
+							lastResult = LineageCache.get(curr, tmp);
+						}
+					}
+			}
+		return lastResult;
+	}
+	
+	private static MatrixBlock isTsmm2Cbind (Instruction curr, ExecutionContext ec)
+	{
+		MatrixBlock lastResult = null;
+		if (!LineageCache.isReusable(curr))
+			return lastResult;
+
+		// If the input to tsmm came from cbind, look for both the inputs in cache.
+		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = items[0];
+					// look for two consecutive cbinds
+		for (LineageItem source : item.getInputs())
+			if (source.getOpcode().equalsIgnoreCase("cbind")) {
+				LineageItem input = source.getInputs()[0];
+				if (input.getOpcode().equalsIgnoreCase("cbind")) {
+					for (LineageItem L2appin : input.getInputs()) {
+						LineageItem tmp = new LineageItem("comb", "cbind", new LineageItem[] {L2appin, source.getInputs()[1]});
+						LineageItem toProbe = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {tmp});
+						if (LineageCache.probe(toProbe)) {
+							if (lastResult == null)
+								lastResult = LineageCache.get(curr, toProbe);
+						}
+					}
+				}
+			}
+		return lastResult;
+	}
+
 	private static ExecutionContext getExecutionContext() {
 		if( _lrEC == null )
 			_lrEC = ExecutionContextFactory.createContext();

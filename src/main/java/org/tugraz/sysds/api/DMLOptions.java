@@ -33,6 +33,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.utils.Explain;
 import org.tugraz.sysds.utils.Explain.ExplainType;
 
@@ -61,7 +62,7 @@ public class DMLOptions {
 	public boolean              help          = false;            // whether to print the usage option
 	public boolean              lineage       = false;            // whether compute lineage trace
 	public boolean              lineage_dedup = false;            // whether deduplicate lineage items
-	public boolean              lineage_reuse = false;            // whether lineage-based reuse of intermediates
+	public ReuseCacheType       linReuseType = ReuseCacheType.NONE;
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -113,8 +114,12 @@ public class DMLOptions {
 					if (lineageType != null){
 						if (lineageType.equalsIgnoreCase("dedup"))
 							dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
-						else if (lineageType.equalsIgnoreCase("reuse"))
-							dmlOptions.lineage_reuse = lineageType.equalsIgnoreCase("reuse");
+						else if (lineageType.equalsIgnoreCase("reuse_full"))
+							dmlOptions.linReuseType = ReuseCacheType.REUSE_FULL;
+						else if (lineageType.equalsIgnoreCase("reuse_partial"))
+							dmlOptions.linReuseType = ReuseCacheType.REUSE_PARTIAL;
+						else if (lineageType.equalsIgnoreCase("reuse_hybrid"))
+							dmlOptions.linReuseType = ReuseCacheType.REUSE_HYBRID;
 						else
 							throw new org.apache.commons.cli.ParseException("Invalid argument specified for -lineage option");
 					}

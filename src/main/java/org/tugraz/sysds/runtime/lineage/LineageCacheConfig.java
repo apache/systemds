@@ -20,16 +20,21 @@ import org.tugraz.sysds.api.DMLScript;
 import java.util.ArrayList;
 
 public class LineageCacheConfig {
-	public enum CacheType {
-		FULL,   // no rewrites
-		PARTIAL, 
-		HYBRID_FULL_PARTIAL,
+	
+	public enum ReuseCacheType {
+		REUSE_FULL,
+		REUSE_PARTIAL,
+		REUSE_HYBRID,
 		NONE;
 		public boolean isFullReuse() {
-			return this == FULL || this == HYBRID_FULL_PARTIAL;
+			return this == REUSE_FULL || this == REUSE_HYBRID;
 		}
 		public boolean isPartialReuse() {
-			return this == PARTIAL || this == HYBRID_FULL_PARTIAL;
+			return this == REUSE_PARTIAL || this == REUSE_HYBRID;
+		}
+		public static boolean isNone() {
+			return DMLScript.LINEAGE_REUSE == null
+				|| DMLScript.LINEAGE_REUSE == NONE;
 		}
 	}
 	
@@ -47,21 +52,21 @@ public class LineageCacheConfig {
 		ALL
 	}
 
-	private static CacheType _cacheType = null;
+	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
 	
-	public static void setConfigTsmmCbind(CacheType ct) {
+	public static void setConfigTsmmCbind(ReuseCacheType ct) {
 		_cacheType = ct;
 		_itemH = CachedItemHead.TSMM;
 		_itemT = CachedItemTail.CBIND;
 	}
 	
-	public static void setConfig(CacheType ct) {
+	public static void setConfig(ReuseCacheType ct) {
 		_cacheType = ct;
 	}
 	
-	public static void setConfig(CacheType ct, CachedItemHead ith, CachedItemTail itt) {
+	public static void setConfig(ReuseCacheType ct, CachedItemHead ith, CachedItemTail itt) {
 		_cacheType = ct;
 		_itemH = ith;
 		_itemT = itt;
@@ -69,15 +74,15 @@ public class LineageCacheConfig {
 	
 	public static void shutdownReuse() {
 		DMLScript.LINEAGE = false;
-		DMLScript.LINEAGE_REUSE = false;
+		DMLScript.LINEAGE_REUSE = ReuseCacheType.NONE;
 	}
 
-	public static void restartReuse() {
+	public static void restartReuse(ReuseCacheType rop) {
 		DMLScript.LINEAGE = true;
-		DMLScript.LINEAGE_REUSE = true;
+		DMLScript.LINEAGE_REUSE = rop;
 	}
 	
-	public static CacheType getCacheType() {
+	public static ReuseCacheType getCacheType() {
 		return _cacheType;
 	}
 

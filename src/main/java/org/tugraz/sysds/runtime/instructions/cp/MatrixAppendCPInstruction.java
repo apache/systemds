@@ -21,10 +21,13 @@ package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
+import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 
-public final class MatrixAppendCPInstruction extends AppendCPInstruction {
+public final class MatrixAppendCPInstruction extends AppendCPInstruction implements LineageTraceable {
 
 	protected MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			AppendType type, String opcode, String istr) {
@@ -50,5 +53,13 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 		//set output and release inputs 
 		ec.setMatrixOutput(output.getName(), ret);
 		ec.releaseMatrixInput(input1.getName(), input2.getName());
+	}
+
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		//TODO: break append to cbind and rbind for full compilation chain
+		String opcode = _type.toString().toLowerCase();
+		return new LineageItem[]{new LineageItem(output.getName(),
+			opcode, LineageItemUtils.getLineage(ec, input1, input2))};
 	}
 }

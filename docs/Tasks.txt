@@ -13,6 +13,7 @@ SYSTEMDS-10 Compiler Rework / Misc
  * 16 Remove instruction patching
  * 17 Refactoring of program block hierarchy                          OK
  * 18 Improve API for new dml-bodied builtin functions                OK
+ * 19 Break append instruction to cbind and rbind 
  
 SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks                                    OK
@@ -61,7 +62,7 @@ SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
  * 76 Generate runtime plan from lineage trace                        OK
  * 77 New builtin function for obtaining lineage                      OK
  * 78 Extended lineage tracing (parfor, funs, codegen)                OK
- * 79 Reuse cache configuration options (cmd line options)
+ * 79 Reuse cache configuration options (cmd line options)            OK
 
 SYSTEMDS-80 Improved distributed operations
  * 81 Avoid unnecessary replication on rmm
@@ -84,6 +85,7 @@ SYSTEMDS-110 New Builtin Functions
  * 115 Builtin function for model debugging (slice finder)            OK
  * 116 Builtin function for kmeans                                    OK
  * 117 Builtin function for lm cross validation                       OK
+ * 118 Builtin function for hyperparameter grid search with CVlm
 
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK
@@ -113,7 +115,9 @@ SYSTEMDS-160 Tensor Compiler/Runtime
  SYSTEMDS-170 Lineage full and partial reuse 
  * 171 Initial version of partial rewrites                            OK
  * 172 Parfor integration (blocked waiting for results)               OK
- * 173 Improved cost estimates and ba+* support
- * 174 Reuse rewrite for rbind-tsmm 
+ * 173 Improved cost estimates                                        OK
+ * 174 Reuse rewrite for rbind-tsmm                                   OK
+ * 175 Refactoring of lineage rewrite code
  * 175 Reuse rewrite for cbind/rbind-elementwise */+
  * 176 Reuse rewrite for aggregate
+ * 177 Compiler assisted reuse (eg. CV, lmCG)

@@ -78,50 +78,52 @@ return(Matrix[Double] C, Matrix[Double] S) {
   # BEGIN STEPWISE LINEAR REGRESSION
   if (dir == "forward") {
     continue = TRUE
-    columns_fixed = matrix(0, rows = 1, cols = m_orig);
-    columns_fixed_ordered = matrix(0, rows = 1, cols = 1);
-    # X_global stores the best model found at each step
-    X_global = matrix(0, rows = n, cols = 1);
-    if (icpt == 1 | icpt == 2) {
+    columns_fixed = matrix(0, 1, m_orig);
+    columns_fixed_ordered = matrix(0, 1, 1);
+    
+		# X_global stores the best model found at each step
+    X_global = matrix(0, n, 1);
+    
+		if (icpt == 1 | icpt == 2) {
       beta = mean(y);
       AIC_best = 2 + n * log(sum((beta - y) ^ 2) / n);
     } else {
       beta = 0.0;
       AIC_best = n * log(sum(y ^ 2) / n);
     }
-    AICs = matrix(AIC_best, rows = 1, cols = m_orig);
+    AICs = matrix(AIC_best, 1, m_orig);
     print("Best AIC without any features: " + AIC_best);
     boa_ncol = ncol(X_orig);
     if (icpt != 0) {
       boa_ncol = boa_ncol + 1
     }
-    beta_out_all = matrix(0, rows = boa_ncol, cols = m_orig * 1);
+    beta_out_all = matrix(0, boa_ncol, m_orig * 1);
     y_ncol = 1;
     column_best = 0;
 
     # First pass to examine single features
     for (i in 1:m_orig, check = 0) {
-      columns_fixed_ordered_1 = matrix(i, rows = 1, cols = 1);
+      columns_fixed_ordered_1 = as.matrix(i);
       [AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, icpt);
 
       AICs[1, i] = AIC_1;
       AIC_cur = as.scalar(AICs[1, i]);
       if ((AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs(thr * AIC_best))) {
         column_best = i;
-        AIC_best = as.scalar(AICs[1, i]);
+        AIC_best = AIC_cur;
       }
-      beta_out_all[1:nrow(beta_out_i), (i - 1) * y_ncol + 1:i * y_ncol] = beta_out_i[, 1:1];
+      beta_out_all[1:nrow(beta_out_i), ((i - 1) * y_ncol + 1):(i * y_ncol)] = beta_out_i[, 1];
     }
-
+		
     # beta best so far
     beta_best = beta_out_all[, (column_best - 1) * y_ncol + 1:column_best * y_ncol];
     if (column_best == 0) {
       print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
-      Selected = matrix(0, rows = 1, cols = 1);
+      Selected = matrix(0, 1, 1);
       if (icpt == 0) {
-        B = matrix(beta, rows = m_orig, cols = 1);
+        B = matrix(beta, m_orig, 1);
       } else {
-        B_tmp = matrix(0, rows = m_orig + 1, cols = 1);
+        B_tmp = matrix(0, m_orig + 1, 1);
         B_tmp[m_orig + 1,] = beta;
         B = B_tmp;
       }
@@ -138,12 +140,12 @@ return(Matrix[Double] C, Matrix[Double] S) {
 
       while (continue) {
         # Subsequent passes over the features
-        beta_out_all_2 = matrix(0, rows = boa_ncol, cols = m_orig * 1);
+        beta_out_all_2 = matrix(0, boa_ncol, m_orig * 1);
         for (i in 1:m_orig, check = 0) {
           if (as.scalar(columns_fixed[1, i]) == 0) {
             # Construct the feature matrix
             X = cbind(X_global, X_orig[, i]);
-            tmp = matrix(0, rows = 1, cols = 1);
+            tmp = as.matrix(0);
             tmp[1, 1] = i;
             columns_fixed_ordered_2 = append(columns_fixed_ordered, tmp);
             [AIC_2, beta_out_i] = linear_regression(X, y, icpt);
@@ -183,7 +185,7 @@ return(Matrix[Double] C, Matrix[Double] S) {
       [AIC, beta_out] = linear_regression(X_global, y, icpt);
       Selected = columns_fixed_ordered;
       if (icpt != 0) {
-        Selected = cbind(Selected, matrix(boa_ncol, rows = 1, cols = 1))
+        Selected = cbind(Selected, matrix(boa_ncol, 1, 1))
       }
       beta_out = reorder_matrix(boa_ncol, beta_out, Selected);
       S = Selected;
@@ -193,6 +195,7 @@ return(Matrix[Double] C, Matrix[Double] S) {
     stop("Currently only forward selection strategy is supported!");
   }
 }
+
 # Computes linear regression using lm and outputs AIC.
 linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0)
   return(Double AIC, Matrix[Double] beta) {
@@ -202,7 +205,7 @@ linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 
   # Introduce the intercept, shift and rescale the columns of X if needed
   if (icpt == 1 | icpt == 2) {
     # add the intercept column
-    ones_n = matrix(1, rows = n, cols = 1);
+    ones_n = matrix(1, n, 1);
     X = cbind(X, ones_n);
     m = m - 1;
   }
@@ -210,7 +213,7 @@ linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 
   m_ext = ncol(X);
 
   # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
-  beta = lm(X = X, y = y);
+  beta = lm(X = X, y = y, verbose=FALSE);
   m_ext = ncol(X);
   # COMPUTE AIC
   y_residual = y - X %*% beta;
@@ -238,7 +241,7 @@ reorder_matrix = function(
     stop("Error: unable to re-order the matrix. Reason: B more than matrix X");
   }
   if (num_empty_B > 0) {
-    pad_zeros = matrix(0, rows = num_empty_B, cols = 1);
+    pad_zeros = matrix(0, num_empty_B, 1);
     B = rbind(B, pad_zeros);
     S = rbind(S, pad_zeros);
   }

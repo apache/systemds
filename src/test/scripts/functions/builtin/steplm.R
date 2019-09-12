@@ -20,12 +20,6 @@ args <- commandArgs(TRUE)
 options(digits = 22)
 library("Matrix")
 
-thr = 0.001;
-intercept_status = 1;
-X = as.matrix(readMM(paste(args[1], "A.mtx", sep = "")))
-y = as.matrix(readMM(paste(args[1], "B.mtx", sep = "")))
-
-
 reorder_matrix <- function(
   ncolX, B, S) {
   # This function assumes that B and S have same number of elements.
@@ -76,14 +70,17 @@ reorder_matrix <- function(
         y = S0[b];
         P[x, y] = 1;
       }
-
     }
   }
-
 
   Y = t(P) %*% B;
   return(Y)
 }
+
+thr = 0.001;
+intercept_status = 1;
+X = as.matrix(readMM(paste(args[1], "A.mtx", sep = "")))
+y = as.matrix(readMM(paste(args[1], "B.mtx", sep = "")))
 
 # currently only the forward selection strategy in supported: start from one feature and iteratively add
 # features until AIC improves
@@ -103,11 +100,11 @@ m_orig = ncol(X_orig);
 
 if (dir == 0) {
   continue = TRUE;
-  columns_fixed = matrix(0, nrow = 1, ncol = m_orig);
-  columns_fixed_ordered = matrix(0, nrow = 1, ncol = 1);
+  columns_fixed = matrix(0, 1, m_orig);
+  columns_fixed_ordered = matrix(0, 1, 1);
 
   # X_global stores the best model found at each step
-  X_global = matrix(0, nrow = n, ncol = 1);
+  X_global = matrix(0, n, 1);
 
   if (intercept_status == 1 | intercept_status == 2) {
     beta = mean(y);
@@ -117,66 +114,40 @@ if (dir == 0) {
     AIC_best = n * log(sum(y ^ 2) / n);
   }
 
-  AICs = matrix(AIC_best, nrow = 1);
-  #print("Best AIC without any features: " + AIC_best);
-  #print(AIC_best);
-
+  AICs = matrix(t(AIC_best), 1, m_orig);
+  
   boa_ncol = ncol(X_orig);
   if (intercept_status != 0) {
     boa_ncol = boa_ncol + 1
   }
 
-  beta_out_all = matrix(0, nrow = boa_ncol, ncol = m_orig * 1);
-
-  y_ncol = ncol(y);
+  beta_out_all = matrix(0, boa_ncol, m_orig * 1);
+  y_ncol = 1;
   column_best = 0;
+  
   # First pass to examine single features
   for (i in 1:m_orig) {
-
-    columns_fixed_ordered_1 = matrix(i, nrow = 1, ncol = 1);
-
-    #[AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, intercept_status);
+    columns_fixed_ordered_1 = as.matrix(i);
     x = as.matrix(X_orig[, i]);
-    n = nrow(x);
-    m = ncol(x);
-
-    # Introduce the intercept, shift and rescale the columns of X if needed
-    if (intercept_status == 1 | intercept_status == 2) {
-      # add the intercept column
-      ones_n <- matrix(1, nrow = n, ncol = 1);
-      x = cbind(X_orig[, i], ones_n);
-      m = m - 1;
-    }
-
-    m_ext = ncol(x)
-
-    # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
-    beta_out_i = lm.fit(x, y)$coefficients
-
-
+		beta_out_i = as.matrix(lm.fit(x, y)$coefficients)
+    
     # COMPUTE AIC
     y_residual = y - x %*% beta_out_i;
     ss_res = sum(y_residual ^ 2);
-    eq_deg_of_freedom = m_ext;
+    eq_deg_of_freedom = ncol(x);
     AIC_1 = (2 * eq_deg_of_freedom) + n * log(ss_res / n);
 
-
-    #AICs[1, i] = AIC_1;
-    #AIC_cur =AICs[1, i];
-    if ((AIC_1 < AIC_best) & ((AIC_best - AIC_1) > abs(thr * AIC_best))) {
+    AICs[1, i] = AIC_1;
+    AIC_cur = AICs[1, i];
+    if ((AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs(thr * AIC_best))) {
       column_best = i;
-      AIC_best = AIC_1;
+      AIC_best = AIC_cur;
     }
-
-    b = as.matrix(beta_out_i)
-
-    beta_out_all[1:nrow(b), i:i] = b[1, 1];
-
-
+    beta_out_all[1:nrow(beta_out_i), ((i - 1) * y_ncol + 1):(i * y_ncol)] = beta_out_i[,1];
   }
 
   # beta best so far
-  beta_best = beta_out_all[, (column_best - 1) * y_ncol + 1:column_best * y_ncol];
+  beta_best = beta_out_all[, ((column_best - 1) * y_ncol + 1):(column_best * y_ncol)];
 
   if (column_best == 0) {
 
@@ -190,15 +161,10 @@ if (dir == 0) {
     }
 
     beta_out = B;
-
-    print("estoy en el stop");
-    print(beta_out);
-    print(Selected);
     writeMM(as(beta_out, "CsparseMatrix"), paste(args[2], "C", sep = ""));
     writeMM(as(Selected, "CsparseMatrix"), paste(args[2], "S", sep = ""));
 
     stop = 1;
-
   }
 
   columns_fixed[1, column_best] = 1;
@@ -208,7 +174,7 @@ if (dir == 0) {
   while (continue) {
     # Subsequent passes over the features
 
-    beta_out_all_2 = matrix(0, nrow = boa_ncol, ncol = m_orig * 1);
+    beta_out_all_2 = matrix(0, boa_ncol, m_orig * 1);
 
     for (i in 1:m_orig) {
       if (columns_fixed[1, i] == 0) {
@@ -254,10 +220,8 @@ if (dir == 0) {
       }
     }
 
-
     # have the best beta store in the matrix
-    beta_best = beta_out_all_2[, (column_best - 1) * y_ncol + 1:column_best * y_ncol];
-
+    beta_best = beta_out_all_2[, ((column_best - 1) * y_ncol + 1):(column_best * y_ncol)];
 
     # Append best found features (i.e., columns) to X_global
     if (is.null(columns_fixed[1, column_best])) {
@@ -272,7 +236,6 @@ if (dir == 0) {
       } else {
         X_global = cbind(X_global, X_orig[, column_best]);
       }
-
     } else {
       continue = FALSE;
     }
@@ -306,7 +269,6 @@ if (dir == 0) {
     eq_deg_of_freedom = m_ext;
     AIC = (2 * eq_deg_of_freedom) + n * log(ss_res / n);
 
-
     Selected = columns_fixed_ordered;
     if (intercept_status != 0) {
       Selected = cbind(Selected, matrix(boa_ncol, nrow = 1, ncol = 1))
@@ -314,12 +276,8 @@ if (dir == 0) {
 
     beta_out = reorder_matrix(boa_ncol, beta_out, Selected);
 
-    print(beta_out);
-    print(Selected[1]);
-
     writeMM(as(beta_out, "CsparseMatrix"), paste(args[2], "C", sep = ""));
     writeMM(as(Selected[1], "CsparseMatrix"), paste(args[2], "S", sep = ""));
-
   }
 
 } else {

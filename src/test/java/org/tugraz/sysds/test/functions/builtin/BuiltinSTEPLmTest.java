@@ -33,8 +33,6 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSTEPLmTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-10;
-	private final static int rows = 10;
-	private final static int cols = 3;
 	private final static double spSparse = 0.3;
 	private final static double spDense = 0.7;
 
@@ -45,25 +43,35 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase
 
 	@Test
 	public void testLmMatrixDenseCPlm() {
-		runSTEPLmTest(false, ExecType.CP);
+		runSTEPLmTest(false, 10, 3, ExecType.CP);
 	}
 
 	@Test
 	public void testLmMatrixSparseCPlm() {
-		runSTEPLmTest(true, ExecType.CP);
+		runSTEPLmTest(true, 10, 3, ExecType.CP);
 	}
 
 	@Test
 	public void testLmMatrixDenseSPlm() {
-		runSTEPLmTest(false, ExecType.SPARK);
+		runSTEPLmTest(false, 10, 3, ExecType.SPARK);
 	}
 
 	@Test
 	public void testLmMatrixSparseSPlm() {
-		runSTEPLmTest(true, ExecType.SPARK);
+		runSTEPLmTest(true, 10, 3, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testLmMatrixDenseCPlm2() {
+		runSTEPLmTest(false, 100, 3, ExecType.CP);
 	}
 
-	private void runSTEPLmTest(boolean sparse, ExecType instType) {
+	@Test
+	public void testLmMatrixSparseCPlm2() {
+		runSTEPLmTest(true, 100, 3, ExecType.CP);
+	}
+
+	private void runSTEPLmTest(boolean sparse, int rows, int cols, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		String dml_test_name = TEST_NAME;
 
@@ -88,6 +96,7 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase
 			runRScript(true);
 
 			//compare matrices
+			//FIXME: currently only scenario w/o any features produce same results
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 			HashMap<CellIndex, Double> dmfile1 = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("C");

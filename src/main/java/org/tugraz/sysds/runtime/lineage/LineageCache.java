@@ -60,10 +60,10 @@ public class LineageCache {
 			synchronized( _cache ) {
 				//try to reuse full or partial intermediates
 				if (LineageCacheConfig.getCacheType().isFullReuse())
-					reuse = fullReuse(item, (ComputationCPInstruction)inst, ec);
-				else if (LineageCacheConfig.getCacheType().isPartialReuse())
-					reuse = RewriteCPlans.executeRewrites(inst, ec);
-				
+					reuse = fullReuse(item, (ComputationCPInstruction)inst, ec); 
+				if (LineageCacheConfig.getCacheType().isPartialReuse())
+					reuse |= LineageRewriteReuse.executeRewrites(inst, ec);
+
 				//create a placeholder if no reuse to avoid redundancy
 				//(e.g., concurrent threads that try to start the computation)
 				if( ! reuse )
@@ -105,7 +105,9 @@ public class LineageCache {
 	
 	private static void putIntern(Instruction inst, LineageItem key, MatrixBlock value, double compcost) {
 		if (_cache.containsKey(key))
-			throw new DMLRuntimeException("Redundant lineage caching detected: "+inst);
+			//can come here if reuse_partial option is enabled
+			return; 
+			//throw new DMLRuntimeException("Redundant lineage caching detected: "+inst);
 		
 		// Create a new entry.
 		Entry newItem = new Entry(key, value, compcost);
@@ -149,7 +151,7 @@ public class LineageCache {
 		}
 		return false;
 	}
-
+	
 	protected static MatrixBlock get(Instruction inst, LineageItem key) {
 		// This method is called only when entry is present either in cache or in local FS.
 		if (_cache.containsKey(key)) {

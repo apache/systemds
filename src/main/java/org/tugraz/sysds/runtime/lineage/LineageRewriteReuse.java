@@ -48,72 +48,52 @@ import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.utils.Explain;
 import org.tugraz.sysds.utils.Explain.ExplainType;
 
-public class RewriteCPlans
+public class LineageRewriteReuse
 {
 	private static final String LR_VAR = "__lrwrt";
 	private static BasicProgramBlock _lrPB = null;
 	private static ExecutionContext _lrEC = null;
-	private static final Log LOG = LogFactory.getLog(RewriteCPlans.class.getName());
+	private static final Log LOG = LogFactory.getLog(LineageRewriteReuse.class.getName());
 	
 	public static boolean executeRewrites (Instruction curr, ExecutionContext ec)
 	{
-		boolean oneappend = false;
-		boolean twoappend = false;
-		boolean onerbind = false;
-		MatrixBlock lastResult = null;
-
-		MatrixBlock mmc = isTsmmCbind(curr, ec);
-		if (mmc != null) {oneappend = true; lastResult = mmc;}
-		MatrixBlock mm2c = isTsmm2Cbind(curr, ec);
-		if (mm2c != null) {twoappend = true; lastResult = mm2c;}
-		MatrixBlock mmr = isTsmmRbind(curr, ec);
-		if (mmr != null) {onerbind = true; lastResult = mmr;}
-
-		if (!oneappend && !twoappend && !onerbind) 
-			return false;
-		
 		ExecutionContext lrwec = getExecutionContext();
 		ExplainType et = DMLScript.EXPLAIN;
 		// Disable explain not to print unnecessary logs
 		// TODO extend recompiler to allow use without explain output
 		DMLScript.EXPLAIN = ExplainType.NONE;
+		
+		//check applicability and apply rewrite
+		ArrayList<Instruction> newInst = rewriteTsmmCbind(curr, ec, lrwec);        //tsmm(cbind(X, deltaX)) using tsmm(X)
+		newInst = (newInst == null) ? rewriteTsmm2Cbind(curr, ec, lrwec) : newInst;   //tsmm(cbind(cbind(X, deltaX), ones)) using tsmm(X)
+		newInst = (newInst == null) ? rewriteTsmmRbind(curr, ec, lrwec) : newInst;    //tsmm(rbind(X, deltaX)) using tsmm(X)
+		
+		if (newInst == null)
+			return false;
+		
+		//execute instructions & write the o/p to symbol table
+		executeInst(newInst, lrwec);
+		ec.setVariable(((ComputationCPInstruction)curr).output.getName(), lrwec.getVariable(LR_VAR));
 
-		try {
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			ArrayList<Instruction> newInst = oneappend ? rewriteCbindTsmm(curr, ec, lrwec, lastResult) : 
-					twoappend ? rewrite2CbindTsmm(curr, ec, lrwec, lastResult) : 
-					onerbind ? rewriteRbindTsmm(curr, ec, lrwec, lastResult) : null;
-			if (DMLScript.STATISTICS) {
-				LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
-				LineageCacheStatistics.incrementPRewrites();
-			}
-			//execute instructions
-			BasicProgramBlock pb = getProgramBlock();
-			pb.setInstructions(newInst);
-			ReuseCacheType oldReuseOption = DMLScript.LINEAGE_REUSE;
-			LineageCacheConfig.shutdownReuse();
-			pb.execute(lrwec);
-			LineageCacheConfig.restartReuse(oldReuseOption);
-			ec.setVariable(((ComputationCPInstruction)curr).output.getName(), lrwec.getVariable(LR_VAR));
-			// add this to cache
-			LineageCache.put(curr, ec);
-		}
-		catch (Exception e) {
-			throw new DMLRuntimeException("Error evaluating instruction: " + curr.toString() , e);
-		}
+		//put the result into the cache
+		LineageCache.put(curr, ec);
 		DMLScript.EXPLAIN = et;
 		return true;
 	}
+	
+	/*--------------------------------REWRITE METHODS------------------------------*/
 
-	private static ArrayList<Instruction> rewriteCbindTsmm(Instruction curr, ExecutionContext ec, ExecutionContext lrwec, MatrixBlock lastResult) 
+	private static ArrayList<Instruction> rewriteTsmmCbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
 	{
-		// Create a transient read op over the last tsmm result
-		MetaData md = new MetaData(lastResult.getDataCharacteristics());
-		MatrixObject newmo = new MatrixObject(ValueType.FP64, "lastResult", md);
-		newmo.acquireModify(lastResult);
-		newmo.release();
-		lrwec.setVariable("lastResult", newmo);
-		DataOp lastRes = HopRewriteUtils.createTransientRead("lastResult", lastResult);
+		// Check the applicability of this rewrite.
+		MatrixBlock cachedEntry = isTsmmCbind(curr, ec);
+		if (cachedEntry == null)
+			return null;
+		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		// Create a transient read op over the cached tsmm result
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		// Create rightIndex op to find the last matrix and the appended column
 		// TODO: For now assumption is that a single column is being appended in a loop
 		//       Need to go down the lineage to find number of columns are being appended.
@@ -140,21 +120,28 @@ public class RewriteCPlans
 		// rbind(rowOne, rowTwo)
 		BinaryOp lrwHop= HopRewriteUtils.createBinary(rowOne, rowTwo, OpOp2.RBIND);
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteCbindTsmm APPLIED");
 		return genInst(lrwWrite, lrwec);
 	}
 	
-	private static ArrayList<Instruction> rewriteRbindTsmm(Instruction curr, ExecutionContext ec, ExecutionContext lrwec, MatrixBlock lastResult)
+	private static ArrayList<Instruction> rewriteTsmmRbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec)
 	{
+		// Check the applicability of this rewrite.
+		MatrixBlock cachedEntry = isTsmmRbind(curr, ec);
+		if (cachedEntry == null)
+			return null;
+		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last tsmm result
-		MetaData md = new MetaData(lastResult.getDataCharacteristics());
-		MatrixObject newmo = new MatrixObject(ValueType.FP64, "lastResult", md);
-		newmo.acquireModify(lastResult);
-		newmo.release();
-		lrwec.setVariable("lastResult", newmo);
-		DataOp lastRes = HopRewriteUtils.createTransientRead("lastResult", lastResult);
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		// Create rightIndex op to find the last appended rows 
 		//TODO: support for block of rows
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
@@ -167,21 +154,29 @@ public class RewriteCPlans
 		AggBinaryOp tsmm_lr = HopRewriteUtils.createMatrixMultiply(tlastRow, lastRow);
 		BinaryOp lrwHop = HopRewriteUtils.createBinary(lastRes, tsmm_lr, OpOp2.PLUS);
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteRbindTsmm APPLIED");
 		return genInst(lrwWrite, lrwec);
 	}
 
-	private static ArrayList<Instruction> rewrite2CbindTsmm(Instruction curr, ExecutionContext ec, ExecutionContext lrwec, MatrixBlock lastResult) 
+	private static ArrayList<Instruction> rewriteTsmm2Cbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
 	{
+		// Check the applicability of this rewrite.
+		MatrixBlock cachedEntry = isTsmm2Cbind(curr, ec);
+		if (cachedEntry == null)
+			return null;
+
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last tsmm result
-		MetaData md = new MetaData(lastResult.getDataCharacteristics());
-		MatrixObject newmo = new MatrixObject(ValueType.FP64, "lastResult", md);
-		newmo.acquireModify(lastResult);
-		newmo.release();
-		lrwec.setVariable("lastResult", newmo);
-		DataOp lastRes = HopRewriteUtils.createTransientRead("lastResult", lastResult);
+		MatrixObject newmo = convMBtoMO(cachedEntry);
+		lrwec.setVariable("cachedEntry", newmo);
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
 		lrwec.setVariable("oldMatrix", mo);
 		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
@@ -212,80 +207,75 @@ public class RewriteCPlans
 		NaryOp lrwHop = HopRewriteUtils.createNary(OpOpN.RBIND, rowOne, newCol, rowTwo);
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewrite2CbindTsmm APPLIED");
 		return genInst(lrwWrite, lrwec);
 	}
 	
-	private static ArrayList<Instruction> genInst(Hop hops, ExecutionContext ec) {
-		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(hops, ec.getVariables(), null, true, true, 0);
-		LOG.debug("EXPLAIN LINEAGE REWRITE \nGENERIC (line "+hops.getBeginLine()+"):\n" + Explain.explain(hops,1));
-		LOG.debug("EXPLAIN LINEAGE REWRITE \nGENERIC (line "+hops.getBeginLine()+"):\n" + Explain.explain(newInst,1));
-		return newInst;
-	}
-	
+	/*------------------------REWRITE APPLICABILITY CHECKS-------------------------*/
+
 	private static MatrixBlock isTsmmCbind(Instruction curr, ExecutionContext ec)
 	{
-		MatrixBlock lastResult = null;
+		MatrixBlock cachedEntry = null;
 		if (!LineageCache.isReusable(curr))
-			return lastResult;
+			return cachedEntry;
 
 		// If the input to tsmm came from cbind, look for both the inputs in cache.
 		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
 		LineageItem item = items[0];
-
-		// TODO restructuring of rewrites to make them all 
-		// independent of each other and this opening condition here
 		for (LineageItem source : item.getInputs())
 			if (source.getOpcode().equalsIgnoreCase("cbind")) {
 				for (LineageItem input : source.getInputs()) {
 					// create tsmm lineage on top of the input of last append
 					LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input});
 					if (LineageCache.probe(tmp)) {
-						if (lastResult == null)
-							lastResult = LineageCache.get(curr, tmp);
+						if (cachedEntry == null)
+							cachedEntry = LineageCache.get(curr, tmp);
 						}
 					}
 			}
-		return lastResult;
+		return cachedEntry;
 	}
 
 	private static MatrixBlock isTsmmRbind(Instruction curr, ExecutionContext ec)
 	{
-		MatrixBlock lastResult = null;
+		MatrixBlock cachedEntry = null;
 		if (!LineageCache.isReusable(curr))
-			return lastResult;
+			return cachedEntry;
 
 		// If the input to tsmm came from rbind, look for both the inputs in cache.
 		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
 		LineageItem item = items[0];
-
-		// TODO restructuring of rewrites to make them all 
-		// independent of each other and this opening condition here
 		for (LineageItem source : item.getInputs())
 			if (source.getOpcode().equalsIgnoreCase("rbind")) {
 				for (LineageItem input : source.getInputs()) {
 					// create tsmm lineage on top of the input of last append
 					LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input});
 					if (LineageCache.probe(tmp)) {
-						if (lastResult == null)
-							lastResult = LineageCache.get(curr, tmp);
+						if (cachedEntry == null)
+							cachedEntry = LineageCache.get(curr, tmp);
 						}
 					}
 			}
-		return lastResult;
+		return cachedEntry;
 	}
 	
 	private static MatrixBlock isTsmm2Cbind (Instruction curr, ExecutionContext ec)
 	{
-		MatrixBlock lastResult = null;
+		MatrixBlock cachedEntry = null;
 		if (!LineageCache.isReusable(curr))
-			return lastResult;
+			return cachedEntry;
 
+		//TODO: support nary cbind
 		// If the input to tsmm came from cbind, look for both the inputs in cache.
 		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
 		LineageItem item = items[0];
-					// look for two consecutive cbinds
+		// look for two consecutive cbinds
 		for (LineageItem source : item.getInputs())
 			if (source.getOpcode().equalsIgnoreCase("cbind")) {
 				LineageItem input = source.getInputs()[0];
@@ -294,13 +284,52 @@ public class RewriteCPlans
 						LineageItem tmp = new LineageItem("comb", "cbind", new LineageItem[] {L2appin, source.getInputs()[1]});
 						LineageItem toProbe = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {tmp});
 						if (LineageCache.probe(toProbe)) {
-							if (lastResult == null)
-								lastResult = LineageCache.get(curr, toProbe);
+							if (cachedEntry == null)
+								cachedEntry = LineageCache.get(curr, toProbe);
 						}
 					}
 				}
 			}
-		return lastResult;
+		return cachedEntry;
+	}
+
+	/*----------------------INSTRUCTIONS GENERATION & EXECUTION-----------------------*/
+
+	private static ArrayList<Instruction> genInst(Hop hops, ExecutionContext ec) {
+		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(hops, ec.getVariables(), null, true, true, 0);
+		LOG.debug("EXPLAIN LINEAGE REWRITE \nGENERIC (line "+hops.getBeginLine()+"):\n" + Explain.explain(hops,1));
+		LOG.debug("EXPLAIN LINEAGE REWRITE \nGENERIC (line "+hops.getBeginLine()+"):\n" + Explain.explain(newInst,1));
+		return newInst;
+	}
+	
+	private static void executeInst (ArrayList<Instruction> newInst, ExecutionContext lrwec)
+	{  
+		// Disable explain not to print unnecessary logs
+		// TODO extend recompiler to allow use without explain output
+		DMLScript.EXPLAIN = ExplainType.NONE;
+
+		try {
+			//execute instructions
+			BasicProgramBlock pb = getProgramBlock();
+			pb.setInstructions(newInst);
+			ReuseCacheType oldReuseOption = DMLScript.LINEAGE_REUSE;
+			LineageCacheConfig.shutdownReuse();
+			pb.execute(lrwec);
+			LineageCacheConfig.restartReuse(oldReuseOption);
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Error executing lineage rewrites" , e);
+		}
+	}
+
+	/*-------------------------------UTILITY METHODS----------------------------------*/
+	
+	private static MatrixObject convMBtoMO (MatrixBlock cachedEntry) {
+		MetaData md = new MetaData(cachedEntry.getDataCharacteristics());
+		MatrixObject mo = new MatrixObject(ValueType.FP64, "cachedEntry", md);
+		mo.acquireModify(cachedEntry);
+		mo.release();
+		return mo;
 	}
 
 	private static ExecutionContext getExecutionContext() {

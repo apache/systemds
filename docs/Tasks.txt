@@ -118,6 +118,6 @@ SYSTEMDS-160 Tensor Compiler/Runtime
  * 173 Improved cost estimates                                        OK
  * 174 Reuse rewrite for rbind-tsmm                                   OK
  * 175 Refactoring of lineage rewrite code
- * 175 Reuse rewrite for cbind/rbind-elementwise */+
- * 176 Reuse rewrite for aggregate
- * 177 Compiler assisted reuse (eg. CV, lmCG)
+ * 176 Reuse rewrite for cbind/rbind-elementwise */+
+ * 177 Reuse rewrite for aggregate
+ * 178 Compiler assisted reuse (eg. CV, lmCG)

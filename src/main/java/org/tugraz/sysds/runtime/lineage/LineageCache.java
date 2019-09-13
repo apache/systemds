@@ -170,8 +170,7 @@ public class LineageCache {
 	public static boolean isReusable (Instruction inst) {
 		// TODO: Move this to the new class LineageCacheConfig and extend
 		return inst.getOpcode().equalsIgnoreCase("tsmm")
-			|| (LineageCacheConfig.getCacheType().isFullReuse() 
-				&& inst.getOpcode().equalsIgnoreCase("ba+*"));
+				|| inst.getOpcode().equalsIgnoreCase("ba+*");
 	}
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------

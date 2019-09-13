@@ -30,4 +30,4 @@ for (i in 2:ncol(X)) {
   sum = sum + sum(Res1);
 }
 
-write(R, $2, format="text");
+write(R, $3, format="text");

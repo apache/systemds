@@ -66,7 +66,12 @@ public class LineageRewriteReuse
 		//check applicability and apply rewrite
 		ArrayList<Instruction> newInst = rewriteTsmmCbind(curr, ec, lrwec);        //tsmm(cbind(X, deltaX)) using tsmm(X)
 		newInst = (newInst == null) ? rewriteTsmm2Cbind(curr, ec, lrwec) : newInst;   //tsmm(cbind(cbind(X, deltaX), ones)) using tsmm(X)
-		newInst = (newInst == null) ? rewriteTsmmRbind(curr, ec, lrwec) : newInst;    //tsmm(rbind(X, deltaX)) using tsmm(X)
+		//tsmm(rbind(X, deltaX)) using C = tsmm(X) -> C + tsmm(deltaX)
+		newInst = (newInst == null) ? rewriteTsmmRbind(curr, ec, lrwec) : newInst;
+		//rbind(X,deltaX) %*% Y using C = X %*% Y -> rbind(C, deltaX %*% Y)
+		newInst = (newInst == null) ? rewriteMatMulRbindLeft(curr, ec, lrwec) : newInst;
+		//X %*% cbind(Y,deltaY)) using C = X %*% Y -> cbind(C, X %*% deltaY)
+		newInst = (newInst == null) ? rewriteMatMulCbindRight(curr, ec, lrwec) : newInst;
 		
 		if (newInst == null)
 			return false;
@@ -216,6 +221,80 @@ public class LineageRewriteReuse
 		LOG.debug("LINEAGE REWRITE rewrite2CbindTsmm APPLIED");
 		return genInst(lrwWrite, lrwec);
 	}
+
+	private static ArrayList<Instruction> rewriteMatMulRbindLeft (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
+	{
+		// Check the applicability of this rewrite.
+		MatrixBlock cachedEntry = isMatMulRbindLeft(curr, ec);
+		if (cachedEntry == null)
+			return null;
+
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		// Create a transient read op over the last ba+* result
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
+		// Create rightIndex op to find the last appended rows 
+		//TODO: support for block of rows
+		MatrixObject moL = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
+		lrwec.setVariable("leftMatrix", moL);
+		DataOp leftMatrix = HopRewriteUtils.createTransientRead("leftMatrix", moL);
+		MatrixObject moR = ec.getMatrixObject(((ComputationCPInstruction)curr).input2);
+		lrwec.setVariable("rightMatrix", moR);
+		DataOp rightMatrix = HopRewriteUtils.createTransientRead("rightMatrix", moR);
+		//TODO avoid the indexing if possible (if deltaX found in cache)
+		IndexingOp lastRow = HopRewriteUtils.createIndexingOp(leftMatrix, new LiteralOp(moL.getNumRows()), 
+				new LiteralOp(moL.getNumRows()), new LiteralOp(1), new LiteralOp(moL.getNumColumns()));
+		// ba+*(X+lastRow, Y) = rbind(ba+*(X, Y), ba+*(lastRow, Y))
+		AggBinaryOp rowTwo = HopRewriteUtils.createMatrixMultiply(lastRow, rightMatrix);
+		BinaryOp lrwHop= HopRewriteUtils.createBinary(lastRes, rowTwo, OpOp2.RBIND);
+		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		
+		// generate runtime instructions
+		LOG.debug("LINEAGE REWRITE rewriteCbindTsmm APPLIED");
+		return genInst(lrwWrite, lrwec);
+	}
+
+	private static ArrayList<Instruction> rewriteMatMulCbindRight (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
+	{
+		// Check the applicability of this rewrite.
+		MatrixBlock cachedEntry = isMatMulCbindRight(curr, ec);
+		if (cachedEntry == null)
+			return null;
+
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		// Create a transient read op over the last ba+* result
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
+		// Create rightIndex op to find the last appended column 
+		//TODO: support for block of rows
+		MatrixObject moL = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
+		lrwec.setVariable("leftMatrix", moL);
+		DataOp leftMatrix = HopRewriteUtils.createTransientRead("leftMatrix", moL);
+		MatrixObject moR = ec.getMatrixObject(((ComputationCPInstruction)curr).input2);
+		lrwec.setVariable("rightMatrix", moR);
+		DataOp rightMatrix = HopRewriteUtils.createTransientRead("rightMatrix", moR);
+		//TODO avoid the indexing if possible (if deltaY found in cache)
+		IndexingOp lastCol = HopRewriteUtils.createIndexingOp(rightMatrix, new LiteralOp(1), new LiteralOp(moR.getNumRows()), 
+				new LiteralOp(moR.getNumColumns()), new LiteralOp(moR.getNumColumns()));
+		// ba+*(X, Y+lastCol) = cbind(ba+*(X, Y), ba+*(X, lastCol))
+		AggBinaryOp rowTwo = HopRewriteUtils.createMatrixMultiply(leftMatrix, lastCol);
+		BinaryOp lrwHop= HopRewriteUtils.createBinary(lastRes, rowTwo, OpOp2.CBIND);
+		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		
+		// generate runtime instructions
+		LOG.debug("LINEAGE REWRITE rewriteCbindTsmm APPLIED");
+		return genInst(lrwWrite, lrwec);
+	}
 	
 	/*------------------------REWRITE APPLICABILITY CHECKS-------------------------*/
 
@@ -290,6 +369,50 @@ public class LineageRewriteReuse
 					}
 				}
 			}
+		return cachedEntry;
+	}
+
+	private static MatrixBlock isMatMulRbindLeft(Instruction curr, ExecutionContext ec)
+	{
+		MatrixBlock cachedEntry = null;
+		if (!LineageCache.isReusable(curr))
+			return cachedEntry;
+
+		// If the left input to ba+* came from rbind, look for both the inputs in cache.
+		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		if (curr.getOpcode().equalsIgnoreCase("ba+*")) {
+			LineageItem left= items[0].getInputs()[0];
+			LineageItem right = items[0].getInputs()[1];
+			if (left.getOpcode().equalsIgnoreCase("rbind")){
+				LineageItem leftSource = left.getInputs()[0]; //left inpur of rbind = X
+				// create ba+* lineage on top of the input of last append
+				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {leftSource, right});
+				if (LineageCache.probe(tmp))
+					cachedEntry = LineageCache.get(curr, tmp);
+			}
+		}
+		return cachedEntry;
+	}
+
+	private static MatrixBlock isMatMulCbindRight(Instruction curr, ExecutionContext ec)
+	{
+		MatrixBlock cachedEntry = null;
+		if (!LineageCache.isReusable(curr))
+			return cachedEntry;
+
+		// If the right input to ba+* came from cbind, look for both the inputs in cache.
+		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		if (curr.getOpcode().equalsIgnoreCase("ba+*")) {
+			LineageItem left = items[0].getInputs()[0];
+			LineageItem right = items[0].getInputs()[1];
+			if (right.getOpcode().equalsIgnoreCase("cbind")) {
+				LineageItem rightSource = right.getInputs()[0]; //left inpur of rbind = X
+				// create ba+* lineage on top of the input of last append
+				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {left, rightSource});
+				if (LineageCache.probe(tmp))
+					cachedEntry = LineageCache.get(curr, tmp);
+			}
+		}
 		return cachedEntry;
 	}
 

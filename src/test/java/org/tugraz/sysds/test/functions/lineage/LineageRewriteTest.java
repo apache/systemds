@@ -33,6 +33,8 @@ public class LineageRewriteTest extends AutomatedTestBase {
 	protected static final String TEST_NAME1 = "RewriteTest3";
 	protected static final String TEST_NAME2 = "RewriteTest2";
 	protected static final String TEST_NAME3 = "RewriteTest7";
+	protected static final String TEST_NAME4 = "RewriteTest8";
+	protected static final String TEST_NAME5 = "RewriteTest9";
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageRewriteTest.class.getSimpleName() + "/";
 	
@@ -45,6 +47,8 @@ public class LineageRewriteTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5));
 	}
 	
 	@Test
@@ -62,6 +66,16 @@ public class LineageRewriteTest extends AutomatedTestBase {
 		testRewrite(TEST_NAME3);
 	}
 
+	@Test
+	public void testmatmulrbindleft() {
+		testRewrite(TEST_NAME4);
+	}
+
+	@Test
+	public void testmatmulcbindright() {
+		testRewrite(TEST_NAME5);
+	}
+
 	private void testRewrite(String testname) {
 		try {
 			getAndLoadTestConfiguration(testname);
@@ -72,11 +86,14 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			proArgs.add("-lineage");
 			proArgs.add("-args");
 			proArgs.add(input("X"));
+			proArgs.add(input("Y"));
 			proArgs.add(output("Res"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			fullDMLScriptName = getScript();
 			double[][] X = getRandomMatrix(numRecords, numFeatures, 0, 1, 0.8, -1);
+			double[][] Y = getRandomMatrix(numFeatures, numRecords, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("X", X, true);
+			writeInputMatrixWithMTD("Y", Y, true);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromHDFS("Res");
 
@@ -88,6 +105,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			proArgs.add("reuse_partial");
 			proArgs.add("-args");
 			proArgs.add(input("X"));
+			proArgs.add(input("Y"));
 			proArgs.add(output("Res"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			fullDMLScriptName = getScript();

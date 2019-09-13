@@ -121,7 +121,8 @@ public class DMLOptions {
 						else if (lineageType.equalsIgnoreCase("reuse_hybrid"))
 							dmlOptions.linReuseType = ReuseCacheType.REUSE_HYBRID;
 						else
-							throw new org.apache.commons.cli.ParseException("Invalid argument specified for -lineage option");
+							throw new org.apache.commons.cli.ParseException(
+								"Invalid argument specified for -lineage option: " + lineageType);
 					}
 				}
 			}

@@ -1000,6 +1000,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		else if( part.getExtConsumed().contains(current.getHopID()) ) {
 			costs += rGetPlanCosts(memo, current, visited, part, matPoints, plan,
 				computeCosts, null, null, costBound - costs);
+			if( costs >= costBound )
+				return Double.POSITIVE_INFINITY;
 		}
 		
 		//sanity check non-negative costs

@@ -76,6 +76,7 @@ SYSTEMDS-100 Various Fixes
  * 105 Fix all application/function tests (various issues)            OK
  * 106 Fix correctness of as.integer for negative numbers             OK
  * 107 Fix correctness IPA check dimension-preserving                 OK
+ * 108 Fix codegen optimizer (early costing abort)                    OK 
  
 SYSTEMDS-110 New Builtin Functions
  * 111 Time builtin function for script-level measurements            OK

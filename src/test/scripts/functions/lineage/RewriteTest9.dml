@@ -17,18 +17,16 @@
 #-------------------------------------------------------------
 
 X = read($1);
+Y = read($2);
 
 sum = 0;
-tmp = X[,1];
-tmp1 = matrix(0, rows=nrow(X), cols=1);
-R = matrix(0, 1, ncol(X));
+tmp = Y[,1];
+R = matrix(0, 1, ncol(Y));
 
-for (i in 2:ncol(X)) {
-  Res1 = t(tmp1) %*% tmp1;
-  tmp = cbind(tmp, X[,i]);
-  while(FALSE) {};
-  ones_n = matrix(1, rows=nrow(X), cols=1);
-  tmp1 = cbind(tmp, ones_n);
+for (i in 2:ncol(Y)) {
+  Res1 = X %*% tmp;
+  tmp = cbind(tmp, Y[,i]);
+  while(FALSE) {}	
   R[1,i] = sum(Res1);
   sum = sum + sum(Res1);
 }

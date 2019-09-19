@@ -33,6 +33,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _ctimeFSWrite    = new LongAdder(); //in nano sec
 	private static final LongAdder _ctimeCosting    = new LongAdder(); //in nano sec
 	private static final LongAdder _ctimeRewrite    = new LongAdder(); //in nano sec
+	private static final LongAdder _ctimeRewriteEx  = new LongAdder(); //in nano sec
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -45,6 +46,7 @@ public class LineageCacheStatistics {
 		_ctimeFSWrite.reset();
 		_ctimeCosting.reset();
 		_ctimeRewrite.reset();
+		_ctimeRewriteEx.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -96,6 +98,11 @@ public class LineageCacheStatistics {
 		// Total time spent estimating computation and disk spill costs.
 		_ctimeRewrite.add(delta);
 	}
+
+	public static void incrementPRwExecTime(long delta) {
+		// Total time spent estimating computation and disk spill costs.
+		_ctimeRewriteEx.add(delta);
+	}
 	
 	public static String displayHits() {
 		StringBuilder sb = new StringBuilder();
@@ -138,6 +145,8 @@ public class LineageCacheStatistics {
 	public static String displayRewriteTime() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%.3f", ((double)_ctimeRewrite.longValue())/1000000000)); //in sec
+		sb.append("/");
+		sb.append(String.format("%.3f", ((double)_ctimeRewriteEx.longValue())/1000000000)); //in sec
 		return sb.toString();
 	}
 }

@@ -67,7 +67,7 @@ public class LineageCache {
 				//create a placeholder if no reuse to avoid redundancy
 				//(e.g., concurrent threads that try to start the computation)
 				if( ! reuse )
-					putIntern(inst, item, null, 0);
+					putIntern(item, null, 0);
 			}
 		}
 		
@@ -81,7 +81,7 @@ public class LineageCache {
 			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];
 			MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
 			synchronized( _cache ) {
-				putIntern(inst, item, mo.acquireReadAndRelease(), getRecomputeEstimate(inst, ec));
+				putIntern(item, mo.acquireReadAndRelease(), getRecomputeEstimate(inst, ec));
 			}
 		}
 	}
@@ -97,13 +97,13 @@ public class LineageCache {
 			
 			synchronized( _cache ) {
 				if( !isBelowThreshold(value) ) 
-					makeSpace(inst, value);
+					makeSpace(value);
 				updateSize(value, true);
 			}
 		}
 	}
 	
-	private static void putIntern(Instruction inst, LineageItem key, MatrixBlock value, double compcost) {
+	private static void putIntern(LineageItem key, MatrixBlock value, double compcost) {
 		if (_cache.containsKey(key))
 			//can come here if reuse_partial option is enabled
 			return; 
@@ -115,7 +115,7 @@ public class LineageCache {
 		// Make space by removing or spilling LRU entries.
 		if( value != null ) {
 			if( !isBelowThreshold(value) ) 
-				makeSpace(inst, value);
+				makeSpace(value);
 			updateSize(value, true);
 		}
 		
@@ -145,14 +145,14 @@ public class LineageCache {
 
 	private static boolean fullReuse (LineageItem item, ComputationCPInstruction inst, ExecutionContext ec) {
 		if (LineageCache.probe(item)) {
-			MatrixBlock d = LineageCache.get(inst, item);
+			MatrixBlock d = LineageCache.get(item);
 			ec.setMatrixOutput(inst.output.getName(), d);
 			return true;
 		}
 		return false;
 	}
 	
-	protected static MatrixBlock get(Instruction inst, LineageItem key) {
+	protected static MatrixBlock get(LineageItem key) {
 		// This method is called only when entry is present either in cache or in local FS.
 		if (_cache.containsKey(key)) {
 			// Read and put the entry at head.
@@ -164,13 +164,15 @@ public class LineageCache {
 			return e.getValue();
 		}
 		else
-			return readFromLocalFS(inst, key);
+			return readFromLocalFS(key);
 	}
 	
 	public static boolean isReusable (Instruction inst) {
 		// TODO: Move this to the new class LineageCacheConfig and extend
 		return inst.getOpcode().equalsIgnoreCase("tsmm")
-				|| inst.getOpcode().equalsIgnoreCase("ba+*");
+				|| inst.getOpcode().equalsIgnoreCase("ba+*")
+				|| inst.getOpcode().equalsIgnoreCase("*")
+				|| inst.getOpcode().equalsIgnoreCase("rightIndex");
 	}
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------
@@ -182,7 +184,7 @@ public class LineageCache {
 		return ((value.getInMemorySize() + _cachesize) <= CACHELIMIT);
 	}
 	
-	private static void makeSpace(Instruction inst, MatrixBlock value) {
+	private static void makeSpace(MatrixBlock value) {
 		double valSize = value.getInMemorySize();
 		// cost based eviction
 		while ((valSize+_cachesize) > CACHELIMIT)
@@ -227,6 +229,7 @@ public class LineageCache {
 		switch (cptype)
 		{
 			case MMTSJ:  //tsmm
+			{
 				MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
 				long r = mo.getNumRows();
 				long c = mo.getNumColumns();
@@ -239,8 +242,10 @@ public class LineageCache {
 				else
 					nflops = !sparse ? ((double)r * c * r/2):(r*c*s + r*c*s*c*s /2);
 				break;
+			}
 				
 			case AggregateBinary:  //ba+*
+			{
 				MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
 				MatrixObject mo2 = ec.getMatrixObject(((ComputationCPInstruction)inst).input2);
 				long r1 = mo1.getNumRows();
@@ -262,6 +267,31 @@ public class LineageCache {
 				else //lsparse && rsparse
 					nflops = 2 * (r1 * c1 * s1 * c2 * s2) /2;
 				break;
+			}
+				
+			case Binary:
+			{
+				MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
+				long r1 = mo1.getNumRows();
+				long c1 = mo1.getNumColumns();
+				if (inst.getOpcode().equalsIgnoreCase("*"))
+					// considering the dimensions of inputs and the output are same 
+					nflops = r1 * c1; 
+				break;
+			}
+			
+			case MatrixIndexing:
+			{
+				MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
+				long r1 = mo1.getNumRows();
+				long c1 = mo1.getNumColumns();
+				long nnz1 = mo1.getNnz();
+				double s1 = OptimizerUtils.getSparsity(r1, c1, nnz1);
+				boolean lsparse = MatrixBlock.evalSparseFormatInMemory(r1, c1, nnz1);
+				if (inst.getOpcode().equalsIgnoreCase("rightIndex"))
+					nflops = 1.0 * (lsparse ? r1 * c1 * s1 : r1 * c1); //FIXME
+				break;
+			}
 				
 			default:
 				throw new DMLRuntimeException("Lineage Cache: unsupported instruction: "+inst.getOpcode());
@@ -297,7 +327,7 @@ public class LineageCache {
 		_spillList.put(_end._key, new SpilledItem(outfile, _end._compEst));
 	}
 	
-	private static MatrixBlock readFromLocalFS(Instruction inst, LineageItem key) {
+	private static MatrixBlock readFromLocalFS(LineageItem key) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		MatrixBlock mb = null;
 		// Read from local FS
@@ -308,7 +338,7 @@ public class LineageCache {
 		}
 		// Restore to cache
 		LocalFileUtils.deleteFileIfExists(_spillList.get(key)._outfile, true);
-		putIntern(inst, key, mb, _spillList.get(key)._compEst);
+		putIntern(key, mb, _spillList.get(key)._compEst);
 		_spillList.remove(key);
 		if (DMLScript.STATISTICS) {
 			long t1 = System.nanoTime();

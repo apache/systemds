@@ -451,10 +451,10 @@ public class BasicTensorBlock implements Serializable {
 	}
 
 	/**
-	 * Copy a part of another tensor
+	 * Copy a part of another <code>BasicTensorBlock</code>
 	 * @param lower lower index of elements to copy (inclusive)
 	 * @param upper upper index of elements to copy (exclusive)
-	 * @param src source tensor
+	 * @param src source <code>BasicTensorBlock</code>
 	 */
 	public void copy(int[] lower, int[] upper, BasicTensorBlock src) {
 		// TODO consider sparse

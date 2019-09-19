@@ -35,6 +35,14 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
+/**
+ * A <code>TensorBlock</code> is the most top level representation of a tensor. There are two types of data representation
+ * which can be used: Basic/Homogeneous and Data/Heterogeneous
+ * Basic supports only one <code>ValueType</code>, while Data supports multiple <code>ValueType</code>s along the column
+ * axis.
+ * The format determines if the <code>TensorBlock</code> uses a <code>BasicTensorBlock</code> or a <code>DataTensorBlock</code>
+ * for storing the data.
+ */
 public class TensorBlock implements CacheBlock, Externalizable {
 	private static final long serialVersionUID = -8768054067319422277L;
 	
@@ -50,45 +58,82 @@ public class TensorBlock implements CacheBlock, Externalizable {
 
 	private DataTensorBlock _dataTensor = null;
 	private BasicTensorBlock _basicTensor = null;
-
+	
+	/**
+	 * Create a <code>TensorBlock</code> with [0,0] dimension and homogeneous representation (aka. basic).
+	 */
 	public TensorBlock() {
 		this(DEFAULT_DIMS, true);
 	}
-
+	
+	/**
+	 * Create a <code>TensorBlock</code> with the given dimensions and the given data representation (basic/data).
+	 * @param dims dimensions
+	 * @param basic true -> basic, false -> data
+	 */
 	public TensorBlock(int[] dims, boolean basic) {
 		_dims = dims;
 		_basic = basic;
 	}
-
+	
+	/**
+	 * Create a basic <code>TensorBlock</code> with the given <code>ValueType</code> and the given dimensions.
+	 * @param vt value type
+	 * @param dims dimensions
+	 */
 	public TensorBlock(ValueType vt, int[] dims) {
 		this(dims, true);
 		_basicTensor = new BasicTensorBlock(vt, dims, false);
 	}
-
+	
+	/**
+	 * Create a data <code>TensorBlock</code> with the given schema and the given dimensions.
+	 * @param schema schema of the columns
+	 * @param dims dimensions
+	 */
 	public TensorBlock(ValueType[] schema, int[] dims) {
 		this(dims, false);
 		_dataTensor = new DataTensorBlock(schema, dims);
 	}
-
+	
+	/**
+	 * Create a [1,1] basic FP64 <code>TensorBlock</code> containing the given value.
+	 * @param value value to put inside
+	 */
 	public TensorBlock(double value) {
 		_dims = new int[]{1, 1};
 		_basicTensor = new BasicTensorBlock(value);
 	}
-
+	
+	/**
+	 * Wrap the given <code>BasicTensorBlock</code> inside a <code>TensorBlock</code>.
+	 * @param basicTensor basic tensor block
+	 */
 	public TensorBlock(BasicTensorBlock basicTensor) {
 		this(basicTensor._dims, true);
 		_basicTensor = basicTensor;
 	}
-
+	
+	/**
+	 * Wrap the given <code>DataTensorBlock</code> inside a <code>TensorBlock</code>.
+	 * @param dataTensor basic tensor block
+	 */
 	public TensorBlock(DataTensorBlock dataTensor) {
 		this(dataTensor._dims, false);
 		_dataTensor = dataTensor;
 	}
-
+	
+	/**
+	 * Copy constructor
+	 * @param that <code>TensorBlock</code> to copy
+	 */
 	public TensorBlock(TensorBlock that) {
 		copy(that);
 	}
-
+	
+	/**
+	 * Reset all cells to 0.
+	 */
 	public void reset() {
 		if (_basic) {
 			if (_basicTensor == null)
@@ -101,7 +146,11 @@ public class TensorBlock implements CacheBlock, Externalizable {
 			_dataTensor.reset();
 		}
 	}
-
+	
+	/**
+	 * Reset data with new dimensions.
+	 * @param dims new dimensions
+	 */
 	public void reset(int[] dims) {
 		_dims = dims;
 		if (_basic) {
@@ -115,18 +164,22 @@ public class TensorBlock implements CacheBlock, Externalizable {
 			_dataTensor.reset(dims);
 		}
 	}
-
+	
 	public boolean isBasic() {
 		return _basic;
 	}
-
+	
 	public boolean isAllocated() {
 		if (_basic)
 			return _basicTensor != null && _basicTensor.isAllocated();
 		else
 			return _dataTensor != null && _dataTensor.isAllocated();
 	}
-
+	
+	/**
+	 * If data is not yet allocated, allocate.
+	 * @return this <code>TensorBlock</code>
+	 */
 	public TensorBlock allocateBlock() {
 		if (_basic) {
 			if (_basicTensor == null)
@@ -140,22 +193,30 @@ public class TensorBlock implements CacheBlock, Externalizable {
 		}
 		return this;
 	}
-
+	
 	public BasicTensorBlock getBasicTensor() {
 		return _basicTensor;
 	}
-
+	
 	public DataTensorBlock getDataTensor() {
 		return _dataTensor;
 	}
-
+	
+	/**
+	 * Get the <code>ValueType</code> if this <code>TensorBlock</code> is homogeneous.
+	 * @return <code>ValueType</code> if homogeneous, null otherwise
+	 */
 	public ValueType getValueType() {
 		if (_basic)
 			return _basicTensor == null ? DEFAULT_VTYPE : _basicTensor.getValueType();
 		else
 			return null;
 	}
-
+	
+	/**
+	 * Get the schema if this <code>TensorBlock</code> is heterogeneous.
+	 * @return value type if heterogeneous, null otherwise
+	 */
 	public ValueType[] getSchema() {
 		if (_basic)
 			return null;
@@ -351,8 +412,7 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	}
 	
 	/**
-	 * Set a cell to the value given as an `Object`. The type is inferred by either the `schema` or `valueType`, depending
-	 * if the `TensorBlock` is a `BasicTensor` or `DataTensor`.
+	 * Set a cell to the value given as an `Object`.
 	 * @param ix indexes in each dimension, starting with 0
 	 * @param v value to set
 	 */
@@ -434,7 +494,13 @@ public class TensorBlock implements CacheBlock, Externalizable {
 		}
 		return this;
 	}
-
+	
+	/**
+	 * Copy a part of another <code>TensorBlock</code>
+	 * @param lower lower index of elements to copy (inclusive)
+	 * @param upper upper index of elements to copy (exclusive)
+	 * @param src source <code>TensorBlock</code>
+	 */
 	public TensorBlock copy(int[] lower, int[] upper, TensorBlock src) {
 		if (_basic) {
 			if (src._basic) {
@@ -476,7 +542,12 @@ public class TensorBlock implements CacheBlock, Externalizable {
 		}
 		return size;
 	}
-
+	
+	/**
+	 * Get the exact serialized size of a <code>BasicTensorBlock</code> if written by
+	 * <code>TensorBlock.writeBlockData(DataOutput,BasicTensorBlock)</code>.
+	 * @param bt <code>BasicTensorBlock</code>
+	 */
 	public long getExactBlockDataSerializedSize(BasicTensorBlock bt) {
 		// nnz, BlockType
 		long size = 8 + 1;
@@ -539,7 +610,13 @@ public class TensorBlock implements CacheBlock, Externalizable {
 			}
 		}
 	}
-
+	
+	/**
+	 * Write a <code>BasicTensorBlock</code>.
+	 * @param out output stream
+	 * @param bt source <code>BasicTensorBlock</code>
+	 * @throws IOException if writing with the output stream fails
+	 */
 	public void writeBlockData(DataOutput out, BasicTensorBlock bt) throws IOException {
 		out.writeLong(bt.getNonZeros()); // nnz
 		if (bt.isEmpty(false)) {
@@ -607,7 +684,13 @@ public class TensorBlock implements CacheBlock, Externalizable {
 				break;
 		}
 	}
-
+	
+	/**
+	 * Read a <code>BasicTensorBlock</code>.
+	 * @param in input stream
+	 * @param bt destination <code>BasicTensorBlock</code>
+	 * @throws IOException if reading with the input stream fails
+	 */
 	protected void readBlockData(DataInput in, BasicTensorBlock bt) throws IOException {
 		bt._nnz = in.readLong();
 		switch (BlockType.values()[in.readByte()]) {

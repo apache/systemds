@@ -31,7 +31,6 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.util.FastStringTokenizer;
 
 import java.io.IOException;
 import java.util.Arrays;

@@ -35,6 +35,8 @@ public class LineageRewriteTest extends AutomatedTestBase {
 	protected static final String TEST_NAME3 = "RewriteTest7";
 	protected static final String TEST_NAME4 = "RewriteTest8";
 	protected static final String TEST_NAME5 = "RewriteTest9";
+	protected static final String TEST_NAME6 = "RewriteTest10";
+	protected static final String TEST_NAME7 = "RewriteTest11";
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageRewriteTest.class.getSimpleName() + "/";
 	
@@ -49,34 +51,46 @@ public class LineageRewriteTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6));
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7));
 	}
 	
 	@Test
-	public void testtsmm2cbind() {
-		testRewrite(TEST_NAME1);
+	public void testTsmm2Cbind() {
+		testRewrite(TEST_NAME1, false);
 	}
 
 	@Test
-	public void testtsmmcbind() {
-		testRewrite(TEST_NAME2);
+	public void testTsmmCbind() {
+		testRewrite(TEST_NAME2, false);
 	}
 
 	@Test
-	public void testtsmmrbind() {
-		testRewrite(TEST_NAME3);
+	public void testTsmmRbind() {
+		testRewrite(TEST_NAME3, false);
 	}
 
 	@Test
-	public void testmatmulrbindleft() {
-		testRewrite(TEST_NAME4);
+	public void testMatmulRbindLeft() {
+		testRewrite(TEST_NAME4, false);
 	}
 
 	@Test
-	public void testmatmulcbindright() {
-		testRewrite(TEST_NAME5);
+	public void testMatmulCbindRight() {
+		testRewrite(TEST_NAME5, false);
 	}
 
-	private void testRewrite(String testname) {
+	@Test
+	public void testElementMulRbind() {
+		testRewrite(TEST_NAME6, true);
+	}
+
+	@Test
+	public void testElementMulCbind() {
+		testRewrite(TEST_NAME7, true);
+	}
+
+	private void testRewrite(String testname, boolean elementwise) {
 		try {
 			getAndLoadTestConfiguration(testname);
 			List<String> proArgs = new ArrayList<>();
@@ -91,7 +105,8 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			fullDMLScriptName = getScript();
 			double[][] X = getRandomMatrix(numRecords, numFeatures, 0, 1, 0.8, -1);
-			double[][] Y = getRandomMatrix(numFeatures, numRecords, 0, 1, 0.8, -1);
+			double[][] Y = !elementwise ? getRandomMatrix(numFeatures, numRecords, 0, 1, 0.8, -1)
+									: getRandomMatrix(numRecords, numFeatures, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
@@ -99,7 +114,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 
 			proArgs.clear();
 			proArgs.add("-explain");
-			//proArgs.add("recompile_runtime");
+			proArgs.add("recompile_hops");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("reuse_partial");

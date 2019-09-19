@@ -341,7 +341,13 @@ public class DataTensorBlock implements Serializable {
 			}
 		}
 	}
-
+	
+	/**
+	 * Copy a part of another <code>DataTensorBlock</code>
+	 * @param lower lower index of elements to copy (inclusive)
+	 * @param upper upper index of elements to copy (exclusive)
+	 * @param src source <code>DataTensorBlock</code>
+	 */
 	public void copy(int[] lower, int[] upper, DataTensorBlock src) {
 		int[] subLower = lower.clone();
 		if (upper[1] == 0) {

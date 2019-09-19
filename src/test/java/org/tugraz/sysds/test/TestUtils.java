@@ -369,8 +369,7 @@ public class TestUtils
 		Assert.assertEquals(tb1.getNumColumns(), tb2.getNumColumns());
 		for (int i = 0; i < tb1.getNumRows(); i++)
 			for (int j = 0; j < tb1.getNumColumns(); j++)
-				Assert.assertEquals(Double.valueOf(tb1.get(i, j)),
-						Double.valueOf(tb2.get(i, j)));
+				Assert.assertEquals(tb1.get(new int[]{i, j}), tb2.get(new int[]{i, j}));
 	}
 	
 	public static TensorBlock createBasicTensor(ValueType vt, int rows, int cols, double sparsity) {

@@ -55,7 +55,11 @@ public class TensorTextCellTest {
 
 	@Test
 	public void testReadWriteTextCellBasicTensorString() {
-		testReadWriteTextCellBasicTensor(ValueType.STRING);
+		TensorBlock tb1 = createBasicTensor(ValueType.STRING, 70, 30, 0.7);
+		tb1.set(new int[]{0, 0}, "\"  f  f  \"");
+		tb1.set(new int[]{69, 29}, "respect");
+		TensorBlock tb2 = writeAndReadBasicTensorTextCell(tb1);
+		compareTensorBlocks(tb1, tb2);
 	}
 
 	private static void testReadWriteTextCellBasicTensor(ValueType vt) {
@@ -91,7 +95,11 @@ public class TensorTextCellTest {
 
 	@Test
 	public void testReadWriteTextCellDataTensorString() {
-		testReadWriteTextCellDataTensor(ValueType.STRING);
+		TensorBlock tb1 = createDataTensor(ValueType.STRING, 70, 30, 0.7);
+		tb1.set(new int[]{0, 0}, "\"  f  f  \"");
+		tb1.set(new int[]{69, 29}, "respect");
+		TensorBlock tb2 = writeAndReadDataTensorTextCell(tb1);
+		compareTensorBlocks(tb1, tb2);
 	}
 
 	private static void testReadWriteTextCellDataTensor(ValueType vt) {

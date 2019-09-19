@@ -69,18 +69,17 @@ public class TensorReaderTextCell extends TensorReader {
 			ret = new TensorBlock(schema, idims).allocateBlock();
 
 		try {
-			FastStringTokenizer st = new FastStringTokenizer(' ');
-			
 			int[] ix = new int[dims.length];
 			for (InputSplit split : splits) {
 				RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 				try {
 					while (reader.next(key, value)) {
-						st.reset(value.toString());
+						String[] parts = Arrays.stream(IOUtilFunctions.splitCSV(value.toString(), " "))
+								.filter(s -> !s.isEmpty()).toArray(String[]::new);
 						for (int i = 0; i < ix.length; i++) {
-							ix[i] = st.nextInt() - 1;
+							ix[i] = Integer.parseInt(parts[i]) - 1;
 						}
-						ret.set(ix, st.nextToken());
+						ret.set(ix, parts[ix.length]);
 					}
 				}
 				finally {

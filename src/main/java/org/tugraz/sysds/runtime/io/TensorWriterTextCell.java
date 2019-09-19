@@ -20,6 +20,7 @@ package org.tugraz.sysds.runtime.io;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.util.HDFSTool;
@@ -63,11 +64,12 @@ public class TensorWriterTextCell extends TensorWriter {
 			int[] ix = new int[dims.length];
 			for (long i = 0; i < src.getLength(); i++) {
 				Object obj = src.get(ix);
+				ValueType vt = src.isBasic() ? src.getValueType() : src.getSchema()[ix[1]];
 				boolean skip;
-				if (!src.isBasic())
-					skip = UtilFunctions.objectToDouble(src.getSchema()[ix[1]], obj) == 0.0;
+				if( vt == ValueType.STRING )
+					skip = obj == null || ((String) obj).isEmpty();
 				else
-					skip = UtilFunctions.objectToDouble(src.getValueType(), obj) == 0.0;
+					skip = UtilFunctions.objectToDouble(vt, obj) == 0.0;
 				if (!skip) {
 					for (int j : ix)
 						sb.append(j + 1).append(' ');

@@ -138,7 +138,7 @@ public class LineageItem {
 	}
 	
 	private boolean equalsLI(LineageItem that) {
-		if (isVisited())
+		if (isVisited() || this == that)
 			return true;
 		
 		boolean ret = _opcode.equals(that._opcode);

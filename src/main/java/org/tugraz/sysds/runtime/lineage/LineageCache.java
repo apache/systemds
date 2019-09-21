@@ -25,6 +25,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
 import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.tugraz.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.MMTSJCPInstruction;
@@ -171,7 +172,8 @@ public class LineageCache {
 		// TODO: Move this to the new class LineageCacheConfig and extend
 		return inst.getOpcode().equalsIgnoreCase("tsmm")
 				|| inst.getOpcode().equalsIgnoreCase("ba+*")
-				|| inst.getOpcode().equalsIgnoreCase("*")
+				|| (inst.getOpcode().equalsIgnoreCase("*") &&
+					inst instanceof BinaryMatrixMatrixCPInstruction) //TODO support scalar
 				|| inst.getOpcode().equalsIgnoreCase("rightIndex");
 	}
 	

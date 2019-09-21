@@ -31,8 +31,10 @@ import org.tugraz.sysds.runtime.DMLScriptException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineagePath;
 
 public class ForProgramBlock extends ProgramBlock
@@ -134,6 +136,10 @@ public class ForProgramBlock extends ProgramBlock
 				
 				//set iteration variable
 				ec.setVariable(_iterPredVar, iterVar);
+				if (DMLScript.LINEAGE) {
+					Lineage li = ec.getLineage();
+					li.set(_iterPredVar, li.getOrCreate(new CPOperand(iterVar)));
+				}
 				
 				//execute all child blocks
 				for (int i = 0; i < _childBlocks.size(); i++) {

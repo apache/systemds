@@ -57,6 +57,13 @@ public class CPOperand
 		_isLiteral = literal;
 	}
 
+	public CPOperand(ScalarObject so) {
+		_name = so.getStringValue();
+		_valueType = so.getValueType();
+		_dataType = DataType.SCALAR;
+		_isLiteral = true;
+	}
+
 	public CPOperand(CPOperand variable){
 		_name = variable._name;
 		_valueType = variable._valueType;

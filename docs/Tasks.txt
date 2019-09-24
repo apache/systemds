@@ -87,6 +87,7 @@ SYSTEMDS-110 New Builtin Functions
  * 116 Builtin function for kmeans                                    OK
  * 117 Builtin function for lm cross validation                       OK
  * 118 Builtin function for hyperparameter grid search with CVlm
+ * 119 Builtin functions for l2svm and msvm
 
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK

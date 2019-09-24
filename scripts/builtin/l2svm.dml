@@ -1,0 +1,145 @@
+#-------------------------------------------------------------
+#
+# Modifications Copyright 2019 Graz University of Technology
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# Builtin function Implements binary-class SVM with squared slack variables
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double  ---         matrix X of feature vectors
+# Y               Double  ---         matrix Y of class labels
+# intercept       Boolean False       No Intercept ( If set to TRUE then a constant bias column is added to X)
+# epsilon         Double  0.001       Procedure terminates early if the reduction in objective function 
+#                      value is less than epsilon (tolerance) times the initial objective function value.
+# lambda          Double  1.0         Regularization parameter (lambda) for L2 regularization
+# maxiterations   Int     100         Maximum number of conjugate gradient iterations
+# ---------------------------------------------------------------------------------------------
+ 
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# model           Double   ---        model matrix
+
+
+m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
+Double epsilon = 0.001, Double lambda = 1, Integer maxiterations = 100, Boolean verbose = FALSE)
+    return(Matrix[Double] model)
+{
+
+  #check input parameter assertions
+  if(nrow(X) < 2)
+    stop("Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
+  if(epsilon < 0)
+    stop("Stopping due to invalid argument: Tolerance (tol) must be non-negative")
+  if(lambda < 0)
+    stop("Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
+  if(maxiterations < 1)
+    stop("Stopping due to invalid argument: Maximum iterations should be a positive integer")
+  
+  #check input lables and transform into -1/1
+  check_min = min(Y)
+  check_max = max(Y)
+  
+  num_min = sum(Y == check_min)
+  num_max = sum(Y == check_max)
+  
+  
+  if(num_min + num_max != nrow(Y)) print("please check Y, it should contain only 2 labels")
+  else{
+    if(check_min != -1 | check_max != +1)
+      Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
+  }
+  
+  if(verbose) print('running L2-SVM ');
+  
+  num_samples = nrow(X)
+  dimensions = ncol(X)
+  
+  if (intercept) {
+    ones  = matrix(1, rows=num_samples, cols=1)
+    X = cbind(X, ones);
+  }
+  
+  num_rows_in_w = dimensions
+  if(intercept){
+    num_rows_in_w = num_rows_in_w + 1
+  }
+  w = matrix(0, rows=num_rows_in_w, cols=1)
+  
+  g_old = t(X) %*% Y
+  s = g_old
+  
+  Xw = matrix(0, rows=nrow(X), cols=1)
+  
+  iter = 0
+  continue = 1
+  while(continue == 1 & iter < maxiterations)  {
+    # minimizing primal obj along direction s
+    step_sz = 0
+    Xd = X %*% s
+    wd = lambda * sum(w * s)
+    dd = lambda * sum(s * s)
+    continue1 = 1
+    while(continue1 == 1){
+      tmp_Xw = Xw + step_sz*Xd
+      out = 1 - Y * (tmp_Xw)
+      sv = (out > 0)
+      out = out * sv
+      g = wd + step_sz*dd - sum(out * Y * Xd)
+      h = dd + sum(Xd * sv * Xd)
+      step_sz = step_sz - g/h
+      continue1 = (g*g/h >= epsilon)
+    }
+  
+    #update weights
+    w = w + step_sz*s
+    Xw = Xw + step_sz*Xd
+  
+    out = 1 - Y * Xw
+    sv = (out > 0)
+    out = sv * out
+    obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
+    g_new = t(X) %*% (out * Y) - lambda * w
+  
+    
+    if(verbose) print("Iter, Obj "+ iter + ", "+obj)
+  
+    tmp = sum(s * g_old)
+    if(step_sz*tmp < epsilon*obj){
+      continue = 0
+    }
+  
+    #non-linear CG step
+    be = sum(g_new * g_new)/sum(g_old * g_old)
+    s = be * s + g_new
+    g_old = g_new
+  
+    iter = iter + 1
+  }
+
+  model = w
+}

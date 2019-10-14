@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -805,7 +805,7 @@ public class Dag<N extends Lop>
 					oparams.getLabel(), oparams.getFile_name(), true, node.getDataType(),
 					OutputInfo.outputInfoToString(getOutputInfo(node, false)),
 					new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), blen, oparams.getNnz()),
-					oparams.getUpdateType());
+					oparams.getUpdateType(), oparams.getLinCacheMarking());
 				
 				createvarInst.setLocation(node);
 				

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Graz University of Technology
+ * Copyright 2020 Graz University of Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,10 +86,10 @@ public class LineageCache {
 				
 				if (reuse && DMLScript.STATISTICS)
 					LineageCacheStatistics.incrementInstHits();
-
+				
 				//create a placeholder if no reuse to avoid redundancy
 				//(e.g., concurrent threads that try to start the computation)
-				if( ! reuse )
+				if(!reuse && isMarkedForCaching(inst, ec))
 					putIntern(item, null, 0);
 			}
 		}
@@ -172,6 +172,7 @@ public class LineageCache {
 		if (ReuseCacheType.isNone())
 			return;
 		if (inst instanceof ComputationCPInstruction && isReusable(inst, ec) ) {
+			if (!isMarkedForCaching(inst, ec)) return;
 			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];
 			MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
 			MatrixBlock value = mo.acquireReadAndRelease();
@@ -329,6 +330,16 @@ public class LineageCache {
 		long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
 		long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
 		return(c1 == 1 || c2 == 1);
+	}
+	
+	public static boolean isMarkedForCaching (Instruction inst, ExecutionContext ec) {
+		if (!LineageCacheConfig.getCompAssRW())
+			return true;
+
+		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)inst).output);
+		//limit this to full reuse as partial reuse is applicable even for loop dependent operation
+		boolean marked = (LineageCacheConfig.getCacheType() == ReuseCacheType.REUSE_FULL  && !mo.isMarked()) ? false : true; 
+		return marked;
 	}
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------

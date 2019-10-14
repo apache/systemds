@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,6 +41,7 @@ public class OutputParameters
 	private long _blocksize = -1;
 	private String _file_name = null;
 	private String _file_label = null;
+	private boolean _linCacheCandidate = true;
 
 	FileFormat matrix_format = FileFormat.BINARY;
 	
@@ -81,6 +84,11 @@ public class OutputParameters
 
 	public void setDimensions(long rows, long cols, long blen, long nnz, UpdateType update) {
 		_updateType = update;
+		setDimensions(rows, cols, blen, nnz);
+	}
+
+	public void setDimensions(long rows, long cols, long blen, long nnz, boolean linCacheCand) {
+		_linCacheCandidate = linCacheCand;
 		setDimensions(rows, cols, blen, nnz);
 	}
 	
@@ -136,6 +144,10 @@ public class OutputParameters
 	
 	public void setUpdateType(UpdateType update) {
 		_updateType = update;
+	}
+	
+	public boolean getLinCacheMarking() {
+		return _linCacheCandidate;
 	}
 
 	public long getBlocksize() {

@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -113,6 +113,10 @@ public abstract class Hop implements ParseInfo
 	// indicates if the output of this hops needs to contain materialized empty blocks 
 	// if those exists; otherwise only blocks w/ non-zero values are materialized
 	protected boolean _outputEmptyBlocks = true;
+
+	// indicates if the output of this hop needs to be saved in lineage cache
+	// this is a suggestion by compiler and can be ignored by runtime
+	protected boolean _requiresLineageCaching = true;
 	
 	private Lop _lops = null;
 	
@@ -262,6 +266,14 @@ public abstract class Hop implements ParseInfo
 	
 	public boolean requiresCompression() {
 		return _requiresCompression;
+	}
+	
+	public void setRequiresLineageCaching(boolean flag) {
+		_requiresLineageCaching = flag;
+	}
+	
+	public boolean requiresLineageCaching() {
+		return _requiresLineageCaching;
 	}
 	
 	public void constructAndSetLopsDataFlowProperties() {
@@ -1653,6 +1665,7 @@ public abstract class Hop implements ParseInfo
 		_requiresReblock = that._requiresReblock;
 		_requiresCheckpoint = that._requiresCheckpoint;
 		_requiresCompression = that._requiresCompression;
+		_requiresLineageCaching = that._requiresLineageCaching;
 		_outputEmptyBlocks = that._outputEmptyBlocks;
 		
 		_beginLine = that._beginLine;

@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -58,7 +58,6 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
  * 	
  * 		Semantic: generate indices, align, cross-operate, generate indices, align, aggregate
  */
-
 public class AggBinaryOp extends MultiThreadedHop
 {
 	public static final double MAPMULT_MEM_MULTIPLIER = 1.0;
@@ -537,7 +536,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		Lop matmultCP = new MMTSJ(getInput().get(mmtsj.isLeft()?1:0).constructLops(),
 			getDataType(), getValueType(), et, mmtsj, false, k);
-		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), getNnz());
+		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), getNnz(), requiresLineageCaching());
 		setLineNumbers( matmultCP );
 		setLops(matmultCP);
 	}

@@ -79,6 +79,13 @@ public class Transform extends Lop
 		_bSortIndInMem = bSortIndInMem;
 		init(inputs, op, dt, vt, et);
 	}
+
+	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem, int k) {
+		super(Lop.Type.Transform, dt, vt);
+		_bSortIndInMem = bSortIndInMem;
+		_numThreads = k;
+		init(inputs, op, dt, vt, et);
+	}
 	
 	private void init (Lop[] input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
@@ -175,6 +182,10 @@ public class Transform extends Lop
 		sb.append( this.prepOutputOperand(output));
 		
 		if( getExecType()==ExecType.CP && operation == OperationTypes.Transpose ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
+		if( getExecType()==ExecType.CP && operation == OperationTypes.Sort ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 		}

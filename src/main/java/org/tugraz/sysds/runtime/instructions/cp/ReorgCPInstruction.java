@@ -108,13 +108,14 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 			return new ReorgCPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase("rsort") ) {
-			InstructionUtils.checkNumFields(parts, 5);
+			InstructionUtils.checkNumFields(str, 5,6);
 			in.split(parts[1]);
 			out.split(parts[5]);
 			CPOperand col = new CPOperand(parts[2]);
 			CPOperand desc = new CPOperand(parts[3]);
 			CPOperand ixret = new CPOperand(parts[4]);
-			return new ReorgCPInstruction(new ReorgOperator(new SortIndex(1,false,false)), 
+			int k = Integer.parseInt(parts[6]);
+			return new ReorgCPInstruction(new ReorgOperator(new SortIndex(1,false,false), k), 
 				in, out, col, desc, ixret, opcode, str);
 		}
 		else {

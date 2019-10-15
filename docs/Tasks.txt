@@ -139,5 +139,8 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
  * 188 Builtin function ALS
  
  
+SYSTEMDS-190 Ramp-Up Tasks
+* 191 Parallel Sort                                                   OK
+
 Others:
  * Break append instruction to cbind and rbind 

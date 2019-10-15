@@ -189,26 +189,29 @@ public class ReorgOp extends MultiThreadedHop
 			}
 			case SORT:
 			{
-				Hop input = getInput().get(0);
-				Hop by = getInput().get(1);
-				Hop desc = getInput().get(2);
-				Hop ixret = getInput().get(3);
-				
+				Lop[] linputs = new Lop[4]; //input, by, desc, ixret
+				for (int i = 0; i < 4; i++)
+					linputs[i] = getInput().get(i).constructLops();
+				Hop by = getInput().get(2);
+				Transform transform1;
+
 				if( et==ExecType.SPARK ) {
 					boolean sortRewrite = !FORCE_DIST_SORT_INDEXES 
 						&& isSortSPRewriteApplicable() && by.getDataType().isScalar();
-					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, sortRewrite);
-					setOutputDimensions(transform1);
-					setLineNumbers(transform1);
-					setLops(transform1);
+					int k = 1;
+					// number of threads set to 1 for spark.
+					transform1 = new Transform( linputs, HopsTransf2Lops.get(ReOrgOp.SORT), getDataType(), getValueType(), et, sortRewrite, k);
 				}
 				else //CP
 				{
-					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, false);
-					setOutputDimensions(transform1);
-					setLineNumbers(transform1);
-					setLops(transform1);
-				}
+					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+					transform1 = new Transform( linputs, HopsTransf2Lops.get(ReOrgOp.SORT), getDataType(), getValueType(), et, false, k);
+				} 
+
+				setOutputDimensions(transform1);
+				setLineNumbers(transform1);
+				setLops(transform1);
+
 				break;
 			}
 			
@@ -222,16 +225,7 @@ public class ReorgOp extends MultiThreadedHop
 		return getLops();
 	}
 
-	private static Lop constructCPOrSparkSortLop( Hop input, Hop by, Hop desc, Hop ixret, ExecType et, boolean bSortIndInMem ) 
-	{
-		Hop[] hinputs = new Hop[]{input, by, desc, ixret};
-		Lop[] linputs = new Lop[4];
-		for( int i=0; i<4; i++ )
-			linputs[i] = hinputs[i].constructLops();
-		return new Transform( linputs, HopsTransf2Lops.get(ReOrgOp.SORT), 
-			input.getDataType(), input.getValueType(), et, bSortIndInMem);
-	}
-	
+
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz ) {
 		//no dedicated mem estimation per op type, because always propagated via refreshSizeInformation

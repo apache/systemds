@@ -17,6 +17,9 @@ maven-eclipse.xml
 *.iml
 *.iws
 
+# vscode
+.vscode
+
 # checksum files
 *.crc
 

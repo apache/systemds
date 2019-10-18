@@ -1,0 +1,39 @@
+#-------------------------------------------------------------
+#
+# Copyright 2019 Graz University of Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
+debug_print = function(String name, Matrix[Double]  m) {
+  print(name + " ROWS=" + nrow(m) + " COLS=" + ncol(m) + "\n" + toString(m, decimal=10))
+}
+
+A = read($1)
+B = read($2)
+
+# out will make A update-in-place from the second iteration of the outer loop
+out = A
+for(i in 1:4) {
+  for ( i in 1:4 ) {
+    debug_print("start A", A[1:5, 1:5])
+    out[,i] = A[,i] + 2 ^ i;
+    debug_print("end A", A[1:5, 1:5])
+  }
+  A = out
+  print("while loop iteration++")
+}
+
+debug_print("A", A[1:5, 1:5])
+debug_print("B", B[1:5, 1:5])

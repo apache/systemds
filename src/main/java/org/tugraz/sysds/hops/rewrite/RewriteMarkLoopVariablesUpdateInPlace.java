@@ -26,11 +26,12 @@ import java.util.List;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.DataOp;
+import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LeftIndexingOp;
-import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
+import org.tugraz.sysds.hops.LeftIndexingOp;
+import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.parser.ForStatement;
 import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.IfStatement;
@@ -128,7 +129,13 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		return ret;
 	}
 	
-	private static boolean isApplicableForUpdateInPlace(Hop hop, String varname) {
+	private static boolean isApplicableForUpdateInPlace(Hop hop, String varname)
+	{
+		// check erroneously marking a variable for update-in-place
+		// that is written to by a function return value
+		if(hop instanceof FunctionOp && ((FunctionOp)hop).containsOutput(varname))
+			return false;
+
 		//NOTE: single-root-level validity check
 		if( !hop.getName().equals(varname) )
 			return true;
@@ -141,8 +148,8 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		if( validLix ) {
 			for( Hop p : hop.getInput().get(0).getInput().get(0).getParent() ) {
 				validLix &= ( p == hop.getInput().get(0)  //lix
-						|| (p instanceof UnaryOp && ((UnaryOp)p).getOp()==OpOp1.NROW)
-						|| (p instanceof UnaryOp && ((UnaryOp)p).getOp()==OpOp1.NCOL));
+					|| (p instanceof UnaryOp && ((UnaryOp)p).getOp()==OpOp1.NROW)
+					|| (p instanceof UnaryOp && ((UnaryOp)p).getOp()==OpOp1.NCOL));
 			} 
 		}
 		

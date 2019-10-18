@@ -17,7 +17,10 @@
 package org.tugraz.sysds.runtime.lineage;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.*;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
+import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
+import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 
 public class LineageDedupUtils {

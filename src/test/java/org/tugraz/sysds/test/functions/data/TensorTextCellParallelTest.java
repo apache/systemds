@@ -23,9 +23,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.io.TensorReaderTextCellParallel;
 import org.tugraz.sysds.runtime.io.TensorWriterTextCellParallel;
-
-import static org.tugraz.sysds.test.TestUtils.*;
-
+import org.tugraz.sysds.test.TestUtils;
 
 public class TensorTextCellParallelTest {
 	static final String FILENAME = "target/testTemp/functions/data/TensorTextCellParallelTest/tensor";
@@ -61,9 +59,9 @@ public class TensorTextCellParallelTest {
 	}
 
 	private static void testReadWriteTextCellParallelBasicTensor(ValueType vt) {
-		TensorBlock tb1 = createBasicTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createBasicTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadBasicTensorTextCellParallel(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	@Test
@@ -97,9 +95,9 @@ public class TensorTextCellParallelTest {
 	}
 
 	private static void testReadWriteTextCellParallelDataTensor(ValueType vt) {
-		TensorBlock tb1 = createDataTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createDataTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadDataTensorTextCellParallel(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	private static TensorBlock writeAndReadBasicTensorTextCellParallel(TensorBlock tb1) {

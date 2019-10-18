@@ -16,7 +16,8 @@
 
 package org.tugraz.sysds.runtime.lineage;
 
-import org.tugraz.sysds.runtime.controlprogram.*;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 
 import java.util.ArrayList;

@@ -23,9 +23,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.io.TensorReaderBinaryBlock;
 import org.tugraz.sysds.runtime.io.TensorWriterBinaryBlock;
-
-import static org.tugraz.sysds.test.TestUtils.*;
-
+import org.tugraz.sysds.test.TestUtils;
 
 public class TensorBinaryBlockTest {
 	static final String FILENAME = "target/testTemp/functions/data/TensorBinaryBlockTest/tensor";
@@ -61,9 +59,9 @@ public class TensorBinaryBlockTest {
 	}
 
 	private static void testReadWriteBinaryBlockBasicTensor(ValueType vt) {
-		TensorBlock tb1 = createBasicTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createBasicTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadBasicTensorBinaryBlock(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	@Test
@@ -97,9 +95,9 @@ public class TensorBinaryBlockTest {
 	}
 
 	private static void testReadWriteBinaryBlockDataTensor(ValueType vt) {
-		TensorBlock tb1 = createDataTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createDataTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadDataTensorBinaryBlock(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	private static TensorBlock writeAndReadBasicTensorBinaryBlock(TensorBlock tb1) {

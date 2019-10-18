@@ -23,9 +23,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.io.TensorReaderBinaryBlockParallel;
 import org.tugraz.sysds.runtime.io.TensorWriterBinaryBlockParallel;
-
-import static org.tugraz.sysds.test.TestUtils.*;
-
+import org.tugraz.sysds.test.TestUtils;
 
 public class TensorBinaryBlockParallelTest {
 	static final String FILENAME = "target/testTemp/functions/data/TensorBinaryBlockParallelTest/tensor";
@@ -61,9 +59,9 @@ public class TensorBinaryBlockParallelTest {
 	}
 	
 	private static void testReadWriteBinaryBlockParallelBasicTensor(ValueType vt) {
-		TensorBlock tb1 = createBasicTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createBasicTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadBasicTensorBinaryBlockParallel(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 	
 	@Test
@@ -97,9 +95,9 @@ public class TensorBinaryBlockParallelTest {
 	}
 	
 	private static void testReadWriteBinaryBlockParallelDataTensor(ValueType vt) {
-		TensorBlock tb1 = createDataTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createDataTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadDataTensorBinaryBlockParallel(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 	
 	private static TensorBlock writeAndReadBasicTensorBinaryBlockParallel(TensorBlock tb1) {

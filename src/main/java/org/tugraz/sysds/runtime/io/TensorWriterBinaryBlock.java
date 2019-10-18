@@ -21,19 +21,20 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class TensorWriterBinaryBlock extends TensorWriter {
 	//TODO replication
 
 	@Override
-	@SuppressWarnings("resource")
-	public void writeTensorToHDFS(TensorBlock src, String fname, long[] dims, int blen) throws IOException {
+	public void writeTensorToHDFS(TensorBlock src, String fname, int blen) throws IOException {
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
@@ -47,25 +48,32 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 			HDFSTool.addBinaryBlockSerializationFramework(job);
 
 		//core write sequential
-		writeBinaryBlockMatrixToHDFS(path, job, fs, src, dims, blen);
+		writeBinaryBlockTensorToHDFS(path, job, fs, src, blen);
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
+	
+	protected void writeBinaryBlockTensorToHDFS(Path path, JobConf job, FileSystem fs, TensorBlock src,
+			int blen) throws IOException {
+		writeBinaryBlockTensorToSequenceFile(path, job, fs, src, blen, 0, src.getNumRows());
+	}
 
 	@SuppressWarnings("deprecation")
-	private static void writeBinaryBlockMatrixToHDFS(Path path, JobConf job, FileSystem fs, TensorBlock src, long[] dims, int blen)
-		throws IOException
+	protected static void writeBinaryBlockTensorToSequenceFile(Path path, JobConf job, FileSystem fs, TensorBlock src,
+			int blen, int rl, int ru)
+			throws IOException
 	{
 		try(SequenceFile.Writer writer = new SequenceFile.Writer(fs, job, path, TensorIndexes.class, TensorBlock.class)) {
+			int[] dims = src.getDims();
 			// bound check
 			for (int i = 0; i < dims.length; i++) {
 				if (src.getDim(i) > dims[i])
 					throw new IOException("TensorBlock dimension " + i + " range [1:" + src.getDim(i) +
 							"] out of range [1:" + dims[i] + "].");
 			}
-			long numBlocks = 1;
-			for (long dim : dims) {
-				numBlocks *= Math.max((long) Math.ceil((double) dim / blen), 1);
+			long numBlocks = Math.max((long) Math.ceil((double) (ru - rl) / blen), 1);
+			for (int i = 1; i < dims.length; i++) {
+				numBlocks *= Math.max((long) Math.ceil((double) dims[i] / blen), 1);
 			}
 
 			for (int i = 0; i < numBlocks; i++) {
@@ -76,17 +84,22 @@ public class TensorWriterBinaryBlock extends TensorWriter {
 				for (int j = dims.length - 1; j >= 0; j--) {
 					long numDimBlocks = Math.max((long) Math.ceil((double)src.getDim(j) / blen), 1);
 					tix[j] = 1 + (blockIndex % numDimBlocks);
+					if (j == 0)
+						tix[j] += rl / blen;
 					blockIndex /= numDimBlocks;
 					offsets[j] = ((int) tix[j] - 1) * blen;
 					blockDims[j] = (tix[j] * blen < src.getDim(j)) ? blen : src.getDim(j) - offsets[j];
 				}
 				TensorIndexes indx = new TensorIndexes(tix);
 				TensorBlock block;
-				if (!src.isBasic())
-					block = new TensorBlock(src.getSchema(), blockDims).allocateBlock();
-				else
+				if( src.isBasic() )
 					block = new TensorBlock(src.getValueType(), blockDims).allocateBlock();
-
+				else {
+					ValueType[] schema = src.getSchema();
+					ValueType[] blockSchema = Arrays.copyOfRange(schema, offsets[1], offsets[1] + blockDims[1]);
+					block = new TensorBlock(blockSchema, blockDims).allocateBlock();
+				}
+				
 				//copy submatrix to block
 				src.slice(offsets, block);
 

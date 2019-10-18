@@ -754,6 +754,15 @@ public class OptimizerUtils
 		return bsize;
 	}
 	
+	public static long estimateSizeTextOutput( int[] dims, long nnz, OutputInfo oinfo )
+	{
+		// TODO accurate estimation
+		if( oinfo == OutputInfo.TextCellOutputInfo )
+			// nnz * (8 bytes for number + each dimension with an expected String length of 3 and one space)
+			return nnz * (8 + dims.length * 4); // very simple estimation. example:100 100 1.345678
+		throw new DMLRuntimeException("Tensor output format not implemented.");
+	}
+	
 	public static double getTotalMemEstimate(Hop[] in, Hop out) {
 		return getTotalMemEstimate(in, out, false);
 	}

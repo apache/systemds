@@ -48,7 +48,7 @@ public class TensorReaderBinaryBlock extends TensorReader {
 		return readBinaryBlockTensorFromHDFS(path, job, fs, dims, blen, schema);
 	}
 
-	private static TensorBlock readBinaryBlockTensorFromHDFS(Path path, JobConf job, FileSystem fs, long[] dims,
+	protected TensorBlock readBinaryBlockTensorFromHDFS(Path path, JobConf job, FileSystem fs, long[] dims,
 			int blen, ValueType[] schema) throws IOException {
 		int[] idims = Arrays.stream(dims).mapToInt(i -> (int) i).toArray();
 		TensorBlock ret;

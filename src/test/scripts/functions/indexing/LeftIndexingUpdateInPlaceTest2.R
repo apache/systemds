@@ -16,26 +16,20 @@
 #
 #-------------------------------------------------------------
 
-debug_print = function(String name, Matrix[Double]  m) {
-  print(name + " ROWS=" + nrow(m) + " COLS=" + ncol(m) + "\n" + toString(m, decimal=10))
-}
 
-bug_test = function(Matrix[Double] inputA) return (Matrix[Double] out) {
-  out = inputA
-  for ( i in 1:4 ) {
-    debug_print("start inputA", inputA[1:5, 1:5])
-    out[,i] = inputA[,i] + 2 ^ i;
-    debug_print("end inputA", inputA[1:5, 1:5])
-  }
-}
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
 
-A = read($1)
-B = read($2)
+A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 
 for(i in 1:4) {
-  A = bug_test(A)
-  print("while loop iteration++")
+  out = A
+  for ( i in 1:4 ) {
+    out[,i] = A[,i] + 2 ^ i;
+  }
+  A = out + A
 }
 
-debug_print("A", A[1:5, 1:5])
-debug_print("B", B[1:5, 1:5])
+R = as.matrix(sum(A))
+writeMM(as(R,"CsparseMatrix"), paste(args[2], "R", sep=""))

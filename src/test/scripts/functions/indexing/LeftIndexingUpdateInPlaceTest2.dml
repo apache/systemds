@@ -16,24 +16,19 @@
 #
 #-------------------------------------------------------------
 
-debug_print = function(String name, Matrix[Double]  m) {
-  print(name + " ROWS=" + nrow(m) + " COLS=" + ncol(m) + "\n" + toString(m, decimal=10))
+bug_test = function(Matrix[Double] inputA) return (Matrix[Double] out) {
+  out = inputA
+  for ( i in 1:4 ) {
+    out[,i] = inputA[,i] + 2 ^ i;
+  }
+  out += inputA
 }
 
 A = read($1)
-B = read($2)
 
-# out will make A update-in-place from the second iteration of the outer loop
-out = A
 for(i in 1:4) {
-  for ( i in 1:4 ) {
-    debug_print("start A", A[1:5, 1:5])
-    out[,i] = A[,i] + 2 ^ i;
-    debug_print("end A", A[1:5, 1:5])
-  }
-  A = out
-  print("while loop iteration++")
+  A = bug_test(A)
 }
 
-debug_print("A", A[1:5, 1:5])
-debug_print("B", B[1:5, 1:5])
+R = as.matrix(sum(A))
+write(R, $3, format="text")

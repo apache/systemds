@@ -34,9 +34,9 @@ import org.tugraz.sysds.test.TestUtils;
 public class LeftIndexingUpdateInPlaceTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/indexing/";
-	private final static String TEST_NAME1 = "LeftIndexingUpdateInPlaceTest";
-	private final static String TEST_NAME2 = "LeftIndexingUpdateInPlaceTestBugTest1";
-	private final static String TEST_NAME3 = "LeftIndexingUpdateInPlaceTestBugTest2";
+	private final static String TEST_NAME1 = "LeftIndexingUpdateInPlaceTest1";
+	private final static String TEST_NAME2 = "LeftIndexingUpdateInPlaceTest2";
+	private final static String TEST_NAME3 = "LeftIndexingUpdateInPlaceTest3";
 	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingUpdateInPlaceTest.class.getSimpleName() + "/";
 	
 	private final static int rows1 = 1281;
@@ -153,14 +153,14 @@ public class LeftIndexingUpdateInPlaceTest extends AutomatedTestBase
 
 			//run dml and r script
 			runTest(true, false, null, 2); //2xrblk
-			if(testName == TEST_NAME1) {
-				runRScript(true);
+			runRScript(true);
 
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-				HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
-				TestUtils.compareMatrices(dmlfile, rfile, 0, "DML", "R");
-				checkDMLMetaDataFile("R", new MatrixCharacteristics(rows1, cols1, 1, 1));
-			}
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");
+			TestUtils.compareMatrices(dmlfile, rfile, 0, "DML", "R");
+			checkDMLMetaDataFile("R", testName.equals(TEST_NAME1) ?
+				new MatrixCharacteristics(rows1, cols1, 1, 1):
+				new MatrixCharacteristics(1, 1, 1, 1));
 		}
 		finally {
 			rtplatform = oldRTP;

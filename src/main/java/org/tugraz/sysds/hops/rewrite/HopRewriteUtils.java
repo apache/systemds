@@ -307,7 +307,6 @@ public class HopRewriteUtils
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
-		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
@@ -337,11 +336,8 @@ public class HopRewriteUtils
 	public static DataGenOp copyDataGenOp( DataGenOp inputGen, double scale, double shift ) 
 	{
 		HashMap<String, Integer> params = inputGen.getParamIndexMap();
-		Hop rows = inputGen.getInput().get(params.get(DataExpression.RAND_ROWS));
-		Hop cols = inputGen.getInput().get(params.get(DataExpression.RAND_COLS));
 		Hop min = inputGen.getInput().get(params.get(DataExpression.RAND_MIN));
 		Hop max = inputGen.getInput().get(params.get(DataExpression.RAND_MAX));
-		Hop dims = inputGen.getInput().get(params.get(DataExpression.RAND_DIMS));
 		Hop pdf = inputGen.getInput().get(params.get(DataExpression.RAND_PDF));
 		Hop mean = inputGen.getInput().get(params.get(DataExpression.RAND_LAMBDA));
 		Hop sparsity = inputGen.getInput().get(params.get(DataExpression.RAND_SPARSITY));
@@ -361,11 +357,18 @@ public class HopRewriteUtils
 		Hop smaxHop = new LiteralOp(smax);
 		
 		HashMap<String, Hop> params2 = new HashMap<>();
-		params2.put(DataExpression.RAND_ROWS, rows);
-		params2.put(DataExpression.RAND_COLS, cols);
+		if( !params.containsKey(DataExpression.RAND_DIMS) ) {
+			Hop rows = inputGen.getInput().get(params.get(DataExpression.RAND_ROWS));
+			Hop cols = inputGen.getInput().get(params.get(DataExpression.RAND_COLS));
+			params2.put(DataExpression.RAND_ROWS, rows);
+			params2.put(DataExpression.RAND_COLS, cols);
+		}
+		else {
+			Hop dims = inputGen.getInput().get(params.get(DataExpression.RAND_DIMS));
+			params2.put(DataExpression.RAND_DIMS, dims);
+		}
 		params2.put(DataExpression.RAND_MIN, sminHop);
 		params2.put(DataExpression.RAND_MAX, smaxHop);
-		params2.put(DataExpression.RAND_DIMS, dims);
 		params2.put(DataExpression.RAND_PDF, pdf);
 		params2.put(DataExpression.RAND_LAMBDA, mean);
 		params2.put(DataExpression.RAND_SPARSITY, sparsity);
@@ -393,7 +396,6 @@ public class HopRewriteUtils
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
-		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
@@ -428,7 +430,6 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
-		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA,new LiteralOp(-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
@@ -449,16 +450,18 @@ public class HopRewriteUtils
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
-		params.put(DataExpression.RAND_ROWS, rowInput);
-		params.put(DataExpression.RAND_COLS, colInput);
-		params.put(DataExpression.RAND_DIMS, dimsInput);
+		if (dt.isTensor())
+			params.put(DataExpression.RAND_DIMS, dimsInput);
+		else {
+			params.put(DataExpression.RAND_ROWS, rowInput);
+			params.put(DataExpression.RAND_COLS, colInput);
+		}
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
-		params.put(DataExpression.RAND_TENSOR, new LiteralOp(false));
 		
 		//note internal refresh size information
 		DataIdentifier di = new DataIdentifier("tmp");

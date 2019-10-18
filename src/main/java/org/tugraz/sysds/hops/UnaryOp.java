@@ -254,7 +254,7 @@ public class UnaryOp extends MultiThreadedHop
 		//special case single row block (no offsets needed)
 		if( rlen > 0 && clen > 0 && rlen <= blen ) {
 			Lop offset = HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1), new LiteralOp(clen),
-					new LiteralOp("1 1"), DataType.MATRIX, ValueType.FP64, getCumulativeInitValue()).constructLops();
+					null, DataType.MATRIX, ValueType.FP64, getCumulativeInitValue()).constructLops();
 			return constructCumOffBinary(X, offset, aggtype, rlen, clen, blen);
 		}
 		

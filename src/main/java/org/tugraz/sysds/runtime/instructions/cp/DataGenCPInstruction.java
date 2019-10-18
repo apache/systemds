@@ -176,7 +176,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( s, 12 );
+			InstructionUtils.checkNumFields ( s, 10, 11 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
@@ -199,21 +199,29 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		
 		if ( method == DataGenMethod.RAND ) 
 		{
-			CPOperand rows = new CPOperand(s[1]);
-			CPOperand cols = new CPOperand(s[2]);
-			CPOperand dims = new CPOperand(s[3]);
-			int blen = Integer.parseInt(s[4]);
-			double sparsity = !s[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-					Double.valueOf(s[7]) : -1;
-			long seed = !s[SEED_POSITION_RAND].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-					Long.valueOf(s[SEED_POSITION_RAND]) : -1;
-			String pdf = s[9];
-			String pdfParams = !s[10].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				s[10] : null;
-			int k = Integer.parseInt(s[11]);
+			int missing; // number of missing params (row & cols or dims)
+			CPOperand rows = null, cols = null, dims = null;
+			if (s.length == 12) {
+				missing = 1;
+				rows = new CPOperand(s[1]);
+				cols = new CPOperand(s[2]);
+			}
+			else {
+				missing = 2;
+				dims = new CPOperand(s[1]);
+			}
+			int blen = Integer.parseInt(s[4 - missing]);
+			double sparsity = !s[7 - missing].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Double.parseDouble(s[7 - missing]) : -1;
+			long seed = !s[SEED_POSITION_RAND - missing].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Long.parseLong(s[SEED_POSITION_RAND - missing]) : -1;
+			String pdf = s[9 - missing];
+			String pdfParams = !s[10 - missing].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				s[10 - missing] : null;
+			int k = Integer.parseInt(s[11 - missing]);
 			
 			return new DataGenCPInstruction(op, method, null, out, rows, cols, dims, blen,
-				s[5], s[6], sparsity, seed, pdf, pdfParams, k, opcode, str);
+				s[5 - missing], s[6 - missing], sparsity, seed, pdf, pdfParams, k, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) 
 		{
@@ -253,9 +261,12 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		
 		//process specific datagen operator
 		if ( method == DataGenMethod.RAND ) {
-			long lrows = ec.getScalarInput(rows).getLongValue();
-			long lcols = ec.getScalarInput(cols).getLongValue();
-			checkValidDimensions(lrows, lcols);
+			long lrows = -1, lcols = -1;
+			if (dims == null) {
+				lrows = ec.getScalarInput(rows).getLongValue();
+				lcols = ec.getScalarInput(cols).getLongValue();
+				checkValidDimensions(lrows, lcols);
+			}
 			
 			//generate pseudo-random seed (because not specified) 
 			long lSeed = seed; //seed per invocation

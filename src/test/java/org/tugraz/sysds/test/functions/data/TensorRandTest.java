@@ -93,9 +93,8 @@ public class TensorRandTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + testName + ".dml";
-			StringBuilder dimensionsStringBuilder = new StringBuilder();
-			Arrays.stream(dimensions).forEach((dim) -> dimensionsStringBuilder.append(dim).append(" "));
-			String dimensionsString = dimensionsStringBuilder.toString();
+			String dimensionsString = Arrays.toString(dimensions).replace(",", "");
+			dimensionsString = dimensionsString.substring(1, dimensionsString.length() - 1);
 
 			programArgs = new String[]{"-explain", "-args", dimensionsString, min, max, Integer.toString(seed)};
 

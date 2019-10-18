@@ -96,10 +96,7 @@ public class DataGenOp extends MultiThreadedHop
 		_op = mthd;
 		
 		//ensure all parameters existing and consistent with data type
-		//TODO remove once this unnecessary parameter is cleaned up
-		if( !inputParameters.containsKey(DataExpression.RAND_TENSOR) )
-			inputParameters.put(DataExpression.RAND_TENSOR, new LiteralOp(false));
-		else if (HopRewriteUtils.isLiteralOfValue(inputParameters.get(DataExpression.RAND_TENSOR), true))
+		if( inputParameters.containsKey(DataExpression.RAND_DIMS) )
 			setDataType(DataType.TENSOR);
 		
 		int index = 0;
@@ -115,7 +112,7 @@ public class DataGenOp extends MultiThreadedHop
 		
 		Hop sparsityOp = inputParameters.get(DataExpression.RAND_SPARSITY);
 		if ( mthd == DataGenMethod.RAND && sparsityOp instanceof LiteralOp)
-			_sparsity = Double.valueOf(((LiteralOp)sparsityOp).getName());
+			_sparsity = HopRewriteUtils.getDoubleValue((LiteralOp)sparsityOp);
 		
 		//generate base dir
 		String scratch = ConfigurationManager.getScratchSpace();
@@ -215,7 +212,7 @@ public class DataGenOp extends MultiThreadedHop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		double ret = 0;
+		double ret;
 		
 		if ( _op == DataGenMethod.RAND && _sparsity != -1 ) {
 			if( hasConstantValue(0.0) ) { //if empty block
@@ -253,11 +250,17 @@ public class DataGenOp extends MultiThreadedHop
 		if( (_op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ) &&
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
 		{
-			long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
-			long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
-			long nnz = _sparsity >= 0 ? (long)(_sparsity * dim1 * dim2) : -1;
-			if( dim1>=0 && dim2>=0 )
-				return new MatrixCharacteristics(dim1, dim2, -1, nnz);
+			if (_paramIndexMap.containsKey(DataExpression.RAND_DIMS)) {
+				// TODO size information for tensors
+				return null;
+			}
+			else {
+				long dim1 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)), memo);
+				long dim2 = computeDimParameterInformation(getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)), memo);
+				long nnz = _sparsity >= 0 ? (long) (_sparsity * dim1 * dim2) : -1;
+				if( dim1 >= 0 && dim2 >= 0 )
+					return new MatrixCharacteristics(dim1, dim2, -1, nnz);
+			}
 		}
 		else if ( _op == DataGenMethod.SEQ )
 		{
@@ -278,7 +281,7 @@ public class DataGenOp extends MultiThreadedHop
 				&& incr instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)incr)==-1 )
 			{
 				long fromVal = computeDimParameterInformation(from, memo);
-				if( fromVal > 0 )	
+				if( fromVal > 0 )
 					return new MatrixCharacteristics(fromVal, 1, -1, -1);
 			}
 		}
@@ -454,8 +457,8 @@ public class DataGenOp extends MultiThreadedHop
 		//sparsity awareness if requires
 		if( ret && val != 0 ) {
 			Hop sparsity = getInput().get(_paramIndexMap.get(DataExpression.RAND_SPARSITY)); //sparsity
-			ret &= (sparsity == null || sparsity instanceof LiteralOp 
-				&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)sparsity) == 1);
+			ret = (sparsity == null || sparsity instanceof LiteralOp
+					&& HopRewriteUtils.getDoubleValueSafe((LiteralOp) sparsity) == 1);
 		}
 		
 		return ret;
@@ -522,8 +525,7 @@ public class DataGenOp extends MultiThreadedHop
 			for( Entry<String,Integer> e : _paramIndexMap.entrySet() ) {
 				String key1 = e.getKey();
 				int pos1 = e.getValue();
-				int pos2 = that2._paramIndexMap.containsKey(key1) ?
-					that2._paramIndexMap.get(key1) : -1;
+				int pos2 = that2._paramIndexMap.getOrDefault(key1, -1);
 				ret &= ( pos2 >=0 && that2.getInput().get(pos2)!=null
 					&& getInput().get(pos1) == that2.getInput().get(pos2) );
 			}

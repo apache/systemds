@@ -176,9 +176,12 @@ public class LineageItemUtils {
 				if (inst instanceof DataGenCPInstruction) {
 					DataGenCPInstruction rand = (DataGenCPInstruction) inst;
 					HashMap<String, Hop> params = new HashMap<>();
-					params.put(DataExpression.RAND_ROWS, new LiteralOp(rand.getRows()));
-					params.put(DataExpression.RAND_COLS, new LiteralOp(rand.getCols()));
-					params.put(DataExpression.RAND_DIMS, new LiteralOp(rand.getDims()));
+					if( rand.output.getDataType() == DataType.TENSOR)
+						params.put(DataExpression.RAND_DIMS, new LiteralOp(rand.getDims()));
+					else {
+						params.put(DataExpression.RAND_ROWS, new LiteralOp(rand.getRows()));
+						params.put(DataExpression.RAND_COLS, new LiteralOp(rand.getCols()));
+					}
 					params.put(DataExpression.RAND_MIN, new LiteralOp(rand.getMinValue()));
 					params.put(DataExpression.RAND_MAX, new LiteralOp(rand.getMaxValue()));
 					params.put(DataExpression.RAND_PDF, new LiteralOp(rand.getPdf()));

@@ -375,8 +375,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			if (runtimeSeed == null)
 				runtimeSeed = (minValue == maxValue && sparsity == 1) ? 
 					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
-			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND + 1 :
-					(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE + 1 : 0;
+			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND :
+					(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(
 					tmpInstStr, position, String.valueOf(runtimeSeed));
 		}

@@ -38,8 +38,6 @@ public class LineageCacheConfig {
 		}
 	}
 	
-	public ArrayList<String> _MMult = new ArrayList<>();
-	
 	public enum CachedItemHead {
 		TSMM,
 		ALL
@@ -51,10 +49,18 @@ public class LineageCacheConfig {
 		INDEX,
 		ALL
 	}
+	
+	public ArrayList<String> _MMult = new ArrayList<>();
+	public static boolean _allowSpill = true;
 
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
+
+	static {
+		//setup static configuration parameters
+		setSpill(false); //disable spilling of cache entries to disk
+	}
 	
 	public static void setConfigTsmmCbind(ReuseCacheType ct) {
 		_cacheType = ct;
@@ -80,6 +86,14 @@ public class LineageCacheConfig {
 	public static void restartReuse(ReuseCacheType rop) {
 		DMLScript.LINEAGE = true;
 		DMLScript.LINEAGE_REUSE = rop;
+	}
+	
+	public static void setSpill(boolean toSpill) {
+		_allowSpill = toSpill;
+	}
+	
+	public static boolean isSetSpill() {
+		return _allowSpill;
 	}
 	
 	public static ReuseCacheType getCacheType() {

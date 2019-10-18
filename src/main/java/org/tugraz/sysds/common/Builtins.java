@@ -90,8 +90,8 @@ public enum Builtins {
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
 	KMEANS("kmeans", true),
-	L2SVM( "l2svm", true),
-	MULTISVM( "multisvm", true),
+	L2SVM("l2svm", true),
+	MSVM("msvm", true),
 	LENGTH("length", false),
 	LINEAGE("lineage", false),
 	LIST("list", false),  //note: builtin and parbuiltin

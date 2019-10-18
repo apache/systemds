@@ -23,9 +23,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.io.TensorReaderTextCell;
 import org.tugraz.sysds.runtime.io.TensorWriterTextCell;
-
-import static org.tugraz.sysds.test.TestUtils.*;
-
+import org.tugraz.sysds.test.TestUtils;
 
 public class TensorTextCellTest {
 	static final String FILENAME = "target/testTemp/functions/data/TensorTextCellTest/tensor";
@@ -57,17 +55,17 @@ public class TensorTextCellTest {
 
 	@Test
 	public void testReadWriteTextCellBasicTensorString() {
-		TensorBlock tb1 = createBasicTensor(ValueType.STRING, 70, 30, 0.7);
+		TensorBlock tb1 = TestUtils.createBasicTensor(ValueType.STRING, 70, 30, 0.7);
 		tb1.set(new int[]{0, 0}, "\"  f  f  \"");
 		tb1.set(new int[]{69, 29}, "respect");
 		TensorBlock tb2 = writeAndReadBasicTensorTextCell(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	private static void testReadWriteTextCellBasicTensor(ValueType vt) {
-		TensorBlock tb1 = createBasicTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createBasicTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadBasicTensorTextCell(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	@Test
@@ -97,17 +95,17 @@ public class TensorTextCellTest {
 
 	@Test
 	public void testReadWriteTextCellDataTensorString() {
-		TensorBlock tb1 = createDataTensor(ValueType.STRING, 70, 30, 0.7);
+		TensorBlock tb1 = TestUtils.createDataTensor(ValueType.STRING, 70, 30, 0.7);
 		tb1.set(new int[]{0, 0}, "\"  f  f  \"");
 		tb1.set(new int[]{69, 29}, "respect");
 		TensorBlock tb2 = writeAndReadDataTensorTextCell(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	private static void testReadWriteTextCellDataTensor(ValueType vt) {
-		TensorBlock tb1 = createDataTensor(vt, 70, 3000, 0.7);
+		TensorBlock tb1 = TestUtils.createDataTensor(vt, 70, 3000, 0.7);
 		TensorBlock tb2 = writeAndReadDataTensorTextCell(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	private static TensorBlock writeAndReadBasicTensorTextCell(TensorBlock tb1) {

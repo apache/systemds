@@ -25,9 +25,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheDataInput;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.tugraz.sysds.runtime.data.TensorBlock;
-
-import static org.tugraz.sysds.test.TestUtils.*;
-
+import org.tugraz.sysds.test.TestUtils;
 
 public class TensorSerializationTest 
 {
@@ -82,15 +80,15 @@ public class TensorSerializationTest
 	}
 
 	private static void testSerializeBasicTensor(ValueType vt) {
-		TensorBlock tb1 = createBasicTensor(vt, 70, 30, 0.7);
+		TensorBlock tb1 = TestUtils.createBasicTensor(vt, 70, 30, 0.7);
 		TensorBlock tb2 = serializeAndDeserializeTensorBlock(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	private static void testSerializeDataTensor(ValueType vt) {
-		TensorBlock tb1 = createDataTensor(vt, 70, 30, 0.7);
+		TensorBlock tb1 = TestUtils.createDataTensor(vt, 70, 30, 0.7);
 		TensorBlock tb2 = serializeAndDeserializeTensorBlock(tb1);
-		compareTensorBlocks(tb1, tb2);
+		TestUtils.compareTensorBlocks(tb1, tb2);
 	}
 
 	private static TensorBlock serializeAndDeserializeTensorBlock(TensorBlock tb1) {

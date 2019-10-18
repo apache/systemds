@@ -80,6 +80,10 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	public int getNumColumnBlocks() {
 		return (int)_dc.getNumColBlocks();
 	}
+	
+	public DataCharacteristics getDataCharacteristics() {
+		return _dc;
+	}
 
 	public static int computeBlocksPerPartition(long rlen, long clen, long blen) {
 		return (int) (BROADCAST_PARTSIZE / Math.min(rlen, blen) / Math.min(clen, blen));

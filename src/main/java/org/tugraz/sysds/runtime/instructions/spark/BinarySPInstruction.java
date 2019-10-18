@@ -39,6 +39,7 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.MatrixMatrixBinaryO
 import org.tugraz.sysds.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.ReblockTensorFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.ReplicateTensorFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.ReplicateVectorFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.TensorTensorBinaryOpFunction;
@@ -196,7 +197,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 
 		BinaryOperator bop = (BinaryOperator) _optr;
 
-		// TODO blocking scheme for tensors/matrices with mismatching number of dimensions
+		// TODO blocking scheme for matrices with mismatching number of dimensions
+		if (tc2.getNumDims() < tc1.getNumDims())
+			in2 = in2.flatMapToPair(new ReblockTensorFunction(tc1.getNumDims(), tc1.getBlocksize()));
 		for (int i = 0; i < tc1.getNumDims(); i++) {
 			long numReps = getNumDimReplicas(tc1, tc2, i);
 			if (numReps > 1)
@@ -267,17 +270,19 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		String rddVar = input1.getName();
 		String bcastVar = input2.getName();
 		JavaPairRDD<TensorIndexes, TensorBlock> in1 = sec.getBinaryTensorBlockRDDHandleForVariable(rddVar);
+		DataCharacteristics dc1 = sec.getDataCharacteristics(rddVar);
+		DataCharacteristics dc2 = sec.getDataCharacteristics(bcastVar).setBlocksize(dc1.getBlocksize());
 		PartitionedBroadcast<TensorBlock> in2 = sec.getBroadcastForTensorVariable(bcastVar);
-		DataCharacteristics mc2 = sec.getDataCharacteristics(bcastVar);
 
 		BinaryOperator bop = (BinaryOperator) _optr;
 
-		boolean[] replicateDim = new boolean[mc2.getNumDims()];
+		boolean[] replicateDim = new boolean[dc2.getNumDims()];
 		for (int i = 0; i < replicateDim.length; i++)
-			replicateDim[i] = mc2.getDim(i) == 1;
+			replicateDim[i] = dc2.getDim(i) == 1;
 
 		//execute map binary operation
-		JavaPairRDD<TensorIndexes, TensorBlock> out = null;
+		JavaPairRDD<TensorIndexes, TensorBlock> out;
+		// TODO less dims broadcast variable
 		out = in1.mapPartitionsToPair(
 				new TensorTensorBinaryOpPartitionFunction(bop, in2, replicateDim), true);
 
@@ -372,7 +377,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected long getNumDimReplicas(DataCharacteristics dc1, DataCharacteristics dc2, int dim) {
-		if (dc2.getDim(dim) == 1 && dc2.getDim(dim) > 1)
+		if (dim >= dc2.getNumDims() || (dc2.getDim(dim) == 1 && dc2.getDim(dim) > 1))
 			return dc1.getNumBlocks(dim);
 		return 1;
 	}
@@ -415,9 +420,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			throw new DMLRuntimeException("Unknown dimensions tensor-tensor binary operations");
 		}
 
-		boolean dimensionMismatch = mc1.getNumDims() != mc2.getNumDims();
+		boolean dimensionMismatch = mc1.getNumDims() < mc2.getNumDims();
 		if (!dimensionMismatch) {
-			for (int i = 0; i < mc1.getNumDims(); i++) {
+			for (int i = 0; i < mc2.getNumDims(); i++) {
 				if (mc1.getDim(i) != mc2.getDim(i) && mc2.getDim(i) != 1) {
 					dimensionMismatch = true;
 					break;
@@ -428,16 +433,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		if (dimensionMismatch) {
 			throw new DMLRuntimeException("Dimensions mismatch tensor-tensor binary operations");
 		}
-
-		boolean blockSizeMismatch = false;
-		for (int i = 0; i < mc1.getNumDims(); i++) {
-			if (mc1.getNumBlocks(i) != mc2.getNumBlocks(i) && mc2.getDim(i) != 1) {
-				blockSizeMismatch = true;
-				break;
-			}
-		}
-		if (blockSizeMismatch)
-			throw new DMLRuntimeException("Blocksize mismatch tensor-tensor binary operations");
 	}
 
 	protected void checkBinaryAppendInputCharacteristics(SparkExecutionContext sec, boolean cbind, boolean checkSingleBlk, boolean checkAligned)

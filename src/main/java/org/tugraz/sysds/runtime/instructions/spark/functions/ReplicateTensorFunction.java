@@ -44,7 +44,7 @@ public class ReplicateTensorFunction implements PairFlatMapFunction<Tuple2<Tenso
 		TensorBlock tb = arg0._2();
 
 		//sanity check inputs
-		if (ix.getIndex(_byDim) != 1 || tb.getDim(_byDim) > 1) {
+		if (ix.getIndex(_byDim) != 1 || (tb.getNumDims() > _byDim && tb.getDim(_byDim) > 1)) {
 			throw new Exception("Expected dimension " + _byDim + " to be 1 in ReplicateTensor");
 		}
 

@@ -50,11 +50,13 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase {
 	@Parameters
 	public static Collection<Object[]> data() {
 		Object[][] data = new Object[][]{
-			{new int[]{3, 4, 5}, new int[]{3, 4, 5}, "3", "-2"},
-			{new int[]{1, 1, 1, 1, 1}, new int[]{1, 1, 1, 1, 1}, "2", "30000000000.0"},
-			{new int[]{4000, 4000}, new int[]{4000, 4000}, "3.0", "-2.0"},
-			{new int[]{4000, 4000}, new int[]{4000, 1}, "3.0", "-2.0"},
-			{new int[]{4000, 4000}, new int[]{1, 1}, "3.0", "-2"},
+				{new int[]{3, 4, 5}, new int[]{3, 4, 5}, "3", "-2"},
+				{new int[]{1, 1, 1, 1, 1}, new int[]{1, 1, 1, 1, 1}, "2", "30000000000.0"},
+				{new int[]{2000, 2000}, new int[]{2000, 2000}, "3.0", "-2.0"},
+				{new int[]{2000, 2000}, new int[]{2000, 1}, "3.0", "-2.0"},
+				{new int[]{2000, 2000}, new int[]{1, 1}, "3.0", "-2"},
+				{new int[]{2000, 200, 40}, new int[]{2000, 200}, "3.0", "-2"},
+				{new int[]{130, 130, 130}, new int[]{130, 130}, "1", "-2"},
 		};
 		return Arrays.asList(data);
 	}
@@ -104,8 +106,8 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase {
 					.replace(",", "").replace("]", "");
 			String rdimString = Arrays.toString(_dimsRight).replace("[", "")
 					.replace(",", "").replace("]", "");
-			programArgs = new String[]{"-explain", "-args",
-					ldimString, rdimString, Integer.toString(_dimsLeft.length), _lvalue, _rvalue, output("A")};
+			programArgs = new String[]{"-explain", "-args", ldimString, Integer.toString(_dimsLeft.length), rdimString,
+					Integer.toString(_dimsRight.length), _lvalue, _rvalue, output("A")};
 
 			runTest(true, false, null, -1);
 			//TODO test correctness

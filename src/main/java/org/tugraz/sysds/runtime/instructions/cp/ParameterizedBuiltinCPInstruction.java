@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.ParameterizedBuiltinFunctionExpression;
 import org.tugraz.sysds.parser.Statement;
@@ -43,6 +45,8 @@ import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
@@ -391,5 +395,26 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			LOG.warn("Truncating "+data.getClass().getSimpleName()+" of size "+sb.toString()+" to "+rows+"x"+cols+". "
 					+ "Use toString(X, rows=..., cols=...) if necessary.");
 		}
+	}
+
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		String opcode = getOpcode();
+		if (opcode.equalsIgnoreCase("groupedagg")) {
+			CPOperand target = new CPOperand(params.get(Statement.GAGG_TARGET), ValueType.FP64, DataType.MATRIX);
+			CPOperand groups = new CPOperand(params.get(Statement.GAGG_GROUPS), ValueType.FP64, DataType.MATRIX);
+			String wt = params.containsKey(Statement.GAGG_WEIGHTS) ? params.get(Statement.GAGG_WEIGHTS) : String.valueOf(-1);
+			CPOperand weights = new CPOperand(wt, ValueType.FP64, DataType.MATRIX);
+			CPOperand fn = new CPOperand(params.get(Statement.GAGG_FN), ValueType.STRING, DataType.SCALAR, true);
+			String ng = params.containsKey(Statement.GAGG_NUM_GROUPS) ? params.get(Statement.GAGG_NUM_GROUPS) : String.valueOf(-1);
+			CPOperand ngroups = new CPOperand(ng , ValueType.INT64, DataType.SCALAR, true);
+			return new LineageItem[]{new LineageItem(output.getName(),
+				getOpcode(), LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups))};
+		}
+		//TODO: generic interface to support all the ops
+		else
+			return new LineageItem[]{new LineageItem(output.getName(),
+					getOpcode(), LineageItemUtils.getLineage(ec, input1,input2,input3))};
+			
 	}
 }

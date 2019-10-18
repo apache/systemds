@@ -18,6 +18,7 @@ package org.tugraz.sysds.runtime.lineage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -30,12 +31,15 @@ import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.Hop.OpOpN;
+import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.NaryOp;
+import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.Program;
@@ -44,6 +48,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.MetaData;
@@ -80,6 +85,8 @@ public class LineageRewriteReuse
 		newInst = (newInst == null) ? rewriteElementMulRbind(curr, ec, lrwec) : newInst;
 		//cbind(X, deltaX) * cbind(Y, deltaY) -> cbind(C, deltaX * deltaY), where C = X * Y
 		newInst = (newInst == null) ? rewriteElementMulCbind(curr, ec, lrwec) : newInst;
+		//aggregate(target=X+deltaX,...) = cbind(C, aggregate(target=deltaX,...)) where C = aggregate(target=X,...)
+		newInst = (newInst == null) ? rewriteAggregateCbind(curr, ec, lrwec) : newInst;
 		
 		if (newInst == null)
 			return false;
@@ -449,6 +456,60 @@ public class LineageRewriteReuse
 		return genInst(lrwWrite, lrwec);
 	}
 	
+	private static ArrayList<Instruction> rewriteAggregateCbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec)
+	{
+		// Check the applicability of this rewrite.
+		Map<String, MatrixBlock> inCache = new HashMap<>();
+		if (!isAggCbind (curr, ec, inCache))
+			return null;
+		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		// Create a transient read op over the last * result
+		MatrixBlock cachedEntry = inCache.get("lastMatrix");
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
+		//TODO: support for block of rows
+		HashMap<String, String> params = ((ParameterizedBuiltinCPInstruction)curr).getParameterMap();
+		MatrixObject mo = ec.getMatrixObject(params.get(Statement.GAGG_TARGET));
+		lrwec.setVariable("oldMatrix", mo);
+		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
+		MatrixObject moG = ec.getMatrixObject(params.get(Statement.GAGG_GROUPS));
+		lrwec.setVariable("groups", moG);
+		DataOp groups = HopRewriteUtils.createTransientRead("groups", moG);
+		String fn = params.get(Statement.GAGG_FN);
+		int ngroups = (params.get(Statement.GAGG_NUM_GROUPS) != null) ? 
+				(int)Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)) : -1;
+		Hop lastCol;
+		// Use deltaX from cache, or create rightIndex
+		if (inCache.containsKey("deltaX")) {
+			MatrixBlock cachedRI = inCache.get("deltaX");
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
+			lastCol = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
+		}
+		else
+			lastCol = HopRewriteUtils.createIndexingOp(newMatrix, new LiteralOp(1), new LiteralOp(mo.getNumRows()), 
+					new LiteralOp(mo.getNumColumns()), new LiteralOp(mo.getNumColumns()));
+		// aggregate(target=X+lastCol,...) = cbind(aggregate(target=X,...), aggregate(target=lastCol,...))
+		LinkedHashMap<String, Hop> args = new LinkedHashMap<>();
+		args.put("target", lastCol);
+		args.put("groups", groups);
+		args.put("fn", new LiteralOp(fn));
+		if (ngroups != -1) 
+			args.put("ngroups", new LiteralOp(ngroups));
+		ParameterizedBuiltinOp rowTwo = HopRewriteUtils.createParameterizedBuiltinOp(newMatrix, args, ParamBuiltinOp.GROUPEDAGG);
+		BinaryOp lrwHop= HopRewriteUtils.createBinary(lastRes, rowTwo, OpOp2.CBIND);
+		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+
+		// generate runtime instructions
+		LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
+		return genInst(lrwWrite, lrwec);
+	}
+	
 	/*------------------------REWRITE APPLICABILITY CHECKS-------------------------*/
 
 	private static boolean isTsmmCbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
@@ -627,6 +688,36 @@ public class LineageRewriteReuse
 					inCache.put("deltaY", LineageCache.get(right.getInputs()[1]));
 			}
 		}
+		return inCache.containsKey("lastMatrix") ? true : false;
+	}
+
+	private static boolean isAggCbind (Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
+	{
+		if (!LineageCache.isReusable(curr)) {
+			return false;
+		}
+
+		// If the input to groupedagg came from cbind, look for both the inputs in cache.
+		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		if (curr.getOpcode().equalsIgnoreCase("groupedagg")) {
+			LineageItem target = items[0].getInputs()[0];
+			LineageItem groups = items[0].getInputs()[1];
+			LineageItem weights = items[0].getInputs()[2];
+			LineageItem fn = items[0].getInputs()[3];
+			LineageItem ngroups = items[0].getInputs()[4];
+			if (target.getOpcode().equalsIgnoreCase("cbind")) {
+				// create groupedagg lineage on top of the input of last append
+				LineageItem input1 = target.getInputs()[0];
+				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), 
+						new LineageItem[] {input1, groups, weights, fn, ngroups});
+				if (LineageCache.probe(tmp)) 
+					inCache.put("lastMatrix", LineageCache.get(tmp));
+				// look for the appended column in cache
+				if (LineageCache.probe(target.getInputs()[1])) 
+					inCache.put("deltaX", LineageCache.get(target.getInputs()[1]));
+			}
+		}
+		// return true only if the last tsmm is found
 		return inCache.containsKey("lastMatrix") ? true : false;
 	}
 

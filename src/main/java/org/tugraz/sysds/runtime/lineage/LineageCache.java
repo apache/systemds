@@ -20,6 +20,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.cost.CostEstimatorStaticRuntime;
 import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
+import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -29,6 +30,7 @@ import org.tugraz.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.tugraz.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
@@ -174,7 +176,8 @@ public class LineageCache {
 				|| inst.getOpcode().equalsIgnoreCase("ba+*")
 				|| (inst.getOpcode().equalsIgnoreCase("*") &&
 					inst instanceof BinaryMatrixMatrixCPInstruction) //TODO support scalar
-				|| inst.getOpcode().equalsIgnoreCase("rightIndex");
+				|| inst.getOpcode().equalsIgnoreCase("rightIndex")
+				|| inst.getOpcode().equalsIgnoreCase("groupedagg");
 	}
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------
@@ -192,7 +195,8 @@ public class LineageCache {
 		while ((valSize+_cachesize) > CACHELIMIT)
 		{
 			double reduction = _cache.get(_end._key).getValue().getInMemorySize();
-			if (_cache.get(_end._key)._compEst > getDiskSpillEstimate())
+			if (_cache.get(_end._key)._compEst > getDiskSpillEstimate() 
+					&& LineageCacheConfig.isSetSpill())
 				spillToLocalFS(); // If re-computation is more expensive, spill data to disk.
 
 			removeEntry(reduction);
@@ -292,6 +296,25 @@ public class LineageCache {
 				boolean lsparse = MatrixBlock.evalSparseFormatInMemory(r1, c1, nnz1);
 				if (inst.getOpcode().equalsIgnoreCase("rightIndex"))
 					nflops = 1.0 * (lsparse ? r1 * c1 * s1 : r1 * c1); //FIXME
+				break;
+			}
+			
+			case ParameterizedBuiltin:
+			{
+				String opcode = ((ParameterizedBuiltinCPInstruction)inst).getOpcode();
+				HashMap<String, String> params = ((ParameterizedBuiltinCPInstruction)inst).getParameterMap();
+				long r1 = ec.getMatrixObject(params.get(Statement.GAGG_TARGET)).getNumRows();
+				String fn = params.get(Statement.GAGG_FN);
+				double xga = 0;
+				if (opcode.equalsIgnoreCase("groupedagg")) {
+					if (fn.equalsIgnoreCase("sum"))
+						xga = 4;
+					else if(fn.equalsIgnoreCase("count"))
+						xga = 1;
+					//TODO: cm, variance
+				}
+				//TODO: support other PBuiltin ops
+				nflops = 2 * r1+xga * r1;
 				break;
 			}
 				

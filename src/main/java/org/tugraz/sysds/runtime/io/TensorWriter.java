@@ -22,5 +22,5 @@ import org.tugraz.sysds.runtime.data.TensorBlock;
 import java.io.IOException;
 
 public abstract class TensorWriter {
-	public abstract void writeTensorToHDFS(TensorBlock src, String fname, long[] dims, int blen) throws IOException;
+	public abstract void writeTensorToHDFS(TensorBlock src, String fname, int blen) throws IOException;
 }

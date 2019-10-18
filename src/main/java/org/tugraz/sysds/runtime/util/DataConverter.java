@@ -105,9 +105,8 @@ public class DataConverter
 	public static void writeTensorToHDFS(TensorBlock tensor, String dir, OutputInfo outputinfo, DataCharacteristics dc)
 			throws IOException {
 		TensorWriter writer = TensorWriterFactory.createTensorWriter(outputinfo);
-		long[] dims = dc.getDims();
 		int blen = dc.getBlocksize();
-		writer.writeTensorToHDFS(tensor, dir, dims, blen);
+		writer.writeTensorToHDFS(tensor, dir, blen);
 	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, boolean localFS)

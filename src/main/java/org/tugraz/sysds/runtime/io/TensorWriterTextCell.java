@@ -32,7 +32,8 @@ import java.io.OutputStreamWriter;
 
 public class TensorWriterTextCell extends TensorWriter {
 	@Override
-	public void writeTensorToHDFS(TensorBlock src, String fname, long[] dims, int blen) throws IOException {
+	public void writeTensorToHDFS(TensorBlock src, String fname, int blen) throws IOException {
+		int[] dims = src.getDims();
 		//validity check matrix dimensions
 		if (src.getNumDims() != dims.length)
 			throw new IOException("Tensor number of dimensions mismatch with metadata: " + src.getNumDims() + " vs " + dims.length);
@@ -50,19 +51,24 @@ public class TensorWriterTextCell extends TensorWriter {
 		HDFSTool.deleteFileIfExistOnHDFS(fname);
 
 		//core write
-		writeTextCellTensorToHDFS(path, fs, src, dims);
+		writeTextCellTensorToHDFS(path, fs, src);
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
-
-	private static void writeTextCellTensorToHDFS(Path path, FileSystem fs, TensorBlock src,
-			long[] dims) throws IOException {
+	
+	protected void writeTextCellTensorToHDFS(Path path, FileSystem fs, TensorBlock src) throws IOException {
+		writeTextCellTensorToFile(path, fs, src, 0, src.getNumRows());
+	}
+	
+	protected static void writeTextCellTensorToFile(Path path, FileSystem fs, TensorBlock src, int rl, int ru) throws IOException {
 		try (BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)))) {
+			int[] dims = src.getDims();
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 
 			int[] ix = new int[dims.length];
-			for (long i = 0; i < src.getLength(); i++) {
+			ix[0] = rl;
+			for (long i = 0; i < (src.getLength() / src.getNumRows()) * (ru - rl); i++) {
 				Object obj = src.get(ix);
 				ValueType vt = src.isBasic() ? src.getValueType() : src.getSchema()[ix[1]];
 				boolean skip;

@@ -52,7 +52,7 @@ public class TensorReaderTextCell extends TensorReader {
 		return readTextCellTensorFromHDFS(path, job, dims, schema);
 	}
 
-	private static TensorBlock readTextCellTensorFromHDFS(Path path, JobConf job, long[] dims, ValueType[] schema) throws IOException {
+	protected TensorBlock readTextCellTensorFromHDFS(Path path, JobConf job, long[] dims, ValueType[] schema) throws IOException {
 		FileInputFormat.addInputPath(job, path);
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);

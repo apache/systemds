@@ -71,6 +71,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -80,7 +81,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 
 	private DataGenMethod method = DataGenMethod.INVALID;
 	private final CPOperand rows, cols, dims;
-	private final int blocksize;
+	private int blocksize;
 	//private boolean minMaxAreDoubles;
 	private final double minValue, maxValue;
 	private final String minValueStr, maxValueStr;
@@ -399,6 +400,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<TensorIndexes, Long> seedsRDD;
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
 		// TODO calculate totalSize
+		// TODO use real blocksize given by instruction (once correct)
+		blocksize = TensorCharacteristics.DEFAULT_BLOCK_SIZE[tDims.length - 2];
 		long[] longDims = new long[tDims.length];
 		long totalSize = 1;
 		long hdfsBlkSize = blocksize * tDims.length;
@@ -415,16 +418,13 @@ public class RandSPInstruction extends UnarySPInstruction {
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
 		{
 			ArrayList<Tuple2<TensorIndexes, Long>> seeds = new ArrayList<>();
+			long[] ix = new long[tmp.getNumDims()];
+			Arrays.fill(ix, 1);
 			for( long i=0; i<numBlocks; i++ ) {
-				long blockIndex = i;
-				long[] ix = new long[tmp.getNumDims()];
-				for (int j = tmp.getNumDims() - 1; j >= 0; j--) {
-					ix[j] = 1 + (blockIndex % tmp.getNumBlocks(j));
-					blockIndex /= tmp.getNumBlocks(j);
-				}
 				TensorIndexes indx = new TensorIndexes(ix);
 				Long seedForBlock = bigrand.nextLong();
 				seeds.add(new Tuple2<>(indx, seedForBlock));
+				UtilFunctions.computeNextTensorIndexes(tmp, ix);
 			}
 
 			//create seeds rdd
@@ -440,15 +440,15 @@ public class RandSPInstruction extends UnarySPInstruction {
 				FileSystem fs = IOUtilFunctions.getFileSystem(path);
 				pw = new PrintWriter(fs.create(path));
 				StringBuilder sb = new StringBuilder();
+				long[] blockIx = new long[tmp.getNumDims()];
+				Arrays.fill(blockIx, 1);
 				for( long i=0; i<numBlocks; i++ ) {
-					long blockIndex = i;
-					for (int j = tmp.getNumDims() - 1; j >= 0; j--) {
-						sb.append(1 + blockIndex % tmp.getNumBlocks(j)).append(',');
-						blockIndex /= tmp.getNumBlocks(j);
-					}
+					for (int j = tmp.getNumDims() - 1; j >= 0; j--)
+						sb.append(blockIx[j]).append(',');
 					sb.append(bigrand.nextLong());
 					pw.println(sb.toString());
 					sb.setLength(0);
+					UtilFunctions.computeNextTensorIndexes(tmp, blockIx);
 				}
 			}
 			catch( IOException ex ) {
@@ -477,7 +477,6 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
-
 	@SuppressWarnings("resource")
 	private void generateSequence(SparkExecutionContext sec) {
 		double lfrom = sec.getScalarInput(seq_from).getDoubleValue();

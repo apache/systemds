@@ -953,22 +953,12 @@ public class SparkExecutionContext extends ExecutionContext
 	private static Tuple2<TensorIndexes, TensorBlock> createIndexedTensorBlock(TensorBlock mb, TensorCharacteristics tc, long ix) {
 		try {
 			//compute block indexes
-			long[] blockIx = new long[tc.getNumDims()];
-			int blocksize = tc.getBlocksize();
+			long[] blockIx = UtilFunctions.computeTensorIndexes(tc, ix);
 			int[] outDims = new int[tc.getNumDims()];
 			int[] offset = new int[tc.getNumDims()];
-			for (int i = tc.getNumDims() - 1; i >= 0; i--) {
-				blockIx[i] = ix % tc.getNumBlocks(i);
-				outDims[i] = UtilFunctions.computeBlockSize(tc.getDim(i), blockIx[i] + 1, blocksize);
-				offset[i] = (int) (blockIx[i] * blocksize);
-				ix /= tc.getNumBlocks(i);
-			}
+			UtilFunctions.computeSliceInfo(tc, blockIx, outDims, offset);
 			TensorBlock outBlock = new TensorBlock(mb.getValueType(), outDims);
 			outBlock = mb.slice(offset, outBlock);
-			//create key-value pair
-			for (int i = 0; i < blockIx.length; i++) {
-				blockIx[i]++;
-			}
 			return new Tuple2<>(new TensorIndexes(blockIx), outBlock);
 		}
 		catch(DMLRuntimeException ex) {

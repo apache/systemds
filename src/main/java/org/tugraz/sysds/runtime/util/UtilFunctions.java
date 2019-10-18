@@ -39,6 +39,7 @@ import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
+import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
 
 public class UtilFunctions 
 {
@@ -156,7 +157,60 @@ public class UtilFunctions
 		long remain = len - (blockIndex-1)*blockSize;
 		return (int)Math.min(blockSize, remain);
 	}
-
+	
+	/**
+	 * Computes the next tensor indexes array.
+	 * @param tc the tensor characteristics
+	 * @param ix the tensor indexes array (will be changed)
+	 * @return the tensor indexes array (changed)
+	 */
+	public static long[] computeNextTensorIndexes(TensorCharacteristics tc, long[] ix) {
+		ix[tc.getNumDims() - 1]++;
+		for (int i = tc.getNumDims() - 1; i > 0; i--) {
+			if (ix[i] == tc.getNumBlocks(i) + 1) {
+				ix[i] = 1;
+				ix[i - 1]++;
+			}
+			else {
+				break;
+			}
+		}
+		return ix;
+	}
+	
+	/**
+	 * Computes the tensor indexes array given a blockIndex we ant to compute. Note that if a sequence of tensor indexes
+	 * array will be computed, it is faster to use
+	 * <code>UtilFunctions.computeNextTensorIndexes(TensorCharacteristics,long[])</code>.
+	 * @param tc the tensor characteristics
+	 * @param blockIndex the number of the block ([0-<code>tc.getNumBlocks()</code>[ valid)
+	 * @return the tensor index array
+	 */
+	public static long[] computeTensorIndexes(TensorCharacteristics tc, long blockIndex) {
+		long[] ix = new long[tc.getNumDims()];
+		for (int j = tc.getNumDims() - 1; j >= 0; j--) {
+			ix[j] = 1 + (blockIndex % tc.getNumBlocks(j));
+			blockIndex /= tc.getNumBlocks(j);
+		}
+		return ix;
+	}
+	
+	/**
+	 * Computes the slice dimensions and offsets for the block slice of another tensor with the size given by
+	 * <code>TensorCharacteristics</code>.
+	 * @param tc tensor characteristics of the block to slice
+	 * @param blockIx the tensor block index
+	 * @param outDims the slice dimension size
+	 * @param offset the offset where the slice should start
+	 */
+	public static void computeSliceInfo(TensorCharacteristics tc, long[] blockIx, int[] outDims,
+			int[] offset) {
+		for (int i = tc.getNumDims() - 1; i >= 0; i--) {
+			outDims[i] = UtilFunctions.computeBlockSize(tc.getDim(i), blockIx[i], tc.getBlocksize());
+			offset[i] = (int) ((blockIx[i] - 1) * tc.getBlocksize());
+		}
+	}
+	
 	/**
 	 * Calculates the number of the block this index refers to (basically a linearisation).
 	 * @param ix the dimensional indexes
@@ -235,7 +289,7 @@ public class UtilFunctions
 	}
 	
 	// Reused by both MR and Spark for performing zero out
-	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blen, IndexRange indexRange) 
+	public static IndexRange getSelectedRangeForZeroOut(IndexedMatrixValue in, int blen, IndexRange indexRange)
 	{
 		IndexRange tempRange = new IndexRange(-1, -1, -1, -1);
 		

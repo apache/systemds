@@ -22,10 +22,10 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class LibTensorBincell {
 	public static boolean isValidDimensionsBinary(TensorBlock m1, TensorBlock m2) {
-		if (m1.getNumDims() != m2.getNumDims())
+		if (m1.getNumDims() < m2.getNumDims())
 			return false;
 
-		for (int i = 0; i < m1.getNumDims(); i++)
+		for (int i = 0; i < m2.getNumDims(); i++)
 			if (m1.getDim(i) != m2.getDim(i) && m2.getDim(i) != 1)
 				return false;
 		return true;
@@ -42,8 +42,8 @@ public class LibTensorBincell {
 	public static void bincellOp(TensorBlock m1, TensorBlock m2, TensorBlock ret, BinaryOperator op) {
 		// TODO separate implementations for matching dims and broadcasting
 		// TODO perf (empty, sparse safe, etc.)
-		int[] ix1 = new int[ret.getNumDims()];
-		int[] ix2 = new int[ret.getNumDims()];
+		int[] ix1 = new int[m1.getNumDims()];
+		int[] ix2 = new int[m2.getNumDims()];
 		for (long i = 0; i < ret.getLength(); i++) {
 			double v1 = UtilFunctions.objectToDouble(m1.getValueType(), m1.get(ix1));
 			double v2 = UtilFunctions.objectToDouble(m2.getValueType(), m2.get(ix2));
@@ -51,16 +51,17 @@ public class LibTensorBincell {
 
 			int j = ix1.length - 1;
 			ix1[j]++;
-			if (m2.getDim(j) != 1)
+			if (j < ix2.length && m2.getDim(j) != 1)
 				ix2[j]++;
 			while (ix1[j] == m1.getDim(j)) {
 				ix1[j] = 0;
-				ix2[j] = 0;
+				if (j < ix2.length)
+					ix2[j] = 0;
 				j--;
 				if (j < 0)
 					break;
 				ix1[j]++;
-				if (m2.getDim(j) != 1)
+				if (j < ix2.length && m2.getDim(j) != 1)
 					ix2[j]++;
 			}
 		}

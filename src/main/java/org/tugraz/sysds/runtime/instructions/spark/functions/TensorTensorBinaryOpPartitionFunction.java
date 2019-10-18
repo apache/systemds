@@ -23,12 +23,12 @@ import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
 
 import java.util.Iterator;
 
 public class TensorTensorBinaryOpPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<TensorIndexes, TensorBlock>>, TensorIndexes, TensorBlock> {
-
 	private static final long serialVersionUID = 8029096658247920867L;
 	private BinaryOperator _op;
 	private PartitionedBroadcast<TensorBlock> _ptV;
@@ -65,7 +65,8 @@ public class TensorTensorBinaryOpPartitionFunction implements PairFlatMapFunctio
 			TensorBlock in1 = arg._2();
 
 			//get the rhs block
-			int[] index = new int[in1.getNumDims()];
+			DataCharacteristics dc = _ptV.getDataCharacteristics();
+			int[] index = new int[dc.getNumDims()];
 			for (int i = 0; i < index.length; i++) {
 				if (_replicateDim[i])
 					index[i] = 1;

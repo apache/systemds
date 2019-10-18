@@ -34,7 +34,7 @@ public class TensorCharacteristics extends DataCharacteristics
 	public TensorCharacteristics() {}
 	
 	public TensorCharacteristics(long[] dims, long nnz) {
-		set(dims, DEFAULT_BLOCK_SIZE[dims.length], nnz);
+		set(dims, DEFAULT_BLOCK_SIZE[dims.length - 2], nnz);
 	}
 	
 	public TensorCharacteristics(long[] dims, int blocksize) {

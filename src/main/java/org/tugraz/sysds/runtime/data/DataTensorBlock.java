@@ -331,9 +331,6 @@ public class DataTensorBlock implements Serializable {
 			if (that._ixToCols[i] != null)
 				_ixToCols[i] = that._ixToCols[i].clone();
 		if (that.isAllocated()) {
-			if (that.isEmpty(false)) {
-				return;
-			}
 			for (int i = 0; i < _colsdata.length; i++) {
 				if (that._colsdata[i] != null) {
 					_colsdata[i] = new BasicTensorBlock(that._colsdata[i]);

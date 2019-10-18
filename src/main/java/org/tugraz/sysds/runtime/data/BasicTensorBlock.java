@@ -162,6 +162,22 @@ public class BasicTensorBlock implements Serializable {
 			}
 		}
 	}
+	
+	/**
+	 * Recomputes and materializes the number of non-zero values
+	 * of the entire basic tensor block.
+	 *
+	 * @return number of non-zeros
+	 */
+	public long recomputeNonZeros() {
+		if( _sparse && _sparseBlock != null ) { //SPARSE
+			throw new DMLRuntimeException("Sparse tensor block not supported");
+		}
+		else if( !_sparse && _denseBlock != null ) { //DENSE
+			_nnz = _denseBlock.countNonZeros();
+		}
+		return _nnz;
+	}
 
 	public boolean isAllocated() {
 		return _sparse ? (_sparseBlock != null) : (_denseBlock != null);
@@ -260,10 +276,9 @@ public class BasicTensorBlock implements Serializable {
 			ret = true;
 		if( _nnz==0 ) {
 			//prevent under-estimation
-			//TODO recomputeNonZeros();
-			//TODO return false if _nnz != 0
 			if(safe)
-				ret = (_nnz == 0);
+				recomputeNonZeros();
+			ret = (_nnz == 0);
 		}
 		return ret;
 	}
@@ -322,18 +337,39 @@ public class BasicTensorBlock implements Serializable {
 			throw new NotImplementedException();
 		}
 		else if (v != null) {
-			if (v instanceof Double)
+			if (v instanceof Double) {
+				double old = _denseBlock.get(ix);
 				_denseBlock.set(ix, (Double) v);
-			else if (v instanceof Float)
+				_nnz += (old == 0 ? 0 : -1) + ((Double) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Float) {
+				double old = _denseBlock.get(ix);
 				_denseBlock.set(ix, (Float) v);
-			else if (v instanceof Long)
+				_nnz += (old == 0 ? 0 : -1) + ((Float) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Long) {
+				long old = _denseBlock.getLong(ix);
 				_denseBlock.set(ix, (Long) v);
-			else if (v instanceof Integer)
+				_nnz += (old == 0 ? 0 : -1) + ((Long) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Integer) {
+				long old = _denseBlock.getLong(ix);
 				_denseBlock.set(ix, (Integer) v);
-			else if (v instanceof Boolean)
+				_nnz += (old == 0 ? 0 : -1) + ((Integer) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Boolean) {
+				long old = _denseBlock.getLong(ix);
 				_denseBlock.set(ix, ((Boolean) v) ? 1.0 : 0.0);
-			else if (v instanceof String)
+				_nnz += (old == 0 ? 0 : -1) + (!(Boolean) v ? 0 : 1);
+			}
+			else if (v instanceof String) {
+				String old = _denseBlock.getString(ix);
+				if (old != null && !old.isEmpty())
+					_nnz--;
 				_denseBlock.set(ix, (String) v);
+				if (!((String) v).isEmpty())
+					_nnz++;
+			}
 			else
 				throw new DMLRuntimeException("BasicTensor.set(int[],Object) is not implemented for the given Object");
 		}
@@ -346,7 +382,9 @@ public class BasicTensorBlock implements Serializable {
 			throw new NotImplementedException();
 		}
 		else {
+			double old = _denseBlock.get(r, c);
 			_denseBlock.set(r, c, v);
+			_nnz += (old == 0 ? 0 : -1) + (v == 0 ? 0 : 1);
 		}
 	}
 
@@ -356,6 +394,10 @@ public class BasicTensorBlock implements Serializable {
 		}
 		else {
 			_denseBlock.set(v);
+			if (v == 0)
+				_nnz = 0;
+			else
+				_nnz = getLength();
 		}
 	}
 
@@ -364,18 +406,30 @@ public class BasicTensorBlock implements Serializable {
 			throw new NotImplementedException();
 		}
 		else {
-			if (v instanceof Double)
+			if (v instanceof Double) {
 				_denseBlock.set((Double) v);
-			else if (v instanceof Float)
+				_nnz += ((Double) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Float) {
 				_denseBlock.set((Float) v);
-			else if (v instanceof Long)
+				_nnz += ((Float) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Long) {
 				_denseBlock.set((Long) v);
-			else if (v instanceof Integer)
+				_nnz += ((Long) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Integer) {
 				_denseBlock.set((Integer) v);
-			else if (v instanceof Boolean)
+				_nnz += ((Integer) v == 0 ? 0 : 1);
+			}
+			else if (v instanceof Boolean) {
 				_denseBlock.set(((Boolean) v) ? 1.0 : 0.0);
-			else if (v instanceof String)
+				_nnz += (!(Boolean) v ? 0 : 1);
+			}
+			else if (v instanceof String) {
 				_denseBlock.set((String) v);
+				_nnz += (((String) v).isEmpty() ? 0 : 1);
+			}
 			else
 				throw new DMLRuntimeException("BasicTensor.set(Object) is not implemented for the given Object");
 		}
@@ -387,8 +441,10 @@ public class BasicTensorBlock implements Serializable {
 		else {
 			if (other.isSparse())
 				throw new NotImplementedException();
-			else
+			else {
 				_denseBlock.set(0, _dims[0], 0, _denseBlock.getCumODims(0), other.getDenseBlock());
+				_nnz = other._nnz;
+			}
 		}
 	}
 
@@ -405,10 +461,12 @@ public class BasicTensorBlock implements Serializable {
 					// TODO implement sparse set instead of converting to dense
 					other.sparseToDense();
 					_denseBlock.set(0, _dims[0], 0, _denseBlock.getCumODims(0), other.getDenseBlock());
+					_nnz = other.getNonZeros();
 				}
 			}
 			else {
 				_denseBlock.set(0, _dims[0], 0, _denseBlock.getCumODims(0), other.getDenseBlock());
+				_nnz = other.getNonZeros();
 			}
 		}
 	}
@@ -443,7 +501,8 @@ public class BasicTensorBlock implements Serializable {
 		if (that.isEmpty(false)) {
 			if (_denseBlock != null)
 				_denseBlock.reset(that._dims);
-			return;
+			else
+				_denseBlock = DenseBlockFactory.createDenseBlock(that._vt, that._dims);
 		}
 		//allocate and copy dense block
 		allocateDenseBlock(false);

@@ -20,6 +20,7 @@
 package org.tugraz.sysds.hops;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.tugraz.sysds.api.DMLScript;
@@ -121,6 +122,11 @@ public class FunctionOp extends Hop
 	
 	public String[] getOutputVariableNames() {
 		return _outputNames;
+	}
+	
+	public boolean containsOutput(String varname) {
+		return Arrays.stream(getOutputVariableNames())
+			.anyMatch(outName -> outName.equals(varname));
 	}
 	
 	public FunctionType getFunctionType() {

@@ -189,7 +189,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		DataGenMethod method = DataGenMethod.INVALID;
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 12 );
+			InstructionUtils.checkNumFields ( str, 10, 11 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
@@ -207,21 +207,29 @@ public class RandSPInstruction extends UnarySPInstruction {
 		CPOperand out = new CPOperand(s[s.length-1]); 
 
 		if ( method == DataGenMethod.RAND ) {
-			CPOperand rows = new CPOperand(s[1]);
-			CPOperand cols = new CPOperand(s[2]);
-			CPOperand dims = new CPOperand(s[3]);
-			int blen = Integer.parseInt(s[4]);
-			double sparsity = !s[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Double.valueOf(s[7]).doubleValue() : -1;
-			long seed = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Long.valueOf(s[8]).longValue() : -1;
-			String dir = s[9];
-			String pdf = s[10];
-			String pdfParams = !s[11].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				s[11] : null;
+			int missing; // number of missing params (row & cols or dims)
+			CPOperand rows = null, cols = null, dims = null;
+			if (s.length == 12) {
+				missing = 1;
+				rows = new CPOperand(s[1]);
+				cols = new CPOperand(s[2]);
+			}
+			else {
+				missing = 2;
+				dims = new CPOperand(s[1]);
+			}
+			int blen = Integer.parseInt(s[4 - missing]);
+			double sparsity = !s[7 - missing].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Double.parseDouble(s[7 - missing]) : -1;
+			long seed = !s[8 - missing].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Long.parseLong(s[8 - missing]) : -1;
+			String dir = s[9 - missing];
+			String pdf = s[10 - missing];
+			String pdfParams = !s[11 - missing].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				s[11 - missing] : null;
 			
 			return new RandSPInstruction(op, method, null, out, rows, cols, dims,
-				blen, s[5], s[6], sparsity, seed, dir, pdf, pdfParams, opcode, str);
+				blen, s[5 - missing], s[6 - missing], sparsity, seed, dir, pdf, pdfParams, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) {
 			int blen = Integer.parseInt(s[3]);

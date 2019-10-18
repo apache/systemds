@@ -132,7 +132,8 @@ public class DataGen extends Lop
 		//sanity checks
 		if ( method != DataGenMethod.RAND )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
-		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length ) {
+		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length - 2 && // tensor
+				getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length - 1 ) { // matrix
 			throw new LopsException(printErrorLocation() + "Invalid number of operands (" 
 				+ getInputs().size() + ") for a Rand operation");
 		}
@@ -145,17 +146,20 @@ public class DataGen extends Lop
 		sb.append(RAND_OPCODE);
 		sb.append(OPERAND_DELIMITOR);
 		
-		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS);
-		sb.append(iLop.prepScalarInputOperand(getExecType()));
-		sb.append(OPERAND_DELIMITOR);
-
-		iLop = _inputParams.get(DataExpression.RAND_COLS);
-		sb.append(iLop.prepScalarInputOperand(getExecType()));
-		sb.append(OPERAND_DELIMITOR);
-
-		iLop = _inputParams.get(DataExpression.RAND_DIMS);
-		sb.append(iLop.prepScalarInputOperand(getExecType()));
-		sb.append(OPERAND_DELIMITOR);
+		Lop iLop = _inputParams.get(DataExpression.RAND_DIMS);
+		if (iLop != null) {
+			sb.append(iLop.prepScalarInputOperand(getExecType()));
+			sb.append(OPERAND_DELIMITOR);
+		}
+		else {
+			iLop = _inputParams.get(DataExpression.RAND_ROWS);
+			sb.append(iLop.prepScalarInputOperand(getExecType()));
+			sb.append(OPERAND_DELIMITOR);
+			
+			iLop = _inputParams.get(DataExpression.RAND_COLS);
+			sb.append(iLop.prepScalarInputOperand(getExecType()));
+			sb.append(OPERAND_DELIMITOR);
+		}
 
 		sb.append(getOutputParameters().getBlocksize());
 		sb.append(OPERAND_DELIMITOR);
@@ -219,9 +223,6 @@ public class DataGen extends Lop
 		iLop = _inputParams.get(DataExpression.RAND_COLS);
 		String colsString = iLop.prepScalarLabel();
 
-		iLop = _inputParams.get(DataExpression.RAND_DIMS);
-		String dimsString = iLop.prepScalarLabel();
-
 		String blen = String.valueOf(getOutputParameters().getBlocksize());
 
 		iLop = _inputParams.get(DataExpression.RAND_MIN);
@@ -242,8 +243,6 @@ public class DataGen extends Lop
 		sb.append(rowsString);
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(colsString);
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(dimsString);
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(blen);
 		sb.append(OPERAND_DELIMITOR);

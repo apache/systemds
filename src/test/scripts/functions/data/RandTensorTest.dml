@@ -16,5 +16,5 @@
 #
 #-------------------------------------------------------------
 
-A = rand(dims=$1, min=$2, max=$3, seed=$4, istensor=TRUE)
+A = rand(dims=$1, min=$2, max=$3, seed=$4)
 print(toString(A))

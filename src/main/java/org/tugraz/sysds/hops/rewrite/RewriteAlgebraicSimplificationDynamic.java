@@ -214,7 +214,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				//remove unnecessary right indexing
 				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(hi.getDim1()),
-						new LiteralOp(hi.getDim2()), new LiteralOp("1 1"), DataType.MATRIX, ValueType.FP64, 0);
+						new LiteralOp(hi.getDim2()), null, DataType.MATRIX, ValueType.FP64, 0);
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
 				HopRewriteUtils.cleanupUnreferenced(hi, input);
 				hi = hnew;
@@ -824,7 +824,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 						else //diagm2v TODO support tensor operation
 							hnew = HopRewriteUtils.createDataGenOpByVal(
 									HopRewriteUtils.createValueHop(input,true), new LiteralOp(1),
-									new LiteralOp("1 1"), DataType.MATRIX, ValueType.FP64, 0);
+									null, DataType.MATRIX, ValueType.FP64, 0);
 					}
 				}
 				else if( rhi.getOp() == ReOrgOp.RESHAPE )

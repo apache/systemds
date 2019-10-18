@@ -60,13 +60,12 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Unsupported opcode: "+opcode);
 		//parse instruction
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
-		InstructionUtils.checkNumFields( s, 6 );
+		InstructionUtils.checkNumFields( s, 5 );
 		CPOperand out = new CPOperand(s[s.length-1]); // output is specified by the last operand
 		long rows = (s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[1]).longValue());
 		long cols = (s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[2]).longValue());
-		// Ignore dims
-		int blen = Integer.parseInt(s[4]);
-		String data = s[5];
+		int blen = Integer.parseInt(s[3]);
+		String data = s[4];
 		return new StringInitCPInstruction(null, null, out, rows, cols, blen, data, opcode, str);
 	}
 	

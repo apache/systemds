@@ -1327,14 +1327,17 @@ public class Recompiler
 				|| d.getOp() == DataGenMethod.SAMPLE ) 
 			{
 				boolean initUnknown = !d.dimsKnown();
-				int ix1 = params.get(DataExpression.RAND_ROWS);
-				int ix2 = params.get(DataExpression.RAND_COLS);
-				//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
-				HashMap<Long, Long> memo = new HashMap<>();
-				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars, memo);
-				d.refreshColsParameterInformation(d.getInput().get(ix2), vars, memo);
-				if( !(initUnknown & d.dimsKnown()) )
-					d.refreshSizeInformation();
+				// TODO refresh tensor size information
+				if (params.containsKey(DataExpression.RAND_ROWS) && params.containsKey(DataExpression.RAND_COLS)) {
+					int ix1 = params.get(DataExpression.RAND_ROWS);
+					int ix2 = params.get(DataExpression.RAND_COLS);
+					//update rows/cols by evaluating simple expression of literals, nrow, ncol, scalars, binaryops
+					HashMap<Long, Long> memo = new HashMap<>();
+					d.refreshRowsParameterInformation(d.getInput().get(ix1), vars, memo);
+					d.refreshColsParameterInformation(d.getInput().get(ix2), vars, memo);
+					if( !(initUnknown & d.dimsKnown()) )
+						d.refreshSizeInformation();
+				}
 			} 
 			else if ( d.getOp() == DataGenMethod.SEQ ) 
 			{

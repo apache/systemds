@@ -344,7 +344,7 @@ public class DMLScript
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
 		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(dmlconf);		
+		ConfigurationManager.setGlobalConfig(dmlconf);
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
 		ConfigurationManager.setGlobalConfig(cconf);
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());

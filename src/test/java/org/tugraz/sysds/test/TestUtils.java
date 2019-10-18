@@ -415,7 +415,7 @@ public class TestUtils
 			}
 		} 
 		catch (IOException e) {
-			assertTrue("could not read from file " + filePath, false);
+			assertTrue("could not read from file " + filePath+": "+e.getMessage(), false);
 		}
 
 		return expectedValues;

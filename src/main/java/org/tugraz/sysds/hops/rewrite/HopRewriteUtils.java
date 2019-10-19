@@ -490,12 +490,12 @@ public class HopRewriteUtils
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, new LiteralOp(rows));
 		params.put(DataExpression.RAND_COLS, new LiteralOp(cols));
-		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_MIN, str);
 		params.put(DataExpression.RAND_MAX, str);
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED));
 		
-		Hop datagen = new DataGenOp(DataGenMethod.SINIT, new DataIdentifier("tmp"), params);
+		Hop datagen = new DataGenOp(DataGenMethod.SINIT,
+			new DataIdentifier("tmp", DataType.MATRIX), params);
 		datagen.setBlocksize(ConfigurationManager.getBlocksize());
 		copyLineNumbers(values.get(0), datagen);
 		

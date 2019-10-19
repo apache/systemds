@@ -19,6 +19,7 @@
 
 package org.tugraz.sysds.parser;
 
+import org.tugraz.sysds.common.Types.DataType;
 
 public class DataIdentifier extends Identifier
 {
@@ -37,6 +38,11 @@ public class DataIdentifier extends Identifier
 	public DataIdentifier(String name){
 		super();
 		_name = name;
+	}
+	
+	public DataIdentifier(String name, DataType dt){
+		this(name);
+		_dataType = dt;
 	}
 	
 	public DataIdentifier(){

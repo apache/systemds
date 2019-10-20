@@ -22,7 +22,6 @@
 package org.tugraz.sysds.parser;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -2060,15 +2059,13 @@ public class DMLTranslator
 			tmpMatrix.add( 3, !paramHops.containsKey(DataExpression.RAND_DIMS) ?
 				new LiteralOp("-1") : paramHops.get(DataExpression.RAND_DIMS));
 			tmpMatrix.add( 4, paramHops.get(DataExpression.RAND_BY_ROW) );
-			System.out.println(Arrays.toString(tmpMatrix.toArray()));
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(),
 				target.getValueType(), ReOrgOp.RESHAPE, tmpMatrix);
 			break;
 
 		default:
 			throw new ParseException(source.printErrorLocation() + 
-					"processDataExpression():: Unknown operation:  "
-							+ source.getOpCode());
+				"processDataExpression():: Unknown operation:  " + source.getOpCode());
 		}
 		
 		//set identifier meta data (incl dimensions and blocksizes)

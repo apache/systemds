@@ -309,9 +309,9 @@ public class ReorgOp extends MultiThreadedHop
 				// special cases where an input or output dimension is zero (i.e., 0x5 -> 1x0 is valid)
 				// #nnz in output is exactly the same as in input
 				if( dc.dimsKnown() ) {
-					if( rowsKnown()  )
+					if( rowsKnown() && getDim1()!=0 )
 						ret = new MatrixCharacteristics(getDim1(), dc.getRows()*dc.getCols()/getDim1(), -1, dc.getNonZeros());
-					else if( colsKnown() ) 
+					else if( colsKnown() && getDim2()!=0 ) 
 						ret = new MatrixCharacteristics(dc.getRows()*dc.getCols()/getDim2(), getDim2(), -1, dc.getNonZeros());
 					else if( dimsKnown() )
 						ret = new MatrixCharacteristics(getDim1(), getDim2(), -1, -1);
@@ -440,9 +440,9 @@ public class ReorgOp extends MultiThreadedHop
 					refreshColsParameterInformation(input3); //refresh cols
 					setNnz(input1.getNnz());
 					if (!dimsKnown() && input1.dimsKnown()) { //reshape allows to infer dims, if input and 1 dim known
-						if (rowsKnown())
+						if (rowsKnown() && getDim1()!=0)
 							setDim2(input1.getLength() / getDim1());
-						else if (colsKnown())
+						else if (colsKnown() && getDim2()!=0)
 							setDim1(input1.getLength() / getDim2());
 					}
 				} else {

@@ -147,7 +147,7 @@ public class CLIOptionsParserTest {
 	
 	@Test
 	public void testLineageReuseF() throws Exception {
-		String cl = "systemds -f test.dml -lineage reuse";
+		String cl = "systemds -f test.dml -lineage reuse_full";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -157,7 +157,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testLineageReuseP() throws Exception {
-		String cl = "systemds -f test.dml -lineage reuse";
+		String cl = "systemds -f test.dml -lineage reuse_partial";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -166,7 +166,7 @@ public class CLIOptionsParserTest {
 	}
 	@Test
 	public void testLineageReuseH() throws Exception {
-		String cl = "systemds -f test.dml -lineage reuse";
+		String cl = "systemds -f test.dml -lineage reuse_hybrid";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -186,7 +186,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testLineageDedupAndReuseF() throws Exception {
-		String cl = "systemds -f test.dml -lineage dedup reuse";
+		String cl = "systemds -f test.dml -lineage dedup reuse_full";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -196,7 +196,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testLineageDedupAndReuseP() throws Exception {
-		String cl = "systemds -f test.dml -lineage dedup reuse";
+		String cl = "systemds -f test.dml -lineage dedup reuse_partial";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -206,7 +206,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testLineageDedupAndReusuH() throws Exception {
-		String cl = "systemds -f test.dml -lineage dedup reuse";
+		String cl = "systemds -f test.dml -lineage dedup reuse_hybrid";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);

@@ -365,7 +365,7 @@ public class LeftIndexingOp  extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
-		Hop input1 = getInput().get(0);	//original matrix	
+		Hop input1 = getInput().get(0); //original matrix
 		Hop input2 = getInput().get(1); //rhs matrix
 		
 		//refresh output dimensions based on original matrix

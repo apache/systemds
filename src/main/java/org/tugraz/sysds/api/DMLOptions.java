@@ -114,7 +114,8 @@ public class DMLOptions {
 					if (lineageType != null){
 						if (lineageType.equalsIgnoreCase("dedup"))
 							dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
-						else if (lineageType.equalsIgnoreCase("reuse_full"))
+						else if (lineageType.equalsIgnoreCase("reuse_full")
+							|| lineageType.equalsIgnoreCase("reuse"))
 							dmlOptions.linReuseType = ReuseCacheType.REUSE_FULL;
 						else if (lineageType.equalsIgnoreCase("reuse_partial"))
 							dmlOptions.linReuseType = ReuseCacheType.REUSE_PARTIAL;

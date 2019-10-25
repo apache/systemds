@@ -38,6 +38,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 	private final static String TEST_NAME4 = "IPAFunInline4"; //neg 1 (control flow)
 	private final static String TEST_NAME5 = "IPAFunInline5"; //neg 2 (large and called twice)
 	private final static String TEST_NAME6 = "IPAFunInline6"; //pos 4 (regression op replication)
+	private final static String TEST_NAME7 = "IPAFunInline7"; //pos 4 (regression op replication)
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAFunctionInliningTest.class.getSimpleName() + "/";
@@ -51,6 +52,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "R" }) );
 	}
 
 	@Test
@@ -113,6 +115,11 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		runIPAFunInlineTest( TEST_NAME6, true );
 	}
 	
+	@Test
+	public void testFunInline7IPA() {
+		runIPAFunInlineTest( TEST_NAME7, true );
+	}
+	
 	private void runIPAFunInlineTest( String testName, boolean IPA )
 	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
@@ -135,15 +142,18 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare results
-			if( !testName.equals(TEST_NAME6) ) {
+			if( !testName.equals(TEST_NAME6) && !testName.equals(TEST_NAME7) ) {
 				double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
 				Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
 			}
 			
 			//compare inlined functions
 			boolean inlined = ( IPA && ArrayUtils.contains(
-				new String[]{TEST_NAME1, TEST_NAME2, TEST_NAME3, TEST_NAME6}, testName));
-			Assert.assertTrue("Unexpected function call: "+inlined, !heavyHittersContainsSubString("foo")==inlined);
+				new String[]{TEST_NAME1, TEST_NAME2, TEST_NAME3, TEST_NAME6, TEST_NAME7}, testName));
+			String[] probe = testName.equals(TEST_NAME7) ?
+				new String[] {"lm","lmDS"} : new String[] {"foo"};
+			Assert.assertTrue("Unexpected function call: "+inlined,
+				!heavyHittersContainsSubString(probe)==inlined);
 		
 			//check for incorrect operation replication
 			if( testName.equals(TEST_NAME6) )

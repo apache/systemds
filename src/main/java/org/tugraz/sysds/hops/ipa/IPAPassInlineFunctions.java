@@ -22,6 +22,7 @@ package org.tugraz.sysds.hops.ipa;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
@@ -121,8 +122,15 @@ public class IPAPassInlineFunctions extends IPAPass
 				
 				//update the function call graph to avoid repeated inlining
 				//(and thus op replication) on repeated IPA calls
-				if( removedAll )
+				if( removedAll ) {
+					Set<String> fkeysTrans = fgraph.getCalledFunctions(fkey);
+					//remove function itself
 					fgraph.removeFunctionCalls(fkey);
+					//remove called functions if on longer reachable
+					for( String fkeyTrans : fkeysTrans )
+						if( !fgraph.isReachableFunction(fkeyTrans, true) )
+							fgraph.removeFunctionCalls(fkeyTrans);
+				}
 			}
 		}
 	}

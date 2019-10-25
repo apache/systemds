@@ -305,8 +305,23 @@ public class FunctionCallGraph
 	 * @return true if the given function is reachable, false otherwise
 	 */
 	public boolean isReachableFunction(String fkey) {
+		return isReachableFunction(fkey, false);
+	}
+	
+	/**
+	 * Indicates if the given function is reachable either directly or indirectly
+	 * from the main program.
+	 * 
+	 * @param fkey function key of calling function, null indicates the main program
+	 * @param deep if all reachability lists need to be probed (no short cuts)
+	 * @return true if the given function is reachable, false otherwise
+	 */
+	protected boolean isReachableFunction(String fkey, boolean deep) {
+		//we check only entry points as functions removed if no longer reachable,
+		//otherwise, we check all reachability lists deeply
 		String lfkey = (fkey == null) ? MAIN_FUNCTION_KEY : fkey;
-		return _fGraph.containsKey(lfkey);
+		return !deep ? _fGraph.containsKey(lfkey) : _fGraph.values()
+			.stream().anyMatch(list -> list.contains(lfkey));
 	}
 	
 	/**

@@ -163,7 +163,7 @@ public class OptimizerUtils
 	 * graphs and various interactions between constant propagation, constant folding,
 	 * and other rewrites such as branch removal and the merge of statement block sequences.
 	 */
-	public static int IPA_NUM_REPETITIONS = 3;
+	public static int IPA_NUM_REPETITIONS = 5;
 
 	/**
 	 * Enables sum product rewrites such as mapmultchains. In the future, this will cover 

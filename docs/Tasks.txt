@@ -127,4 +127,5 @@ SYSTEMDS-170 Lineage full and partial reuse
  * 178 Compiler assisted reuse (eg. CV, lmCG)
 
 SYSTEMDS-180 New Builtin Functions II                                 OK
- * 181 Builtin function for naive bayes																OK
+ * 181 Builtin function for naive bayes                               OK
+ * 182 Builtin function for typeof (frame schema detection)           OK

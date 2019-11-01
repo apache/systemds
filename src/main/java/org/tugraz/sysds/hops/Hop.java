@@ -973,7 +973,7 @@ public abstract class Hop implements ParseInfo
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
 		PRINT, ASSERT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
-		SVD, EXISTS, LINEAGE,
+		SVD, EXISTS, LINEAGE, TYPEOF,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD,
 		//fused ML-specific operators for performance 
@@ -1241,7 +1241,8 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.tugraz.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.tugraz.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.SPROP, org.tugraz.sysds.lops.Unary.OperationTypes.SPROP);
-		HopsOpOp1LopsU.put(OpOp1.SIGMOID, org.tugraz.sysds.lops.Unary.OperationTypes.SIGMOID);
+		HopsOpOp1LopsU.put(OpOp1.SIGMOID, Unary.OperationTypes.SIGMOID);
+		HopsOpOp1LopsU.put(OpOp1.TYPEOF, Unary.OperationTypes.TYPEOF);
 		HopsOpOp1LopsU.put(OpOp1.LOG_NZ, org.tugraz.sysds.lops.Unary.OperationTypes.LOG_NZ);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.tugraz.sysds.lops.Unary.OperationTypes.CAST_AS_MATRIX);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.tugraz.sysds.lops.Unary.OperationTypes.CAST_AS_FRAME);
@@ -1281,6 +1282,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.CEIL, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CEIL);
 		HopsOpOp1LopsUS.put(OpOp1.FLOOR, org.tugraz.sysds.lops.UnaryCP.OperationTypes.FLOOR);
 		HopsOpOp1LopsUS.put(OpOp1.STOP, org.tugraz.sysds.lops.UnaryCP.OperationTypes.STOP);
+		HopsOpOp1LopsUS.put(OpOp1.TYPEOF, UnaryCP.OperationTypes.TYPEOF);
 	}
 
 	protected static final HashMap<OpOp3, Ternary.OperationType> HopsOpOp3Lops;
@@ -1343,7 +1345,8 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp12String.put(OpOp1.INVERSE, "inv");
 		HopsOpOp12String.put(OpOp1.SPROP, "sprop");
 		HopsOpOp12String.put(OpOp1.SIGMOID, "sigmoid");
-		
+		HopsOpOp12String.put(OpOp1.TYPEOF, "typeOf");
+
 		HopsStringOpOp1 = new HashMap<>();
 		for( Entry<OpOp1,String> e : HopsOpOp12String.entrySet() )
 			HopsStringOpOp1.put(e.getValue(), e.getKey());

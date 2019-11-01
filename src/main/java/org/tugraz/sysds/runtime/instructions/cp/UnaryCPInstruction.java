@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,7 +33,7 @@ import org.tugraz.sysds.runtime.matrix.data.LibCommonsMath;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
 
-public abstract class UnaryCPInstruction extends ComputationCPInstruction {
+public abstract class  UnaryCPInstruction extends ComputationCPInstruction {
 
 	protected UnaryCPInstruction(CPType type, Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		this(type, op, in, null, null, out, opcode, instr);
@@ -76,8 +78,9 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 			else if(in.getDataType() == DataType.MATRIX)
 				return new UnaryMatrixCPInstruction(LibCommonsMath.isSupportedUnaryOperation(opcode) ?
 					null : InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
+			else if(in.getDataType() == DataType.FRAME)
+				return new UnaryFrameCPInstruction(InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
 		}
-		
 		return null;
 	}
 

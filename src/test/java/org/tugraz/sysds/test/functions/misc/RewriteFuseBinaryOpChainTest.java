@@ -31,6 +31,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
+import org.tugraz.sysds.utils.Statistics;
 
 /**
  * Regression test for function recompile-once issue with literal replacement.
@@ -42,6 +43,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	private static final String TEST_NAME2 = "RewriteFuseBinaryOpChainTest2"; //-* (X-s*Y) 
 	private static final String TEST_NAME3 = "RewriteFuseBinaryOpChainTest3"; //+* (s*Y+X)
 	private static final String TEST_NAME4 = "RewriteFuseBinaryOpChainTest4"; //outer(X, s*Y, "+") not applied
+	private static final String TEST_NAME5 = "RewriteFuseBinaryOpChainTest5"; //2 quantiles
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteFuseBinaryOpChainTest.class.getSimpleName() + "/";
@@ -54,7 +56,8 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );		
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 	}
 	
 	@Test
@@ -129,6 +132,16 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		testFuseBinaryChain( TEST_NAME4, true, ExecType.CP);
 	}
 	
+	@Test
+	public void testQuantilesNoRewriteCP() {
+		testFuseBinaryChain(TEST_NAME5, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testQuantilesRewriteCP() {
+		testFuseBinaryChain(TEST_NAME5, true, ExecType.CP);
+	}
+	
 	private void testFuseBinaryChain( String testname, boolean rewrites, ExecType instType )
 	{	
 		ExecMode platformOld = rtplatform;
@@ -154,7 +167,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain", "-stats","-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			runTest(true, false, null, -1);
 			runRScript(true); 
@@ -163,13 +176,16 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
+			
+			if( testname.equals(TEST_NAME5) ) {
+				//check for common subexpression elimination at lop level (independent of rewrites)
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("qsort") == 1);
+			}
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-		
-	}	
+	}
 }

@@ -8,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -678,7 +678,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case CAST_AS_MATRIX:
 			checkNumParameters(1);
 			checkDataTypeParam(getFirstExpr(),
-				DataType.SCALAR, DataType.FRAME, DataType.LIST);
+			DataType.SCALAR, DataType.FRAME, DataType.LIST);
 			output.setDataType(DataType.MATRIX);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
@@ -687,6 +687,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setDimensions(-1, -1); //correction list: arbitrary object
 			output.setBlocksize(id.getBlocksize());
 			output.setValueType(ValueType.FP64); //matrices always in double
+			break;
+		case TYPEOF:
+			checkNumParameters(1);
+			checkMatrixFrameParam(getFirstExpr());
+			output.setDataType(DataType.FRAME);
+			output.setDimensions(1, id.getDim2());
+			output.setBlocksize (id.getBlocksize());
+			output.setValueType(ValueType.STRING);
 			break;
 		case CAST_AS_FRAME:
 			checkNumParameters(1);

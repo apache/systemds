@@ -151,6 +151,7 @@ public enum Builtins {
 	TAN("tan", false),
 	TANH("tanh", false),
 	TRACE("trace", false),
+	TYPEOF("typeOf", false),
 	VAR("var", false),
 	XOR("xor", false),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val

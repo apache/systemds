@@ -116,7 +116,7 @@ SYSTEMDS-160 Tensor Compiler/Runtime
  * 161 Local readers and writers for tensors (all formats)
  * 162 Spark binary tensor instructions
  
- SYSTEMDS-170 Lineage full and partial reuse 
+SYSTEMDS-170 Lineage full and partial reuse 
  * 171 Initial version of partial rewrites                            OK
  * 172 Parfor integration (blocked waiting for results)               OK
  * 173 Improved cost estimates                                        OK
@@ -125,3 +125,6 @@ SYSTEMDS-160 Tensor Compiler/Runtime
  * 176 Reuse rewrite for cbind/rbind-elementwise */+
  * 177 Reuse rewrite for aggregate                                    OK
  * 178 Compiler assisted reuse (eg. CV, lmCG)
+
+SYSTEMDS-180 New Builtin Functions II                                 OK
+ * 181 Builtin function for naive bayes																OK

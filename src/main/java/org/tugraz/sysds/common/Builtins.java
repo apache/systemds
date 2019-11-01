@@ -113,6 +113,7 @@ public enum Builtins {
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
 	NROW("nrow", false),
+	NAIVEBAYES("naivebayes", true, false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	PPRED("ppred", false),

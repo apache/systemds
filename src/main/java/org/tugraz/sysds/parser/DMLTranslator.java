@@ -1487,7 +1487,7 @@ public class DMLTranslator
 				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
 			else if( source instanceof DataExpression ) {
 				Hop ae = processDataExpression((DataExpression)source, target, hops);
-				if (ae instanceof DataOp){
+				if (ae instanceof DataOp && ((DataOp) ae).getDataOpType() != DataOpTypes.SQLREAD){
 					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
 					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
 				}
@@ -2061,6 +2061,11 @@ public class DMLTranslator
 			tmpMatrix.add( 4, paramHops.get(DataExpression.RAND_BY_ROW) );
 			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(),
 				target.getValueType(), ReOrgOp.RESHAPE, tmpMatrix);
+			break;
+			
+		case SQL:
+			currBuiltinOp = new DataOp(target.getName(), target.getDataType(),
+				target.getValueType(), DataOpTypes.SQLREAD, paramHops);
 			break;
 
 		default:

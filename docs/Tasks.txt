@@ -45,7 +45,7 @@ SYSTEMDS-40 Preprocessing builtins
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)
  * 52 Support for libsvm files (local/distributed) 
- * 
+ * 53 New sql data source (local, distributed)
 
 SYSTEMDS-60 Update SystemML improvements
  * 61 Take over cumulative aggregate improvements                     OK

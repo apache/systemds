@@ -90,12 +90,12 @@ public class TensorObject extends CacheableData<TensorBlock> {
 
 	public long getNumRows() {
 		DataCharacteristics dc = getDataCharacteristics();
-		return dc.getRows();
+		return dc.getDim(0);
 	}
 
 	public long getNumColumns() {
 		DataCharacteristics dc = getDataCharacteristics();
-		return dc.getCols();
+		return dc.getDim(1);
 	}
 
 	public long getNnz() {

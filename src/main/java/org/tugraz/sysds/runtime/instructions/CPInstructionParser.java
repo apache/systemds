@@ -57,6 +57,7 @@ import org.tugraz.sysds.runtime.instructions.cp.QuantileSortCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.ReorgCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.SpoofCPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.StringInitCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.TernaryCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
@@ -296,6 +297,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "partition", 	CPType.Partition);
 		String2CPInstructionType.put( "compress", 	CPType.Compression);
 		String2CPInstructionType.put( "spoof", 		CPType.SpoofFused);
+		
+		String2CPInstructionType.put( "sql", CPType.Sql);
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) {
@@ -422,6 +425,9 @@ public class CPInstructionParser extends InstructionParser
 			
 			case SpoofFused:
 				return SpoofCPInstruction.parseInstruction(str);
+				
+			case Sql:
+				return SqlCPInstruction.parseInstruction(str);
 			
 			default: 
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

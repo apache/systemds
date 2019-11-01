@@ -60,6 +60,7 @@ public abstract class Lop
 		Checkpoint,                                         //Spark persist into storage level
 		PlusMult, MinusMult,                                //CP
 		SpoofFused,                                         //CP/SP generated fused operator
+		Sql,                                                //CP sql read
 	}
 
 	/**

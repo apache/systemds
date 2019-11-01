@@ -1104,7 +1104,7 @@ public class DataConverter
 	 * @param ix the index of the TensorBlock value
 	 */
 	private static void concatenateTensorValue(TensorBlock tb, StringBuilder sb, DecimalFormat df, int[] ix) {
-		switch (tb.getValueType()) {
+		switch (tb.isBasic() ? tb.getValueType() : tb.getSchema()[ix[1]]) {
 			case FP32:
 				Float valuef = (Float) tb.get(ix);
 				if (valuef.equals(-0.0f))

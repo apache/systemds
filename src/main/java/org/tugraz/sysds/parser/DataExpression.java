@@ -74,6 +74,11 @@ public class DataExpression extends DataIdentifier
 	public static final String READCOLPARAM = "cols";
 	public static final String READNNZPARAM = "nnz";
 	
+	public static final String SQL_CONN = "conn";
+	public static final String SQL_USER = "user";
+	public static final String SQL_PASS = "password";
+	public static final String SQL_QUERY = "query";
+	
 	public static final String FORMAT_TYPE = "format";
 	public static final String FORMAT_TYPE_VALUE_TEXT = "text";
 	public static final String FORMAT_TYPE_VALUE_BINARY = "binary";
@@ -106,6 +111,8 @@ public class DataExpression extends DataIdentifier
 	
 	public static final String[] RESHAPE_VALID_PARAM_NAMES =
 		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
+	
+	public static final String[] SQL_VALID_PARAM_NAMES = {SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY};
 
 	// Valid parameter names in a metadata file
 	public static final String[] READ_VALID_MTD_PARAM_NAMES =
@@ -157,7 +164,7 @@ public class DataExpression extends DataIdentifier
 		
 		// check if the function name is built-in function
 		//	 (assign built-in function op if function is built-in)
-		Expression.DataOp dop = null;
+		Expression.DataOp dop;
 		DataExpression dataExpr = null;
 		if (functionName.equals("read") || functionName.equals("readMM") || functionName.equals("read.csv")) {
 			dop = Expression.DataOp.READ;
@@ -296,7 +303,8 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			dataExpr.setMatrixDefault();
-		} else if (functionName.equals("tensor")){
+		}
+		else if (functionName.equals("tensor")){
 			dop = Expression.DataOp.TENSOR;
 			dataExpr = new DataExpression(dop, new HashMap<String, Expression>(), parseInfo);
 
@@ -336,13 +344,15 @@ public class DataExpression extends DataIdentifier
 					return null;
 				}
 
-			} else {
+			}
+			else {
 				// handle first parameter, which is data and may be unnamed
 				ParameterExpression firstParam = passedParamExprs.get(0);
 				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.RAND_DATA)){
 					errorListener.validationError(parseInfo, "tensor method must have data parameter as first parameter or unnamed parameter");
 					return null;
-				} else {
+				}
+				else {
 					dataExpr.addTensorExprParam(DataExpression.RAND_DATA, passedParamExprs.get(0).getExpr());
 				}
 
@@ -350,22 +360,69 @@ public class DataExpression extends DataIdentifier
 					if (passedParamExprs.get(i).getName() == null){
 						errorListener.validationError(parseInfo, "for tensor statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
 						return null;
-					} else {
+					}
+					else {
 						dataExpr.addTensorExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr());
 					}
 				}
 			}
 			dataExpr.setTensorDefault();
 		}
+		else if (functionName.equals("sql")) {
+			dop = DataOp.SQL;
+			dataExpr = new DataExpression(dop, new HashMap<>(), parseInfo);
+			
+			int namedParamCount = 0, unnamedParamCount = 0;
+			for (ParameterExpression currExpr : passedParamExprs) {
+				if (currExpr.getName() == null)
+					unnamedParamCount++;
+				else
+					namedParamCount++;
+			}
+			
+			// check whether named or unnamed parameters are used
+			if (passedParamExprs.size() < 2){
+				errorListener.validationError(parseInfo, "for sql statement, must specify at least 2 arguments: conn, query");
+				return null;
+			}
+			
+			if (unnamedParamCount > 0){
+				if (namedParamCount > 0) {
+					errorListener.validationError(parseInfo, "for sql statement, cannot mix named and unnamed parameters");
+					return null;
+				}
+				
+				if (unnamedParamCount == 2 || unnamedParamCount == 4 ) {
+					// assume: conn, query, [password, query]
+					dataExpr.addSqlExprParam(DataExpression.SQL_CONN, passedParamExprs.get(0).getExpr());
+					dataExpr.addSqlExprParam(DataExpression.SQL_QUERY, passedParamExprs.get(1).getExpr());
+					if (unnamedParamCount == 4) {
+						dataExpr.addSqlExprParam(DataExpression.SQL_PASS, passedParamExprs.get(2).getExpr());
+						dataExpr.addSqlExprParam(DataExpression.SQL_QUERY, passedParamExprs.get(3).getExpr());
+					}
+				}
+				else {
+					errorListener.validationError(parseInfo, "for sql statement, "
+						+ "at most 4 arguments supported: conn, user, password, query");
+					return null;
+				}
+				
+			}
+			else {
+				for (ParameterExpression passedParamExpr : passedParamExprs) {
+					dataExpr.addSqlExprParam(passedParamExpr.getName(), passedParamExpr.getExpr());
+				}
+			}
+			dataExpr.setSqlDefault();
+		}
 
 		if (dataExpr != null) {
 			dataExpr.setParseInfo(parseInfo);
 		}
 		return dataExpr;
-	
 	} // end method getBuiltinFunctionExpression
 	
-	public void addRandExprParam(String paramName, Expression paramValue) 
+	public void addRandExprParam(String paramName, Expression paramValue)
 	{
 		if (DMLScript.VALIDATOR_IGNORE_ISSUES && (paramValue == null)) {
 			return;
@@ -436,7 +493,7 @@ public class DataExpression extends DataIdentifier
 		// check name is valid
 		boolean found = false;
 		if (paramName != null ){
-			found = Arrays.stream(RESHAPE_VALID_PARAM_NAMES).anyMatch((name) -> name.equals(paramName));
+			found = Arrays.asList(RESHAPE_VALID_PARAM_NAMES).contains(paramName);
 		}
 
 		if (!found){
@@ -455,6 +512,27 @@ public class DataExpression extends DataIdentifier
 			paramValue = new IntIdentifier((long) ((DoubleIdentifier) paramValue).getValue(), this);
 		}*/
 
+		// add the parameter to expression list
+		paramValue.setParseInfo(this);
+		addVarParam(paramName,paramValue);
+	}
+	
+	public void addSqlExprParam(String paramName, Expression paramValue)
+	{
+		// check name is valid
+		boolean found = false;
+		if (paramName != null ){
+			found = Arrays.asList(SQL_VALID_PARAM_NAMES).contains(paramName);
+		}
+		
+		if (!found){
+			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for sql statement are "
+					+ "(capitalization-sensitive): " + SQL_CONN + ", " + SQL_USER + ", " + SQL_PASS + ", " + SQL_QUERY);
+		}
+		if (getVarParam(paramName) != null) {
+			raiseValidateError("attempted to add sql statement parameter " + paramValue + " more than once");
+		}
+		
 		// add the parameter to expression list
 		paramValue.setParseInfo(this);
 		addVarParam(paramName,paramValue);
@@ -501,7 +579,15 @@ public class DataExpression extends DataIdentifier
 		if (getVarParam(RAND_BY_ROW) == null)
 			addVarParam(RAND_BY_ROW, new BooleanIdentifier(true, this));
 	}
-
+	
+	private void setSqlDefault() {
+		if (getVarParam(SQL_USER) == null)
+			addVarParam(SQL_USER, new StringIdentifier("", this));
+		if (getVarParam(SQL_PASS) == null)
+			addVarParam(SQL_PASS, new StringIdentifier("", this));
+	}
+	
+	
 	public void setRandDefault() {
 		if (getVarParam(RAND_DIMS) == null) {
 			if( getVarParam(RAND_ROWS) == null ) {
@@ -1709,9 +1795,50 @@ public class DataExpression extends DataIdentifier
 			}
 
 			break;
+			
+		case SQL:
+			//handle default and input arguments
+			setSqlDefault();
+			validateParams(conditional, SQL_VALID_PARAM_NAMES,
+					"Legal parameters for tensor statement are (case-sensitive): " + SQL_CONN + ", " +
+							SQL_USER + ", " + SQL_PASS + ", " + SQL_QUERY);
+			
+			//validate correct value types
+			Expression connExp = getVarParam(SQL_CONN);
+			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+				raiseValidateError("for tensor statement " + SQL_CONN + " has incorrect value type", conditional);
+			}
+			connExp = getVarParam(SQL_USER);
+			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+				raiseValidateError("for tensor statement " + SQL_USER + " has incorrect value type", conditional);
+			}
+			connExp = getVarParam(SQL_PASS);
+			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+				raiseValidateError("for tensor statement " + SQL_PASS + " has incorrect value type", conditional);
+			}
+			connExp = getVarParam(SQL_QUERY);
+			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+				raiseValidateError("for tensor statement " + SQL_QUERY + " has incorrect value type", conditional);
+			}
+			
+			//validate general data expression
+			getVarParam(SQL_CONN).validateExpression(ids, currConstVars, conditional);
+			getVarParam(SQL_USER).validateExpression(ids, currConstVars, conditional);
+			getVarParam(SQL_PASS).validateExpression(ids, currConstVars, conditional);
+			getVarParam(SQL_QUERY).validateExpression(ids, currConstVars, conditional);
+			
+			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setDataType(DataType.TENSOR);
+			getOutput().setValueType(ValueType.UNKNOWN);
+			getOutput().setDimensions(-1, -1);
+			
+			if (getOutput() instanceof IndexedIdentifier){
+				LOG.warn(this.printWarningLocation() + "Output for sql statement may have incorrect size information");
+			}
+			break;
 	
 		default:
-			raiseValidateError("Unsupported Data expression"+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
+			raiseValidateError("Unsupported Data expression "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
 		}
 	}
 

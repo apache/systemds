@@ -29,6 +29,7 @@ import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.LopsException;
+import org.tugraz.sysds.lops.Sql;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
@@ -102,7 +103,7 @@ public class DataOp extends Hop
 	}
 
 	/**
-	 * READ operation for Matrix
+	 * READ operation for Matrix / SQL operation for tensor
 	 * This constructor supports expressions in parameters
 	 * 
 	 * @param l ?
@@ -198,19 +199,20 @@ public class DataOp extends Hop
 		int sz = _input.size();
 		int pz = _paramIndexMap.size();
 		switch (_dataop) {
-		case PERSISTENTREAD:
-		case TRANSIENTREAD:
-			HopsException.check(sz == pz, this,
-					"in %s operator type has %d inputs and %d parameters",
-					_dataop.name(), sz, pz);
-			break;
-		case PERSISTENTWRITE:
-		case TRANSIENTWRITE:
-		case FUNCTIONOUTPUT:
-			HopsException.check(sz == pz + 1, this,
-					"in %s operator type has %d inputs and %d parameters (expect 1 more input for write operator type)",
-					_dataop.name(), sz, pz);
-			break;
+			case PERSISTENTREAD:
+			case TRANSIENTREAD:
+			case SQLREAD:
+				HopsException.check(sz == pz, this,
+						"in %s operator type has %d inputs and %d parameters",
+						_dataop.name(), sz, pz);
+				break;
+			case PERSISTENTWRITE:
+			case TRANSIENTWRITE:
+			case FUNCTIONOUTPUT:
+				HopsException.check(sz == pz + 1, this,
+						"in %s operator type has %d inputs and %d parameters (expect 1 more input for write operator type)",
+						_dataop.name(), sz, pz);
+				break;
 		}
 	}
 
@@ -300,7 +302,11 @@ public class DataOp extends Hop
 				((Data)l).setExecType(et);
 				setOutputDimensions(l);
 				break;
-			
+				
+			case SQLREAD:
+				l = new Sql(inputLops, getDataType(), getValueType());
+				break;
+				
 			default:
 				throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
 		}

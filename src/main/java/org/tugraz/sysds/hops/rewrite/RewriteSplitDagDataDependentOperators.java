@@ -295,6 +295,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			investigateChilds = false;
 		}
 		
+		//#5 sql
+		if( hop instanceof DataOp && ((DataOp) hop).getDataOpType() == DataOpTypes.SQLREAD && !noSplitRequired) {
+			cand.add(hop);
+			investigateChilds = false;
+		}
+		
 		//process children (if not already found a special operators;
 		//otherwise, processed by recursive rule application)
 		if( investigateChilds && hop.getInput()!=null )

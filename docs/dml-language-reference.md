@@ -21,45 +21,45 @@ limitations under the License.
 
 ### Table of Contents
 
-  * [Introduction](dml-language-reference.html#introduction)
-  * [Variables](dml-language-reference.html#variables)
-    * [Identifier Names](dml-language-reference.html#identifier-names)
-    * [Data Types](dml-language-reference.html#data-types)
-    * [Comments](dml-language-reference.html#comments)
-  * [Expressions](dml-language-reference.html#expressions)
-    * [Operators](dml-language-reference.html#operators)
-    * [Matrix-Vector Operations](dml-language-reference.html#matrix-vector-operations)
-    * [Matrix Indexing](dml-language-reference.html#matrix-indexing)
-  * [Statements](dml-language-reference.html#statements)
-    * [Assignment Statement](dml-language-reference.html#assignment-statement)
-    * [Control Statements](dml-language-reference.html#control-statements)
-      * [While Statement](dml-language-reference.html#while-statement)
-      * [If Statement](dml-language-reference.html#if-statement)
-      * [For Statement](dml-language-reference.html#for-statement)
-      * [ParFor Statement](dml-language-reference.html#parfor-statement)
-    * [User-Defined Function (UDF)](dml-language-reference.html#user-defined-function-udf)
-  * [Variable Scoping](dml-language-reference.html#variable-scoping)
-  * [Command-Line Arguments](dml-language-reference.html#command-line-arguments)
-  * [Built-in Functions](dml-language-reference.html#built-in-functions)
-    * [Matrix Construction, Manipulation, and Aggregation Built-In Functions](dml-language-reference.html#matrix-construction-manipulation-and-aggregation-built-in-functions)
-    * [Matrix and/or Scalar Comparison Built-In Functions](dml-language-reference.html#matrix-andor-scalar-comparison-built-in-functions)
-    * [Casting Built-In Functions](dml-language-reference.html#casting-built-in-functions)
-    * [Statistical Built-In Functions](dml-language-reference.html#statistical-built-in-functions)
-    * [Mathematical and Trigonometric Built-In Functions](dml-language-reference.html#mathematical-and-trigonometric-built-in-functions)
-    * [Linear Algebra Built-In Functions](dml-language-reference.html#linear-algebra-built-in-functions)
-    * [Read/Write Built-In Functions](dml-language-reference.html#readwrite-built-in-functions)
-    * [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions)
-    * [Deep Learning Built-In Functions](dml-language-reference.html#deep-learning-built-in-functions)
-    * [Parameter Server Built-In Function](dml-language-reference.html#parameter-server-built-in-function)
-    * [Other Built-In Functions](dml-language-reference.html#other-built-in-functions)
-  * [Frames](dml-language-reference.html#frames)
-    * [Creating Frames](dml-language-reference.html#creating-frames)
-    * [Appending Frames](dml-language-reference.html#appending-frames)
-    * [Indexing Frames](dml-language-reference.html#indexing-frames)
-    * [Casting Frames](dml-language-reference.html#casting-frames)
-    * [Transforming Frames](dml-language-reference.html#transforming-frames)
-  * [Modules](dml-language-reference.html#modules)
-  * [Reserved Keywords](dml-language-reference.html#reserved-keywords)
+  * [Introduction](#introduction)
+  * [Variables](#variables)
+    * [Identifier Names](#identifier-names)
+    * [Data Types](#data-types)
+    * [Comments](#comments)
+  * [Expressions](#expressions)
+    * [Operators](#operators)
+    * [Matrix-Vector Operations](#matrix-vector-operations)
+    * [Matrix Indexing](#matrix-indexing)
+  * [Statements](#statements)
+    * [Assignment Statement](#assignment-statement)
+    * [Control Statements](#control-statements)
+      * [While Statement](#while-statement)
+      * [If Statement](#if-statement)
+      * [For Statement](#for-statement)
+      * [ParFor Statement](#parfor-statement)
+    * [User-Defined Function (UDF)](#user-defined-function-udf)
+  * [Variable Scoping](#variable-scoping)
+  * [Command-Line Arguments](#command-line-arguments)
+  * [Built-in Functions](#built-in-functions)
+    * [Matrix Construction, Manipulation, and Aggregation Built-In Functions](#matrix-construction-manipulation-and-aggregation-built-in-functions)
+    * [Matrix and/or Scalar Comparison Built-In Functions](#matrix-andor-scalar-comparison-built-in-functions)
+    * [Casting Built-In Functions](#casting-built-in-functions)
+    * [Statistical Built-In Functions](#statistical-built-in-functions)
+    * [Mathematical and Trigonometric Built-In Functions](#mathematical-and-trigonometric-built-in-functions)
+    * [Linear Algebra Built-In Functions](#linear-algebra-built-in-functions)
+    * [Read/Write Built-In Functions](#readwrite-built-in-functions)
+    * [Data Pre-Processing Built-In Functions](#data-pre-processing-built-in-functions)
+    * [Deep Learning Built-In Functions](#deep-learning-built-in-functions)
+    * [Parameter Server Built-In Function](#parameter-server-built-in-function)
+    * [Other Built-In Functions](#other-built-in-functions)
+  * [Frames](#frames)
+    * [Creating Frames](#creating-frames)
+    * [Appending Frames](#appending-frames)
+    * [Indexing Frames](#indexing-frames)
+    * [Casting Frames](#casting-frames)
+    * [Transforming Frames](#transforming-frames)
+  * [Modules](#modules)
+  * [Reserved Keywords](#reserved-keywords)
 
 
 ## Introduction
@@ -102,7 +102,7 @@ As seen in above example, there is no formal declaration of a variable. A variab
 
 ### Data Types
 
-Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean.  Frame functions are described in [Frames](dml-language-reference.html#frames) and  [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions).  SystemDS supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
+Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean.  Frame functions are described in [Frames](#frames) and  [Data Pre-Processing Built-In Functions](#data-pre-processing-built-in-functions).  SystemDS supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
 
     # Spoiler alert: matrix() is a built-in function to
     # create matrix, which will be discussed later
@@ -1646,7 +1646,7 @@ This example shows creating a frame with <code>schema="string,double,int,boolean
     C = read("tableC", data_type="frame", schema=tableSchema, rows=1600, cols=4, format="csv");
 
 *Note: the header line in frame CSV files is sensitive to white spaces.* <br/>
-For example, CSV1 with header <code>ID,FirstName,LastName</code> results in three columns with tokens between separators.  In contrast, CSV2 with header <code>ID, FirstName,LastName</code> also results in three columns but the second column has a space preceding <code> FirstName</code>.  This extra space is significant when referencing the second column by name in transform specifications as described in [Transforming Frames](dml-language-reference.html#transforming-frames).
+For example, CSV1 with header <code>ID,FirstName,LastName</code> results in three columns with tokens between separators.  In contrast, CSV2 with header <code>ID, FirstName,LastName</code> also results in three columns but the second column has a space preceding <code> FirstName</code>.  This extra space is significant when referencing the second column by name in transform specifications as described in [Transforming Frames](#transforming-frames).
 
 <div class="codetabs2">
 
@@ -1718,14 +1718,14 @@ as.scalar(&lt;frame&gt;) | 1x1 Frame is cast to scalar. | Input: (&lt;frame&gt;)
 
 ### Transforming Frames
 
-Frames support additional [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions) as shown below.
+Frames support additional [Data Pre-Processing Built-In Functions](#data-pre-processing-built-in-functions) as shown below.
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
-transformencode() | Transforms a frame into a matrix using specification. <br/> Builds and applies frame metadata. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Outputs: &lt;matrix&gt;, &lt;frame&gt;|[transformencode](dml-language-reference.html#transformencode)
-transformdecode() | Transforms a matrix into a frame using specification. <br/> Valid only for specific transformation types. | Input:<br/> target = &lt;matrix&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;frame&gt; |[transformdecode](dml-language-reference.html#transformdecode)
-transformapply() | Transforms a frame into a matrix using specification. <br/> Applies existing frame metadata. |  Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;matrix&gt; | [transformapply](dml-language-reference.html#transformapply)
-transformcolmap() | Obtains the column mapping of a transformed frame using the given specification. The input frame is assumed to be the meta data frame returned from a transformencode call. <br/> The output has a row per encoded input attribute, indicating the source column position, as well as the start and end positions in the encode output. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Output: &lt;matrix&gt; |[transformcolmap](dml-language-reference.html#transformdecode)
+transformencode() | Transforms a frame into a matrix using specification. <br/> Builds and applies frame metadata. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Outputs: &lt;matrix&gt;, &lt;frame&gt;|[transformencode](#transformencode)
+transformdecode() | Transforms a matrix into a frame using specification. <br/> Valid only for specific transformation types. | Input:<br/> target = &lt;matrix&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;frame&gt; |[transformdecode](#transformdecode)
+transformapply() | Transforms a frame into a matrix using specification. <br/> Applies existing frame metadata. |  Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> meta = &lt;frame&gt; <br/> Output: &lt;matrix&gt; | [transformapply](#transformapply)
+transformcolmap() | Obtains the column mapping of a transformed frame using the given specification. The input frame is assumed to be the meta data frame returned from a transformencode call. <br/> The output has a row per encoded input attribute, indicating the source column position, as well as the start and end positions in the encode output. | Input:<br/> target = &lt;frame&gt; <br/> spec = &lt;json specification&gt; <br/> Output: &lt;matrix&gt; |[transformcolmap](#transformdecode)
 
 The following table summarizes the supported transformations for <code>transformencode(), transformdecode(), transformapply()</code>.  Note only recoding, dummy coding and pass-through are reversible, i.e., subject to <code>transformdecode()</code>, whereas binning, missing value imputation, and omit are not.
 
@@ -1903,7 +1903,7 @@ The transformed matrix X and output M are as follows.
     91312·2
 
 <br/>
-As mentioned in [Creating Frames](dml-language-reference.html#creating-frames), the header line in frame CSV files is sensitive to white space.  The tabs below show compatible transform specifications for the given CSV header.  Note the extra (possibly inadvertent) space before the <code> district</code> column in CSV2 impacts the transform specification.  More specifically,  transform spec1 does not match the header in CSV2.  To match, either remove the extra space before <code> district</code> in CSV2 or use spec2 which quotes the <code> district</code> token name to include the extra space.
+As mentioned in [Creating Frames](#creating-frames), the header line in frame CSV files is sensitive to white space.  The tabs below show compatible transform specifications for the given CSV header.  Note the extra (possibly inadvertent) space before the <code> district</code> column in CSV2 impacts the transform specification.  More specifically,  transform spec1 does not match the header in CSV2.  To match, either remove the extra space before <code> district</code> in CSV2 or use spec2 which quotes the <code> district</code> token name to include the extra space.
 
 <div class="codetabs2">
 
@@ -1946,7 +1946,7 @@ As mentioned in [Creating Frames](dml-language-reference.html#creating-frames), 
 
 The <code>transformdecode()</code> function can be used to transform a <code>matrix</code> back into a <code>frame</code>.  Only recoding, dummy coding and pass-through transformations are reversible and can be used with <code>transformdecode()</code>.  The transformations binning, missing value imputation, and omit are not reversible and cannot be used with <code>transformdecode()</code>.
 
-The next example takes the outputs from the [transformencode](dml-language-reference.html#transformencode) example and reconstructs the original data using the same transformation specification. 
+The next example takes the outputs from the [transformencode](#transformencode) example and reconstructs the original data using the same transformation specification. 
 
     F1 = read("/user/ml/homes.csv", data_type="frame", format="csv");
     jspec = read("/user/ml/homes.tfspec_recode2.json", data_type="scalar", value_type="string");
@@ -1983,7 +1983,7 @@ The next example takes the outputs from the [transformencode](dml-language-refer
 
 In contrast to <code>transformencode()</code>, which creates and applies frame metadata (transformencode := build+apply), <code>transformapply()</code> applies *existing* metadata (transformapply := apply).
 
-The following example uses <code>transformapply()</code> with the input matrix and second output (i.e., existing frame metadata built with <code>transformencode()</code>) from the [transformencode](dml-language-reference.html#transformencode) example for the [`homes.tfspec_bin2.json`](files/dml-language-reference/homes.tfspec_bin2.json) transformation specification.
+The following example uses <code>transformapply()</code> with the input matrix and second output (i.e., existing frame metadata built with <code>transformencode()</code>) from the [transformencode](#transformencode) example for the [`homes.tfspec_bin2.json`](files/dml-language-reference/homes.tfspec_bin2.json) transformation specification.
 
     {
      "recode": [ zipcode, "district", "view" ], "bin": [

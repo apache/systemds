@@ -1004,7 +1004,8 @@ public class Dag<N extends Lop>
 	 * @return new list of potentially modified instructions
 	 */
 	private static ArrayList<Instruction> cleanupInstructions(List<Instruction> insts) {
-		//step 1: create mvvar instructions: assignvar s1 s2, rmvar s1 -> mvvar s1 s2
+		//step 1: create mvvar instructions: assignvar s1 s2, rmvar s1 -> mvvar s1 s2,
+		//                                   cpvar m1 m2, rmvar m1 --> mvvar m1 m2 
 		List<Instruction> tmp1 = collapseAssignvarAndRmvarInstructions(insts);
 		
 		//step 2: create packed rmvar instructions: rmvar m1, rmvar m2 -> rmvar m1 m2
@@ -1019,7 +1020,7 @@ public class Dag<N extends Lop>
 		while( iter.hasNext() ) {
 			Instruction inst = iter.next();
 			if( iter.hasNext() && inst instanceof VariableCPInstruction
-				&& ((VariableCPInstruction)inst).isAssignVariable() ) {
+				&& ((VariableCPInstruction)inst).isAssignOrCopyVariable() ) {
 				VariableCPInstruction inst1 = (VariableCPInstruction) inst;
 				Instruction inst2 = iter.next();
 				if( inst2 instanceof VariableCPInstruction

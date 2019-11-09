@@ -211,7 +211,10 @@ public class LineageMap {
 	private void processMoveLI(LineageItem li) {
 		if (li.getName().equals("__pred"))
 			removeLineageItem(li.getInputs()[0].getName());
-		else
-			addLineageItem(li);
+		else {
+			//remove from old and move to new key
+			_traces.put(li.getName(),
+				_traces.remove(li.getInputs()[0].getName()));
+		}
 	}
 }

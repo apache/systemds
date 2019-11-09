@@ -13,7 +13,7 @@ SYSTEMDS-10 Compiler Rework / Misc
  * 16 Remove instruction patching
  * 17 Refactoring of program block hierarchy                          OK
  * 18 Improve API for new dml-bodied builtin functions                OK
- * 19 Break append instruction to cbind and rbind 
+ * 19 Cleanup pass cpvar+rmvar to mvvar instructions                  OK
  
 SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks                                    OK
@@ -130,3 +130,7 @@ SYSTEMDS-170 Lineage full and partial reuse
 SYSTEMDS-180 New Builtin Functions II                                 OK
  * 181 Builtin function for naive bayes                               OK
  * 182 Builtin function for typeof (frame schema detection)           OK
+ 
+ 
+Others:
+ * Break append instruction to cbind and rbind 

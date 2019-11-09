@@ -224,20 +224,25 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	
 	public boolean isRemoveVariableNoFile() {
-		return (opcode == VariableOperationCode.RemoveVariable);
+		return opcode == VariableOperationCode.RemoveVariable;
 	}
 	
 	public boolean isRemoveVariable() {
-		return (opcode == VariableOperationCode.RemoveVariable
-			|| opcode == VariableOperationCode.RemoveVariableAndFile);
+		return opcode == VariableOperationCode.RemoveVariable
+			|| opcode == VariableOperationCode.RemoveVariableAndFile;
 	}
 
 	public boolean isAssignVariable() {
-		return (opcode == VariableOperationCode.AssignVariable);
+		return opcode == VariableOperationCode.AssignVariable;
+	}
+	
+	public boolean isAssignOrCopyVariable() {
+		return opcode == VariableOperationCode.AssignVariable
+			|| opcode == VariableOperationCode.CopyVariable;
 	}
 	
 	public boolean isCreateVariable() {
-		return (opcode == VariableOperationCode.CreateVariable);
+		return opcode == VariableOperationCode.CreateVariable;
 	}
 
 	public VariableOperationCode getVariableOpcode() {

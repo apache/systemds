@@ -94,6 +94,7 @@ SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK
  * 122 Reduce thread contention on parfor left indexing               OK
  * 123 Avoid unnecessary spark context creation on explain            OK
+ * 124 Improved cbind performance (small rhs)                         OK
  
 SYSTEMDS-130 IPA and Size Propagation
  * 131 New IPA pass for function call forwarding                      OK

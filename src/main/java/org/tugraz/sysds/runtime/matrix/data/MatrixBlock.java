@@ -21,6 +21,7 @@
 
 package org.tugraz.sysds.runtime.matrix.data;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -3439,10 +3440,34 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( !result.sparse && nnz!=0 ) //DENSE
 		{
 			if( cbind ) {
-				result.copy(0, m-1, 0, clen-1, this, false);
-				for(int i=0, off=clen; i<that.length; i++) {
-					result.copy(0, m-1, off, off+that[i].clen-1, that[i], false);
-					off += that[i].clen;
+				DenseBlock resd = result.allocateBlock().getDenseBlock();
+				MatrixBlock[] in = ArrayUtils.addAll(new MatrixBlock[]{this}, that);
+				
+				for( int i=0; i<m; i++ ) {
+					for( int k=0, off=0; k<in.length; off+=in[k].clen, k++ ) {
+						if( in[k].isEmptyBlock(false) )
+							continue;
+						if( in[k].sparse ) {
+							SparseBlock src = in[k].sparseBlock;
+							if( src.isEmpty(i) )
+								continue;
+							int srcpos = src.pos(i);
+							int srclen = src.size(i);
+							int[] srcix = src.indexes(i);
+							double[] srcval = src.values(i);
+							double[] resval = resd.values(i);
+							int resix = resd.pos(i, off);
+							for (int j=srcpos; j<srcpos+srclen; j++)
+								resval[resix+srcix[j]] = srcval[j];
+						}
+						else {
+							DenseBlock src = in[k].getDenseBlock();
+							double[] srcval = src.values(i);
+							double[] resval = resd.values(i);
+							System.arraycopy(srcval, src.pos(i),
+								resval, resd.pos(i, off), in[k].clen);
+						}
+					}
 				}
 			}
 			else { //rbind

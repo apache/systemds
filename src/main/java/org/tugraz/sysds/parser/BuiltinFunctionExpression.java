@@ -678,7 +678,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case CAST_AS_MATRIX:
 			checkNumParameters(1);
 			checkDataTypeParam(getFirstExpr(),
-			DataType.SCALAR, DataType.FRAME, DataType.LIST);
+				DataType.SCALAR, DataType.FRAME, DataType.LIST);
 			output.setDataType(DataType.MATRIX);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
@@ -689,6 +689,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.FP64); //matrices always in double
 			break;
 		case TYPEOF:
+		case DETECTSCHEMA:
 			checkNumParameters(1);
 			checkMatrixFrameParam(getFirstExpr());
 			output.setDataType(DataType.FRAME);

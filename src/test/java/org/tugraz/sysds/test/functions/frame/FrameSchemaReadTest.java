@@ -143,9 +143,9 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 			
 			//verify output schema
 			ValueType[] schemaExpected = (testname.equals(TEST_NAME2) || wildcard) ?
-					Collections.nCopies(schema.length, ValueType.STRING).toArray(new ValueType[0]) : schema;					
+					Collections.nCopies(schema.length, ValueType.STRING).toArray(new ValueType[0]) : schema;
 			for( int i=0; i<schemaExpected.length; i++ ) {
-				Assert.assertEquals("Wrong result: "+frame2.getSchema()[i]+".", 
+				Assert.assertEquals("Wrong result: "+frame2.getSchema()[i]+".",
 						schemaExpected[i], frame2.getSchema()[i]);
 			}
 		}

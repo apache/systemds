@@ -21,21 +21,6 @@
 
 package org.tugraz.sysds.runtime.matrix.data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.Serializable;
-import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.io.Writable;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -45,6 +30,12 @@ import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.transform.encode.EncoderRecode;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.io.*;
+import java.lang.ref.SoftReference;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements Writable, CacheBlock, Externalizable  
@@ -107,6 +98,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public FrameBlock(ValueType[] schema, String[][] data) {
 		//default column names not materialized
 		this(schema, null, data);
+
 	}
 	
 	public FrameBlock(ValueType[] schema, String[] names, String[][] data) {
@@ -274,8 +266,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			switch( _schema[j] ) {
 				case STRING:  _coldata[j] = new StringArray(new String[numRows]); break;
 				case BOOLEAN: _coldata[j] = new BooleanArray(new boolean[numRows]); break;
-				case INT64:     _coldata[j] = new LongArray(new long[numRows]); break;
-				case FP64:  _coldata[j] = new DoubleArray(new double[numRows]); break;
+				case INT32:   _coldata[j] = new IntegerArray(new int[numRows]); break;
+				case INT64:   _coldata[j] = new LongArray(new long[numRows]); break;
+				case FP64:   _coldata[j] = new DoubleArray(new double[numRows]); break;
 				default: throw new RuntimeException("Unsupported value type: "+_schema[j]);
 			}
 		}
@@ -327,7 +320,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			_colmeta[j].setNumDistinct(card);
 		}
 	}
-	
+
 	///////
 	// basic get and set functionality
 	
@@ -411,11 +404,12 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(String[] col) {
 		ensureColumnCompatibility(col.length);
 		String[] colnames = getColumnNames(); //before schema modification
-		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
 		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.STRING);
+		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
 		_coldata = (_coldata==null) ? new Array[]{new StringArray(col)} :
 			(Array[]) ArrayUtils.add(_coldata, new StringArray(col));
 		_numRows = col.length;
+
 	}
 	
 	/**
@@ -442,6 +436,22 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * 
 	 * @param col array of longs
 	 */
+	public void appendColumn(int[] col) {
+		ensureColumnCompatibility(col.length);
+		String[] colnames = getColumnNames(); //before schema modification
+		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.INT32);
+		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
+		_coldata = (_coldata==null) ? new Array[]{new IntegerArray(col)} :
+			(Array[]) ArrayUtils.add(_coldata, new IntegerArray(col));
+		_numRows = col.length;
+	}
+	/**
+	 * Append a column of value type LONG as the last column of
+	 * the data frame. The given array is wrapped but not copied
+	 * and hence might be updated in the future.
+	 *
+	 * @param col array of longs
+	 */
 	public void appendColumn(long[] col) {
 		ensureColumnCompatibility(col.length);
 		String[] colnames = getColumnNames(); //before schema modification
@@ -453,10 +463,26 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 	
 	/**
-	 * Append a column of value type DOUBLE as the last column of 
-	 * the data frame. The given array is wrapped but not copied 
+	 * Append a column of value type float as the last column of
+	 * the data frame. The given array is wrapped but not copied
 	 * and hence might be updated in the future.
 	 * 
+	 * @param col array of doubles
+	 */
+	public void appendColumn(float[] col) {
+		ensureColumnCompatibility(col.length);
+		String[] colnames = getColumnNames(); //before schema modification
+		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.FP32);
+		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
+		_coldata = (_coldata==null) ? new Array[]{new FloatArray(col)} :
+				(Array[]) ArrayUtils.add(_coldata, new FloatArray(col));
+		_numRows = col.length;
+	}
+	/**
+	 * Append a column of value type DOUBLE as the last column of
+	 * the data frame. The given array is wrapped but not copied
+	 * and hence might be updated in the future.
+	 *
 	 * @param col array of doubles
 	 */
 	public void appendColumn(double[] col) {
@@ -922,7 +948,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 					ret._coldata[j-cl].set(0, ru-rl, _coldata[j], rl);
 			}
 		}
-		
 		return ret;
 	}
 	
@@ -1023,7 +1048,6 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			while( iter.hasNext() )
 				ret.appendRow(iter.next());
 		}
-		
 		return ret;
 	}
 
@@ -1511,6 +1535,139 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 	}
 
+	private static class IntegerArray extends Array<Integer> {
+		private int[] _data = null;
+
+		public IntegerArray(int[] data) {
+			_data = data;
+			_size = _data.length;
+		}
+
+		@Override
+		public Integer get(int index) {
+			return _data[index];
+		}
+
+		@Override
+		public void set(int index, Integer value) { _data[index] = (value!=null) ? value : 0;}
+		@Override
+		public void set(int rl, int ru, Array value) {
+			set(rl, ru, value, 0);
+		}
+		@Override
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((IntegerArray)value)._data, rlSrc, _data, rl, ru-rl+1);
+		}
+		@Override
+		public void setNz(int rl, int ru, Array value) {
+			int[] data2 = ((IntegerArray)value)._data;
+			for( int i=rl; i<ru+1; i++ )
+				if( data2[i]!=0 )
+					_data[i] = data2[i];
+		}
+		@Override
+		public void append(String value) {
+			append((value!=null)?Integer.parseInt(value.trim()):null);
+		}
+		@Override
+		public void append(Integer value) {
+			if( _data.length <= _size )
+				_data = Arrays.copyOf(_data, newSize());
+			_data[_size++] = (value!=null) ? value : 0;
+		}
+		@Override
+		public void write(DataOutput out) throws IOException {
+			for( int i=0; i<_size; i++ )
+				out.writeLong(_data[i]);
+		}
+		@Override
+		public void readFields(DataInput in) throws IOException {
+			_size = _data.length;
+			for( int i=0; i<_size; i++ )
+				_data[i] = in.readInt();
+		}
+		@Override
+		public Array clone() {
+			return new IntegerArray(Arrays.copyOf(_data, _size));
+		}
+		@Override
+		public Array slice(int rl, int ru) {
+			return new IntegerArray(Arrays.copyOfRange(_data,rl,ru+1));
+		}
+		@Override
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new int[size];
+			_size = size;
+		}
+	}
+
+	private static class FloatArray extends Array<Float> {
+		private float[] _data = null;
+
+		public FloatArray(float[] data) {
+			_data = data;
+			_size = _data.length;
+		}
+		@Override
+		public Float get(int index) {
+			return _data[index];
+		}
+
+		@Override
+		public void set(int index, Float value) { _data[index] = (value!=null) ? value : 0f; }
+
+		@Override
+		public void set(int rl, int ru, Array value) {
+			set(rl,ru, value, 0);
+		}
+		@Override
+		public void set(int rl, int ru, Array value, int rlSrc) {
+			System.arraycopy(((FloatArray)value)._data, rlSrc, _data, rl, ru-rl+1);
+		}
+		@Override
+		public void setNz(int rl, int ru, Array value) {
+			float[] data2 = ((FloatArray)value)._data;
+			for( int i=rl; i<ru+1; i++ )
+				if( data2[i]!=0 )
+					_data[i] = data2[i];
+		}
+		@Override
+		public void append(String value) {	append((value!=null)? Float.parseFloat(value):null); }
+
+		@Override
+		public void append(Float value) {
+			if( _data.length <= _size )
+				_data = Arrays.copyOf(_data, newSize());
+			_data[_size++] = (value!=null) ? value : 0f;
+		}
+		@Override
+		public void write(DataOutput out) throws IOException {
+			for( int i=0; i<_size; i++ )
+				out.writeFloat(_data[i]);
+		}
+		@Override
+		public void readFields(DataInput in) throws IOException {
+			_size = _data.length;
+			for( int i=0; i<_size; i++ )
+				_data[i] = in.readFloat();
+		}
+		@Override
+		public Array clone() {
+			return new FloatArray(Arrays.copyOf(_data, _size));
+		}
+		@Override
+		public Array slice(int rl, int ru) {
+			return new FloatArray(Arrays.copyOfRange(_data,rl,ru+1));
+		}
+		@Override
+		public void reset(int size) {
+			if( _data.length < size )
+				_data = new float[size];
+			_size = size;
+		}
+	}
+
 	private static class DoubleArray extends Array<Double> {
 		private double[] _data = null;
 		
@@ -1608,5 +1765,108 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		public void setMvValue(String mvVal) {
 			_mvValue = mvVal;
 		}
+	}
+
+	private static String isType(String val) {
+		//TODO use consistent names (why not return value types)
+		val = val.trim().toLowerCase().replaceAll("\"",  "");
+		if (val.matches("(true|false|t|f|0|1)"))
+			return "Boolean";
+		else if (val.matches("[-+]?\\d+"))
+			return "Long";
+		else if (val.matches("[-+]?[0-9]+\\.?[0-9]*([e]?[-+]?[0-9]+)") || val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
+			return "Double";
+		else if (val.length() == 1)
+			return "Character";
+		else return "String";
+	}
+
+	public FrameBlock detectSchemaFromRow(double sampleFraction) {
+		int rows = this.getNumRows();
+		int cols = this.getNumColumns();
+
+		int sample = (int) (sampleFraction * rows);
+		if (sample <= 0)
+			sample = rows;
+
+		String[] schemaInfo = new String[cols];
+		HashMap<String, String> cellType = new HashMap<>();
+		FrameBlock fb = null;
+
+		for (int i = 0; i < cols; i++) {
+			//TODO avoid keeping all the values sampled
+			Array obj = this.getColumn(i);
+			for (int j = 0; j < sample; j++) {
+				int randomIndex = ThreadLocalRandom.current().nextInt(0, rows - 1);
+				cellType.put(obj.get(randomIndex).toString().replace("\"", "").toLowerCase(), isType(obj.get(randomIndex).toString()));
+			}
+			
+			//TODO fix special value handling, etc 
+			//TODO fix string handling - use value type 
+			if (cellType.containsValue("String"))
+				schemaInfo[i] = "STRING";
+			else if (cellType.containsValue("Double")) {
+				if (cellType.containsKey("infinity") || cellType.containsKey("-infinity") || cellType.containsKey("nan"))
+					schemaInfo[i] = "FP64";
+				else {
+					//TODO fix handling of floats -> double would overflow here
+					Set<Float> cellValues = cellType.keySet().stream().map(s -> Float.parseFloat(s)).collect(Collectors.toSet());
+					float maxValue = Collections.max(cellValues);
+					if (maxValue >= (1.40129846432481707 * Math.exp(-45)) && maxValue <= (3.40282346638528860 * Math.exp(38))) {
+						schemaInfo[i] = "FP32";
+					}
+					else
+						schemaInfo[i] = "FP64";
+				}
+			} else if (cellType.containsValue("Long")) {
+				Set<Long> cellValues = cellType.keySet().stream().map(s -> Long.parseLong(s)).collect(Collectors.toSet());
+				long maxValue = Collections.max(cellValues);
+				if (maxValue >= Math.pow(-2, 31) && maxValue <= (Math.pow(2, 31) - 1)) {
+					schemaInfo[i] = "INT32";
+				} else
+					schemaInfo[i] = "INT64";
+			}
+			else if (cellType.containsValue("Boolean")) schemaInfo[i] = "BOOLEAN";
+			else if (cellType.containsValue("Character")) schemaInfo[i] = "CHARACTER";
+			cellType.clear();
+		}
+		ValueType[] outputSchema = UtilFunctions.nCopies(this.getNumColumns(), ValueType.STRING);
+		String[] dataOut = new String[cols];
+		Arrays.setAll(dataOut, value -> schemaInfo[value]);
+		fb = new FrameBlock(outputSchema);
+		fb.appendRow(dataOut);
+
+		return fb;
+	}
+
+	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {
+		String[] rowTemp1 = temp1.getStringRowIterator().next();
+		String[] rowTemp2 = temp2.getStringRowIterator().next();
+
+		if(rowTemp1.length != rowTemp2.length)
+			throw new DMLRuntimeException("Schema dimension "
+				+ "mismatch: "+rowTemp1.length+" vs "+rowTemp2.length);
+
+		for(int i=0; i< rowTemp1.length; i++ ) {
+			//modify schema1 if necessary (different schema2) 
+			if(!rowTemp1[i].equals(rowTemp2[i])) {
+				if(rowTemp1[i].equals("STRING") || rowTemp2[i].equals("STRING"))
+					rowTemp1[i] = "STRING";
+				else if (rowTemp1[i].equals("FP64") || rowTemp2[i].equals("FP64"))
+					rowTemp1[i] = "FP64";
+				else if (rowTemp1[i].equals("FP32") && new ArrayList<String> (Arrays.asList("INT64", "INT32", "CHARACTER")).contains(rowTemp2[i].toString()) )
+					rowTemp1[i] = "FP32";
+				else if (rowTemp1[i].equals("INT64") && new ArrayList<String> (Arrays.asList("INT32", "CHARACTER")).contains(rowTemp2[i].toString()))
+					rowTemp1[i] = "INT64";
+				else if (rowTemp1[i].equals("INT32") || rowTemp2[i].equals("CHARACTER"))
+					rowTemp1[i] = "INT32";
+			}
+		}
+
+		//create output block one row representing the schema as strings
+		FrameBlock mergedFrame = new FrameBlock(
+			UtilFunctions.nCopies(temp1.getNumColumns(), ValueType.STRING));
+		mergedFrame.appendRow(rowTemp1);
+		return mergedFrame;
 	}
 }

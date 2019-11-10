@@ -21,6 +21,7 @@ package org.tugraz.sysds.runtime.instructions;
 
 import java.util.HashMap;
 
+import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.lops.DataGen;
 import org.tugraz.sysds.lops.LeftIndex;
@@ -36,6 +37,7 @@ import org.tugraz.sysds.lops.WeightedSquaredLossR;
 import org.tugraz.sysds.lops.WeightedUnaryMM;
 import org.tugraz.sysds.lops.WeightedUnaryMMR;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
@@ -71,15 +73,16 @@ import org.tugraz.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.ReorgSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.RmmSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction;
+import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.tugraz.sysds.runtime.instructions.spark.SpoofSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.TernarySPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.Tsmm2SPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.TsmmSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.UaggOuterChainSPInstruction;
+import org.tugraz.sysds.runtime.instructions.spark.UnaryFrameSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.ZipmmSPInstruction;
-import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
 
 
 public class SPInstructionParser extends InstructionParser 
@@ -242,7 +245,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "floor" , SPType.Unary);
 		String2SPInstructionType.put( "sprop", SPType.Unary);
 		String2SPInstructionType.put( "sigmoid", SPType.Unary);
-		
+		String2SPInstructionType.put( "detectSchema", SPType.Unary);
+
 		// Parameterized Builtin Functions
 		String2SPInstructionType.put( "groupedagg",     SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "mapgroupedagg",  SPType.ParameterizedBuiltin);
@@ -415,8 +419,12 @@ public class SPInstructionParser extends InstructionParser
 				}
 				
 			case Unary:
-				return UnaryMatrixSPInstruction.parseInstruction(str);
-			
+				parts = InstructionUtils.getInstructionPartsWithValueType(str);
+				CPOperand in = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
+				if(in.getDataType() == Types.DataType.MATRIX)
+					return UnaryMatrixSPInstruction.parseInstruction(str);
+				else
+					return UnaryFrameSPInstruction.parseInstruction(str);
 			case BuiltinNary:
 				return BuiltinNarySPInstruction.parseInstruction(str);
 			

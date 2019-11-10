@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,7 +51,8 @@ public class Builtin extends ValueFunction
 	
 	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
-		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST, TYPEOF }
+		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
+		TYPEOF, DETECTSCHEMA }
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -97,6 +100,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "sprop",   BuiltinCode.SPROP);
 		String2BuiltinCode.put( "sigmoid", BuiltinCode.SIGMOID);
 		String2BuiltinCode.put( "typeOf", BuiltinCode.TYPEOF);
+		String2BuiltinCode.put( "detectSchema", BuiltinCode.DETECTSCHEMA);
 	}
 	
 	// We should create one object for every builtin function that we support
@@ -105,7 +109,7 @@ public class Builtin extends ValueFunction
 	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null, printfObj;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
 	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null, cumsprodObj=null;
-	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, typeOfObj = null ;
+	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, typeOfObj = null, detectSchemaObj = null  ;
 	
 	private Builtin(BuiltinCode bf) {
 		bFunc = bf;
@@ -293,6 +297,10 @@ public class Builtin extends ValueFunction
 			if ( typeOfObj == null )
 				typeOfObj = new Builtin(BuiltinCode.TYPEOF);
 			return typeOfObj;
+		case DETECTSCHEMA:
+			if ( detectSchemaObj == null )
+				detectSchemaObj = new Builtin(BuiltinCode.DETECTSCHEMA);
+			return detectSchemaObj;
 		default:
 			// Unknown code --> return null
 			return null;

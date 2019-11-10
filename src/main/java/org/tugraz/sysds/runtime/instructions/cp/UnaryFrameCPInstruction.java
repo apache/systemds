@@ -21,21 +21,30 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
+import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 
 public class UnaryFrameCPInstruction extends UnaryCPInstruction {
-    protected UnaryFrameCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+	protected UnaryFrameCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
+		super(CPType.Unary, op, in, out, opcode, instr);
+	}
 
-        super(CPType.Unary, op, in, out, opcode, instr);
-    }
-
-    @Override
-    public void processInstruction(ExecutionContext ec) {
-        FrameBlock inBlock = ec.getFrameInput(input1.getName());
-        FrameBlock retBlock = inBlock.getSchemaTypeOf();
-        ec.releaseFrameInput(input1.getName());
-        ec.setFrameOutput(output.getName(), retBlock);
-    }
+	@Override
+	public void processInstruction(ExecutionContext ec) {
+		if(getOpcode().equals("typeOf")) {
+			FrameBlock inBlock = ec.getFrameInput(input1.getName());
+			FrameBlock retBlock = inBlock.getSchemaTypeOf();
+			ec.releaseFrameInput(input1.getName());
+			ec.setFrameOutput(output.getName(), retBlock);
+		}
+		else if(getOpcode().equals("detectSchema"))
+		{
+			FrameBlock inBlock = ec.getFrameInput(input1.getName());
+			FrameBlock retBlock = inBlock.detectSchemaFromRow(Lop.SAMPLE_FRACTION);
+			ec.releaseFrameInput(input1.getName());
+			ec.setFrameOutput(output.getName(), retBlock);
+		}
+	}
 }

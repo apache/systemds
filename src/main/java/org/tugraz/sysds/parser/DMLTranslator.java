@@ -2572,13 +2572,14 @@ public class DMLTranslator
 		case INVERSE:
 		case CHOLESKY:
 		case TYPEOF:
+		case DETECTSCHEMA:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 				OpOp1.valueOf(source.getOpCode().name()), expr);
 			break;
 			
 		case OUTER:
 			if( !(expr3 instanceof LiteralOp) )
-				throw new HopsException("Operator for outer builtin function must be a constant: "+expr3);			
+				throw new HopsException("Operator for outer builtin function must be a constant: "+expr3);
 			OpOp2 op = Hop.getOpOp2ForOuterVectorOperation(((LiteralOp)expr3).getStringValue());
 			if( op == null )
 				throw new HopsException("Unsupported outer vector binary operation: "+((LiteralOp)expr3).getStringValue());

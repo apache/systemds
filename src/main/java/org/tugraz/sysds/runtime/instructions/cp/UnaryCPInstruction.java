@@ -33,7 +33,7 @@ import org.tugraz.sysds.runtime.matrix.data.LibCommonsMath;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
 
-public abstract class  UnaryCPInstruction extends ComputationCPInstruction {
+public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 
 	protected UnaryCPInstruction(CPType type, Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		this(type, op, in, null, null, out, opcode, instr);

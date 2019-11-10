@@ -130,6 +130,7 @@ SYSTEMDS-170 Lineage full and partial reuse
 SYSTEMDS-180 New Builtin Functions II                                 OK
  * 181 Builtin function for naive bayes                               OK
  * 182 Builtin function for typeof (frame schema detection)           OK
+ * 183 Builtin function detectSchema                                  OK
  
  
 Others:

@@ -142,7 +142,7 @@ public class DetectSchemaTest extends AutomatedTestBase {
 		}
 	}
 
-	private void initFrameDataString(FrameBlock frame1, double[][] data, Types.ValueType[] lschema) {
+	private static void initFrameDataString(FrameBlock frame1, double[][] data, Types.ValueType[] lschema) {
 		for (int j = 0; j < lschema.length - 1; j++) {
 			Types.ValueType vt = lschema[j];
 			switch (vt) {

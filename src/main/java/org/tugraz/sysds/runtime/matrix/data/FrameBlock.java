@@ -1854,9 +1854,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 					rowTemp1[i] = "STRING";
 				else if (rowTemp1[i].equals("FP64") || rowTemp2[i].equals("FP64"))
 					rowTemp1[i] = "FP64";
-				else if (rowTemp1[i].equals("FP32") && new ArrayList<String> (Arrays.asList("INT64", "INT32", "CHARACTER")).contains(rowTemp2[i].toString()) )
+				else if (rowTemp1[i].equals("FP32") && new ArrayList<> (Arrays.asList("INT64", "INT32", "CHARACTER")).contains(rowTemp2[i].toString()) )
 					rowTemp1[i] = "FP32";
-				else if (rowTemp1[i].equals("INT64") && new ArrayList<String> (Arrays.asList("INT32", "CHARACTER")).contains(rowTemp2[i].toString()))
+				else if (rowTemp1[i].equals("INT64") && new ArrayList<> (Arrays.asList("INT32", "CHARACTER")).contains(rowTemp2[i].toString()))
 					rowTemp1[i] = "INT64";
 				else if (rowTemp1[i].equals("INT32") || rowTemp2[i].equals("CHARACTER"))
 					rowTemp1[i] = "INT32";

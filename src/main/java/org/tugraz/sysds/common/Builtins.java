@@ -83,6 +83,7 @@ public enum Builtins {
 	EXP("exp", false),
 	EVAL("eval", false),
 	FLOOR("floor", false),
+	GNMF("gnmf", true),
 	IFELSE("ifelse", false),
 	IMG_MIRROR("img_mirror", true),
 	IMG_BRIGHTNESS("img_brightness", true),

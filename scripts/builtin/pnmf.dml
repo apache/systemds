@@ -21,23 +21,27 @@
 #
 #-------------------------------------------------------------
 
-# Implements Gaussian Nonnegative Matrix Factorization (GNMF)
+# Implements Poisson Nonnegative Matrix Factorization (PNMF)
 #
 # [Chao Liu, Hung-chih Yang, Jinliang Fan, Li-Wei He, Yi-Min Wang:
 # Distributed nonnegative matrix factorization for web-scale dyadic 
 # data analysis on mapreduce. WWW 2010: 681-690]
 
-m_gnmf = function(Matrix[Double] X, Integer rnk, Double eps = 10^-8, Integer maxi = 10) 
+m_pnmf = function(Matrix[Double] X, Integer rnk, Double eps = 10^-8, Integer maxi = 10, Boolean verbose=TRUE) 
   return (Matrix[Double] W, Matrix[Double] H) 
 {
   #initialize W and H
-  W = rand(rows=nrow(X), cols=rnk, min=-0.05, max=0.05);
-  H = rand(rows=rnk, cols=ncol(X), min=-0.05, max=0.05);
+  W = rand(rows=nrow(X), cols=rnk, min=0, max=0.025);
+  H = rand(rows=rnk, cols=ncol(X), min=0, max=0.025);
 
   i = 0;
   while(i < maxi) {
-    H = H * ((t(W) %*% X) / (((t(W) %*% W) %*% H)+eps));
-    W = W * ((X %*% t(H)) / ((W %*% (H %*% t(H)))+eps));
+    H = (H*(t(W)%*%(X/(W%*%H+eps)))) / t(colSums(W));
+    W = (W*((X/(W%*%H+eps))%*%t(H))) / t(rowSums(H));
     i = i + 1;
+    if( verbose ) {
+      obj = sum(W%*%H) - sum(X*log(W%*%H+eps));
+      print("iter=" + i + " obj=" + obj);
+    }
   }
 }

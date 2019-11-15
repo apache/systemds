@@ -79,7 +79,9 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 				for( int j=0; j<finputs.size(); j++ )
 					if( fcallSizes.isSafeLiteral(fkey, j) ) {
 						LiteralOp lit = (LiteralOp) first.getInput().get(j);
-						callVars.put(finputs.get(j).getName(), ScalarObjectFactory
+						String varname = (first.getInputVariableNames()!=null) ?
+							first.getInputVariableNames()[j] : finputs.get(j).getName();
+						callVars.put(varname, ScalarObjectFactory
 							.createScalarObject(lit.getValueType(), lit));
 					}
 				

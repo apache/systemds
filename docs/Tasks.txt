@@ -100,7 +100,8 @@ SYSTEMDS-130 IPA and Size Propagation
  * 131 New IPA pass for function call forwarding                      OK
  * 132 Size propagation via data characteristics
  * 133 Hop Size Propagation for Tensors
- * 134 Increased repretition and fixpoint detection
+ * 134 Increased repretition and fixpoint detection                   OK
+ * 135 Fix IPA scalar propagation w/ named arguments                  OK
 
 SYSTEMDS-140 Distributed Tensor Operations
  * 141 Infrastructure for spark tensor operations

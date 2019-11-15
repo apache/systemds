@@ -16,6 +16,7 @@
 
 package org.tugraz.sysds.test.functions.builtin;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types;
@@ -24,6 +25,7 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
+import org.tugraz.sysds.utils.Statistics;
 
 public class BuiltinFactorizationTest extends AutomatedTestBase
 {
@@ -104,13 +106,18 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 				String.valueOf(rank), String.valueOf(max_iter)};
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-
+			
 			//generate input and write incl meta data
 			double[][] Xa = TestUtils.generateTestMatrix(rows, cols, 1, 10, sparsity, 7);
 			writeInputMatrixWithMTD("X", Xa, true);
 			
 			//run test case
 			runTest(true, false, null, -1);
+			
+			if( (testname.equals(TEST_NAME1) || testname.equals(TEST_NAME2))
+				&& instType==ExecType.CP) {
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount("/")>=20);
+			}
 		}
 		finally {
 			rtplatform = platformOld;

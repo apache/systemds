@@ -118,6 +118,7 @@ public enum Builtins {
 	NAIVEBAYES("naivebayes", true, false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
+	PNMF("pnmf", true),
 	PPRED("ppred", false),
 	PROD("prod", false),
 	QR("qr", false, ReturnType.MULTI_RETURN),

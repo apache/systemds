@@ -131,8 +131,8 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
  * 181 Builtin function for naive bayes                               OK
  * 182 Builtin function for typeof (frame schema detection)           OK
  * 183 Builtin function detectSchema                                  OK
- * 184 Builtin function GNMF
- * 185 Builtin function PNMF
+ * 184 Builtin function GNMF                                          OK
+ * 185 Builtin function PNMF                                          OK
  * 186 Builtin function ALS-DS
  * 187 Builtin function ALS-CG
  * 188 Builtin function ALS

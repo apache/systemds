@@ -21,10 +21,6 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
@@ -32,6 +28,7 @@ import org.tugraz.sysds.test.TestUtils;
 public class BuiltinFactorizationTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "GNMF";
+	private final static String TEST_NAME2 = "PNMF";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinFactorizationTest.class.getSimpleName() + "/";
 
@@ -45,6 +42,7 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"U","V"}));
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"U","V"}));
 	}
 
 	@Test
@@ -67,6 +65,26 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 		runFactorizationTest(TEST_NAME1, false, ExecType.SPARK);
 	}
 	
+	@Test
+	public void testPNMFRewritesCP() {
+		runFactorizationTest(TEST_NAME2, true, ExecType.CP);
+	}
+
+	@Test
+	public void testPNMFNoRewritesCP() {
+		runFactorizationTest(TEST_NAME2, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testPNMFRewritesSpark() {
+		runFactorizationTest(TEST_NAME2, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testPNMFNoRewritesSpark() {
+		runFactorizationTest(TEST_NAME2, false, ExecType.SPARK);
+	}
+	
 	private void runFactorizationTest(String testname, boolean rewrites, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
@@ -82,21 +100,13 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-explain", "-stats",
-				"-args", input("X"), output("U"), output("V"),
+				"-args", input("X"), output("W"), output("H"),
 				String.valueOf(rank), String.valueOf(max_iter)};
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
-			//generate actual datasets X = W * (U %*% V)
-			MatrixBlock U = MatrixBlock.randOperations(rows, rank, 1.0, -1, 1, "uniform", 3);
-			MatrixBlock V = MatrixBlock.randOperations(rank, cols, 1.0, -1, 1, "uniform", 7);
-			MatrixBlock X = U.aggregateBinaryOperations(U, V, new MatrixBlock(),
-				InstructionUtils.getMatMultOperator(InfrastructureAnalyzer.getLocalParallelism()));
-			MatrixBlock I = MatrixBlock.randOperations(rows, cols, sparsity, 1, 1, "uniform", 12);
-			X = (MatrixBlock) X.binaryOperations(InstructionUtils.parseBinaryOperator("*"), I, new MatrixBlock());
-			double[][] Xa = DataConverter.convertToDoubleMatrix(X);
-			
-			//write input incl meta data
+			//generate input and write incl meta data
+			double[][] Xa = TestUtils.generateTestMatrix(rows, cols, 1, 10, sparsity, 7);
 			writeInputMatrixWithMTD("X", Xa, true);
 			
 			//run test case

@@ -92,7 +92,7 @@ public class SqlCPInstruction extends CPInstruction {
 		}
 	}
 	
-	private void setCell(TensorBlock outBlock, ResultSet resultSet, ValueType valueType, int[] ix) throws SQLException {
+	private static void setCell(TensorBlock outBlock, ResultSet resultSet, ValueType valueType, int[] ix) throws SQLException {
 		int sqlCol = ix[1] + 1;
 		switch (valueType) {
 			case FP64: outBlock.set(ix, resultSet.getDouble(sqlCol)); break;
@@ -105,7 +105,7 @@ public class SqlCPInstruction extends CPInstruction {
 		}
 	}
 	
-	private ValueType[] getSchemaFromMetaData(ResultSetMetaData meta) throws SQLException {
+	private static ValueType[] getSchemaFromMetaData(ResultSetMetaData meta) throws SQLException {
 		ValueType[] schema = new ValueType[meta.getColumnCount()];
 		for (int i = 0; i < meta.getColumnCount(); i++) {
 			int type = meta.getColumnType(i + 1);

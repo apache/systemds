@@ -420,7 +420,7 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Unary:
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				CPOperand in = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
+				CPOperand in = new CPOperand(parts[1]);
 				if(in.getDataType() == Types.DataType.MATRIX)
 					return UnaryMatrixSPInstruction.parseInstruction(str);
 				else

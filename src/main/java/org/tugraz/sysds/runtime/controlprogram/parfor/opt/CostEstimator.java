@@ -89,7 +89,6 @@ public abstract class CostEstimator
 	 * 
 	 * @param measure ?
 	 * @param node internal representation of a plan alternative for program blocks and instructions
-	 * @param inclCondPart including conditional partitioning
 	 * @return estimate?
 	 */
 	public double getEstimate( TestMeasure measure, OptNode node ) {

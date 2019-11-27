@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -107,6 +107,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 	 * 
 	 * @param m1Map density map left-hand-side operand
 	 * @param m2Map density map right-hand-side operand
+	 * @param op operator code
 	 * @return density map
 	 */
 	public DensityMap estimIntern(DensityMap m1Map, DensityMap m2Map, OpCode op) {

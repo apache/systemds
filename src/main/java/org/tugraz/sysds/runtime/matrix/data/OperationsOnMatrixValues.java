@@ -411,8 +411,7 @@ public class OperationsOnMatrixValues
 	 * 
 	 * @param in ?
 	 * @param ixrange index range
-	 * @param blen number of rows in a block
-	 * @param blen number of columns in a block
+	 * @param blen block length
 	 * @param outlist list of pairs of frame blocks
 	 */
 	public static void performSlice(Pair<Long,FrameBlock> in, IndexRange ixrange, int blen, ArrayList<Pair<Long,FrameBlock>> outlist) {

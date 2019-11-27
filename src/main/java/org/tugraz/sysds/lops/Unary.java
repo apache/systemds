@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -98,6 +98,7 @@ public class Unary extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 * @param numThreads number of threads
+	 * @param inplace inplace behavior
 	 */
 	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et, int numThreads, boolean inplace) {
 		super(Lop.Type.UNARY, dt, vt);

@@ -54,8 +54,8 @@ public abstract class SparsityEstimator
 	 * Estimates the output sparsity of a DAG of matrix multiplications
 	 * for the given operator graph of a single root node.
 	 * 
-	 * @param root
-	 * @return
+	 * @param root DAG root node
+	 * @return output data characteristics
 	 */
 	public abstract DataCharacteristics estim(MMNode root);
 	

@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -117,7 +117,7 @@ public class ParamservUtils {
 	}
 
 	/**
-	 * Clean up the list object according to the given array of data status (i.e., false => not be removed)
+	 * Clean up the list object according to the given array of data status (i.e., false {@literal =>} not be removed)
 	 * @param ec execution context
 	 * @param lName list var name
 	 * @param status data status
@@ -352,7 +352,7 @@ public class ParamservUtils {
 	 *
 	 * @param featuresRDD indexed features matrix block
 	 * @param labelsRDD indexed labels matrix block
-	 * @return Assembled rdd with rowID as key while matrix of features and labels as value (rowID -> features, labels)
+	 * @return Assembled rdd with rowID as key while matrix of features and labels as value (rowID {@literal ->} features, labels)
 	 */
 	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
 		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(featuresRDD);

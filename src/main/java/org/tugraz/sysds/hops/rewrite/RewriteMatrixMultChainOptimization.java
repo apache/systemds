@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -264,11 +264,18 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	/**
 	 * mmChainRelinkHops(): This method gets invoked after finding the optimal
 	 * order (split[][]) from dynamic programming. It relinks the Hops that are
-	 * part of the mmChain. mmChain : basic operands in the entire matrix
-	 * multiplication chain. mmOperators : Hops that store the intermediate
-	 * results in the chain. For example: A = B %*% (C %*% D) there will be
-	 * three Hops in mmChain (B,C,D), and two Hops in mmOperators (one for each
-	 * %*%) .
+	 * part of the mmChain.
+	 * @param mmChain : basic operands in the entire matrix multiplication chain.
+	 * @param mmOperators : Hops that store the intermediate results in the chain.
+	 *                      For example: A = B %*% (C %*% D) there will be three
+	 *                      Hops in mmChain (B,C,D), and two Hops in mmOperators
+	 *                     (one for each * %*%).
+	 * @param h high level operator
+	 * @param i array index i
+	 * @param j array index j
+	 * @param opIndex operator index
+	 * @param split optimal order
+	 * @param level log level
 	 */
 	protected final void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators,
 			int opIndex, int[][] split, int level) 
@@ -343,7 +350,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 * @param chain list of high-level operators
-	 * @param dimArray dimension array
+	 * @param dimsArray dimension array
 	 * @return true if all dimensions known
 	 */
 	protected static boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray )

@@ -19,18 +19,21 @@
  * specific language governing permissions and limitations
  * under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.apache</groupId>
 		<artifactId>apache</artifactId>
 		<version>18</version>
 	</parent>
-	<groupId>org.tugraz.systemds</groupId>
+	<groupId>org.tugraz.sysds</groupId>
 	<version>0.2.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
+	<url>https://github.com/tugraz-isds/systemds</url>
 	<description>Declarative End-to-End Data Science</description>
 	<licenses>
 		<license>
@@ -45,13 +48,11 @@
 		<spark.version>2.1.0</spark.version>
 		<scala.version>2.11.8</scala.version>
 		<scala.binary.version>2.11</scala.binary.version>
-		<scala.test.version>2.2.6</scala.test.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
-		<jcuda.version>10.1.0</jcuda.version>
+		<jcuda.version>10.2.0</jcuda.version>
 		<skipTests>true</skipTests>
-		<integrationTestExtraJVMArgs />
 	</properties>
 
 	<repositories>
@@ -64,10 +65,12 @@
 		</repository>
 	</repositories>
 
-	<build>
+	<scm>
+		<developerConnection>scm:git:https://github.com/tugraz-isds/systemds.git</developerConnection>
+	</scm>
 
-		<!-- Adds scripts to main jar, in-memory jar, sources jar, and standalone 
-			jar -->
+	<build>
+		<!-- Adds scripts to main jar, in-memory jar, sources jar, and standalone jar -->
 		<resources>
 			<resource>
 				<directory>scripts</directory>
@@ -78,7 +81,6 @@
 					<exclude>staging/**/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
-					<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
 				</excludes>
 				<targetPath>scripts</targetPath>
 			</resource>
@@ -86,6 +88,8 @@
 				<directory>src/main/cpp/kernels</directory>
 				<excludes>
 					<exclude>*.cu</exclude>
+					<exclude>*.cuh</exclude>
+					<exclude>Makefile</exclude>
 				</excludes>
 				<targetPath>kernels</targetPath>
 			</resource>
@@ -152,14 +156,31 @@
 									<include>org.antlr:antlr4-runtime:*</include>
 								</includes>
 							</artifactSet>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>org.tugraz.sysds.api.DMLScript</mainClass>
+								</transformer>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
+								</transformer>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+									<resource>META-INF/LICENSE</resource>
+									<file>src/assembly/bin/LICENSE</file>
+								</transformer>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+									<resource>META-INF/NOTICE</resource>
+									<file>NOTICE</file>
+								</transformer>
+							</transformers>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
 						</configuration>
 					</execution>
 				</executions>
-
 				<configuration>
 					<!-- Include signature files so that recent versions of Java will run 
 						the resulting jar without complaining about "Invalid signature file digest 
-						for Manifest main attributes". -->
+						for Manifest main attributes".
+						Furthermore, the excluded notice and license files will be explicitly
+						added by the resource transformers above -->
 					<filters>
 						<filter>
 							<artifact>*:*</artifact>
@@ -167,40 +188,22 @@
 								<exclude>META-INF/*.SF</exclude>
 								<exclude>META-INF/*.DSA</exclude>
 								<exclude>META-INF/*.RSA</exclude>
+								<exclude>META-INF/LICENSE</exclude>
+								<exclude>META-INF/NOTICE</exclude>
 							</excludes>
 						</filter>
 					</filters>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version><!--$NO-MVN-MAN-VER$-->
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>default-jar</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-						<phase>package</phase>
-						<configuration>
-							<archive>
-								<index>true</index>
-								<manifestEntries>
-									<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
-									<Main-Class>org.tugraz.sysds.api.DMLScript</Main-Class>
-								</manifestEntries>
-							</archive>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 
 			<plugin>
@@ -257,7 +260,7 @@
 					<parallel>classes</parallel>
 					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
 					<threadCount>12</threadCount>
-					<!-- 1C means the number of threads times 1 posible maximum forks for testing-->
+					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>1C</forkCount>
 					<argLine>-Xms4g -Xmx4g</argLine>
 					<reuseForks>false</reuseForks>
@@ -308,40 +311,6 @@
 			</plugin>
 
 			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<tarLongFileMode>gnu</tarLongFileMode>
-				</configuration>
-				<executions>
-					<execution>
-						<id>create-main-jar</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<configuration>
-							<descriptors>
-								<descriptor>src/assembly/jar.xml</descriptor>
-							</descriptors>
-							<appendAssemblyId>false</appendAssemblyId>
-							<archive>
-								<manifest>
-									<mainClass>org.tugraz.sysds.api.DMLScript</mainClass>
-								</manifest>
-								<manifestEntries>
-									<Build-Time>${maven.build.timestamp}</Build-Time>
-									<Group-Id>${project.groupId}</Group-Id>
-									<Artifact-Id>${project.artifactId}</Artifact-Id>
-									<Version>${project.version}</Version>
-									<Minimum-Recommended-Spark-Version>${spark.version}</Minimum-Recommended-Spark-Version>
-								</manifestEntries>
-							</archive>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
 				<executions>
@@ -361,27 +330,6 @@
 			</plugin>
 
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.6.0</version>
-				<executions>
-					<execution>
-						<id>install-dependency-for-integration-tests</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>java</goal>
-						</goals>
-						<configuration>
-							<mainClass>org.tugraz.sysds.utils.InstallDependencyForIntegrationTests</mainClass>
-							<arguments>
-								<argument>true</argument> <!-- <argument>${skipTests}</argument> -->
-								<argument>${enableGPU}</argument>
-							</arguments>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.7.6.201602180812</version>
@@ -394,6 +342,7 @@
 					</execution>
 				</executions>
 			</plugin>
+
 			<plugin>
 				<groupId>org.eluder.coveralls</groupId>
 				<artifactId>coveralls-maven-plugin</artifactId>
@@ -403,7 +352,6 @@
 	</build>
 
 	<profiles>
-
 		<profile>
 			<id>windows-x86_64</id>
 			<activation>
@@ -454,21 +402,6 @@
 			<properties>
 				<jcuda.os>linux</jcuda.os>
 				<jcuda.arch>ppc_64</jcuda.arch>
-			</properties>
-		</profile>
-
-		<profile>
-			<!-- Profile for Windows builds. Not currently needed, but might be needed 
-				in the future. -->
-			<id>platform-windows</id>
-			<activation>
-				<os>
-					<family>windows</family>
-				</os>
-			</activation>
-			<properties>
-				<!-- Extra JVM args for Windows go here. -->
-				<integrationTestExtraJVMArgs />
 			</properties>
 		</profile>
 
@@ -525,20 +458,6 @@
 												<versionRange>[2.10,)</versionRange>
 												<goals>
 													<goal>copy-dependencies</goal>
-												</goals>
-											</pluginExecutionFilter>
-											<action>
-												<ignore>
-												</ignore>
-											</action>
-										</pluginExecution>
-										<pluginExecution>
-											<pluginExecutionFilter>
-												<groupId>org.codehaus.mojo</groupId>
-												<artifactId>build-helper-maven-plugin</artifactId>
-												<versionRange>[1.8,)</versionRange>
-												<goals>
-													<goal>add-test-source</goal>
 												</goals>
 											</pluginExecutionFilter>
 											<action>
@@ -632,7 +551,7 @@
 		</profile>
 
 		<profile>
-			<!-- Profile to create binary distributions. Execute with `mvn clean package
+			<!-- Profile to create binary distributions. Execute with `mvn clean package 
 				-P distribution` -->
 			<id>distribution</id>
 			<build>
@@ -640,7 +559,7 @@
 					<plugin>
 						<artifactId>maven-assembly-plugin</artifactId>
 						<configuration>
-							<tarLongFileMode>gnu</tarLongFileMode>
+							<tarLongFileMode>posix</tarLongFileMode>
 						</configuration>
 						<executions>
 							<execution>
@@ -652,19 +571,6 @@
 								<configuration>
 									<descriptors>
 										<descriptor>src/assembly/source.xml</descriptor>
-									</descriptors>
-								</configuration>
-							</execution>
-
-							<execution>
-								<id>create-binary-distribution</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/bin.xml</descriptor>
 									</descriptors>
 								</configuration>
 							</execution>
@@ -685,7 +591,18 @@
 											<Version>${project.version}</Version>
 										</manifestEntries>
 									</archive>
-									<classifier>extra</classifier>
+								</configuration>
+							</execution>
+							<execution>
+								<id>create-binary-distribution</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/bin.xml</descriptor>
+									</descriptors>
 								</configuration>
 							</execution>
 						</executions>
@@ -700,20 +617,13 @@
 								<goals>
 									<goal>sign</goal>
 								</goals>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>2.4</version>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<goals>
-									<goal>jar-no-fork</goal>
-								</goals>
+								<configuration>
+									<!-- This is necessary for gpg to not try to use the pinentry programs -->
+									<gpgArguments>
+										<arg>--pinentry-mode</arg>
+										<arg>loopback</arg>
+									</gpgArguments>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
@@ -740,15 +650,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.10.3</version>
-						<configuration>
-							<!-- Need to include the following packages, so exclude others: org.tugraz.sysds.api 
-								org.tugraz.sysds.runtime.instructions.spark.utils (for RDDConverterUtils, 
-								etc) org.tugraz.sysds.runtime.matrix (for MatrixCharacteristics, etc) org.tugraz.sysds.runtime.matrix.data 
-								(for MatrixIndexes, MatrixBlock, etc) org.tugraz.sysds.udf -->
-							<excludePackageNames>org.tugraz.sysds.hops:org.tugraz.sysds.lops:org.tugraz.sysds.parser:org.tugraz.sysds.runtime.controlprogram:org.tugraz.sysds.runtime.functionobjects:org.tugraz.sysds.runtime.instructions.cp:org.tugraz.sysds.runtime.instructions.cpfile:org.tugraz.sysds.runtime.instructions.mr:org.tugraz.sysds.runtime.instructions.spark.data:org.tugraz.sysds.runtime.instructions.spark.functions:org.tugraz.sysds.runtime.io:org.tugraz.sysds.runtime.matrix.data.hadoopfix:org.tugraz.sysds.runtime.matrix.mapred:org.tugraz.sysds.runtime.matrix.operators:org.tugraz.sysds.runtime.matrix.sort:org.tugraz.sysds.runtime.transform:org.tugraz.sysds.runtime.util:org.tugraz.sysds.utils:org.tugraz.sysds.yarn</excludePackageNames>
-							<additionalparam>${javadoc.opts}</additionalparam>
-						</configuration>
+						<version>3.1.1</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -761,9 +663,23 @@
 				</plugins>
 			</build>
 		</profile>
-		
-	</profiles>
 
+		<profile>
+			<id>skip-sign</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<configuration>
+							<skip>true</skip>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.jcuda</groupId>
@@ -778,6 +694,7 @@
 	        	</exclusion>
 	      	</exclusions>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas</artifactId>
@@ -791,6 +708,7 @@
 	        	</exclusion>
 	      	</exclusions>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
@@ -804,6 +722,7 @@
 	        	</exclusion>
 	      	</exclusions>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver</artifactId>
@@ -817,6 +736,7 @@
 	        	</exclusion>
 	      	</exclusions>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn</artifactId>
@@ -839,6 +759,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas-natives</artifactId>
@@ -846,6 +767,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse-natives</artifactId>
@@ -853,6 +775,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver-natives</artifactId>
@@ -860,6 +783,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
@@ -875,6 +799,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas-natives</artifactId>
@@ -882,6 +807,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse-natives</artifactId>
@@ -889,6 +815,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver-natives</artifactId>
@@ -896,6 +823,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
@@ -904,52 +832,14 @@
 			<scope>${jcuda.scope}</scope>
 		</dependency>
 
-		<!-- Commented until the PowerPC jcuda libraries are deployed for 0.9.0 version
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda-natives</artifactId>
-			<classifier>linux-ppc_64</classifier>
+			<classifier>apple-x86_64</classifier>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcublas-natives</artifactId>
-			<classifier>linux-ppc_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusparse-natives</artifactId>
-			<classifier>linux-ppc_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusolver-natives</artifactId>
-			<classifier>linux-ppc_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcudnn-natives</artifactId>
-			<classifier>linux-ppc_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		 -->
 
-		 <!-- Commented until the MacOS jcuda libraries are deployed for 0.9.0 version
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcuda-natives</artifactId>
-			<classifier>apple-x86_64</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas-natives</artifactId>
@@ -957,6 +847,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse-natives</artifactId>
@@ -964,6 +855,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver-natives</artifactId>
@@ -971,6 +863,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
@@ -978,13 +871,13 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-		 -->
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
@@ -996,6 +889,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
@@ -1007,32 +901,38 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
 			<version>${hadoop.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
 			<version>1.1.3</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.4.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.wink</groupId>
 			<artifactId>wink-json4j</artifactId>
 			<version>1.4</version>
 		</dependency>
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
 			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<!--Used for annotations in tests to execute tests in thread safe manner-->
 			<groupId>com.github.stephenc.jcip</groupId>
@@ -1040,11 +940,13 @@
 			<version>1.0-1</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
 		</dependency>
+
 		<!-- fast java compiler for codegen, consistent version w/ spark -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
@@ -1052,6 +954,7 @@
 			<version>3.0.8</version>
 			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>
@@ -1064,22 +967,46 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>
 			<version>${antlr.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.derby</groupId>
 			<artifactId>derby</artifactId>
 			<version>10.14.2.0</version>
 			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
 			<version>4.0.42.Final</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-javadoc-plugin -->
+		<dependency>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-javadoc-plugin</artifactId>
+			<version>3.1.1</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
+		<dependency>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-gpg-plugin</artifactId>
+			<version>1.6</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.sf.py4j</groupId>
+			<artifactId>py4j</artifactId>
+			<version>0.10.4</version>
+		</dependency>
+
 	</dependencies>
 </project>

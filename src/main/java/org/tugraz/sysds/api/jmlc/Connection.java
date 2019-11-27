@@ -382,8 +382,7 @@ public class Connection implements Closeable
 	 * @param iinfo InputInfo object
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
-	 * @param blen number of rows per block
-	 * @param blen number of columns per block
+	 * @param blen block length
 	 * @param nnz number of non-zero values, -1 indicates unknown
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException if IOException occurs

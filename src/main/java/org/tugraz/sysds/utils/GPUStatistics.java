@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -84,7 +86,7 @@ public class GPUStatistics {
 	private static HashMap<String, HashMap<String, Long>> _cpInstMiscCount = new HashMap<> ();
 
 	/**
-	 * Resets the miscellaneous timers & counters
+	 * Resets the miscellaneous timers {@literal &} counters
 	 */
 	public static void resetMiscTimers(){
 		_cpInstMiscTime.clear();
@@ -92,7 +94,7 @@ public class GPUStatistics {
 	}
 
 	/**
-	 * Resets all the cuda counters and timers, including the misc timers & counters
+	 * Resets all the cuda counters and timers, including the misc timers {@literal &} counters
 	 */
 	public static void reset(){
 		cudaInitTime = 0;
@@ -177,8 +179,8 @@ public class GPUStatistics {
 	}
 
 	/**
-	 * Used to print out cuda timers & counters
-	 * @return a formatted string of cuda timers & counters
+	 * Used to print out cuda timers {@literal &} counters
+	 * @return a formatted string of cuda timers {@literal &} counters
 	 */
 	public static String getStringForCudaTimers() {
 		StringBuffer sb = new StringBuffer();

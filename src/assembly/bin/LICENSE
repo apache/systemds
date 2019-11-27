@@ -214,6 +214,7 @@ commons-configuration-1.6.jar
 commons-httpclient-3.1.jar
 commons-io-2.4.jar
 commons-lang-2.6.jar
+commons-lang3-3.5.jar
 commons-logging-1.1.3.jar
 commons-math3-3.4.1.jar
 guava-11.0.2.jar
@@ -230,22 +231,23 @@ hadoop-yarn-api-2.6.0.jar
 hadoop-yarn-client-2.6.0.jar
 hadoop-yarn-common-2.6.0.jar
 hadoop-yarn-server-common-2.6.0.jar
-hadoop-yarn-server-nodemanager-2.6.0.jar
-hadoop-yarn-server-web-proxy-2.6.0.jar
 jackson-core-asl-1.9.13.jar
 jackson-mapper-asl-1.9.13.jar
-log4j-1.2.15.jar
+log4j-1.2.17.jar
+netty-all-4.0.42.Final.jar
+netty-3.6.2.Final.jar
 -------------------------------------------------------------------------------
 The following compile-scope dependencies come under the Apache Software License 2.0.
 
 Apache Wink :: JSON4J (http://www.apache.org/wink/wink-json4j/) org.apache.wink:wink-json4j:1.4
 -------------------------------------------------------------------------------
-The following windows-only components come under the Apache Software License 2.0.
+The following components come under the Apache Software License 2.0.
 
 hadoop.dll
 hadoop.exp
 hadoop.lib
 hadoop.pdb
+libhadoop.so
 libwinutils.lib
 winutils.exe
 winutils.pdb
@@ -253,7 +255,7 @@ winutils.pdb
 
 The following ANTLR dependency is distributed under the BSD license.
 
-ANTLR 4 Runtime (http://www.antlr.org) org.antlr:antlr4-runtime:4.5.3
+ANTLR 4 Runtime (http://www.antlr.org/antlr4-runtime) org.antlr:antlr4-runtime:4.5.3
 
 Copyright (c) 2012 Terence Parr and Sam Harwell
 All rights reserved.
@@ -293,7 +295,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The following Protocol Buffer Java API dependencies are distributed under the BSD license.
 
-Protocol Buffer Java API (http://code.google.com/p/protobuf) com.google.protobuf:protobuf-java:3.2.0 (protobuf-java-3.2.0.jar)
+Protocol Buffer Java API (http://code.google.com/p/protobuf) com.google.protobuf:protobuf-java:2.5.0 (protobuf-java-2.5.0.jar)
 
 Copyright 2014, Google Inc.  All rights reserved.
 
@@ -355,3 +357,35 @@ OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ===============================================================================
+
+The following PY4J dependencies are distributed under the BSD license.
+
+Python Bindings for Java (https://www.py4j.org) py4j (py4j-0.10.4.jar)
+
+Copyright (c) 2009-2018, Barthelemy Dagenais and individual contributors. All
+ rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+
+ - Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+ - Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+ - The name of the author may not be used to endorse or promote products
+   derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+================================================================================

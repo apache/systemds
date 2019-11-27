@@ -119,7 +119,8 @@ SYSTEMDS-150 Releases
  * 154 fix license headers in all touched files                       OK
  * 155 import release scripts from SystemML repo                      OK
  * 156 initial codestyle eclipse template                             OK
- 
+ * 157 Shell script simplification, cleanups and fixes for 0.2        OK
+
 SYSTEMDS-160 Tensor Compiler/Runtime
  * 161 Local readers and writers for tensors (all formats)
  * 162 Spark binary tensor instructions

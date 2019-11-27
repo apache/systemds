@@ -1398,7 +1398,7 @@ public abstract class Hop implements ParseInfo
 	 *  <li> The hop has unknown dimensions and is scheduled for local execution 
 	 *    due to good worst-case memory estimates but codegen is enabled, which
 	 *    requires (mostly) known sizes to validity conditions and cost estimation. </li>
-	 * <ul> <p>
+	 * </ul>
 	 */
 	protected void setRequiresRecompileIfNecessary() {
 		boolean caseRemote = (!dimsKnown(true) && _etype == ExecType.SPARK);

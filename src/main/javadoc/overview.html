@@ -26,7 +26,7 @@
 Algorithms in Apache SystemDS are written in a high-level R-like language called Declarative Machine learning Language (DML)
 or a high-level Python-like language called PyDML.
 SystemDS compiles and optimizes these algorithms into hybrid runtime
-plans of multi-threaded, in-memory operations on a single node (scale-up) and distributed MR or Spark operations on
+plans of multi-threaded, in-memory operations on a single node (scale-up) and distributed Spark operations on
 a cluster of nodes (scale-out). SystemDS's high-level architecture consists of the following components:
 
 <h2>Language</h2>
@@ -40,7 +40,7 @@ The user provides the DML script through one of the following APIs:
   <li>Java Machine Learning Connector API ( {@link org.tugraz.sysds.api.jmlc.Connection} )</li>
 </ul>
 
-{@link org.tugraz.sysds.parser.AParserWrapper} performs syntatic validation and
+{@link org.tugraz.sysds.parser.ParserWrapper} performs syntactic validation and
 parses the input DML script using ANTLR into a 
 a hierarchy of {@link org.tugraz.sysds.parser.StatementBlock} and
 {@link org.tugraz.sysds.parser.Statement}  as defined by control structures.
@@ -77,15 +77,10 @@ an executable runtime program of instructions.
 <h2>Runtime</h2>
 We execute the generated runtime program locally
 in CP (control program), i.e., within a driver process.
-This driver handles recompilation, runs in-memory singlenode
+This driver handles recompilation, runs in-memory single-node
 {@link org.tugraz.sysds.runtime.instructions.cp.CPInstruction} (some of which are multi-threaded ),
-maintains an in-memory buffer pool, and launches MR or
-Spark jobs if the runtime plan contains distributed computations
-in the form of  {@link org.tugraz.sysds.runtime.instructions.mr.MRInstruction}
-or Spark instructions ( {@link org.tugraz.sysds.runtime.instructions.spark.SPInstruction} ).
-For the MR backend, the SystemDS compiler groups LOPs --
-and thus, MR instructions -- into a minimal number of MR
-jobs (MR-job instructions). This procedure is referred to as piggybacking ( {@link org.tugraz.sysds.lops.compile.Dag} )
+maintains an in-memory buffer pool, and launches Spark jobs if the runtime plan contains distributed computations
+in the form of Spark instructions ( {@link org.tugraz.sysds.runtime.instructions.spark.SPInstruction} ).
 For the Spark backend, we rely on Spark's lazy evaluation and stage construction.
 CP instructions may also be backed by GPU kernels ( {@link org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction} ).
 The multi-level buffer pool caches local matrices in-memory,

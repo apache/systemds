@@ -131,7 +131,7 @@ public class DataAugmentation
 	 * 
 	 * @param frame Original frame block
 	 * @param pMiss Probability of adding missing values to a row
-	 * @param pTypo Probability of dropping a value from a row previously selected by pTypo
+	 * @param pDrop Probability of dropping a value
 	 * @return A new frameblock with missing values
 	 * 
 	 */

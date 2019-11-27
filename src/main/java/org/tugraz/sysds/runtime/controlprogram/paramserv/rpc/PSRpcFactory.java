@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 
 package org.tugraz.sysds.runtime.controlprogram.paramserv.rpc;
 
@@ -43,6 +46,9 @@ public class PSRpcFactory {
 
 	/**
 	 * Create and start the server
+	 * @param conf spark config
+	 * @param ps LocalParamServer object
+	 * @param host hostname
 	 * @return server
 	 */
 	public static TransportServer createServer(SparkConf conf, LocalParamServer ps, String host) {

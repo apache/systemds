@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 
 package org.tugraz.sysds.runtime.controlprogram.paramserv.dp;
 
@@ -49,8 +52,8 @@ public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Lo
 
 	/**
 	 * Do data partitioning
-	 * @param input RowBlockID => (features, labels)
-	 * @return WorkerID => (rowBlockID, (single row features, single row labels))
+	 * @param input RowBlockID {@literal =>} (features, labels)
+	 * @return WorkerID {@literal =>} (rowBlockID, (single row features, single row labels))
 	 * @throws Exception Some exception
 	 */
 	@Override

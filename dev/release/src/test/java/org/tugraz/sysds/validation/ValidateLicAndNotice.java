@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -655,24 +655,21 @@ public class ValidateLicAndNotice
 
 		LocalDateTime currentTime = LocalDateTime.now();
 
-		String noticeLines[] = new String[4];
+		String noticeLines[] = new String[2];
 		boolean noticeLineIn[] = new boolean[4];
 
 // ToDo: fix notice lines
 		noticeLines[0] = "SystemDS";
 		noticeLines[1] = "Copyright [2018-" + currentTime.getYear() + "] Graz University of Technology";
-//		noticeLines[2] = "This product includes software developed at";
-//		noticeLines[3] = "The Apache Software Foundation (http://www.apache.org/)";
 
 		BufferedReader reader = new BufferedReader(new FileReader(noticeFile));
 		String line = null;
 		while ((line = reader.readLine()) != null) {
 			line = line.trim();
-			for (int i = 0; i < noticeLines.length; i++) {
-				if (line.contains(noticeLines[i])) {
+
+			for (int i = 0; i < noticeLines.length; i++)
+				if (line.contains(noticeLines[i]))
 					noticeLineIn[i] = true;
-				}
-			}
 		}
 
 		for (int i = 0; i < noticeLines.length; i++) {
@@ -812,7 +809,7 @@ public class ValidateLicAndNotice
 			Utility.debugPrint(Constants.DEBUG_INFO, "Return code = " + retCode);
 		}
 		catch (Exception e) {
-			Utility.debugPrint(Constants.DEBUG_ERROR, "Error while validating license in archive." + e);
+			Utility.debugPrint(Constants.DEBUG_ERROR, "Error while validating license in archive: " + e);
 		}
 	}
 

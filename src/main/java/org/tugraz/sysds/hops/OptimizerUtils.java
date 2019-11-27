@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -158,7 +158,7 @@ public class OptimizerUtils
 	public static boolean ALLOW_INTER_PROCEDURAL_ANALYSIS = true;
 
 	/**
-	 * Number of inter-procedural analysis (IPA) repetitions. If set to >=2, we apply
+	 * Number of inter-procedural analysis (IPA) repetitions. If set to {@literal >=2}, we apply
 	 * IPA multiple times in order to allow scalar propagation over complex function call
 	 * graphs and various interactions between constant propagation, constant folding,
 	 * and other rewrites such as branch removal and the merge of statement block sequences.
@@ -799,8 +799,7 @@ public class OptimizerUtils
 	 * @param ru rows upper
 	 * @param cl cols lower
 	 * @param cu cols upper
-	 * @param blen rows per block
-	 * @param blen cols per block
+	 * @param blen rows/cols per block
 	 * @return true if indexing range is block aligned
 	 */
 	public static boolean isIndexingRangeBlockAligned(long rl, long ru, long cl, long cu, long blen) {

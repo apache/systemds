@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -44,9 +44,9 @@ import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /** Primary use cases for now, are
- * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)
- * 		quantile (<n-1-matrix>, <n-1-matrix>, <scalar>):       quantile (A, w, s)
- * 		interquantile (<n-1-matrix>, <n-1-matrix>, <scalar>):  interquantile (A, w, s)
+ * 		{@code quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)}
+ * 		{@code quantile (<n-1-matrix>, <n-1-matrix>, <scalar>):       quantile (A, w, s)}
+ * 		{@code interquantile (<n-1-matrix>, <n-1-matrix>, <scalar>):  interquantile (A, w, s)}
  * 
  * Keep in mind, that we also have binaries for it w/o weights.
  * 	quantile (A, 0.5)

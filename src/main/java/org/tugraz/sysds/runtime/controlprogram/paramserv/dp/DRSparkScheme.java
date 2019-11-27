@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,6 +19,7 @@
  * under the License.
  */
 
+
 package org.tugraz.sysds.runtime.controlprogram.paramserv.dp;
 
 import java.util.List;
@@ -32,7 +35,7 @@ import scala.Tuple2;
 /**
  * Spark data partitioner Disjoint_Random:
  *
- * For the current row block, find all the shifted place for each row (WorkerID => (row block ID, matrix)
+ * For the current row block, find all the shifted place for each row (WorkerID {@literal =>} (row block ID, matrix)
  */
 public class DRSparkScheme extends DataPartitionSparkScheme {
 

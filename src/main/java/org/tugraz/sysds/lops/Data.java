@@ -67,7 +67,6 @@ public class Data extends Lop
 	 * @param literal string literal
 	 * @param dt data type
 	 * @param vt value type
-	 * @param isTransient true if transient
 	 * @param fmt file format
 	 */
 	public Data(OpOpData op, Lop input, HashMap<String, Lop> 

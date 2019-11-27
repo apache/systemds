@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2019 Graz University of Technology
+# Modifications Copyright 2020 Graz University of Technology
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -25,11 +25,11 @@
 function exit_with_usage {
   cat << EOF
 
-release-verify - Verifies the artifacts from a given directory.
+simple-release-verify - Verifies the artifacts from a given directory.
 
 SYNOPSIS
 
-usage: release-verify.sh [--compile | --verifyAll | verifyLic | verifyBin]
+usage: simple-release-verify.sh [--compile | --verifyAll | verifyLic | verifyBin]
 
 DESCRIPTION
 
@@ -39,13 +39,13 @@ Once artifacts are generated, this utility will verify the artifacts.
 This will compile the utility source code which is not on regular source code path.
 
 --verifyAll <--tag="Code based on Git tag will be validated."> [--workDir="Directory where output files will be created]
-This will verify license, notice and binary files. 
+This will verify license, notice and binary files.
 
 --verifyLic [--distDir="Directory Containing zip/tgz/tar.gz files]
-This will verify license, notice in zip/tgz/tar.gz files. 
+This will verify license, notice in zip/tgz/tar.gz files.
 
 --verifyBin <--tag="Code based on Git tag will be validated."> [--workDir="Directory where output files will be created]
-This will verify binary distribution files for runtime correctness. 
+This will verify binary distribution files for runtime correctness.
 
 OPTIONS
 
@@ -82,6 +82,11 @@ if [ $# -eq 0 ]; then
   exit_with_usage
 fi
 
+# detect operating system to set correct directory separator
+if [ "$OSTYPE" == "win32" ] ||  [ "$OSTYPE" == "msys" ] ; then
+  echo "This script currently does not support Windows, as it makes use of symbolic linking via 'ln -s'"
+  exit 1
+fi
 
 # Process each provided argument configuration
 while [ "${1+defined}" ]; do
@@ -130,6 +135,17 @@ while [ "${1+defined}" ]; do
   esac
 done
 
+if [[ -z "$SYSTEMDS_ROOT" ]]; then
+    echo
+    echo "-------------------------------------------------------------"
+    echo 'The environment variable SYSTEMDS_ROOT is not set. This'
+    echo 'variable needs to point to the base of your SystemDS source'
+    echo 'tree.'
+    echo "-------------------------------------------------------------"
+
+    exit_with_usage
+fi
+
 ORIG_DIR=$(pwd)
 EXEC_DIR="`dirname \"$0\"`"
 if [[ ${EXEC_DIR:0:1} != "/" ]]; then
@@ -142,9 +158,9 @@ elif [[ ${WORK_DIR:0:1} != "/" ]]; then
     WORK_DIR="$ORIG_DIR/$WORK_DIR"
 fi
 
-# If --verifyAll has been specified en license and notice validation should be done from place where all files downloaded in --verifyBin step.
-if [[ "$BIN_VERIFY" == "true" && "$LIC_NOTICE_VERIFY" == "true" ]]; then
-    DIST_DIR=$WORK_DIR/downloads
+BUILD_TARGET_DIR="$EXEC_DIR/target"
+if [[ ! -d $BUILD_TARGET_DIR ]]; then
+  ln -s "$SYSTEMDS_ROOT"/target "$BUILD_TARGET_DIR"
 fi
 
 if [[ "$BIN_VERIFY" == "true" && -z "$TAG" ]]; then
@@ -152,11 +168,9 @@ if [[ "$BIN_VERIFY" == "true" && -z "$TAG" ]]; then
     exit_with_usage
 fi
 
-if [[ "$LIC_NOTICE_VERIFY" == "true" && -z "$DIST_DIR" ]]; then
-    echo "`date +%Y-%m-%dT%H:%M:%S`: WARNING: Since --distDir has not passed, default distribution directory '$EXEC_DIR/target/release/systemds/target' has been used."
-    DIST_DIR="$EXEC_DIR/target/release/systemds/target"
-elif [[ ${DIST_DIR:0:1} != "/" ]]; then
-    DIST_DIR="$ORIG_DIR/$DIST_DIR"
+if [[ -n $COMPILE_CODE && -z "$DIST_DIR" ]]; then
+  echo "`date +%Y-%m-%dT%H:%M:%S`: ERROR: Argument --distDir is missing (path to release (zip/tgz/tar.gz) files)"
+  exit_with_usage
 fi
 
 cd $EXEC_DIR/src/test/java
@@ -172,15 +186,46 @@ fi
 if [[ "$BIN_VERIFY" == "true" ]]; then
     echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary files for runtime execution..."
 
-    $EXEC_DIR/src/test/bin/verifyBuild.sh $TAG $WORK_DIR
-    RET_CODE=$?
-    if [[ $RET_CODE == 0 ]]; then
-       echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of binary files for runtime execution completed successfully."
-    else
-       echo "`date +%Y-%m-%dT%H:%M:%S`: ERROR: Verification of binary files for runtime execution failed."
-       cd $ORIG_DIR
-       exit $RET_CODE
+    if [ -z $WORKING_DIR ] ; then
+        WORKING_DIR="$EXEC_DIR/tmp/relValidation"
     fi
+
+    rm -rf "$WORKING_DIR"/systemds
+    mkdir -p "$WORKING_DIR"
+    cd "$WORKING_DIR"
+
+    ## Verify binary tgz files
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary tgz files..."
+    rm -rf systemds-$TAG-bin
+    tar -xzf $DIST_DIR/systemds-$TAG-bin.tgz
+    cd systemds-$TAG-bin
+    echo "print('hello world');" > hello.dml
+    ./systemds.sh hello.dml
+    cd ..
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of tgz files completed successfully."
+
+    ## Verify binary zip files
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying binary zip files..."
+    rm -rf systemds-$TAG-bin
+    unzip -q $DIST_DIR/systemds-$TAG-bin.zip
+    cd systemds-$TAG-bin
+    echo "print('hello world');" > hello.dml
+    ./systemds.sh hello.dml
+    cd ..
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of zip files completed successfully."
+
+    ## Verify src tgz files
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying source tgz files..."
+    rm -rf systemds-$TAG-src
+    tar -xzf $DIST_DIR/systemds-$TAG-src.tgz
+    cd systemds-$TAG-src
+    mvn clean package -P distribution -DskipTests
+    cd target
+    java -cp "./lib/*:SystemDS.jar" org.tugraz.sysds.api.DMLScript -s "print('hello world');"
+    cd ../..
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of source archive completed successfully."
+
+    echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of all binary files for runtime execution completed successfully."
     echo "*********************************************************************************************************************"
 fi
 

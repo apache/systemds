@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Graz University of Technology
+ * Copyright 2020 Graz University of Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,6 +108,7 @@ public class FederatedData {
 	 * Executes an federated operation on a federated worker.
 	 *
 	 * @param request the requested operation
+	 * @param varID variable ID
 	 * @return the response
 	 */
 	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest request, long varID) {

@@ -571,8 +571,7 @@ public class LibMatrixReorg
 	 * @param offset ?
 	 * @param rmRows ?
 	 * @param len ?
-	 * @param blen number of rows in a block
-	 * @param blen number of columns in a block
+	 * @param blen block length
 	 * @param outList list of indexed matrix values
 	 */
 	public static void rmempty(IndexedMatrixValue data, IndexedMatrixValue offset, boolean rmRows, long len, long blen, ArrayList<IndexedMatrixValue> outList) {
@@ -697,8 +696,7 @@ public class LibMatrixReorg
 	 * @param rows ?
 	 * @param cast ?
 	 * @param ignore ?
-	 * @param blen number of rows in a block
-	 * @param blen number of columns in a block
+	 * @param blen block length
 	 * @param outList list of indexed matrix values
 	 */
 	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long blen, ArrayList<IndexedMatrixValue> outList) {

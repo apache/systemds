@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -193,8 +193,11 @@ public class RemoteParForUtils
 	/**
 	 * Export lineage for remote Spark parfor workers.
 	 *
-	 * @return list of lineage items
-	 * @throws IOException 
+	 * @param workerID worker id
+	 * @param vars local variable map
+	 * @param resultVars list of result variables
+	 * @param lineage lineage object
+	 * @throws IOException if IOException occurs
 	 */
 	public static void exportLineageItems(long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, Lineage lineage) 
 		throws IOException 

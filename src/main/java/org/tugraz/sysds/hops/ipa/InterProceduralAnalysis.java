@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -120,7 +120,8 @@ public class InterProceduralAnalysis
 	 * call initializes various internal information such as the
 	 * function call graph  which can be reused across multiple IPA 
 	 * calls (e.g., for second chance analysis).
-	 * 
+	 *
+	 * @param dmlp The DML program to analyze
 	 */
 	public InterProceduralAnalysis(DMLProgram dmlp) {
 		//analyzes the function call graph 

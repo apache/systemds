@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -68,7 +70,6 @@ public abstract class MatrixReader
 	 * @param rlen number of rows
 	 * @param clen number of columns
 	 * @param blen number of columns in a block
-	 * @param blen number of rows in a block
 	 * @param estnnz estimated number of non-zeros
 	 * @param mallocDense if true and not sparse, allocate dense block unsafe
 	 * @param mallocSparse if true and sparse, allocate sparse rows block

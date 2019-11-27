@@ -46,19 +46,20 @@ fi
 # configure and compile INTEL MKL
 cmake . -B INTEL -DUSE_INTEL_MKL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-DUSE_GNU_THREADING -m64"
 cmake --build INTEL --target install --config Release
+patchelf --add-needed libmkl_rt.so lib/libsystemds_mkl-Linux-x86_64.so
 rm -R INTEL
 
 # configure and compile OPENBLAS
 cmake . -B OPENBLAS -DUSE_OPEN_BLAS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-m64"
 cmake --build OPENBLAS --target install --config Release
-patchelf --add-needed libopenblas.so.0 libsystemds_openblas-Linux-x86_64.so
+patchelf --add-needed libopenblas.so.0 lib/libsystemds_openblas-Linux-x86_64.so
 rm -R OPENBLAS
 
 # check dependencies linux x86_64
 echo "-----------------------------------------------------------------------"
 echo "Check for unexpected dependencies added after code change or new setup:"
 echo "Non-standard dependencies for libsystemds_mkl-linux-x86_64.so"
-ldd lib/libsystemds_mkl-Linux-x86_64.so | grep -v $gcc_toolkit"\|"$linux_loader"\|"$intel_mkl
+ldd lib/libsystemds_mkl-Linux-x86_64.so | grep -v $gcc_toolkit"\|$linux_loader\|"$intel_mkl
 echo "Non-standard dependencies for libsystemds_openblas-linux-x86_64.so"
-ldd lib/libsystemds_openblas-Linux-x86_64.so | grep -v $gcc_toolkit"\|"$linux_loader"\|"$openblas
+ldd lib/libsystemds_openblas-Linux-x86_64.so | grep -v $gcc_toolkit"\|$linux_loader\|"$openblas
 echo "-----------------------------------------------------------------------"

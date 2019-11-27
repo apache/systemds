@@ -151,7 +151,7 @@ public abstract class TemplateBase
 	 * @param compileLiterals if true compile non-integer literals 
 	 * as constants, otherwise variables. note: integer literals are 
 	 * always compiled as constants.
-	 * @return
+	 * @return pair containing hops and code template
 	 */
 	public abstract Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals);	
 }

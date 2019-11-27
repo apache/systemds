@@ -237,8 +237,7 @@ public class RDDSortUtils
 	 * @param asc if true, sort ascending
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @param blen number of rows in a block
-	 * @param blen number of columns in a block
+	 * @param blen block length
 	 * @param sec spark execution context
 	 * @param r_op reorg operator
 	 * @return data as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}

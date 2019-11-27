@@ -89,7 +89,6 @@ public class DataPartitionerLocal extends DataPartitioner
 	 * DataPartitionerLocal constructor.
 	 * 
 	 * @param dpf data partitionformat
-	 * @param n ?
 	 * @param par -1 for serial otherwise number of threads, can be ignored by implementation
 	 */
 	public DataPartitionerLocal(PartitionFormat dpf, int par) {

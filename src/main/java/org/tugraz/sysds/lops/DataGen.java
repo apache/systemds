@@ -56,7 +56,7 @@ public class DataGen extends Lop
 	/**
 	 * <p>Creates a new Rand-LOP. The target identifier has to hold the dimensions of the new random object.</p>
 	 * 
-	 * @param mthd data gen method
+	 * @param op data gen method
 	 * @param id target identifier
 	 * @param inputParametersLops Lops of input parameters
 	 * @param baseDir base dir for runtime

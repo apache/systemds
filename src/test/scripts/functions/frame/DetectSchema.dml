@@ -21,7 +21,6 @@
 #
 #-------------------------------------------------------------
 
-
 X = read($1, rows=$2, cols=$3, data_type="frame", format="csv", header=FALSE);
 R = detectSchema(X);
 print(toString(R))

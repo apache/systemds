@@ -35,7 +35,6 @@ import java.io.*;
 import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements Writable, CacheBlock, Externalizable  
@@ -1767,75 +1766,72 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		}
 	}
 
-	private static String isType(String val) {
-		//TODO use consistent names (why not return value types)
+	private static ValueType isType(String val) {
 		val = val.trim().toLowerCase().replaceAll("\"",  "");
 		if (val.matches("(true|false|t|f|0|1)"))
-			return "Boolean";
+			return ValueType.BOOLEAN;
 		else if (val.matches("[-+]?\\d+"))
-			return "Long";
+			return ValueType.INT64;
 		else if (val.matches("[-+]?[0-9]+\\.?[0-9]*([e]?[-+]?[0-9]+)") || val.equals("infinity") || val.equals("-infinity") || val.equals("nan"))
-			return "Double";
-		else if (val.length() == 1)
-			return "Character";
-		else return "String";
+			return ValueType.FP64;
+		else return ValueType.STRING;
 	}
 
 	public FrameBlock detectSchemaFromRow(double sampleFraction) {
 		int rows = this.getNumRows();
 		int cols = this.getNumColumns();
+		String[] schemaInfo = new String[cols];
 
 		int sample = (int) (sampleFraction * rows);
 		if (sample <= 0)
 			sample = rows;
 
-		String[] schemaInfo = new String[cols];
-		HashMap<String, String> cellType = new HashMap<>();
-		FrameBlock fb = null;
-
 		for (int i = 0; i < cols; i++) {
-			//TODO avoid keeping all the values sampled
+			ValueType state = ValueType.UNKNOWN;
 			Array obj = this.getColumn(i);
-			for (int j = 0; j < sample; j++) {
-				int randomIndex = ThreadLocalRandom.current().nextInt(0, rows - 1);
-				cellType.put(obj.get(randomIndex).toString().replace("\"", "").toLowerCase(), isType(obj.get(randomIndex).toString()));
-			}
-			
-			//TODO fix special value handling, etc 
-			//TODO fix string handling - use value type 
-			if (cellType.containsValue("String"))
-				schemaInfo[i] = "STRING";
-			else if (cellType.containsValue("Double")) {
-				if (cellType.containsKey("infinity") || cellType.containsKey("-infinity") || cellType.containsKey("nan"))
-					schemaInfo[i] = "FP64";
-				else {
-					//TODO fix handling of floats -> double would overflow here
-					Set<Float> cellValues = cellType.keySet().stream().map(s -> Float.parseFloat(s)).collect(Collectors.toSet());
-					float maxValue = Collections.max(cellValues);
-					if (maxValue >= (1.40129846432481707 * Math.exp(-45)) && maxValue <= (3.40282346638528860 * Math.exp(38))) {
-						schemaInfo[i] = "FP32";
-					}
-					else
-						schemaInfo[i] = "FP64";
+			for (int j = 0; j < sample; j++)
+			{
+				String dataValue = null;
+				//read a not null sample value
+				while (dataValue == null) {
+					int randomIndex = ThreadLocalRandom.current().nextInt(0, rows - 1);
+					dataValue = obj.get(randomIndex).toString().trim().replace("\"", "").toLowerCase();
 				}
-			} else if (cellType.containsValue("Long")) {
-				Set<Long> cellValues = cellType.keySet().stream().map(s -> Long.parseLong(s)).collect(Collectors.toSet());
-				long maxValue = Collections.max(cellValues);
-				if (maxValue >= Math.pow(-2, 31) && maxValue <= (Math.pow(2, 31) - 1)) {
-					schemaInfo[i] = "INT32";
-				} else
-					schemaInfo[i] = "INT64";
-			}
-			else if (cellType.containsValue("Boolean")) schemaInfo[i] = "BOOLEAN";
-			else if (cellType.containsValue("Character")) schemaInfo[i] = "CHARACTER";
-			cellType.clear();
-		}
-		ValueType[] outputSchema = UtilFunctions.nCopies(this.getNumColumns(), ValueType.STRING);
-		String[] dataOut = new String[cols];
-		Arrays.setAll(dataOut, value -> schemaInfo[value]);
-		fb = new FrameBlock(outputSchema);
-		fb.appendRow(dataOut);
 
+				if (isType(dataValue) == ValueType.STRING) {
+					state = ValueType.STRING;
+					break;
+				}
+				else if (isType(dataValue) == ValueType.FP64) {
+					if (dataValue.equals("infinity") || dataValue.equals("-infinity") || dataValue.equals("nan")) {
+						state = ValueType.FP64;
+					}
+					else {
+						double maxValue = Double.parseDouble(dataValue);
+						if ((maxValue >= (-Float.MAX_VALUE)) && (maxValue <= Float.MAX_VALUE))
+							state = (state == ValueType.FP64 ? state : ValueType.FP32);
+						else
+							state = ValueType.FP64;
+					}
+				}
+				else if (isType(dataValue) == ValueType.INT64) {
+					long maxValue = Long.parseLong(dataValue);
+					if ((maxValue >= Integer.MIN_VALUE) && (maxValue <= Integer.MAX_VALUE))
+						state = ((state == ValueType.FP64 || state == ValueType.FP32 || state == ValueType.INT64) ? state : ValueType.INT32);
+					else
+						state = ((state == ValueType.FP64  || state == ValueType.FP32) ? state : ValueType.INT64);
+				}
+				else if (isType(dataValue) == ValueType.BOOLEAN)
+					state = ((new ArrayList<>(Arrays.asList(ValueType.FP64, ValueType.FP32, ValueType.INT64, ValueType.INT32)).contains(state)) ? state : ValueType.BOOLEAN);
+				else if (isType(dataValue) == ValueType.STRING)
+					state = ((new ArrayList<>(Arrays.asList(ValueType.FP64, ValueType.FP32, ValueType.INT64, ValueType.INT32, ValueType.BOOLEAN)).contains(state)) ? state : ValueType.STRING);
+			}
+			schemaInfo[i] = state.name();
+		}
+
+		//create output block one row representing the schema as strings
+		FrameBlock fb = new FrameBlock(UtilFunctions.nCopies(cols, ValueType.STRING));
+		fb.appendRow(schemaInfo);
 		return fb;
 	}
 
@@ -1854,9 +1850,9 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 					rowTemp1[i] = "STRING";
 				else if (rowTemp1[i].equals("FP64") || rowTemp2[i].equals("FP64"))
 					rowTemp1[i] = "FP64";
-				else if (rowTemp1[i].equals("FP32") && new ArrayList<> (Arrays.asList("INT64", "INT32", "CHARACTER")).contains(rowTemp2[i].toString()) )
+				else if (rowTemp1[i].equals("FP32") && new ArrayList<>(Arrays.asList("INT64", "INT32", "CHARACTER")).contains(rowTemp2[i]) )
 					rowTemp1[i] = "FP32";
-				else if (rowTemp1[i].equals("INT64") && new ArrayList<> (Arrays.asList("INT32", "CHARACTER")).contains(rowTemp2[i].toString()))
+				else if (rowTemp1[i].equals("INT64") && new ArrayList<>(Arrays.asList("INT32", "CHARACTER")).contains(rowTemp2[i]))
 					rowTemp1[i] = "INT64";
 				else if (rowTemp1[i].equals("INT32") || rowTemp2[i].equals("CHARACTER"))
 					rowTemp1[i] = "INT32";

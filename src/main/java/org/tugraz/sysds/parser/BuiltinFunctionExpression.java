@@ -759,17 +759,22 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else if( getAllExpr().length == 1 ) {
 				checkDataTypeParam(getFirstExpr(), DataType.LIST);
 			}
-			//matrix append (rbind/cbind)
 			else {
 				if( getAllExpr().length < 2 )
 					raiseValidateError("Invalid number of arguments for "+getOpCode(), conditional);
-				for(int i=0; i<getAllExpr().length; i++)
-					checkMatrixFrameParam(getExpr(i));
+				//list append
+				if(getFirstExpr().getOutput().getDataType().isList() )
+					for(int i=1; i<getAllExpr().length; i++)
+						checkDataTypeParam(getExpr(i), DataType.SCALAR, DataType.MATRIX, DataType.FRAME);
+				//matrix append (rbind/cbind)
+				else
+					for(int i=0; i<getAllExpr().length; i++)
+						checkMatrixFrameParam(getExpr(i));
 			}
 			
 			output.setDataType(id.getDataType());
 			output.setValueType(id.getValueType());
-			if (id.getDataType() == DataType.LIST) {
+			if( id.getDataType() == DataType.LIST && getAllExpr().length == 1) {
 				output.setDataType(DataType.MATRIX);
 				output.setValueType(ValueType.FP64);
 			}

@@ -25,5 +25,10 @@ if( cond & sum(R) > 0 )
   L = list(R, R);
 R[1,] = length(L);
 
+# list append
+for(i in 1:7)
+  L = append(L, as.matrix(i))
+R[2,] = length(L);
+
 
 write(R, $2);

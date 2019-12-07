@@ -38,7 +38,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//separate scalars and matrices and pin all input matrices
-		List<MatrixBlock> matrices = ec.getMatrixInputs(inputs);
+		List<MatrixBlock> matrices = ec.getMatrixInputs(inputs, true);
 		List<ScalarObject> scalars = ec.getScalarInputs(inputs);
 		
 		MatrixBlock outBlock = null;
@@ -57,8 +57,8 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		}
 		
 		//release inputs and set output matrix or scalar
-		ec.releaseMatrixInputs(inputs);
-		if( output.getDataType().isMatrix() ) {
+		ec.releaseMatrixInputs(inputs, true);
+		if( output.getDataType().isMatrix()) {
 			ec.setMatrixOutput(output.getName(), outBlock);
 		}
 		else {

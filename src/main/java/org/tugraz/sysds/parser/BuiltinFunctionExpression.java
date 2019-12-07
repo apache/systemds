@@ -492,6 +492,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 		return paramExpression;
 	}
+	
+	private boolean isValidNoArgumentFunction() {
+		return getOpCode() == Builtins.TIME
+			|| getOpCode() == Builtins.LIST;
+	}
 
 	/**
 	 * Validate parse tree : Process BuiltinFunction Expression in an assignment
@@ -512,7 +517,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		DataIdentifier output = new DataIdentifier(outputName);
 		output.setParseInfo(this);
 		
-		if (getFirstExpr() == null && getOpCode() != Builtins.TIME) { // time has no arguments 
+		if (getFirstExpr() == null && !isValidNoArgumentFunction()) { // time has no arguments 
 			raiseValidateError("Function " + this + " has no arguments.", false);
 		}
 		Identifier id = (_args.length != 0) ?

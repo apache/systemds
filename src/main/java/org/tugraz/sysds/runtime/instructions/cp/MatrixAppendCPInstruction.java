@@ -29,9 +29,9 @@ import org.tugraz.sysds.runtime.matrix.operators.Operator;
 
 public final class MatrixAppendCPInstruction extends AppendCPInstruction implements LineageTraceable {
 
-	protected MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	protected MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			AppendType type, String opcode, String istr) {
-		super(op, in1, in2, in3, out, type, opcode, istr);
+		super(op, in1, in2, out, type, opcode, istr);
 	}
 
 	@Override

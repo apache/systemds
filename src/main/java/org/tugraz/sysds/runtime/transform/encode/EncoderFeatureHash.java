@@ -44,7 +44,7 @@ public class EncoderFeatureHash extends Encoder
 	 * @return K value
 	 * @throws JSONException
 	 */
-	private long getK(JSONObject parsedSpec) throws JSONException {
+	private static long getK(JSONObject parsedSpec) throws JSONException {
 		//TODO generalize to different k per feature
 		return parsedSpec.getLong("K");
 	}

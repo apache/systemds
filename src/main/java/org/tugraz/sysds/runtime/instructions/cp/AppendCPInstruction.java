@@ -33,12 +33,13 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 		CBIND,
 		RBIND,
 		STRING,
+		LIST,
 	}
 
 	//type (matrix cbind / scalar string concatenation)
 	protected final AppendType _type;
 
-	protected AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	protected AppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			AppendType type, String opcode, String istr) {
 		super(CPType.Append, op, in1, in2, out, opcode, istr);
 		_type = type;
@@ -51,22 +52,24 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
-		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
 		boolean cbind = Boolean.parseBoolean(parts[5]);
 		
 		AppendType type = (in1.getDataType()!=DataType.MATRIX && in1.getDataType()!=DataType.FRAME) ? 
-				AppendType.STRING : cbind ? AppendType.CBIND : AppendType.RBIND;
+			in1.getDataType()==DataType.LIST ? AppendType.LIST : AppendType.STRING : 
+			cbind ? AppendType.CBIND : AppendType.RBIND;
 		
 		if(!opcode.equalsIgnoreCase("append"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
 
 		Operator op = new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1));
 		if( type == AppendType.STRING )
-			return new ScalarAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);
+			return new ScalarAppendCPInstruction(op, in1, in2, out, type, opcode, str);
+		else if( type == AppendType.LIST )
+			return new ListAppendRemoveCPInstruction(op, in1, in2, out, type, opcode, str);
 		else if( in1.getDataType()==DataType.MATRIX )
-			return new MatrixAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);
+			return new MatrixAppendCPInstruction(op, in1, in2, out, type, opcode, str);
 		else //DataType.FRAME
-			return new FrameAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);
+			return new FrameAppendCPInstruction(op, in1, in2, out, type, opcode, str);
 	}
 }

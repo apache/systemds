@@ -472,6 +472,10 @@ public class ExecutionContext {
 		setVariable(varName, so);
 	}
 
+	public ListObject getListObject(CPOperand input) {
+		return getListObject(input.getName());
+	}
+	
 	public ListObject getListObject(String name) {
 		Data dat = getVariable(name);
 		//error handling if non existing or no list

@@ -192,9 +192,22 @@ public class ListObject extends Data {
 		return set(pos1, pos2, data);
 	}
 	
+	public ListObject append(Data dat) {
+		append(null, dat);
+		return this;
+	}
+	
+	public ListObject append(String name, Data dat) {
+		if( _names != null && name == null )
+			throw new DMLRuntimeException("Cannot append to a named list");
+		//otherwise append and ignore name
+		_data.add(dat);
+		return this;
+	}
+	
 	private int getPosForName(String name) {
 		//check for existing named list
-		if (_names == null)
+		if ( _names == null )
 			throw new DMLRuntimeException("Invalid indexing by name" + " in unnamed list: " + name + ".");
 		
 		//find position and check for existing entry

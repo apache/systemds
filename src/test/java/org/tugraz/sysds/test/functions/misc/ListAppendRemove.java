@@ -105,13 +105,13 @@ public class ListAppendRemove extends AutomatedTestBase
 			double[][] ret = TestUtils.convertHashMapToDoubleArray(
 				readDMLMatrixFromHDFS("R"), 4, 1);
 			Assert.assertEquals(new Double(ret[0][0]), new Double(0)); //empty list
-			//Assert.assertEquals(new Double(ret[1][0]), new Double(7)); //append list
+			Assert.assertEquals(new Double(ret[1][0]), new Double(7)); //append list
 			//Assert.assertEquals(new Double(ret[2][0]), new Double(3)); //remove list
 			
 			//check for properly compiled CP operations for list 
 			//(but spark instructions for sum, indexing, write)
 			int numExpected = (type == ExecType.CP) ? 0 :
-				conditional ? 3 : 2;
+				conditional ? 4 : 3;
 			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==numExpected);
 			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==numExpected);
 		}

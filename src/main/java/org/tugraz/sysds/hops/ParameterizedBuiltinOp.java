@@ -733,7 +733,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 		switch( _op )
 		{
 			case CDF:
-			case INVCDF:	
+			case INVCDF:
 				//do nothing; CDF is a scalar
 				break;
 			
@@ -758,12 +758,19 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				//one output dimension dim1 or dim2 is completely data dependent 
 				Hop target = getTargetHop();
 				Hop margin = getParameterHop("margin");
+				Hop select = getParameterHop("select");
 				if( margin instanceof LiteralOp ) {
 					LiteralOp lmargin = (LiteralOp)margin;
-					if( "rows".equals(lmargin.getStringValue()) )
+					if( "rows".equals(lmargin.getStringValue()) ) {
 						setDim2( target.getDim2() );
-					else if( "cols".equals(lmargin.getStringValue()) )
+						if( select != null )
+							setDim1(select.getNnz());
+					}
+					else if( "cols".equals(lmargin.getStringValue()) ) {
 						setDim1( target.getDim1() );
+						if( select != null )
+							setDim2(select.getNnz());
+					}
 				}
 				setNnz( target.getNnz() );
 				break;

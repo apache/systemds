@@ -29,7 +29,7 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -53,9 +53,9 @@ public class DecoderFactory
 			
 			//create decoders 'recode', 'dummy' and 'pass-through'
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString())));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString()))); 
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils

@@ -29,7 +29,7 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 
 public class EncoderRecode extends Encoder 
@@ -44,10 +44,7 @@ public class EncoderRecode extends Encoder
 		throws JSONException 
 	{
 		super(null, clen);
-		
-		if( parsedSpec.containsKey(TfUtils.TXMETHOD_RECODE) ) {
-			_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_RECODE);
-		}
+		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.RECODE.toString());
 	}
 	
 	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() { 
@@ -94,14 +91,23 @@ public class EncoderRecode extends Encoder
 				HashMap<String,Long> map = _rcdMaps.get(colID);
 				String key = row[j];
 				if( key!=null && !key.isEmpty() && !map.containsKey(key) )
-					map.put(key, Long.valueOf(map.size()+1));
+					putCode(map, key);
 			}
 		}
 	}
 
+	/**
+	 * Put the code into the map with the provided key. The code depends on the type of encoder. 
+	 * @param map column map
+	 * @param key key for the new entry
+	 */
+	protected void putCode(HashMap<String,Long> map, String key) {
+		map.put(key, Long.valueOf(map.size()+1));
+	}
+
 	public void buildPartial(FrameBlock in) {
 		if( !isApplicable() )
-			return;		
+			return;
 
 		//ensure allocated partial recode map
 		if( _rcdMapsPart == null )

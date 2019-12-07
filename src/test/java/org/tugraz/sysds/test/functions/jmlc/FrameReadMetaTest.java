@@ -35,7 +35,7 @@ import org.tugraz.sysds.api.jmlc.ResultVariables;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.HDFSTool;
@@ -160,7 +160,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 	@SuppressWarnings("unchecked")
 	private static HashMap<String,Long>[] getRecodeMaps(String spec, FrameBlock M) {
 		List<Integer> collist = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonIDList(spec, M.getColumnNames(), TfUtils.TXMETHOD_RECODE)));
+			TfMetaUtils.parseJsonIDList(spec, M.getColumnNames(), TfMethod.RECODE.toString())));
 		HashMap<String,Long>[] ret = new HashMap[M.getNumColumns()];
 		Iterator<Object[]> iter = M.getObjectRowIterator();
 		while( iter.hasNext() ) {

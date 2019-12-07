@@ -49,6 +49,11 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	private final static String SPEC6b   = "homes3/homes.tfspec_recode_dummy2.json";
 	private final static String SPEC7    = "homes3/homes.tfspec_binDummy.json"; //recode+dummy
 	private final static String SPEC7b   = "homes3/homes.tfspec_binDummy2.json"; //recode+dummy
+	private final static String SPEC8    = "homes3/homes.tfspec_hash.json";
+	private final static String SPEC8b   = "homes3/homes.tfspec_hash2.json";
+	private final static String SPEC9    = "homes3/homes.tfspec_hash_recode.json";
+	private final static String SPEC9b   = "homes3/homes.tfspec_hash_recode2.json";
+
 	
 	//dataset and transform tasks with missing values
 	private final static String DATASET2 = "homes/homes.csv";
@@ -68,6 +73,8 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		BIN_DUMMY,
 		IMPUTE,
 		OMIT,
+		HASH,
+		HASH_RECODE,
 	}
 	
 	@Override
@@ -285,6 +292,70 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	public void testHomesImputeColnamesHybridCSV() {
 		runTransformTest(ExecMode.HYBRID, "csv", TransformType.IMPUTE, true);
 	}
+
+	@Test
+	public void testHomesHashColnamesSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH, true);
+	}
+
+//TODO fix spark implementation feature hashing (w/o recode)
+//	@Test
+//	public void testHomesHashColnamesSparkCSV() {
+//		runTransformTest(ExecMode.SPARK, "csv", TransformType.HASH, true);
+//	}
+	
+	@Test
+	public void testHomesHashColnamesHybridCSV() {
+		runTransformTest(ExecMode.HYBRID, "csv", TransformType.HASH, true);
+	}
+
+	@Test
+	public void testHomesHashIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH, false);
+	}
+	
+//TODO fix spark implementation feature hashing (w/o recode)
+//	@Test
+//	public void testHomesHashIDsSparkCSV() {
+//		runTransformTest(ExecMode.SPARK, "csv", TransformType.HASH, false);
+//	}
+	
+	@Test
+	public void testHomesHashIDsHybridCSV() {
+		runTransformTest(ExecMode.HYBRID, "csv", TransformType.HASH, false);
+	}
+
+	@Test
+	public void testHomesHashRecodeColnamesSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, true);
+	}
+
+//TODO fix spark implementation feature hashing (w/o recode)
+//	@Test
+//	public void testHomesHashRecodeColnamesSparkCSV() {
+//		runTransformTest(ExecMode.SPARK, "csv", TransformType.HASH_RECODE, true);
+//	}
+
+	@Test
+	public void testHomesHashRecodeColnamesHybridCSV() {
+		runTransformTest(ExecMode.HYBRID, "csv", TransformType.HASH_RECODE, true);
+	}
+
+	@Test
+	public void testHomesHashRecodeIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, false);
+	}
+
+//TODO fix spark implementation feature hashing (w/o recode)
+//	@Test
+//	public void testHomesHashRecodeIDsSparkCSV() {
+//		runTransformTest(ExecMode.SPARK, "csv", TransformType.HASH_RECODE, false);
+//	}
+
+	@Test
+	public void testHomesHashRecodeIDsHybridCSV() {
+		runTransformTest(ExecMode.HYBRID, "csv", TransformType.HASH_RECODE, false);
+	}
 	
 	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )
 	{
@@ -304,6 +375,8 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			case OMIT:   SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
 			case RECODE_DUMMY: SPEC = colnames?SPEC6b:SPEC6; DATASET = DATASET1; break;
 			case BIN_DUMMY: SPEC = colnames?SPEC7b:SPEC7; DATASET = DATASET1; break;
+			case HASH:	 SPEC = colnames?SPEC8b:SPEC8; DATASET = DATASET1; break;
+			case HASH_RECODE: SPEC = colnames?SPEC9b:SPEC9; DATASET = DATASET1; break;
 		}
 
 		if( !ofmt.equals("csv") )

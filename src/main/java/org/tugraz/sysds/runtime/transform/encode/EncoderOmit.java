@@ -24,6 +24,7 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -37,9 +38,9 @@ public class EncoderOmit extends Encoder
 		throws JSONException 
 	{
 		super(null, clen);
-		if (!parsedSpec.containsKey(TfUtils.TXMETHOD_OMIT))
+		if (!parsedSpec.containsKey(TfMethod.OMIT.toString()))
 			return;
-		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_OMIT);
+		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.OMIT.toString());
 		initColList(collist);
 	}
 	

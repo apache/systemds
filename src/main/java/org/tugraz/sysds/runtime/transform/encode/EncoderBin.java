@@ -30,7 +30,7 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -53,7 +53,7 @@ public class EncoderBin extends Encoder
 		throws JSONException, IOException 
 	{
 		super( null, clen );
-		if ( !parsedSpec.containsKey(TfUtils.TXMETHOD_BIN) )
+		if ( !parsedSpec.containsKey(TfMethod.BIN.toString()) )
 			return;
 		
 		//parse column names or column ids
@@ -62,7 +62,7 @@ public class EncoderBin extends Encoder
 		
 		//parse number of bins per column
 		boolean ids = parsedSpec.containsKey("ids") && parsedSpec.getBoolean("ids");
-		JSONArray group = (JSONArray) parsedSpec.get(TfUtils.TXMETHOD_BIN);
+		JSONArray group = (JSONArray) parsedSpec.get(TfMethod.BIN.toString());
 		_numBins = new int[collist.size()];
 		for(int i=0; i < _numBins.length; i++) {
 			JSONObject colspec = (JSONObject) group.get(i);

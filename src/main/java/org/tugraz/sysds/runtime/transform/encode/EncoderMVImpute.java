@@ -36,37 +36,38 @@ import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class EncoderMVImpute extends Encoder 
-{	
+{
 	private static final long serialVersionUID = 9057868620144662194L;
 
 	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT }
 	
 	private MVMethod[] _mvMethodList = null;
-	private MVMethod[] _mvscMethodList = null;	// scaling methods for attributes that are imputed and also scaled
+	private MVMethod[] _mvscMethodList = null; // scaling methods for attributes that are imputed and also scaled
 	
 	private BitSet _isMVScaled = null;
 	private CM _varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);		// function object that understands variance computation
 	
 	// objects required to compute mean and variance of all non-missing entries 
-	private Mean _meanFn = Mean.getMeanFnObject();	// function object that understands mean computation
-	private KahanObject[] _meanList = null; 		// column-level means, computed so far
-	private long[] _countList = null;				// #of non-missing values
+	private Mean _meanFn = Mean.getMeanFnObject();  // function object that understands mean computation
+	private KahanObject[] _meanList = null;         // column-level means, computed so far
+	private long[] _countList = null;               // #of non-missing values
 	
-	private CM_COV_Object[] _varList = null;		// column-level variances, computed so far (for scaling)
+	private CM_COV_Object[] _varList = null;        // column-level variances, computed so far (for scaling)
 
-	private int[] 			_scnomvList = null;			// List of attributes that are scaled but not imputed
-	private MVMethod[]		_scnomvMethodList = null;	// scaling methods: 0 for invalid; 1 for mean-subtraction; 2 for z-scoring
-	private KahanObject[] 	_scnomvMeanList = null;		// column-level means, for attributes scaled but not imputed
-	private long[] 			_scnomvCountList = null;	// #of non-missing values, for attributes scaled but not imputed
-	private CM_COV_Object[] _scnomvVarList = null;		// column-level variances, computed so far
+	private int[]           _scnomvList = null;        // List of attributes that are scaled but not imputed
+	private MVMethod[]      _scnomvMethodList = null;  // scaling methods: 0 for invalid; 1 for mean-subtraction; 2 for z-scoring
+	private KahanObject[]   _scnomvMeanList = null;    // column-level means, for attributes scaled but not imputed
+	private long[]          _scnomvCountList = null;   // #of non-missing values, for attributes scaled but not imputed
+	private CM_COV_Object[] _scnomvVarList = null;     // column-level variances, computed so far
 	
-	private String[] _replacementList = null;		// replacements: for global_mean, mean; and for global_mode, recode id of mode category
+	private String[] _replacementList = null; // replacements: for global_mean, mean; and for global_mode, recode id of mode category
 	private String[] _NAstrings = null;
-	private List<Integer> _rcList = null; 
+	private List<Integer> _rcList = null;
 	private HashMap<Integer,HashMap<String,Long>> _hist = null;
 	
 	public String[] getReplacements() { return _replacementList; }
@@ -81,7 +82,7 @@ public class EncoderMVImpute extends Encoder
 		super(null, clen);
 		
 		//handle column list
-		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, colnames, TfUtils.TXMETHOD_IMPUTE);
+		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, colnames, TfMethod.IMPUTE.toString());
 		initColList(collist);
 	
 		//handle method list
@@ -95,8 +96,8 @@ public class EncoderMVImpute extends Encoder
 		throws JSONException 
 	{
 		super(null, clen);
-		boolean isMV = parsedSpec.containsKey(TfUtils.TXMETHOD_IMPUTE);
-		boolean isSC = parsedSpec.containsKey(TfUtils.TXMETHOD_SCALE);
+		boolean isMV = parsedSpec.containsKey(TfMethod.IMPUTE.toString());
+		boolean isSC = parsedSpec.containsKey(TfMethod.SCALE.toString());
 		_NAstrings = NAstrings;
 		
 		if(!isMV) {
@@ -108,7 +109,7 @@ public class EncoderMVImpute extends Encoder
 			_replacementList = null;
 		}
 		else {
-			JSONObject mvobj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_IMPUTE);
+			JSONObject mvobj = (JSONObject) parsedSpec.get(TfMethod.IMPUTE.toString());
 			JSONArray mvattrs = (JSONArray) mvobj.get(TfUtils.JSON_ATTRS);
 			JSONArray mvmthds = (JSONArray) mvobj.get(TfUtils.JSON_MTHD);
 			int mvLength = mvattrs.size();
@@ -153,7 +154,7 @@ public class EncoderMVImpute extends Encoder
 			if ( _colList != null ) 
 				_mvscMethodList = new MVMethod[_colList.length];
 			
-			JSONObject scobj = (JSONObject) parsedSpec.get(TfUtils.TXMETHOD_SCALE);
+			JSONObject scobj = (JSONObject) parsedSpec.get(TfMethod.SCALE.toString());
 			JSONArray scattrs = (JSONArray) scobj.get(TfUtils.JSON_ATTRS);
 			JSONArray scmthds = (JSONArray) scobj.get(TfUtils.JSON_MTHD);
 			int scLength = scattrs.size();
@@ -164,8 +165,8 @@ public class EncoderMVImpute extends Encoder
 			for(int i=0; i < scLength; i++)
 			{
 				colID = UtilFunctions.toInt(scattrs.get(i));
-				mthd = (byte) UtilFunctions.toInt(scmthds.get(i)); 
-						
+				mthd = (byte) UtilFunctions.toInt(scmthds.get(i));
+				
 				_allscaled[i] = colID;
 				
 				// check if the attribute is also MV imputed
@@ -182,8 +183,8 @@ public class EncoderMVImpute extends Encoder
 			
 			if(scnomv > 0)
 			{
-				_scnomvList = new int[scnomv];			
-				_scnomvMethodList = new MVMethod[scnomv];	
+				_scnomvList = new int[scnomv];
+				_scnomvMethodList = new MVMethod[scnomv];
 	
 				_scnomvMeanList = new KahanObject[scnomv];
 				_scnomvCountList = new long[scnomv];
@@ -192,7 +193,7 @@ public class EncoderMVImpute extends Encoder
 				for(int i=0, idx=0; i < scLength; i++)
 				{
 					colID = UtilFunctions.toInt(scattrs.get(i));
-					mthd = (byte)UtilFunctions.toInt(scmthds.get(i)); 
+					mthd = (byte)UtilFunctions.toInt(scmthds.get(i));
 							
 					if(isApplicable(colID) == -1)
 					{	// scaled but not imputed
@@ -208,7 +209,7 @@ public class EncoderMVImpute extends Encoder
 	}
 
 	private void parseMethodsAndReplacments(JSONObject parsedSpec) throws JSONException {
-		JSONArray mvspec = (JSONArray) parsedSpec.get(TfUtils.TXMETHOD_IMPUTE);
+		JSONArray mvspec = (JSONArray) parsedSpec.get(TfMethod.IMPUTE.toString());
 		_mvMethodList = new MVMethod[mvspec.size()];
 		_replacementList = new String[mvspec.size()];
 		_meanList = new KahanObject[mvspec.size()];

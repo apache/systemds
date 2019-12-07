@@ -68,7 +68,7 @@ import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.decode.Decoder;
 import org.tugraz.sysds.runtime.transform.decode.DecoderFactory;
 import org.tugraz.sysds.runtime.transform.encode.Encoder;
@@ -831,7 +831,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		
 		public RDDTransformApplyOffsetFunction(String spec, String[] colnames) {
 			try {
-				_omitColList = TfMetaUtils.parseJsonIDList(spec, colnames, TfUtils.TXMETHOD_OMIT);
+				_omitColList = TfMetaUtils.parseJsonIDList(
+					spec, colnames, TfMethod.OMIT.toString());
 			} 
 			catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);

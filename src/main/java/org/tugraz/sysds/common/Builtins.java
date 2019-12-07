@@ -112,6 +112,7 @@ public enum Builtins {
 	MAX_POOL_BACKWARD("max_pool_backward", false),
 	MEDIAN("median", false),
 	MOMENT("moment", "centralMoment", false),
+	MICE_LM("mice_lm", true),
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
 	NROW("nrow", false),

@@ -144,7 +144,8 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
 SYSTEMDS-190 New Builtin Functions III
 
 SYSTEMDS-200 Various Fixes
- * 201 Fix spark append instruction zero columns                      OK 
+ * 201 Fix spark append instruction zero columns                      OK
+ * 202 Fix rewrite split DAG multiple removeEmpty (pending op)
 
 Others:
  * Break append instruction to cbind and rbind 

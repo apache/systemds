@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -30,7 +32,7 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -55,27 +57,35 @@ public class EncoderFactory
 			JSONObject jSpec = new JSONObject(spec);
 			List<Encoder> lencoders = new ArrayList<>();
 		
-			//prepare basic id lists (recode, dummycode, pass-through)
+			//prepare basic id lists (recode, feature hash, dummycode, pass-through)
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
+				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString())));
+			List<Integer>haIDs = Arrays.asList(ArrayUtils.toObject(
+				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString())));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
+				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString())));
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames);
 			//note: any dummycode column requires recode as preparation, unless it follows binning
-			rcIDs = new ArrayList<Integer>(
-				CollectionUtils.union(rcIDs, CollectionUtils.subtract(dcIDs, binIDs)));
+			rcIDs = new ArrayList<Integer>(CollectionUtils.subtract(
+				CollectionUtils.union(rcIDs, CollectionUtils.subtract(dcIDs, binIDs)), haIDs));
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils.subtract(
-					CollectionUtils.subtract(UtilFunctions.getSeqList(1, clen, 1), rcIDs), binIDs));
+				CollectionUtils.subtract(UtilFunctions.getSeqList(1, clen, 1),
+					CollectionUtils.union(rcIDs,haIDs)), binIDs));
 			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_OMIT)));
+				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString())));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfUtils.TXMETHOD_IMPUTE)));
+				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString())));
 			
 			//create individual encoders
 			if( !rcIDs.isEmpty() ) {
 				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen);
 				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
 				lencoders.add(ra);
+			}
+			if( !haIDs.isEmpty() ) {
+				EncoderFeatureHash ha = new EncoderFeatureHash(jSpec, colnames, clen);
+				ha.setColList(ArrayUtils.toPrimitive(haIDs.toArray(new Integer[0])));
+				lencoders.add(ha);
 			}
 			if( !ptIDs.isEmpty() )
 				lencoders.add(new EncoderPassThrough(

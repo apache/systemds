@@ -23,7 +23,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 
 public class EncoderDummycode extends Encoder 
@@ -36,8 +36,8 @@ public class EncoderDummycode extends Encoder
 	public EncoderDummycode(JSONObject parsedSpec, String[] colnames, int clen) throws JSONException {
 		super(null, clen);
 		
-		if ( parsedSpec.containsKey(TfUtils.TXMETHOD_DUMMYCODE) ) {
-			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE);
+		if ( parsedSpec.containsKey(TfMethod.DUMMYCODE.toString()) ) {
+			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.DUMMYCODE.toString());
 			initColList(collist);
 		}
 	}

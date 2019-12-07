@@ -33,7 +33,6 @@ public class TfUtils implements Serializable
 		NOMINAL,
 		ORDINAL,
 		DUMMYCODED;
-	
 		protected byte toID() { 
 			switch(this) {
 				case SCALE: return 1;
@@ -44,17 +43,18 @@ public class TfUtils implements Serializable
 				default:
 					throw new RuntimeException("Invalid Column Type: " + this);
 			}
-		}	
+		}
 	}
 	
 	//transform methods
-	public static final String TXMETHOD_IMPUTE    = "impute";
-	public static final String TXMETHOD_RECODE    = "recode";
-	public static final String TXMETHOD_BIN       = "bin";
-	public static final String TXMETHOD_DUMMYCODE = "dummycode";
-	public static final String TXMETHOD_SCALE     = "scale";
-	public static final String TXMETHOD_OMIT      = "omit";
-		
+	public enum TfMethod {
+		IMPUTE, RECODE, HASH, BIN, DUMMYCODE, SCALE, OMIT;
+		@Override
+		public String toString() {
+			return name().toLowerCase();
+		}
+	}
+	
 	//transform meta data constants (frame-based transform)
 	public static final String TXMTD_MVPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"MV";
 	public static final String TXMTD_NDPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"ND";
@@ -67,10 +67,10 @@ public class TfUtils implements Serializable
 	public static final String TXMTD_BIN_FILE_SUFFIX     = ".bin";
 	public static final String TXMTD_MV_FILE_SUFFIX      = ".impute";
 	
-	public static final String JSON_ATTRS 	= "attributes"; 
-	public static final String JSON_MTHD 	= "methods"; 
-	public static final String JSON_CONSTS = "constants"; 
-	public static final String JSON_NBINS 	= "numbins"; 		
+	public static final String JSON_ATTRS  = "attributes";
+	public static final String JSON_MTHD   = "methods";
+	public static final String JSON_CONSTS = "constants";
+	public static final String JSON_NBINS  = "numbins";
 
 	private String _headerLine = null;
 	private boolean _hasHeader;

@@ -44,6 +44,7 @@ import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
 import org.tugraz.sysds.runtime.transform.decode.DecoderRecode;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
@@ -65,7 +66,7 @@ public class TfMetaUtils
 	}
 
 	public static boolean containsOmitSpec(String spec, String[] colnames) {
-		return (TfMetaUtils.parseJsonIDList(spec, colnames, TfUtils.TXMETHOD_OMIT).length > 0);	
+		return (TfMetaUtils.parseJsonIDList(spec, colnames, TfMethod.OMIT.toString()).length > 0);	
 	}
 
 	public static int[] parseJsonIDList(String spec, String[] colnames, String group) {
@@ -348,9 +349,9 @@ public class TfMetaUtils
 			//parse json transform specification for recode col ids
 			JSONObject jSpec = new JSONObject(spec);
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString())));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString()))); 
 			specRecodeIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
 		}
 		catch(Exception ex) {
@@ -376,13 +377,14 @@ public class TfMetaUtils
 		throws IOException 
 	{
 		try {
-			if( jSpec.containsKey(TfUtils.TXMETHOD_BIN) && jSpec.get(TfUtils.TXMETHOD_BIN) instanceof JSONArray ) {
+			String binKey = TfMethod.BIN.toString();
+			if( jSpec.containsKey(binKey) && jSpec.get(binKey) instanceof JSONArray ) {
 				return Arrays.asList(ArrayUtils.toObject(
-						TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfUtils.TXMETHOD_BIN)));
+						TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, binKey)));
 			}
 			else { //internally generates
 				return Arrays.asList(ArrayUtils.toObject(
-						TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_BIN)));
+						TfMetaUtils.parseJsonIDList(jSpec, colnames, binKey)));
 			}
 		}
 		catch(JSONException ex) {

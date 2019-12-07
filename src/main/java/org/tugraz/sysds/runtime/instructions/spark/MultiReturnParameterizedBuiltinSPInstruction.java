@@ -107,27 +107,27 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			FrameObject fo = sec.getFrameObject(input1.getName());
 			FrameObject fometa = sec.getFrameObject(_outputs.get(1).getName());
 			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
-					sec.getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
+				sec.getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
 			String spec = ec.getScalarInput(input2).getStringValue();
 			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			String[] colnames = !TfMetaUtils.isIDSpec(spec) ?
-					in.lookup(1L).get(0).getColumnNames() : null; 
-					
+				in.lookup(1L).get(0).getColumnNames() : null; 
+			
 			//step 1: build transform meta data
 			Encoder encoderBuild = EncoderFactory.createEncoder(spec, colnames,
-					fo.getSchema(), (int)fo.getNumColumns(), null);
+				fo.getSchema(), (int)fo.getNumColumns(), null);
 			
 			MaxLongAccumulator accMax = registerMaxLongAccumulator(sec.getSparkContext()); 
 			JavaRDD<String> rcMaps = in
-					.mapPartitionsToPair(new TransformEncodeBuildFunction(encoderBuild))
-					.distinct().groupByKey()
-					.flatMap(new TransformEncodeGroupFunction(accMax));
+				.mapPartitionsToPair(new TransformEncodeBuildFunction(encoderBuild))
+				.distinct().groupByKey()
+				.flatMap(new TransformEncodeGroupFunction(accMax));
 			if( containsMVImputeEncoder(encoderBuild) ) {
 				EncoderMVImpute mva = getMVImputeEncoder(encoderBuild);
 				rcMaps = rcMaps.union(
-						in.mapPartitionsToPair(new TransformEncodeBuild2Function(mva))
-						  .groupByKey().flatMap(new TransformEncodeGroup2Function(mva)) );
+					in.mapPartitionsToPair(new TransformEncodeBuild2Function(mva))
+					  .groupByKey().flatMap(new TransformEncodeGroup2Function(mva)) );
 			}
 			rcMaps.saveAsTextFile(fometa.getFileName()); //trigger eval
 			
@@ -147,16 +147,16 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			
 			//create encoder broadcast (avoiding replication per task) 
 			Encoder encoder = EncoderFactory.createEncoder(spec, colnames,
-					fo.getSchema(), (int)fo.getNumColumns(), meta);
+				fo.getSchema(), (int)fo.getNumColumns(), meta);
 			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
 			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;
 			
 			//execute transform apply
 			JavaPairRDD<Long,FrameBlock> tmp = in
-					.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
+				.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = FrameRDDConverterUtils
-					.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+				.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
 			
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(_outputs.get(0).getName(), out);
@@ -173,7 +173,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
 				if( cencoder instanceof EncoderMVImpute )
 					return true;
-		return false;	
+		return false;
 	}
 
 	private static EncoderMVImpute getMVImputeEncoder(Encoder encoder) {
@@ -181,7 +181,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			for( Encoder cencoder : ((EncoderComposite)encoder).getEncoders() )
 				if( cencoder instanceof EncoderMVImpute )
 					return (EncoderMVImpute) cencoder;
-		return null;	
+		return null;
 	}
 	
 	private static MaxLongAccumulator registerMaxLongAccumulator(JavaSparkContext sc) {
@@ -256,9 +256,9 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			throws Exception 
 		{
 			//build meta data (e.g., recode maps)
-			while( iter.hasNext() ) {
-				_raEncoder.buildPartial(iter.next()._2());	
-			}
+			if( _raEncoder != null )
+				while( iter.hasNext() )
+					_raEncoder.buildPartial(iter.next()._2());
 			
 			//output recode maps as columnID - token pairs
 			ArrayList<Tuple2<Integer,Object>> ret = new ArrayList<>();
@@ -266,7 +266,8 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			for( Entry<Integer,HashSet<Object>> e1 : tmp.entrySet() )
 				for( Object token : e1.getValue() )
 					ret.add(new Tuple2<>(e1.getKey(), token));
-			_raEncoder.getCPRecodeMapsPartial().clear();
+			if( _raEncoder != null )
+				_raEncoder.getCPRecodeMapsPartial().clear();
 		
 			return ret.iterator();
 		}

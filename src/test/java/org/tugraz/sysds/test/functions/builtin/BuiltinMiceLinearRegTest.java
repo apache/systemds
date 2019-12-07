@@ -47,15 +47,15 @@ public class BuiltinMiceLinearRegTest extends AutomatedTestBase {
 		runLmTest(0.3, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testMatrixSparseSpark() {
-//		runLmTest(0.7, LopProperties.ExecType.SPARK);
-//	}
-//
-//	@Test
-//	public void testMatrixDenseSpark() {
-//		runLmTest(0.3, LopProperties.ExecType.SPARK);
-//	}
+	@Test
+	public void testMatrixSparseSpark() {
+		runLmTest(0.7, LopProperties.ExecType.SPARK);
+	}
+
+	@Test
+	public void testMatrixDenseSpark() {
+		runLmTest(0.3, LopProperties.ExecType.SPARK);
+	}
 
 	private void runLmTest(double sparseVal, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);

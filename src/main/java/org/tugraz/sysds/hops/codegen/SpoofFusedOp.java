@@ -80,6 +80,16 @@ public class SpoofFusedOp extends MultiThreadedHop
 	public void setConstDim2(long constDim2) {
 		_constDim2 = constDim2;
 	}
+	
+	@Override
+	public boolean isGPUEnabled() {
+		return false;
+	}
+	
+	@Override
+	public boolean isMultiThreadedOpType() {
+		return true;
+	}
 
 	@Override
 	protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
@@ -297,10 +307,5 @@ public class SpoofFusedOp extends MultiThreadedHop
 		}
 		
 		return ret;
-	}
-
-	@Override
-	public boolean isGPUEnabled() {
-		return false;
 	}
 }

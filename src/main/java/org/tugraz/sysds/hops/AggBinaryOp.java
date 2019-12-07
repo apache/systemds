@@ -371,6 +371,11 @@ public class AggBinaryOp extends MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isMultiThreadedOpType() {
+		return isMatrixMultiply();
+	}
+	
+	@Override
 	public boolean allowsAllExecTypes()
 	{
 		return true;

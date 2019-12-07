@@ -27,21 +27,15 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.AggBinaryOp.MMultMethod;
-import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
-import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.MemoTable;
 import org.tugraz.sysds.hops.MultiThreadedHop;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
-import org.tugraz.sysds.hops.ReorgOp;
-import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.hops.rewrite.ProgramRewriteStatus;
@@ -1267,17 +1261,9 @@ public class OptimizerRuleBased extends Optimizer
 				{
 					//set degree of parallelism for multi-threaded leaf nodes
 					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
-					if(    ConfigurationManager.isParallelMatrixOperations() 
-						&& h instanceof MultiThreadedHop //abop, datagenop, qop, paramop
-						&& !( h instanceof ParameterizedBuiltinOp //paramop-grpagg, rexpand, paramserv
-							 && !HopRewriteUtils.isValidOp(((ParameterizedBuiltinOp)h).getOp(), 
-								ParamBuiltinOp.GROUPEDAGG, ParamBuiltinOp.REXPAND, ParamBuiltinOp.PARAMSERV))
-						&& !( h instanceof UnaryOp //only unaryop-cumulativeagg
-							 && !((UnaryOp)h).isCumulativeUnaryOperation()
-							 && !((UnaryOp)h).isExpensiveUnaryOperation())
-						&& !( h instanceof ReorgOp //only reorgop-transpose
-							 && ((ReorgOp)h).getOp() != ReOrgOp.TRANS )
-						&& !( h instanceof BinaryOp && h.getDataType().isScalar() ) )
+					if(    ConfigurationManager.isParallelMatrixOperations()
+						&& h instanceof MultiThreadedHop
+						&& ((MultiThreadedHop)h).isMultiThreadedOpType() )
 					{
 						MultiThreadedHop mhop = (MultiThreadedHop) h;
 						mhop.setMaxNumThreads(opsK); //set max constraint in hop

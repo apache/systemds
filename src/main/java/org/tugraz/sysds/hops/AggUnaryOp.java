@@ -478,6 +478,11 @@ public class AggUnaryOp extends MultiThreadedHop
 			|| opOp2 == OpOp2.EQUAL || opOp2 == OpOp2.NOTEQUAL);
 	}
 	
+	@Override
+	public boolean isMultiThreadedOpType() {
+		return true;
+	}
+	
 	/**
 	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  
 	 * @return true if sufficient memory

@@ -95,6 +95,7 @@ SYSTEMDS-120 Performance Features
  * 122 Reduce thread contention on parfor left indexing               OK
  * 123 Avoid unnecessary spark context creation on explain            OK
  * 124 Improved cbind performance (small rhs)                         OK
+ * 125 Parallel Sort (previously 191)                                 OK
  
 SYSTEMDS-130 IPA and Size Propagation
  * 131 New IPA pass for function call forwarding                      OK
@@ -137,10 +138,6 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
  * 186 Builtin function ALS-DS
  * 187 Builtin function ALS-CG
  * 188 Builtin function ALS
- 
- 
-SYSTEMDS-190 Ramp-Up Tasks
-* 191 Parallel Sort                                                   OK
 
 Others:
  * Break append instruction to cbind and rbind 

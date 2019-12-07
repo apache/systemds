@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
@@ -56,6 +57,21 @@ public class CommonThreadPool implements ExecutorService
 	public static ExecutorService get(int k) {
 		return new CommonThreadPool( (size==k) ?
 			shared : Executors.newFixedThreadPool(k));
+	}
+	
+	public static <T> void invokeAndShutdown(ExecutorService pool, Collection<? extends Callable<T>> tasks) {
+		try {
+			//execute tasks
+			List<Future<T>> ret = pool.invokeAll(tasks);
+			//check for errors and exceptions
+			for( Future<T> r : ret )
+				r.get();
+			//shutdown pool
+			pool.shutdown();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
 	}
 
 	public static void shutdownShared() {

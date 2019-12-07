@@ -187,7 +187,9 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 				if(cutAt >= in.getNumColumns()) {
 					// The block is too small to be cut
 					MatrixBlock firstBlk = new MatrixBlock(in.getNumRows(), lblen1, true);
-					firstBlk = firstBlk.leftIndexingOperations(in, 0, in.getNumRows()-1, lblen1-in.getNumColumns(), lblen1-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
+					if( in.getNumColumns()>0 )
+						firstBlk = firstBlk.leftIndexingOperations(in, 0, in.getNumRows()-1,
+							lblen1-in.getNumColumns(), lblen1-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
 					retVal.add(new Tuple2<>(firstIndex, firstBlk));
 				}
 				else {
@@ -213,7 +215,9 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 				if(cutAt >= in.getNumRows()) {
 					// The block is too small to be cut
 					MatrixBlock firstBlk = new MatrixBlock(lblen1, in.getNumColumns(), true);
-					firstBlk = firstBlk.leftIndexingOperations(in, lblen1-in.getNumRows(), lblen1-1, 0, in.getNumColumns()-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
+					if( in.getNumRows()>0 )
+						firstBlk = firstBlk.leftIndexingOperations(in, lblen1-in.getNumRows(), lblen1-1,
+							0, in.getNumColumns()-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
 					retVal.add(new Tuple2<>(firstIndex, firstBlk));
 				}
 				else {

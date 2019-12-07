@@ -41,6 +41,7 @@ SYSTEMDS-40 Preprocessing builtins
  * 45 SotA outlier detection primitives
  * 46 Generalization of quantiles
  * 47 Add new normalize builtin function                              OK
+ * 48 Extended transform encode/apply: feature hashing                OK
 
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)
@@ -135,9 +136,15 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
  * 183 Builtin function detectSchema                                  OK
  * 184 Builtin function GNMF                                          OK
  * 185 Builtin function PNMF                                          OK
- * 186 Builtin function ALS-DS
- * 187 Builtin function ALS-CG
- * 188 Builtin function ALS
+ * 186 Builtin function ALS-DS                                        OK
+ * 187 Builtin function ALS-CG                                        OK
+ * 188 Builtin function ALS                                           OK
+ * 189 Builtin function mice (chained equation imputation)            OK
+
+SYSTEMDS-190 New Builtin Functions III
+
+SYSTEMDS-200 Various Fixes
+ * 201 Fix spark append instruction zero columns                      OK 
 
 Others:
  * Break append instruction to cbind and rbind 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.tugraz.sysds.test.functions.unary.frame;
+package org.tugraz.sysds.test.functions.frame;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -33,18 +33,15 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
-
 import java.security.SecureRandom;
 
-//TODO fix the tests
-//TODO move to package frame
 public class DetectSchemaTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "DetectSchema";
-	private final static String TEST_DIR = "functions/unary/frame/";
+	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + DetectSchemaTest.class.getSimpleName() + "/";
 
-	private final static int rows = 120;
-	private final static Types.ValueType[] schemaStrings = {Types.ValueType.INT32, Types.ValueType.BOOLEAN, Types.ValueType.FP32, Types.ValueType.STRING};
+	private final static int rows = 10000;
+	private final static Types.ValueType[] schemaStrings = {Types.ValueType.INT32, Types.ValueType.BOOLEAN, Types.ValueType.FP32, Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.FP32};
 	private final static Types.ValueType[] schemaDoubles = new Types.ValueType[]{Types.ValueType.FP64, Types.ValueType.FP64};
 	private final static Types.ValueType[] schemaMixed = new Types.ValueType[]{Types.ValueType.INT64, Types.ValueType.FP64, Types.ValueType.INT64, Types.ValueType.BOOLEAN};
 
@@ -71,35 +68,35 @@ public class DetectSchemaTest extends AutomatedTestBase {
 
 	@Test
 	public void testDetectSchemaDoubleCP() {
-		runDetectSchemaTest(schemaDoubles, rows, schemaDoubles.length, false, ExecType.CP);
+		runDetectSchemaTest(schemaDoubles, rows, schemaDoubles.length, false,  ExecType.CP);
 	}
 
 	@Test
 	public void testDetectSchemaDoubleSpark() {
-		runDetectSchemaTest(schemaDoubles, rows, schemaDoubles.length, false, ExecType.SPARK);
+		runDetectSchemaTest(schemaDoubles, rows, schemaDoubles.length, false,  ExecType.SPARK);
 	}
 
 	@Test
 	public void testDetectSchemaStringCP() {
-		runDetectSchemaTest(schemaStrings, rows, schemaStrings.length, true, ExecType.CP);
+		runDetectSchemaTest(schemaStrings, rows, schemaStrings.length, true,  ExecType.CP);
 	}
 
 	@Test
 	public void testDetectSchemaStringSpark() {
-		runDetectSchemaTest(schemaStrings, rows, schemaStrings.length, true, ExecType.SPARK);
+		runDetectSchemaTest(schemaStrings, rows, schemaStrings.length, true,  ExecType.SPARK);
 	}
 
 	@Test
 	public void testDetectSchemaMixCP() {
-		runDetectSchemaTest(schemaMixed, rows, schemaMixed.length, false, ExecType.CP);
+		runDetectSchemaTest(schemaMixed, rows, schemaMixed.length, false,  ExecType.CP);
 	}
 
 	@Test
 	public void testDetectSchemaMixSpark() {
-		runDetectSchemaTest(schemaMixed, rows, schemaMixed.length, false, ExecType.SPARK);
+		runDetectSchemaTest(schemaMixed, rows, schemaMixed.length, false,  ExecType.SPARK);
 	}
 
-	private void runDetectSchemaTest(Types.ValueType[] schema, int rows, int cols, boolean isStringTest, ExecType et) {
+	private void runDetectSchemaTest(Types.ValueType[] schema, int rows, int cols, boolean isStringTest,  ExecType et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -112,13 +109,15 @@ public class DetectSchemaTest extends AutomatedTestBase {
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.CSVOutputInfo);
 
 			if (!isStringTest) {
-				double[][] A = getRandomMatrix(rows, schema.length, -10, 10, 0.9, 2373);
+				double[][] A = getRandomMatrix(rows, schema.length, -Double.MIN_VALUE, Double.MAX_VALUE, 0.7, 2373);
 				initFrameDataDouble(frame1, A, schema);
 				writer.writeFrameToHDFS(frame1, input("A"), rows, schema.length);
-			} else {
-				double[][] A = getRandomMatrix(rows, schema.length - 1, -10, 10, 0.9, 2373);
+			}
+			else {
+				double[][] A = getRandomMatrix(rows, 3, -Float.MAX_VALUE, Float.MAX_VALUE, 0.7, 2373);
 				initFrameDataString(frame1, A, schema);
-				writer.writeFrameToHDFS(frame1.slice(0, 119, 0, 3, new FrameBlock()), input("A"), rows, schema.length);
+				writer.writeFrameToHDFS(frame1.slice(0, rows-1, 0, schema.length-1, new FrameBlock()), input("A"), rows, schema.length);
+				schema[schema.length-2] = Types.ValueType.FP64;
 			}
 
 			runTest(true, false, null, -1);
@@ -126,7 +125,7 @@ public class DetectSchemaTest extends AutomatedTestBase {
 
 			//verify output schema
 			for (int i = 0; i < schema.length; i++) {
-				Assert.assertEquals("Wrong result: " + frame2.getSchema()[i] + ".",
+					Assert.assertEquals("Wrong result: " + frame2.getSchema()[i] + ".",
 						schema[i].toString(), frame2.get(0, i).toString());
 			}
 		}
@@ -143,7 +142,7 @@ public class DetectSchemaTest extends AutomatedTestBase {
 	}
 
 	private static void initFrameDataString(FrameBlock frame1, double[][] data, Types.ValueType[] lschema) {
-		for (int j = 0; j < lschema.length - 1; j++) {
+		for (int j = 0; j < 3; j++) {
 			Types.ValueType vt = lschema[j];
 			switch (vt) {
 				case STRING:
@@ -188,6 +187,8 @@ public class DetectSchemaTest extends AutomatedTestBase {
 		}
 		String[] randomData = generateRandomString(8, rows);
 		frame1.appendColumn(randomData);
+		frame1.appendColumn(doubleSpecialData(rows));
+		frame1.appendColumn(floatLimitData(rows));
 	}
 
 	private static void initFrameDataDouble(FrameBlock frame, double[][] data, Types.ValueType[] lschema) {
@@ -201,7 +202,7 @@ public class DetectSchemaTest extends AutomatedTestBase {
 		}
 	}
 
-	public static String[] generateRandomString(int stringLength, int rows) {
+	private static String[] generateRandomString(int stringLength, int rows) {
 		String CHAR_LOWER = "abcdefghijklmnopqrstuvwxyz";
 		String CHAR_UPPER = CHAR_LOWER.toUpperCase();
 		String NUMBER = "0123456789";
@@ -219,6 +220,24 @@ public class DetectSchemaTest extends AutomatedTestBase {
 			}
 			A[j] = sb.toString();
 		}
+		return A;
+	}
+	
+	private static String[] doubleSpecialData(int rows) {
+		String[] dataArray = new String[]{"Infinity", "3.4028234e+38", "Nan" , "-3.4028236e+38" };
+		String[] A = new String[rows];
+		SecureRandom random = new SecureRandom();
+		for (int j = 0; j < rows; j++)
+			A[j] = dataArray[random.nextInt(4)];
+		return A;
+	}
+	
+	private static double[] floatLimitData(int rows) {
+		double[] dataArray = new double[]{Float.MAX_VALUE, 3.4028233E38,  3.4028234e38 , 3.4028228e38, 2.4028228e38,  -3.4028234e38, -3.40282310e38};
+		double[] A = new double[rows];
+		SecureRandom random = new SecureRandom();
+		for (int j = 0; j < rows; j++)
+			A[j] = dataArray[random.nextInt(7)];
 		return A;
 	}
 }

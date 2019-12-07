@@ -92,6 +92,10 @@ public class CPOperand
 		return _dataType.isTensor();
 	}
 
+	public boolean isList() {
+		return _dataType.isList();
+	}
+
 	public boolean isScalar() {
 		return _dataType.isScalar();
 	}

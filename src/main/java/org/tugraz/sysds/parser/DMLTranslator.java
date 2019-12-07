@@ -2346,12 +2346,12 @@ public class DMLTranslator
 			
 		case CBIND:
 		case RBIND:
-			OpOp2 appendOp1 = (source.getOpCode()==Builtins.CBIND) ? OpOp2.CBIND : OpOp2.RBIND;
-			OpOpN appendOp2 = (source.getOpCode()==Builtins.CBIND) ? OpOpN.CBIND : OpOpN.RBIND;
+			OpOp2 appendOp2 = (source.getOpCode()==Builtins.CBIND) ? OpOp2.CBIND : OpOp2.RBIND;
+			OpOpN appendOpN = (source.getOpCode()==Builtins.CBIND) ? OpOpN.CBIND : OpOpN.RBIND;
 			currBuiltinOp = (source.getAllExpr().length == 2) ?
-					new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOp1, expr, expr2) :
-					new NaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOp2,
-							processAllExpressions(source.getAllExpr(), hops));
+				new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOp2, expr, expr2) :
+				new NaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOpN,
+					processAllExpressions(source.getAllExpr(), hops));
 			break;
 			
 		case TABLE:

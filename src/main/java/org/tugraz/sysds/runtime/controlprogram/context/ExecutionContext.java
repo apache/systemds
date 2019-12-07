@@ -481,6 +481,19 @@ public class ExecutionContext {
 			throw new DMLRuntimeException("Variable '" + name + "' is not a list.");
 		return (ListObject) dat;
 	}
+	
+	private List<MatrixObject> getMatricesFromList(ListObject lo) {
+		List<MatrixObject> ret = new ArrayList<>();
+		for (Data e : lo.getData()) {
+			if (e instanceof MatrixObject)
+				ret.add((MatrixObject)e);
+			else if (e instanceof ListObject)
+				ret.addAll(getMatricesFromList((ListObject)e));
+			else
+				throw new DMLRuntimeException("List must contain only matrices or lists for rbind/cbind.");
+		}
+		return ret;
+	}
 
 	public void releaseMatrixOutputForGPUInstruction(String varName) {
 		MatrixObject mo = getMatrixObject(varName);
@@ -526,8 +539,22 @@ public class ExecutionContext {
 	}
 	
 	public List<MatrixBlock> getMatrixInputs(CPOperand[] inputs) {
-		return Arrays.stream(inputs).filter(in -> in.isMatrix())
+		return getMatrixInputs(inputs, false);
+	}
+	
+	public List<MatrixBlock> getMatrixInputs(CPOperand[] inputs, boolean includeList) {
+		List<MatrixBlock> ret = Arrays.stream(inputs).filter(in -> in.isMatrix())
 			.map(in -> getMatrixInput(in.getName())).collect(Collectors.toList());
+		
+		if (includeList) {
+			List<ListObject> lolist = Arrays.stream(inputs).filter(in -> in.isList())
+				.map(in -> getListObject(in.getName())).collect(Collectors.toList());
+			for (ListObject lo : lolist)
+				ret.addAll( getMatricesFromList(lo).stream()
+					.map(mo -> mo.acquireRead()).collect(Collectors.toList()));
+		}
+		
+		return ret;
 	}
 	
 	public List<ScalarObject> getScalarInputs(CPOperand[] inputs) {
@@ -536,8 +563,19 @@ public class ExecutionContext {
 	}
 	
 	public void releaseMatrixInputs(CPOperand[] inputs) {
+		releaseMatrixInputs(inputs, false);
+	}
+
+	public void releaseMatrixInputs(CPOperand[] inputs, boolean includeList) {
 		Arrays.stream(inputs).filter(in -> in.isMatrix())
 			.forEach(in -> releaseMatrixInput(in.getName()));
+
+		if (includeList) {
+			List<ListObject> lolist = Arrays.stream(inputs).filter(in -> in.isList())
+				.map(in -> getListObject(in.getName())).collect(Collectors.toList());
+			for (ListObject lo : lolist)
+				getMatricesFromList(lo).stream().forEach(mo -> mo.release());
+		}
 	}
 	
 	/**

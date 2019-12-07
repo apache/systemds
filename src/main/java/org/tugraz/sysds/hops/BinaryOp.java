@@ -174,6 +174,11 @@ public class BinaryOp extends MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isMultiThreadedOpType() {
+		return !getDataType().isScalar();
+	}
+	
+	@Override
 	public Lop constructLops() 
 	{
 		//return already created lops

@@ -24,7 +24,6 @@ package org.tugraz.sysds.runtime.matrix.data;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-//import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.DenseBlockFactory;
 import org.tugraz.sysds.runtime.data.SparseBlock;
@@ -373,15 +372,15 @@ public class LibMatrixReorg
 		}
 
 		//step 3: index vector sorting
-		
 		//create index vector and extract values
+		//TODO perf: reconsider partition sort to avoid unnecessary barriers
 		int[] vix = new int[rlen];
 		double[] values = new double[rlen];
 		for( int i=0; i<rlen; i++ ) {
 			vix[i] = i;
 			values[i] = in.quickGetValue(i, by[0]-1);
 		}
-		
+
 		// step 4: split the data into number of blocks of PAR_NUMCELL_THRESHOLD_SORT (1024) elements.
 		if (k == 1 || rlen < PAR_NUMCELL_THRESHOLD_SORT){ // There is no parallel
 			//sort index vector on extracted data (unstable)
@@ -389,23 +388,16 @@ public class LibMatrixReorg
 		} else {
 			try {
 				ExecutorService pool = CommonThreadPool.get(k);
-
 				ArrayList<SortTask> tasks = new ArrayList<>();
 				
 				// sort smaller blocks.
 				int blklen = (int)(Math.ceil((double)rlen/k));
 				for( int i=0; i*blklen<rlen; i++ ){
-					
 					int start = i*blklen;
 					int stop = Math.min(rlen , i*blklen + blklen);
-					
 					tasks.add(new SortTask(start, stop, vix, values));
 				}
-				List<Future<Object>> taskret = pool.invokeAll(tasks);
-				pool.shutdown();
-				for( Future<Object> task : taskret )
-					task.get();
-
+				CommonThreadPool.invokeAndShutdown(pool, tasks);
 				mergeSortedBlocks(blklen, vix, values, k);
 			}
 			catch(Exception ex) {
@@ -430,21 +422,15 @@ public class LibMatrixReorg
 
 		//step 4: create output matrix (guaranteed non-empty, see step 2)
 		if( !ixret ) {
+			out.allocateBlock();
 			//copy input data in sorted order into result
-			if( !sparse ) { //DENSE
-				out.allocateDenseBlock(false);
-				DenseBlock a = in.getDenseBlock();
-				DenseBlock c = out.getDenseBlock();
-				for( int i=0; i<rlen; i++ )
-					System.arraycopy(a.values(vix[i]), a.pos(vix[i]), c.values(i), c.pos(i), clen);
-			}
-			else { //SPARSE
-				out.allocateSparseRowsBlock(false);
-				for( int i=0; i<rlen; i++ )
-					if( !in.sparseBlock.isEmpty(vix[i]) )
-						out.sparseBlock.set(i, in.sparseBlock.get(vix[i]),
-							!SHALLOW_COPY_REORG); //row remains unchanged
-			}
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<CopyTask> tasks = new ArrayList<>();
+			ArrayList<Integer> blklen = UtilFunctions
+				.getBalancedBlockSizesDefault(rlen, k, false);
+			for( int i=0, lb=0; i<blklen.size(); lb+=blklen.get(i), i++ )
+				tasks.add( new CopyTask(in, out, vix, lb, lb+blklen.get(i)));
+			CommonThreadPool.invokeAndShutdown(pool, tasks);
 		}
 		else {
 			//copy sorted index vector into result
@@ -453,7 +439,7 @@ public class LibMatrixReorg
 			for( int i=0; i<rlen; i++ )
 				c.set(i, 0, vix[i]+1);
 		}
-
+		
 		return out;
 	}
 	
@@ -2188,10 +2174,7 @@ public class LibMatrixReorg
 						tasks.add(new MergeTask(start, stop, blockLength, valueIndexes, values));
 					}
 				}
-				List<Future<Object>> taskret = pool.invokeAll(tasks);
-				pool.shutdown();
-				for( Future<Object> task : taskret )
-					task.get();
+				CommonThreadPool.invokeAndShutdown(pool, tasks);
 				// recursive merge larger blocks.
 				mergeSortedBlocks(mergeBlockSize, valueIndexes, values, k);
 			}
@@ -2482,25 +2465,20 @@ public class LibMatrixReorg
 			
 			// Make copy of entire right side so that we use left side directly as output.
 			// Results in worst case (and most cases) allocation of extra array of half input size. 
-			int[] rhsCopy = new int[_end-middle];
-			double[] rhsCopyV = new double[_end-middle];
-			for(int i = middle ; i < _end ; i++){
-				rhsCopy[i-middle] = _indexes[i];
-				rhsCopyV[i-middle] = _values[i];
-			}
-			int pointrIndex = _end - middle - 1;
+			int[] rhsCopy = Arrays.copyOfRange(_indexes, middle, _end);
+			double[] rhsCopyV = Arrays.copyOfRange(_values, middle, _end);
 			
-			//int tmpI;
-			//double tmpD;
+			int pointrIndex = _end - middle - 1;
 			while (positionToAssign >= _start && pointrIndex >= 0) {
-				if  ( pointrIndex < 0 ||
-					( pointlIndex >= _start && _values[pointlIndex] > rhsCopyV[pointrIndex])
-					){
+				if( pointrIndex < 0 
+					|| ( pointlIndex >= _start && _values[pointlIndex] > rhsCopyV[pointrIndex]) )
+				{
 					_values[positionToAssign] = _values[pointlIndex];
 					_indexes[positionToAssign] = _indexes[pointlIndex];
 					pointlIndex--;
 					positionToAssign--;
-				} else {
+				}
+				else {
 					_values[positionToAssign] = rhsCopyV[pointrIndex];
 					_indexes[positionToAssign] = rhsCopy[pointrIndex];
 					positionToAssign--;
@@ -2509,6 +2487,41 @@ public class LibMatrixReorg
 			}
 
 			return 1l;
+		}
+	}
+	
+	private static class CopyTask implements Callable<Object>
+	{
+		private final MatrixBlock _in;
+		private final MatrixBlock _out;
+		private final int[] _vix;
+		private final int _rl;
+		private final int _ru;
+
+		protected CopyTask(MatrixBlock in, MatrixBlock out, int[] vix, int rl, int ru) {
+			_in = in;
+			_out = out;
+			_vix = vix;
+			_rl = rl;
+			_ru = ru;
+		}
+
+		@Override
+		public Object call() {
+			int clen = _in.clen;
+			if( !_out.sparse ) { //DENSE
+				DenseBlock a = _in.getDenseBlock();
+				DenseBlock c = _out.getDenseBlock();
+				for( int i=_rl; i<_ru; i++ )
+					System.arraycopy(a.values(_vix[i]), a.pos(_vix[i]), c.values(i), c.pos(i), clen);
+			}
+			else { //SPARSE
+				for( int i=_rl; i<_ru; i++ )
+					if( !_in.sparseBlock.isEmpty(_vix[i]) )
+						_out.sparseBlock.set(i, _in.sparseBlock.get(_vix[i]),
+							!SHALLOW_COPY_REORG); //row remains unchanged
+			}
+			return null;
 		}
 	}
 }

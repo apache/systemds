@@ -162,6 +162,11 @@ public class DataGenOp extends MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isMultiThreadedOpType() {
+		return _op == DataGenMethod.RAND;
+	}
+	
+	@Override
 	public Lop constructLops() 
 	{
 		//return already created lops

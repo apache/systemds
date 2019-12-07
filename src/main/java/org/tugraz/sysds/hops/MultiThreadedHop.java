@@ -44,4 +44,8 @@ public abstract class MultiThreadedHop extends Hop
 	public final int getMaxNumThreads() {
 		return _maxNumThreads;
 	}
+	
+	//force implementing hops to make relevant
+	//sub operation types as multi-threaded or not
+	public abstract boolean isMultiThreadedOpType();
 }

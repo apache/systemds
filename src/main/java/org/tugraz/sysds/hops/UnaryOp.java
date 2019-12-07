@@ -114,6 +114,12 @@ public class UnaryOp extends MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isMultiThreadedOpType() {
+		return isCumulativeUnaryOperation()
+			|| isExpensiveUnaryOperation();
+	}
+	
+	@Override
 	public Lop constructLops()
 	{
 		//reuse existing lop

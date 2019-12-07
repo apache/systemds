@@ -175,6 +175,11 @@ public class QuaternaryOp extends MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isMultiThreadedOpType() {
+		return true;
+	}
+	
+	@Override
 	public Lop constructLops() 
 	{
 		//return already created lops

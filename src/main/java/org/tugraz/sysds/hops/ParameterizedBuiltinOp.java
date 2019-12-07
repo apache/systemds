@@ -137,6 +137,12 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 	}
 	
 	@Override
+	public boolean isMultiThreadedOpType() {
+		return HopRewriteUtils.isValidOp(_op, 
+			ParamBuiltinOp.GROUPEDAGG, ParamBuiltinOp.REXPAND, ParamBuiltinOp.PARAMSERV);
+	}
+	
+	@Override
 	public Lop constructLops() 
 	{
 		//return already created lops
@@ -674,8 +680,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 	}
 	
 	@Override 
-	public boolean allowsAllExecTypes()
-	{
+	public boolean allowsAllExecTypes() {
 		return false;
 	}
 	

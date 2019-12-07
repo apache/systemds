@@ -92,8 +92,8 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 		}
 		else if( "list".equals(getOpcode()) ) {
 			//obtain all input data objects, incl handling of literals
-			List<Data> data = Arrays.stream(inputs)
-				.map(in -> ec.getVariable(in)).collect(Collectors.toList());
+			List<Data> data = (inputs== null) ? new ArrayList<>() :
+				Arrays.stream(inputs).map(in -> ec.getVariable(in)).collect(Collectors.toList());
 			
 			//create list object over all inputs
 			ListObject list = new ListObject(data);

@@ -911,19 +911,11 @@ public class TestUtils
 		
 	}
 	
-	/**
-	 * 
-	 * @param matrix
-	 * @param rows
-	 * @param cols
-	 * @return
-	 */
 	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix, int rows, int cols)
-	{		
+	{
 		double [][] ret_arr = new double[rows][cols];
 		
-		for(CellIndex ci:matrix.keySet())
-		{
+		for(CellIndex ci:matrix.keySet()) {
 			int i = ci.row-1;
 			int j = ci.column-1;
 			ret_arr[i][j] = matrix.get(ci);

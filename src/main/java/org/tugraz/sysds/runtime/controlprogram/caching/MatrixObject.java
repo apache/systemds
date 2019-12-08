@@ -22,6 +22,7 @@
 package org.tugraz.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.Pair;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
@@ -32,6 +33,10 @@ import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.controlprogram.federated.FederatedData;
+import org.tugraz.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.tugraz.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.tugraz.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
@@ -47,6 +52,9 @@ import org.tugraz.sysds.runtime.util.IndexRange;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 /**
@@ -82,6 +90,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
+	
+	private TreeMap<FederatedRange, FederatedData> _fedMapping = null; // mapping for federated matrixobject
 	
 	/**
 	 * Constructor that takes the value type and the HDFS filename.
@@ -129,7 +139,68 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_partitionSize = mo._partitionSize;
 		_partitionCacheName = mo._partitionCacheName;
 	}
-
+	
+	public void federate(List<Pair<FederatedRange, FederatedData>> workers) {
+		_fedMapping = new TreeMap<>();
+		for (Pair<FederatedRange, FederatedData> t : workers) {
+			// TODO support all value types
+			_fedMapping.put(t.getLeft(), t.getRight());
+		}
+		for (Map.Entry<FederatedRange, FederatedData> entry : _fedMapping.entrySet()) {
+			FederatedRange range = entry.getKey();
+			FederatedData value = entry.getValue();
+			if( !value.isInitialized() ) {
+				long[] beginDims = range.getBeginDims();
+				long[] endDims = range.getEndDims();
+				long[] dims = getDataCharacteristics().getDims();
+				for (int i = 0; i < dims.length; i++)
+					dims[i] = endDims[i] - beginDims[i];
+				value.initFederatedData();
+			}
+		}
+	}
+	
+	public boolean isFederated() {
+		return _fedMapping != null;
+	}
+	
+	@Override
+	public MatrixBlock acquireRead() {
+		if (!isFederated())
+			return super.acquireRead();
+		
+		//obtain matrix block from remote sites
+		long[] dims = getDataCharacteristics().getDims();
+		MatrixBlock result = new MatrixBlock((int) dims[0], (int) dims[1], false);
+		for (Map.Entry<FederatedRange, FederatedData> entry : _fedMapping.entrySet()) {
+			FederatedRange range = entry.getKey();
+			// TODO generalize for n dimensions
+			int[] beginDimsInt = range.getBeginDimsInt();
+			int[] endDimsInt = range.getEndDimsInt();
+			
+			FederatedData fd = entry.getValue();
+			MatrixBlock multRes;
+			if( fd.isInitialized() ) {
+				FederatedRequest request = new FederatedRequest(FederatedRequest.FedMethod.TRANSFER);
+				FederatedResponse response = fd.executeFederatedOperation(request, true);
+				if( !response.isSuccessful() ) {
+					throw new DMLRuntimeException("Federated tensor multiplication failed: " + response.getErrorMessage());
+				}
+				multRes = (MatrixBlock) response.getData();
+			}
+			else {
+				throw new DMLRuntimeException("Federated tensor operations only supported on federated tensorObjects");
+			}
+			result.copy(beginDimsInt[0], endDimsInt[0] - 1, beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
+		}
+		
+		//keep obtained block in buffer pool 
+		//(release then works as with any other cachable data)
+		acquireModify(result);
+		
+		return result;
+	}
+	
 	public void setUpdateType(UpdateType flag) {
 		_updateType = flag;
 	}

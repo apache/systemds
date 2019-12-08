@@ -22,6 +22,7 @@ package org.tugraz.sysds.runtime.instructions;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.tugraz.sysds.runtime.instructions.fed.FEDInstruction;
 import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
 
@@ -52,6 +53,12 @@ public class InstructionParser
 				if( gputype == null )
 					throw new DMLRuntimeException("Unknown GPU instruction: " + str);
 				return GPUInstructionParser.parseSingleInstruction (gputype, str);
+			}
+			case FED: {
+				FEDInstruction.FEDType fedtype = InstructionUtils.getFEDType(str);
+				if( fedtype == null )
+					throw new DMLRuntimeException("Unknown FEDERATED instruction: " + str);
+				return FEDInstructionParser.parseSingleInstruction (fedtype, str);
 			}
 			default:
 				throw new DMLRuntimeException("Unknown execution type in instruction: " + str);

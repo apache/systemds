@@ -431,7 +431,7 @@ public class CPInstructionParser extends InstructionParser
 			case Sql:
 				return SqlCPInstruction.parseInstruction(str);
 			
-			default: 
+			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
 		}
 	}

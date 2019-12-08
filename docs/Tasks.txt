@@ -153,5 +153,12 @@ SYSTEMDS-210 Extended lists Operations
  * 213 Add entries to lists                                           OK
  * 214 Removal of entries from lists                                  OK
 
+SYSTEMDS-220 Federated Tensors and Instructions
+ * 221 Initial infrastructure federated operations                    OK
+ * 222 Federated matrix-vector multiplication
+ * 223 Federated unary aggregates
+ * 224 Federated transform functionality
+ * 225 Federated elementwise operations
+
 Others:
  * Break append instruction to cbind and rbind 

@@ -32,7 +32,8 @@ public abstract class Instruction
 		CONTROL_PROGRAM,
 		BREAKPOINT,
 		SPARK,
-		GPU
+		GPU,
+		FEDERATED
 	}
 	
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());

@@ -60,6 +60,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
@@ -154,7 +155,7 @@ public class DMLScript
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-
+		
 		try {
 			DMLScript.executeScript(conf, otherArgs);
 		} catch (ParseException pe) {
@@ -210,6 +211,11 @@ public class DMLScript
 
 			if (dmlOptions.clean) {
 				cleanSystemDSWorkspace();
+				return true;
+			}
+			
+			if( dmlOptions.fedWorker ) {
+				startFederatedWorker(dmlOptions.fedWorkerPort);
 				return true;
 			}
 			
@@ -528,6 +534,17 @@ public class DMLScript
 		}
 		catch(Exception ex) {
 			throw new DMLException("Failed to run SystemDS workspace cleanup.", ex);
+		}
+	}
+	
+	private static void startFederatedWorker(int port) {
+		try {
+			new FederatedWorker(port).run();
+		} catch (ParseException e) {
+			System.err.println("-w flag should be followed by valid port number");
+		}
+		catch (Exception e) {
+			System.err.println(e.getMessage());
 		}
 	}
 	

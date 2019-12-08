@@ -132,7 +132,9 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						// by default, all transient reads and writes are in blocked format
 						dop.setBlocksize(blocksize);
 					}
-
+				}
+				else if (dop.getDataOpType() == Hop.DataOpTypes.FEDERATED) {
+					// TODO maybe do something here?
 				} else {
 					throw new HopsException(hop.printErrorLocation() + "unexpected non-scalar Data HOP in reblock.\n");
 				}

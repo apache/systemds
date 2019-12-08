@@ -21,14 +21,13 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 
 public class TensorReaderFactory {
-
 	public static TensorReader createTensorReader(InputInfo iinfo) {
 		TensorReader reader;
 
 		if (iinfo == InputInfo.TextCellInputInfo) {
 			reader = new TensorReaderTextCell();
 		}
-		else if (iinfo == InputInfo.BinaryBlockInputInfo) {
+		else if (iinfo == InputInfo.BinaryTensorBlockInputInfo) {
 			reader = new TensorReaderBinaryBlock();
 		}
 		else {

@@ -79,6 +79,9 @@ public class DataExpression extends DataIdentifier
 	public static final String SQL_PASS = "password";
 	public static final String SQL_QUERY = "query";
 	
+	public static final String FED_ADDRESSES = "addresses";
+	public static final String FED_RANGES = "ranges";
+	
 	public static final String FORMAT_TYPE = "format";
 	public static final String FORMAT_TYPE_VALUE_TEXT = "text";
 	public static final String FORMAT_TYPE_VALUE_BINARY = "binary";
@@ -113,6 +116,8 @@ public class DataExpression extends DataIdentifier
 		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
 	
 	public static final String[] SQL_VALID_PARAM_NAMES = {SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY};
+	
+	public static final String[] FEDERATED_VALID_PARAM_NAMES = {FED_ADDRESSES, FED_RANGES};
 
 	// Valid parameter names in a metadata file
 	public static final String[] READ_VALID_MTD_PARAM_NAMES =
@@ -415,6 +420,41 @@ public class DataExpression extends DataIdentifier
 			}
 			dataExpr.setSqlDefault();
 		}
+		else if (functionName.equals("federated")) {
+			dop = DataOp.FEDERATED;
+			dataExpr = new DataExpression(dop, new HashMap<>(), parseInfo);
+			int namedParamCount = 0, unnamedParamCount = 0;
+			for (ParameterExpression currExpr : passedParamExprs) {
+				if (currExpr.getName() == null)
+					unnamedParamCount++;
+				else
+					namedParamCount++;
+			}
+			if (passedParamExprs.size() != 2){
+				errorListener.validationError(parseInfo, "for federated statement, must specify exactly 2 argument: addresses, ranges");
+				return null;
+			}
+			if (unnamedParamCount > 0) {
+				if (namedParamCount > 0) {
+					errorListener.validationError(parseInfo, "for federated statement, cannot mix named and unnamed parameters");
+					return null;
+				}
+				ParameterExpression param = passedParamExprs.get(0);
+				dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+				param = passedParamExprs.get(1);
+				dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+			}
+			else {
+				ParameterExpression firstParam = passedParamExprs.get(0);
+				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.FED_ADDRESSES)){
+					errorListener.validationError(parseInfo, "federated method must have addresses parameter as first parameter or unnamed parameter");
+					return null;
+				}
+				for (ParameterExpression passedParamExpr : passedParamExprs) {
+					dataExpr.addFederatedExprParam(passedParamExpr.getName(), passedParamExpr.getExpr());
+				}
+			}
+		}
 
 		if (dataExpr != null) {
 			dataExpr.setParseInfo(parseInfo);
@@ -537,7 +577,23 @@ public class DataExpression extends DataIdentifier
 		paramValue.setParseInfo(this);
 		addVarParam(paramName,paramValue);
 	}
-
+	
+	public void addFederatedExprParam(String paramName, Expression paramValue) {
+		// check name is valid
+		boolean found = (paramName != null ) && 
+			Arrays.asList(FEDERATED_VALID_PARAM_NAMES).contains(paramName);
+		
+		if (!found)
+			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for federated statement are "
+				+ "(capitalization-sensitive): " + FED_ADDRESSES + ", " + FED_RANGES);
+		if (getVarParam(paramName) != null)
+			raiseValidateError("attempted to add federated statement parameter " + paramValue + " more than once");
+		
+		// add the parameter to expression list
+		paramValue.setParseInfo(this);
+		addVarParam(paramName,paramValue);
+	}
+	
 	public DataExpression(DataOp op, HashMap<String, Expression> varParams, ParseInfo parseInfo) {
 		_opcode = op;
 		_varParams = varParams;
@@ -721,7 +777,8 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			inputParamExpr.validateExpression(ids, currConstVars, conditional);
-			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS)) {
+			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA) &&
+					!s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES)) {
 				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
@@ -1804,20 +1861,20 @@ public class DataExpression extends DataIdentifier
 							SQL_USER + ", " + SQL_PASS + ", " + SQL_QUERY);
 			
 			//validate correct value types
-			Expression connExp = getVarParam(SQL_CONN);
-			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+			Expression exp = getVarParam(SQL_CONN);
+			if( !(exp instanceof StringIdentifier) && exp instanceof Identifier ) {
 				raiseValidateError("for tensor statement " + SQL_CONN + " has incorrect value type", conditional);
 			}
-			connExp = getVarParam(SQL_USER);
-			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+			exp = getVarParam(SQL_USER);
+			if( !(exp instanceof StringIdentifier) && exp instanceof Identifier ) {
 				raiseValidateError("for tensor statement " + SQL_USER + " has incorrect value type", conditional);
 			}
-			connExp = getVarParam(SQL_PASS);
-			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+			exp = getVarParam(SQL_PASS);
+			if( !(exp instanceof StringIdentifier) && exp instanceof Identifier ) {
 				raiseValidateError("for tensor statement " + SQL_PASS + " has incorrect value type", conditional);
 			}
-			connExp = getVarParam(SQL_QUERY);
-			if( !(connExp instanceof StringIdentifier) && connExp instanceof Identifier ) {
+			exp = getVarParam(SQL_QUERY);
+			if( !(exp instanceof StringIdentifier) && exp instanceof Identifier ) {
 				raiseValidateError("for tensor statement " + SQL_QUERY + " has incorrect value type", conditional);
 			}
 			
@@ -1836,7 +1893,28 @@ public class DataExpression extends DataIdentifier
 				LOG.warn(this.printWarningLocation() + "Output for sql statement may have incorrect size information");
 			}
 			break;
-	
+			
+		case FEDERATED:
+			validateParams(conditional, FEDERATED_VALID_PARAM_NAMES,
+					"Legal parameters for federated statement are (case-sensitive): " + FED_ADDRESSES + ", " +
+					FED_RANGES);
+			exp = getVarParam(FED_ADDRESSES);
+			if( !(exp instanceof DataIdentifier) ) {
+				raiseValidateError("for federated statement " + FED_ADDRESSES + " has incorrect value type", conditional);
+			}
+			getVarParam(FED_ADDRESSES).validateExpression(ids, currConstVars, conditional);
+			exp = getVarParam(FED_RANGES);
+			if( !(exp instanceof DataIdentifier) ) {
+				raiseValidateError("for federated statement " + FED_RANGES + " has incorrect value type", conditional);
+			}
+			getVarParam(FED_RANGES).validateExpression(ids, currConstVars, conditional);
+			
+			// TODO format type?
+			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setDataType(DataType.MATRIX);
+			getOutput().setValueType(ValueType.UNKNOWN);
+			getOutput().setDimensions(-1, -1);
+			break;
 		default:
 			raiseValidateError("Unsupported Data expression "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
 		}

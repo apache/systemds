@@ -521,6 +521,38 @@ public class TensorBlock implements CacheBlock, Externalizable {
 		}
 		return this;
 	}
+	
+	/**
+	 * Copy a part of another <code>TensorBlock</code>. The difference to <code>copy()</code> is that
+	 * this allows for exact sub-blocks instead of taking all consecutive data elements from lower to upper.
+	 * @param lower lower index of elements to copy (inclusive)
+	 * @param upper upper index of elements to copy (exclusive)
+	 * @param src source <code>TensorBlock</code>
+	 */
+	public TensorBlock copyExact(int[] lower, int[] upper, TensorBlock src) {
+		int[] destIx = lower.clone();
+		int[] srcIx = new int[lower.length];
+		long length = src.getLength();
+		for (long l = 0; l < length; l++) {
+			set(destIx, src.get(srcIx));
+			int i = src.getNumDims() - 1;
+			srcIx[i]++;
+			destIx[i]++;
+			//calculating next index
+			while (srcIx[i] == src.getDim(i)) {
+				srcIx[i] = 0;
+				destIx[i] = lower[i];
+				i--;
+				if (i < 0) {
+					//we are finished
+					return this;
+				}
+				srcIx[i]++;
+				destIx[i]++;
+			}
+		}
+		return this;
+	}
 
 	// `getExactSerializedSize()`, `write(DataOutput)` and `readFields(DataInput)` have to match in their serialized
 	// form definition

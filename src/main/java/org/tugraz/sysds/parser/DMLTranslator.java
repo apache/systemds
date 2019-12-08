@@ -1487,7 +1487,8 @@ public class DMLTranslator
 				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
 			else if( source instanceof DataExpression ) {
 				Hop ae = processDataExpression((DataExpression)source, target, hops);
-				if (ae instanceof DataOp && ((DataOp) ae).getDataOpType() != DataOpTypes.SQLREAD){
+				if (ae instanceof DataOp && ((DataOp) ae).getDataOpType() != DataOpTypes.SQLREAD &&
+						((DataOp) ae).getDataOpType() != DataOpTypes.FEDERATED) {
 					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
 					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
 				}
@@ -2066,6 +2067,11 @@ public class DMLTranslator
 		case SQL:
 			currBuiltinOp = new DataOp(target.getName(), target.getDataType(),
 				target.getValueType(), DataOpTypes.SQLREAD, paramHops);
+			break;
+			
+		case FEDERATED:
+			currBuiltinOp = new DataOp(target.getName(), target.getDataType(),
+					target.getValueType(), DataOpTypes.FEDERATED, paramHops);
 			break;
 
 		default:

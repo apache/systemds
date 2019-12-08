@@ -192,17 +192,25 @@ public class ListObject extends Data {
 		return set(pos1, pos2, data);
 	}
 	
-	public ListObject append(Data dat) {
-		append(null, dat);
+	public ListObject add(Data dat) {
+		add(null, dat);
 		return this;
 	}
 	
-	public ListObject append(String name, Data dat) {
+	public ListObject add(String name, Data dat) {
 		if( _names != null && name == null )
-			throw new DMLRuntimeException("Cannot append to a named list");
+			throw new DMLRuntimeException("Cannot add to a named list");
 		//otherwise append and ignore name
 		_data.add(dat);
 		return this;
+	}
+	
+	public ListObject remove(int pos) {
+		ListObject ret = new ListObject(Arrays.asList(_data.get(pos)));
+		_data.remove(pos);
+		if( _names != null )
+			_names.remove(pos);
+		return ret;
 	}
 	
 	private int getPosForName(String name) {

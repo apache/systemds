@@ -71,11 +71,11 @@ public class CPInstructionParser extends InstructionParser
 	public static final HashMap<String, CPType> String2CPInstructionType;
 	static {
 		String2CPInstructionType = new HashMap<>();
-		String2CPInstructionType.put( "ba+*"   	, CPType.AggregateBinary);
+		String2CPInstructionType.put( "ba+*"    , CPType.AggregateBinary);
 		String2CPInstructionType.put( "tak+*"   , CPType.AggregateTernary);
 		String2CPInstructionType.put( "tack+*"  , CPType.AggregateTernary);
 		
-		String2CPInstructionType.put( "uak+"   	, CPType.AggregateUnary);
+		String2CPInstructionType.put( "uak+"    , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uark+"   , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uack+"   , CPType.AggregateUnary);
 		String2CPInstructionType.put( "uasqk+"  , CPType.AggregateUnary);
@@ -191,8 +191,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "list",   CPType.BuiltinNary);
 		
 		// Parameterized Builtin Functions
-		String2CPInstructionType.put("paramserv", 		CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "nvlist",  CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put("paramserv",       CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "nvlist",         CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "invcdf",         CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "groupedagg",     CPType.ParameterizedBuiltin);
@@ -215,9 +215,9 @@ public class CPInstructionParser extends InstructionParser
 		
 		// Variable Instruction Opcodes 
 		String2CPInstructionType.put( "assignvar"   , CPType.Variable);
-		String2CPInstructionType.put( "cpvar"    	, CPType.Variable);
-		String2CPInstructionType.put( "mvvar"    	, CPType.Variable);
-		String2CPInstructionType.put( "rmvar"    	, CPType.Variable);
+		String2CPInstructionType.put( "cpvar"       , CPType.Variable);
+		String2CPInstructionType.put( "mvvar"       , CPType.Variable);
+		String2CPInstructionType.put( "rmvar"       , CPType.Variable);
 		String2CPInstructionType.put( "rmfilevar"   , CPType.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_SCALAR_OPCODE, CPType.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_MATRIX_OPCODE, CPType.Variable);
@@ -226,16 +226,16 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( UnaryCP.CAST_AS_INT_OPCODE,    CPType.Variable);
 		String2CPInstructionType.put( UnaryCP.CAST_AS_BOOLEAN_OPCODE, CPType.Variable);
 		String2CPInstructionType.put( "attachfiletovar"  , CPType.Variable);
-		String2CPInstructionType.put( "read"  		, CPType.Variable);
-		String2CPInstructionType.put( "write" 		, CPType.Variable);
+		String2CPInstructionType.put( "read"        , CPType.Variable);
+		String2CPInstructionType.put( "write"       , CPType.Variable);
 		String2CPInstructionType.put( "createvar"   , CPType.Variable);
 
 		// Reorg Instruction Opcodes (repositioning of existing values)
-		String2CPInstructionType.put( "r'"   	    , CPType.Reorg);
-		String2CPInstructionType.put( "rev"   	    , CPType.Reorg);
+		String2CPInstructionType.put( "r'"          , CPType.Reorg);
+		String2CPInstructionType.put( "rev"         , CPType.Reorg);
 		String2CPInstructionType.put( "rdiag"       , CPType.Reorg);
 		String2CPInstructionType.put( "rshape"      , CPType.Reshape);
-		String2CPInstructionType.put( "rsort"      , CPType.Reorg);
+		String2CPInstructionType.put( "rsort"       , CPType.Reorg);
 
 		// Opcodes related to convolutions
 		String2CPInstructionType.put( "relu_backward"      , CPType.Dnn);
@@ -257,14 +257,15 @@ public class CPInstructionParser extends InstructionParser
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPType.Quaternary);
 		String2CPInstructionType.put( "wsigmoid", CPType.Quaternary);
-		String2CPInstructionType.put( "wdivmm"  , CPType.Quaternary);
-		String2CPInstructionType.put( "wcemm"   , CPType.Quaternary);
-		String2CPInstructionType.put( "wumm"    , CPType.Quaternary);
+		String2CPInstructionType.put( "wdivmm",   CPType.Quaternary);
+		String2CPInstructionType.put( "wcemm",    CPType.Quaternary);
+		String2CPInstructionType.put( "wumm",     CPType.Quaternary);
 		
 		// User-defined function Opcodes
-		String2CPInstructionType.put( "extfunct"   	, CPType.External);
+		String2CPInstructionType.put( "extfunct", CPType.External);
 
 		String2CPInstructionType.put( Append.OPCODE, CPType.Append);
+		String2CPInstructionType.put( "remove",      CPType.Append);
 		
 		// data generation opcodes
 		String2CPInstructionType.put( DataGen.RAND_OPCODE   , CPType.Rand);
@@ -273,31 +274,31 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( DataGen.SAMPLE_OPCODE , CPType.Rand);
 		String2CPInstructionType.put( DataGen.TIME_OPCODE   , CPType.Rand);
 
-		String2CPInstructionType.put( "ctable", 		CPType.Ctable);
-		String2CPInstructionType.put( "ctableexpand", 	CPType.Ctable);
+		String2CPInstructionType.put( "ctable",       CPType.Ctable);
+		String2CPInstructionType.put( "ctableexpand", CPType.Ctable);
 		
 		//central moment, covariance, quantiles (sort/pick)
-		String2CPInstructionType.put( "cm"    , CPType.CentralMoment);
-		String2CPInstructionType.put( "cov"   , CPType.Covariance);
-		String2CPInstructionType.put( "qsort"  , CPType.QSort);
-		String2CPInstructionType.put( "qpick"  , CPType.QPick);
+		String2CPInstructionType.put( "cm",    CPType.CentralMoment);
+		String2CPInstructionType.put( "cov",   CPType.Covariance);
+		String2CPInstructionType.put( "qsort", CPType.QSort);
+		String2CPInstructionType.put( "qpick", CPType.QPick);
 		
 		
 		String2CPInstructionType.put( RightIndex.OPCODE, CPType.MatrixIndexing);
 		String2CPInstructionType.put( LeftIndex.OPCODE, CPType.MatrixIndexing);
 	
-		String2CPInstructionType.put( "tsmm"   , CPType.MMTSJ);
-		String2CPInstructionType.put( "pmm"   , CPType.PMMJ);
-		String2CPInstructionType.put( "mmchain"   , CPType.MMChain);
+		String2CPInstructionType.put( "tsmm",    CPType.MMTSJ);
+		String2CPInstructionType.put( "pmm",     CPType.PMMJ);
+		String2CPInstructionType.put( "mmchain", CPType.MMChain);
 		
 		String2CPInstructionType.put( "qr",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "lu",    CPType.MultiReturnBuiltin);
 		String2CPInstructionType.put( "eigen", CPType.MultiReturnBuiltin);
-		String2CPInstructionType.put( "svd", 	 CPType.MultiReturnBuiltin);
+		String2CPInstructionType.put( "svd",   CPType.MultiReturnBuiltin);
 
-		String2CPInstructionType.put( "partition", 	CPType.Partition);
-		String2CPInstructionType.put( "compress", 	CPType.Compression);
-		String2CPInstructionType.put( "spoof", 		CPType.SpoofFused);
+		String2CPInstructionType.put( "partition", CPType.Partition);
+		String2CPInstructionType.put( "compress",  CPType.Compression);
+		String2CPInstructionType.put( "spoof",     CPType.SpoofFused);
 		
 		String2CPInstructionType.put( "sql", CPType.Sql);
 	}

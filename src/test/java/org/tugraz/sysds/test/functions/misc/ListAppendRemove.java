@@ -111,7 +111,7 @@ public class ListAppendRemove extends AutomatedTestBase
 			//check for properly compiled CP operations for list 
 			//(but spark instructions for sum, indexing, write)
 			int numExpected = (type == ExecType.CP) ? 0 :
-				conditional ? 4 : 3;
+				conditional ? 5 : 4;
 			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==numExpected);
 			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==numExpected);
 		}

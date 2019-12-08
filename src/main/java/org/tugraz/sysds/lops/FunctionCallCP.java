@@ -26,6 +26,7 @@ import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.DMLProgram;
+import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -77,6 +78,10 @@ public class FunctionCallCP extends Lop
 
 	public ArrayList<Lop> getFunctionOutputs() {
 		return _outputLops;
+	}
+	
+	public boolean requiresOutputCreateVar() {
+		return !_fname.equalsIgnoreCase(Builtins.REMOVE.getName());
 	}
 	
 	@Override

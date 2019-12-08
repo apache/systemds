@@ -2122,6 +2122,7 @@ public class DMLTranslator
 			case LSTM_BACKWARD:
 			case BATCH_NORM2D:
 			case BATCH_NORM2D_BACKWARD:
+			case REMOVE:
 			case SVD:
 				
 				// Number of outputs = size of targetList = #of identifiers in source.getOutputs

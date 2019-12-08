@@ -30,5 +30,11 @@ for(i in 1:7)
   L = append(L, as.matrix(i))
 R[2,] = length(L);
 
+# list remove
+for(i in 1:4) {
+  [L,x] = remove(L, 2);
+	print(toString(as.matrix(x))); 
+}
+R[3,] = length(L);
 
 write(R, $2);

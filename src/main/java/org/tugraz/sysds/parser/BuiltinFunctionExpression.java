@@ -328,7 +328,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			setDimensions(dBias, getThirdExpr());
 			break;
 		}
-		case EIGEN:
+		case EIGEN: {
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
 			
@@ -353,7 +353,29 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			eigenOut2.setBlocksize(getFirstExpr().getOutput().getBlocksize());
 			
 			break;
-
+		}
+		case REMOVE: {
+			checkNumParameters(2);
+			checkListParam(getFirstExpr());
+			
+			// setup output properties
+			DataIdentifier out1 = (DataIdentifier) getOutputs()[0];
+			DataIdentifier out2 = (DataIdentifier) getOutputs()[1];
+			
+			// Output1 - Eigen Values
+			out1.setDataType(DataType.LIST);
+			out1.setValueType(getFirstExpr().getOutput().getValueType());
+			out1.setDimensions(getFirstExpr().getOutput().getDim1()-1, 1);
+			out1.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+			
+			// Output2 - Eigen Vectors
+			out2.setDataType(DataType.LIST);
+			out2.setValueType(getFirstExpr().getOutput().getValueType());
+			out2.setDimensions(1, 1);
+			out2.setBlocksize(getFirstExpr().getOutput().getBlocksize());
+			
+			break;
+		}
 		case SVD:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -1738,7 +1760,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					this.getOpCode().toString().toLowerCase() + "().", false);
 		}
 	}
-
+	
 	protected void checkMatrixTensorParam(Expression e) {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
 			// Param is not a matrix
@@ -1770,14 +1792,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	private void checkScalarParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.SCALAR) {
-			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+			raiseValidateError("Expecting scalar parameter for function " + getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
+	}
+	
+	private void checkListParam(Expression e) { //always unconditional
+		if (e.getOutput().getDataType() != DataType.LIST) {
+			raiseValidateError("Expecting scalar parameter for function " + getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 	
 	@SuppressWarnings("unused")
 	private void checkScalarFrameParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.SCALAR && e.getOutput().getDataType() != DataType.FRAME) {
-			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+			raiseValidateError("Expecting scalar parameter for function " + getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 

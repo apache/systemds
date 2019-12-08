@@ -819,8 +819,9 @@ public class Dag<N extends Lop>
 			else {
 				// If the function call is set with output lops (e.g., multi return builtin),
 				// generate a createvar instruction for each function output
+				// (except for remove, which creates list outputs, i.e., meta data objects)
 				FunctionCallCP fcall = (FunctionCallCP) node;
-				if ( fcall.getFunctionOutputs() != null ) {
+				if ( fcall.getFunctionOutputs() != null && fcall.requiresOutputCreateVar() ) {
 					for( Lop fnOut: fcall.getFunctionOutputs()) {
 						OutputParameters fnOutParams = fnOut.getOutputParameters();
 						//OutputInfo oinfo = getOutputInfo((N)fnOut, false);

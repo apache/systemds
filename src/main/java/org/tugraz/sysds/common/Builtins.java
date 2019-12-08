@@ -126,6 +126,7 @@ public enum Builtins {
 	QUANTILE("quantile", false),
 	RANGE("range", false),
 	RBIND("rbind", false),
+	REMOVE("remove", false, ReturnType.MULTI_RETURN),
 	REV("rev", false),
 	ROUND("round", false),
 	ROWINDEXMAX("rowIndexMax", false),

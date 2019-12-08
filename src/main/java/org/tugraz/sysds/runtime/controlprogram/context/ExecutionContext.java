@@ -8,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -228,7 +228,7 @@ public class ExecutionContext {
 
 		return (TensorObject) dat;
 	}
-
+	
 	public boolean isFrameObject(String varname) {
 		Data dat = getVariable(varname);
 		return (dat!= null && dat instanceof FrameObject);
@@ -258,7 +258,7 @@ public class ExecutionContext {
 		if( dat == null )
 			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
 		if( !(dat instanceof CacheableData<?>) )
-			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix or frame.");
+			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix, tensor or frame.");
 		return (CacheableData<?>) dat;
 	}
 
@@ -272,7 +272,7 @@ public class ExecutionContext {
 	
 	/**
 	 * Pins a matrix variable into memory and returns the internal matrix block.
-	 * 
+	 *
 	 * @param varName variable name
 	 * @return matrix block
 	 */
@@ -292,14 +292,14 @@ public class ExecutionContext {
 
 	public void setMetaData(String varName, long nrows, long ncols) {
 		MatrixObject mo = getMatrixObject(varName);
-		if(mo.getNumRows() == nrows && mo.getNumColumns() == ncols) 
+		if(mo.getNumRows() == nrows && mo.getNumColumns() == ncols)
 			return;
 		MetaData oldMetaData = mo.getMetaData();
 		if( oldMetaData == null || !(oldMetaData instanceof MetaDataFormat) )
 			throw new DMLRuntimeException("Metadata not available");
 		MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols,
 			(int) mo.getBlocksize());
-		mo.setMetaData(new MetaDataFormat(mc, 
+		mo.setMetaData(new MetaDataFormat(mc,
 			((MetaDataFormat)oldMetaData).getOutputInfo(),
 			((MetaDataFormat)oldMetaData).getInputInfo()));
 	}
@@ -307,7 +307,7 @@ public class ExecutionContext {
 	/**
 	 * Compares two potential dimensions d1 and d2 and return the one which is not -1.
 	 * This method is useful when the dimensions are not known at compile time, but are known at runtime.
-	 *  
+	 *
 	 * @param d1 dimension1
 	 * @param d2 dimension1
 	 * @return valid d1 or d2
@@ -336,7 +336,7 @@ public class ExecutionContext {
 	/**
 	 * Allocates a sparse matrix in CSR format on the GPU.
 	 * Assumes that mat.getNumRows() returns a valid number
-	 * 
+	 *
 	 * @param varName variable name
 	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
@@ -406,8 +406,8 @@ public class ExecutionContext {
 	}
 	
 	/**
-	 * Unpins a currently pinned matrix variable and update fine-grained statistics. 
-	 * 
+	 * Unpins a currently pinned matrix variable and update fine-grained statistics.
+	 *
 	 * @param varName variable name
 	 */
 	public void releaseMatrixInput(String varName) {
@@ -425,7 +425,7 @@ public class ExecutionContext {
 	
 	/**
 	 * Pins a frame variable into memory and returns the internal frame block.
-	 * 
+	 *
 	 * @param varName variable name
 	 * @return frame block
 	 */
@@ -434,8 +434,8 @@ public class ExecutionContext {
 	}
 	
 	/**
-	 * Unpins a currently pinned frame variable. 
-	 * 
+	 * Unpins a currently pinned frame variable.
+	 *
 	 * @param varName variable name
 	 */
 	public void releaseFrameInput(String varName) {
@@ -452,7 +452,7 @@ public class ExecutionContext {
 	}
 
 	public ScalarObject getScalarInput(CPOperand input) {
-		return input.isLiteral() ? input.getLiteral() : 
+		return input.isLiteral() ? input.getLiteral() :
 			getScalarInput(input.getName(), input.getValueType(), false);
 	}
 	
@@ -534,7 +534,7 @@ public class ExecutionContext {
 		to.release();
 		setVariable(varName, to);
 	}
-
+	
 	public void setFrameOutput(String varName, FrameBlock outputData) {
 		FrameObject fo = getFrameObject(varName);
 		fo.acquireModify(outputData);
@@ -583,20 +583,20 @@ public class ExecutionContext {
 	}
 	
 	/**
-	 * Pin a given list of variables i.e., set the "clean up" state in 
+	 * Pin a given list of variables i.e., set the "clean up" state in
 	 * corresponding matrix objects, so that the cached data inside these
-	 * objects is not cleared and the corresponding HDFS files are not 
-	 * deleted (through rmvar instructions). 
-	 * 
-	 * This is necessary for: function input variables, parfor result variables, 
+	 * objects is not cleared and the corresponding HDFS files are not
+	 * deleted (through rmvar instructions).
+	 *
+	 * This is necessary for: function input variables, parfor result variables,
 	 * parfor shared inputs that are passed to functions.
-	 * 
+	 *
 	 * The function returns the OLD "clean up" state of matrix objects.
-	 * 
+	 *
 	 * @param varList variable list
 	 * @return indicator vector of old cleanup state of matrix objects
 	 */
-	public boolean[] pinVariables(List<String> varList) 
+	public boolean[] pinVariables(List<String> varList)
 	{
 		//analyze list variables
 		int nlist = 0;
@@ -640,16 +640,16 @@ public class ExecutionContext {
 	/**
 	 * Unpin the a given list of variables by setting their "cleanup" status
 	 * to the values specified by <code>varsStats</code>.
-	 * 
+	 *
 	 * Typical usage:
-	 *    <code> 
+	 *    <code>
 	 *    oldStatus = pinVariables(varList);
 	 *    ...
 	 *    unpinVariables(varList, oldStatus);
 	 *    </code>
-	 * 
+	 *
 	 * i.e., a call to unpinVariables() is preceded by pinVariables().
-	 * 
+	 *
 	 * @param varList variable list
 	 * @param varsState variable state
 	 */
@@ -666,8 +666,8 @@ public class ExecutionContext {
 	}
 	
 	/**
-	 * NOTE: No order guaranteed, so keep same list for pin and unpin. 
-	 * 
+	 * NOTE: No order guaranteed, so keep same list for pin and unpin.
+	 *
 	 * @return list of all variable names.
 	 */
 	public ArrayList<String> getVarList() {
@@ -675,15 +675,15 @@ public class ExecutionContext {
 	}
 	
 	/**
-	 * NOTE: No order guaranteed, so keep same list for pin and unpin. 
-	 * 
+	 * NOTE: No order guaranteed, so keep same list for pin and unpin.
+	 *
 	 * @return list of all variable names of partitioned matrices.
 	 */
 	public ArrayList<String> getVarListPartitioned() {
 		ArrayList<String> ret = new ArrayList<>();
 		for( String var : _variables.keySet() ) {
 			Data dat = _variables.get(var);
-			if( dat instanceof MatrixObject 
+			if( dat instanceof MatrixObject
 				&& ((MatrixObject)dat).isPartitioned() )
 				ret.add(var);
 		}

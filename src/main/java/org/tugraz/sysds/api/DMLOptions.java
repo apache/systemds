@@ -53,7 +53,7 @@ public class DMLOptions {
 	public int                  statsCount    = 10;               // Default statistics count
 	public boolean              memStats      = false;            // max memory statistics
 	public Explain.ExplainType  explainType   = Explain.ExplainType.NONE;  // Whether to print the "Explain" and if so, what type
-	public ExecMode             execMode = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
+	public ExecMode             execMode      = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
 	public boolean              gpu           = false;            // Whether to use the GPU
 	public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
 	public boolean              debug         = false;            // to go into debug mode to be able to step through a program
@@ -62,8 +62,10 @@ public class DMLOptions {
 	public boolean              help          = false;            // whether to print the usage option
 	public boolean              lineage       = false;            // whether compute lineage trace
 	public boolean              lineage_dedup = false;            // whether deduplicate lineage items
-	public ReuseCacheType       linReuseType = ReuseCacheType.NONE;
-
+	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE;
+	public boolean              fedWorker     = false;
+	public int                  fedWorkerPort = -1;
+	
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
 	public DMLOptions(Options opts) {
@@ -88,6 +90,7 @@ public class DMLOptions {
 			", script='" + script + '\'' +
 			", help=" + help +
 			", lineage=" + lineage +
+			", w=" + fedWorker +
 			'}';
 	}
 	
@@ -174,9 +177,14 @@ public class DMLOptions {
 		dmlOptions.memStats = line.hasOption("mem");
 
 		dmlOptions.clean = line.hasOption("clean");
-
+		
 		if (line.hasOption("config")){
 			dmlOptions.configFile = line.getOptionValue("config");
+		}
+		
+		if (line.hasOption("w")){
+			dmlOptions.fedWorker = true;
+			dmlOptions.fedWorkerPort = Integer.parseInt(line.getOptionValue("w"));
 		}
 
 		if (line.hasOption("f")){
@@ -231,7 +239,7 @@ public class DMLOptions {
 		Option configOpt = OptionBuilder.withArgName("filename")
 			.withDescription("uses a given configuration file (can be on local/hdfs/gpfs; default values in SystemDS-config.xml")
 			.hasArg().create("config");
-		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemDS working directories (FS, DFS); all other flags are ignored in this mode. \n")
+		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemDS working directories (FS, DFS); all other flags are ignored in this mode.")
 			.create("clean");
 		Option statsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
@@ -261,7 +269,9 @@ public class DMLOptions {
 			.create("help");
 		Option lineageOpt = OptionBuilder.withDescription("computes lineage traces")
 			.hasOptionalArgs().create("lineage");
-
+		Option fedOpt = OptionBuilder.withDescription("starts a federated worker.")
+			.hasArg().create("w");
+		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
 		options.addOption(statsOpt);
@@ -272,6 +282,7 @@ public class DMLOptions {
 		options.addOption(debugOpt);
 		options.addOption(pythonOpt);
 		options.addOption(lineageOpt);
+		options.addOption(fedOpt);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

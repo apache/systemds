@@ -58,6 +58,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
+import org.tugraz.sysds.runtime.instructions.fed.FEDInstruction;
 import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CheckpointSPInstruction;
@@ -760,7 +761,8 @@ public class Explain
 	private static String explainGenericInstruction( Instruction inst, int level )
 	{
 		String tmp = null;
-		if ( inst instanceof SPInstruction || inst instanceof CPInstruction || inst instanceof GPUInstruction)
+		if ( inst instanceof SPInstruction || inst instanceof CPInstruction || inst instanceof GPUInstruction ||
+				inst instanceof FEDInstruction )
 			tmp = inst.toString();
 
 		if( REPLACE_SPECIAL_CHARACTERS ){

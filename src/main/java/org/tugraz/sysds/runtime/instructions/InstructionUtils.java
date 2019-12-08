@@ -86,6 +86,7 @@ import org.tugraz.sysds.runtime.functionobjects.Xor;
 import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.tugraz.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.tugraz.sysds.runtime.matrix.data.LibCommonsMath;
@@ -221,6 +222,10 @@ public class InstructionUtils
 
 	public static GPUINSTRUCTION_TYPE getGPUType( String str ) {
 		return GPUInstructionParser.String2GPUInstructionType.get(getOpCode(str));
+	}
+	
+	public static FEDType getFEDType(String str) {
+		return FEDInstructionParser.String2FEDInstructionType.get(getOpCode(str));
 	}
 
 	public static boolean isBuiltinFunction( String opcode ) {

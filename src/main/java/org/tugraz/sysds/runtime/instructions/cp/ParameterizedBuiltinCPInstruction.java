@@ -324,27 +324,28 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			int decimal = (getParam("decimal") != null) ? Integer.parseInt(getParam("decimal")) : TOSTRING_DECIMAL;
 			boolean sparse = (getParam("sparse") != null) ? Boolean.parseBoolean(getParam("sparse")) : TOSTRING_SPARSE;
 			String separator = (getParam("sep") != null) ? getParam("sep") : TOSTRING_SEPARATOR;
-			String lineseparator = (getParam("linesep") != null) ? getParam("linesep") : TOSTRING_LINESEPARATOR;
+			String lineSeparator = (getParam("linesep") != null) ? getParam("linesep") : TOSTRING_LINESEPARATOR;
 			
 			//get input matrix/frame and convert to string
 			String out = null;
-			CacheableData<?> data = ec.getCacheableData(getParam("target"));
-			if( data instanceof MatrixObject ) {
-				MatrixBlock matrix = (MatrixBlock) data.acquireRead();
+			
+			CacheableData<?> cacheData = ec.getCacheableData(getParam("target"));
+			if( cacheData instanceof MatrixObject) {
+				MatrixBlock matrix = (MatrixBlock) cacheData.acquireRead();
 				warnOnTrunction(matrix, rows, cols);
-				out = DataConverter.toString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
+				out = DataConverter.toString(matrix, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
-			else if( data instanceof TensorObject ) {
-				TensorBlock tensor = (TensorBlock) data.acquireRead();
+			else if( cacheData instanceof TensorObject ) {
+				TensorBlock tensor = (TensorBlock) cacheData.acquireRead();
 				// TODO improve truncation to check all dimensions
 				warnOnTrunction(tensor, rows, cols);
 				out = DataConverter.toString(tensor, sparse, separator,
-					lineseparator, "[", "]", rows, cols, decimal);
+					lineSeparator, "[", "]", rows, cols, decimal);
 			}
-			else if( data instanceof FrameObject ) {
-				FrameBlock frame = (FrameBlock) data.acquireRead();
+			else if( cacheData instanceof FrameObject ) {
+				FrameBlock frame = (FrameBlock) cacheData.acquireRead();
 				warnOnTrunction(frame, rows, cols);
-				out = DataConverter.toString(frame, sparse, separator, lineseparator, rows, cols, decimal);
+				out = DataConverter.toString(frame, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
 			else {
 				throw new DMLRuntimeException("toString only converts matrix, tensors or frames to string");

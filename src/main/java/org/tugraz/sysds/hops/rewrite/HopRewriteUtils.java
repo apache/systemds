@@ -81,6 +81,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class HopRewriteUtils 
 {
@@ -665,6 +666,12 @@ public class HopRewriteUtils
 		return auop;
 	}
 	
+	public static AggBinaryOp createTSMM(Hop input, boolean left) {
+		Hop trans = createTranspose(input);
+		return createMatrixMultiply(
+			left ? trans : input, left ? input : trans);
+	}
+	
 	public static AggBinaryOp createMatrixMultiply(Hop left, Hop right) {
 		AggBinaryOp mmult = new AggBinaryOp(left.getName(), left.getDataType(), left.getValueType(), OpOp2.MULT, AggOp.SUM, left, right);
 		mmult.setBlocksize(left.getBlocksize());
@@ -969,7 +976,14 @@ public class HopRewriteUtils
 	
 	public static boolean isTransposeOfItself(Hop hop1, Hop hop2) {
 		return isTransposeOperation(hop1) && hop1.getInput().get(0) == hop2
-			|| isTransposeOperation(hop2) && hop2.getInput().get(0) == hop1;	
+			|| isTransposeOperation(hop2) && hop2.getInput().get(0) == hop1;
+	}
+	
+	public static boolean isTsmm(Hop input) {
+		if( isMatrixMultiply(input) && isTransposeOfItself(
+			input.getInput().get(0), input.getInput().get(1)) )
+			return true;
+		return false;
 	}
 	
 	public static boolean isTsmmInput(Hop input) {
@@ -1147,6 +1161,23 @@ public class HopRewriteUtils
 			if( hop.getInput().get(i).getDataType() != dt[i] )
 				return false;
 		return true;
+	}
+	
+	public static boolean checkAvgRowsGteCols(List<Hop> list) {
+		if( list.isEmpty() )
+			return false;
+		double avg = list.stream().mapToDouble(h -> h.getDim1()).sum();
+		return (avg/list.size()) >= list.get(0).getDim2();
+	}
+	
+	public static boolean checkConsistentRows(List<Hop> list1, List<Hop> list2) {
+		if( list1.size() != list2.size() )
+			return false;
+		boolean ret = true;
+		int len = list1.size();
+		for( int i=0; i<len; i++ )
+			ret &= list1.get(i).getDim1() == list2.get(i).getDim1();
+		return ret;
 	}
 	
 	public static boolean isColumnRightIndexing(Hop hop) {

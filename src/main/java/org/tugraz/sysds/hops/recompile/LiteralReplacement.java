@@ -370,7 +370,7 @@ public class LiteralReplacement
 						String varname = Dag.getNextUniqueVarname(DataType.MATRIX);
 						MatrixObject mo = (MatrixObject) list.slice(i);
 						vars.put(varname, mo);
-						tmp.add(HopRewriteUtils.createTransientRead(varname, c));
+						tmp.add(HopRewriteUtils.createTransientRead(varname, mo));
 					}
 					ret = HopRewriteUtils.createNary(
 						((NaryOp)c).getOp(), tmp.toArray(new Hop[0]));

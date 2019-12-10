@@ -761,7 +761,8 @@ public class BinaryOp extends MultiThreadedHop
 			else
 				_etype = ExecType.CP;
 		}
-		else if( op == OpOp2.CBIND && getDataType().isList() ) {
+		else if( (op == OpOp2.CBIND && getDataType().isList())
+				|| (op == OpOp2.RBIND && getDataType().isList())) {
 			_etype = ExecType.CP;
 		}
 		

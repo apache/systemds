@@ -28,11 +28,13 @@ import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
+import org.tugraz.sysds.hops.NaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.Hop.AggOp;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.Direction;
 import org.tugraz.sysds.hops.Hop.OpOp1;
+import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.common.Types.DataType;
@@ -48,7 +50,6 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class LiteralReplacement 
 {
-	
 	//internal configuration parameters
 	private static final long REPLACE_LITERALS_MAX_MATRIX_SIZE = 1000000; //10^6 cells (8MB)
 	private static final boolean REPORT_LITERAL_REPLACE_OPS_STATS = true;
@@ -77,6 +78,7 @@ public class LiteralReplacement
 					lit = (lit==null) ? replaceLiteralFullUnaryAggregate(c, vars) : lit;
 					lit = (lit==null) ? replaceLiteralFullUnaryAggregateRightIndexing(c, vars) : lit;
 					lit = (lit==null) ? replaceTReadMatrixFromList(c, vars) : lit;
+					lit = (lit==null) ? replaceTReadMatrixFromListAppend(c, vars) : lit;
 					lit = (lit==null) ? replaceTReadMatrixLookupFromList(c, vars) : lit;
 					lit = (lit==null) ? replaceTReadScalarLookupFromList(c, vars) : lit;
 				}
@@ -348,6 +350,30 @@ public class LiteralReplacement
 					MatrixObject mo = (MatrixObject) list.slice(0);
 					vars.put(varname, mo);
 					ret = HopRewriteUtils.createTransientRead(varname, c);
+				}
+			}
+		}
+		return ret;
+	}
+	
+	private static NaryOp replaceTReadMatrixFromListAppend( Hop c, LocalVariableMap vars ) {
+		//pattern: cbind(X) or rbind(X) with X being a list
+		NaryOp ret = null;
+		if( HopRewriteUtils.isNary(c, OpOpN.CBIND, OpOpN.RBIND)) {
+			Hop in = c.getInput().get(0);
+			if( in.getDataType() == DataType.LIST
+				&& HopRewriteUtils.isData(in, DataOpTypes.TRANSIENTREAD) ) {
+				ListObject list = (ListObject)vars.get(in.getName());
+				if( list.getLength() <= 128 ) {
+					ArrayList<Hop> tmp = new ArrayList<>();
+					for( int i=0; i < list.getLength(); i++ ) {
+						String varname = Dag.getNextUniqueVarname(DataType.MATRIX);
+						MatrixObject mo = (MatrixObject) list.slice(i);
+						vars.put(varname, mo);
+						tmp.add(HopRewriteUtils.createTransientRead(varname, c));
+					}
+					ret = HopRewriteUtils.createNary(
+						((NaryOp)c).getOp(), tmp.toArray(new Hop[0]));
 				}
 			}
 		}

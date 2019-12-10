@@ -152,6 +152,7 @@ SYSTEMDS-210 Extended lists Operations
  * 212 Creation of empty lists                                        OK
  * 213 Add entries to lists                                           OK
  * 214 Removal of entries from lists                                  OK
+ * 215 List expansion during dynamic recompilation                    OK
 
 SYSTEMDS-220 Federated Tensors and Instructions
  * 221 Initial infrastructure federated operations                    OK

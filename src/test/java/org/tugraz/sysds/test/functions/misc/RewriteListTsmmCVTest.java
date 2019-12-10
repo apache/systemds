@@ -54,17 +54,25 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 	
 	@Test
 	public void testListTsmmRewriteCP() {
-		testListTsmmCV(TEST_NAME1, true, ExecType.CP);
+		testListTsmmCV(TEST_NAME1, true, false, ExecType.CP);
 	}
 	
 	@Test
 	public void testListTsmmRewriteSP() {
-		testListTsmmCV(TEST_NAME1, true, ExecType.SPARK);
+		testListTsmmCV(TEST_NAME1, true, false, ExecType.SPARK);
 	}
 	
-	//TODO lineage 
+//	@Test
+//	public void testListTsmmRewriteLineageCP() {
+//		testListTsmmCV(TEST_NAME1, true, true, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testListTsmmRewriteLineageSP() {
+//		testListTsmmCV(TEST_NAME1, true, true, ExecType.SPARK);
+//	}
 	
-	private void testListTsmmCV( String testname, boolean rewrites, ExecType instType )
+	private void testListTsmmCV( String testname, boolean rewrites, boolean lineage, ExecType instType )
 	{
 		ExecMode platformOld = setExecMode(instType);
 		
@@ -78,6 +86,12 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
+
+			//TODO lineage list
+//			ReuseCacheType ltype = lineage ? ReuseCacheType.REUSE_FULL : ReuseCacheType.NONE; 
+//			programArgs = new String[]{"-explain", "-lineage", ltype.name(), "-stats","-args",
+//				String.valueOf(rows), String.valueOf(cols), output("S") };
+
 			programArgs = new String[]{"-explain", "-stats","-args",
 				String.valueOf(rows), String.valueOf(cols), output("S") };
 			
@@ -96,11 +110,14 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			if( rewrites ) {
 				String[] codes = (instType==ExecType.CP) ?
 					new String[]{"rbind","tsmm","ba+*","+"} :
-					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_map+"};
-				//Assert.assertTrue(!heavyHittersContainsString(codes[0]));
-				//Assert.assertTrue(Statistics.getCPHeavyHitterCount(codes[1]) == 4);
-				//Assert.assertTrue(Statistics.getCPHeavyHitterCount(codes[2]) == 4);
-				//Assert.assertTrue(Statistics.getCPHeavyHitterCount(codes[3]) == 4);
+					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_+"};
+				Assert.assertTrue(!heavyHittersContainsString(codes[0]));
+				Assert.assertEquals( (lineage ? 7 : 7*6), //per fold
+					Statistics.getCPHeavyHitterCount(codes[1]));
+				Assert.assertEquals( (lineage ? 7 : 7*6) + 1, //per fold
+					Statistics.getCPHeavyHitterCount(codes[2]));
+				Assert.assertEquals( 7*5 + (instType==ExecType.CP?7*6:0), //for intermediates
+					Statistics.getCPHeavyHitterCount(codes[3]));
 			}
 		}
 		finally {

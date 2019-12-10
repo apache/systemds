@@ -156,6 +156,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = removeUnnecessaryReorgOperation(hop, hi, i); //e.g., matrix(X) -> X, if dims(in)==dims(out); r(X)->X, if 1x1 dims
 			hi = removeUnnecessaryOuterProduct(hop, hi, i);   //e.g., X*(Y%*%matrix(1,...) -> X*Y, if Y col vector
 			hi = removeUnnecessaryIfElseOperation(hop, hi, i);//e.g., ifelse(E, A, B) -> A, if E==TRUE or nnz(E)==length(E)
+			hi = removeUnnecessaryAppendTSMM(hop, hi, i); //e.g., X = t(rbind(A,B,C)) %*% rbind(A,B,C) -> t(A)%*%A + t(B)%*%B + t(C)%*%C
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = fuseDatagenAndReorgOperation(hop, hi, i);    //e.g., t(rand(rows=10,cols=1)) -> rand(rows=1,cols=10), if one dim=1
 			hi = simplifyColwiseAggregate(hop, hi, i);        //e.g., colsums(X) -> sum(X) or X, if col/row vector
@@ -482,6 +483,65 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			HopRewriteUtils.cleanupUnreferenced(hi);
 			LOG.debug("Applied removeUnnecessaryIfElse3 (line "+hi.getBeginLine()+")");
 			hi = first;
+		}
+		
+		return hi;
+	}
+	
+	private static Hop removeUnnecessaryAppendTSMM(Hop parent, Hop hi, int pos)
+	{
+		Hop hnew = null;
+		//pattern 1: X = t(rbind(A,B,C)) %*% rbind(A,B,C) -> t(A)%*%A + t(B)%*%B + t(C)%*%C
+		int branch = -1;
+		if( HopRewriteUtils.isTsmm(hi) 
+			&& HopRewriteUtils.isTransposeOperation(hi.getInput().get(0))
+			&& HopRewriteUtils.isNary(hi.getInput().get(1), OpOpN.RBIND) )
+		{
+			List<Hop> inputs = hi.getInput().get(1).getInput();
+			if( HopRewriteUtils.checkAvgRowsGteCols(inputs) ) {
+				hnew = HopRewriteUtils.createTSMM(inputs.get(0), true);
+				for( int i=1; i<inputs.size(); i++ )
+					hnew = HopRewriteUtils.createBinary(hnew,
+						HopRewriteUtils.createTSMM(inputs.get(i), true), OpOp2.PLUS);
+				//cleanup parent references from rbind
+				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(1));
+				branch = 1;
+			}
+		}
+		//pattern 2: X = t(rbind(A,B,C)) %*% rbind(D,E,F)  -> t(A)%*%D + t(B)%*%E + t(C)%*%F
+		else if( HopRewriteUtils.isMatrixMultiply(hi) 
+			&& HopRewriteUtils.isTransposeOperation(hi.getInput().get(0))
+			&& HopRewriteUtils.isNary(hi.getInput().get(0).getInput().get(0), OpOpN.RBIND)
+			&& HopRewriteUtils.isNary(hi.getInput().get(1), OpOpN.RBIND) )
+		{
+			List<Hop> inputs1 = hi.getInput().get(0).getInput().get(0).getInput();
+			List<Hop> inputs2 = hi.getInput().get(1).getInput();
+			if( HopRewriteUtils.checkAvgRowsGteCols(inputs1) 
+				&& HopRewriteUtils.checkAvgRowsGteCols(inputs2) 
+				&& HopRewriteUtils.checkConsistentRows(inputs1, inputs2) ) 
+			{
+				hnew = HopRewriteUtils.createMatrixMultiply(
+					HopRewriteUtils.createTranspose(inputs1.get(0)), inputs2.get(0));
+				for( int i=1; i<inputs1.size(); i++ )
+					hnew = HopRewriteUtils.createBinary(hnew,
+						HopRewriteUtils.createMatrixMultiply(
+							HopRewriteUtils.createTranspose(inputs1.get(i)), inputs2.get(i)), OpOp2.PLUS);
+				//cleanup parent references from rbind left/right
+				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(0).getInput().get(0));
+				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(1));
+				branch = 2;
+			}
+		}
+		
+		//TODO introduce nary plus for more efficient aggregation
+		
+		//modify dag if one of the above rules applied
+		if( hnew != null ){ 
+			HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+			HopRewriteUtils.removeAllChildReferences(hi);
+			hi = hnew;
+			LOG.debug("Applied removeUnnecessaryAppendTSMM"
+				+ branch + " (line " + hi.getBeginLine() + ")");
 		}
 		
 		return hi;

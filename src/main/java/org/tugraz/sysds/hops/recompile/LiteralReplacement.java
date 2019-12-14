@@ -70,7 +70,7 @@ public class LiteralReplacement
 				Hop lit = null;
 				
 				//conditional apply of literal replacements
-				lit = (lit==null) ? replaceLiteralScalarRead(c, vars) : lit;
+				lit = replaceLiteralScalarRead(c, vars);
 				lit = (lit==null) ? replaceLiteralValueTypeCastScalarRead(c, vars) : lit;
 				lit = (lit==null) ? replaceLiteralValueTypeCastLiteral(c, vars) : lit;
 				if( !scalarsOnly ) {

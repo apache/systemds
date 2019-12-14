@@ -24,6 +24,7 @@ import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
@@ -44,12 +45,18 @@ public class LineageCache {
 	private static final Map<LineageItem, Entry> _cache = new HashMap<>();
 	private static final Map<LineageItem, SpilledItem> _spillList = new HashMap<>();
 	private static final HashSet<LineageItem> _removelist = new HashSet<>();
-	private static final long CACHELIMIT= (long)512*1024*1024; // 500MB
+	private static final double CACHE_FRAC = 0.05; // 5% of JVM mem
+	private static final long CACHE_LIMIT; //limit in bytes
 	private static String outdir = null;
 	private static long _cachesize = 0;
 	private static Entry _head = null;
 	private static Entry _end = null;
 
+	static {
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		CACHE_LIMIT = (long)(CACHE_FRAC * maxMem);
+	}
+	
 	//--------------------- CACHE LOGIC METHODS ----------------------
 	
 	public static boolean reuse(Instruction inst, ExecutionContext ec) {
@@ -117,6 +124,8 @@ public class LineageCache {
 		
 		// Make space by removing or spilling LRU entries.
 		if( value != null ) {
+			if( value.getInMemorySize() > CACHE_LIMIT )
+				return; //not applicable
 			if( !isBelowThreshold(value) ) 
 				makeSpace(value);
 			updateSize(value, true);
@@ -183,16 +192,13 @@ public class LineageCache {
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------
 	
 	private static boolean isBelowThreshold(MatrixBlock value) {
-		//FIXME: we cannot throw such an exception here, instead need to gracefully ignore
-		if (value.getInMemorySize() > CACHELIMIT)
-			throw new RuntimeException("Single item larger than the size of lineage cache");
-		return ((value.getInMemorySize() + _cachesize) <= CACHELIMIT);
+		return ((value.getInMemorySize() + _cachesize) <= CACHE_LIMIT);
 	}
 	
 	private static void makeSpace(MatrixBlock value) {
 		double valSize = value.getInMemorySize();
 		// cost based eviction
-		while ((valSize+_cachesize) > CACHELIMIT)
+		while ((valSize+_cachesize) > CACHE_LIMIT)
 		{
 			double reduction = _cache.get(_end._key).getValue().getInMemorySize();
 			if (_cache.get(_end._key)._compEst > getDiskSpillEstimate() 

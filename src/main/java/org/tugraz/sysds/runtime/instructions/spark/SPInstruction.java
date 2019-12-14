@@ -61,6 +61,10 @@ public abstract class SPInstruction extends Instruction {
 	public IType getType() {
 		return IType.SPARK;
 	}
+	
+	public Operator getOperator() {
+		return _optr;
+	}
 
 	public SPType getSPInstructionType() {
 		return _sptype;

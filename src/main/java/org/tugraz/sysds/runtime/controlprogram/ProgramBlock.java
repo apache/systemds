@@ -203,7 +203,7 @@ public abstract class ProgramBlock implements ParseInfo
 
 			// pre-process instruction (inst patching, listeners, lineage)
 			Instruction tmp = currInst.preprocessInstruction( ec );
-
+			
 			// try to reuse instruction result from lineage cache
 			if( !LineageCache.reuse(tmp, ec) ) {
 				// process actual instruction
@@ -242,7 +242,7 @@ public abstract class ProgramBlock implements ParseInfo
 				throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
 		}
 	}
-
+	
 	protected UpdateType[] prepareUpdateInPlaceVariables(ExecutionContext ec, long tid) {
 		if( _sb == null || _sb.getUpdateInPlaceVars().isEmpty() )
 			return null;

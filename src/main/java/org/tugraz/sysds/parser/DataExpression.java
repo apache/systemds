@@ -580,7 +580,7 @@ public class DataExpression extends DataIdentifier
 	
 	public void addFederatedExprParam(String paramName, Expression paramValue) {
 		// check name is valid
-		boolean found = (paramName != null ) && 
+		boolean found = (paramName != null ) &&
 			Arrays.asList(FEDERATED_VALID_PARAM_NAMES).contains(paramName);
 		
 		if (!found)

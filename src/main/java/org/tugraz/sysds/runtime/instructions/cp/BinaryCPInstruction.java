@@ -79,6 +79,10 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		return opcode;
 	}
 	
+	public Operator getOperator() {
+		return _optr;
+	}
+	
 	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {
 		// check for valid data type of output
 		if((in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) && out.getDataType() != DataType.MATRIX)

@@ -26,7 +26,7 @@ public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
 	
 	public enum FedMethod {
-		READ, SHUTDOWN, TRANSFER
+		READ, MATVECMULT, TRANSFER
 	}
 	
 	private FedMethod _method;
@@ -62,5 +62,9 @@ public class FederatedRequest implements Serializable {
 	
 	public int getNumParams() {
 		return _data.size();
+	}
+	
+	public FederatedRequest deepClone() {
+		return new FederatedRequest(_method, new ArrayList<>(_data));
 	}
 }

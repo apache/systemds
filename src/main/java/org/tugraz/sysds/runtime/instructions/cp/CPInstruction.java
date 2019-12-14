@@ -30,6 +30,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
 import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 
 public abstract class CPInstruction extends Instruction 
@@ -81,7 +82,7 @@ public abstract class CPInstruction extends Instruction
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
-		//default preprocess behavior (e.g., debug state)
+		//default preprocess behavior (e.g., debug state, lineage)
 		Instruction tmp = super.preprocessInstruction(ec);
 
 		//instruction patching
@@ -93,6 +94,10 @@ public abstract class CPInstruction extends Instruction
 			if (DMLScript.LINEAGE)
 				ec.traceLineage(tmp);
 		}
+		
+		//robustness federated instructions (runtime assignment)
+		tmp = FEDInstructionUtils.checkAndReplace(tmp, ec);
+		
 		return tmp;
 	}
 

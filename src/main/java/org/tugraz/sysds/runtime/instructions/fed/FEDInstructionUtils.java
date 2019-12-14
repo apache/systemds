@@ -16,41 +16,22 @@
 
 package org.tugraz.sysds.runtime.instructions.fed;
 
+import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.tugraz.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 
-public abstract class FEDInstruction extends Instruction {
-	
-	public enum FEDType {
-		Init, AggregateBinary
-	}
-	
-	protected final FEDType _fedType;
-	protected final Operator _optr;
-	
-	protected FEDInstruction(FEDType type, String opcode, String istr) {
-		this(type, null, opcode, istr);
-	}
-	
-	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr) {
-		_fedType = type;
-		_optr = op;
-		instString = istr;
-		instOpcode = opcode;
-	}
-	
-	@Override
-	public IType getType() {
-		return IType.FEDERATED;
-	}
-	
-	public FEDType getFEDInstructionType() {
-		return _fedType;
-	}
-	
-	@Override
-	public Instruction preprocessInstruction(ExecutionContext ec) {
-		return super.preprocessInstruction(ec);
+public class FEDInstructionUtils {
+	public static Instruction checkAndReplace(Instruction inst, ExecutionContext ec) {
+		if( inst instanceof AggregateBinaryCPInstruction ) {
+			AggregateBinaryCPInstruction instruction = (AggregateBinaryCPInstruction) inst;
+			MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
+			MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
+			if (mo1.isFederated() && mo2.getNumColumns() == 1 
+				|| mo1.getNumRows() == 1 && mo2.isFederated()) {
+				return AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			}
+		}
+		return inst;
 	}
 }

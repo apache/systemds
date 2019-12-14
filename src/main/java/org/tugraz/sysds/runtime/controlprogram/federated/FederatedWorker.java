@@ -29,28 +29,28 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import org.apache.log4j.Logger;
+import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class FederatedWorker {
+	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 	
 	public int _port;
 	private IDSequence _seq = new IDSequence();
-	private Map<Long, Data> _vars = new HashMap<>();
+	private Map<Long, CacheableData<?>> _vars = new HashMap<>();
 	
 	public FederatedWorker(int port) {
 		_port = port;
 	}
 	
 	public void run() throws Exception {
-		//TODO modify logging to use actual logger not stdout,
-		//otherwise the stdout queue might fill up if nobody is reading from it
-		System.out.println("[Federated Worker] Setting up...");
-		EventLoopGroup bossGroup = new NioEventLoopGroup();
-		EventLoopGroup workerGroup = new NioEventLoopGroup();
+		log.debug("[Federated Worker] Setting up...");
+		EventLoopGroup bossGroup = new NioEventLoopGroup(10);
+		EventLoopGroup workerGroup = new NioEventLoopGroup(10);
 		try {
 			ServerBootstrap b = new ServerBootstrap();
 			b.group(bossGroup, workerGroup)
@@ -59,19 +59,19 @@ public class FederatedWorker {
 					@Override
 					public void initChannel(SocketChannel ch) {
 						ch.pipeline().addLast("ObjectDecoder",
-							new ObjectDecoder(ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
+							new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
 								.addLast("ObjectEncoder", new ObjectEncoder())
 								.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_seq, _vars));
 					}
 				})
 				.option(ChannelOption.SO_BACKLOG, 128)
 				.childOption(ChannelOption.SO_KEEPALIVE, true);
-			System.out.println("[Federated Worker] Starting server at port " + _port);
+			log.debug("[Federated Worker] Starting server at port " + _port);
 			ChannelFuture f = b.bind(_port).sync();
 			f.channel().closeFuture().sync();
 		}
 		finally {
-			System.out.println("[Federated Worker] Shutting down.");
+			log.debug("[Federated Worker] Shutting down.");
 			workerGroup.shutdownGracefully();
 			bossGroup.shutdownGracefully();
 		}

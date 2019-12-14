@@ -382,7 +382,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		return 1;
 	}
 
-	protected void checkMatrixMatrixBinaryCharacteristics(SparkExecutionContext sec) 
+	protected void checkMatrixMatrixBinaryCharacteristics(SparkExecutionContext sec)
 	{
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());

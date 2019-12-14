@@ -142,6 +142,7 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
  * 189 Builtin function mice (chained equation imputation)            OK
 
 SYSTEMDS-190 New Builtin Functions III
+ * 191 Builtin function multi logreg   																OK
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK

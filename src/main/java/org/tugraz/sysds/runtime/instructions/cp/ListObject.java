@@ -27,6 +27,7 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
 
 public class ListObject extends Data {
 	private static final long serialVersionUID = 3652422061598967358L;
@@ -35,22 +36,29 @@ public class ListObject extends Data {
 	private boolean[] _dataState = null;
 	private List<String> _names = null;
 	private int _nCacheable;
+	private List<LineageItem> _lineage = null;
 	
 	public ListObject(List<Data> data) {
-		this(data, null);
+		this(data, null, null);
 	}
 
 	public ListObject(List<Data> data, List<String> names) {
+		this(data, names, null);
+	}
+
+	public ListObject(List<Data> data, List<String> names, List<LineageItem> lineage) {
 		super(DataType.LIST, ValueType.UNKNOWN);
 		_data = data;
 		_names = names;
+		_lineage = lineage;
 		_nCacheable = (int) data.stream().filter(
 			d -> d instanceof CacheableData).count();
 	}
 	
 	public ListObject(ListObject that) {
 		this(new ArrayList<>(that._data), (that._names != null) ?
-			new ArrayList<>(that._names) : null);
+			new ArrayList<>(that._names) : null, (that._lineage != null) ?
+			new ArrayList<>(that._lineage) : null);
 		if( that._dataState != null )
 			_dataState = Arrays.copyOf(that._dataState, getLength());
 	}
@@ -95,6 +103,10 @@ public class ListObject extends Data {
 	public List<Data> getData() {
 		return _data;
 	}
+	
+	public List<LineageItem> getLineageItems() {
+		return _lineage;
+	}
 
 	public long getDataSize() {
 		return _data.stream().filter(data -> data instanceof CacheableData)
@@ -108,10 +120,16 @@ public class ListObject extends Data {
 	public Data slice(int ix) {
 		return _data.get(ix);
 	}
+
+	public LineageItem getLineageItem(int ix) {
+		LineageItem li = _lineage != null ? _lineage.get(ix):null;
+		return li;
+	}
 	
 	public ListObject slice(int ix1, int ix2) {
 		ListObject ret = new ListObject(_data.subList(ix1, ix2 + 1),
-			(_names != null) ? _names.subList(ix1, ix2 + 1) : null);
+			(_names != null) ? _names.subList(ix1, ix2 + 1) : null,
+			(_lineage != null) ? _lineage.subList(ix1, ix2 + 1) : null);
 		if( _dataState != null )
 			ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2 + 1));
 		return ret;
@@ -135,9 +153,9 @@ public class ListObject extends Data {
 	}
 	
 	public ListObject copy() {
-		ListObject ret = isNamedList() ?
-			new ListObject(new ArrayList<>(getData()), new ArrayList<>(getNames())) :
-			new ListObject(new ArrayList<>(getData()));
+		List<String> names = isNamedList() ? new ArrayList<>(getNames()) : null;
+		List<LineageItem> LineageItems = getLineageItems() != null ? new ArrayList<>(getLineageItems()) : null;
+		ListObject ret = new ListObject(new ArrayList<>(getData()), names, LineageItems);
 		if( getStatus() != null )
 			ret.setStatus(Arrays.copyOf(getStatus(), getLength()));
 		return ret;
@@ -192,22 +210,29 @@ public class ListObject extends Data {
 		return set(pos1, pos2, data);
 	}
 	
-	public ListObject add(Data dat) {
-		add(null, dat);
+	public ListObject add(Data dat, LineageItem li) {
+		add(null, dat, li);
 		return this;
 	}
 	
-	public ListObject add(String name, Data dat) {
+	public ListObject add(String name, Data dat, LineageItem li) {
 		if( _names != null && name == null )
 			throw new DMLRuntimeException("Cannot add to a named list");
 		//otherwise append and ignore name
 		_data.add(dat);
+		if (_lineage == null && li!= null) 
+			_lineage = new ArrayList<>();
+		if (li != null)
+			_lineage.add(li);
 		return this;
 	}
 	
 	public ListObject remove(int pos) {
-		ListObject ret = new ListObject(Arrays.asList(_data.get(pos)));
+		ListObject ret = new ListObject(Arrays.asList(_data.get(pos)),
+				null, _lineage != null?Arrays.asList(_lineage.get(pos)):null);
 		_data.remove(pos);
+		if (_lineage != null)
+			_lineage.remove(pos);
 		if( _names != null )
 			_names.remove(pos);
 		return ret;

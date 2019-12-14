@@ -83,7 +83,7 @@ public class BasicProgramBlock extends ProgramBlock
 				&& _sb.requiresRecompilation() )
 			{
 				tmp = Recompiler.recompileHopsDag(
-					_sb, _sb.getHops(), ec.getVariables(), null, false, true, _tid);
+					_sb, _sb.getHops(), ec, null, false, true, _tid);
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();

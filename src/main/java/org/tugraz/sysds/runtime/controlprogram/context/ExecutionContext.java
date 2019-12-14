@@ -93,6 +93,12 @@ public class ExecutionContext {
 		_prog = prog;
 	}
 
+	public ExecutionContext(LocalVariableMap vars) {
+		_variables = vars;
+		_lineage = null;
+		_prog = null;
+	}
+
 	public Program getProgram(){
 		return _prog;
 	}

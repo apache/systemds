@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
@@ -62,15 +63,15 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 		testListTsmmCV(TEST_NAME1, true, false, ExecType.SPARK);
 	}
 	
-//	@Test
-//	public void testListTsmmRewriteLineageCP() {
-//		testListTsmmCV(TEST_NAME1, true, true, ExecType.CP);
-//	}
-//	
-//	@Test
-//	public void testListTsmmRewriteLineageSP() {
-//		testListTsmmCV(TEST_NAME1, true, true, ExecType.SPARK);
-//	}
+	@Test
+	public void testListTsmmRewriteLineageCP() {
+		testListTsmmCV(TEST_NAME1, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testListTsmmRewriteLineageSP() {
+		testListTsmmCV(TEST_NAME1, true, true, ExecType.SPARK);
+	}
 	
 	private void testListTsmmCV( String testname, boolean rewrites, boolean lineage, ExecType instType )
 	{
@@ -87,13 +88,12 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 
-			//TODO lineage list
-//			ReuseCacheType ltype = lineage ? ReuseCacheType.REUSE_FULL : ReuseCacheType.NONE; 
-//			programArgs = new String[]{"-explain", "-lineage", ltype.name(), "-stats","-args",
-//				String.valueOf(rows), String.valueOf(cols), output("S") };
-
-			programArgs = new String[]{"-explain", "-stats","-args",
-				String.valueOf(rows), String.valueOf(cols), output("S") };
+			if (lineage)
+				programArgs = new String[]{"-explain","recompile_runtime", "-lineage", ReuseCacheType.REUSE_FULL.name().toLowerCase(),
+						"-stats","-args", String.valueOf(rows), String.valueOf(cols), output("S") };
+			else
+				programArgs = new String[]{"-explain", "-stats","-args",
+						String.valueOf(rows), String.valueOf(cols), output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
@@ -116,7 +116,7 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 					Statistics.getCPHeavyHitterCount(codes[1]));
 				Assert.assertEquals( (lineage ? 7 : 7*6) + 1, //per fold
 					Statistics.getCPHeavyHitterCount(codes[2]));
-				Assert.assertEquals( 7*5 + (instType==ExecType.CP?7*6:0), //for intermediates
+				Assert.assertEquals( 7*5 + (instType==ExecType.CP?7*6:7), //for intermediates
 					Statistics.getCPHeavyHitterCount(codes[3]));
 			}
 		}

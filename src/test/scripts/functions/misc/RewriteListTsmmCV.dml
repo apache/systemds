@@ -38,7 +38,6 @@ crossV = function(Matrix[double] X, Matrix[double] y, double lamda, Integer k) r
     trainy = rbind(tmpy);
     beta = SimlinRegDS(trainX, trainy, lamda, ncol(X));
     beta_list = append(beta_list, beta);
-    #FIXME: transpose is not getting picked
   }
 
   R = cbind(beta_list);

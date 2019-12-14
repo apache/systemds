@@ -35,6 +35,9 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.MapInputSignature;
 import org.tugraz.sysds.runtime.instructions.spark.functions.MapJoinSignature;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
+import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
@@ -45,7 +48,7 @@ import scala.Tuple2;
 
 import java.util.List;
 
-public class BuiltinNarySPInstruction extends SPInstruction 
+public class BuiltinNarySPInstruction extends SPInstruction implements LineageTraceable
 {
 	private CPOperand[] inputs;
 	private CPOperand output;
@@ -194,5 +197,11 @@ public class BuiltinNarySPInstruction extends SPInstruction
 		public MatrixBlock call(MatrixBlock[] v1) throws Exception {
 			return MatrixBlock.naryOperations(_op, v1, _scalars, new MatrixBlock());
 		}
+	}
+	
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
+			LineageItemUtils.getLineage(ec, inputs))};
 	}
 }

@@ -87,13 +87,11 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-
-			if (lineage)
-				programArgs = new String[]{"-explain","recompile_runtime", "-lineage", ReuseCacheType.REUSE_FULL.name().toLowerCase(),
-						"-stats","-args", String.valueOf(rows), String.valueOf(cols), output("S") };
-			else
-				programArgs = new String[]{"-explain", "-stats","-args",
-						String.valueOf(rows), String.valueOf(cols), output("S") };
+			
+			//lineage tracing with and without reuse
+			ReuseCacheType reuse = lineage ? ReuseCacheType.REUSE_FULL : ReuseCacheType.NONE;
+			programArgs = new String[]{"-explain","recompile_runtime", "-lineage", reuse.name().toLowerCase(),
+				"-stats","-args", String.valueOf(rows), String.valueOf(cols), output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
@@ -108,15 +106,17 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			if( instType == ExecType.CP )
 				Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			if( rewrites ) {
+				boolean expectedReuse = lineage && instType == ExecType.CP;
 				String[] codes = (instType==ExecType.CP) ?
 					new String[]{"rbind","tsmm","ba+*","+"} :
 					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_+"};
 				Assert.assertTrue(!heavyHittersContainsString(codes[0]));
-				Assert.assertEquals( (lineage ? 7 : 7*6), //per fold
+				Assert.assertEquals( (expectedReuse ? 7 : 7*6), //per fold
 					Statistics.getCPHeavyHitterCount(codes[1]));
-				Assert.assertEquals( (lineage ? 7 : 7*6) + 1, //per fold
+				Assert.assertEquals( (expectedReuse ? 7 : 7*6) + 1, //per fold
 					Statistics.getCPHeavyHitterCount(codes[2]));
-				Assert.assertEquals( 7*5 + (instType==ExecType.CP?7*6:7), //for intermediates
+				//for intermediates tsmm/ba+* + 7 diag (in spark sp_map+ vs sp_+)
+				Assert.assertEquals( 7*5 + (instType==ExecType.CP?7*6:7),
 					Statistics.getCPHeavyHitterCount(codes[3]));
 			}
 		}

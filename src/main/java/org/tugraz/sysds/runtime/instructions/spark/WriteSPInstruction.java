@@ -21,6 +21,7 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -39,6 +40,9 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
+import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
@@ -50,7 +54,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class WriteSPInstruction extends SPInstruction {
+public class WriteSPInstruction extends SPInstruction implements LineageTraceable {
 	private CPOperand input1 = null;
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
@@ -289,5 +293,13 @@ public class WriteSPInstruction extends SPInstruction {
 		else {
 			rdd.saveAsTextFile(fname);
 		}
+	}
+
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		LineageItem[] ret = LineageItemUtils.getLineage(ec, input1, input2, input3, input4);
+		if (formatProperties != null && formatProperties.getDescription() != null && !formatProperties.getDescription().isEmpty())
+			ret = (LineageItem[])ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
+		return new LineageItem[]{new LineageItem(input1.getName(), getOpcode(), ret)};
 	}
 }

@@ -152,6 +152,10 @@ public abstract class Instruction
 		return instString;
 	}
 	
+	public String getInstructionString() {
+		return instString;
+	}
+	
 	public String getGraphString() {
 		return null;
 	}

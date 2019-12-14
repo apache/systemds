@@ -18,7 +18,6 @@
 package org.tugraz.sysds.runtime.controlprogram.federated;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -30,10 +29,11 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.util.concurrent.Promise;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 public class FederatedData {
 	private InetSocketAddress _address;
@@ -48,12 +48,22 @@ public class FederatedData {
 		_filepath = filepath;
 	}
 	
+	/**
+	 * Make a copy of the <code>FederatedData</code> metadata, but use another varID (refer to another object on worker)
+	 * @param other the <code>FederatedData</code> of which we want to copy the worker information from
+	 * @param varID the varID of the variable we refer to
+	 */
+	public FederatedData(FederatedData other, long varID) {
+		this(other._address, other._filepath);
+		_varID = varID;
+	}
+	
 	public InetSocketAddress getAddress() {
 		return _address;
 	}
 	
-	public long getVarID() {
-		return _varID;
+	public void setVarID(long varID) {
+		_varID = varID;
 	}
 	
 	public String getFilepath() {
@@ -64,16 +74,13 @@ public class FederatedData {
 		return _varID != -1;
 	}
 	
-	public void initFederatedData() {
+	public synchronized Future<FederatedResponse> initFederatedData() {
 		if( isInitialized() )
 			throw new DMLRuntimeException("Tried to init already initialized data");
 		FederatedRequest request = new FederatedRequest(FederatedRequest.FedMethod.READ);
 		request.appendParam(_filepath);
-		FederatedResponse response = executeFederatedOperation(request);
-		if( response.isSuccessful() )
-			_varID = (Long) response.getData();
-		else
-			throw new DMLRuntimeException(response.getErrorMessage());
+		return executeFederatedOperation(request);
+		
 	}
 	
 	/**
@@ -83,7 +90,7 @@ public class FederatedData {
 	 * @param withVarID true if we should add the default varID (initialized) or false if we should not
 	 * @return the response
 	 */
-	public FederatedResponse executeFederatedOperation(FederatedRequest request, boolean withVarID) {
+	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest request, boolean withVarID) {
 		if (withVarID) {
 			if( !isInitialized() )
 				throw new DMLRuntimeException("Tried to execute federated operation on data non initialized federated data.");
@@ -98,7 +105,8 @@ public class FederatedData {
 	 * @param request the requested operation
 	 * @return the response
 	 */
-	public FederatedResponse executeFederatedOperation(FederatedRequest request, long varID) {
+	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest request, long varID) {
+		request = request.deepClone();
 		request.appendParam(varID);
 		return executeFederatedOperation(request);
 	}
@@ -109,34 +117,26 @@ public class FederatedData {
 	 * @param request the requested operation
 	 * @return the response
 	 */
-	public FederatedResponse executeFederatedOperation(FederatedRequest request) {
-		// TODO async
-		EventLoopGroup workerGroup = new NioEventLoopGroup();
+	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest request) {
+		EventLoopGroup workerGroup = new NioEventLoopGroup(10);
 		try {
 			Bootstrap b = new Bootstrap();
-			CompletableFuture<FederatedResponse> future = new CompletableFuture<>();
+			final DataRequestHandler handler = new DataRequestHandler(workerGroup);
 			b.group(workerGroup).channel(NioSocketChannel.class).handler(new ChannelInitializer<SocketChannel>() {
 				@Override
-				public void initChannel(SocketChannel ch) throws Exception {
+				public void initChannel(SocketChannel ch) {
 					ch.pipeline().addLast("ObjectDecoder",
-					new ObjectDecoder(ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
-					.addLast("FederatedOperationHandler", new ChannelInboundHandlerAdapter() {
-						@Override
-						public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-							future.complete((FederatedResponse) msg);
-						}
-					})
-					.addLast("ObjectEncoder", new ObjectEncoder());
+							new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
+							.addLast("FederatedOperationHandler", handler)
+							.addLast("ObjectEncoder", new ObjectEncoder());
 				}
 			});
 			
 			ChannelFuture f = b.connect(_address).sync();
-			Channel c = f.channel();
-			c = c.writeAndFlush(request).sync().channel();
-			c.read();
-			FederatedResponse response = future.get();
-			c.close().sync();
-			return response;
+			Promise<FederatedResponse> promise = f.channel().eventLoop().newPromise();
+			handler.setPromise(promise);
+			f.channel().writeAndFlush(request);
+			return promise;
 		}
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException("Could not send federated operation.");
@@ -144,8 +144,27 @@ public class FederatedData {
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}
-		finally {
-			workerGroup.shutdownGracefully();
+	}
+	
+	private static class DataRequestHandler extends ChannelInboundHandlerAdapter {
+		private Promise<FederatedResponse> _prom;
+		private EventLoopGroup _workerGroup;
+		
+		public DataRequestHandler(EventLoopGroup workerGroup) {
+			_workerGroup = workerGroup;
+		}
+		
+		public void setPromise(Promise<FederatedResponse> prom) {
+			_prom = prom;
+		}
+		
+		@Override
+		public void channelRead(ChannelHandlerContext ctx, Object msg) {
+			if (_prom == null)
+				throw new DMLRuntimeException("Read while no message was sent");
+			_prom.setSuccess((FederatedResponse) msg);
+			ctx.close();
+			_workerGroup.shutdownGracefully();
 		}
 	}
 }

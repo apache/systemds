@@ -20,8 +20,6 @@ package org.tugraz.sysds.runtime.controlprogram.federated;
 import java.util.Arrays;
 
 public class FederatedRange implements Comparable<FederatedRange> {
-	//TODO move to general purpose index range for tensors (see equivalent for matrices)
-	
 	private long[] _beginDims;
 	private long[] _endDims;
 	

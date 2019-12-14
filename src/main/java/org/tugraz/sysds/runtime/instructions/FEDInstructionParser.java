@@ -18,6 +18,7 @@
 package org.tugraz.sysds.runtime.instructions;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
 import org.tugraz.sysds.runtime.instructions.fed.FEDInstruction;
 import org.tugraz.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.tugraz.sysds.runtime.instructions.fed.InitFEDInstruction;
@@ -30,6 +31,7 @@ public class FEDInstructionParser extends InstructionParser
 	static {
 		String2FEDInstructionType = new HashMap<>();
 		String2FEDInstructionType.put("fedinit", FEDType.Init);
+		String2FEDInstructionType.put("ba+*",    FEDType.AggregateBinary);
 	}
 
 	public static FEDInstruction parseSingleInstruction (String str ) {
@@ -50,6 +52,8 @@ public class FEDInstructionParser extends InstructionParser
 		switch(fedtype) {
 			case Init:
 				return InitFEDInstruction.parseInstruction(str);
+			case AggregateBinary:
+				return AggregateBinaryFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

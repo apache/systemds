@@ -22,6 +22,7 @@
 package org.tugraz.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
@@ -52,9 +53,10 @@ import org.tugraz.sysds.runtime.util.IndexRange;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.Future;
 
 
 /**
@@ -91,7 +93,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
 	
-	private TreeMap<FederatedRange, FederatedData> _fedMapping = null; // mapping for federated matrixobject
+	private Map<FederatedRange, FederatedData> _fedMapping = null; // mapping for federated matrixobject
 	
 	/**
 	 * Constructor that takes the value type and the HDFS filename.
@@ -140,62 +142,61 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_partitionCacheName = mo._partitionCacheName;
 	}
 	
-	public void federate(List<Pair<FederatedRange, FederatedData>> workers) {
-		_fedMapping = new TreeMap<>();
-		for (Pair<FederatedRange, FederatedData> t : workers) {
-			// TODO support all value types
-			_fedMapping.put(t.getLeft(), t.getRight());
-		}
-		for (Map.Entry<FederatedRange, FederatedData> entry : _fedMapping.entrySet()) {
-			FederatedRange range = entry.getKey();
-			FederatedData value = entry.getValue();
-			if( !value.isInitialized() ) {
-				long[] beginDims = range.getBeginDims();
-				long[] endDims = range.getEndDims();
-				long[] dims = getDataCharacteristics().getDims();
-				for (int i = 0; i < dims.length; i++)
-					dims[i] = endDims[i] - beginDims[i];
-				value.initFederatedData();
-			}
-		}
-	}
-	
 	public boolean isFederated() {
 		return _fedMapping != null;
 	}
 	
+	public Map<FederatedRange, FederatedData> getFedMapping() {
+		return _fedMapping;
+	}
+	
+	public void setFedMapping(Map<FederatedRange, FederatedData> fedMapping) {
+		_fedMapping = fedMapping;
+	}
+	
 	@Override
 	public MatrixBlock acquireRead() {
-		if (!isFederated())
+		// forward call for non-federated objects
+		if( !isFederated() )
 			return super.acquireRead();
 		
-		//obtain matrix block from remote sites
 		long[] dims = getDataCharacteristics().getDims();
+		// TODO sparse optimization
 		MatrixBlock result = new MatrixBlock((int) dims[0], (int) dims[1], false);
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
 		for (Map.Entry<FederatedRange, FederatedData> entry : _fedMapping.entrySet()) {
 			FederatedRange range = entry.getKey();
-			// TODO generalize for n dimensions
-			int[] beginDimsInt = range.getBeginDimsInt();
-			int[] endDimsInt = range.getEndDimsInt();
-			
 			FederatedData fd = entry.getValue();
-			MatrixBlock multRes;
+			
 			if( fd.isInitialized() ) {
 				FederatedRequest request = new FederatedRequest(FederatedRequest.FedMethod.TRANSFER);
-				FederatedResponse response = fd.executeFederatedOperation(request, true);
-				if( !response.isSuccessful() ) {
-					throw new DMLRuntimeException("Federated tensor multiplication failed: " + response.getErrorMessage());
-				}
-				multRes = (MatrixBlock) response.getData();
+				Future<FederatedResponse> readResponse = fd.executeFederatedOperation(request, true);
+				readResponses.add(new ImmutablePair<>(range, readResponse));
 			}
 			else {
-				throw new DMLRuntimeException("Federated tensor operations only supported on federated tensorObjects");
+				throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");
 			}
-			result.copy(beginDimsInt[0], endDimsInt[0] - 1, beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
+		}
+		try {
+			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+				FederatedRange range = readResponse.getLeft();
+				FederatedResponse response = readResponse.getRight().get();
+				// add result
+				int[] beginDimsInt = range.getBeginDimsInt();
+				int[] endDimsInt = range.getEndDimsInt();
+				if( !response.isSuccessful() )
+					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
+				MatrixBlock multRes = (MatrixBlock) response.getData();
+				result.copy(beginDimsInt[0], endDimsInt[0] - 1,
+					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
+				result.setNonZeros(result.getNonZeros() + multRes.getNonZeros());
+			}
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Federated matrix read failed.", e);
 		}
 		
-		//keep obtained block in buffer pool 
-		//(release then works as with any other cachable data)
+		//keep returned object for future use 
 		acquireModify(result);
 		
 		return result;
@@ -305,7 +306,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * However, since we currently only support row- and column-wise partitioning caching is not applied yet.
 	 * This could be changed once we also support column-block-wise and row-block-wise. Furthermore,
 	 * as we reject to partition vectors and support only full row or column indexing, no metadata (apart from
-	 * the partition flag) is required.  
+	 * the partition flag) is required.
 	 * 
 	 * @param pred index range
 	 * @return matrix block
@@ -372,7 +373,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 					case COLUMN_BLOCK_WISE_N: 
 						rows = mc.getRows();
 						cols = _partitionSize;
-						break;	
+						break;
 					default:
 						throw new DMLRuntimeException("Unsupported partition format: "+_partitionFormat);
 				}
@@ -455,13 +456,13 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			case COLUMN_BLOCK_WISE_N:
 				sb.append(Lop.FILE_SEPARATOR);
 				sb.append((pred.colStart-1)/_partitionSize+1);
-				break;	
+				break;
 			default:
 				throw new DMLRuntimeException("MatrixObject not available to indexed read.");
 		}
 
 		return sb.toString();
-	}	
+	}
 	
 	
 
@@ -638,7 +639,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.				
-		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);	
+		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);
 		_metaData.getDataCharacteristics().setNonZeros(newnnz);
 	}
 }

@@ -113,7 +113,7 @@ public class DataOp extends Hop
 	 * @param dop data operator type
 	 * @param params input parameters
 	 */
-	public DataOp(String l, DataType dt, ValueType vt, 
+	public DataOp(String l, DataType dt, ValueType vt,
 			DataOpTypes dop, HashMap<String, Hop> params) {
 		super(l, dt, vt);
 

@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.tugraz.sysds.runtime.instructions.fed;
@@ -25,6 +24,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.federated.FederatedData;
 import org.tugraz.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.tugraz.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -37,6 +37,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -126,8 +129,45 @@ public class InitFEDInstruction extends FEDInstruction {
 				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
 			}
 		}
-		MatrixObject matrixObject = ec.getMatrixObject(_output);
-		matrixObject.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
-		matrixObject.federate(feds);
+		MatrixObject output = ec.getMatrixObject(_output);
+		output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
+		federate(output, feds);
+	}
+	
+	public void federate(MatrixObject output, List<Pair<FederatedRange, FederatedData>> workers) {
+		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
+		for (Pair<FederatedRange, FederatedData> t : workers) {
+			// TODO support all value types
+			fedMapping.put(t.getLeft(), t.getRight());
+		}
+		List<Pair<FederatedData, Future<FederatedResponse>>> idResponses = new ArrayList<>();
+		for (Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
+			FederatedRange range = entry.getKey();
+			FederatedData value = entry.getValue();
+			if( !value.isInitialized() ) {
+				long[] beginDims = range.getBeginDims();
+				long[] endDims = range.getEndDims();
+				long[] dims = output.getDataCharacteristics().getDims();
+				for (int i = 0; i < dims.length; i++) {
+					dims[i] = endDims[i] - beginDims[i];
+				}
+				idResponses.add(new ImmutablePair<>(value, value.initFederatedData()));
+			}
+		}
+		try {
+			for (Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses) {
+				FederatedResponse response = idResponse.getRight().get();
+				if( response.isSuccessful() )
+					idResponse.getLeft().setVarID((Long) response.getData());
+				else
+					throw new DMLRuntimeException(response.getErrorMessage());
+			}
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Federation initialization failed", e);
+		}
+		output.getDataCharacteristics().setNonZeros(
+			output.getNumColumns() * output.getNumRows());
+		output.setFedMapping(fedMapping);
 	}
 }

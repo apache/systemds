@@ -16,9 +16,11 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
+import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 
 public final class ListAppendRemoveCPInstruction extends AppendCPInstruction {
@@ -41,7 +43,8 @@ public final class ListAppendRemoveCPInstruction extends AppendCPInstruction {
 		if( getOpcode().equals("append") ) {
 			//copy on write and append unnamed argument
 			Data dat2 = ec.getVariable(input2);
-			ListObject tmp = lo.copy().add(dat2);
+			LineageItem li = DMLScript.LINEAGE ? ec.getLineage().get(input2):null;
+			ListObject tmp = lo.copy().add(dat2, li);
 			//set output variable
 			ec.setVariable(output.getName(), tmp);
 		}

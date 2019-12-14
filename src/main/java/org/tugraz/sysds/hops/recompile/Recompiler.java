@@ -146,14 +146,14 @@ public class Recompiler
 	}
 	
 	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, 
-			LocalVariableMap vars, RecompileStatus status, boolean inplace, boolean replaceLit, long tid ) 
+			ExecutionContext ec, RecompileStatus status, boolean inplace, boolean replaceLit, long tid ) 
 	{
 		ArrayList<Instruction> newInst = null;
 
 		//need for synchronization as we do temp changes in shared hops/lops
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) {
-			newInst = recompile(sb, hops, vars, status, inplace, replaceLit, true, false, false, null, tid);
+			newInst = recompile(sb, hops, ec, status, inplace, replaceLit, true, false, false, null, tid);
 		}
 		
 		// replace thread ids in new instructions
@@ -161,8 +161,8 @@ public class Recompiler
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// remove writes if called through mlcontext or jmlc 
-		if( vars.getRegisteredOutputs() != null )
-			newInst = JMLCUtils.cleanupRuntimeInstructions(newInst, vars.getRegisteredOutputs());
+		if( ec.getVariables().getRegisteredOutputs() != null )
+			newInst = JMLCUtils.cleanupRuntimeInstructions(newInst, ec.getVariables().getRegisteredOutputs());
 		
 		// explain recompiled hops / instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
@@ -170,7 +170,35 @@ public class Recompiler
 	
 		return newInst;
 	}
+
+	public static ArrayList<Instruction> recompileHopsDag( StatementBlock sb, ArrayList<Hop> hops, 
+			LocalVariableMap vars, RecompileStatus status, boolean inplace, boolean replaceLit, long tid ) 
+	{
+		return recompileHopsDag(sb, hops, new ExecutionContext(vars), status, inplace, replaceLit, tid);
+	}
 	
+	public static ArrayList<Instruction> recompileHopsDag( Hop hop, ExecutionContext ec, 
+			RecompileStatus status, boolean inplace, boolean replaceLit, long tid ) 
+	{
+		ArrayList<Instruction> newInst = null;
+
+		//need for synchronization as we do temp changes in shared hops/lops
+		synchronized( hop ) {
+			newInst = recompile(null, new ArrayList<>(Arrays.asList(hop)),
+				ec, status, inplace, replaceLit, true, false, true, null, tid);
+		}
+		
+		// replace thread ids in new instructions
+		if( tid != 0 ) //only in parfor context
+			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
+		
+		// explain recompiled instructions
+		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
+			logExplainPred(hop, newInst);
+		
+		return newInst;
+	}
+
 	public static ArrayList<Instruction> recompileHopsDag( Hop hop, LocalVariableMap vars, 
 			RecompileStatus status, boolean inplace, boolean replaceLit, long tid ) 
 	{
@@ -201,7 +229,7 @@ public class Recompiler
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) {
 			//always in place, no stats update/rewrites, but forced exec type
-			newInst = recompile(sb, hops, null, null, true, false, false, true, false, et, tid);
+			newInst = recompile(sb, hops, (LocalVariableMap)null, null, true, false, false, true, false, et, tid);
 		}
 		
 		// replace thread ids in new instructions
@@ -223,7 +251,7 @@ public class Recompiler
 		synchronized( hop ) {
 			//always in place, no stats update/rewrites, but forced exec type
 			newInst = recompile(null, new ArrayList<>(Arrays.asList(hop)),
-				null, null, true, false, false, true, true, et, tid);
+				(LocalVariableMap)null, null, true, false, false, true, true, et, tid);
 		}
 
 		// replace thread ids in new instructions
@@ -245,7 +273,7 @@ public class Recompiler
 		//however, we create deep copies for most dags to allow for concurrent recompile
 		synchronized( hops ) {
 			//always in place, no stats update/rewrites
-			newInst = recompile(sb, hops, null, null, true, false, false, false, false, null, 0);
+			newInst = recompile(sb, hops, (LocalVariableMap)null, null, true, false, false, false, false, null, 0);
 		}
 		
 		// explain recompiled hops / instructions
@@ -263,13 +291,14 @@ public class Recompiler
 		synchronized( hop ) {
 			//always in place, no stats update/rewrites
 			newInst = recompile(null, new ArrayList<>(Arrays.asList(hop)),
-				null, null, true, false, false, false, true, null, 0);
+				(LocalVariableMap)null, null, true, false, false, false, true, null, 0);
 		}
 		
 		// explain recompiled instructions
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
 			logExplainPred(hop, newInst);
 		
+
 		return newInst;
 	}
 	
@@ -279,7 +308,7 @@ public class Recompiler
 	 * 
 	 * @param sb statement block of DAG, null for predicates
 	 * @param hops list of DAG root nodes
-	 * @param vars symbol table
+	 * @param ec Execution context
 	 * @param status recompilation status
 	 * @param inplace modify DAG in place, otherwise deep copy
 	 * @param replaceLit replace literals (only applicable on deep copy)
@@ -290,7 +319,7 @@ public class Recompiler
 	 * @param tid thread id, 0 for main or before worker creation
 	 * @return modified list of instructions
 	 */
-	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, RecompileStatus status,
+	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, ExecutionContext ec, RecompileStatus status,
 		boolean inplace, boolean replaceLit, boolean updateStats, boolean forceEt, boolean pred, ExecType et, long tid ) 
 	{
 		boolean codegen = ConfigurationManager.isCodegenEnabled()
@@ -317,7 +346,7 @@ public class Recompiler
 		if( !inplace && replaceLit ) {
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
-				rReplaceLiterals( hopRoot, vars, false );
+				rReplaceLiterals( hopRoot, ec, false );
 		}
 		
 		// force exec type (et=null for reset)
@@ -333,7 +362,7 @@ public class Recompiler
 			// refresh matrix characteristics (update stats)
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
-				rUpdateStatistics( hopRoot, vars );
+				rUpdateStatistics( hopRoot, ec.getVariables() );
 			
 			// dynamic hop rewrites
 			if( !inplace ) {
@@ -342,7 +371,7 @@ public class Recompiler
 				//update stats after rewrites
 				Hop.resetVisitStatus(hops);
 				for( Hop hopRoot : hops )
-					rUpdateStatistics( hopRoot, vars );
+					rUpdateStatistics( hopRoot, ec.getVariables() );
 			}
 			
 			// refresh memory estimates (based on updated stats,
@@ -393,6 +422,13 @@ public class Recompiler
 		}
 		
 		return newInst;
+	}
+
+	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, RecompileStatus status,
+		boolean inplace, boolean replaceLit, boolean updateStats, boolean forceEt, boolean pred, ExecType et, long tid ) 
+	{
+		return recompile(sb, hops, new ExecutionContext(vars), status, inplace, replaceLit,
+				updateStats, forceEt, pred, et, tid);
 	}
 	
 	private static void logExplainDAG(StatementBlock sb, ArrayList<Hop> hops, ArrayList<Instruction> inst) {
@@ -1411,14 +1447,20 @@ public class Recompiler
 	 * public interface to package local literal replacement
 	 * 
 	 * @param hop high-level operator
-	 * @param vars local variable map
+	 * @param ec Execution context
 	 * @param scalarsOnly if true, replace only scalar variables but no matrix operations;
 	 *            if false, apply full literal replacement
 	 */
+	public static void rReplaceLiterals( Hop hop, ExecutionContext ec, boolean scalarsOnly )
+	{
+		//public interface 
+		LiteralReplacement.rReplaceLiterals(hop, ec, scalarsOnly);
+	}
+
 	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars, boolean scalarsOnly )
 	{
 		//public interface 
-		LiteralReplacement.rReplaceLiterals(hop, vars, scalarsOnly);
+		LiteralReplacement.rReplaceLiterals(hop, new ExecutionContext(vars), scalarsOnly);
 	}
 	
 	public static void rSetExecType( Hop hop, ExecType etype ) {

@@ -129,6 +129,7 @@ SYSTEMDS-170 Lineage full and partial reuse
  * 176 Reuse rewrite for cbind/rbind-elementwise */+
  * 177 Reuse rewrite for aggregate                                    OK
  * 178 Compiler assisted reuse (eg. CV, lmCG)
+ * 179 Lineage handling for lists                                     OK
 
 SYSTEMDS-180 New Builtin Functions II                                 OK
  * 181 Builtin function for naive bayes                               OK
@@ -142,7 +143,7 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
  * 189 Builtin function mice (chained equation imputation)            OK
 
 SYSTEMDS-190 New Builtin Functions III
- * 191 Builtin function multi logreg   																OK
+ * 191 Builtin function multi logreg                                  OK
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK

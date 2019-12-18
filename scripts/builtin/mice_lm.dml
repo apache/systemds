@@ -62,20 +62,19 @@ m_mice_lm = function(Matrix[Double] X, Integer iter = 3, Integer complete = 3)
   {
     Mask_Filled = Mask;
   	
-    parfor(i in 1:col)
+    for(i in 1:col)
     {
       # construct column selector
       sel = cbind(matrix(1,1,i-1), as.matrix(0), matrix(1,1,col-i));
 
       # prepare train data set X and Y
       slice1 = removeEmpty(target = X2, margin = "rows", select = inverseMask[,i])
-      while(FALSE){}
       train_X = removeEmpty(target = slice1, margin = "cols", select = sel);
       train_Y = slice1[,i]
 
+      while(FALSE){}
       # prepare score data set X and Y for imputing Y
       slice2 = removeEmpty(target = X2, margin = "rows", select = Mask[,i])
-      while(FALSE){}
       test_X =  removeEmpty(target = slice2, margin = "cols", select = sel);
       test_Y = slice2[,i]
 
@@ -87,7 +86,9 @@ m_mice_lm = function(Matrix[Double] X, Integer iter = 3, Integer complete = 3)
 
       # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
       R = removeEmpty(target=Mask_Filled[,i] * seq(1,n), margin="rows");
-      Mask_Filled[,i] = table(R, 1, pred, n, 1);
+      #TODO modify removeEmpty to return zero row and n columns
+      if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0)))
+        Mask_Filled[,i] = table(R, 1, pred, n, 1);
     }
 
     # binding results of multiple imputations

@@ -151,7 +151,7 @@ SYSTEMDS-190 New Builtin Functions III
  * 192 Extended cmdline interface -b for calling builtin functions
  * 193 New outlierBySds builtin function (delete row/cell)            OK
  * 194 New outlierByIQR builtin function (delete row/cell)            OK
- * 195 Builtin function mice for nominal features
+ * 195 Builtin function mice for nominal features                     OK
  * 196 Builtin function intersect (set intersection)                  OK
  * 197 Builtin function for functional dependency discovery           OK
  * 198 Extended slice finding (classification)                        OK

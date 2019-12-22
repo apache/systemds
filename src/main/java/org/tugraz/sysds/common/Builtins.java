@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Graz University of Technology
+ * Copyright 2020 Graz University of Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public enum Builtins {
 	LSTM_BACKWARD("lstm_backward", false, ReturnType.MULTI_RETURN),
 	LU("lu", false, ReturnType.MULTI_RETURN),
 	MEAN("mean", "avg", false),
-	MICE_LM("mice_lm", true),
+	MICE("mice", true),
 	MIN("min", "pmin", false),
 	MAX("max", "pmax", false),
 	MAX_POOL("max_pool", false),

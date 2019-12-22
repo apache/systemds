@@ -20,7 +20,7 @@
 # 1. The data is continous/numerical 
 # 2. The missing values are denoted by zeros
 
-# Builtin function Implements binary-class SVM with squared slack variables
+# Builtin function Implements Multiple Imputations using Chained Equations for continous/numerical data
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------

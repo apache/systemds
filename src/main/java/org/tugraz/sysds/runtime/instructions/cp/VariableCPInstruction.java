@@ -403,7 +403,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				lineageCache = Boolean.parseBoolean(parts[11]); 
 			
 			//handle frame schema
-			String schema = (dt==DataType.FRAME && parts.length>=12) ? parts[parts.length-1] : null;
+			String schema = (dt==DataType.FRAME && parts.length>=13) ? parts[parts.length-1] : null;
 			
 			if ( fmt.equalsIgnoreCase("csv") ) {
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.

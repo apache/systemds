@@ -186,7 +186,8 @@ public class LineageCache {
 				|| (inst.getOpcode().equalsIgnoreCase("*") &&
 					inst instanceof BinaryMatrixMatrixCPInstruction) //TODO support scalar
 				|| inst.getOpcode().equalsIgnoreCase("rightIndex")
-				|| inst.getOpcode().equalsIgnoreCase("groupedagg");
+				|| inst.getOpcode().equalsIgnoreCase("groupedagg")
+				|| inst.getOpcode().equalsIgnoreCase("r'");
 	}
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------
@@ -321,6 +322,18 @@ public class LineageCache {
 				}
 				//TODO: support other PBuiltin ops
 				nflops = 2 * r1+xga * r1;
+				break;
+			}
+
+			case Reorg:  //r'
+			{
+				MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
+				long r = mo.getNumRows();
+				long c = mo.getNumColumns();
+				long nnz = mo.getNnz();
+				double s = OptimizerUtils.getSparsity(r, c, nnz);
+				boolean sparse = MatrixBlock.evalSparseFormatInMemory(r, c, nnz);
+				nflops = sparse ? r*c*s : r*c; 
 				break;
 			}
 				

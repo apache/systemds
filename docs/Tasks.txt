@@ -147,7 +147,7 @@ SYSTEMDS-190 New Builtin Functions III
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK
- * 202 Fix rewrite split DAG multiple removeEmpty (pending op)
+ * 202 Fix rewrite split DAG multiple removeEmpty (pending op)        OK
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK

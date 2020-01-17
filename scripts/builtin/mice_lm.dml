@@ -72,7 +72,6 @@ m_mice_lm = function(Matrix[Double] X, Integer iter = 3, Integer complete = 3)
       train_X = removeEmpty(target = slice1, margin = "cols", select = sel);
       train_Y = slice1[,i]
 
-      while(FALSE){}
       # prepare score data set X and Y for imputing Y
       slice2 = removeEmpty(target = X2, margin = "rows", select = Mask[,i])
       test_X =  removeEmpty(target = slice2, margin = "cols", select = sel);

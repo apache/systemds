@@ -199,7 +199,10 @@ public class ExecutionContext {
 	}
 	
 	public MetaData getMetaData(String varname) {
-		return _variables.get(varname).getMetaData();
+		Data tmp = _variables.get(varname);
+		if( tmp == null )
+			throw new DMLRuntimeException(getNonExistingVarError(varname));
+		return tmp.getMetaData();
 	}
 	
 	public boolean isMatrixObject(String varname) {
@@ -216,7 +219,7 @@ public class ExecutionContext {
 		
 		//error handling if non existing or no matrix
 		if( dat == null )
-			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+			throw new DMLRuntimeException(getNonExistingVarError(varname));
 		if( !(dat instanceof MatrixObject) )
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix.");
 		
@@ -228,7 +231,7 @@ public class ExecutionContext {
 
 		//error handling if non existing or no matrix
 		if( dat == null )
-			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+			throw new DMLRuntimeException(getNonExistingVarError(varname));
 		if( !(dat instanceof TensorObject) )
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a tensor.");
 
@@ -248,7 +251,7 @@ public class ExecutionContext {
 		Data dat = getVariable(varname);
 		//error handling if non existing or no matrix
 		if( dat == null )
-			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+			throw new DMLRuntimeException(getNonExistingVarError(varname));
 		if( !(dat instanceof FrameObject) )
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a frame.");
 		return (FrameObject) dat;
@@ -262,7 +265,7 @@ public class ExecutionContext {
 		Data dat = getVariable(varname);
 		//error handling if non existing or no matrix
 		if( dat == null )
-			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+			throw new DMLRuntimeException(getNonExistingVarError(varname));
 		if( !(dat instanceof CacheableData<?>) )
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix, tensor or frame.");
 		return (CacheableData<?>) dat;
@@ -486,7 +489,7 @@ public class ExecutionContext {
 		Data dat = getVariable(name);
 		//error handling if non existing or no list
 		if (dat == null)
-			throw new DMLRuntimeException("Variable '" + name + "' does not exist in the symbol table.");
+			throw new DMLRuntimeException(getNonExistingVarError(name));
 		if (!(dat instanceof ListObject))
 			throw new DMLRuntimeException("Variable '" + name + "' is not a list.");
 		return (ListObject) dat;
@@ -745,5 +748,9 @@ public class ExecutionContext {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
 		return _lineage.getOrCreate(input);
+	}
+	
+	private static String getNonExistingVarError(String varname) {
+		return "Variable '" + varname + "' does not exist in the symbol table.";
 	}
 }

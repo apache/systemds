@@ -81,7 +81,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 	
-		//collect all unknown csv reads hops
+		//collect all unknown data dependent ops
 		ArrayList<Hop> cand = new ArrayList<>();
 		collectDataDependentOperators( sb.getHops(), cand );
 		Hop.resetVisitStatus(sb.getHops());
@@ -90,8 +90,12 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		if( !cand.isEmpty() )
 		{
 			//collect child operators of candidates (to prevent rewrite anomalies)
+			//For example, B = rmEmpty(A), C = rmEmpty(B), op(C, nrow(B)) needs to 
+			//preserve the link rmEmpty(B) in the split-off DAG. Therefore, the
+			//candidates themselves need to be part of this anomaly filter as well.
 			HashSet<Hop> candChilds = new HashSet<>();
 			collectCandidateChildOperators( cand, candChilds );
+			candChilds.addAll(cand);
 			
 			try
 			{
@@ -103,7 +107,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				sb1.setLiveOut(new VariableSet());
 				
 				//move data-dependent ops incl transient writes to new statement block
-				//(and replace original persistent read with transient read)
+				//(and replace original hop with transient read)
 				ArrayList<Hop> sb1hops = new ArrayList<>();
 				for( Hop c : cand )
 				{
@@ -155,8 +159,9 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						for( int i=0; i<parents.size(); i++ ) {
 							//prevent concurrent modification by index access
 							Hop parent = parents.get(i);
-							if( !candChilds.contains(parent) ) //anomaly filter
+							if( !candChilds.contains(parent) ) { //anomaly filter
 								HopRewriteUtils.replaceChildReference(parent, c, tread);
+							}
 						}
 						
 						//add data-dependent operator sub dag to first statement block

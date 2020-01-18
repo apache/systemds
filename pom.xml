@@ -317,30 +317,22 @@
 			</plugin>
 
 			
-			<!-- Currently, all tests are integration tests. -->
-			<plugin>
+			<plugin> <!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.18</version><!--$NO-MVN-MAN-VER$ -->
 				<configuration>
-
-					<!-- STDERR/STDOUT to individual .txt files instead of console -->
-					<redirectTestOutputToFile>true</redirectTestOutputToFile>
-
 					<includes>
 						<include>**/component/*.java</include>
-						
 					</includes>
-
 					<excludes>
 						<exclude>**/functions/**.java</exclude>
 						<exclude>**/applications/**.java</exclude>
 					</excludes>
-
 				</configuration>
 			</plugin>
 
-			<plugin>
+			<plugin> <!-- integration tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 	
@@ -353,19 +345,17 @@
 					</execution>
 				</executions>
 				<configuration>
-
+					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
-
 					<includes>
-						<include>**/component/*.java</include>
-						
+						<include>**/component/*/*.java</include>
+						<include>**/functions/jmlc/*.java</include>
+						<include>**/functions/lineage/*.java</include>
 					</includes>
-
 					<excludes>
 						<exclude>**/functions/**.java</exclude>
 						<exclude>**/applications/**.java</exclude>
 					</excludes>
-
 				</configuration>
 			</plugin>
 
@@ -757,14 +747,6 @@
 					</plugin>
 				</plugins>
 			</build>
-		</profile>
-
-		<!-- profile to enable running tests on the GPU -->
-		<profile>
-			<id>gpuTests</id>
-			<properties>
-				<gpuTestsPath>**/integration/gpu/**/*Suite.java</gpuTestsPath>
-			</properties>
 		</profile>
 
 		<profile>

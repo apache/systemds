@@ -23,11 +23,11 @@ jdk:
   - openjdk8
 
 addons:
-#  apt:
-#    sources:
-#    - r-packages-trusty
-#    packages:
-#    - r-base-dev
+  apt:
+    sources:
+    - r-packages-trusty
+    packages:
+    - r-base-dev
 
 cache:
   apt: true
@@ -38,7 +38,7 @@ cache:
 #    - /usr/local/lib/R/site-library
 
 install:
-#  - sudo Rscript ./src/test/scripts/installDependencies.R
+  - sudo Rscript ./src/test/scripts/installDependencies.R
 
 before_script:
 #  this is not needed anymore since adding authentication object in code for running hadoop/spark local

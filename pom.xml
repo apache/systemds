@@ -349,8 +349,6 @@
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 					<includes>
 						<include>**/component/*/*.java</include>
-						<include>**/functions/jmlc/*.java</include>
-						<include>**/functions/lineage/*.java</include>
 					</includes>
 					<excludes>
 						<exclude>**/functions/**.java</exclude>

@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -35,24 +36,18 @@ import org.tugraz.sysds.common.Types.ValueType;
  */
 public class ParameterizedBuiltin extends Lop 
 {
-	public enum OperationTypes { 
-		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, LOWER_TRI, UPPER_TRI,
-		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
-		TOSTRING, LIST, PARAMSERV
-	}
-	
-	private OperationTypes _operation;
+	private ParamBuiltinOp _operation;
 	private HashMap<String, Lop> _inputParams;
 	private boolean _bRmEmptyBC;
 
 	//cp-specific parameters
 	private int _numThreads = 1;
 	
-	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, ParamBuiltinOp op, DataType dt, ValueType vt, ExecType et) {
 		this(paramLops, op, dt, vt, et, 1);
 	}
 	
-	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) {
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, ParamBuiltinOp op, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
 		_operation = op;
 		
@@ -67,12 +62,12 @@ public class ParameterizedBuiltin extends Lop
 		lps.setProperties(inputs, et);
 	}
 
-	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bRmEmptyBC) {
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, ParamBuiltinOp op, DataType dt, ValueType vt, ExecType et, boolean bRmEmptyBC) {
 		this(paramLops, op, dt, vt, et);
 		_bRmEmptyBC = bRmEmptyBC;
 	}
 	
-	public OperationTypes getOp() { 
+	public ParamBuiltinOp getOp() { 
 		return _operation; 
 	}
 	
@@ -99,7 +94,7 @@ public class ParameterizedBuiltin extends Lop
 		{
 			case CDF:
 			case INVCDF:
-				sb.append( (_operation == OperationTypes.CDF ? "cdf" : "invcdf") );
+				sb.append( (_operation == ParamBuiltinOp.CDF ? "cdf" : "invcdf") );
 				sb.append( OPERAND_DELIMITOR );
 				
 				for ( String s : _inputParams.keySet() ) 
@@ -212,14 +207,14 @@ public class ParameterizedBuiltin extends Lop
 				throw new LopsException(this.printErrorLocation() + "In ParameterizedBuiltin Lop, Unknown operation: " + _operation);
 		}
 		
-		if (_operation == OperationTypes.RMEMPTY) {
+		if (_operation == ParamBuiltinOp.RMEMPTY) {
 			sb.append("bRmEmptyBC");
 			sb.append(NAME_VALUE_SEPARATOR);
 			sb.append( _bRmEmptyBC );
 			sb.append(OPERAND_DELIMITOR);
 		}
 		
-		if( getExecType()==ExecType.CP && _operation == OperationTypes.REXPAND ) {
+		if( getExecType()==ExecType.CP && _operation == ParamBuiltinOp.REXPAND ) {
 			sb.append( "k" );
 			sb.append( Lop.NAME_VALUE_SEPARATOR );
 			sb.append( _numThreads );	

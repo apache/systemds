@@ -22,17 +22,16 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Aggregate;
-import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.PartialAggregate;
-import org.tugraz.sysds.lops.PartialAggregate.DirectionTypes;
 import org.tugraz.sysds.lops.TernaryAggregate;
 import org.tugraz.sysds.lops.UAggOuterChain;
 import org.tugraz.sysds.lops.UnaryCP;
@@ -133,14 +132,11 @@ public class AggUnaryOp extends MultiThreadedHop
 				}
 				else if( isUnaryAggregateOuterCPRewriteApplicable() )
 				{
-					OperationTypes op = HopsAgg2Lops.get(_op);
-					DirectionTypes dir = HopsDirection2Lops.get(_direction);
-
 					BinaryOp binput = (BinaryOp)getInput().get(0);
 					agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
-							binput.getInput().get(1).constructLops(), op, dir, 
+							binput.getInput().get(1).constructLops(), _op, _direction, 
 							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.CP);
-					PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getBlocksize(), dir);
+					PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getBlocksize(), _direction);
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
@@ -153,8 +149,8 @@ public class AggUnaryOp extends MultiThreadedHop
 				}
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					agg1 = new PartialAggregate(input.constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);
+					agg1 = new PartialAggregate(input.constructLops(),
+							_op, _direction, getDataType(),getValueType(), et, k);
 				}
 				
 				setOutputDimensions(agg1);
@@ -167,9 +163,6 @@ public class AggUnaryOp extends MultiThreadedHop
 			}
 			else if( et == ExecType.SPARK )
 			{
-				OperationTypes op = HopsAgg2Lops.get(_op);
-				DirectionTypes dir = HopsDirection2Lops.get(_direction);
-
 				//unary aggregate
 				if( isTernaryAggregateRewriteApplicable() ) 
 				{
@@ -182,9 +175,9 @@ public class AggUnaryOp extends MultiThreadedHop
 				{
 					BinaryOp binput = (BinaryOp)getInput().get(0);
 					Lop transform1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
-							binput.getInput().get(1).constructLops(), op, dir, 
+							binput.getInput().get(1).constructLops(), _op, _direction, 
 							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.SPARK);
-					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getBlocksize(), dir);
+					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getBlocksize(), _direction);
 					setLineNumbers(transform1);
 					setLops(transform1);
 				
@@ -204,7 +197,7 @@ public class AggUnaryOp extends MultiThreadedHop
 					SparkAggType aggtype = getSparkUnaryAggregationType(needAgg);
 					
 					PartialAggregate aggregate = new PartialAggregate(input.constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), input._dataType, getValueType(), aggtype, et);
+						_op, _direction, input._dataType, getValueType(), aggtype, et);
 					aggregate.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getBlocksize());
 					setLineNumbers(aggregate);
 					setLops(aggregate);
@@ -235,10 +228,7 @@ public class AggUnaryOp extends MultiThreadedHop
 	@Override
 	public String getOpString() {
 		//ua - unary aggregate, for consistency with runtime
-		String s = "ua(" + 
-				HopsAgg2String.get(_op) + 
-				HopsDirection2String.get(_direction) + ")";
-		return s;
+		return"ua(" + _op.toString() + _direction.toString() + ")";
 	}
 	
 	@Override
@@ -615,10 +605,9 @@ public class AggUnaryOp extends MultiThreadedHop
 		ExecType et_input = input1.optFindExecType();
 		// Because ternary aggregate are not supported on GPU
 		et_input = et_input == ExecType.GPU ? ExecType.CP :  et_input;
-		DirectionTypes dir = HopsDirection2Lops.get(_direction);
 		
-		return new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 
-				Binary.OperationTypes.MULTIPLY, dir, getDataType(), ValueType.FP64, et_input, k);
+		return new TernaryAggregate(in1, in2, in3, AggOp.SUM, 
+				Binary.OperationTypes.MULTIPLY, _direction, getDataType(), ValueType.FP64, et_input, k);
 	}
 	
 	@Override

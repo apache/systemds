@@ -63,6 +63,7 @@ public abstract class Lop
 		Sql,                                                //CP sql read
 		Federated                                           //FED federated read
 	}
+	
 
 	/**
 	 * Lop types

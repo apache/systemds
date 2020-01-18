@@ -39,14 +39,14 @@ import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.AggOp;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.Direction;
+import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.Hop.OpOp3;
 import org.tugraz.sysds.hops.Hop.OpOpN;
-import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
 import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.Statement;
@@ -1069,7 +1069,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private static Hop pushdownSumBinaryMult(Hop parent, Hop hi, int pos ) {
 		//pattern:  sum(lamda*X) -> lamda*sum(X)
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol
-				&& ((AggUnaryOp)hi).getOp()==Hop.AggOp.SUM // only one parent which is the sum
+				&& ((AggUnaryOp)hi).getOp()==AggOp.SUM // only one parent which is the sum
 				&& HopRewriteUtils.isBinary(hi.getInput().get(0), OpOp2.MULT, 1)
 				&& ((hi.getInput().get(0).getInput().get(0).getDataType()==DataType.SCALAR && hi.getInput().get(0).getInput().get(1).getDataType()==DataType.MATRIX)
 					||(hi.getInput().get(0).getInput().get(0).getDataType()==DataType.MATRIX && hi.getInput().get(0).getInput().get(1).getDataType()==DataType.SCALAR)))

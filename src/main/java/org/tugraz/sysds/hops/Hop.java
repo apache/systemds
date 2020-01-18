@@ -39,7 +39,6 @@ import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.Nary;
-import org.tugraz.sysds.lops.ParameterizedBuiltin;
 import org.tugraz.sysds.lops.ReBlock;
 import org.tugraz.sysds.lops.Ternary;
 import org.tugraz.sysds.lops.Unary;
@@ -1014,10 +1013,6 @@ public abstract class Hop implements ParseInfo
 		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
 	}
 	
-	public enum AggOp {
-		SUM, SUM_SQ, MIN, MAX, TRACE, PROD, MEAN, VAR, MAXINDEX, MININDEX
-	}
-
 	public enum ReOrgOp {
 		TRANS, DIAG, RESHAPE, SORT, REV
 		//Note: Diag types are invalid because for unknown sizes this would 
@@ -1037,23 +1032,12 @@ public abstract class Hop implements ParseInfo
 		RAND, SEQ, SINIT, SAMPLE, INVALID, TIME
 	}
 
-	public enum ParamBuiltinOp {
-		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
-		LOWER_TRI, UPPER_TRI,
-		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
-		TOSTRING, LIST, PARAMSERV
-	}
-
 	public enum FileFormatTypes {
 		TEXT, BINARY, MM, CSV, LIBSVM
 	}
 
 	public enum DataOpTypes {
 		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE, FUNCTIONOUTPUT, SQLREAD, FEDERATED
-	}
-
-	public enum Direction {
-		RowCol, Row, Col
 	}
 
 	protected static final HashMap<DataOpTypes, org.tugraz.sysds.lops.Data.OperationTypes> HopsData2Lops;
@@ -1063,21 +1047,6 @@ public abstract class Hop implements ParseInfo
 		HopsData2Lops.put(DataOpTypes.PERSISTENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, org.tugraz.sysds.lops.Data.OperationTypes.READ);
-	}
-
-	protected static final HashMap<Hop.AggOp, org.tugraz.sysds.lops.Aggregate.OperationTypes> HopsAgg2Lops;
-	static {
-		HopsAgg2Lops = new HashMap<>();
-		HopsAgg2Lops.put(AggOp.SUM, org.tugraz.sysds.lops.Aggregate.OperationTypes.KahanSum);
-		HopsAgg2Lops.put(AggOp.SUM_SQ, org.tugraz.sysds.lops.Aggregate.OperationTypes.KahanSumSq);
-		HopsAgg2Lops.put(AggOp.TRACE, org.tugraz.sysds.lops.Aggregate.OperationTypes.KahanTrace);
-		HopsAgg2Lops.put(AggOp.MIN, org.tugraz.sysds.lops.Aggregate.OperationTypes.Min);
-		HopsAgg2Lops.put(AggOp.MAX, org.tugraz.sysds.lops.Aggregate.OperationTypes.Max);
-		HopsAgg2Lops.put(AggOp.MAXINDEX, org.tugraz.sysds.lops.Aggregate.OperationTypes.MaxIndex);
-		HopsAgg2Lops.put(AggOp.MININDEX, org.tugraz.sysds.lops.Aggregate.OperationTypes.MinIndex);
-		HopsAgg2Lops.put(AggOp.PROD, org.tugraz.sysds.lops.Aggregate.OperationTypes.Product);
-		HopsAgg2Lops.put(AggOp.MEAN, org.tugraz.sysds.lops.Aggregate.OperationTypes.Mean);
-		HopsAgg2Lops.put(AggOp.VAR, org.tugraz.sysds.lops.Aggregate.OperationTypes.Var);
 	}
 
 	protected static final HashMap<ReOrgOp, org.tugraz.sysds.lops.Transform.OperationTypes> HopsTransf2Lops;
@@ -1106,15 +1075,6 @@ public abstract class Hop implements ParseInfo
 		HopsConv2Lops.put(OpOpDnn.BATCH_NORM2D_TEST, org.tugraz.sysds.lops.DnnTransform.OperationTypes.BATCH_NORM2D_TEST);
 		HopsConv2Lops.put(OpOpDnn.CHANNEL_SUMS, org.tugraz.sysds.lops.DnnTransform.OperationTypes.CHANNEL_SUMS);
 		HopsConv2Lops.put(OpOpDnn.UPDATE_NESTEROV_X, org.tugraz.sysds.lops.DnnTransform.OperationTypes.UPDATE_NESTEROV_X);
-	}
-
-	protected static final HashMap<Hop.Direction, org.tugraz.sysds.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
-	static {
-		HopsDirection2Lops = new HashMap<>();
-		HopsDirection2Lops.put(Direction.RowCol, org.tugraz.sysds.lops.PartialAggregate.DirectionTypes.RowCol);
-		HopsDirection2Lops.put(Direction.Col, org.tugraz.sysds.lops.PartialAggregate.DirectionTypes.Col);
-		HopsDirection2Lops.put(Direction.Row, org.tugraz.sysds.lops.PartialAggregate.DirectionTypes.Row);
-
 	}
 
 	protected static final HashMap<Hop.OpOp2, Binary.OperationTypes> HopsOpOp2LopsB;
@@ -1358,25 +1318,6 @@ public abstract class Hop implements ParseInfo
 	public static OpOp1 getUnaryOpCode(String op) {
 		return HopsStringOpOp1.get(op);
 	}
-	
-	protected static final HashMap<Hop.ParamBuiltinOp, org.tugraz.sysds.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
-	static {
-		HopsParameterizedBuiltinLops = new HashMap<>();
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.CDF, ParameterizedBuiltin.OperationTypes.CDF);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.INVCDF, ParameterizedBuiltin.OperationTypes.INVCDF);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, ParameterizedBuiltin.OperationTypes.RMEMPTY);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, ParameterizedBuiltin.OperationTypes.REPLACE);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REXPAND, ParameterizedBuiltin.OperationTypes.REXPAND);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.LOWER_TRI, ParameterizedBuiltin.OperationTypes.LOWER_TRI);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.UPPER_TRI, ParameterizedBuiltin.OperationTypes.UPPER_TRI);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMAPPLY, ParameterizedBuiltin.OperationTypes.TRANSFORMAPPLY);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMDECODE, ParameterizedBuiltin.OperationTypes.TRANSFORMDECODE);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMCOLMAP, ParameterizedBuiltin.OperationTypes.TRANSFORMCOLMAP);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMMETA, ParameterizedBuiltin.OperationTypes.TRANSFORMMETA);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TOSTRING, ParameterizedBuiltin.OperationTypes.TOSTRING);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.LIST, ParameterizedBuiltin.OperationTypes.LIST);
-		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.PARAMSERV, ParameterizedBuiltin.OperationTypes.PARAMSERV);
-	}
 
 	protected static final HashMap<OpOp2, String> HopsOpOp2String;
 	protected static final HashMap<String,OpOp2> HopsStringOpOp2;
@@ -1469,30 +1410,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp4String.put(OpOp4.WDIVMM,   "wdivmm");
 		HopsOpOp4String.put(OpOp4.WUMM,     "wumm");
 	}
-
-	protected static final HashMap<Hop.Direction, String> HopsDirection2String;
-	static {
-		HopsDirection2String = new HashMap<>();
-		HopsDirection2String.put(Direction.RowCol, "RC");
-		HopsDirection2String.put(Direction.Col, "C");
-		HopsDirection2String.put(Direction.Row, "R");
-	}
-
-	protected static final HashMap<Hop.AggOp, String> HopsAgg2String;
-	static {
-		HopsAgg2String = new HashMap<>();
-		HopsAgg2String.put(AggOp.SUM, "+");
-		HopsAgg2String.put(AggOp.SUM_SQ, "sq+");
-		HopsAgg2String.put(AggOp.PROD, "*");
-		HopsAgg2String.put(AggOp.MIN, "min");
-		HopsAgg2String.put(AggOp.MAX, "max");
-		HopsAgg2String.put(AggOp.MAXINDEX, "maxindex");
-		HopsAgg2String.put(AggOp.MININDEX, "minindex");
-		HopsAgg2String.put(AggOp.TRACE, "trace");
-		HopsAgg2String.put(AggOp.MEAN, "mean");
-		HopsAgg2String.put(AggOp.VAR, "var");
-	}
-
+	
 	protected static final HashMap<Hop.ReOrgOp, String> HopsTransf2String;
 	static {
 		HopsTransf2String = new HashMap<>();

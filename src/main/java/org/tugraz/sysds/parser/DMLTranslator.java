@@ -42,16 +42,13 @@ import org.tugraz.sysds.hops.DnnOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.FunctionOp.FunctionType;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.AggOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.hops.Hop.Direction;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.Hop.OpOp3;
 import org.tugraz.sysds.hops.Hop.OpOpDnn;
 import org.tugraz.sysds.hops.Hop.OpOpN;
-import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
 import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.IndexingOp;
@@ -76,7 +73,10 @@ import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Builtins;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.Expression.FormatType;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
@@ -1725,7 +1725,7 @@ public class DMLTranslator
 		} else if (source.getOpCode() == Expression.BinaryOp.INTDIV) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.INTDIV, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.MATMULT) {
-			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, AggOp.SUM, left, right);
+			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, org.tugraz.sysds.common.Types.AggOp.SUM, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.POW) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.POW, left, right);
 		}

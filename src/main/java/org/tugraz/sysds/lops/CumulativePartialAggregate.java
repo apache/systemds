@@ -19,24 +19,23 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
 public class CumulativePartialAggregate extends Lop 
 {
+	private AggOp _op;
 	
-	private OperationTypes _op;
-	
-	public CumulativePartialAggregate(Lop input, DataType dt, ValueType vt, OperationTypes op, ExecType et) {
+	public CumulativePartialAggregate(Lop input, DataType dt, ValueType vt, AggOp op, ExecType et) {
 		super(Lop.Type.CumulativePartialAggregate, dt, vt);
 		
 		//sanity check for supported aggregates
-		if( !( op == OperationTypes.KahanSum || op == OperationTypes.Product 
-			|| op == OperationTypes.SumProduct
-			|| op == OperationTypes.Min || op == OperationTypes.Max) )
+		if( !( op == AggOp.SUM || op == AggOp.PROD 
+			|| op == AggOp.SUM_PROD
+			|| op == AggOp.MIN || op == AggOp.MAX) )
 		{
 			throw new LopsException("Unsupported aggregate operation type: "+op);
 		}
@@ -57,12 +56,12 @@ public class CumulativePartialAggregate extends Lop
 	
 	private String getOpcode() {
 		switch( _op ) {
-			case KahanSum:   return "ucumack+";
-			case Product:    return "ucumac*";
-			case SumProduct: return "ucumac+*";
-			case Min:        return "ucumacmin";
-			case Max:        return "ucumacmax";
-			default:         return null;
+			case SUM:      return "ucumack+";
+			case PROD:     return "ucumac*";
+			case SUM_PROD: return "ucumac+*";
+			case MIN:      return "ucumacmin";
+			case MAX:      return "ucumacmax";
+			default:       return null;
 		}
 	}
 	

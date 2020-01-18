@@ -22,7 +22,9 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
@@ -237,7 +239,7 @@ public class AggBinaryOp extends MultiThreadedHop
 						constructSparkLopsPMM(); 
 						break;
 					case ZIPMM:
-						constructSparkLopsZIPMM(); 
+						constructSparkLopsZIPMM();
 						break;
 						
 					default:
@@ -257,8 +259,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	@Override
 	public String getOpString() {
 		//ba - binary aggregate, for consistency with runtime 
-		String s = "ba(" + 
-				HopsAgg2String.get(outerOp) + 
+		String s = "ba(" + outerOp.toString() + 
 				HopsOpOp2String.get(innerOp)+")";
 		return s;
 	}

@@ -21,9 +21,9 @@ package org.tugraz.sysds.lops;
 
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.PartialAggregate.DirectionTypes;
-
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ValueType;
 
 public class TernaryAggregate extends Lop 
@@ -32,14 +32,14 @@ public class TernaryAggregate extends Lop
 	public static final String OPCODE_C = "tack+*";
 	
 	//NOTE: currently only used for ta+*
-	//private Aggregate.OperationTypes _aggOp = null;
+	//private AggOp _aggOp = null;
 	//private Binary.OperationTypes _binOp = null;
-	private DirectionTypes _direction;
+	private Direction _direction;
 	
 	//optional attribute for cp
 	private int _numThreads = -1;
 
-	public TernaryAggregate(Lop input1, Lop input2, Lop input3, Aggregate.OperationTypes aggOp, Binary.OperationTypes binOp, DirectionTypes direction, DataType dt, ValueType vt, ExecType et, int k ) 
+	public TernaryAggregate(Lop input1, Lop input2, Lop input3, AggOp aggOp, Binary.OperationTypes binOp, Direction direction, DataType dt, ValueType vt, ExecType et, int k ) 
 	{
 		super(Lop.Type.TernaryAggregate, dt, vt);
 		

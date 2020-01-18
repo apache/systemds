@@ -21,7 +21,7 @@ package org.tugraz.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.hops.Hop.AggOp;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;

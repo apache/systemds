@@ -22,10 +22,10 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.lops.CumulativeOffsetBinary;
 import org.tugraz.sysds.lops.CumulativePartialAggregate;
@@ -254,7 +254,7 @@ public class UnaryOp extends MultiThreadedHop
 		long clen = input.getDim2();
 		long blen = input.getBlocksize();
 		boolean force = !dimsKnown() || _etypeForced == ExecType.SPARK;
-		OperationTypes aggtype = getCumulativeAggType();
+		AggOp aggtype = getCumulativeAggType();
 		Lop X = input.constructLops();
 		
 		//special case single row block (no offsets needed)
@@ -311,7 +311,7 @@ public class UnaryOp extends MultiThreadedHop
 		return TEMP;
 	}
 	
-	private Lop constructCumOffBinary(Lop data, Lop offset, OperationTypes aggtype, long rlen, long clen, long blen) {
+	private Lop constructCumOffBinary(Lop data, Lop offset, AggOp aggtype, long rlen, long clen, long blen) {
 		//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
 		//the subsequent offset binary apply of split aggregates against the original data)
 		double initValue = getCumulativeInitValue();
@@ -326,13 +326,13 @@ public class UnaryOp extends MultiThreadedHop
 		return binary;
 	}
 
-	private OperationTypes getCumulativeAggType() {
+	private AggOp getCumulativeAggType() {
 		switch( _op ) {
-			case CUMSUM:     return OperationTypes.KahanSum;
-			case CUMPROD:    return OperationTypes.Product;
-			case CUMSUMPROD: return OperationTypes.SumProduct;
-			case CUMMIN:     return OperationTypes.Min;
-			case CUMMAX:     return OperationTypes.Max;
+			case CUMSUM:     return AggOp.SUM;
+			case CUMPROD:    return AggOp.PROD;
+			case CUMMIN:     return AggOp.MIN;
+			case CUMMAX:     return AggOp.MAX;
+			case CUMSUMPROD: return AggOp.SUM_PROD;
 			default:         return null;
 		}
 	}

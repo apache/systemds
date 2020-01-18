@@ -40,13 +40,12 @@ import org.tugraz.sysds.hops.NaryOp;
 import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.AggOp;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.Hop.OpOp3;
 import org.tugraz.sysds.hops.Hop.OpOpDnn;
 import org.tugraz.sysds.hops.Hop.OpOpN;
-import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeCell;
@@ -61,6 +60,7 @@ import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 
 public class TemplateCell extends TemplateBase 

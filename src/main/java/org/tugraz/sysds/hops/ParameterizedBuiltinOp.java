@@ -21,7 +21,10 @@
 
 package org.tugraz.sysds.hops;
 
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Data;
@@ -183,8 +186,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			case PARAMSERV:
 			case LIST: {
 				ExecType et = optFindExecType();
-				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
+					inputlops, _op, getDataType(), getValueType(), et);
 				setOutputDimensions(pbilop);
 				setLineNumbers(pbilop);
 				setLops(pbilop);
@@ -276,7 +279,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 		
 		if( et == ExecType.CP )
 		{
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, _op, getDataType(), getValueType(), et);
 			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 			setLops(pbilop);
@@ -404,7 +407,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			if ( !FORCE_DIST_RM_EMPTY && isRemoveEmptyBcSP())
 				_bRmEmptyBC = true;
 			
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et, _bRmEmptyBC);			
+			ParameterizedBuiltin pbilop = new ParameterizedBuiltin( inMap, _op, getDataType(), getValueType(), et, _bRmEmptyBC);			
 			setOutputDimensions(pbilop);
 			setLineNumbers(pbilop);
 			
@@ -421,8 +424,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 	private void constructLopsRExpand(HashMap<String, Lop> inputlops, ExecType et) 
 	{
 		int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
-		ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, 
-				HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et, k);
+		ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
+			inputlops, _op, getDataType(), getValueType(), et, k);
 		setOutputDimensions(pbilop);
 		setLineNumbers(pbilop);
 		setLops(pbilop);

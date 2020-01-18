@@ -122,4 +122,68 @@ public class Types
 		SINGLE_RETURN,
 		MULTI_RETURN
 	}
+	
+	
+	/**
+	 * Type of aggregation direction
+	 */
+	public enum Direction {
+		RowCol, // full aggregate
+		Row,    // row aggregate (e.g., rowSums)
+		Col;    // column aggregate (e.g., colSums)
+		
+		@Override
+		public String toString() {
+			switch(this) {
+				case RowCol: return "RC";
+				case Row:    return "R";
+				case Col:    return "C";
+				default:
+					throw new RuntimeException("Invalid direction type: " + this);
+			}
+		}
+	}
+
+	public enum CorrectionLocationType { 
+		NONE, 
+		LASTROW, 
+		LASTCOLUMN, 
+		LASTTWOROWS, 
+		LASTTWOCOLUMNS,
+		LASTFOURROWS,
+		LASTFOURCOLUMNS,
+		INVALID;
+		
+		public int getNumRemovedRowsColumns() {
+			return (this==LASTROW || this==LASTCOLUMN) ? 1 :
+				(this==LASTTWOROWS || this==LASTTWOCOLUMNS) ? 2 :
+				(this==LASTFOURROWS || this==LASTFOURCOLUMNS) ? 4 : 0;
+		}
+	}
+	
+	public enum AggOp {
+		SUM, SUM_SQ,
+		PROD, SUM_PROD,
+		MIN, MAX,
+		TRACE, MEAN, VAR,
+		MAXINDEX, MININDEX;
+		
+		@Override
+		public String toString() {
+			switch(this) {
+				case SUM:    return "+";
+				case SUM_SQ: return "sq+";
+				case PROD:   return "*";
+				default:     return name().toLowerCase();
+			}
+		}
+	}
+	
+
+	public enum ParamBuiltinOp {
+		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
+		LOWER_TRI, UPPER_TRI,
+		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
+		TOSTRING, LIST, PARAMSERV
+	}
 }

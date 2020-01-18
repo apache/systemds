@@ -30,14 +30,14 @@ import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.NaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.AggOp;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.hops.Hop.Direction;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.compile.Dag;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -482,11 +482,11 @@ public class LiteralReplacement
 	
 	private static boolean isReplaceableUnaryAggregate( AggUnaryOp auop )
 	{
-		boolean cdir = (auop.getDirection() == Direction.RowCol);		
-		boolean cop = (  auop.getOp() == AggOp.SUM
-				      || auop.getOp() == AggOp.SUM_SQ
-				      || auop.getOp() == AggOp.MIN
-				      || auop.getOp() == AggOp.MAX ); 
+		boolean cdir = (auop.getDirection() == Direction.RowCol);
+		boolean cop = (auop.getOp() == AggOp.SUM
+			|| auop.getOp() == AggOp.SUM_SQ
+			|| auop.getOp() == AggOp.MIN
+			|| auop.getOp() == AggOp.MAX);
 		
 		return cdir && cop;
 	}

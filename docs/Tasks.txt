@@ -144,6 +144,9 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
 
 SYSTEMDS-190 New Builtin Functions III
  * 191 Builtin function multi logreg                                  OK
+ * 192 Extended cmdline interface -b for calling builtin functions
+ * 193 New outlierBySds builtin function (delete row/cell)
+ * 194 New outlierByIQR builtin function (delte row/cell)
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK
@@ -163,6 +166,10 @@ SYSTEMDS-220 Federated Tensors and Instructions
  * 223 Federated unary aggregates
  * 224 Federated transform functionality
  * 225 Federated elementwise operations
+
+SYSTEMDS-230 Lineage Integration
+ * 231 Use lineage in buffer pool
+ * 232 Lineage of generated operators
 
 Others:
  * Break append instruction to cbind and rbind 

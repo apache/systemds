@@ -27,7 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
+import org.tugraz.sysds.common.Types.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInput;
 import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;

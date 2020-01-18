@@ -25,8 +25,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.AggOp;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeData;

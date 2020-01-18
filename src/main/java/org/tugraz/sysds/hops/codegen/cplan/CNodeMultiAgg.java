@@ -24,7 +24,7 @@ import java.util.Arrays;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.AggOp;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 

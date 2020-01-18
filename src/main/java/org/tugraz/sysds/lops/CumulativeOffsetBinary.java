@@ -19,18 +19,18 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
 public class CumulativeOffsetBinary extends Lop 
 {
-	private OperationTypes _op;
+	private AggOp _op;
 	private double _initValue = 0;
 	private boolean _broadcast = false;
 	
-	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, OperationTypes op, ExecType et) 
+	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, AggOp op, ExecType et) 
 	{
 		super(Lop.Type.CumulativeOffsetBinary, dt, vt);
 		checkSupportedOperations(op);
@@ -39,7 +39,7 @@ public class CumulativeOffsetBinary extends Lop
 		init(data, offsets, dt, vt, et);
 	}
 	
-	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, double init, boolean broadcast, OperationTypes op, ExecType et)
+	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, double init, boolean broadcast, AggOp op, ExecType et)
 	{
 		super(Lop.Type.CumulativeOffsetBinary, dt, vt);
 		checkSupportedOperations(op);
@@ -65,11 +65,11 @@ public class CumulativeOffsetBinary extends Lop
 		return "CumulativeOffsetBinary";
 	}
 
-	private static void checkSupportedOperations(OperationTypes op) {
+	private static void checkSupportedOperations(AggOp op) {
 		//sanity check for supported aggregates
-		if( !( op == OperationTypes.KahanSum || op == OperationTypes.Product
-			|| op == OperationTypes.SumProduct
-			|| op == OperationTypes.Min || op == OperationTypes.Max) )
+		if( !( op == AggOp.SUM || op == AggOp.PROD
+			|| op == AggOp.SUM_PROD
+			|| op == AggOp.MIN || op == AggOp.MAX) )
 		{
 			throw new LopsException("Unsupported aggregate operation type: "+op);
 		}
@@ -77,12 +77,12 @@ public class CumulativeOffsetBinary extends Lop
 	
 	private String getOpcode() {
 		switch( _op ) {
-			case KahanSum:   return "bcumoffk+";
-			case Product:    return "bcumoff*";
-			case SumProduct: return "bcumoff+*";
-			case Min:        return "bcumoffmin";
-			case Max:        return "bcumoffmax";
-			default:         return null;
+			case SUM:      return "bcumoffk+";
+			case PROD:     return "bcumoff*";
+			case SUM_PROD: return "bcumoff+*";
+			case MIN:      return "bcumoffmin";
+			case MAX:      return "bcumoffmax";
+			default:       return null;
 		}
 	}
 	

@@ -21,7 +21,9 @@ package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -31,10 +33,10 @@ public class BinaryUAggChain extends Lop
 	public static final String OPCODE = "binuaggchain";
 
 	//outer operation
-	private Binary.OperationTypes _binOp             = null;	
+	private Binary.OperationTypes _binOp = null;
 	//inner operation
-	private Aggregate.OperationTypes _uaggOp         = null;
-	private PartialAggregate.DirectionTypes _uaggDir = null;
+	private AggOp _uaggOp = null;
+	private Direction _uaggDir = null;
 	
 	
 	/**
@@ -49,7 +51,7 @@ public class BinaryUAggChain extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 */
-	public BinaryUAggChain(Lop input1, Binary.OperationTypes bop, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, DataType dt, ValueType vt, ExecType et) {
+	public BinaryUAggChain(Lop input1, Binary.OperationTypes bop, AggOp uaop, Direction uadir, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.BinUaggChain, dt, vt);
 		addInput(input1); //X
 		input1.addOutput(this); 

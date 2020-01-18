@@ -30,8 +30,6 @@ import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.AggOp;
-import org.tugraz.sysds.hops.Hop.Direction;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.parser.ForStatement;
@@ -39,7 +37,9 @@ import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatementBlock;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 
 /**
  * Rule: Simplify program structure by pulling if or else statement body out

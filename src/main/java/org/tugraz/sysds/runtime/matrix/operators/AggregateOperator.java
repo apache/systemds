@@ -22,7 +22,7 @@ package org.tugraz.sysds.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
+import org.tugraz.sysds.common.Types.CorrectionLocationType;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlusSq;
 import org.tugraz.sysds.runtime.functionobjects.Minus;

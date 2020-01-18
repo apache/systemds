@@ -21,8 +21,9 @@ package org.tugraz.sysds.runtime.instructions;
 
 import java.util.StringTokenizer;
 
-import org.tugraz.sysds.hops.Hop.AggOp;
-import org.tugraz.sysds.hops.Hop.Direction;
+import org.tugraz.sysds.common.Types.AggOp;
+import org.tugraz.sysds.common.Types.CorrectionLocationType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.lops.AppendM;
 import org.tugraz.sysds.lops.BinaryM;
 import org.tugraz.sysds.lops.GroupedAggregateM;
@@ -42,7 +43,6 @@ import org.tugraz.sysds.lops.WeightedSquaredLossR;
 import org.tugraz.sysds.lops.WeightedUnaryMM;
 import org.tugraz.sysds.lops.WeightedUnaryMMR;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.functionobjects.And;
 import org.tugraz.sysds.runtime.functionobjects.BitwAnd;

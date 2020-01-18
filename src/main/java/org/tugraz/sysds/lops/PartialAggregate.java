@@ -23,8 +23,10 @@ import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-
+import org.tugraz.sysds.common.Types.AggOp;
+import org.tugraz.sysds.common.Types.CorrectionLocationType;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -35,34 +37,8 @@ import org.tugraz.sysds.common.Types.ValueType;
 
 public class PartialAggregate extends Lop 
 {
-
-	
-	public enum DirectionTypes {
-		RowCol, 
-		Row, 
-		Col
-	}
-
-	public enum CorrectionLocationType { 
-		NONE, 
-		LASTROW, 
-		LASTCOLUMN, 
-		LASTTWOROWS, 
-		LASTTWOCOLUMNS,
-		LASTFOURROWS,
-		LASTFOURCOLUMNS,
-		INVALID;
-		
-		public int getNumRemovedRowsColumns() {
-			return (this==LASTROW || this==LASTCOLUMN) ? 1 :
-				(this==LASTTWOROWS || this==LASTTWOCOLUMNS) ? 2 :
-				(this==LASTFOURROWS || this==LASTFOURCOLUMNS) ? 4 : 0;
-		}
-		
-	}
-	
-	private Aggregate.OperationTypes operation;
-	private DirectionTypes direction;
+	private AggOp operation;
+	private Direction direction;
 	
 	//optional attribute for CP num threads
 	private int _numThreads = -1;
@@ -70,16 +46,14 @@ public class PartialAggregate extends Lop
 	//optional attribute for spark exec type
 	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
 
-	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et, int k)
+	public PartialAggregate( Lop input, AggOp op, Direction direct, DataType dt, ValueType vt, ExecType et, int k)
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
 		init(input, op, direct, dt, vt, et);
 		_numThreads = k;
 	}
 	
-	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
+	public PartialAggregate( Lop input, AggOp op, Direction direct, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
 		init(input, op, direct, dt, vt, et);
@@ -96,12 +70,10 @@ public class PartialAggregate extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 */
-	private void init(Lop input,
-			Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et) {
+	private void init(Lop input, AggOp op, Direction direct, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
 		direction = direct;
-		this.addInput(input);
+		addInput(input);
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
 	}
@@ -128,13 +100,13 @@ public class PartialAggregate extends Lop
 		return getCorrectionLocation(operation, direction);
 	}
 	
-	public static CorrectionLocationType getCorrectionLocation(Aggregate.OperationTypes operation, DirectionTypes direction) {
+	public static CorrectionLocationType getCorrectionLocation(AggOp operation, Direction direction) {
 		CorrectionLocationType loc;
 
 		switch (operation) {
-		case KahanSum:
-		case KahanSumSq:
-		case KahanTrace:
+		case SUM:
+		case SUM_SQ:
+		case TRACE:
 			switch (direction) {
 				case Col:
 					// colSums: corrections will be present as a last row in the
@@ -153,7 +125,7 @@ public class PartialAggregate extends Lop
 			}
 			break;
 
-		case Mean:
+		case MEAN:
 			// Computation of stable mean requires each mapper to output both
 			// the running mean as well as the count
 			switch (direction) {
@@ -172,7 +144,7 @@ public class PartialAggregate extends Lop
 			}
 			break;
 
-		case Var:
+		case VAR:
 			// Computation of stable variance requires each mapper to
 			// output the running variance, the running mean, the
 			// count, a correction term for the squared deviations
@@ -200,8 +172,8 @@ public class PartialAggregate extends Lop
 			}
 			break;
 
-		case MaxIndex:
-		case MinIndex:
+		case MAXINDEX:
+		case MININDEX:
 			loc = CorrectionLocationType.LASTCOLUMN;
 			break;
 			
@@ -215,14 +187,14 @@ public class PartialAggregate extends Lop
 		setDimensionsBasedOnDirection(this, dim1, dim2, blen, direction);
 	}
 
-	public static void setDimensionsBasedOnDirection(Lop lop, long dim1, long dim2,  long blen, DirectionTypes dir)
+	public static void setDimensionsBasedOnDirection(Lop lop, long dim1, long dim2,  long blen, Direction dir)
 	{
 		try {
-			if (dir == DirectionTypes.Row)
+			if (dir == Direction.Row)
 				lop.outParams.setDimensions(dim1, 1, blen, -1);
-			else if (dir == DirectionTypes.Col)
+			else if (dir == Direction.Col)
 				lop.outParams.setDimensions(1, dim2, blen, -1);
-			else if (dir == DirectionTypes.RowCol)
+			else if (dir == Direction.RowCol)
 				lop.outParams.setDimensions(1, 1, blen, -1);
 			else
 				throw new LopsException("In PartialAggregate Lop, Unknown aggregate direction " + dir);
@@ -268,64 +240,54 @@ public class PartialAggregate extends Lop
 		return sb.toString();
 	}
 
-	public static String getOpcode(Aggregate.OperationTypes op, DirectionTypes dir) 
+	public static String getOpcode(AggOp op, Direction dir) 
 	{
 		switch( op )
 		{
-			case Sum: {
-				if( dir == DirectionTypes.RowCol ) 
-					return "ua+";
-				else if( dir == DirectionTypes.Row ) 
-					return "uar+";
-				else if( dir == DirectionTypes.Col ) 
-					return "uac+";
-				break;
-			}
-
-			case KahanSum: {
+			case SUM: {
 				// instructions that use kahanSum are similar to ua+,uar+,uac+
 				// except that they also produce correction values along with partial
 				// sums.
-				if( dir == DirectionTypes.RowCol )
+				if( dir == Direction.RowCol )
 					return "uak+";
-				else if( dir == DirectionTypes.Row )
+				else if( dir == Direction.Row )
 					return "uark+";
-				else if( dir == DirectionTypes.Col ) 
+				else if( dir == Direction.Col ) 
 					return "uack+";
 				break;
 			}
 
-			case KahanSumSq: {
-				if( dir == DirectionTypes.RowCol )
+			case SUM_SQ: {
+				if( dir == Direction.RowCol )
 					return "uasqk+";
-				else if( dir == DirectionTypes.Row )
+				else if( dir == Direction.Row )
 					return "uarsqk+";
-				else if( dir == DirectionTypes.Col )
+				else if( dir == Direction.Col )
 					return "uacsqk+";
 				break;
 			}
 
-			case Mean: {
-				if( dir == DirectionTypes.RowCol )
+			case MEAN: {
+				if( dir == Direction.RowCol )
 					return "uamean";
-				else if( dir == DirectionTypes.Row )
+				else if( dir == Direction.Row )
 					return "uarmean";
-				else if( dir == DirectionTypes.Col )
+				else if( dir == Direction.Col )
 					return "uacmean";
 				break;
 			}
 
-			case Var: {
-				if( dir == DirectionTypes.RowCol )
+			case VAR: {
+				if( dir == Direction.RowCol )
 					return "uavar";
-				else if( dir == DirectionTypes.Row )
+				else if( dir == Direction.Row )
 					return "uarvar";
-				else if( dir == DirectionTypes.Col )
+				else if( dir == Direction.Col )
 					return "uacvar";
 				break;
 			}
 
-			case Product: {
+			case PROD: {
 				switch( dir ) {
 					case RowCol: return "ua*";
 					case Row:    return "uar*";
@@ -333,7 +295,7 @@ public class PartialAggregate extends Lop
 				}
 			}
 			
-			case SumProduct: {
+			case SUM_PROD: {
 				switch( dir ) {
 					case RowCol: return "ua+*";
 					case Row:    return "uar+*";
@@ -341,46 +303,40 @@ public class PartialAggregate extends Lop
 				}
 			}
 			
-			case Max: {
-				if( dir == DirectionTypes.RowCol ) 
+			case MAX: {
+				if( dir == Direction.RowCol ) 
 					return "uamax";
-				else if( dir == DirectionTypes.Row ) 
+				else if( dir == Direction.Row ) 
 					return "uarmax";
-				else if( dir == DirectionTypes.Col )
+				else if( dir == Direction.Col )
 					return "uacmax";
 				break;
 			}
 			
-			case Min: {
-				if( dir == DirectionTypes.RowCol ) 
+			case MIN: {
+				if( dir == Direction.RowCol ) 
 					return "uamin";
-				else if( dir == DirectionTypes.Row ) 
+				else if( dir == Direction.Row ) 
 					return "uarmin";
-				else if( dir == DirectionTypes.Col ) 
+				else if( dir == Direction.Col ) 
 					return "uacmin";
 				break;
 			}
 			
-			case MaxIndex:{
-				if( dir == DirectionTypes.Row )
+			case MAXINDEX:{
+				if( dir == Direction.Row )
 					return "uarimax";
 				break;
 			}
 			
-			case MinIndex: {
-				if( dir == DirectionTypes.Row )
+			case MININDEX: {
+				if( dir == Direction.Row )
 					return "uarimin";
 				break;
 			}
-		
-			case Trace: {
-				if( dir == DirectionTypes.RowCol)
-					return "uatrace";
-				break;	
-			}
 			
-			case KahanTrace: {
-				if( dir == DirectionTypes.RowCol ) 
+			case TRACE: {
+				if( dir == Direction.RowCol ) 
 					return "uaktrace";
 				break;
 			}

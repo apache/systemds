@@ -22,7 +22,9 @@ package org.tugraz.sysds.lops;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -34,15 +36,13 @@ import org.tugraz.sysds.common.Types.ValueType;
  */
 public class UAggOuterChain extends Lop 
 {
-	
 	public static final String OPCODE = "uaggouterchain";
 
 	//outer operation
-	private Aggregate.OperationTypes _uaggOp         = null;
-	private PartialAggregate.DirectionTypes _uaggDir = null;
+	private AggOp _uaggOp      = null;
+	private Direction _uaggDir = null;
 	//inner operation
-	private Binary.OperationTypes _binOp             = null;	
-		
+	private Binary.OperationTypes _binOp = null;
 	
 	/**
 	 * Constructor to setup a unaryagg outer chain
@@ -56,7 +56,7 @@ public class UAggOuterChain extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 */
-	public UAggOuterChain(Lop input1, Lop input2, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) {
+	public UAggOuterChain(Lop input1, Lop input2, AggOp uaop, Direction uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.UaggOuterChain, dt, vt);
 		addInput(input1);
 		addInput(input2);

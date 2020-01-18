@@ -19,8 +19,8 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
+import org.tugraz.sysds.common.Types.CorrectionLocationType;
 import org.tugraz.sysds.lops.UAggOuterChain;
-import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.functionobjects.ReduceAll;

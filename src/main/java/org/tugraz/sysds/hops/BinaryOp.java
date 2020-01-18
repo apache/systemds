@@ -22,7 +22,9 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
@@ -477,19 +479,18 @@ public class BinaryOp extends MultiThreadedHop
 				if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN ) {
 					AggUnaryOp uRight = (AggUnaryOp)right;
 					binary = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
-							HopsAgg2Lops.get(uRight.getOp()), HopsDirection2Lops.get(uRight.getDirection()),
-							getDataType(), getValueType(), et);
+						uRight.getOp(), uRight.getDirection(), getDataType(), getValueType(), et);
 				}
 				else if (mbin == MMBinaryMethod.MR_BINARY_M) {
 					boolean isColVector = dt1 != DataType.TENSOR && dt2 != DataType.TENSOR &&
-							(right.getDim2() == 1 && left.getDim1() == right.getDim1());
+						(right.getDim2() == 1 && left.getDim1() == right.getDim1());
 
 					binary = new BinaryM(left.constructLops(), right.constructLops(),
-							HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et, isColVector);
+						HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et, isColVector);
 				}
 				else {
 					binary = new Binary(left.constructLops(), right.constructLops(), 
-							HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
+						HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
 				}
 				
 				setOutputDimensions(binary);

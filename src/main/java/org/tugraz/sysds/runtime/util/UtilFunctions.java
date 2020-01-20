@@ -459,8 +459,9 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return in;
 			case BOOLEAN: return Boolean.parseBoolean(in);
-			case INT64:     return Long.parseLong(in);
-			case FP64:  return Double.parseDouble(in);
+			case INT32:   return Integer.parseInt(in);
+			case INT64:   return Long.parseLong(in);
+			case FP64:    return Double.parseDouble(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -499,6 +500,8 @@ public class UtilFunctions
 				return null;
 			else if(in instanceof Long && ((Long)in).longValue() == 0)
 				return null;
+			else if(in instanceof Long && ((Integer)in).intValue() == 0)
+				return null;
 			else if(in instanceof Boolean && ((Boolean)in).booleanValue() == false)
 				return null;
 			else if(in instanceof String && ((String)in).trim().length() == 0)
@@ -513,6 +516,7 @@ public class UtilFunctions
 	public static Object objectToObject(ValueType vt, Object in) {
 		if( in instanceof Double && vt == ValueType.FP64 
 			|| in instanceof Long && vt == ValueType.INT64
+			|| in instanceof Integer && vt == ValueType.INT32
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN
 			|| in instanceof String && vt == ValueType.STRING )
 			return in; //quick path to avoid double parsing
@@ -536,8 +540,9 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return ((String)in1).compareTo((String)in2);
 			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
-			case INT64:     return ((Long)in1).compareTo((Long)in2);
-			case FP64:  return ((Double)in1).compareTo((Double)in2);
+			case INT64:   return ((Long)in1).compareTo((Long)in2);
+			case INT32:   return ((Integer)in1).compareTo((Integer)in2);
+			case FP64:    return ((Double)in1).compareTo((Double)in2);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}

@@ -1781,11 +1781,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		int rows = this.getNumRows();
 		int cols = this.getNumColumns();
 		String[] schemaInfo = new String[cols];
-
-		int sample = (int) (sampleFraction * rows);
-		if (sample <= 0)
-			sample = rows;
-
+		int sample = (int)Math.min(Math.max(sampleFraction*rows, 1024), rows);
 		for (int i = 0; i < cols; i++) {
 			ValueType state = ValueType.UNKNOWN;
 			Array obj = this.getColumn(i);

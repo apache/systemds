@@ -514,7 +514,7 @@ public class LineageRewriteReuse
 
 	private static boolean isTsmmCbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr)) {
+		if (!LineageCache.isReusable(curr, ec)) {
 			return false;
 		}
 
@@ -539,7 +539,7 @@ public class LineageRewriteReuse
 
 	private static boolean isTsmmRbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr))
+		if (!LineageCache.isReusable(curr, ec))
 			return false;
 
 		// If the input to tsmm came from rbind, look for both the inputs in cache.
@@ -562,7 +562,7 @@ public class LineageRewriteReuse
 	
 	private static boolean isTsmm2Cbind (Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr))
+		if (!LineageCache.isReusable(curr, ec))
 			return false;
 
 		//TODO: support nary cbind
@@ -590,7 +590,7 @@ public class LineageRewriteReuse
 
 	private static boolean isMatMulRbindLeft(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr))
+		if (!LineageCache.isReusable(curr, ec))
 			return false;
 
 		// If the left input to ba+* came from rbind, look for both the inputs in cache.
@@ -615,7 +615,7 @@ public class LineageRewriteReuse
 
 	private static boolean isMatMulCbindRight(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr))
+		if (!LineageCache.isReusable(curr, ec))
 			return false;
 
 		// If the right input to ba+* came from cbind, look for both the inputs in cache.
@@ -639,7 +639,7 @@ public class LineageRewriteReuse
 
 	private static boolean isElementMulRbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr))
+		if (!LineageCache.isReusable(curr, ec))
 			return false;
 
 		// If the inputs to * came from rbind, look for both the inputs in cache.
@@ -666,7 +666,7 @@ public class LineageRewriteReuse
 
 	private static boolean isElementMulCbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr))
+		if (!LineageCache.isReusable(curr, ec))
 			return false;
 
 		// If the inputs to * came from cbind, look for both the inputs in cache.
@@ -693,7 +693,7 @@ public class LineageRewriteReuse
 
 	private static boolean isAggCbind (Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr)) {
+		if (!LineageCache.isReusable(curr, ec)) {
 			return false;
 		}
 

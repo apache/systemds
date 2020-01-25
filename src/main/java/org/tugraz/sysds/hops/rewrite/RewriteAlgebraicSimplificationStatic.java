@@ -1848,19 +1848,23 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	private static Hop simplifyBinaryComparisonChain(Hop parent, Hop hi, int pos) {
 		if( HopRewriteUtils.isBinaryPPred(hi) 
 			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(1), 0d, 1d)
-			&& HopRewriteUtils.isBinaryPPred(hi.getInput().get(0)) ) {
+			&& HopRewriteUtils.isBinaryPPred(hi.getInput().get(0)) )
+		{
 			BinaryOp bop = (BinaryOp) hi;
 			BinaryOp bop2 = (BinaryOp) hi.getInput().get(0);
+			boolean one = HopRewriteUtils.isLiteralOfValue(hi.getInput().get(1), 0);
 			
 			//pattern: outer(v1,v2,"!=") == 1 -> outer(v1,v2,"!=")
-			if( HopRewriteUtils.isLiteralOfValue(bop.getInput().get(1), 1) ) {
+			if( (one && bop.getOp() == OpOp2.EQUAL)
+				|| (!one && bop.getOp() == OpOp2.NOTEQUAL) )
+			{
 				HopRewriteUtils.replaceChildReference(parent, bop, bop2, pos);
 				HopRewriteUtils.cleanupUnreferenced(bop);
 				hi = bop2;
 				LOG.debug("Applied simplifyBinaryComparisonChain1 (line "+hi.getBeginLine()+")");
 			}
 			//pattern: outer(v1,v2,"!=") == 0 -> outer(v1,v2,"==")
-			else {
+			else if( !one && bop.getOp() == OpOp2.EQUAL ) {
 				OpOp2 optr = bop2.getComplementPPredOperation();
 				BinaryOp tmp = HopRewriteUtils.createBinary(bop2.getInput().get(0),
 					bop2.getInput().get(1), optr, bop2.isOuter());

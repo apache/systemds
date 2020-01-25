@@ -667,11 +667,11 @@ public class SpoofSPInstruction extends SPInstruction {
 	
 	public static AggregateOperator getAggregateOperator(AggOp aggop) {
 		if( aggop == AggOp.SUM || aggop == AggOp.SUM_SQ )
-			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);
+			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.NONE);
 		else if( aggop == AggOp.MIN )
-			return new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MIN), false, CorrectionLocationType.NONE);
+			return new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MIN), CorrectionLocationType.NONE);
 		else if( aggop == AggOp.MAX )
-			return new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MAX), false, CorrectionLocationType.NONE);
+			return new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MAX), CorrectionLocationType.NONE);
 		return null;
 	}
 }

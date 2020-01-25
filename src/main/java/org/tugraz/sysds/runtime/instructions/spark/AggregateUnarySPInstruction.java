@@ -70,10 +70,9 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		
 		String aopcode = InstructionUtils.deriveAggregateOperatorOpcode(opcode);
 		CorrectionLocationType corrLoc = InstructionUtils.deriveAggregateOperatorCorrectionLocation(opcode);
-		String corrExists = (corrLoc != CorrectionLocationType.NONE) ? "true" : "false";
 		
 		AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
-		AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrExists, corrLoc.toString());
+		AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrLoc.toString());
 		return new AggregateUnarySPInstruction(SPType.AggregateUnary, aggun, aop, in1, out, aggtype, opcode, str);
 	}
 	
@@ -113,7 +112,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, aggop);
 
 			//drop correction after aggregation
-			out3.dropLastRowsOrColumns(aggop.correctionLocation);
+			out3.dropLastRowsOrColumns(aggop.correction);
 
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
@@ -133,7 +132,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 
 				//drop correction after aggregation if required (aggbykey creates
 				//partitioning, drop correction via partitioning-preserving mapvalues)
-				if( auop.aggOp.correctionExists )
+				if( auop.aggOp.existsCorrection() )
 					out = out.mapValues( new AggregateDropCorrectionFunction(aggop) );
 			}
 
@@ -307,7 +306,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			arg0.aggregateUnaryOperations(_op, blkOut, _blen, _ix);
 			
 			//always drop correction since no aggregation
-			blkOut.dropLastRowsOrColumns(_op.aggOp.correctionLocation);
+			blkOut.dropLastRowsOrColumns(_op.aggOp.correction);
 			
 			//output new tuple
 			return blkOut;

@@ -58,8 +58,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 			//derive aggregation operator from unary operator
 			String aopcode = InstructionUtils.deriveAggregateOperatorOpcode(parts[1]);
 			CorrectionLocationType corrLoc = InstructionUtils.deriveAggregateOperatorCorrectionLocation(parts[1]);
-			String corrExists = (corrLoc != CorrectionLocationType.NONE) ? "true" : "false";
-			AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrExists, corrLoc.toString());
+			AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrLoc.toString());
 
 			return new UaggOuterChainCPInstruction(bop, uaggop, aop, in1, in2, out, opcode, str);
 		} 
@@ -90,8 +89,8 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 		//release locks
 		ec.releaseMatrixInput(input1.getName(), input2.getName());
 		
-		if( _uaggOp.aggOp.correctionExists )
-			mbOut.dropLastRowsOrColumns(_uaggOp.aggOp.correctionLocation);
+		if( _uaggOp.aggOp.existsCorrection() )
+			mbOut.dropLastRowsOrColumns(_uaggOp.aggOp.correction);
 		
 		if(_uaggOp.indexFn instanceof ReduceAll ) { //RC AGG (output is scalar)
 			ec.setMatrixOutput(output.getName(),

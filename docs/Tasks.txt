@@ -153,7 +153,8 @@ SYSTEMDS-190 New Builtin Functions III
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK
  * 202 Fix rewrite split DAG multiple removeEmpty (pending op)        OK
- * 203 Fix codegen outer compilation (MV operations)
+ * 203 Fix codegen outer compilation (MV operations)                  OK
+ * 204 Fix rewrite simplify sequences of binary comparisons           OK
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK
@@ -172,7 +173,9 @@ SYSTEMDS-220 Federated Tensors and Instructions
 
 SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool
- * 232 Lineage of generated operators
+ * 232 Lineage of code generated operators
+ * 233 Lineage cache and reuse of function results                    OK
+ * 234 Lineage tracing for spark instructions													OK
 
 SYSTEMDS-240 GPU Backend Improvements
  * 241 Dense GPU cumulative aggregates 

@@ -271,65 +271,65 @@ public class InstructionUtils
 		AggregateUnaryOperator aggun = null;
 		
 		if ( opcode.equalsIgnoreCase("uak+") ) {
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uark+") ) { // RowSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
 		else if ( opcode.equalsIgnoreCase("uack+") ) { // ColSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTROW);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uasqk+") ) {
-			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uarsqk+") ) {
 			// RowSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uacsqk+") ) {
 			// ColSums
-			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), true, CorrectionLocationType.LASTROW);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), CorrectionLocationType.LASTROW);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uamean") ) {
 			// Mean
-			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
+			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), CorrectionLocationType.LASTTWOCOLUMNS);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		} 
 		else if ( opcode.equalsIgnoreCase("uarmean") ) {
 			// RowMeans
-			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOCOLUMNS);
+			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), CorrectionLocationType.LASTTWOCOLUMNS);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
 		else if ( opcode.equalsIgnoreCase("uacmean") ) {
 			// ColMeans
-			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), true, CorrectionLocationType.LASTTWOROWS);
+			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), CorrectionLocationType.LASTTWOROWS);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uavar") ) {
 			// Variance
 			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
 			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURCOLUMNS;
-			AggregateOperator agg = new AggregateOperator(0, varFn, true, cloc);
+			AggregateOperator agg = new AggregateOperator(0, varFn, cloc);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uarvar") ) {
 			// RowVariances
 			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
 			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURCOLUMNS;
-			AggregateOperator agg = new AggregateOperator(0, varFn, true, cloc);
+			AggregateOperator agg = new AggregateOperator(0, varFn, cloc);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uacvar") ) {
 			// ColVariances
 			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
 			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURROWS;
-			AggregateOperator agg = new AggregateOperator(0, varFn, true, cloc);
+			AggregateOperator agg = new AggregateOperator(0, varFn, cloc);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("ua+") ) {
@@ -371,7 +371,7 @@ public class InstructionUtils
 			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject(), numThreads);
 		} 
 		else if ( opcode.equalsIgnoreCase("uaktrace") ) {
-			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject(), numThreads);
 		} 		
 		else if ( opcode.equalsIgnoreCase("uarmax") ) {
@@ -379,7 +379,7 @@ public class InstructionUtils
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
 		else if (opcode.equalsIgnoreCase("uarimax") ) {
-			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uarmin") ) {
@@ -387,7 +387,7 @@ public class InstructionUtils
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
 		else if (opcode.equalsIgnoreCase("uarimin") ) {
-			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
 		else if ( opcode.equalsIgnoreCase("uacmax") ) {
@@ -408,27 +408,25 @@ public class InstructionUtils
 	
 	public static AggregateTernaryOperator parseAggregateTernaryOperator(String opcode, int numThreads) {
 		CorrectionLocationType corr = opcode.equalsIgnoreCase("tak+*") ? 
-				CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.LASTROW;
-		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, corr);
+			CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.LASTROW;
+		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), corr);
 		IndexFunction ixfun = opcode.equalsIgnoreCase("tak+*") ? 
 			ReduceAll.getReduceAllFnObject() : ReduceRow.getReduceRowFnObject();
 		
 		return new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg, ixfun, numThreads);
 	}
 	
-	public static AggregateOperator parseAggregateOperator(String opcode, String corrExists, String corrLoc)
+	public static AggregateOperator parseAggregateOperator(String opcode, String corrLoc)
 	{
 		AggregateOperator agg = null;
 	
 		if ( opcode.equalsIgnoreCase("ak+") || opcode.equalsIgnoreCase("aktrace") ) {
-			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
 			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.valueOf(corrLoc);
-			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrExists, lcorrLoc);
+			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrLoc);
 		}
 		else if ( opcode.equalsIgnoreCase("asqk+") ) {
-			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
 			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.valueOf(corrLoc);
-			agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), lcorrExists, lcorrLoc);
+			agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), lcorrLoc);
 		}
 		else if ( opcode.equalsIgnoreCase("a+") ) {
 			agg = new AggregateOperator(0, Plus.getPlusFnObject());
@@ -437,7 +435,7 @@ public class InstructionUtils
 			agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 		}
 		else if (opcode.equalsIgnoreCase("arimax")){
-			agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"), true, CorrectionLocationType.LASTCOLUMN);
+			agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"), CorrectionLocationType.LASTCOLUMN);
 		}
 		else if ( opcode.equalsIgnoreCase("amax") ) {
 			agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
@@ -446,20 +444,18 @@ public class InstructionUtils
 			agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 		}
 		else if (opcode.equalsIgnoreCase("arimin")){
-			agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"), true, CorrectionLocationType.LASTCOLUMN);
+			agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"), CorrectionLocationType.LASTCOLUMN);
 		}
 		else if ( opcode.equalsIgnoreCase("amean") ) {
-			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
 			CorrectionLocationType lcorrLoc = (corrLoc==null) ? CorrectionLocationType.LASTTWOCOLUMNS : CorrectionLocationType.valueOf(corrLoc);
-			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrExists, lcorrLoc);
+			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), lcorrLoc);
 		}
 		else if ( opcode.equalsIgnoreCase("avar") ) {
-			boolean lcorrExists = (corrExists==null) ? true : Boolean.parseBoolean(corrExists);
 			CorrectionLocationType lcorrLoc = (corrLoc==null) ?
-					CorrectionLocationType.LASTFOURCOLUMNS :
-					CorrectionLocationType.valueOf(corrLoc);
+				CorrectionLocationType.LASTFOURCOLUMNS :
+				CorrectionLocationType.valueOf(corrLoc);
 			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
-			agg = new AggregateOperator(0, varFn, lcorrExists, lcorrLoc);
+			agg = new AggregateOperator(0, varFn, lcorrLoc);
 		}
 
 		return agg;
@@ -483,15 +479,15 @@ public class InstructionUtils
 	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(String opcode) {
 		AggregateOperator agg = null;
 		if( "ucumack+".equals(opcode) )
-			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
+			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTROW);
 		else if ( "ucumac*".equals(opcode) )
-			agg = new AggregateOperator(1, Multiply.getMultiplyFnObject(), false, CorrectionLocationType.NONE);
+			agg = new AggregateOperator(1, Multiply.getMultiplyFnObject(), CorrectionLocationType.NONE);
 		else if ( "ucumac+*".equals(opcode) )
-			agg = new AggregateOperator(0, PlusMultiply.getFnObject(), false, CorrectionLocationType.NONE);
+			agg = new AggregateOperator(0, PlusMultiply.getFnObject(), CorrectionLocationType.NONE);
 		else if ( "ucumacmin".equals(opcode) )
-			agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"), false, CorrectionLocationType.NONE);
+			agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"), CorrectionLocationType.NONE);
 		else if ( "ucumacmax".equals(opcode) )
-			agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"), false, CorrectionLocationType.NONE);
+			agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"), CorrectionLocationType.NONE);
 		return new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 	}
 	
@@ -959,7 +955,7 @@ public class InstructionUtils
 	
 		switch(op) {
 		case SUM:
-			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			
 		case COUNT:
 		case MEAN:

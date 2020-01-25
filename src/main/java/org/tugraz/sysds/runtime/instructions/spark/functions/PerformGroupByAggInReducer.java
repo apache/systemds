@@ -64,10 +64,9 @@ public class PerformGroupByAggInReducer implements Function<Iterable<WeightedCel
 		else if(op instanceof AggregateOperator) //sum
 		{
 			AggregateOperator aggop=(AggregateOperator) op;
-				
-			if( aggop.correctionExists ) {
+			
+			if( aggop.existsCorrection() ) {
 				KahanObject buffer=new KahanObject(aggop.initialValue, 0);
-				
 				KahanPlus.getKahanPlusFnObject();
 				
 				//partial aggregate with correction
@@ -77,17 +76,13 @@ public class PerformGroupByAggInReducer implements Function<Iterable<WeightedCel
 				outCell.setValue(buffer._sum);
 				outCell.setWeight(1);
 			}
-			else //no correction
-			{
+			else { //no correction
 				double v = aggop.initialValue;
-				
-				//partial aggregate without correction
 				for(WeightedCell value : kv)
 					v=aggop.increOp.fn.execute(v, value.getValue()*value.getWeight());
-				
 				outCell.setValue(v);
 				outCell.setWeight(1);
-			}				
+			}
 		}
 		else
 			throw new DMLRuntimeException("Unsupported operator in grouped aggregate instruction:" + op);

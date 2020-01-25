@@ -45,17 +45,13 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	public static AggregateUnaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		
 		String aopcode = InstructionUtils.deriveAggregateOperatorOpcode(opcode);
 		Types.CorrectionLocationType corrLoc = InstructionUtils
 			.deriveAggregateOperatorCorrectionLocation(opcode);
-		String corrExists = (corrLoc != Types.CorrectionLocationType.NONE) ? "true" : "false";
-		
 		AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
-		AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrExists, corrLoc.toString());
+		AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrLoc.toString());
 		return new AggregateUnaryFEDInstruction(aggun, aop, in1, out, opcode, str);
 	}
 	

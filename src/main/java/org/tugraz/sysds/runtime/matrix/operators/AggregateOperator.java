@@ -37,20 +37,22 @@ public class AggregateOperator  extends Operator implements Serializable
 
 	public final double initialValue;
 	public final BinaryOperator increOp;
-	public final boolean correctionExists;
-	public final CorrectionLocationType correctionLocation;
+	public final CorrectionLocationType correction;
 	
 	public AggregateOperator(double initValue, ValueFunction op) {
-		this(initValue, op, false, CorrectionLocationType.INVALID);
+		this(initValue, op, CorrectionLocationType.INVALID);
 	}
 	
-	public AggregateOperator(double initValue, ValueFunction op, boolean correctionExists, CorrectionLocationType correctionLocation) {
+	public AggregateOperator(double initValue, ValueFunction op, CorrectionLocationType correctionLocation) {
 		//as long as (v op 0)=v, then op is sparseSafe
 		super(op instanceof Plus || op instanceof KahanPlus || op instanceof KahanPlusSq 
 			|| op instanceof Or || op instanceof Minus);
-		initialValue=initValue;
-		increOp=new BinaryOperator(op);
-		this.correctionExists=correctionExists;
-		this.correctionLocation=correctionLocation;
+		initialValue = initValue;
+		increOp = new BinaryOperator(op);
+		correction = correctionLocation;
+	}
+	
+	public boolean existsCorrection() {
+		return correction != CorrectionLocationType.NONE;
 	}
 }

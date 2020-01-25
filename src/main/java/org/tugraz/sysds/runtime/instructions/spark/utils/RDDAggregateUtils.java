@@ -303,7 +303,7 @@ public class RDDAggregateUtils
 	{
 		private static final long serialVersionUID = 3703543699467085539L;
 		
-		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);
+		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.NONE);
 		
 		private final boolean _deep;
 
@@ -337,7 +337,7 @@ public class RDDAggregateUtils
 	{
 		private static final long serialVersionUID = 7664941774566119853L;
 		
-		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
+		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.NONE);	
 		private final boolean _deep;
 
 		public MergeSumBlockCombinerFunction(boolean deep) {
@@ -491,13 +491,13 @@ public class RDDAggregateUtils
 			MatrixBlock corr = arg0.getCorrection();
 			
 			//correction block allocation on demand
-			if( corr == null && _op.correctionExists ){
+			if( corr == null && _op.existsCorrection() ){
 				corr = new MatrixBlock(value.getNumRows(), value.getNumColumns(), false);
 			}
 			
 			//aggregate other input and maintain corrections 
 			//(existing value and corr are used in place)
-			if(_op.correctionExists)
+			if(_op.existsCorrection())
 				OperationsOnMatrixValues.incrementalAggregation(value, corr, arg1, _op, true);
 			else
 				OperationsOnMatrixValues.incrementalAggregation(value, null, arg1, _op, true);
@@ -526,14 +526,14 @@ public class RDDAggregateUtils
 			MatrixBlock corr = arg0.getCorrection();
 			
 			//correction block allocation on demand (but use second if exists)
-			if( corr == null && _op.correctionExists) {
+			if( corr == null && _op.existsCorrection()) {
 				corr = (arg1.getCorrection()!=null)?arg1.getCorrection():
 					new MatrixBlock(value1.getNumRows(), value1.getNumColumns(), false);
 			}
 			
 			//aggregate other input and maintain corrections
 			//(existing value and corr are used in place)
-			if(_op.correctionExists)
+			if(_op.existsCorrection())
 				OperationsOnMatrixValues.incrementalAggregation(value1, corr, value2, _op, true);
 			else
 				OperationsOnMatrixValues.incrementalAggregation(value1, null, value2, _op, true);
@@ -564,7 +564,7 @@ public class RDDAggregateUtils
 	 * block indexes. Note that this aggregation function does not apply to embedded corrections.
 	 * 
 	 */
-	private static class SumSingleBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	private static class SumSingleBlockFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock>
 	{
 		private static final long serialVersionUID = 1737038715965862222L;
 		
@@ -573,7 +573,7 @@ public class RDDAggregateUtils
 		private boolean _deep = false;
 		
 		public SumSingleBlockFunction(boolean deep) {
-			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
+			_op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.NONE);
 			_deep = deep;
 		}
 		
@@ -634,13 +634,13 @@ public class RDDAggregateUtils
 			}
 			
 			//create correction block (on demand)
-			if( _op.correctionExists && _corr == null ) {
+			if( _op.existsCorrection() && _corr == null ) {
 				_corr = new MatrixBlock(arg0.getNumRows(), arg0.getNumColumns(), false);
 			}
 			
 			//aggregate second input (in-place)
 			OperationsOnMatrixValues.incrementalAggregation(
-				arg0, _op.correctionExists ? _corr : null, arg1, _op, true);
+				arg0, _op.existsCorrection() ? _corr : null, arg1, _op, true);
 			
 			return arg0;
 		}

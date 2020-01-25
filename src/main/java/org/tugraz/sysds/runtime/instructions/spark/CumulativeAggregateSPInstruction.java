@@ -124,8 +124,8 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			}
 			else { //general case
 				OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, ixOut, blkOut, aop, _blen);
-				if( aop.aggOp.correctionExists )
-					blkOut.dropLastRowsOrColumns(aop.aggOp.correctionLocation);
+				if( aop.aggOp.existsCorrection() )
+					blkOut.dropLastRowsOrColumns(aop.aggOp.correction);
 			}
 			
 			//cumsum expand partial aggregates

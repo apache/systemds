@@ -128,7 +128,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			paramsMap.put(Statement.GAGG_GROUPS, groups.getName());
 			paramsMap.put(Statement.GAGG_NUM_GROUPS, parts[4]);
 			
-			Operator op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			Operator op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			
 			return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
 		}

@@ -105,11 +105,11 @@ public class OperationsOnMatrixValues
 	public static void startAggregation(MatrixValue valueOut, MatrixValue correction, AggregateOperator op, 
 			int rlen, int clen, boolean sparseHint, boolean imbededCorrection) {
 		int outRow=0, outCol=0, corRow=0, corCol=0;
-		if(op.correctionExists)
+		if(op.existsCorrection())
 		{
 			if(!imbededCorrection)
 			{
-				switch(op.correctionLocation)
+				switch(op.correction)
 				{
 				case NONE:
 					outRow=rlen;
@@ -165,7 +165,7 @@ public class OperationsOnMatrixValues
 					corCol=4;
 					break;
 				default:
-						throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correctionLocation);
+						throw new DMLRuntimeException("unrecognized correctionLocation: "+op.correction);
 				}
 			}else
 			{
@@ -203,9 +203,9 @@ public class OperationsOnMatrixValues
 	public static void incrementalAggregation(MatrixValue valueAgg, MatrixValue correction, MatrixValue valueAdd, 
 			AggregateOperator op, boolean imbededCorrection, boolean deep)
 	{
-		if(op.correctionExists)
+		if(op.existsCorrection())
 		{
-			if(!imbededCorrection || op.correctionLocation==CorrectionLocationType.NONE)
+			if(!imbededCorrection || op.correction==CorrectionLocationType.NONE)
 				valueAgg.incrementalAggregate(op, correction, valueAdd, deep);
 			else
 				valueAgg.incrementalAggregate(op, valueAdd);

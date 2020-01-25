@@ -168,6 +168,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
 			hi = fuseOrderOperationChain(hi);                    //e.g., order(order(X,2),1) -> order(X,(12))
 			hi = removeUnnecessaryReorgOperation(hop, hi, i);    //e.g., t(t(X))->X; rev(rev(X))->X potentially introduced by other rewrites
+			hi = removeUnnecessaryRemoveEmpty(hop, hi, i);       //e.g., nrow(removeEmpty(A)) -> nnz(A) iff col vector
 			hi = simplifyTransposeAggBinBinaryChains(hop, hi, i);//e.g., t(t(A)%*%t(B)+C) -> B%*%A+t(C)
 			hi = simplifyReplaceZeroOperation(hop, hi, i);       //e.g., X + (X==0) * s -> replace(X, 0, s)
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplify binary or dyn rewrites
@@ -1611,6 +1612,39 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				
 				LOG.debug("Applied removeUnecessaryReorgOperation.");
 			}
+		}
+		
+		return hi;
+	}
+	
+	private static Hop removeUnnecessaryRemoveEmpty(Hop parent, Hop hi, int pos)
+	{
+		Hop hnew = null;
+		
+		if( HopRewriteUtils.isUnary(hi, OpOp1.NROW)
+			&& HopRewriteUtils.isRemoveEmpty(hi.getInput().get(0), true)
+			&& hi.getInput().get(0).getParent().size() == 1 )
+		{
+			ParameterizedBuiltinOp rm = (ParameterizedBuiltinOp) hi.getInput().get(0);
+			//obtain optional select vector or input if col vector
+			//NOTE: part of static rewrites despite size dependence for phase 
+			//ordering before rewrite for DAG splits after table/removeEmpty
+			Hop input = (rm.getParameterHop("select") != null) ?
+				rm.getParameterHop("select") :
+				(rm.getDim2() == 1) ? rm.getTargetHop() : null;
+			
+			//create new expression w/o rmEmpty if applicable
+			if( input != null ) {
+				HopRewriteUtils.removeAllChildReferences(rm);
+				hnew = HopRewriteUtils.createComputeNnz(input);
+			}
+		}
+		
+		//modify dag if one of the above rules applied
+		if( hnew != null ){ 
+			HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+			hi = hnew;
+			LOG.debug("Applied removeUnnecessaryRemoveEmpty (line " + hi.getBeginLine() + ")");
 		}
 		
 		return hi;

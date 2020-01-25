@@ -57,23 +57,27 @@ public class TemplateOuterProduct extends TemplateBase {
 
 	@Override
 	public boolean open(Hop hop) {
-		//open on outer product like matrix mult (output larger than common dim)
-		return HopRewriteUtils.isOuterProductLikeMM(hop)
-			&& hop.getDim1()>256 && hop.getDim2() > 256;
+		//open on (1) outer product like matrix mult (output larger than common dim)
+		//or (2) binary outer operation
+		return (HopRewriteUtils.isOuterProductLikeMM(hop)
+				|| HopRewriteUtils.isOuterBinary(hop))
+			&& hop.getDim1() > 256 && hop.getDim2() > 256;
 	}
 
 	@Override
 	public boolean fuse(Hop hop, Hop input) {
-		return !isClosed() 
-			&&((hop instanceof UnaryOp && TemplateUtils.isOperationSupported(hop))  
-			|| (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
-				&& (TemplateUtils.isBinaryMatrixColVector(hop) || HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
-				|| (HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)) )) 
-			|| (HopRewriteUtils.isTransposeOperation(hop) && input instanceof AggBinaryOp
-				&& !HopRewriteUtils.isOuterProductLikeMM(input)) 
-			|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop)
-				&& TemplateUtils.containsOuterProduct(input, HopRewriteUtils.getOtherInput(hop, input)))
-			|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.RowCol));
+		return !isClosed()
+			&& ((hop instanceof UnaryOp && TemplateUtils.isOperationSupported(hop))
+				|| (hop instanceof BinaryOp && TemplateUtils.isOperationSupported(hop)
+					&& (TemplateUtils.isBinaryMatrixColVector(hop)
+					|| HopRewriteUtils.isBinaryMatrixScalarOperation(hop)
+					|| HopRewriteUtils.isBinaryMatrixMatrixOperation(hop)
+					|| TemplateUtils.isBinaryMatrixRowVector(hop)))
+				|| (HopRewriteUtils.isTransposeOperation(hop) && input instanceof AggBinaryOp
+					 && !HopRewriteUtils.isOuterProductLikeMM(input))
+				|| (hop instanceof AggBinaryOp && !HopRewriteUtils.isOuterProductLikeMM(hop)
+					 && TemplateUtils.containsOuterProduct(input, HopRewriteUtils.getOtherInput(hop, input)))
+				|| (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getDirection()==Direction.RowCol));
 	}
 
 	@Override

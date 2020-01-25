@@ -903,6 +903,10 @@ public class HopRewriteUtils
 			&& hop.getInput().get(1).getDim1() < hop.getInput().get(1).getDim2();
 	}
 	
+	public static boolean isOuterBinary( Hop hop ) {
+		return hop instanceof BinaryOp && ((BinaryOp) hop).isOuter();
+	}
+	
 	public static boolean isValidOuterBinaryOp( OpOp2 op ) {
 		String opcode = Hop.getBinaryOpCode(op);
 		return (Hop.getOpOp2ForOuterVectorOperation(opcode) == op);

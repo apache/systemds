@@ -89,6 +89,7 @@ public enum Builtins {
 	IMG_BRIGHTNESS("img_brightness", true),
 	IMG_CROP("img_crop", true),
 	INTERQUANTILE("interQuantile", false),
+	INTERSECT("intersect", true),
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
 	KMEANS("kmeans", true),

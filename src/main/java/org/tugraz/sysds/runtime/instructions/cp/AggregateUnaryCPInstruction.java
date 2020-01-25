@@ -194,6 +194,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		}
 	}
 	
+	public AUType getAUType() {
+		return _type;
+	}
+	
 	private static long getSizeMetaData(AUType type, DataCharacteristics mc) {
 		switch( type ) {
 			case NROW: return mc.getRows();

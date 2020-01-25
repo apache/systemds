@@ -91,6 +91,8 @@ public abstract class AutomatedTestBase
 	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite
 	public static final boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
+	
+	public static final int FED_WORKER_WAIT = 200; //in ms
 
 	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 	// Hadoop 2.4.1 doesn't work on Windows unless winutils.exe is available

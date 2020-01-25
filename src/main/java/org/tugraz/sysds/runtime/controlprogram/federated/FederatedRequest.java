@@ -26,7 +26,7 @@ public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
 	
 	public enum FedMethod {
-		READ, MATVECMULT, TRANSFER
+		READ, MATVECMULT, TRANSFER, AGGREGATE
 	}
 	
 	private FedMethod _method;
@@ -35,6 +35,11 @@ public class FederatedRequest implements Serializable {
 	public FederatedRequest(FedMethod method, List<Object> data) {
 		_method = method;
 		_data = data;
+	}
+	
+	public FederatedRequest(FedMethod method, Object ... datas) {
+		_method = method;
+		_data = Arrays.asList(datas);
 	}
 	
 	public FederatedRequest(FedMethod method) {

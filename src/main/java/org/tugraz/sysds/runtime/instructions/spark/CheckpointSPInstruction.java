@@ -28,6 +28,7 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
+import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.data.SparseBlock;
@@ -87,9 +88,13 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		//-------
 		//(for csv input files with unknown dimensions, we might have generated a checkpoint after
 		//csvreblock although not necessary because the csvreblock was subject to in-memory reblock)
+		// and for federated matrices
 		CacheableData<?> obj = sec.getCacheableData(input1.getName());
 		DataCharacteristics mcIn = sec.getDataCharacteristics( input1.getName() );
-		if( obj.isCached(true) || Recompiler.checkCPCheckpoint(mcIn) ) { //available in memory
+		if (obj.isCached(true) || Recompiler.checkCPCheckpoint(mcIn) 
+			|| (sec.getCacheableData(input1.getName()) instanceof MatrixObject 
+				&& sec.getMatrixObject(input1.getName()).isFederated())) {
+			//available in memory
 			sec.setVariable(output.getName(), obj);
 			Statistics.decrementNoOfExecutedSPInst();
 			return;

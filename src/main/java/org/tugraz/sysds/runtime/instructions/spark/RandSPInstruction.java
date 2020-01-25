@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -52,6 +52,7 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
@@ -90,9 +91,14 @@ public class RandSPInstruction extends UnarySPInstruction {
 	private long seed = 0;
 	private final String dir;
 	private final CPOperand seq_from, seq_to, seq_incr;
+	private Long runtimeSeed;
 
 	// sample specific attributes
 	private final boolean replace;
+	
+	// seed positions
+	private static final int SEED_POSITION_RAND = 8;
+	private static final int SEED_POSITION_SAMPLE = 4;
 
 	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows,
 		CPOperand cols, CPOperand dims, int blen, String minValue, String maxValue,
@@ -181,7 +187,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 	public double getSparsity() {
 		return sparsity;
 	}
-
+	
+	public long getSeed() {
+		return seed;
+	}
+	
 	public static RandSPInstruction parseInstruction(String str) {
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = s[0];
@@ -280,6 +290,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 		} else {
 			generateRandDataTensor(sec);
 		}
+		//reset runtime seed (e.g., when executed in loop)
+		runtimeSeed = null;
 	}
 
 	@SuppressWarnings("resource")
@@ -288,9 +300,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		long lcols = sec.getScalarInput(cols).getLongValue();
 
 		//step 1: generate pseudo-random seed (because not specified)
-		long lSeed = seed; //seed per invocation
-		if( lSeed == DataGenOp.UNSPECIFIED_SEED )
-			lSeed = DataGenOp.generateRandomSeed();
+		long lSeed = generateRandomSeed();
 
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
@@ -395,9 +405,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		int[] tDims = DataConverter.getTensorDimensions(sec, dims);
 
 		//step 1: generate pseudo-random seed (because not specified)
-		long lSeed = seed; //seed per invocation
-		if( lSeed == DataGenOp.UNSPECIFIED_SEED )
-			lSeed = DataGenOp.generateRandomSeed();
+		long lSeed = generateRandomSeed();
 
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
@@ -624,6 +632,16 @@ public class RandSPInstruction extends UnarySPInstruction {
 		sec.setRDDHandleForVariable(output.getName(), mbRDD);
 	}
 	
+	private long generateRandomSeed() {
+		long lSeed = seed; //seed per invocation
+		if (lSeed == DataGenOp.UNSPECIFIED_SEED) {
+			if (runtimeSeed == null)
+				runtimeSeed = DataGenOp.generateRandomSeed();
+			lSeed = runtimeSeed;
+		}
+		return lSeed;
+	}
+	
 	/**
 	 * Private class that defines a sampling task. 
 	 * The task produces a portion of sample from range [range_start, range_start+partitionSize].
@@ -784,9 +802,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = 3973794676854157101L;
 
 		@Override
-		public Tuple2<TensorIndexes, Long> call(String arg)
-				throws Exception
-		{
+		public Tuple2<TensorIndexes, Long> call(String arg) throws Exception {
 			String[] parts = IOUtilFunctions.split(arg, ",");
 			long[] ix = new long[parts.length - 1];
 			for (int i = 0; i < parts.length - 1; i++)
@@ -943,9 +959,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Double seq_from) 
-			throws Exception 
-		{
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Double seq_from) throws Exception {
 			double seq_to = (_seq_incr > 0) ?
 				Math.min(_global_seq_end, seq_from + _seq_incr*(_blen-1)) :
 				Math.max(_global_seq_end, seq_from + _seq_incr*(_blen+1));
@@ -955,7 +969,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			MatrixIndexes indx = new MatrixIndexes(rowIndex, 1);
 			MatrixBlock blk = MatrixBlock.seqOperations(seq_from, seq_to, _seq_incr);
 			return new Tuple2<>(indx, blk);
-		}	
+		}
 	}
 	
 	/**
@@ -974,5 +988,21 @@ public class RandSPInstruction extends UnarySPInstruction {
 		return ( OptimizerUtils.isValidCPDimensions(lrows, lcols)
 				 && OptimizerUtils.isValidCPMatrixSize(lrows, lcols, sparsity) 
 				 && size < OptimizerUtils.getLocalMemBudget() );
+	}
+	
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		String tmpInstStr = instString;
+		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
+			//generate pseudo-random seed (because not specified)
+			if (runtimeSeed == null)
+				runtimeSeed = (minValue == maxValue && sparsity == 1) ?
+					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
+			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND :
+				(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
+			tmpInstStr = InstructionUtils.replaceOperand(
+				tmpInstStr, position, String.valueOf(runtimeSeed));
+		}
+		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
 	}
 }

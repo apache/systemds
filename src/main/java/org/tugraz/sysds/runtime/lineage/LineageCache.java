@@ -64,6 +64,8 @@ public class LineageCache {
 			return false;
 		
 		boolean reuse = false;
+		//NOTE: the check for computation CP instructions ensures that the output
+		// will always fit in memory and hence can be pinned unconditionally
 		if (inst instanceof ComputationCPInstruction && LineageCache.isReusable(inst, ec)) {
 			LineageItem item = ((ComputationCPInstruction) inst).getLineageItems(ec)[0];
 			

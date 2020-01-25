@@ -43,7 +43,7 @@ public class AggregateDropCorrectionFunction implements Function<MatrixBlock, Ma
 		MatrixBlock blkOut = new MatrixBlock(arg0);
 		
 		//drop correction
-		blkOut.dropLastRowsOrColumns(_op.correctionLocation);
+		blkOut.dropLastRowsOrColumns(_op.correction);
 		
 		return blkOut;
 	}	

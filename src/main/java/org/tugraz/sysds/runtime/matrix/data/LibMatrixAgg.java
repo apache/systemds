@@ -182,8 +182,8 @@ public class LibMatrixAgg
 		//Timing time = new Timing(true);
 		
 		//core aggregation
-		boolean lastRowCorr = (aop.correctionLocation == CorrectionLocationType.LASTROW);
-		boolean lastColCorr = (aop.correctionLocation == CorrectionLocationType.LASTCOLUMN);
+		boolean lastRowCorr = (aop.correction == CorrectionLocationType.LASTROW);
+		boolean lastColCorr = (aop.correction == CorrectionLocationType.LASTCOLUMN);
 		if( !in.sparse && lastRowCorr )
 			aggregateBinaryMatrixLastRowDenseGeneric(in, aggVal);
 		else if( in.sparse && lastRowCorr )
@@ -381,8 +381,8 @@ public class LibMatrixAgg
 			MatrixBlock tmp = new MatrixBlock(tasks.size(), n2, false);
 			for( int i=0; i<tasks.size(); i++ ) {
 				MatrixBlock row = tasks.get(i).getResult();
-				if( uaop.aggOp.correctionExists )
-					row.dropLastRowsOrColumns(uaop.aggOp.correctionLocation);
+				if( uaop.aggOp.existsCorrection() )
+					row.dropLastRowsOrColumns(uaop.aggOp.correction);
 				tmp.leftIndexingOperations(row, i, i, 0, n2-1, tmp, UpdateType.INPLACE_PINNED);
 			}
 			MatrixBlock tmp2 = cumaggregateUnaryMatrix(tmp, new MatrixBlock(tasks.size(), n2, false), uop);
@@ -595,7 +595,7 @@ public class LibMatrixAgg
 		
 		//(kahan) sum / sum squared / trace (for ReduceDiag)
 		if( vfn instanceof KahanFunction
-			&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTCOLUMN || op.aggOp.correctionLocation == CorrectionLocationType.LASTROW)
+			&& (op.aggOp.correction == CorrectionLocationType.LASTCOLUMN || op.aggOp.correction == CorrectionLocationType.LASTROW)
 			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow || ifn instanceof ReduceDiag) )
 		{
 			if (vfn instanceof KahanPlus)
@@ -606,7 +606,7 @@ public class LibMatrixAgg
 
 		//mean
 		if( vfn instanceof Mean 
-			&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTTWOCOLUMNS || op.aggOp.correctionLocation == CorrectionLocationType.LASTTWOROWS)
+			&& (op.aggOp.correction == CorrectionLocationType.LASTTWOCOLUMNS || op.aggOp.correction == CorrectionLocationType.LASTTWOROWS)
 			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
 		{
 			return AggType.MEAN;
@@ -615,8 +615,8 @@ public class LibMatrixAgg
 		//variance
 		if( vfn instanceof CM
 				&& ((CM) vfn).getAggOpType() == AggregateOperationTypes.VARIANCE
-				&& (op.aggOp.correctionLocation == CorrectionLocationType.LASTFOURCOLUMNS ||
-					op.aggOp.correctionLocation == CorrectionLocationType.LASTFOURROWS)
+				&& (op.aggOp.correction == CorrectionLocationType.LASTFOURCOLUMNS ||
+					op.aggOp.correction == CorrectionLocationType.LASTFOURROWS)
 				&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow) )
 		{
 			return AggType.VAR;
@@ -668,11 +668,11 @@ public class LibMatrixAgg
 		//special handling for mean where the final aggregate operator (kahan plus)
 		//is not equals to the partial aggregate operator
 		if( aop.increOp.fn instanceof Mean ) {
-			laop = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), aop.correctionExists, aop.correctionLocation);
+			laop = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), aop.correction);
 		}
 
 		//incremental aggregation of final results
-		if( laop.correctionExists )
+		if( laop.existsCorrection() )
 			out.incrementalAggregate(laop, partout);
 		else
 			out.binaryOperationsInPlace(laop.increOp, partout);

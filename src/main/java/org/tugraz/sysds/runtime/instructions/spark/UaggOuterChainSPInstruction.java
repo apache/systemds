@@ -92,8 +92,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			//derive aggregation operator from unary operator
 			String aopcode = InstructionUtils.deriveAggregateOperatorOpcode(parts[1]);
 			CorrectionLocationType corrLoc = InstructionUtils.deriveAggregateOperatorCorrectionLocation(parts[1]);
-			String corrExists = (corrLoc != CorrectionLocationType.NONE) ? "true" : "false";
-			AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrExists, corrLoc.toString());
+			AggregateOperator aop = InstructionUtils.parseAggregateOperator(aopcode, corrLoc.toString());
 
 			return new UaggOuterChainSPInstruction(bop, uaggop, aop, in1, in2, out, opcode, str);
 		} 
@@ -154,7 +153,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			MatrixBlock tmp = RDDAggregateUtils.aggStable(out, _aggOp);
 			
 			//drop correction after aggregation
-			tmp.dropLastRowsOrColumns(_aggOp.correctionLocation);
+			tmp.dropLastRowsOrColumns(_aggOp.correction);
 
 			//put output block into symbol table (no lineage because single block)
 			sec.setMatrixOutput(output.getName(), tmp);
@@ -164,7 +163,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			//put output RDD handle into symbol table
 			updateUnaryAggOutputDataCharacteristics(sec);
 			
-			if( _uaggOp.aggOp.correctionExists )
+			if( _uaggOp.aggOp.existsCorrection() )
 				out = out.mapValues( new AggregateDropCorrectionFunction(_uaggOp.aggOp) );
 			
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -345,7 +344,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 						corr = new MatrixBlock(_tmpVal2.getNumRows(), _tmpVal2.getNumColumns(), false);
 					}
 					
-					if(_aggOp.correctionExists)
+					if(_aggOp.existsCorrection())
 						OperationsOnMatrixValues.incrementalAggregation(outVal, corr, _tmpVal2, _aggOp, true);
 					else 
 						OperationsOnMatrixValues.incrementalAggregation(outVal, null, _tmpVal2, _aggOp, true);

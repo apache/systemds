@@ -889,7 +889,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//construct operator
 		CorrectionLocationType corrLoc = CorrectionLocationType.LASTCOLUMN;
 		ReduceAll reduceAllObj = ReduceAll.getReduceAllFnObject();
-		AggregateOperator aop = new AggregateOperator(0, kfunc, true, corrLoc);
+		AggregateOperator aop = new AggregateOperator(0, kfunc, corrLoc);
 		AggregateUnaryOperator auop = new AggregateUnaryOperator(aop, reduceAllObj);
 		//execute operation
 		MatrixBlock out = new MatrixBlock(1, 2, false);
@@ -2898,8 +2898,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		MatrixBlock newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
 		
-		if(aggOp.correctionLocation==CorrectionLocationType.LASTROW)
-		{
+		if(aggOp.correction==CorrectionLocationType.LASTROW) {
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
 				{
@@ -2910,9 +2909,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					quickSetValue(r, c, buffer._sum);
 					cor.quickSetValue(0, c, buffer._correction);
 				}
-			
-		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
-		{
+		}
+		else if(aggOp.correction==CorrectionLocationType.LASTCOLUMN) {
 			if(aggOp.increOp.fn instanceof Builtin 
 				&& ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX
 					|| ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MININDEX ) ) {
@@ -2960,8 +2958,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 						}
 				}
 		}
-		else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
-		{
+		else if(aggOp.correction==CorrectionLocationType.NONE) {
 			//e.g., ak+ kahan plus as used in sum, mapmult, mmcj and tsmm
 			if(aggOp.increOp.fn instanceof KahanPlus) {
 				LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, cor, deep);
@@ -3011,8 +3008,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				examSparsity(); 
 			}
 		}
-		else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
-		{
+		else if(aggOp.correction==CorrectionLocationType.LASTTWOROWS) {
 			double n, n2, mu2;
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
@@ -3029,9 +3025,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					cor.quickSetValue(0, c, n);
 					cor.quickSetValue(1, c, buffer._correction);
 				}
-			
-		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
-		{
+		}
+		else if(aggOp.correction==CorrectionLocationType.LASTTWOCOLUMNS) {
 			double n, n2, mu2;
 			for(int r=0; r<rlen; r++)
 				for(int c=0; c<clen; c++)
@@ -3049,7 +3044,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					cor.quickSetValue(r, 1, buffer._correction);
 				}
 		}
-		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURROWS
+		else if (aggOp.correction == CorrectionLocationType.LASTFOURROWS
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
@@ -3087,7 +3082,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					cor.quickSetValue(3, c, cbuff_curr.mean._correction);
 				}
 		}
-		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURCOLUMNS
+		else if (aggOp.correction == CorrectionLocationType.LASTFOURCOLUMNS
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
@@ -3126,7 +3121,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				}
 		}
 		else
-			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
+			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correction);
 	}
 	
 	@Override
@@ -3135,7 +3130,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		MatrixBlock newWithCor=checkType(newWithCorrection);
 		KahanObject buffer=new KahanObject(0, 0);
 		
-		if(aggOp.correctionLocation==CorrectionLocationType.LASTROW)
+		if(aggOp.correction==CorrectionLocationType.LASTROW)
 		{
 			if( aggOp.increOp.fn instanceof KahanPlus )
 			{
@@ -3155,7 +3150,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					}
 			}	
 		}
-		else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
+		else if(aggOp.correction==CorrectionLocationType.LASTCOLUMN)
 		{
 			if(aggOp.increOp.fn instanceof Builtin 
 			   && ( ((Builtin)(aggOp.increOp.fn)).bFunc == Builtin.BuiltinCode.MAXINDEX 
@@ -3196,12 +3191,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			}
 			else
 			{
-				if(aggOp.increOp.fn instanceof KahanPlus)
-				{
+				if(aggOp.increOp.fn instanceof KahanPlus) {
 					LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, aggOp);
 				}
-				else
-				{
+				else {
 					for(int r=0; r<rlen; r++)
 						for(int c=0; c<clen-1; c++)
 						{
@@ -3214,7 +3207,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				}
 			}
 		}
-		else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
+		else if(aggOp.correction==CorrectionLocationType.LASTTWOROWS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen-2; r++)
@@ -3233,7 +3226,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					quickSetValue(r+2, c, buffer._correction);
 				}
 			
-		}else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
+		}else if(aggOp.correction==CorrectionLocationType.LASTTWOCOLUMNS)
 		{
 			double n, n2, mu2;
 			for(int r=0; r<rlen; r++)
@@ -3252,7 +3245,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					quickSetValue(r, c+2, buffer._correction);
 				}
 		}
-		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURROWS
+		else if (aggOp.correction == CorrectionLocationType.LASTFOURROWS
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
@@ -3290,7 +3283,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					quickSetValue(r+4, c, cbuff_curr.mean._correction);
 				}
 		}
-		else if (aggOp.correctionLocation == CorrectionLocationType.LASTFOURCOLUMNS
+		else if (aggOp.correction == CorrectionLocationType.LASTFOURCOLUMNS
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
@@ -3329,7 +3322,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				}
 		}
 		else
-			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
+			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correction);
 	}
 
 	@Override
@@ -4238,21 +4231,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			int blen, MatrixIndexes indexesIn, boolean inCP)  {
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
-		if(op.aggOp.correctionExists)
+		if(op.aggOp.existsCorrection())
 		{
-			switch(op.aggOp.correctionLocation)
+			switch(op.aggOp.correction)
 			{
 				case LASTROW: 
-					tempCellIndex.row++; 
+					tempCellIndex.row++;
 					break;
 				case LASTCOLUMN: 
-					tempCellIndex.column++; 
+					tempCellIndex.column++;
 					break;
 				case LASTTWOROWS: 
-					tempCellIndex.row+=2; 
+					tempCellIndex.row+=2;
 					break;
 				case LASTTWOCOLUMNS: 
-					tempCellIndex.column+=2; 
+					tempCellIndex.column+=2;
 					break;
 				case LASTFOURROWS:
 					tempCellIndex.row+=4;
@@ -4261,7 +4254,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					tempCellIndex.column+=4;
 					break;
 				default:
-					throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correctionLocation);	
+					throw new DMLRuntimeException("unrecognized correctionLocation: "+op.aggOp.correction);
 			}
 		}
 		
@@ -4284,8 +4277,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else
 			denseAggregateUnaryHelp(op, ret, blen, indexesIn);
 		
-		if(op.aggOp.correctionExists && inCP)
-			((MatrixBlock)result).dropLastRowsOrColumns(op.aggOp.correctionLocation);
+		if(op.aggOp.existsCorrection() && inCP)
+			((MatrixBlock)result).dropLastRowsOrColumns(op.aggOp.correction);
 		
 		return ret;
 	}
@@ -4345,42 +4338,42 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	private static void incrementalAggregateUnaryHelp(AggregateOperator aggOp, MatrixBlock result, int row, int column, 
 			double newvalue, KahanObject buffer)
 	{
-		if(aggOp.correctionExists)
+		if(aggOp.existsCorrection())
 		{
-			if(aggOp.correctionLocation==CorrectionLocationType.LASTROW || aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
+			if(aggOp.correction==CorrectionLocationType.LASTROW || aggOp.correction==CorrectionLocationType.LASTCOLUMN)
 			{
 				int corRow=row, corCol=column;
-				if(aggOp.correctionLocation==CorrectionLocationType.LASTROW)//extra row
+				if(aggOp.correction==CorrectionLocationType.LASTROW)//extra row
 					corRow++;
-				else if(aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
+				else if(aggOp.correction==CorrectionLocationType.LASTCOLUMN)
 					corCol++;
 				else
-					throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
+					throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correction);
 				
 				buffer._sum=result.quickGetValue(row, column);
 				buffer._correction=result.quickGetValue(corRow, corCol);
 				buffer=(KahanObject) aggOp.increOp.fn.execute(buffer, newvalue);
 				result.quickSetValue(row, column, buffer._sum);
 				result.quickSetValue(corRow, corCol, buffer._correction);
-			}else if(aggOp.correctionLocation==CorrectionLocationType.NONE)
+			}else if(aggOp.correction==CorrectionLocationType.NONE)
 			{
-				throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
+				throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correction);
 			}else// for mean
 			{
 				int corRow=row, corCol=column;
 				int countRow=row, countCol=column;
-				if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOROWS)
+				if(aggOp.correction==CorrectionLocationType.LASTTWOROWS)
 				{
 					countRow++;
 					corRow+=2;
 				}
-				else if(aggOp.correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS)
+				else if(aggOp.correction==CorrectionLocationType.LASTTWOCOLUMNS)
 				{
 					countCol++;
 					corCol+=2;
 				}
 				else
-					throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
+					throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correction);
 				buffer._sum=result.quickGetValue(row, column);
 				buffer._correction=result.quickGetValue(corRow, corCol);
 				double count=result.quickGetValue(countRow, countCol)+1.0;
@@ -4870,8 +4863,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else
 			ret = LibMatrixAgg.aggregateTernary(m1, m2, m3, ret, op);
 		
-		if(op.aggOp.correctionExists && inCP)
-			ret.dropLastRowsOrColumns(op.aggOp.correctionLocation);
+		if(op.aggOp.existsCorrection() && inCP)
+			ret.dropLastRowsOrColumns(op.aggOp.correction);
 		return ret;
 	}
 

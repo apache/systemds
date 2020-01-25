@@ -48,30 +48,25 @@ public class PerformGroupByAggInCombiner implements Function2<WeightedCell, Weig
 		CM_COV_Object cmObj = new CM_COV_Object(); 
 		if(_op instanceof CMOperator) //everything except sum
 		{
-			if( ((CMOperator) _op).isPartialAggregateOperator() )
-			{
+			if( ((CMOperator) _op).isPartialAggregateOperator() ) {
 				cmObj.reset();
 				CM lcmFn = CM.getCMFnObject(((CMOperator) _op).aggOpType); // cmFn.get(key.getTag());
-				
 				//partial aggregate cm operator
 				lcmFn.execute(cmObj, value1.getValue(), value1.getWeight());
 				lcmFn.execute(cmObj, value2.getValue(), value2.getWeight());
-				
 				outCell.setValue(cmObj.getRequiredPartialResult(_op));
-				outCell.setWeight(cmObj.getWeight());	
+				outCell.setWeight(cmObj.getWeight());
 			}
-			else //forward tuples to reducer
-			{
+			else { //forward tuples to reducer
 				throw new DMLRuntimeException("Incorrect usage, should have used PerformGroupByAggInReducer");
-			}				
+			}
 		}
 		else if(_op instanceof AggregateOperator) //sum
 		{
 			AggregateOperator aggop=(AggregateOperator) _op;
 				
-			if( aggop.correctionExists ) {
+			if( aggop.existsCorrection() ) {
 				KahanObject buffer=new KahanObject(aggop.initialValue, 0);
-				
 				KahanPlus.getKahanPlusFnObject();
 				
 				//partial aggregate with correction
@@ -81,17 +76,13 @@ public class PerformGroupByAggInCombiner implements Function2<WeightedCell, Weig
 				outCell.setValue(buffer._sum);
 				outCell.setWeight(1);
 			}
-			else //no correction
-			{
+			else { //no correction
 				double v = aggop.initialValue;
-				
-				//partial aggregate without correction
 				v=aggop.increOp.fn.execute(v, value1.getValue()*value1.getWeight());
 				v=aggop.increOp.fn.execute(v, value2.getValue()*value2.getWeight());
-				
 				outCell.setValue(v);
 				outCell.setWeight(1);
-			}				
+			}
 		}
 		else
 			throw new DMLRuntimeException("Unsupported operator in grouped aggregate instruction:" + _op);

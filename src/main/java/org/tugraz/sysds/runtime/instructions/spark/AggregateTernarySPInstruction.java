@@ -97,7 +97,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 		{
 			//single block aggregation and drop correction
 			MatrixBlock ret = RDDAggregateUtils.aggStable(out, aggop.aggOp);
-			ret.dropLastRowsOrColumns(aggop.aggOp.correctionLocation);
+			ret.dropLastRowsOrColumns(aggop.aggOp.correction);
 			
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics

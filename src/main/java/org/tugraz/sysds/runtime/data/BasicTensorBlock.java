@@ -560,7 +560,7 @@ public class BasicTensorBlock implements Serializable {
 		}
 		int dim0 = 1;
 		int dim1 = 1;
-		if (op.aggOp.correctionExists) {
+		if (op.aggOp.existsCorrection()) {
 			dim1 = 2;
 		}
 		//prepare result matrix block
@@ -580,12 +580,9 @@ public class BasicTensorBlock implements Serializable {
 	}
 
 	public void incrementalAggregate(AggregateOperator aggOp, BasicTensorBlock partialResult) {
-		if (!aggOp.correctionExists) {
-			if (aggOp.increOp.fn instanceof Plus) {
-				aggregateBinaryTensor(partialResult, this, aggOp);
-			}
-		}
+		if( !aggOp.existsCorrection() && aggOp.increOp.fn instanceof Plus)
+			aggregateBinaryTensor(partialResult, this, aggOp);
 		else
-			throw new DMLRuntimeException("Correction not supported. correctionLocation: " + aggOp.correctionLocation);
+			throw new DMLRuntimeException("Correction not supported. correctionLocation: " + aggOp.correction);
 	}
 }

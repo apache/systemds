@@ -127,7 +127,7 @@ public class LibTensorAgg {
 		//core aggregation
 		// TODO support indexfn that are not reduce all
 		// TODO support for all shapes
-		if (!aop.correctionExists) {
+		if (!aop.existsCorrection()) {
 			if (aop.increOp.fn instanceof Plus) {
 				int[] first = new int[in.getNumDims()];
 				switch (in.getValueType()) {
@@ -207,7 +207,7 @@ public class LibTensorAgg {
 		//TODO special handling for mean where the final aggregate operator
 		// is not equals to the partial aggregate operator
 		//incremental aggregation of final results
-		if (!aop.correctionExists)
+		if (!aop.existsCorrection())
 			out.incrementalAggregate(aop, partout);
 		else
 			throw new NotImplementedException();

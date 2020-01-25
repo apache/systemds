@@ -161,10 +161,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// make outBlock right size
 		int outNumRows = (int) mc.getRows();
 		int outNumCols = (int) mc.getCols();
-		if (operator.aggOp.correctionExists) {
+		if (operator.aggOp.existsCorrection()) {
 			// add rows for correction
-			int numMissing = operator.aggOp.correctionLocation.getNumRemovedRowsColumns();
-			if (operator.aggOp.correctionLocation.isRows())
+			int numMissing = operator.aggOp.correction.getNumRemovedRowsColumns();
+			if (operator.aggOp.correction.isRows())
 				outNumRows += numMissing;
 			else
 				outNumCols += numMissing;
@@ -177,7 +177,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return new FederatedResponse(FederatedResponse.Type.ERROR, "FederatedWorkerHandler: " + e);
 		}
 		// result block without correction
-		ret.dropLastRowsOrColumns(operator.aggOp.correctionLocation);
+		ret.dropLastRowsOrColumns(operator.aggOp.correction);
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, ret);
 	}
 	

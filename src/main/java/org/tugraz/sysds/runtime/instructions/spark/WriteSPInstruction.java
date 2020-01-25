@@ -55,7 +55,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class WriteSPInstruction extends SPInstruction implements LineageTraceable {
-	private CPOperand input1 = null;
+	public CPOperand input1 = null;
 	private CPOperand input2 = null;
 	private CPOperand input3 = null;
 	private CPOperand input4 = null;

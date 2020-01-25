@@ -115,8 +115,8 @@ public class TestUtils
 				lineActual = outIn.readLine();
 			}
 
-			assertTrue(expectedFile + ": " + lineExpected + " vs " + actualFile + ": " + lineActual, 
-					   lineActual.equals(lineExpected));
+			assertEquals(expectedFile + ": " + lineExpected + " vs " + actualFile + ": " + lineActual,
+					Double.parseDouble(lineExpected), Double.parseDouble(lineActual), epsilon);
 		} catch (IOException e) {
 			fail("unable to read file: " + e.getMessage());
 		}
@@ -2102,5 +2102,23 @@ public class TestUtils
 		for(int i=0; i<data.length; i++)
 			nnz += UtilFunctions.computeNnz(data[i], 0, data[i].length);
 		return nnz;
+	}
+	
+	public static void shutdownThreads(Thread... ts) {
+		for( Thread t : ts )
+			shutdownThread(t);
+	}
+	
+	public static void shutdownThread(Thread t) {
+		// kill the worker
+		if( t != null ) {
+			t.interrupt();
+			try {
+				t.join();
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

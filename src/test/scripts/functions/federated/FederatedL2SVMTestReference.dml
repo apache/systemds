@@ -18,7 +18,5 @@
 
 X = rbind(read($1), read($2))
 Y = read($3)
-model= l2svm(X=X,  Y=Y, intercept = FALSE, epsilon = 1e-12, lambda = 1, maxiterations = 100)
-write(model, $4, format="binary")
-print("Reference model")
-print(toString(model))
+model = l2svm(X=X,  Y=Y, intercept = FALSE, epsilon = 1e-12, lambda = 1, maxiterations = 100)
+write(model, $4)

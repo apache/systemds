@@ -22,9 +22,9 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import java.util.Arrays;
-
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.util.Arrays;
 
 public class DenseBlockFP64 extends DenseBlockDRB
 {
@@ -137,9 +137,12 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	@Override
 	public DenseBlock set(int rl, int ru, int ol, int ou, DenseBlock db) {
 		//TODO generalize to non-double dense blocks
+		//TODO should we specify that the length HAS TO BE (ru - rl) * (ou - ol) == db.size()? or allow partial sets
 		double[] a = db.valuesAt(0);
+		// if we can make use of the linearized array, just do an arraycopy.
+		// all columns for our DenseBlock mean we can just have to limit the range by rows
 		if( ol == 0 && ou == _odims[0])
-			System.arraycopy(a, 0, _data, rl*_odims[0]+ol, (int)db.size());
+			System.arraycopy(a, 0, _data, rl*_odims[0], (ru - rl) * _odims[0]);
 		else {
 			int len = ou - ol;
 			for(int i=rl, ix1=0, ix2=rl*_odims[0]+ol; i<ru; i++, ix1+=len, ix2+=_odims[0])

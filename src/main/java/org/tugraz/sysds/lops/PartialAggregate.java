@@ -240,7 +240,7 @@ public class PartialAggregate extends Lop
 		return sb.toString();
 	}
 
-	public static String getOpcode(AggOp op, Direction dir) 
+	public static String getOpcode(AggOp op, Direction dir)
 	{
 		switch( op )
 		{
@@ -252,7 +252,7 @@ public class PartialAggregate extends Lop
 					return "uak+";
 				else if( dir == Direction.Row )
 					return "uark+";
-				else if( dir == Direction.Col ) 
+				else if( dir == Direction.Col )
 					return "uack+";
 				break;
 			}
@@ -304,9 +304,9 @@ public class PartialAggregate extends Lop
 			}
 			
 			case MAX: {
-				if( dir == Direction.RowCol ) 
+				if( dir == Direction.RowCol )
 					return "uamax";
-				else if( dir == Direction.Row ) 
+				else if( dir == Direction.Row )
 					return "uarmax";
 				else if( dir == Direction.Col )
 					return "uacmax";
@@ -314,11 +314,11 @@ public class PartialAggregate extends Lop
 			}
 			
 			case MIN: {
-				if( dir == Direction.RowCol ) 
+				if( dir == Direction.RowCol )
 					return "uamin";
-				else if( dir == Direction.Row ) 
+				else if( dir == Direction.Row )
 					return "uarmin";
-				else if( dir == Direction.Col ) 
+				else if( dir == Direction.Col )
 					return "uacmin";
 				break;
 			}
@@ -336,7 +336,7 @@ public class PartialAggregate extends Lop
 			}
 			
 			case TRACE: {
-				if( dir == Direction.RowCol ) 
+				if( dir == Direction.RowCol )
 					return "uaktrace";
 				break;
 			}

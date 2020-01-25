@@ -96,7 +96,7 @@ public abstract class CPInstruction extends Instruction
 		}
 		
 		//robustness federated instructions (runtime assignment)
-		tmp = FEDInstructionUtils.checkAndReplace(tmp, ec);
+		tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
 		
 		return tmp;
 	}

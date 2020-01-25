@@ -18,4 +18,4 @@
 
 # TODO rework function definition
 A = federated(addresses=list($1, $1), ranges=list(list(0, 0), list($2, $3), list($2, 0), list($4, $3)))
-print(toString(A))
+write(A, $5)

@@ -503,8 +503,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		}
 		
 		//read matrix and maintain meta data
-		MatrixBlock newData = DataConverter.readMatrixFromHDFS(fname, iimd.getInputInfo(), rlen, clen,
-				mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
+		MatrixBlock newData = isFederated() ? acquireReadAndRelease() :
+			DataConverter.readMatrixFromHDFS(fname, iimd.getInputInfo(), rlen,
+			clen, mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
+		
 		setHDFSFileExists(true);
 		
 		//sanity check correct output

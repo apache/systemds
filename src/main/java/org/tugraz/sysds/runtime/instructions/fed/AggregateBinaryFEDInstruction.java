@@ -16,11 +16,6 @@
 
 package org.tugraz.sysds.runtime.instructions.fed;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.tugraz.sysds.common.Types.DataType;
@@ -40,6 +35,11 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
 
 public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	
@@ -103,6 +103,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	{
 		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) )
 			throw new DMLRuntimeException("Only matrix-vector is supported for federated binary aggregation");
+		// fixed implementation only for mv, vm multiply and plus
+		// TODO move this to a Lib class?
 		// create output matrix
 		MatrixBlock resultBlock;
 		// if we chang the order of parameters, so VM instead of MV, the output has different dimensions

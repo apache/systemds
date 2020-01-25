@@ -337,7 +337,7 @@ public class RDDAggregateUtils
 	{
 		private static final long serialVersionUID = 7664941774566119853L;
 		
-		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.NONE);	
+		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.NONE);
 		private final boolean _deep;
 
 		public MergeSumBlockCombinerFunction(boolean deep) {

@@ -53,6 +53,7 @@ public class AggregateOperator  extends Operator implements Serializable
 	}
 	
 	public boolean existsCorrection() {
-		return correction != CorrectionLocationType.NONE;
+		return correction != CorrectionLocationType.NONE
+			&& correction != CorrectionLocationType.INVALID;
 	}
 }

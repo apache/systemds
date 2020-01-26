@@ -1,0 +1,88 @@
+#-------------------------------------------------------------
+#
+# Copyright 2020 Graz University of Technology
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Implements builtin for finding functional dependencies
+# 
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# TODO
+ 
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# FD              Double   ---        matrix of functional dependencies 
+
+m_discoverFD = function(Matrix[Double] X)
+  return(Matrix[Double] FD)
+{
+	# allocate output and working sets
+	n = ncol(X)
+  FD = matrix(0, n, n)
+  FDCols = matrix(0, n, n)
+  FDRows = matrix(0, n, n)
+  
+  # compute summary statistics (assumes recoded columns) 
+  cm = colMaxs(X)
+  cm = order(target=t(cm), decreasing=TRUE, index.return=TRUE)
+  
+  sequence = (nrow(X)*(nrow(X)+1))/2
+  for(i in 1 : n){
+    index_i = as.scalar(cm[i,1])
+    colDist = colDistinct(X[,index_i])
+    columnSum = sum(X[,index_i])  
+    if(colDist == 1.0) 
+      FDCols[, index_i] = matrix(1, n, 1)
+    else if(columnSum == sequence)
+      FDRows[index_i, ] = matrix(1, 1, n)
+    else {
+      parfor(j in seq(i+1,ncol(X), 1), check =0){
+        index_j = as.scalar(cm[j,1])
+        [A_determines_B, del] = compute_dependency(X[, index_i], X[, index_j]);
+        if(A_determines_B & del > 0.8)
+          FD[index_i, index_j] = 1
+      }
+    }
+  }
+  FD = (FD + FDCols + FDRows) != 0 
+}
+
+compute_dependency = function(Matrix[Double] X, Matrix[Double] Y)
+  return(Boolean A_determines_B, Double delta)
+{
+  ctab = table(X, Y)
+  rowMax = rowMaxs(ctab)
+  rowMax = removeEmpty(target = rowMax, margin = "rows")
+  rowSum = rowSums(ctab)
+  rowSumTable = rowSums(ctab != 0)
+  A_determines_B = (sum(rowSumTable == 1) == colDistinct(X));
+  delta = sum(rowMax) / sum(rowSum ) 
+}
+
+colDistinct = function(Matrix[Double] X)
+return(double distinctItems)
+{
+  distinctItems = sum(table(X, 1) != 0)
+}

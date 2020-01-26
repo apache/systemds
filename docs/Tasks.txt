@@ -148,7 +148,8 @@ SYSTEMDS-190 New Builtin Functions III
  * 193 New outlierBySds builtin function (delete row/cell)
  * 194 New outlierByIQR builtin function (delete row/cell)
  * 195 Builtin function mice for nominal features
- * 196 Builtin function intersect (set intersection)
+ * 196 Builtin function intersect (set intersection)                  OK
+ * 197 Builtin function for functional dependency discovery
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK

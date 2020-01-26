@@ -1852,7 +1852,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		{
 			BinaryOp bop = (BinaryOp) hi;
 			BinaryOp bop2 = (BinaryOp) hi.getInput().get(0);
-			boolean one = HopRewriteUtils.isLiteralOfValue(hi.getInput().get(1), 0);
+			boolean one = HopRewriteUtils.isLiteralOfValue(hi.getInput().get(1), 1);
 			
 			//pattern: outer(v1,v2,"!=") == 1 -> outer(v1,v2,"!=")
 			if( (one && bop.getOp() == OpOp2.EQUAL)

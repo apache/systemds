@@ -107,7 +107,7 @@ public class CM extends ValueFunction
 				double w= cm1.w + 1;
 				double d=in2-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
-				cm1.w=w;			
+				cm1.w=w;
 				break;
 			}
 			case CM2:
@@ -120,7 +120,7 @@ public class CM extends ValueFunction
 				_buff2.set(cm1.m2);
 				_buff2=(KahanObject) _plus.execute(_buff2, lt1);
 				cm1.m2.set(_buff2);
-				cm1.w=w;				
+				cm1.w=w;
 				break;
 			}
 			case CM3:

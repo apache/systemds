@@ -31,18 +31,22 @@ public class FEDInstructionUtils {
 	public static Instruction checkAndReplaceCP(Instruction inst, ExecutionContext ec) {
 		if (inst instanceof AggregateBinaryCPInstruction) {
 			AggregateBinaryCPInstruction instruction = (AggregateBinaryCPInstruction) inst;
-			MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
-			MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
-			if (mo1.isFederated() && mo2.getNumColumns() == 1 || mo1.getNumRows() == 1 && mo2.isFederated()) {
-				// currently only vm/mv is supported
-				return AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			if( instruction.input1.isMatrix() && instruction.input2.isMatrix() ) {
+				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
+				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
+				if (mo1.isFederated() && mo2.getNumColumns() == 1 || mo1.getNumRows() == 1 && mo2.isFederated()) {
+					// currently only vm/mv is supported
+					return AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+				}
 			}
 		}
 		else if (inst instanceof AggregateUnaryCPInstruction) {
 			AggregateUnaryCPInstruction instruction = (AggregateUnaryCPInstruction) inst;
-			MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
-			if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
-				return AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			if( instruction.input1.isMatrix() ) {
+				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
+				if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
+					return AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			}
 		}
 		return inst;
 	}

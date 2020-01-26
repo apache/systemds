@@ -193,8 +193,8 @@ public class OperationsOnMatrixValues
 	}
 	
 	public static void incrementalAggregation(MatrixValue valueAgg, MatrixValue correction, MatrixValue valueAdd, 
-			AggregateOperator op, boolean imbededCorrection) {
-		incrementalAggregation(valueAgg, correction, valueAdd, op, imbededCorrection, true);
+			AggregateOperator op, boolean embeddedCorrection) {
+		incrementalAggregation(valueAgg, correction, valueAdd, op, embeddedCorrection, true);
 	}
 	
 	

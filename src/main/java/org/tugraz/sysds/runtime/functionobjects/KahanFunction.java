@@ -30,18 +30,23 @@ import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
  */
 public abstract class KahanFunction extends ValueFunction implements Serializable {
 
-    private static final long serialVersionUID = -8880016655817461398L;
+	private static final long serialVersionUID = -8880016655817461398L;
 
-    /**
-     * Add the given term to the existing sum with a function applied
-     * using the Kahan summation algorithm.
-     *
-     * @param kObj A KahanObject containing the current sum and
-     *             correction factor for the Kahan summation
-     *             algorithm.
-     * @param in The current term to be added.
-     */
-    public abstract void execute2(KahanObject kObj, double in);
+	/**
+	 * Add the given term to the existing sum with a function applied
+	 * using the Kahan summation algorithm.
+	 *
+	 * @param kObj A KahanObject containing the current sum and
+	 *             correction factor for the Kahan summation
+	 *             algorithm.
+	 * @param in The current term to be added.
+	 */
+	public abstract void execute2(KahanObject kObj, double in);
 
-    public abstract void execute3(KahanObject kObj, double in, int count);
+	public abstract void execute3(KahanObject kObj, double in, int count);
+
+	@Override
+	public final boolean requiresCorrection() {
+		return true;
+	}
 }

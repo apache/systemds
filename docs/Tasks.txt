@@ -77,7 +77,7 @@ SYSTEMDS-100 Various Fixes
  * 105 Fix all application/function tests (various issues)            OK
  * 106 Fix correctness of as.integer for negative numbers             OK
  * 107 Fix correctness IPA check dimension-preserving                 OK
- * 108 Fix codegen optimizer (early costing abort)                    OK 
+ * 108 Fix codegen optimizer (early costing abort)                    OK
  * 109 Fix update-in-place w/ udf function calls                      OK
  
 SYSTEMDS-110 New Builtin Functions
@@ -176,7 +176,7 @@ SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool
  * 232 Lineage of code generated operators
  * 233 Lineage cache and reuse of function results                    OK
- * 234 Lineage tracing for spark instructions													OK
+ * 234 Lineage tracing for spark instructions                         OK
 
 SYSTEMDS-240 GPU Backend Improvements
  * 241 Dense GPU cumulative aggregates 

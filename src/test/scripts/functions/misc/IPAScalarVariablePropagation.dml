@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 
-pnmf = function(matrix[double] V, integer max_iteration, integer rank) return (matrix[double] W, matrix[double] H) {
+pnmf2 = function(matrix[double] V, integer max_iteration, integer rank) return (matrix[double] W, matrix[double] H) {
     n = nrow(V)
     m = ncol(V)
     
@@ -47,7 +47,7 @@ max_iteration = 5
 rank = as.integer($1)
 
 # run PNMF and evaluate
-[W, H] = pnmf(X, max_iteration, rank)
+[W, H] = pnmf2(X, max_iteration, rank)
 negloglik_temp = negloglikfunc(X, W, H)
 
 # write outputs

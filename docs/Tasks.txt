@@ -155,6 +155,7 @@ SYSTEMDS-200 Various Fixes
  * 202 Fix rewrite split DAG multiple removeEmpty (pending op)        OK
  * 203 Fix codegen outer compilation (MV operations)                  OK
  * 204 Fix rewrite simplify sequences of binary comparisons           OK
+ * 205 Fix scoping of builtin dml-bodied functions (vs user-defined)
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK

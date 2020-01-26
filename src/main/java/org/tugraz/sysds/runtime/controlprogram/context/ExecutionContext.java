@@ -186,6 +186,10 @@ public class ExecutionContext {
 		_variables.put(name, val);
 	}
 	
+	public boolean containsVariable(CPOperand operand) {
+		return containsVariable(operand.getName());
+	}
+	
 	public boolean containsVariable(String name) {
 		return _variables.keySet().contains(name);
 	}

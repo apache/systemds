@@ -42,7 +42,7 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof AggregateUnaryCPInstruction) {
 			AggregateUnaryCPInstruction instruction = (AggregateUnaryCPInstruction) inst;
-			if( instruction.input1.isMatrix() ) {
+			if( instruction.input1.isMatrix() && ec.containsVariable(instruction.input1) ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
 					return AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());

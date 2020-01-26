@@ -73,7 +73,7 @@ public class BuiltinFDTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("X")};
+			programArgs = new String[]{"-stats","-args", input("X")};
 			writeInputMatrixWithMTD("X", X, true);
 			runTest(true, false, null, -1);
 		}

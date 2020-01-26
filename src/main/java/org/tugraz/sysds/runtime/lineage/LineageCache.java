@@ -238,10 +238,11 @@ public class LineageCache {
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
-		MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
-		MatrixObject mo2 = ec.getMatrixObject(((ComputationCPInstruction)inst).input2);
-		long c1 = mo1.getNumColumns();
-		long c2 = mo2.getNumColumns();
+		ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
+		if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
+			return false;
+		long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
+		long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
 		return(c1 == 1 || c2 == 1);
 	}
 	

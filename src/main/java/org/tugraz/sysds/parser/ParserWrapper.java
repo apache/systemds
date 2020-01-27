@@ -35,6 +35,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.tugraz.sysds.api.jmlc.Connection;
 import org.tugraz.sysds.parser.dml.CustomErrorListener.ParseIssue;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 
@@ -46,7 +47,8 @@ public abstract class ParserWrapper {
 	protected boolean atLeastOneError = false;
 	protected boolean atLeastOneWarning = false;
 	protected List<ParseIssue> parseIssues;
-	
+	private static FileSystem fs = null;
+
 	public abstract DMLProgram parse(String fileName, String dmlScript, Map<String, String> argVals);
 
 	/**
@@ -102,9 +104,8 @@ public abstract class ParserWrapper {
 				Path scriptPath = new Path(script);
 				String scheme = (scriptPath.toUri()!=null) ? scriptPath.toUri().getScheme() : null;
 				LOG.debug("Looking for the following file in "+scheme+": " + script);
-				try( FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath) ) {
-					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
-				}
+				fs = IOUtilFunctions.getFileSystem(scriptPath);
+				in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 			}
 			// from local file system
 			else 
@@ -151,7 +152,10 @@ public abstract class ParserWrapper {
 				IOUtilFunctions.closeSilently(is);
 			}
 		}
-		finally {
+		finally	{
+			if(fs != null)
+				fs.close();
+
 			IOUtilFunctions.closeSilently(in);
 		}
 		

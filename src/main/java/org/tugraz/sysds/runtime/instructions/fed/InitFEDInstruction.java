@@ -19,6 +19,7 @@ package org.tugraz.sysds.runtime.instructions.fed;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.tugraz.sysds.common.Types;
+import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -34,98 +35,88 @@ import org.tugraz.sysds.runtime.instructions.cp.StringObject;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Future;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class InitFEDInstruction extends FEDInstruction {
 	private CPOperand _addresses, _ranges, _output;
-	
+
 	public InitFEDInstruction(CPOperand addresses, CPOperand ranges, CPOperand out, String opcode, String instr) {
 		super(FEDType.Init, opcode, instr);
 		_addresses = addresses;
 		_ranges = ranges;
 		_output = out;
 	}
-	
+
 	public static InitFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		// We need 3 parts: Opcode, Addresses (list of Strings with url/ip:port/filepath), ranges and the output Operand
-		if( parts.length != 4 )
+		// We need 4 parts: Opcode, Addresses (list of Strings with
+		// url/ip:port/filepath), ranges and the output Operand
+		if (parts.length != 4)
 			throw new DMLRuntimeException("Invalid number of operands in federated instruction: " + str);
 		String opcode = parts[0];
-		
+
 		CPOperand addresses, ranges, out;
 		addresses = new CPOperand(parts[1]);
 		ranges = new CPOperand(parts[2]);
 		out = new CPOperand(parts[3]);
 		return new InitFEDInstruction(addresses, ranges, out, opcode, str);
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		ListObject addresses = ec.getListObject(_addresses.getName());
 		ListObject ranges = ec.getListObject(_ranges.getName());
 		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
-		
-		if( addresses.getLength() * 2 != ranges.getLength() )
-			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges " +
-					"(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
-		
-		long[] usedDims = new long[]{0, 0};
+
+		if (addresses.getLength() * 2 != ranges.getLength())
+			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges "
+					+ "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
+
+		long[] usedDims = new long[] { 0, 0 };
 		for (int i = 0; i < addresses.getLength(); i++) {
 			Data addressData = addresses.getData().get(i);
-			if( addressData instanceof StringObject ) {
-				String address = ((StringObject) addressData).getStringValue();
-				// We split address into url/ip, the port and filepath of file to read
-				String urlRegex = "^([-a-zA-Z0-9@]+(?:\\.[a-zA-Z0-9]+)*)";
-				String portRegex = ":([0-9]+)";
-				String filepathRegex = "((?:/[\\w-]+)*/[\\w-.]+)/?$";
-				Pattern compiled = Pattern.compile(urlRegex + portRegex + filepathRegex);
-				Matcher matcher = compiled.matcher(address);
-				if( matcher.matches() ) {
-					// matches: 0 whole match, 1 host address, 2 port, 3 filepath
-					String host = matcher.group(1);
-					int port = Integer.parseInt(matcher.group(2));
-					String filepath = matcher.group(3).substring(1);
-					// get begin and end ranges
-					List<Data> rangesData = ranges.getData();
-					Data beginData = rangesData.get(i * 2);
-					Data endData = rangesData.get(i * 2 + 1);
-					if( beginData.getDataType() != Types.DataType.LIST || endData.getDataType() != Types.DataType.LIST )
-						throw new DMLRuntimeException("Federated read ranges (lower, upper) have to be lists of dimensions");
-					List<Data> beginDimsData = ((ListObject) beginData).getData();
-					List<Data> endDimsData = ((ListObject) endData).getData();
-					
-					// fill begin and end dims
-					long[] beginDims = new long[beginDimsData.size()];
-					long[] endDims = new long[beginDims.length];
-					for (int d = 0; d < beginDims.length; d++) {
-						beginDims[d] = ((ScalarObject) beginDimsData.get(d)).getLongValue();
-						endDims[d] = ((ScalarObject) endDimsData.get(d)).getLongValue();
-					}
-					usedDims[0] = Math.max(usedDims[0], endDims[0]);
-					usedDims[1] = Math.max(usedDims[1], endDims[1]);
-					try {
-						FederatedData federatedData = new FederatedData(
-								new InetSocketAddress(InetAddress.getByName(host), port), filepath);
-						feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
-					}
-					catch (UnknownHostException e) {
-						throw new DMLRuntimeException("federated host was unknown: " + host);
-					}
+			if (addressData instanceof StringObject) {
+
+				// We split address into url/ip, the port and file path of file to read
+				String[] parsedValues = parseURL(((StringObject) addressData).getStringValue());
+				String host = parsedValues[0];
+				int port = Integer.parseInt(parsedValues[1]);
+				String filePath = parsedValues[2];
+				// get beginning and end of data ranges
+				List<Data> rangesData = ranges.getData();
+				Data beginData = rangesData.get(i * 2);
+				Data endData = rangesData.get(i * 2 + 1);
+				if (beginData.getDataType() != Types.DataType.LIST || endData.getDataType() != Types.DataType.LIST)
+					throw new DMLRuntimeException(
+							"Federated read ranges (lower, upper) have to be lists of dimensions");
+				List<Data> beginDimsData = ((ListObject) beginData).getData();
+				List<Data> endDimsData = ((ListObject) endData).getData();
+
+				// fill begin and end dims
+				long[] beginDims = new long[beginDimsData.size()];
+				long[] endDims = new long[beginDims.length];
+				for (int d = 0; d < beginDims.length; d++) {
+					beginDims[d] = ((ScalarObject) beginDimsData.get(d)).getLongValue();
+					endDims[d] = ((ScalarObject) endDimsData.get(d)).getLongValue();
 				}
-				else {
-					throw new DMLRuntimeException("federated address `" + address + "` does not fit required pattern " +
-							"of \"host:port/directory\"");
+				usedDims[0] = Math.max(usedDims[0], endDims[0]);
+				usedDims[1] = Math.max(usedDims[1], endDims[1]);
+				try {
+					FederatedData federatedData = new FederatedData(
+							new InetSocketAddress(InetAddress.getByName(host), port), filePath);
+					feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
+				} catch (UnknownHostException e) {
+					throw new DMLRuntimeException("federated host was unknown: " + host);
 				}
-			}
-			else {
+
+			} else {
 				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
 			}
 		}
@@ -133,7 +124,41 @@ public class InitFEDInstruction extends FEDInstruction {
 		output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
 		federate(output, feds);
 	}
-	
+
+	public static String[] parseURL(String input) {
+		try {
+			// Artificially making it http protocol. 
+			// This is to avoid malformed address error in the URL passing.
+			// TODO: Construct new protocol name for Federated communication
+			URL address = new URL("http://" + input);
+			String host = address.getHost();
+			if (host.length() == 0)
+				throw new IllegalArgumentException("Missing Host name for federated address");
+			// The current system does not support ipv6, only ipv4.
+			// TODO: Support IPV6 address for Federated communication
+			String ipRegex = "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+			if (host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$") && !host.matches(ipRegex))
+				throw new IllegalArgumentException("Input Host address looks like an IP address but is outside range");
+			String port = Integer.toString(address.getPort());
+			if (port.equals("-1"))
+				port = DMLConfig.DEFAULT_FEDERATED_PORT;
+			String filePath = address.getPath();
+			if (filePath.length() == 0)
+				throw new IllegalArgumentException("Missing File path for federated address");
+
+			if (address.getQuery() != null)
+				throw new IllegalArgumentException("Query is not supported");
+
+			if (address.getRef() != null)
+				throw new IllegalArgumentException("Reference is not supported");
+				
+			return new String[] { host, port, filePath };
+		} catch (MalformedURLException e) {
+			throw new IllegalArgumentException("federated address `" + input
+					+ "` does not fit required URL pattern of \"host:port/directory\"", e);
+		}
+	}
+
 	public void federate(MatrixObject output, List<Pair<FederatedRange, FederatedData>> workers) {
 		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
 		for (Pair<FederatedRange, FederatedData> t : workers) {
@@ -144,7 +169,7 @@ public class InitFEDInstruction extends FEDInstruction {
 		for (Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
 			FederatedRange range = entry.getKey();
 			FederatedData value = entry.getValue();
-			if( !value.isInitialized() ) {
+			if (!value.isInitialized()) {
 				long[] beginDims = range.getBeginDims();
 				long[] endDims = range.getEndDims();
 				long[] dims = output.getDataCharacteristics().getDims();
@@ -157,17 +182,15 @@ public class InitFEDInstruction extends FEDInstruction {
 		try {
 			for (Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses) {
 				FederatedResponse response = idResponse.getRight().get();
-				if( response.isSuccessful() )
+				if (response.isSuccessful())
 					idResponse.getLeft().setVarID((Long) response.getData());
 				else
 					throw new DMLRuntimeException(response.getErrorMessage());
 			}
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			throw new DMLRuntimeException("Federation initialization failed", e);
 		}
-		output.getDataCharacteristics().setNonZeros(
-			output.getNumColumns() * output.getNumRows());
+		output.getDataCharacteristics().setNonZeros(output.getNumColumns() * output.getNumRows());
 		output.setFedMapping(fedMapping);
 	}
 }

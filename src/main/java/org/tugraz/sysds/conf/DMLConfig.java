@@ -88,6 +88,8 @@ public class DMLConfig
 	public static final String PRINT_GPU_MEMORY_INFO = "sysds.gpu.print.memoryInfo";
 	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysds.gpu.eviction.shadow.bufferSize";
 	
+	public static final String DEFAULT_FEDERATED_PORT = "25501";
+
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
 	

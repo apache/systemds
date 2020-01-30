@@ -17,6 +17,7 @@
 package org.tugraz.sysds.runtime.lineage;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.cost.CostEstimatorStaticRuntime;
 import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
@@ -30,15 +31,22 @@ import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.tugraz.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class LineageCache {
@@ -98,8 +106,52 @@ public class LineageCache {
 				//create a placeholder if no reuse to avoid redundancy
 				//(e.g., concurrent threads that try to start the computation)
 				putIntern(item, null, 0);
+				//FIXME: parfor - every thread gets different function names
 		}
 		return d;
+	}
+	
+	public static boolean reuse(List<String> outputs, int numOutputs, LineageItem[] liInputs, String name, ExecutionContext ec)
+	{
+		if( ReuseCacheType.isNone() )
+			return false;
+
+		boolean reuse = true;
+		for (int i=0; i<numOutputs; i++) {
+			String opcode = name + String.valueOf(i+1);
+			LineageItem li = new LineageItem(outputs.get(i), opcode, liInputs);
+			MatrixBlock cachedValue = LineageCache.reuse(li); 
+			//TODO: handling of recursive calls
+			
+			if (cachedValue != null) {
+				String boundVarName = outputs.get(i);
+				//convert to matrix object
+				MetaDataFormat md = new MetaDataFormat(cachedValue.getDataCharacteristics(), 
+						OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
+				MatrixObject boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
+				boundValue.acquireModify(cachedValue);
+				boundValue.release();
+
+				//cleanup existing data bound to output variable name
+				Data exdata = ec.removeVariable(boundVarName);
+				if( exdata != boundValue)
+					ec.cleanupDataObject(exdata);
+
+				//add/replace data in symbol table
+				ec.setVariable(boundVarName, boundValue);
+				
+				// map original lineage of function return to the calling site
+				LineageItem orig = LineageCache.getNext(li);
+				ec.getLineage().set(boundVarName, orig);
+			}
+			else {
+				// if one output cannot be reused, we need to execute the function
+				// NOTE: all outputs need to be prepared for caching and hence,
+				// we cannot directly return here
+				reuse = false;
+			}
+		}
+		return reuse;
 	}
 	
 	public static LineageItem getNext(LineageItem firstItem) {
@@ -156,6 +208,29 @@ public class LineageCache {
 		else
 			removeEntry(item);  //remove the placeholder
 
+	}
+
+	public static void putValue(List<String> outputs, int numOutputs, LineageItem[] liInputs, String name, ExecutionContext ec)
+	{
+		if( ReuseCacheType.isNone() )
+			return;
+		
+		for (int i=0; i<numOutputs; i++) {
+			if (!ReuseCacheType.isNone()) {
+				String opcode = name + String.valueOf(i+1);
+				LineageItem li = new LineageItem(outputs.get(i), opcode, liInputs);
+				String boundVarName = outputs.get(i);
+				LineageItem boundLI = ec.getLineage().get(boundVarName);
+				Data boundValue = ec.getVariable(boundVarName);
+				//if (LineageItemUtils.containsRandDataGen(liInputs, ec.getLineage().get(boundVarName)))
+				if (LineageItemUtils.containsRandDataGen(new HashSet<>(Arrays.asList(liInputs)), boundLI)
+					|| boundValue instanceof ScalarObject) //TODO: cache scalar objects
+					LineageCache.removeEntry(li);  //remove the placeholder
+				else 
+					LineageCache.putValue(li, boundLI, (MatrixObject)boundValue);
+					//TODO: Unmark for caching in compiler if function contains rand()
+			}
+		}
 	}
 	
 	private static void putIntern(LineageItem key, MatrixBlock value, double compcost) {

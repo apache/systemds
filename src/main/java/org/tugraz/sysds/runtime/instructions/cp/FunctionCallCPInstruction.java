@@ -28,12 +28,10 @@ import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.DMLScriptException;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.instructions.Instruction;
@@ -41,11 +39,9 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageCache;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MetaData;
+import org.tugraz.sysds.utils.Statistics;
 
 public class FunctionCallCPInstruction extends CPInstruction {
 	private final String _functionName;
@@ -224,17 +220,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			//map lineage of function returns back to calling site
 			if( lineage != null ) //unchanged ref
 				ec.getLineage().set(boundVarName, lineage.get(retVarName));
-
-			if (!ReuseCacheType.isNone()) {
-				String opcode = _functionName + String.valueOf(i+1);
-				LineageItem li = new LineageItem(_boundOutputNames.get(i), opcode, liInputs);
-				if (boundValue instanceof ScalarObject) //TODO: cache scalar objects
-					LineageCache.removeEntry(li);  //remove the placeholder
-				else 
-					LineageCache.putValue(li, lineage.get(retVarName), (MatrixObject)boundValue);
-					//TODO: Unmark for caching in compiler if function contains rand()
-			}
 		}
+
+		//update lineage cache with the functions outputs
+		LineageCache.putValue(_boundOutputNames, numOutputs, liInputs, _functionName, ec);
 	}
 
 	@Override
@@ -270,44 +259,13 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 	
 	private boolean reuseFunctionOutputs(LineageItem[] liInputs, FunctionProgramBlock fpb, ExecutionContext ec) {
-		if( ReuseCacheType.isNone() )
-			return false;
-		
 		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
-		boolean reuse = true;
-		for (int i=0; i< numOutputs; i++) {
-			//String opcode = _functionName + _boundOutputNames.get(i);
-			String opcode = _functionName + String.valueOf(i+1);
-			LineageItem li = new LineageItem(_boundOutputNames.get(i), opcode, liInputs);
-			MatrixBlock cachedValue = LineageCache.reuse(li);
-			
-			if (cachedValue != null) {
-				String boundVarName = _boundOutputNames.get(i);
-				//convert to matrix object
-				MetaData md = new MetaData(cachedValue.getDataCharacteristics());
-				MatrixObject boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
-				boundValue.acquireModify(cachedValue);
-				boundValue.release();
+		boolean reuse = LineageCache.reuse(_boundOutputNames, numOutputs, liInputs, _functionName, ec);
 
-				//cleanup existing data bound to output variable name
-				Data exdata = ec.removeVariable(boundVarName);
-				if( exdata != boundValue)
-					ec.cleanupDataObject(exdata);
+		if (reuse && DMLScript.STATISTICS)
+			//decrement the call count for this function
+			Statistics.maintainCPFuncCallStats(this.getExtendedOpcode());
 
-				//add/replace data in symbol table
-				ec.setVariable(boundVarName, boundValue);
-				
-				// map original lineage of function return to the calling site
-				LineageItem orig = LineageCache.getNext(li);
-				ec.getLineage().set(boundVarName, orig);
-			}
-			else {
-				// if one output cannot be reused, we need to execute the function
-				// NOTE: all outputs need to be prepared for caching and hence,
-				// we cannot directly return here
-				reuse = false;
-			}
-		}
 		return reuse;
 	}
 }

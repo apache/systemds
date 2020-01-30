@@ -59,6 +59,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -418,5 +419,41 @@ public class LineageItemUtils {
 		for( int i=0; i<len; i++ )
 			ret[i] = operands.get(item.getInputs()[i].getId());
 		return ret;
+	}
+	
+	public static boolean containsRandDataGen(HashSet<LineageItem> entries, LineageItem root) {
+		boolean isRand = false;
+		if (entries.contains(root))
+			return false;
+		if (isNonDeterministic(root))
+			isRand |= true;
+		if (!root.isLeaf()) 
+			for (LineageItem input : root.getInputs())
+				isRand = isRand ? true : containsRandDataGen(entries, input);
+		return isRand;
+		//TODO: unmark for caching in compile time
+	}
+	
+	private static boolean isNonDeterministic(LineageItem li) {
+		if (li.getType() != LineageItemType.Creation)
+			return false;
+
+		boolean isND = false;
+		DataGenCPInstruction ins = (DataGenCPInstruction)InstructionParser.parseSingleInstruction(li.getData());
+		switch(li.getOpcode().toUpperCase())
+		{
+			case "RAND":
+				if ((ins.getMinValue() != ins.getMaxValue()) || (ins.getSparsity() != 1))
+					isND = true;
+				break;
+			case "SAMPLE":
+				isND = true;
+				break;
+			default:
+				isND = false;
+				break;
+		}
+		//TODO: add 'read' in this list
+		return isND;
 	}
 }

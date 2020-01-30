@@ -639,6 +639,12 @@ public class Statistics
 		tmp.time.add(timeNanos);
 		tmp.count.increment();
 	}
+	
+	public static void maintainCPFuncCallStats(String instName) {
+		InstStats tmp = _instStats.get(instName);
+		if (tmp != null)  //tmp should never be null
+			tmp.count.decrement();
+	}
 
 	public static Set<String> getCPHeavyHitterOpCodes() {
 		return _instStats.keySet();

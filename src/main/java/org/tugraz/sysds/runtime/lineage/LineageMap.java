@@ -218,8 +218,7 @@ public class LineageMap {
 			removeLineageItem(li.getInputs()[0].getName());
 		else {
 			//remove from old and move to new key
-			_traces.put(li.getName(),
-				_traces.remove(li.getInputs()[0].getName()));
+			_traces.put(li.getName(), li.getInputs()[0]);
 		}
 	}
 }

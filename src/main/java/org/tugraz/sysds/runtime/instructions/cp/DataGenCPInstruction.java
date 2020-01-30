@@ -166,7 +166,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public long getSeed() {
 		return seed;
 	}
-	
+
 	public static DataGenCPInstruction parseInstruction(String str)
 	{
 		DataGenMethod method = DataGenMethod.INVALID;
@@ -377,8 +377,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
 			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND :
 					(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
-			tmpInstStr = InstructionUtils.replaceOperand(
-					tmpInstStr, position, String.valueOf(runtimeSeed));
+			tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
+							tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
 		}
 		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
 	}

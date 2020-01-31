@@ -71,21 +71,21 @@ public class LineageRewriteReuse
 		DMLScript.EXPLAIN = ExplainType.NONE;
 		
 		//check applicability and apply rewrite
-		//tsmm(cbind(X, deltaX)) -> rbind(cbind(C, t(X) %*% deltaX), cbind(t(deltaX) %*%X, tsmm(deltaX))), where C = tsmm(X) 
+		//tsmm(cbind(X, deltaX)) -> rbind(cbind(tsmm(X), t(X) %*% deltaX), cbind(t(deltaX) %*%X, tsmm(deltaX)))
 		ArrayList<Instruction> newInst = rewriteTsmmCbind(curr, ec, lrwec);
 		//tsmm(cbind(cbind(X, deltaX), ones)) -> TODO
 		newInst = (newInst == null) ? rewriteTsmm2Cbind(curr, ec, lrwec) : newInst;
-		//tsmm(rbind(X, deltaX)) -> C + tsmm(deltaX), where C = tsmm(X)
+		//tsmm(rbind(X, deltaX)) -> tsmm(X) + tsmm(deltaX)
 		newInst = (newInst == null) ? rewriteTsmmRbind(curr, ec, lrwec) : newInst;
-		//rbind(X,deltaX) %*% Y -> rbind(C, deltaX %*% Y), C = X %*% Y
+		//rbind(X,deltaX) %*% Y -> rbind(X %*% Y, deltaX %*% Y)
 		newInst = (newInst == null) ? rewriteMatMulRbindLeft(curr, ec, lrwec) : newInst;
-		//X %*% cbind(Y,deltaY)) -> cbind(C, X %*% deltaY), where C = X %*% Y
+		//X %*% cbind(Y,deltaY)) -> cbind(X %*% Y, X %*% deltaY)
 		newInst = (newInst == null) ? rewriteMatMulCbindRight(curr, ec, lrwec) : newInst;
-		//rbind(X, deltaX) * rbind(Y, deltaY) -> rbind(C, deltaX * deltaY), where C = X * Y
+		//rbind(X, deltaX) * rbind(Y, deltaY) -> rbind(X * Y, deltaX * deltaY)
 		newInst = (newInst == null) ? rewriteElementMulRbind(curr, ec, lrwec) : newInst;
-		//cbind(X, deltaX) * cbind(Y, deltaY) -> cbind(C, deltaX * deltaY), where C = X * Y
+		//cbind(X, deltaX) * cbind(Y, deltaY) -> cbind(X * Y, deltaX * deltaY)
 		newInst = (newInst == null) ? rewriteElementMulCbind(curr, ec, lrwec) : newInst;
-		//aggregate(target=X+deltaX,...) = cbind(C, aggregate(target=deltaX,...)) where C = aggregate(target=X,...)
+		//aggregate(target=cbind(X, deltaX,...) = cbind(aggregate(target=X,...), aggregate(target=deltaX,...)) for same agg function
 		newInst = (newInst == null) ? rewriteAggregateCbind(curr, ec, lrwec) : newInst;
 		
 		if (newInst == null)
@@ -149,14 +149,15 @@ public class LineageRewriteReuse
 		BinaryOp lrwHop= HopRewriteUtils.createBinary(rowOne, rowTwo, OpOp2.RBIND);
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
+		// generate runtime instructions
+		LOG.debug("LINEAGE REWRITE rewriteTsmmCbind APPLIED");
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
 		if (DMLScript.STATISTICS) {
 			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
 			LineageCacheStatistics.incrementPRewrites();
 		}
-		
-		// generate runtime instructions
-		LOG.debug("LINEAGE REWRITE rewriteTsmmCbind APPLIED");
-		return genInst(lrwWrite, lrwec);
+		return inst;
 	}
 	
 	private static ArrayList<Instruction> rewriteTsmmRbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec)
@@ -198,7 +199,13 @@ public class LineageRewriteReuse
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteTsmmRbind APPLIED");
-		return genInst(lrwWrite, lrwec);
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		return inst;
 	}
 
 	private static ArrayList<Instruction> rewriteTsmm2Cbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
@@ -259,7 +266,13 @@ public class LineageRewriteReuse
 
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteTsmm2Cbind APPLIED");
-		return genInst(lrwWrite, lrwec);
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		return inst;
 	}
 
 	private static ArrayList<Instruction> rewriteMatMulRbindLeft (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
@@ -302,7 +315,13 @@ public class LineageRewriteReuse
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteMetMulRbindLeft APPLIED");
-		return genInst(lrwWrite, lrwec);
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		return inst;
 	}
 
 	private static ArrayList<Instruction> rewriteMatMulCbindRight (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
@@ -345,7 +364,13 @@ public class LineageRewriteReuse
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRight APPLIED");
-		return genInst(lrwWrite, lrwec);
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		return inst;
 	}
 
 	private static ArrayList<Instruction> rewriteElementMulRbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
@@ -399,7 +424,13 @@ public class LineageRewriteReuse
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteElementMulRbind APPLIED");
-		return genInst(lrwWrite, lrwec);
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		return inst;
 	}
 
 	private static ArrayList<Instruction> rewriteElementMulCbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
@@ -453,7 +484,13 @@ public class LineageRewriteReuse
 		
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
-		return genInst(lrwWrite, lrwec);
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		return inst;
 	}
 	
 	private static ArrayList<Instruction> rewriteAggregateCbind (Instruction curr, ExecutionContext ec, ExecutionContext lrwec)
@@ -507,7 +544,13 @@ public class LineageRewriteReuse
 
 		// generate runtime instructions
 		LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
-		return genInst(lrwWrite, lrwec);
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+
+		if (DMLScript.STATISTICS) {
+			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+			LineageCacheStatistics.incrementPRewrites();
+		}
+		return inst;
 	}
 	
 	/*------------------------REWRITE APPLICABILITY CHECKS-------------------------*/
@@ -740,6 +783,7 @@ public class LineageRewriteReuse
 		DMLScript.EXPLAIN = ExplainType.NONE;
 
 		try {
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			//execute instructions
 			BasicProgramBlock pb = getProgramBlock();
 			pb.setInstructions(newInst);
@@ -747,6 +791,8 @@ public class LineageRewriteReuse
 			LineageCacheConfig.shutdownReuse();
 			pb.execute(lrwec);
 			LineageCacheConfig.restartReuse(oldReuseOption);
+			if (DMLScript.STATISTICS) 
+				LineageCacheStatistics.incrementPRwExecTime(System.nanoTime()-t0);
 		}
 		catch (Exception e) {
 			throw new DMLRuntimeException("Error executing lineage rewrites" , e);

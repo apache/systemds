@@ -26,6 +26,8 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsMem      = new LongAdder();
 	private static final LongAdder _numHitsFS       = new LongAdder();
 	private static final LongAdder _numHitsDel      = new LongAdder();
+	private static final LongAdder _numHitsInst     = new LongAdder();
+	private static final LongAdder _numHitsFunc     = new LongAdder();
 	private static final LongAdder _numWritesMem    = new LongAdder();
 	private static final LongAdder _numWritesFS     = new LongAdder();
 	private static final LongAdder _numRewrites     = new LongAdder();
@@ -39,6 +41,8 @@ public class LineageCacheStatistics {
 		_numHitsMem.reset();
 		_numHitsFS.reset();
 		_numHitsDel.reset();
+		_numHitsInst.reset();
+		_numHitsFunc.reset();
 		_numWritesMem.reset();
 		_numWritesFS.reset();
 		_numRewrites.reset();
@@ -62,6 +66,16 @@ public class LineageCacheStatistics {
 	public static void incrementDelHits() {
 		// Number of times entry is removed from cache but sought again later.
 		_numHitsDel.increment();
+	}
+
+	public static void incrementInstHits() {
+		// Number of times single instruction results are reused (full and partial).
+		_numHitsInst.increment();
+	}
+
+	public static void incrementFuncHits() {
+		// Number of times function results are reused.
+		_numHitsFunc.increment();
 	}
 
 	public static void incrementMemWrites() {
@@ -95,7 +109,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static void incrementPRewriteTime(long delta) {
-		// Total time spent estimating computation and disk spill costs.
+		// Total time spent executing lineage rewrites.
 		_ctimeRewrite.add(delta);
 	}
 
@@ -111,6 +125,14 @@ public class LineageCacheStatistics {
 		sb.append(_numHitsFS.longValue());
 		sb.append("/");
 		sb.append(_numHitsDel.longValue());
+		return sb.toString();
+	}
+
+	public static String displayMultiLvlHits() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_numHitsInst.longValue());
+		sb.append("/");
+		sb.append(_numHitsFunc.longValue());
 		return sb.toString();
 	}
 

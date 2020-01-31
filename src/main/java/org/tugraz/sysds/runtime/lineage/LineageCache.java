@@ -83,6 +83,9 @@ public class LineageCache {
 					reuse = fullReuse(item, (ComputationCPInstruction)inst, ec); 
 				if (LineageCacheConfig.getCacheType().isPartialReuse())
 					reuse |= LineageRewriteReuse.executeRewrites(inst, ec);
+				
+				if (reuse && DMLScript.STATISTICS)
+					LineageCacheStatistics.incrementInstHits();
 
 				//create a placeholder if no reuse to avoid redundancy
 				//(e.g., concurrent threads that try to start the computation)
@@ -303,7 +306,8 @@ public class LineageCache {
 		// TODO: Move this to the new class LineageCacheConfig and extend
 		return inst.getOpcode().equalsIgnoreCase("tsmm")
 				|| inst.getOpcode().equalsIgnoreCase("ba+*")
-				|| (inst.getOpcode().equalsIgnoreCase("*") &&
+				|| ((inst.getOpcode().equalsIgnoreCase("*") 
+				|| inst.getOpcode().equalsIgnoreCase("/")) &&
 					inst instanceof BinaryMatrixMatrixCPInstruction) //TODO support scalar
 				|| inst.getOpcode().equalsIgnoreCase("rightIndex")
 				|| inst.getOpcode().equalsIgnoreCase("groupedagg")
@@ -418,12 +422,12 @@ public class LineageCache {
 				break;
 			}
 				
-			case Binary:
+			case Binary:  //*, /
 			{
 				MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
 				long r1 = mo1.getNumRows();
 				long c1 = mo1.getNumColumns();
-				if (inst.getOpcode().equalsIgnoreCase("*"))
+				if (inst.getOpcode().equalsIgnoreCase("*") || inst.getOpcode().equalsIgnoreCase("/"))
 					// considering the dimensions of inputs and the output are same 
 					nflops = r1 * c1; 
 				else if (inst.getOpcode().equalsIgnoreCase("solve"))
@@ -431,7 +435,7 @@ public class LineageCache {
 				break;
 			}
 			
-			case MatrixIndexing:
+			case MatrixIndexing:  //rightIndex
 			{
 				MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
 				long r1 = mo1.getNumRows();
@@ -444,7 +448,7 @@ public class LineageCache {
 				break;
 			}
 			
-			case ParameterizedBuiltin:
+			case ParameterizedBuiltin:  //groupedagg (sum, count)
 			{
 				String opcode = ((ParameterizedBuiltinCPInstruction)inst).getOpcode();
 				HashMap<String, String> params = ((ParameterizedBuiltinCPInstruction)inst).getParameterMap();
@@ -475,7 +479,7 @@ public class LineageCache {
 				break;
 			}
 
-			case Append:
+			case Append:  //cbind, rbind
 			{
 				MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
 				MatrixObject mo2 = ec.getMatrixObject(((ComputationCPInstruction)inst).input2);

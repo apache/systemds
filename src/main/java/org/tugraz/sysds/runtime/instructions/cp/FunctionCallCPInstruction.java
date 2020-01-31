@@ -39,6 +39,7 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageCache;
+import org.tugraz.sysds.runtime.lineage.LineageCacheStatistics;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.utils.Statistics;
@@ -262,10 +263,11 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
 		boolean reuse = LineageCache.reuse(_boundOutputNames, numOutputs, liInputs, _functionName, ec);
 
-		if (reuse && DMLScript.STATISTICS)
+		if (reuse && DMLScript.STATISTICS) {
 			//decrement the call count for this function
 			Statistics.maintainCPFuncCallStats(this.getExtendedOpcode());
-
+			LineageCacheStatistics.incrementFuncHits();
+		}
 		return reuse;
 	}
 }

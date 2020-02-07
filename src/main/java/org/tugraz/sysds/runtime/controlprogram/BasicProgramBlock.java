@@ -24,6 +24,11 @@ import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.lineage.LineageCache;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.tugraz.sysds.runtime.lineage.LineageCacheStatistics;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.utils.Statistics;
 
 public class BasicProgramBlock extends ProgramBlock 
@@ -96,8 +101,26 @@ public class BasicProgramBlock extends ProgramBlock
 		{
 			throw new DMLRuntimeException("Unable to recompile program block.", ex);
 		}
+		
+		//statement-block-level, lineage-based reuse
+		LineageItem[] liInputs = null;
+		if (_sb != null && !ReuseCacheType.isNone()) {
+			String name = "SB" + _sb.getSBID();
+			liInputs = LineageItemUtils.getLineageItemInputstoSB(_sb.getInputstoSB(), ec);
+			if( LineageCache.reuse(_sb.getOutputsofSB(), _sb.getOutputsofSB().size(), liInputs, name, ec) ) {
+				if( DMLScript.STATISTICS )
+					LineageCacheStatistics.incrementSBHits();
+				return;
+			}
+		}
 
 		//actual instruction execution
 		executeInstructions(tmp, ec);
+		
+		//statement-block-level, lineage-based caching
+		if (_sb != null && liInputs != null) {
+			String name = "SB" + _sb.getSBID();
+			LineageCache.putValue(_sb.getOutputsofSB(), _sb.getOutputsofSB().size(), liInputs, name, ec);
+		}
 	}
 }

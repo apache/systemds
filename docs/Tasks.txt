@@ -183,6 +183,7 @@ SYSTEMDS-230 Lineage Integration
  * 233 Lineage cache and reuse of function results                    OK
  * 234 Lineage tracing for spark instructions                         OK
  * 235 Lineage tracing for remote-spark parfor                        OK
+ * 236 Extended multi-level lineage cache for statement blocks        OK
 
 SYSTEMDS-240 GPU Backend Improvements
  * 241 Dense GPU cumulative aggregates 

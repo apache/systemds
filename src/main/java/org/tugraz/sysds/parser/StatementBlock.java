@@ -46,6 +46,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
 	protected static IDSequence _seq = new IDSequence();
+	private static IDSequence _seqSBID = new IDSequence();
+	protected final long _ID;
 
 	protected DMLProgram _dmlProg;
 	protected ArrayList<Statement> _statements;
@@ -59,6 +61,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private boolean _splitDag = false;
 
 	public StatementBlock() {
+		_ID = getNextSBID();
 		_dmlProg = null;
 		_statements = new ArrayList<>();
 		_read = new VariableSet();
@@ -81,9 +84,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	public void setDMLProg(DMLProgram dmlProg){
 		_dmlProg = dmlProg;
 	}
+	
+	private static long getNextSBID() {
+		return _seqSBID.getNextID();
+	}
 
 	public DMLProgram getDMLProg(){
 		return _dmlProg;
+	}
+	
+	public long getSBID() {
+		return _ID;
 	}
 
 	public void addStatement(Statement s) {
@@ -375,6 +386,28 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		if (_read != null && !_read.getVariables().isEmpty()) sb.append("read " + _read.toString()+ "\n");
 		if (_updated != null && !_updated.getVariables().isEmpty()) sb.append("updated " + _updated.toString()+ "\n");
 		return sb.toString();
+	}
+	
+	public ArrayList<String> getInputstoSB() {
+		ArrayList<String> inputs = _liveIn != null && _read != null ? new ArrayList<>() : null;
+		if (_liveIn != null && _read != null) {
+			for (String varName : _read.getVariables().keySet()) {
+				if (_liveIn.containsVariable(varName))
+					inputs.add(varName);
+			}
+		}
+		return inputs;
+	}
+
+	public ArrayList<String> getOutputsofSB() {
+		ArrayList<String> outputs = _liveOut != null && _updated != null ? new ArrayList<>() : null;
+		if (_liveOut != null && _updated != null) {
+			for (String varName : _updated.getVariables().keySet()) {
+				if (_liveOut.containsVariable(varName))
+					outputs.add(varName);
+			}
+		}
+		return outputs;
 	}
 
 	public static ArrayList<StatementBlock> mergeStatementBlocks(ArrayList<StatementBlock> sb){

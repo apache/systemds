@@ -69,13 +69,6 @@ return(Matrix[Double] C, Matrix[Double] S) {
   dir = "forward";
   thr = 0.001;
 
-  Xtmp1 = rand(rows=100, cols=100, sparsity=1.0, seed=1);
-    betatmp1 = rand(rows=100, cols=1, sparsity=1.0, seed=1);
-    ytmp1 = Xtmp1 %*% betatmp1;
-    Xtmp2 = cbind(rand(rows=100, cols=100, sparsity=1.0, seed=1), Xtmp1);
-    X = Xtmp1;
-    y = ytmp1;
-
   print("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
   print("Reading X and Y...");
   X_orig = X;

@@ -32,15 +32,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class FunctionFullReuseTest extends AutomatedTestBase {
+public class SBFullReuseTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "FunctionFullReuse1";
-	protected static final String TEST_NAME2 = "FunctionFullReuse2";
-	protected static final String TEST_NAME3 = "FunctionFullReuse3";
-	protected static final String TEST_NAME4 = "FunctionFullReuse4";
-	protected static final String TEST_NAME5 = "FunctionFullReuse5";
-	protected String TEST_CLASS_DIR = TEST_DIR + FunctionFullReuseTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME1 = "SBFullReuse1";
+	protected static final String TEST_NAME2 = "SBFullReuse2";
+	protected static final String TEST_NAME3 = "SBFullReuse3";
+	protected String TEST_CLASS_DIR = TEST_DIR + SBFullReuseTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
@@ -48,8 +46,6 @@ public class FunctionFullReuseTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5));
 	}
 	
 	@Test
@@ -63,19 +59,9 @@ public class FunctionFullReuseTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMultipleReturns() {
+	public void testCacheFallThrough() {
 		testLineageTrace(TEST_NAME3);
 	}
-
-	@Test
-	public void testNestedFunc() {
-		testLineageTrace(TEST_NAME4);
-	}
-
-	@Test
-	public void testStepLM() {
-		testLineageTrace(TEST_NAME5);
-	} 
 	
 	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -95,7 +81,6 @@ public class FunctionFullReuseTest extends AutomatedTestBase {
 			List<String> proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
@@ -107,6 +92,7 @@ public class FunctionFullReuseTest extends AutomatedTestBase {
 			// With lineage-based reuse enabled
 			proArgs.clear();
 			proArgs.add("-stats");
+			proArgs.add("-explain");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("-args");
@@ -129,4 +115,3 @@ public class FunctionFullReuseTest extends AutomatedTestBase {
 		}
 	}
 }
-

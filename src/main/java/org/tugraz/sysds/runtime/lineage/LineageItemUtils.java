@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.tugraz.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.OpOpN;
@@ -50,9 +51,11 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
+import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 
@@ -459,12 +462,19 @@ public class LineageItemUtils {
 			return false;
 
 		boolean isND = false;
-		DataGenCPInstruction ins = (DataGenCPInstruction)InstructionParser.parseSingleInstruction(li.getData());
+		CPInstruction CPins = (CPInstruction) InstructionParser.parseSingleInstruction(li.getData());
+		if (!(CPins instanceof DataGenCPInstruction))
+			return false;
+
+		DataGenCPInstruction ins = (DataGenCPInstruction)CPins;
 		switch(li.getOpcode().toUpperCase())
 		{
 			case "RAND":
 				if ((ins.getMinValue() != ins.getMaxValue()) || (ins.getSparsity() != 1))
 					isND = true;
+					//NOTE:It is hard to detect in runtime if rand was called with unspecified seed
+					//as -1 is already replaced by computed seed. Solution is to unmark for caching in 
+					//compile time. That way we can differentiate between given and unspecified seed.
 				break;
 			case "SAMPLE":
 				isND = true;
@@ -475,5 +485,21 @@ public class LineageItemUtils {
 		}
 		//TODO: add 'read' in this list
 		return isND;
+	}
+	
+	public static LineageItem[] getLineageItemInputstoSB(ArrayList<String> inputs, ExecutionContext ec) {
+		if (ReuseCacheType.isNone())
+			return null;
+		
+		ArrayList<CPOperand> CPOpInputs = inputs.size() > 0 ? new ArrayList<>() : null;
+		for (int i=0; i<inputs.size(); i++) {
+			Data value = ec.getVariable(inputs.get(i));
+			if (value != null) {
+				CPOpInputs.add(new CPOperand(value instanceof ScalarObject ? value.toString() : inputs.get(i),
+					value.getValueType(), value.getDataType()));
+			}
+		}
+		return(CPOpInputs != null ? LineageItemUtils.getLineage(ec, 
+			CPOpInputs.toArray(new CPOperand[CPOpInputs.size()])) : null);
 	}
 }

@@ -15,15 +15,25 @@
 # limitations under the License.
 #
 #-------------------------------------------------------------
-# Increase rows and cols for better performance gains
+# Increase k for better performance gains
 
-X = rand(rows=100, cols=10, sparsity=1.0, seed=1);
-y = X %*% rand(rows=10, cols=1, sparsity=1.0, seed=1);
-R = matrix(0, 101, 2);
+X = rand(rows=1024, cols=1024, seed=42);
+R = matrix(0, 1024, 1024);
+k = 10
 
-[C, S] = steplm(X=X, y=y, icpt=2);
-S = cbind(S, matrix(1, 1, 1));
-R[1:nrow(C) ,1] = C;
-R[1:ncol(S) ,2] = t(S);
+for(i in 1:k) {
+  tmp = t(X) %*% X;
+  tmp = tmp + 1;
+  tmp1 = X %*% tmp;
+}
+
+if (sum(t(X) %*% X) > 1) {
+  tmp = t(X) %*% X;
+  tmp = tmp + 1;
+  tmp1 = X %*% tmp;
+}
+
+R = t(tmp1) %*% tmp1; 
 
 write(R, $1, format="text");
+

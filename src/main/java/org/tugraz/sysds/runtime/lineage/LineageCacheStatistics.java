@@ -27,6 +27,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsFS       = new LongAdder();
 	private static final LongAdder _numHitsDel      = new LongAdder();
 	private static final LongAdder _numHitsInst     = new LongAdder();
+	private static final LongAdder _numHitsSB       = new LongAdder();
 	private static final LongAdder _numHitsFunc     = new LongAdder();
 	private static final LongAdder _numWritesMem    = new LongAdder();
 	private static final LongAdder _numWritesFS     = new LongAdder();
@@ -42,6 +43,7 @@ public class LineageCacheStatistics {
 		_numHitsFS.reset();
 		_numHitsDel.reset();
 		_numHitsInst.reset();
+		_numHitsSB.reset();
 		_numHitsFunc.reset();
 		_numWritesMem.reset();
 		_numWritesFS.reset();
@@ -71,6 +73,11 @@ public class LineageCacheStatistics {
 	public static void incrementInstHits() {
 		// Number of times single instruction results are reused (full and partial).
 		_numHitsInst.increment();
+	}
+
+	public static void incrementSBHits() {
+		// Number of times statementblock results are reused.
+		_numHitsSB.increment();
 	}
 
 	public static void incrementFuncHits() {
@@ -114,7 +121,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static void incrementPRwExecTime(long delta) {
-		// Total time spent estimating computation and disk spill costs.
+		// Total time spent executing lineage rewrites.
 		_ctimeRewriteEx.add(delta);
 	}
 	
@@ -131,6 +138,8 @@ public class LineageCacheStatistics {
 	public static String displayMultiLvlHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsInst.longValue());
+		sb.append("/");
+		sb.append(_numHitsSB.longValue());
 		sb.append("/");
 		sb.append(_numHitsFunc.longValue());
 		return sb.toString();

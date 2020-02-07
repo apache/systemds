@@ -119,7 +119,7 @@ public class LineageCache {
 		if( ReuseCacheType.isNone() )
 			return false;
 
-		boolean reuse = true;
+		boolean reuse = (numOutputs != 0);
 		for (int i=0; i<numOutputs; i++) {
 			String opcode = name + String.valueOf(i+1);
 			LineageItem li = new LineageItem(outputs.get(i), opcode, liInputs);
@@ -144,7 +144,7 @@ public class LineageCache {
 				ec.setVariable(boundVarName, boundValue);
 				
 				// map original lineage of function return to the calling site
-				LineageItem orig = LineageCache.getNext(li);
+				LineageItem orig = _cache.get(li)._origItem; //FIXME: synchronize
 				ec.getLineage().set(boundVarName, orig);
 			}
 			else {
@@ -157,17 +157,7 @@ public class LineageCache {
 		return reuse;
 	}
 	
-	public static LineageItem getNext(LineageItem firstItem) {
-		for(Map.Entry<LineageItem, Entry> entry : _cache.entrySet()) {
-			if (!(entry.getKey().equals(firstItem)) && !entry.getValue().isNullVal() &&
-					(entry.getValue().getValue() == _cache.get(firstItem).getValue()))
-				return entry.getKey();
-		}
-		return null;
-	}
-	
 	//NOTE: safe to pin the object in memory as coming from CPInstruction
-	
 	public static void put(Instruction inst, ExecutionContext ec) {
 		if (inst instanceof ComputationCPInstruction && isReusable(inst, ec) ) {
 			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];
@@ -195,12 +185,14 @@ public class LineageCache {
 		}
 	}
 	
-	public static void putValue(LineageItem item, LineageItem probeItem, MatrixObject mo) {
+	public static void putValue(LineageItem item, LineageItem probeItem) {
 		if (ReuseCacheType.isNone())
 			return;
 		if (LineageCache.probe(probeItem)) {
 			MatrixBlock value = LineageCache.get(probeItem);
-			_cache.get(item).setValue(value, 0); //TODO: compute estimate for function
+			Entry e = _cache.get(item);
+			e.setValue(value, 0); //TODO: compute estimate for function
+			e._origItem = probeItem; 
 
 			synchronized( _cache ) {
 				if(!isBelowThreshold(value)) 
@@ -217,23 +209,32 @@ public class LineageCache {
 	{
 		if( ReuseCacheType.isNone() )
 			return;
-		
+
+		HashMap<LineageItem, LineageItem> FuncLIMap = new HashMap<>();
+		boolean AllOutputsCacheable = true;
 		for (int i=0; i<numOutputs; i++) {
-			if (!ReuseCacheType.isNone()) {
-				String opcode = name + String.valueOf(i+1);
-				LineageItem li = new LineageItem(outputs.get(i), opcode, liInputs);
-				String boundVarName = outputs.get(i);
-				LineageItem boundLI = ec.getLineage().get(boundVarName);
-				Data boundValue = ec.getVariable(boundVarName);
-				//if (LineageItemUtils.containsRandDataGen(liInputs, ec.getLineage().get(boundVarName)))
-				if (LineageItemUtils.containsRandDataGen(new HashSet<>(Arrays.asList(liInputs)), boundLI)
-					|| boundValue instanceof ScalarObject) //TODO: cache scalar objects
-					LineageCache.removeEntry(li);  //remove the placeholder
-				else 
-					LineageCache.putValue(li, boundLI, (MatrixObject)boundValue);
-					//TODO: Unmark for caching in compiler if function contains rand()
+			String opcode = name + String.valueOf(i+1);
+			LineageItem li = new LineageItem(outputs.get(i), opcode, liInputs);
+			String boundVarName = outputs.get(i);
+			LineageItem boundLI = ec.getLineage().get(boundVarName);
+			Data boundValue = ec.getVariable(boundVarName);
+			if (boundLI == null 
+				|| !LineageCache.probe(li)
+				|| LineageItemUtils.containsRandDataGen(new HashSet<>(Arrays.asList(liInputs)), boundLI)
+				|| boundValue instanceof ScalarObject) { //TODO: cache scalar objects
+				AllOutputsCacheable = false;
 			}
+			FuncLIMap.put(li, boundLI);
 		}
+
+		//cache either all the outputs, or none.
+		if(AllOutputsCacheable) 
+			FuncLIMap.forEach((Li, boundLI) -> LineageCache.putValue(Li, boundLI));
+		else 
+			//remove all the placeholders
+			FuncLIMap.forEach((Li, boundLI) -> LineageCache.removeEntry(Li));
+		
+		return;
 	}
 	
 	private static void putIntern(LineageItem key, MatrixBlock value, double compcost) {
@@ -273,6 +274,8 @@ public class LineageCache {
 	public static void resetCache() {
 		_cache.clear();
 		_spillList.clear();
+		_head = null;
+		_end = null;
 		if (DMLScript.STATISTICS)
 			_removelist.clear();
 	}
@@ -602,11 +605,13 @@ public class LineageCache {
 		double _compEst;
 		private Entry _prev;
 		private Entry _next;
+		private LineageItem _origItem;
 		
 		public Entry(LineageItem key, MatrixBlock value, double computecost) {
 			_key = key;
 			_val = value;
 			_compEst = computecost;
+			_origItem = null;
 		}
 
 		public synchronized MatrixBlock getValue() {

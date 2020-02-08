@@ -10,6 +10,7 @@
 .settings/
 .externalToolBuilders/
 maven-eclipse.xml
+/src/main/cpp/kernels/.cproject
 
 # Intellij
 .idea/

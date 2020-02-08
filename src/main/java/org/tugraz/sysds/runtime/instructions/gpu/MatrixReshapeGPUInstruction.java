@@ -55,13 +55,16 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 	
 	public static MatrixReshapeGPUInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields( parts, 5 );
+		// ToDo: Tensor GPU support
+
+		InstructionUtils.checkNumFields( parts, 6 );
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand in3 = new CPOperand(parts[3]);
-		CPOperand in4 = new CPOperand(parts[4]);
-		CPOperand out = new CPOperand(parts[5]);
+		CPOperand in4 = new CPOperand(parts[5]);
+		CPOperand out = new CPOperand(parts[6]);
+
 		if(!opcode.equalsIgnoreCase("rshape"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MatrixReshapeGPUInstruction: " + str);
 		else

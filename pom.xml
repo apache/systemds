@@ -49,7 +49,7 @@
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
-		<jcuda.version>0.9.0d</jcuda.version>
+		<jcuda.version>10.1.0</jcuda.version>
 		<integrationTestExtraJVMArgs />
 	</properties>
 

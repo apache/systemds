@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,6 +18,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.tugraz.sysds.runtime.instructions;
 
 import java.util.HashMap;
@@ -141,6 +144,12 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "uarvar"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Row Variance
 		String2GPUInstructionType.put( "uacvar"  , GPUINSTRUCTION_TYPE.AggregateUnary); // Col Variance
 
+		// Cumulative Ops
+		String2GPUInstructionType.put( "ucumk+"  , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "ucum*"   , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "ucumk+*" , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "ucummin" , GPUINSTRUCTION_TYPE.BuiltinUnary);
+		String2GPUInstructionType.put( "ucummax" , GPUINSTRUCTION_TYPE.BuiltinUnary);
 		// Relational Binary
 		String2GPUInstructionType.put( "=="   , GPUINSTRUCTION_TYPE.RelationalBinary);
 		String2GPUInstructionType.put( "!="   , GPUINSTRUCTION_TYPE.RelationalBinary);

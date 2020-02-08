@@ -101,8 +101,10 @@ public class UnaryOp extends MultiThreadedHop
 				case SIN:case COS: case TAN:
 				case ASIN:case ACOS:case ATAN:
 				case SINH:case COSH: case TANH:
-				case SIGN:
-				case SIGMOID:
+				case SIGN: case SIGMOID:
+				case CUMSUM: case CUMPROD:
+				case CUMMIN: case CUMMAX:
+				case CUMSUMPROD:
 					return true;
 				default:
 					return false;

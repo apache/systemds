@@ -21,6 +21,8 @@ package org.tugraz.sysds.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DataIdentifier;
@@ -37,7 +39,16 @@ public abstract class Instruction
 	}
 	
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
-	
+
+	// local flag for debug output
+	private static final boolean LTRACE = false;
+	static {
+		// for internal debugging only
+		if( LTRACE ) {
+			Logger.getLogger("org.tugraz.sysds.runtime.instructions.Instruction").setLevel(Level.TRACE);
+		}
+	}
+
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;
 	public static final String VALUETYPE_PREFIX = Lop.VALUETYPE_PREFIX;

@@ -373,29 +373,26 @@ public class ExecutionContext {
 	public MatrixObject allocateGPUMatrixObject(String varName, long numRows, long numCols) {
 		MatrixObject mo = getMatrixObject(varName);
 		long dim1 = -1; long dim2 = -1;
-		DMLRuntimeException e = null;
+
 		try {
 			dim1 = validateDimensions(mo.getNumRows(), numRows);
-		} catch(DMLRuntimeException e1) {
-			e = e1;
-		}
-		try {
 			dim2 = validateDimensions(mo.getNumColumns(), numCols);
-		} catch(DMLRuntimeException e1) {
-			e = e1;
 		}
-		if(e != null) {
-			throw new DMLRuntimeException("Incorrect dimensions given to allocateGPUMatrixObject: [" + numRows + "," + numCols + "], "
-					+ "[" + mo.getNumRows() + "," + mo.getNumColumns() + "]", e);
+		catch(DMLRuntimeException e) {
+			throw new DMLRuntimeException("Incorrect dimensions given to allocateGPUMatrixObject: [" + numRows + "," +
+					numCols + "], " + "[" + mo.getNumRows() + "," + mo.getNumColumns() + "]", e);
 		}
+
 		if(dim1 != mo.getNumRows() || dim2 != mo.getNumColumns()) {
 			// Set unknown dimensions
 			mo.getDataCharacteristics().setDimension(dim1, dim2);
 		}
+
 		if( mo.getGPUObject(getGPUContext(0)) == null ) {
 			GPUObject newGObj = getGPUContext(0).createGPUObject(mo);
 			mo.setGPUObject(getGPUContext(0), newGObj);
 		}
+
 		// The lock is added here for an output block
 		// so that any block currently in use is not deallocated by eviction on the GPU
 		mo.getGPUObject(getGPUContext(0)).addWriteLock();

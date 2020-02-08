@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +24,7 @@ package org.tugraz.sysds.runtime.instructions.gpu;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixCuDNN;
@@ -38,11 +41,13 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
-		
+
 		String opcode = getOpcode();
 		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
-		ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
+		if(opcode != "ucumk+*")
+			ec.setMetaData(_output.getName(), mat.getNumRows(), mat.getNumColumns());
 
+		Timing time = new Timing(true);
 		switch(opcode) {
 			case "exp":
 				LibMatrixCUDA.exp(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
@@ -82,9 +87,37 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 				LibMatrixCUDA.sigmoid(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
 			case "softmax":
 				LibMatrixCuDNN.softmax(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName()); break;
+			case "ucumk+":
+				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_sum", mat,
+						_output.getName());
+				break;
+			case "ucum*":
+				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_prod", mat,
+						_output.getName());
+				break;
+			case "ucumk+*":
+				ec.setMetaData(_output.getName(), mat.getNumRows(), 1);
+				LibMatrixCUDA.cumulativeSumProduct(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_sum_prod",
+						mat, _output.getName());
+				break;
+			case "ucummin":
+				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_min", mat,
+						_output.getName());
+				break;
+			case "ucummax":
+				LibMatrixCUDA.cumulativeScan(ec, ec.getGPUContext(0), getExtendedOpcode(), "cumulative_max", mat,
+						_output.getName());
+				break;
 			default:
 				throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
 		}
+
+		if(LOG.isTraceEnabled())
+		{
+			double duration = time.stop();
+			LOG.trace("processInstruction() " + getExtendedOpcode() + " executed in " + duration + "ms.");
+		}
+
 		ec.releaseMatrixInputForGPUInstruction(_input.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}

@@ -73,6 +73,7 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 			case 5:
 				in1.split(parts[1]);
 				in2.split(parts[2]);
+				in3.split(parts[3]);
 				break;
 			default:
 				throw new DMLRuntimeException("Unexpected number of operands in the instruction: " + instr);

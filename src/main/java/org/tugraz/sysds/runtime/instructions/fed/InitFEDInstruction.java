@@ -77,7 +77,7 @@ public class InitFEDInstruction extends FEDInstruction {
 
 		if (addresses.getLength() * 2 != ranges.getLength())
 			throw new DMLRuntimeException("Federated read needs twice the amount of addresses as ranges "
-					+ "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
+				+ "(begin and end): addresses=" + addresses.getLength() + " ranges=" + ranges.getLength());
 
 		long[] usedDims = new long[] { 0, 0 };
 		for (int i = 0; i < addresses.getLength(); i++) {
@@ -95,7 +95,7 @@ public class InitFEDInstruction extends FEDInstruction {
 				Data endData = rangesData.get(i * 2 + 1);
 				if (beginData.getDataType() != Types.DataType.LIST || endData.getDataType() != Types.DataType.LIST)
 					throw new DMLRuntimeException(
-							"Federated read ranges (lower, upper) have to be lists of dimensions");
+						"Federated read ranges (lower, upper) have to be lists of dimensions");
 				List<Data> beginDimsData = ((ListObject) beginData).getData();
 				List<Data> endDimsData = ((ListObject) endData).getData();
 
@@ -110,13 +110,15 @@ public class InitFEDInstruction extends FEDInstruction {
 				usedDims[1] = Math.max(usedDims[1], endDims[1]);
 				try {
 					FederatedData federatedData = new FederatedData(
-							new InetSocketAddress(InetAddress.getByName(host), port), filePath);
+						new InetSocketAddress(InetAddress.getByName(host), port), filePath);
 					feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
-				} catch (UnknownHostException e) {
+				}
+				catch (UnknownHostException e) {
 					throw new DMLRuntimeException("federated host was unknown: " + host);
 				}
 
-			} else {
+			}
+			else {
 				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
 			}
 		}
@@ -151,11 +153,12 @@ public class InitFEDInstruction extends FEDInstruction {
 
 			if (address.getRef() != null)
 				throw new IllegalArgumentException("Reference is not supported");
-				
+			
 			return new String[] { host, port, filePath };
-		} catch (MalformedURLException e) {
+		}
+		catch (MalformedURLException e) {
 			throw new IllegalArgumentException("federated address `" + input
-					+ "` does not fit required URL pattern of \"host:port/directory\"", e);
+				+ "` does not fit required URL pattern of \"host:port/directory\"", e);
 		}
 	}
 
@@ -187,7 +190,8 @@ public class InitFEDInstruction extends FEDInstruction {
 				else
 					throw new DMLRuntimeException(response.getErrorMessage());
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new DMLRuntimeException("Federation initialization failed", e);
 		}
 		output.getDataCharacteristics().setNonZeros(output.getNumColumns() * output.getNumRows());

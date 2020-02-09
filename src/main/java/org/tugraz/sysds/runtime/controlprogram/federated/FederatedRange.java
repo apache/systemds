@@ -34,6 +34,23 @@ public class FederatedRange implements Comparable<FederatedRange> {
 		_endDims = endDims;
 	}
 	
+	/**
+	 * Does a deep copy of another <code>FederatedRange</code> object.
+	 * @param other the <code>FederatedRange</code> to copy
+	 */
+	public FederatedRange(FederatedRange other) {
+		_beginDims = other._beginDims.clone();
+		_endDims = other._endDims.clone();
+	}
+	
+	public void setBeginDim(int dim, long value) {
+		_beginDims[dim] = value;
+	}
+	
+	public void setEndDim(int dim, long value) {
+		_endDims[dim] = value;
+	}
+	
 	public long[] getBeginDims() {
 		return _beginDims;
 	}

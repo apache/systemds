@@ -149,8 +149,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		Data dataObject = _vars.get(varID);
 		if (dataObject.getDataType() != Types.DataType.MATRIX) {
 			return new FederatedResponse(FederatedResponse.Type.ERROR,
-				"FederatedWorkerHandler: Aggregation only supported for matrices, not for " +
-					dataObject.getDataType().name());
+				"FederatedWorkerHandler: Aggregation only supported for matrices, not for "
+				+ dataObject.getDataType().name());
 		}
 		MatrixObject matrixObject = (MatrixObject) dataObject;
 		MatrixBlock matrixBlock = matrixObject.acquireRead();
@@ -210,7 +210,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// TODO other datatypes
 		AggregateBinaryOperator ab_op = new AggregateBinaryOperator(
 			Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()));
-		MatrixBlock result = isMatVecMult ?
+		MatrixBlock result =isMatVecMult?
 			matBlock1.aggregateBinaryOperations(matBlock1, vector, new MatrixBlock(), ab_op) :
 			vector.aggregateBinaryOperations(vector, matBlock1, new MatrixBlock(), ab_op);
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, result);
@@ -285,11 +285,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 	
 	private static void checkNumParams(int actual, int... expected) {
-		if( Arrays.stream(expected).anyMatch(x -> x==actual) )
+		if( Arrays.stream(expected).anyMatch(x -> x==actual ))
 			return;
-		throw new DMLRuntimeException(
-			"FederatedWorkerHandler: Received wrong amount of params:" + " expected="
-				+ Arrays.toString(expected) + ", actual=" + actual);
+		throw new DMLRuntimeException("FederatedWorkerHandler: Received wrong amount of params:" 
+			+ " expected=" +  Arrays.toString(expected) +", actual=" + actual);
 	}
 	
 	@Override

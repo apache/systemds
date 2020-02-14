@@ -184,6 +184,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "sigmoid", CPType.Unary);
 		String2CPInstructionType.put( "typeOf", CPType.Unary);
 		String2CPInstructionType.put( "detectSchema", CPType.Unary);
+		String2CPInstructionType.put( "isna", CPType.Unary);
+		String2CPInstructionType.put( "isnan", CPType.Unary);
+		String2CPInstructionType.put( "isinf", CPType.Unary);
 		String2CPInstructionType.put( "printf", CPType.BuiltinNary);
 		String2CPInstructionType.put( "cbind",  CPType.BuiltinNary);
 		String2CPInstructionType.put( "rbind",  CPType.BuiltinNary);

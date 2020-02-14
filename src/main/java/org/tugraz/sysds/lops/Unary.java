@@ -44,6 +44,7 @@ public class Unary extends Lop
 		AND, OR, XOR, BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR,
 		ROUND, CEIL, FLOOR, MR_IQM, INVERSE, CHOLESKY,
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD,
+		ISNA, ISNAN, ISINF,
 		SPROP, SIGMOID, SUBTRACT_NZ, LOG_NZ,
 		CAST_AS_MATRIX, CAST_AS_FRAME,
 		TYPEOF, DETECTSCHEMA,
@@ -294,10 +295,13 @@ public class Unary extends Lop
 		case BW_XOR: return "bitwXor";
 		case BW_SHIFTL: return "bitwShiftL";
 		case BW_SHIFTR: return "bitwShiftR";
+		case ISNA: return "isna";
+		case ISNAN: return "isnan";
+		case ISINF: return "isinf";
 		
 		default:
 			throw new LopsException(
-					"Instruction not defined for Unary operation: " + op);
+				"Instruction not defined for Unary operation: " + op);
 		}
 	}
 	

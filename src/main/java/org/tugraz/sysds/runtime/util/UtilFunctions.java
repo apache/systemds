@@ -336,16 +336,18 @@ public class UtilFunctions
 	}
 
 	/**
-	 * JDK8 floating decimal double parsing, which is generally faster
-	 * than &lt;JDK8 parseDouble and works well in multi-threaded tasks.
+	 * Safe double parsing including handling of NAs. Previously, we also
+	 * used this wrapper for handling thread contention in multi-threaded
+	 * environments because Double.parseDouble relied on a synchronized cache
+	 * (which was replaced with thread-local caches in JDK8).
 	 * 
 	 * @param str string to parse to double
 	 * @return double value
 	 */
-	public static double parseToDouble(String str)
-	{
-		//return FloatingDecimal.parseDouble(str);
-    	return Double.parseDouble(str);
+	public static double parseToDouble(String str) {
+		return "NA".equals(str) ?
+			Double.NaN :
+			Double.parseDouble(str);
 	}
 	
 	public static int parseToInt( String str )

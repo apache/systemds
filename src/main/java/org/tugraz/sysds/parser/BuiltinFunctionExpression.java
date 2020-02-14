@@ -1188,13 +1188,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 			break;
 		
+		case ISNA:
+		case ISNAN:
+		case ISINF:
+			checkNumParameters(1);
+			checkMatrixScalarParam(getFirstExpr());
+			output.setDataType(id.getDataType());
+			output.setDimensions(id.getDim1(), id.getDim2());
+			output.setBlocksize (id.getBlocksize());
+			//TODO set output type to boolean when supported
+			output.setValueType(id.getValueType());
+			break;
+			
 		case MEDIAN:
-			if (getSecondExpr() != null){
-			    checkNumParameters(2);
-		    }
-			else {
-				checkNumParameters(1);
-			}
+			checkNumParameters((getSecondExpr()!=null) ? 2 : 1);
 			checkMatrixParam(getFirstExpr());
 
 			if (getSecondExpr() != null) {

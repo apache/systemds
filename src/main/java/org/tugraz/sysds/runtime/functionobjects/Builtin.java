@@ -52,7 +52,7 @@ public class Builtin extends ValueFunction
 	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
 		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
-		TYPEOF, DETECTSCHEMA }
+		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF }
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -101,15 +101,10 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "sigmoid", BuiltinCode.SIGMOID);
 		String2BuiltinCode.put( "typeOf", BuiltinCode.TYPEOF);
 		String2BuiltinCode.put( "detectSchema", BuiltinCode.DETECTSCHEMA);
+		String2BuiltinCode.put( "isna", BuiltinCode.ISNA);
+		String2BuiltinCode.put( "isnan", BuiltinCode.ISNAN);
+		String2BuiltinCode.put( "isinf", BuiltinCode.ISINF);
 	}
-	
-	// We should create one object for every builtin function that we support
-	private static Builtin sinObj = null, cosObj = null, tanObj = null, sinhObj = null, coshObj = null, tanhObj = null, asinObj = null, acosObj = null, atanObj = null;
-	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
-	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null, printfObj;
-	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
-	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null, cumsprodObj=null;
-	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null, typeOfObj = null, detectSchemaObj = null  ;
 	
 	private Builtin(BuiltinCode bf) {
 		bFunc = bf;
@@ -132,179 +127,10 @@ public class Builtin extends ValueFunction
 		return getBuiltinFnObject( code );
 	}
 
-	public static Builtin getBuiltinFnObject(BuiltinCode code) 
-	{	
+	public static Builtin getBuiltinFnObject(BuiltinCode code) {
 		if ( code == null ) 
 			return null; 
-			
-		switch ( code ) {
-		case SIN:
-			if ( sinObj == null )
-				sinObj = new Builtin(BuiltinCode.SIN);
-			return sinObj;
-		
-		case COS:
-			if ( cosObj == null )
-				cosObj = new Builtin(BuiltinCode.COS);
-			return cosObj;
-		case TAN:
-			if ( tanObj == null )
-				tanObj = new Builtin(BuiltinCode.TAN);
-			return tanObj;
-		case SINH:
-			if ( sinhObj == null )
-				sinhObj = new Builtin(BuiltinCode.SINH);
-			return sinhObj;
-		
-		case COSH:
-			if ( coshObj == null )
-				coshObj = new Builtin(BuiltinCode.COSH);
-			return coshObj;
-		case TANH:
-			if ( tanhObj == null )
-				tanhObj = new Builtin(BuiltinCode.TANH);
-			return tanhObj;
-		case ASIN:
-			if ( asinObj == null )
-				asinObj = new Builtin(BuiltinCode.ASIN);
-			return asinObj;
-		
-		case ACOS:
-			if ( acosObj == null )
-				acosObj = new Builtin(BuiltinCode.ACOS);
-			return acosObj;
-		case ATAN:
-			if ( atanObj == null )
-				atanObj = new Builtin(BuiltinCode.ATAN);
-			return atanObj;
-		case LOG:
-			if ( logObj == null )
-				logObj = new Builtin(BuiltinCode.LOG);
-			return logObj;
-		case LOG_NZ:
-			if ( lognzObj == null )
-				lognzObj = new Builtin(BuiltinCode.LOG_NZ);
-			return lognzObj;
-		case MAX:
-			if ( maxObj == null )
-				maxObj = new Builtin(BuiltinCode.MAX);
-			return maxObj;
-		case MAXINDEX:
-			if ( maxindexObj == null )
-				maxindexObj = new Builtin(BuiltinCode.MAXINDEX);
-			return maxindexObj;
-		case MIN:
-			if ( minObj == null )
-				minObj = new Builtin(BuiltinCode.MIN);
-			return minObj;
-		case MININDEX:
-			if ( minindexObj == null )
-				minindexObj = new Builtin(BuiltinCode.MININDEX);
-			return minindexObj;
-		case ABS:
-			if ( absObj == null )
-				absObj = new Builtin(BuiltinCode.ABS);
-			return absObj;
-		case SIGN:
-			if ( signObj == null )
-				signObj = new Builtin(BuiltinCode.SIGN);
-			return signObj;
-		case SQRT:
-			if ( sqrtObj == null )
-				sqrtObj = new Builtin(BuiltinCode.SQRT);
-			return sqrtObj;
-		case EXP:
-			if ( expObj == null )
-				expObj = new Builtin(BuiltinCode.EXP);
-			return expObj;
-		case PLOGP:
-			if ( plogpObj == null )
-				plogpObj = new Builtin(BuiltinCode.PLOGP);
-			return plogpObj;
-		case PRINT:
-			if ( printObj == null )
-				printObj = new Builtin(BuiltinCode.PRINT);
-			return printObj;
-		case PRINTF:
-			if (printfObj == null) {
-				printfObj = new Builtin(BuiltinCode.PRINTF);
-			}
-			return printfObj;
-		case NROW:
-			if ( nrowObj == null )
-				nrowObj = new Builtin(BuiltinCode.NROW);
-			return nrowObj;
-		case NCOL:
-			if ( ncolObj == null )
-				ncolObj = new Builtin(BuiltinCode.NCOL);
-			return ncolObj;
-		case LENGTH:
-			if ( lengthObj == null )
-				lengthObj = new Builtin(BuiltinCode.LENGTH);
-			return lengthObj;
-		case ROUND:
-			if ( roundObj == null )
-				roundObj = new Builtin(BuiltinCode.ROUND);
-			return roundObj;
-		case CEIL:
-			if ( ceilObj == null )
-				ceilObj = new Builtin(BuiltinCode.CEIL);
-			return ceilObj;
-		case FLOOR:
-			if ( floorObj == null )
-				floorObj = new Builtin(BuiltinCode.FLOOR);
-			return floorObj;
-		case CUMSUM:
-			if ( cumsumObj == null )
-				cumsumObj = new Builtin(BuiltinCode.CUMSUM);
-			return cumsumObj;	
-		case CUMPROD:
-			if ( cumprodObj == null )
-				cumprodObj = new Builtin(BuiltinCode.CUMPROD);
-			return cumprodObj;
-		case CUMSUMPROD:
-			if ( cumsprodObj == null )
-				cumsprodObj = new Builtin(BuiltinCode.CUMSUMPROD);
-			return cumsprodObj;	
-		case CUMMIN:
-			if ( cumminObj == null )
-				cumminObj = new Builtin(BuiltinCode.CUMMIN);
-			return cumminObj;	
-		case CUMMAX:
-			if ( cummaxObj == null )
-				cummaxObj = new Builtin(BuiltinCode.CUMMAX);
-			return cummaxObj;	
-		case INVERSE:
-			if ( inverseObj == null )
-				inverseObj = new Builtin(BuiltinCode.INVERSE);
-			return inverseObj;	
-		case STOP:
-			if ( stopObj == null )
-				stopObj = new Builtin(BuiltinCode.STOP);
-			return stopObj;
-
-		case SPROP:
-			if ( spropObj == null )
-				spropObj = new Builtin(BuiltinCode.SPROP);
-			return spropObj;
-			
-		case SIGMOID:
-			if ( sigmoidObj == null )
-				sigmoidObj = new Builtin(BuiltinCode.SIGMOID);
-			return sigmoidObj;
-
-		case TYPEOF:
-			if ( typeOfObj == null )
-				typeOfObj = new Builtin(BuiltinCode.TYPEOF);
-			return typeOfObj;
-		case DETECTSCHEMA:
-			if ( detectSchemaObj == null )
-				detectSchemaObj = new Builtin(BuiltinCode.DETECTSCHEMA);
-			return detectSchemaObj;
-		default:
-			// Unknown code --> return null
-			return null;
-		}
+		return new Builtin(code);
 	}
 
 	@Override
@@ -325,7 +151,7 @@ public class Builtin extends ValueFunction
 			case LOG:    return Math.log(in); //faster in Math
 			case LOG_NZ: return (in==0) ? 0 : Math.log(in); //faster in Math
 			case ABS:    return Math.abs(in); //no need for FastMath
-			case SIGN:	 return FASTMATH ? FastMath.signum(in) : Math.signum(in);
+			case SIGN:   return FASTMATH ? FastMath.signum(in) : Math.signum(in);
 			case SQRT:   return Math.sqrt(in); //faster in Math
 			case EXP:    return FASTMATH ? FastMath.exp(in) : Math.exp(in);
 			case ROUND: return Math.round(in); //no need for FastMath
@@ -345,6 +171,10 @@ public class Builtin extends ValueFunction
 			case SIGMOID:
 				//sigmoid: 1/(1+exp(-x))
 				return FASTMATH ? 1 / (1 + FastMath.exp(-in))  : 1 / (1 + Math.exp(-in));
+			
+			case ISNA: return Double.isNaN(in) ? 1 : 0;
+			case ISNAN: return Double.isNaN(in) ? 1 : 0;
+			case ISINF: return Double.isInfinite(in) ? 1 : 0;
 			
 			default:
 				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);

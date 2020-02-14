@@ -364,6 +364,11 @@ public abstract class AutomatedTestBase
 		return platformOld;
 	}
 	
+	protected void resetExecMode(ExecMode execModeOld) {
+		rtplatform = execModeOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = false;
+	}
+	
 	/**
 	 * <p>
 	 * Generates a random matrix with the specified characteristics and returns

@@ -188,6 +188,7 @@ ID : (ALPHABET (ALPHABET|DIGIT|'_')*  '::')? ALPHABET (ALPHABET|DIGIT|'_')*
    // | 'matrix' // --> This is a special case which causes lot of headache
    | 'as.scalar' | 'as.matrix' | 'as.frame' | 'as.double' | 'as.integer' | 'as.logical' | 'index.return' | 'empty.return' | 'lower.tail'
    | 'lower.tri' | 'upper.tri'
+   | 'is.na' | 'is.nan' | 'is.infinite'
 ;
 // Unfortunately, we have datatype name clashing with builtin function name: matrix :(
 // Therefore, ugly work around for checking datatype

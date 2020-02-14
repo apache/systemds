@@ -2278,7 +2278,7 @@ public class LibMatrixCUDA {
 		}
 		else
 			return 0.0;
-	};
+	}
 
 	/**
 	 * Cumulative scan
@@ -2386,7 +2386,7 @@ public class LibMatrixCUDA {
 		if(rows > 128) {
 			final int MAX_BLOCKS = getMaxBlocks(gCtx);
 			ArrayList<Pointer> intermediate_buffers = new ArrayList<>();
-			ArrayList<Integer> cb_list = new ArrayList<Integer>();
+			ArrayList<Integer> cb_list = new ArrayList<>();
 
 			int block_height = 64;
 			int blocks = (rows + block_height - 1) / block_height;

@@ -1015,14 +1015,6 @@ public abstract class Hop implements ParseInfo
 		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
 	}
 	
-	public enum ReOrgOp {
-		TRANS, DIAG, RESHAPE, SORT, REV
-		//Note: Diag types are invalid because for unknown sizes this would 
-		//create incorrect plans (now we try to infer it for memory estimates
-		//and rewrites but the final choice is made during runtime)
-		//DIAG_V2M, DIAG_M2V, 
-	}
-	
 	public enum OpOpDnn {
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
@@ -1049,17 +1041,6 @@ public abstract class Hop implements ParseInfo
 		HopsData2Lops.put(DataOpTypes.PERSISTENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, org.tugraz.sysds.lops.Data.OperationTypes.READ);
-	}
-
-	protected static final HashMap<ReOrgOp, org.tugraz.sysds.lops.Transform.OperationTypes> HopsTransf2Lops;
-	static {
-		HopsTransf2Lops = new HashMap<>();
-		HopsTransf2Lops.put(ReOrgOp.TRANS, org.tugraz.sysds.lops.Transform.OperationTypes.Transpose);
-		HopsTransf2Lops.put(ReOrgOp.REV, org.tugraz.sysds.lops.Transform.OperationTypes.Rev);
-		HopsTransf2Lops.put(ReOrgOp.DIAG, org.tugraz.sysds.lops.Transform.OperationTypes.Diag);
-		HopsTransf2Lops.put(ReOrgOp.RESHAPE, org.tugraz.sysds.lops.Transform.OperationTypes.Reshape);
-		HopsTransf2Lops.put(ReOrgOp.SORT, org.tugraz.sysds.lops.Transform.OperationTypes.Sort);
-
 	}
 	
 	protected static final HashMap<OpOpDnn, org.tugraz.sysds.lops.DnnTransform.OperationTypes> HopsConv2Lops;
@@ -1414,15 +1395,6 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp4String.put(OpOp4.WCEMM,    "wcemm");
 		HopsOpOp4String.put(OpOp4.WDIVMM,   "wdivmm");
 		HopsOpOp4String.put(OpOp4.WUMM,     "wumm");
-	}
-	
-	protected static final HashMap<Hop.ReOrgOp, String> HopsTransf2String;
-	static {
-		HopsTransf2String = new HashMap<>();
-		HopsTransf2String.put(ReOrgOp.TRANS, "t");
-		HopsTransf2String.put(ReOrgOp.DIAG, "diag");
-		HopsTransf2String.put(ReOrgOp.RESHAPE, "rshape");
-		HopsTransf2String.put(ReOrgOp.SORT, "sort");
 	}
 
 	protected static final HashMap<DataOpTypes, String> HopsData2String;

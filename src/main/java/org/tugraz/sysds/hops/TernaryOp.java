@@ -24,6 +24,7 @@ package org.tugraz.sysds.hops;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
+import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;

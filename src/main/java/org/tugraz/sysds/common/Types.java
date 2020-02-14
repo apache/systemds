@@ -183,10 +183,58 @@ public class Types
 		}
 	}
 	
+	// Operations that require 3 operands
+	public enum OpOp3 {
+		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE
+	}
+	
+	// Operations that require 4 operands
+	public enum OpOp4 {
+		WSLOSS, //weighted sloss mm
+		WSIGMOID, //weighted sigmoid mm
+		WDIVMM, //weighted divide mm
+		WCEMM, //weighted cross entropy mm
+		WUMM //weighted unary mm
+	}
+	
+	// Operations that require a variable number of operands
+	public enum OpOpN {
+		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
+	}
+	
+	public enum ReOrgOp {
+		TRANS("t"),
+		RESHAPE("rshape"), 
+		DIAG, //DIAG_V2M and DIAG_M2V could not be distinguished if sizes unknown
+		SORT, 
+		REV;
+		
+		private ReOrgOp() {
+			_opString = name().toLowerCase();
+		}
+		
+		private ReOrgOp(String opString) {
+			_opString = opString; //custom hop label
+		}
+		
+		private final String _opString;
+		
+		public String getOpString() {
+			return _opString;
+		}
+	}
+	
 	public enum ParamBuiltinOp {
 		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
 		LOWER_TRI, UPPER_TRI,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOSTRING, LIST, PARAMSERV
+	}
+	
+	public enum OpOpDnn {
+		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
+		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
+		BIASADD, BIASMULT, BATCH_NORM2D_TEST, CHANNEL_SUMS,
+		UPDATE_NESTEROV_X
 	}
 }

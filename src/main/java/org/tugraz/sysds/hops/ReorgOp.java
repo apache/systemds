@@ -23,12 +23,12 @@ package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.Transform;
-import org.tugraz.sysds.lops.Transform.OperationTypes;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -107,7 +107,7 @@ public class ReorgOp extends MultiThreadedHop
 	
 	@Override
 	public String getOpString() {
-		return "r(" + HopsTransf2String.get(_op) + ")";
+		return "r(" + _op.getOpString() + ")";
 	}
 	
 	@Override
@@ -154,14 +154,13 @@ public class ReorgOp extends MultiThreadedHop
 			case TRANS:
 			{
 				Lop lin = getInput().get(0).constructLops();
-				if( lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose )
+				if( lin instanceof Transform && ((Transform)lin).getOp()==ReOrgOp.TRANS )
 					setLops(lin.getInputs().get(0)); //if input is already a transpose, avoid redundant transpose ops
 				else if( getDim1()==1 && getDim2()==1 )
 					setLops(lin); //if input of size 1x1, avoid unnecessary transpose
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					Transform transform1 = new Transform( lin, 
-							HopsTransf2Lops.get(_op), getDataType(), getValueType(), et, k);
+					Transform transform1 = new Transform(lin, _op, getDataType(), getValueType(), et, k);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
 					setLops(transform1);
@@ -170,12 +169,12 @@ public class ReorgOp extends MultiThreadedHop
 			}
 			case DIAG:
 			case REV: {
-				Transform transform1 = new Transform( getInput().get(0).constructLops(), 
-						HopsTransf2Lops.get(_op), getDataType(), getValueType(), et);
+				Transform transform1 = new Transform(
+					getInput().get(0).constructLops(),
+					_op, getDataType(), getValueType(), et);
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
 				setLops(transform1);
-
 				break;
 			}
 			case RESHAPE: {
@@ -185,7 +184,7 @@ public class ReorgOp extends MultiThreadedHop
 				_outputEmptyBlocks = (et == ExecType.SPARK &&
 						!OptimizerUtils.allowsToFilterEmptyBlockOutputs(this));
 				Transform transform1 = new Transform(linputs,
-						HopsTransf2Lops.get(_op), getDataType(), getValueType(), _outputEmptyBlocks, et);
+					_op, getDataType(), getValueType(), _outputEmptyBlocks, et);
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
 
@@ -202,12 +201,12 @@ public class ReorgOp extends MultiThreadedHop
 				if( et==ExecType.SPARK ) {
 					boolean sortRewrite = !FORCE_DIST_SORT_INDEXES 
 						&& isSortSPRewriteApplicable() && by.getDataType().isScalar();
-					transform1 = new Transform( linputs, HopsTransf2Lops.get(ReOrgOp.SORT),
+					transform1 = new Transform(linputs, ReOrgOp.SORT,
 						getDataType(), getValueType(), et, sortRewrite, 1); //#threads = 1
 				}
 				else { //CP
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-					transform1 = new Transform( linputs, HopsTransf2Lops.get(ReOrgOp.SORT), 
+					transform1 = new Transform( linputs, ReOrgOp.SORT, 
 						getDataType(), getValueType(), et, false, k);
 				}
 

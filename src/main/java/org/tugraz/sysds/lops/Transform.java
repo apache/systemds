@@ -25,6 +25,7 @@ package org.tugraz.sysds.lops;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -34,75 +35,63 @@ import org.tugraz.sysds.common.Types.ValueType;
  */
 public class Transform extends Lop
 {
-	public enum OperationTypes {
-		Transpose,
-		Diag,
-		Reshape,
-		Sort,
-		Rev
-	}
-	
-	private OperationTypes operation = null;
+	private ReOrgOp _operation = null;
 	private boolean _bSortIndInMem = false;
 	private boolean _outputEmptyBlock = true;
 	private int _numThreads = 1;
 	
-	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public Transform(Lop input, ReOrgOp op, DataType dt, ValueType vt, ExecType et) {
 		this(input, op, dt, vt, et, 1);
 	}
 	
-	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, boolean outputEmptyBlock, ExecType et) {
+	public Transform(Lop[] inputs, ReOrgOp op, DataType dt, ValueType vt, boolean outputEmptyBlock, ExecType et) {
 		this(inputs, op, dt, vt, et, 1);
 		_outputEmptyBlock = outputEmptyBlock;
 	}
 	
-	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k)  {
+	public Transform(Lop input, ReOrgOp op, DataType dt, ValueType vt, ExecType et, int k)  {
 		super(Lop.Type.Transform, dt, vt);
 		init(new Lop[]{input}, op, dt, vt, et);
 		_numThreads = k;
 	}
 	
-	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k)  {
+	public Transform(Lop[] inputs, ReOrgOp op, DataType dt, ValueType vt, ExecType et, int k)  {
 		super(Lop.Type.Transform, dt, vt);
 		init(inputs, op, dt, vt, et);
 		_numThreads = k;
 	}
 
-	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
+	public Transform(Lop input, ReOrgOp op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
 		super(Lop.Type.Transform, dt, vt);
 		_bSortIndInMem = bSortIndInMem;
 		init(new Lop[]{input}, op, dt, vt, et);
 	}
 	
-	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
+	public Transform(Lop[] inputs, ReOrgOp op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
 		super(Lop.Type.Transform, dt, vt);
 		_bSortIndInMem = bSortIndInMem;
 		init(inputs, op, dt, vt, et);
 	}
 
-	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem, int k) {
+	public Transform(Lop[] inputs, ReOrgOp op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem, int k) {
 		super(Lop.Type.Transform, dt, vt);
 		_bSortIndInMem = bSortIndInMem;
 		_numThreads = k;
 		init(inputs, op, dt, vt, et);
 	}
 	
-	private void init (Lop[] input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
-		operation = op;
-		
+	private void init (Lop[] input, ReOrgOp op, DataType dt, ValueType vt, ExecType et) {
+		_operation = op;
 		for(Lop in : input) {
 			this.addInput(in);
 			in.addOutput(this);
 		}
-		
-		lps.setProperties( inputs, et);
+		lps.setProperties(inputs, et);
 	}
 
 	@Override
 	public String toString() {
-
-		return " Operation: " + operation;
+		return " Operation: " + _operation;
 	}
 
 	/**
@@ -110,35 +99,35 @@ public class Transform extends Lop
 	 * @return operaton type
 	 */
 	 
-	public OperationTypes getOperationType()
-	{
-		return operation;
+	public ReOrgOp getOp() {
+		return _operation;
 	}
 
 	private String getOpcode() {
-		switch(operation) {
-		case Transpose:
-			// Transpose a matrix
-			return "r'";
-		
-		case Rev:
-			// Transpose a matrix
-			return "rev";
-		
-		case Diag:
-			// Transform a vector into a diagonal matrix
-			return "rdiag";
-		
-		case Reshape:
-			// Transform a vector into a diagonal matrix
-			return "rshape";
-		
-		case Sort:
-			// Transform a matrix into a sorted matrix 
-			return "rsort";
-		
-		default:
-			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
+		switch(_operation) {
+			case TRANS:
+				// Transpose a matrix
+				return "r'";
+			
+			case REV:
+				// Transpose a matrix
+				return "rev";
+			
+			case DIAG:
+				// Transform a vector into a diagonal matrix
+				return "rdiag";
+			
+			case RESHAPE:
+				// Transform a vector into a diagonal matrix
+				return "rshape";
+			
+			case SORT:
+				// Transform a matrix into a sorted matrix 
+				return "rsort";
+			
+			default:
+				throw new UnsupportedOperationException(printErrorLocation() 
+					+ "Instruction is not defined for Transform operation " + _operation);
 		}
 	}
 	
@@ -181,19 +170,16 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
 		
-		if( getExecType()==ExecType.CP && operation == OperationTypes.Transpose ) {
+		if( getExecType()==ExecType.CP 
+			&& (_operation == ReOrgOp.TRANS || _operation == ReOrgOp.SORT) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 		}
-		if( getExecType()==ExecType.CP && operation == OperationTypes.Sort ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
-		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Reshape ) {
+		if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.RESHAPE ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _outputEmptyBlock );
 		}
-		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Sort ){
+		if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.SORT ){
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _bSortIndInMem );
 		}

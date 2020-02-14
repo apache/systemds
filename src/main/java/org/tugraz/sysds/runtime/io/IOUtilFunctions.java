@@ -143,12 +143,7 @@ public class IOUtilFunctions
 			LOG.error("Failed to close record reader.", ex);
 		}
 	}
-
-	public static double parseDoubleParallel( String str ) {
-		//return FloatingDecimal.parseDouble(str);
-		return Double.parseDouble(str);
-	}
-
+	
 	public static void checkAndRaiseErrorCSVEmptyField(String row, boolean fill, boolean emptyFound) 
 		throws IOException
 	{

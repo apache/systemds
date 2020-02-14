@@ -42,6 +42,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
  * Parallel version of ReaderTextCSV.java. To summarize, we do two passes in
@@ -416,7 +417,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 									cellValue = _fillValue;
 								} 
 								else {
-									cellValue = IOUtilFunctions.parseDoubleParallel(part);
+									cellValue = UtilFunctions.parseToDouble(part);
 								}
 
 								if( cellValue != 0 ) {
@@ -447,7 +448,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 									cellValue = _fillValue;
 								} 
 								else {
-									cellValue = IOUtilFunctions.parseDoubleParallel(part);
+									cellValue = UtilFunctions.parseToDouble(part);
 								}
 								if( cellValue != 0 ) {
 									a.set(row, col, cellValue);

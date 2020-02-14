@@ -717,9 +717,9 @@ public class RDDConverterUtils
 						String part = parts[pix++];
 						emptyFound |= part.isEmpty() && !_fill;
 						double val = (part.isEmpty() && _fill) ?
-								_fillValue : Double.parseDouble(part);
+							_fillValue : UtilFunctions.parseToDouble(part);
 						mb[cix-1].appendValue(pos, j, val);
-					}	
+					}
 				}
 		
 				//sanity check empty cells filled w/ values

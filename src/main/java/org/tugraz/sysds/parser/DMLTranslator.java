@@ -2459,7 +2459,9 @@ public class DMLTranslator
 		case CUMSUMPROD:
 		case CUMMIN:
 		case CUMMAX:
-
+		case ISNA:
+		case ISNAN:
+		case ISINF:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 				OpOp1.valueOf(source.getOpCode().name()), expr);
 			break;
@@ -2514,7 +2516,7 @@ public class DMLTranslator
 			currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 				Hop.OpOp3.IFELSE, expr, expr2, expr3);
 			break;
-			
+		
 		case SEQ:
 			HashMap<String,Hop> randParams = new HashMap<>();
 			randParams.put(Statement.SEQ_FROM, expr);

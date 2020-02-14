@@ -47,6 +47,7 @@ SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)
  * 52 Support for libsvm files (local/distributed) 
  * 53 New sql data source (local, distributed)
+ * 54 Support for is.na, is.nan, is.infinite                          OK
 
 SYSTEMDS-60 Update SystemML improvements
  * 61 Take over cumulative aggregate improvements                     OK
@@ -115,6 +116,7 @@ SYSTEMDS-150 Releases
  * 153 convert all occurrences SystemML/sysml to SystemDS/sysds       OK
  * 154 fix license headers in all touched files                       OK
  * 155 import release scripts from SystemML repo                      OK
+ * 156 initial codestyle eclipse template                             OK
  
 SYSTEMDS-160 Tensor Compiler/Runtime
  * 161 Local readers and writers for tensors (all formats)
@@ -145,11 +147,11 @@ SYSTEMDS-180 New Builtin Functions II                                 OK
 SYSTEMDS-190 New Builtin Functions III
  * 191 Builtin function multi logreg                                  OK
  * 192 Extended cmdline interface -b for calling builtin functions
- * 193 New outlierBySds builtin function (delete row/cell)
- * 194 New outlierByIQR builtin function (delete row/cell)
+ * 193 New outlierBySds builtin function (delete row/cell)            OK
+ * 194 New outlierByIQR builtin function (delete row/cell)            OK
  * 195 Builtin function mice for nominal features
  * 196 Builtin function intersect (set intersection)                  OK
- * 197 Builtin function for functional dependency discovery
+ * 197 Builtin function for functional dependency discovery           OK
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK
@@ -169,9 +171,10 @@ SYSTEMDS-210 Extended lists Operations
 SYSTEMDS-220 Federated Tensors and Instructions
  * 221 Initial infrastructure federated operations                    OK
  * 222 Federated matrix-vector multiplication
- * 223 Federated unary aggregates
+ * 223 Federated unary aggregates                                     OK
  * 224 Federated transform functionality
  * 225 Federated elementwise operations
+ * 226 Federated rbind and cbind                                      OK
 
 SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool
@@ -186,7 +189,7 @@ SYSTEMDS-250 Large-Scale Slice Finding
  * 251 Initial data slicing implementation Python
 
 SYSTEMDS-260 Algorithms
- * 261 Stable marriage algorithm                                    ok
+ * 261 Stable marriage algorithm                                      OK
 
 Others:
  * Break append instruction to cbind and rbind 

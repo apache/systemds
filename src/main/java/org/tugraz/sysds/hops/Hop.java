@@ -975,6 +975,8 @@ public abstract class Hop implements ParseInfo
 		SVD, EXISTS, LINEAGE, TYPEOF, DETECTSCHEMA,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD,
+		//checks for special values
+		ISNA, ISNAN, ISINF,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
@@ -1198,6 +1200,9 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsU.put(OpOp1.CUMSUMPROD, org.tugraz.sysds.lops.Unary.OperationTypes.CUMSUMPROD);
 		HopsOpOp1LopsU.put(OpOp1.INVERSE, org.tugraz.sysds.lops.Unary.OperationTypes.INVERSE);
 		HopsOpOp1LopsU.put(OpOp1.CHOLESKY, org.tugraz.sysds.lops.Unary.OperationTypes.CHOLESKY);
+		HopsOpOp1LopsU.put(OpOp1.ISNA, org.tugraz.sysds.lops.Unary.OperationTypes.ISNA);
+		HopsOpOp1LopsU.put(OpOp1.ISNAN, org.tugraz.sysds.lops.Unary.OperationTypes.ISNAN);
+		HopsOpOp1LopsU.put(OpOp1.ISINF, org.tugraz.sysds.lops.Unary.OperationTypes.ISINF);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.tugraz.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.tugraz.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
 		HopsOpOp1LopsU.put(OpOp1.SPROP, org.tugraz.sysds.lops.Unary.OperationTypes.SPROP);

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -29,16 +31,14 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-public class ReplaceTest extends AutomatedTestBase 
+public class IsSpecialValueTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "replace_value";
-	private final static String TEST_NAME2 = "replace_NaN";
-	private final static String TEST_NAME3 = "replace_Infinity";
-	private final static String TEST_NAME4 = "replace_NInfinity";
-	private final static String TEST_NAME5 = "replace_maxmin";
+	private final static String TEST_NAME1 = "is_NA";
+	private final static String TEST_NAME2 = "is_NaN";
+	private final static String TEST_NAME3 = "is_Infinite";
 	
 	private final static String TEST_DIR = "functions/unary/matrix/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + ReplaceTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + IsSpecialValueTest.class.getSimpleName() + "/";
 
 	private final static int rows = 1577;
 	private final static int cols = 37;
@@ -47,164 +47,93 @@ public class ReplaceTest extends AutomatedTestBase
 	private final static double sparsity2 = 0.07;
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME1, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "C" }) ); 
 		addTestConfiguration(TEST_NAME2, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C" }) ); 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "C" }) ); 
 		addTestConfiguration(TEST_NAME3, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "C" }) ); 
-		addTestConfiguration(TEST_NAME4, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "C" }) ); 
-		addTestConfiguration(TEST_NAME5, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "C" }) ); 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "C" }) ); 
 	}
 	
 	@Test
-	public void testReplaceZeroDenseCP() 
-	{
-		runTestReplace( TEST_NAME1, 0, false, ExecType.CP );
+	public void testIsNaDenseCP() {
+		runTestReplace( TEST_NAME1, Double.NaN, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplaceValueDenseCP() 
-	{
-		runTestReplace( TEST_NAME1, 7, false, ExecType.CP );
-	}
-	
-	@Test
-	public void testReplaceNaNDenseCP() 
-	{
+	public void testIsNaNDenseCP() {
 		runTestReplace( TEST_NAME2, Double.NaN, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplacePInfinityDenseCP() 
-	{
+	public void testIsInfDenseCP() {
 		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplaceNInfinityDenseCP() 
-	{
-		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, false, ExecType.CP );
+	public void testIsNInfDenseCP() {
+		runTestReplace( TEST_NAME3, Double.NEGATIVE_INFINITY, false, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplaceMaxMinDenseCP() 
-	{
-		runTestReplace( TEST_NAME5, -1, false, ExecType.CP );
-	}
-
-	@Test
-	public void testReplaceZeroSparseCP() 
-	{
-		runTestReplace( TEST_NAME1, 0, true, ExecType.CP );
+	public void testIsNaSparseCP() {
+		runTestReplace( TEST_NAME1, Double.NaN, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplaceValueSparseCP() 
-	{
-		runTestReplace( TEST_NAME1, 7, true, ExecType.CP );
-	}
-	
-	@Test
-	public void testReplaceNaNSparseCP() 
-	{
+	public void testIsNaNSparseCP() {
 		runTestReplace( TEST_NAME2, Double.NaN, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplacePInfinitySparseCP() 
-	{
+	public void testIsInfSparseCP() {
 		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplaceNInfinitySparseCP() 
-	{
-		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, true, ExecType.CP );
+	public void testIsNInfSparseCP() {
+		runTestReplace( TEST_NAME3, Double.NEGATIVE_INFINITY, true, ExecType.CP );
 	}
 	
 	@Test
-	public void testReplaceMaxMinSparseCP() 
-	{
-		runTestReplace( TEST_NAME5, -1, true, ExecType.CP );
-	}
-	
-	// ------------------------------------------------------------------------
-
-	@Test
-	public void testReplaceZeroDenseSP() 
-	{	
-		runTestReplace( TEST_NAME1, 0, false, ExecType.SPARK );
+	public void testIsNaDenseSP() {
+		runTestReplace( TEST_NAME1, Double.NaN, false, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testReplaceValueDenseSP() 
-	{	
-		runTestReplace( TEST_NAME1, 7, false, ExecType.SPARK );
-	}
-	
-	@Test
-	public void testReplaceNaNDenseSP() 
-	{	
+	public void testIsNaNDenseSP() {
 		runTestReplace( TEST_NAME2, Double.NaN, false, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testReplacePInfinityDenseSP() 
-	{	
+	public void testIsInfDenseSP() {
 		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, false, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testReplaceNInfinityDenseSP() 
-	{	
-		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, false, ExecType.SPARK );
+	public void testIsNInfDenseSP() {
+		runTestReplace( TEST_NAME3, Double.NEGATIVE_INFINITY, false, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testReplaceMaxMinDenseSP() 
-	{	
-		runTestReplace( TEST_NAME5, -1, false, ExecType.SPARK );
-	}
-
-	@Test
-	public void testReplaceZeroSparseSP() 
-	{
-		runTestReplace( TEST_NAME1, 0, true, ExecType.SPARK );
+	public void testIsNaSparseSP() {
+		runTestReplace( TEST_NAME1, Double.NaN, true, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testReplaceValueSparseSP() 
-	{	
-		runTestReplace( TEST_NAME1, 7, true, ExecType.SPARK );
-	}
-	
-	@Test
-	public void testReplaceNaNSparseSP() 
-	{
+	public void testIsNaNSparseSP() {
 		runTestReplace( TEST_NAME2, Double.NaN, true, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testReplacePInfinitySparseSP() 
-	{
+	public void testIsInfSparseSP() {
 		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, true, ExecType.SPARK );
 	}
 	
 	@Test
-	public void testReplaceNInfinitySparseSP() 
-	{
-		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, true, ExecType.SPARK );
-	}
-	
-	@Test
-	public void testReplaceMaxMinSparseSP() 
-	{
-		runTestReplace( TEST_NAME5, -1, true, ExecType.SPARK );
+	public void testIsNInfSparseSP() {
+		runTestReplace( TEST_NAME3, Double.NEGATIVE_INFINITY, true, ExecType.SPARK );
 	}
 	
 	private void runTestReplace( String test, double pattern, boolean sparse, ExecType etype )

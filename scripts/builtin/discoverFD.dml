@@ -27,62 +27,81 @@
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# TODO
- 
+# X               Double    --       Input Matrix X, encoded Matrix if data is categorical
+# Mask            Double    --       A row vector for interested features i.e. Mask =[1, 0, 1]
+                                     # will exclude the second column from processing
+# threshold       Double    --       threshold value in interval [0, 1] for robust FDs 
+# ---------------------------------------------------------------------------------------------
+
+
 #Output(s)
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # FD              Double   ---        matrix of functional dependencies 
 
-m_discoverFD = function(Matrix[Double] X)
+m_discoverFD = function(Matrix[Double] X, Matrix[Double] Mask, Double threshold)
   return(Matrix[Double] FD)
 {
-  #TODO pass mask of relevant columns (only integer/boolean)
-  # remove known dependencies and only iterate over pairs for relevant cols
+  if( threshold < 0 | threshold > 1 )
+    stop("Stopping due to invalid input, threshold required in interval [0, 1] found "+threshold)
+
+  if(ncol(X) != ncol(Mask))
+    stop("Stopping due to dimension mismatch in Matrix and it's Mask")
+
+  if( nrow(Mask) > 1 )
+    stop("Stopping due to invalid input, Mask required n * 1 found n * "+nrow(Mask))
+
+  # feature pruning using mask (keep interested features only for FD discovery)
+  X = removeEmpty(target = X, margin = "cols", select=Mask)
 
   # allocate output and working sets
-  n = ncol(X)
-  FD = matrix(0, n, n)
-  
-  # compute summary statistics (assumes integer codes) 
-  #TODO parfor over colDistinct instead (to work not just with recoded)
-  cm = colMaxs(X) # num distinct per column
-  
+  n = nrow(X)
+  d = ncol(X)
+  FD = matrix(0, d, d)
+  cm = matrix(0, 1, d)
+
+  # num distinct per column
+  parfor(i in 1:d)
+    cm[1,i] = colDistinct(X[,i]) 
+
   # add know functional dependencies
-  FD = FD + (cm == 1) # constant columns determined by all columns
+  FD = FD + (cm == 1)    # constant columns determined by all columns
   FD = FD + (t(cm) == n) # unique columns determine all columns
-  
-  # sort num distinct and enumerate only upper triangle 
+  FD = FD != 0           # to keep the count consistent
+
+  # sort num distinct and enumerate only upper triangle
   cm2 = order(target=t(cm), decreasing=TRUE, index.return=TRUE)
-  parfor(i in 1 : n, check=0) {
+  parfor(i in 1 : d, check=0) {
     index_i = as.scalar(cm2[i,1])
     ndX = as.scalar(cm[1,index_i])
-    if( ndX!=1 & ndX!=n ) {
+    if( ndX!=1 & ndX!=n) {
       Xi = X[,index_i];
-      parfor(j in i+1:n, check=0) {
-        index_j = as.scalar(cm2[j,1])
-        ndY = as.scalar(cm[1,index_j])
-        [A_determines_B, del] = isFD(Xi, X[,index_j], ndX, ndY);
-        if(A_determines_B & del > 0.8)
-          FD[index_i, index_j] = 1
+      k = ifelse(threshold < 1, 1, (i+1)); # enumerate only upper triangle if threshold = 1
+      parfor(j in k:d , check=0) {
+        if(j != i) {
+          index_j = as.scalar(cm2[j,1])
+          [A_determines_B, ratio] = isFD(Xi, X[,index_j], ndX);
+          if(A_determines_B | ratio >= threshold)
+          FD[index_i, index_j] =  ratio; # matrix of robust FD with their ratios 
+        }
       }
     }
   }
 }
 
-isFD = function(Matrix[Double] X, Matrix[Double] Y, Integer ndX, Integer ndY)
-  return(Boolean A_determines_B, Double delta)
+isFD = function(Matrix[Double] X, Matrix[Double] Y, Integer ndX)
+  return(Boolean A_determines_B, Double ratio)
 {
-  ctab = table(X, Y, ndX, ndY)
+  ctab = table(X, Y)
   rowSumTable = rowSums(ctab != 0) # X values -> num Y values
   A_determines_B = (sum(rowSumTable==1) == ndX);
   # robust functional dependency ratio (1.0 if A -> B)
-  delta = sum(rowMaxs(ctab)) / nrow(X) 
+  ratio = sum(rowMaxs(ctab)) / nrow(X) 
 }
 
 colDistinct = function(Matrix[Double] X)
-  return(double distinctItems)
+  return(Double distinctItems)
 {
   distinctItems = sum(table(X, 1) != 0)
 }

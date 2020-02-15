@@ -87,12 +87,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			ArrayList<ReadRowsTask> tasks2 = new ArrayList<>();
 			for( int i=0; i<splits.length; i++ )
 				tasks2.add( new ReadRowsTask(splits[i], informat, job, dest, offsets.get(i).intValue(), i==0));
-			List<Future<Object>> rret = pool.invokeAll(tasks2);
-			pool.shutdown();
-			
-			//error handling
-			for( Future<Object> read : rret )
-				read.get();
+			CommonThreadPool.invokeAndShutdown(pool, tasks2);
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of text csv input.", e);

@@ -22,8 +22,10 @@ package org.tugraz.sysds.runtime.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,6 +42,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.io.IOUtilFunctions.CountRowsTask;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
@@ -195,18 +198,17 @@ public class ReaderTextCSVParallel extends MatrixReader
 				tasks.add(new CountRowsTask(split, informat, job, hasHeader));
 				hasHeader = false;
 			}
-			pool.invokeAll(tasks);
+			List<Future<Long>> ret = pool.invokeAll(tasks);
 			pool.shutdown();
 
 			// collect row counts for offset computation
 			// early error notify in case not all tasks successful
 			_offsets = new SplitOffsetInfos(tasks.size());
-			for (CountRowsTask rt : tasks) {
-				if (!rt.getReturnCode())
-					throw new IOException("Count task for csv input failed: "+ rt.getErrMsg());
-				_offsets.setOffsetPerSplit(tasks.indexOf(rt), nrow);
-				_offsets.setLenghtPerSplit(tasks.indexOf(rt), rt.getRowCount());
-				nrow = nrow + rt.getRowCount();
+			for (Future<Long> rc : ret) {
+				int lnrow = (int)rc.get().longValue(); //incl error handling
+				_offsets.setOffsetPerSplit(ret.indexOf(rc), nrow);
+				_offsets.setLenghtPerSplit(ret.indexOf(rc), lnrow);
+				nrow = nrow + lnrow;
 			}
 		} 
 		catch (Exception e) {
@@ -258,67 +260,6 @@ public class ReaderTextCSVParallel extends MatrixReader
 
 		public void setOffsetPerSplit(int split, int o) {
 			offsetPerSplit[split] = o;
-		}
-	}
-
-	private static class CountRowsTask implements Callable<Object> 
-	{
-		private InputSplit _split = null;
-		private TextInputFormat _informat = null;
-		private JobConf _job = null;
-		private boolean _rc = true;
-		private String _errMsg = null;
-		private int _nrows = -1;
-		private boolean _hasHeader = false;
-
-		public CountRowsTask(InputSplit split, TextInputFormat informat,
-				JobConf job, boolean hasHeader) {
-			_split = split;
-			_informat = informat;
-			_job = job;
-			_nrows = 0;
-			_hasHeader = hasHeader;
-		}
-
-		public boolean getReturnCode() {
-			return _rc;
-		}
-
-		public int getRowCount() {
-			return _nrows;
-		}
-		
-		public String getErrMsg() {
-			return _errMsg;
-		}
-
-		@Override
-		public Object call() 
-			throws Exception 
-		{
-			RecordReader<LongWritable, Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
-			LongWritable key = new LongWritable();
-			Text oneLine = new Text();
-
-			try {
-				// count rows from the first non-header row
-				if (_hasHeader) {
-					reader.next(key, oneLine);
-				}
-				while (reader.next(key, oneLine)) {
-					_nrows++;
-				}
-			} 
-			catch (Exception e) {
-				_rc = false;
-				_errMsg = "RecordReader error CSV format. split: "+ _split.toString() + e.getMessage();
-				throw new IOException(_errMsg);
-			} 
-			finally {
-				IOUtilFunctions.closeSilently(reader);
-			}
-
-			return null;
 		}
 	}
 

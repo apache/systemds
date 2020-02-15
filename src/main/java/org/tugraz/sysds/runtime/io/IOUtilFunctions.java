@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import org.apache.commons.io.input.ReaderInputStream;
@@ -51,6 +52,7 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TextInputFormat;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.transform.TfUtils;
@@ -639,6 +641,44 @@ public class IOUtilFunctions
 		} 
 		catch(Exception e) {
 			throw new DMLRuntimeException(e);
+		}
+	}
+	
+	public static class CountRowsTask implements Callable<Long> {
+		private final InputSplit _split;
+		private final TextInputFormat _inputFormat;
+		private final JobConf _jobConf;
+		private final boolean _hasHeader;
+
+		public CountRowsTask(InputSplit split, TextInputFormat inputFormat, JobConf jobConf) {
+			this(split, inputFormat, jobConf, false);
+		}
+		
+		public CountRowsTask(InputSplit split, TextInputFormat inputFormat, JobConf jobConf, boolean header){
+			_split = split;
+			_inputFormat = inputFormat;
+			_jobConf = jobConf;
+			_hasHeader = header;
+		}
+
+		@Override
+		public Long call() throws Exception {
+			RecordReader<LongWritable, Text> reader = _inputFormat.getRecordReader(_split, _jobConf, Reporter.NULL);
+			LongWritable key = new LongWritable();
+			Text value = new Text();
+			long nrows = 0;
+
+			try{
+				// count rows from the first non-header row
+				if (_hasHeader)
+					reader.next(key, value);
+				while (reader.next(key, value))
+					nrows++;
+			}
+			finally {
+				IOUtilFunctions.closeSilently(reader);
+			}
+			return nrows;
 		}
 	}
 }

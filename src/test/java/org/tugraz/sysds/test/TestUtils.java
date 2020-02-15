@@ -21,30 +21,6 @@
 
 package org.tugraz.sysds.test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Random;
-import java.util.StringTokenizer;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -63,11 +39,17 @@ import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.io.*;
+import java.text.NumberFormat;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 
 /**
@@ -374,12 +356,12 @@ public class TestUtils
 	
 	public static TensorBlock createBasicTensor(ValueType vt, int rows, int cols, double sparsity) {
 		return DataConverter.convertToTensorBlock(TestUtils.round(
-				MatrixBlock.randOperations(rows, cols, sparsity, 0, 10, "uniform", 7)), vt, true);
+			MatrixBlock.randOperations(rows, cols, sparsity, 0, 10, "uniform", 7)), vt, true);
 	}
 	
 	public static TensorBlock createDataTensor(ValueType vt, int rows, int cols, double sparsity) {
 		return DataConverter.convertToTensorBlock(TestUtils.round(
-				MatrixBlock.randOperations(rows, cols, sparsity, 0, 10, "uniform", 7)), vt, false);
+			MatrixBlock.randOperations(rows, cols, sparsity, 0, 10, "uniform", 7)), vt, false);
 	}
 
 	/**
@@ -1388,6 +1370,191 @@ public class TestUtils
 		} catch (IOException e) {
 			fail("unable to write test matrix: " + e.getMessage());
 		}
+	}
+
+	/**
+	 * <p>
+	 *     Generates a random FrameBlock with given parameters.
+	 * </p>
+	 */
+	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random){
+		String[] names = new String[cols];
+		for(int i = 0; i < cols; i++)
+			names[i] = schema[i].toString();
+		FrameBlock frameBlock = new FrameBlock(schema, names);
+		frameBlock.ensureAllocatedColumns((int)rows);
+		for(int row = 0; row < rows; row++)
+			for(int col = 0; col < cols; col++)
+				frameBlock.set(row, col, generateRandomValueFromValueType(schema[col], random));
+		return frameBlock;
+	}
+
+	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, long seed){
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		return generateRandomFrameBlock(rows, cols, schema, random);
+	}
+
+	public static FrameBlock generateRandomFrameBlock(int rows, int cols, long seed){
+		ValueType[] schema = generateRandomSchema(cols, seed);
+		return generateRandomFrameBlock(rows, cols,schema ,seed);
+	}
+
+	/**
+	 * <p>
+	 *     Generates a random Schema with given params. With no type Unknown
+	 * </p>
+	 *
+	 * @param size
+	 * 				size of the schema
+	 * @param random
+	 * 				random Object
+	 */
+	public static ValueType[] generateRandomSchema(int size, Random random){
+		final List<ValueType> valueTypes = Collections.unmodifiableList(Arrays.asList(ValueType.FP64, ValueType.INT64, ValueType.BOOLEAN, ValueType.STRING));
+		ValueType[] newSchema = new ValueType[size];
+		for(int i = 0; i < size; i++){
+			newSchema[i] = valueTypes.get(random.nextInt(valueTypes.size()));
+		}
+		return newSchema;
+	}
+
+	public static ValueType[] generateRandomSchema(int size, long seed){
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		return generateRandomSchema(size, random);
+	}
+
+	/**
+	 * <p>
+	 *     Generates a random SchemaMap with given params. Maximum name length per name is 10
+	 * </p>
+	 *
+	 * @param size
+	 * 				size of the schemaMap
+	 * @param random
+	 * 				random Object
+	 */
+	public static Map<String, Integer> generateRandomSchemaMap(int size, Random random){
+		Map<String, Integer> schemaMap = new HashMap<>();
+		List<String> generatedPaths = new ArrayList<>();
+		for(int k = 0; k < (size/2) + 1; k++){
+			generatedPaths.add(generateRandomJSONPath(0, random));
+		}
+		while(generatedPaths.size() < size){
+			generateRandomJSONPaths(generatedPaths, random, size - generatedPaths.size());
+		}
+		for(int i = 0; i < generatedPaths.size(); i++){
+			schemaMap.put(generatedPaths.get(i), i);
+		}
+		return schemaMap;
+	}
+
+	public static Map<String, Integer> generateRandomSchemaMap(int size, long seed){
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		return generateRandomSchemaMap(size, random);
+	}
+
+
+
+	/**
+	 * <p>
+	 *     Generates a random JSON paths from a existing set of paths, Function is probabilistic so may have to be
+	 *     repeated to get the exact number of paths in size
+	 * </p>
+	 *
+	 * @param size
+	 * 				extrapolates the given paths to a MAXIMUM of size paths
+	 * @param random
+	 * 				random object
+	 */
+	public static List<String> generateRandomJSONPaths(List<String> paths, Random random, int size){
+		List<String> newPaths = new LinkedList<>();
+		if(paths.size() == 0 || size <= 0){
+			return newPaths;
+		}
+		int pathslen = paths.size();
+		for(int i = 0; i < pathslen; i++){
+			String base = paths.get(i);
+			int subEntries = random.nextInt(5) + 2;
+			for(int c = 0; c < subEntries && size > 0; c++){
+				String sub = base + generateRandomJSONPath(0, random);
+				paths.add(sub);
+				if(c == 0){
+					paths.remove(base);
+					pathslen--;
+					size++;
+				}
+				size--;
+				if(random.nextBoolean()){
+					newPaths.add(sub);
+					paths.remove(sub);
+					size++;
+					pathslen--;
+				}
+			}
+
+		}
+		List<String> ret = generateRandomJSONPaths(newPaths, random, size - newPaths.size());
+		paths.addAll(ret);
+		return paths;
+	}
+
+	public static List<String> generateRandomJSONPaths(List<String> paths, long seed, int size){
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		return generateRandomJSONPaths(paths, random, size);
+	}
+
+	/**
+	 * <p>
+	 *     Generates a random JSON path
+	 * </p>
+	 *
+	 * @param len
+	 * 				length of the new path = len + 1
+	 * @param random
+	 * 				random Object
+	 */
+	public static String generateRandomJSONPath(int len, Random random){
+		String current = "/" + random.ints('a', 'z' + 1).limit(10).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+		if(len == 0){
+			return current;
+		}
+		return current + generateRandomJSONPath(len - 1, random);
+	}
+
+	public static String generateRandomJSONPath(int len, long seed){
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		return generateRandomJSONPath(len, random);
+	}
+	/**
+	 * <p>
+	 *     Generates a random value for a given Value Type
+	 * </p>
+	 *
+	 * @param valueType
+	 * 				the ValueType of which to generate the value
+	 * @param random
+	 * 				random Object
+	 */
+	public static Object generateRandomValueFromValueType(ValueType valueType, Random random){
+		switch (valueType){
+			case FP32:	  return random.nextFloat();
+			case FP64:    return random.nextDouble();
+			case INT32:   return random.nextInt();
+			case INT64:   return random.nextLong();
+			case BOOLEAN: return random.nextBoolean();
+			case STRING:
+				return random.ints('a', 'z' + 1)
+						.limit(10)
+						.collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+						.toString();
+			default:
+				return null;
+		}
+	}
+
+	public static Object generateRandomValueFromValueType(ValueType valueType, long seed){
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		return generateRandomValueFromValueType(valueType, random);
 	}
 
 	/**

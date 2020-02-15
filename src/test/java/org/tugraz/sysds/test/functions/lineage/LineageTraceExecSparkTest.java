@@ -61,11 +61,10 @@ public class LineageTraceExecSparkTest extends AutomatedTestBase {
 		testLineageTraceSpark(TEST_NAME1);
 	}
 
-	//TODO fix tracing for mapLeftIndexing
-//	@Test
-//	public void testLineageTraceSpark5() {
-//		testLineageTraceSpark(TEST_NAME5);
-//	}
+	@Test
+	public void testLineageTraceSpark5() {
+		testLineageTraceSpark(TEST_NAME5);
+	}
 	
 	
 	public void testLineageTraceSpark(String testname) {

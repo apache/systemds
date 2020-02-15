@@ -45,6 +45,7 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.utils.Statistics;
 
 import scala.Tuple2;
@@ -91,21 +92,27 @@ public class RemoteParForSpark
 		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS) {
 			brInputs = broadcastInputs(sec, resultVars);
 		}
+		
+		//prepare lineage
+		Map<String, String> serialLineage = DMLScript.LINEAGE ? ec.getLineage().serialize() : null;
 
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
-		List<Tuple2<Long,String>> out = sc.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
+		List<Tuple2<Long, String>> out = sc.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
 			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog,
-				clsMap, cpCaching, aTasks, aIters, brInputs, topLevelPF))
+				clsMap, cpCaching, aTasks, aIters, brInputs, topLevelPF, serialLineage))
 			.collect(); //execute and get output handles
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);
+		Lineage[] lineages = DMLScript.LINEAGE ?
+			RemoteParForUtils.getLineages(results) : null;
+		
 		int numTasks = aTasks.value().intValue(); //get accumulator value
 		int numIters = aIters.value().intValue(); //get accumulator value
 		
 		//create output symbol table entries
-		RemoteParForJobReturn ret = new RemoteParForJobReturn(true, numTasks, numIters, results);
+		RemoteParForJobReturn ret = new RemoteParForJobReturn(true, numTasks, numIters, results, lineages);
 		
 		//maintain statistics
 		Statistics.incrementNoOfCompiledSPInst();

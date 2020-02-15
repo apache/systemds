@@ -19,10 +19,10 @@
 X = rand(rows=$3, cols=$4, seed=7);
 
 R = matrix(0, nrow(X), ncol(X));
-parfor(i in 1:ncol(X)) {
+parfor(i in 1:ncol(X), check=0, opt=None, mode=REMOTE_SPARK) {
   Xi = X[,i];
-	Xi = Xi + Xi - 2 * sqrt(Xi) + Xi * Xi;
-	R[,i] = rowSums(Xi)+colSums(Xi);
+  Xi = Xi + Xi - 2 * sqrt(Xi) + Xi * Xi;
+  R[,i] = rowSums(Xi)+colSums(Xi);
 }
 
 print(lineage(R));

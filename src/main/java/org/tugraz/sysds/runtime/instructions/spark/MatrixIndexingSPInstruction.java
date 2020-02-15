@@ -42,6 +42,8 @@ import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.tugraz.sysds.runtime.instructions.spark.functions.IsBlockInRange;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
@@ -110,7 +112,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			}
 			else { //rdd output for general case
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = generalCaseRightIndexing(in1, mcIn, mcOut, ixrange, _aggType);
-					
+				
 				//put output RDD handle into symbol table
 				sec.setRDDHandleForVariable(output.getName(), out);
 				sec.addLineageRDD(output.getName(), input1.getName());	
@@ -625,5 +627,11 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		public Boolean apply(Object partIndex) {
 			return _filterFlags.contains(partIndex);
 		}
+	}
+	
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
+			LineageItemUtils.getLineage(ec, input1,input2,input3,rowLower,rowUpper,colLower,colUpper))};
 	}
 }

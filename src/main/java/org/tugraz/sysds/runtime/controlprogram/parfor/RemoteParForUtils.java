@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.io.LongWritable;
@@ -37,6 +38,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheStatistics;
@@ -46,6 +48,12 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Stat;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
+import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageParser;
+import static org.tugraz.sysds.utils.Explain.explain;
+
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.utils.Statistics;
@@ -59,7 +67,6 @@ import scala.Tuple2;
  */
 public class RemoteParForUtils 
 {
-
 	public static void incrementParForMRCounters(Reporter reporter, long deltaTasks, long deltaIterations)
 	{
 		//report parfor counters
@@ -144,7 +151,7 @@ public class RemoteParForUtils
 					ovalue.set( datStr );
 					out.collect( okey, ovalue );
 				}
-			}	
+			}
 		}
 	}
 	
@@ -184,6 +191,28 @@ public class RemoteParForUtils
 	}
 	
 	/**
+	 * Export lineage for remote Spark parfor workers.
+	 *
+	 * @return list of lineage items
+	 * @throws IOException 
+	 */
+	public static void exportLineageItems(long workerID, LocalVariableMap vars, ArrayList<ResultVar> resultVars, Lineage lineage) 
+		throws IOException 
+	{
+		for( ResultVar rvar : resultVars ) {
+			Data dat = vars.get( rvar._name );
+			//Note: written lineage should be consistent with exportResultVariables
+			if ( dat != null && dat.getDataType() == DataType.MATRIX )  {
+				MatrixObject mo = (MatrixObject) dat;
+				if( mo.isDirty() ) {
+					LineageItem item = lineage.get(rvar._name);
+					HDFSTool.writeStringToHDFS(explain(item), mo.getFileName()+".lin");
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Cleanup all temporary files created by this SystemDS process.
 	 */
 	public static void cleanupWorkingDirectories()
@@ -214,29 +243,49 @@ public class RemoteParForUtils
 				new DeleteWorkingDirectoriesTask());
 	}
 	
-	public static LocalVariableMap[] getResults( List<Tuple2<Long,String>> out, Log LOG ) 
+	public static Lineage[] getLineages(LocalVariableMap[] results) {
+		Lineage[] ret = new Lineage[results.length];
+		try {
+			for( int i=0; i<results.length; i++ ) { //for all workers
+				LocalVariableMap vars = results[i];
+				ret[i] = new Lineage();
+				for( Entry<String,Data> e : vars.entrySet() ) { //for all result vars
+					MatrixObject mo = (MatrixObject) e.getValue();
+					String lineage = HDFSTool.readStringFromHDFSFile(mo.getFileName()+".lin");
+					ret[i].set(e.getKey(),
+						LineageParser.parseLineageTrace(lineage, e.getKey()));
+				}
+			}
+		}
+		catch(IOException ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		return ret;
+	}
+	
+	
+	public static LocalVariableMap[] getResults(List<Tuple2<Long,String>> out, Log LOG )
 	{
 		HashMap<Long,LocalVariableMap> tmp = new HashMap<>();
-
+		
 		int countAll = 0;
-		for( Tuple2<Long,String> entry : out )
-		{
+		for( Tuple2<Long,String> entry : out ) {
 			Long key = entry._1();
 			String val = entry._2();
 			if( !tmp.containsKey( key ) )
-				tmp.put(key, new LocalVariableMap ());	   
+				tmp.put(key, new LocalVariableMap());
 			Object[] dat = ProgramConverter.parseDataObject( val );
 			tmp.get(key).put((String)dat[0], (Data)dat[1]);
 			countAll++;
 		}
-
+		
 		if( LOG != null ) {
 			LOG.debug("Num remote worker results (before deduplication): "+countAll);
 			LOG.debug("Num remote worker results: "+tmp.size());
 		}
 		
 		//create return array
-		return tmp.values().toArray(new LocalVariableMap[0]);	
+		return tmp.values().toArray(new LocalVariableMap[0]);
 	}
 
 	/**

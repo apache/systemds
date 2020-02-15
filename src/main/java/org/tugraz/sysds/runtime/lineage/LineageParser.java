@@ -43,6 +43,10 @@ public class LineageParser {
 	}
 	
 	public static LineageItem parseLineageTrace(String str) {
+		return parseLineageTrace(str, null);
+	}
+	
+	public static LineageItem parseLineageTrace(String str, String name) {
 		ExecutionContext ec = ExecutionContextFactory.createContext();
 		LineageItem li = null;
 		Map<Long, LineageItem> map = new HashMap<>();
@@ -74,7 +78,7 @@ public class LineageParser {
 					break;
 				
 				case Instruction:
-					li = parseLineageInstruction(id, representation, map);
+					li = parseLineageInstruction(id, representation, map, name);
 					break;
 				
 				default:
@@ -85,7 +89,7 @@ public class LineageParser {
 		return li;
 	}
 	
-	private static LineageItem parseLineageInstruction(Long id, String str, Map<Long, LineageItem> map) {
+	private static LineageItem parseLineageInstruction(Long id, String str, Map<Long, LineageItem> map, String name) {
 		ArrayList<LineageItem> inputs = new ArrayList<>();
 		String[] tokens = str.split(" ");
 		if (tokens.length < 2)
@@ -99,6 +103,6 @@ public class LineageParser {
 			} else
 				throw new ParseException("Invalid format for LineageItem reference");
 		}
-		return new LineageItem(id, null, opcode, inputs.toArray(new LineageItem[0]));
+		return new LineageItem(id, name, opcode, inputs.toArray(new LineageItem[0]));
 	}
 }

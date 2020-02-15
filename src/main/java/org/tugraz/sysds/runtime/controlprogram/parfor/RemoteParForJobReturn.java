@@ -20,6 +20,7 @@
 package org.tugraz.sysds.runtime.controlprogram.parfor;
 
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 
 /**
  * Wrapper for job return of ParFor REMOTE for transferring statistics and result symbol table.
@@ -27,43 +28,45 @@ import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
  */
 public class RemoteParForJobReturn 
 {
-
+	private final boolean _successful;
+	private final int _numTasks;
+	private final int _numIters;
+	private final LocalVariableMap [] _variables;
+	private final Lineage[] _lineages;
 	
-	private boolean _successful  = true;
-	private int     _numTasks    = -1;
-	private int     _numIters    = -1;
-	private LocalVariableMap [] _variables = null;
-		
-	public RemoteParForJobReturn( boolean successful, int numTasks, int numIters, LocalVariableMap [] variables )
+	public RemoteParForJobReturn( boolean successful, int numTasks,
+		int numIters, LocalVariableMap [] variables) 
+	{
+		this(successful, numIters, numTasks, variables, null);
+	}
+	
+	public RemoteParForJobReturn( boolean successful, int numTasks,
+		int numIters, LocalVariableMap [] variables, Lineage [] lineages)
 	{
 		_successful = successful;
-		_numTasks   = numTasks;
-		_numIters   = numIters;
-		_variables  = variables;
+		_numTasks = numTasks;
+		_numIters = numIters;
+		_variables = variables;
+		_lineages = lineages;
 	}
 
-	public boolean isSuccessful()
-	{
+	public boolean isSuccessful() {
 		return _successful;
 	}
 
-	public int getNumExecutedTasks()
-	{
+	public int getNumExecutedTasks() {
 		return _numTasks;
 	}
 
-	public int getNumExecutedIterations()
-	{
+	public int getNumExecutedIterations() {
 		return _numIters;
 	}
 
-	public LocalVariableMap [] getVariables()
-	{
+	public LocalVariableMap [] getVariables() {
 		return _variables;
 	}
 
-	public void setVariables (LocalVariableMap [] variables)
-	{
-		_variables = variables;
+	public Lineage [] getLineages() {
+		return _lineages;
 	}
 }

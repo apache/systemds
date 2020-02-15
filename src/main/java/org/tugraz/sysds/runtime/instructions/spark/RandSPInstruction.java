@@ -192,6 +192,16 @@ public class RandSPInstruction extends UnarySPInstruction {
 		return seed;
 	}
 	
+	public String getDims() { return dims.getName(); }
+	
+	public String getPdf() {
+		return pdf;
+	}
+	
+	public String getPdfParams() {
+		return pdfParams;
+	}
+	
 	public static RandSPInstruction parseInstruction(String str) {
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = s[0];

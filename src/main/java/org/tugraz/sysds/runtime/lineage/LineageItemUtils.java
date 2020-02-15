@@ -21,6 +21,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.tugraz.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.tugraz.sysds.common.Types.DataType;
@@ -206,6 +207,25 @@ public class LineageItemUtils {
 					DataOp pread = new DataOp(parts[1].substring(5), dt, vt, DataOpTypes.PERSISTENTREAD, params);
 					pread.setFileName(parts[2]);
 					operands.put(item.getId(), pread);
+				}
+				else if  (inst instanceof RandSPInstruction) {
+					RandSPInstruction rand = (RandSPInstruction) inst;
+					HashMap<String, Hop> params = new HashMap<>();
+					if (rand.output.getDataType() == DataType.TENSOR)
+						params.put(DataExpression.RAND_DIMS, new LiteralOp(rand.getDims()));
+					else {
+						params.put(DataExpression.RAND_ROWS, new LiteralOp(rand.getRows()));
+						params.put(DataExpression.RAND_COLS, new LiteralOp(rand.getCols()));
+					}
+					params.put(DataExpression.RAND_MIN, new LiteralOp(rand.getMinValue()));
+					params.put(DataExpression.RAND_MAX, new LiteralOp(rand.getMaxValue()));
+					params.put(DataExpression.RAND_PDF, new LiteralOp(rand.getPdf()));
+					params.put(DataExpression.RAND_LAMBDA, new LiteralOp(rand.getPdfParams()));
+					params.put(DataExpression.RAND_SPARSITY, new LiteralOp(rand.getSparsity()));
+					params.put(DataExpression.RAND_SEED, new LiteralOp(rand.getSeed()));
+					Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+					datagen.setBlocksize(rand.getBlocksize());
+					operands.put(item.getId(), datagen);
 				}
 				break;
 			}
@@ -405,7 +425,7 @@ public class LineageItemUtils {
 		//process children until old item found, then replace
 		for(int i=0; i<current.getInputs().length; i++) {
 			LineageItem tmp = current.getInputs()[i];
-			if( tmp == liOld )
+			if( tmp.equals(liOld) )
 				current.getInputs()[i] = liNew;
 			else
 				rReplace(tmp, liOld, liNew);

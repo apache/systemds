@@ -821,7 +821,7 @@ public class ProgramConverter
 		sb.append(VARS_END);
 		return sb.toString();
 	}
-
+	
 	public static String serializeDataObject(String key, Data dat) 
 	{
 		// SCHEMA: <name>|<datatype>|<valuetype>|value
@@ -1284,7 +1284,7 @@ public class ProgramConverter
 		}
 		return ret;
 	}
-
+	
 	private static HashMap<String,FunctionProgramBlock> parseFunctionProgramBlocks( String in, Program prog, int id ) {
 		HashMap<String,FunctionProgramBlock> ret = new HashMap<>();
 		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer( in, ELEMENT_DELIM );

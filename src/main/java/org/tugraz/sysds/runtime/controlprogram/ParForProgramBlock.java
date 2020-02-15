@@ -80,6 +80,7 @@ import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.instructions.cp.ListObject;
 import org.tugraz.sysds.runtime.instructions.cp.StringObject;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
@@ -777,7 +778,10 @@ public class ParForProgramBlock extends ForProgramBlock
 				numExecutedIterations += workers[i].getExecutedIterations();
 			}
 			//lineage maintenance
-			mergeWorkerLineage(ec, workers);
+			Lineage [] lineages = Arrays.stream(workers)
+				.map(w -> w.getExecutionContext().getLineage())
+				.toArray(Lineage[]::new);
+			mergeLineage(ec, lineages);
 
 			//consolidate results into global symbol table
 			consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
@@ -806,14 +810,13 @@ public class ParForProgramBlock extends ForProgramBlock
 			//(in finally to prevent error side effects for multiple scripts in one jvm)
 			resetMemoryBudget();
 		
-			if( _monitor )  {
+			if( _monitor ) {
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
 			}
 		}
 	}
-
 
 	private void executeRemoteSparkParFor(ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr) 
 	{
@@ -862,6 +865,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		// Step 4) collecting results from each parallel worker
 		int numExecutedTasks = ret.getNumExecutedTasks();
 		int numExecutedIterations = ret.getNumExecutedIterations();
+		
+		//lineage maintenance
+		mergeLineage(ec, ret.getLineages());
+		// TODO: remove duplicate lineage items in ec.getLineage()
 		
 		//consolidate results into global symbol table
 		consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
@@ -1333,15 +1340,15 @@ public class ParForProgramBlock extends ForProgramBlock
 			_childBlocks, tid, new HashSet<String>(), null);
 	}
 	
-	private void mergeWorkerLineage(ExecutionContext ec, LocalParWorker[] workers) {
+	private void mergeLineage(ExecutionContext ec, Lineage[] lineages) {
 		if( !DMLScript.LINEAGE )
 			return;
 		//stack lineage traces on top of each other (e.g., indexing)
 		for( ResultVar var : _resultVars ) {
 			LineageItem retIn = ec.getLineage().get(var._name);
-			LineageItem current = workers[0].getExecutionContext().getLineage().get(var._name);
-			for( int i=1; i<workers.length; i++ ) {
-				LineageItem next = workers[i].getExecutionContext().getLineage().get(var._name);
+			LineageItem current = lineages[0].get(var._name);
+			for( int i=1; i<lineages.length; i++ ) {
+				LineageItem next = lineages[i].get(var._name);
 				current = LineageItemUtils.replace(next, retIn, current);
 			}
 			ec.getLineage().set(var._name, current);

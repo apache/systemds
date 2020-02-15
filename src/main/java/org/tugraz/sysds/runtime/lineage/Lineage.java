@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
+import static org.tugraz.sysds.utils.Explain.explain;
+
 public class Lineage {
 	private final LineageMap _map;
 	private final Stack<LineageDedupBlock> _initDedupBlock = new Stack<>();
@@ -71,6 +73,10 @@ public class Lineage {
 		_map.set(varName, li);
 	}
 	
+	public void setLiteral(String varName, LineageItem li) {
+		_map.setLiteral(varName, li);
+	}
+	
 	public LineageItem get(CPOperand variable) {
 		return _initDedupBlock.empty() ?
 			_map.get(variable) :
@@ -93,6 +99,22 @@ public class Lineage {
 	
 	public void clearDedupBlock() {
 		_activeDedupBlock.pop();
+	}
+	
+	public Map<String,String> serialize() {
+		Map<String,String> ret = new HashMap<>();
+		for (Map.Entry<String,LineageItem> e : _map.getTraces().entrySet()) {
+			ret.put(e.getKey(), explain(e.getValue()));
+		}
+		return ret;
+	}
+	
+	public static Lineage deserialize(Map<String,String> serialLineage) {
+		Lineage ret = new Lineage();
+		for (Map.Entry<String,String> e : serialLineage.entrySet()) {
+			ret.set(e.getKey(), LineageParser.parseLineageTrace(e.getValue()));
+		}
+		return ret;
 	}
 	
 	public static void resetInternalState() {

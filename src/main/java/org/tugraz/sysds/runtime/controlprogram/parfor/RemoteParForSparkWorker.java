@@ -33,10 +33,12 @@ import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
+import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -54,6 +56,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private boolean _initialized = false;
 	private boolean _caching = true;
 	private final boolean _cleanCache;
+	private final Map<String,String> _lineage;
 	
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
@@ -61,7 +64,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private final Map<String, Broadcast<CacheBlock>> _brInputs;
 	
 	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching,
-			LongAccumulator atasks, LongAccumulator aiters, Map<String, Broadcast<CacheBlock>> brInputs, boolean cleanCache) {
+			LongAccumulator atasks, LongAccumulator aiters, Map<String, Broadcast<CacheBlock>> brInputs, 
+			boolean cleanCache, Map<String,String> lineage) 
+	{
 		_jobid = jobid;
 		_prog = program;
 		_clsMap = clsMap;
@@ -71,6 +76,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_aIters = aiters;
 		_brInputs = brInputs;
 		_cleanCache = cleanCache;
+		_lineage = lineage;
 	}
 	
 	@Override 
@@ -96,6 +102,11 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_ec.getVariables().keySet().stream().filter(v -> !inVars.contains(v))
 			.map(v -> _ec.getVariable(v)).filter(d -> d instanceof CacheableData)
 			.forEach(c -> ((CacheableData<?>)c).freeEvictedBlob());
+		
+		//write output lineage of required
+		if( DMLScript.LINEAGE )
+			RemoteParForUtils.exportLineageItems(_workerID, 
+				_ec.getVariables(), _resultVars, _ec.getLineage());
 		
 		//write output if required (matrix indexed write), incl cleanup pinned vars
 		//note: this copy is necessary for environments without spark libraries
@@ -136,6 +147,12 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		//enable/disable caching (if required and not in CP process)
 		if( !_caching && !InfrastructureAnalyzer.isLocalMode() )
 			CacheableData.disableCaching();
+		
+		//enable and setup lineage
+		if( _lineage != null ) {
+			DMLScript.LINEAGE = true;
+			_ec.setLineage(Lineage.deserialize(_lineage));
+		}
 		
 		//mark as initialized
 		_initialized = true;

@@ -25,6 +25,9 @@ import org.apache.commons.lang.ArrayUtils;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDnn;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -43,9 +46,6 @@ import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.Hop.OpOp3;
-import org.tugraz.sysds.hops.Hop.OpOpDnn;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp;
@@ -771,7 +771,7 @@ public class HopRewriteUtils
 	}
 	
 	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, String opcode) {
-		return createTernaryOp(mleft, smid, mright, Hop.getTernaryOpCode(opcode));
+		return createTernaryOp(mleft, smid, mright, OpOp3.valueOfCode(opcode));
 	}
 	
 	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {

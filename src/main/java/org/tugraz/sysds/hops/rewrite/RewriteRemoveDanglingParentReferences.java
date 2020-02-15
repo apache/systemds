@@ -21,6 +21,7 @@ package org.tugraz.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
@@ -28,7 +29,6 @@ import org.tugraz.sysds.hops.NaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 
 /**
  * This rewrite is a general-purpose cleanup pass that removes any

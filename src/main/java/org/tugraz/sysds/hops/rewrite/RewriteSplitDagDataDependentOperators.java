@@ -27,6 +27,8 @@ import java.util.List;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -39,8 +41,6 @@ import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOp3;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.StatementBlock;

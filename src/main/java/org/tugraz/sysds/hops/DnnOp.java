@@ -23,10 +23,10 @@ package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.DnnTransform;
-import org.tugraz.sysds.lops.DnnTransform.OperationTypes;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -51,7 +51,7 @@ public class DnnOp extends MultiThreadedHop
 	// -------------------------------------------------------------------------
 	
 	// Specifies the type of this hop
-	private Hop.OpOpDnn op;
+	private OpOpDnn op;
 
 	private DnnOp() {
 		//default constructor for clone
@@ -92,7 +92,7 @@ public class DnnOp extends MultiThreadedHop
 	
 	@Override
 	public String getOpString() {
-		return "" + HopsConv2Lops.get(op);
+		return op.toString();
 	}
 
 	private static boolean isEligibleForSpark() {
@@ -130,38 +130,30 @@ public class DnnOp extends MultiThreadedHop
 			case CONV2D:
 			case CONV2D_BACKWARD_DATA:
 			case CONV2D_BACKWARD_FILTER:
-			case BIASADD:
-			case BIASMULT:
-			{	
+			case BIAS_ADD:
+			case BIAS_MULT: {
 				if(et == ExecType.CP || et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
 					break;
 				}
-				else {
-					throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
-				}
-				// break;
+				throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
 			}
 			case BATCH_NORM2D_TEST:
 			case CHANNEL_SUMS:
-			case UPDATE_NESTEROV_X:
-			{	
+			case UPDATE_NESTEROV_X: {
 				if(et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
 					break;
 				}
-				else {
-					throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
-				}
-				// break;
+				throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
 			}
-			default: 
+			default:
 				throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
 		}
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-				
+		
 		return getLops();
 	}
 	
@@ -177,8 +169,8 @@ public class DnnOp extends MultiThreadedHop
 			case CONV2D_BACKWARD_FILTER:
 			case CONV2D_BACKWARD_DATA:
 				return 14;
-			case BIASADD:
-			case BIASMULT:
+			case BIAS_ADD:
+			case BIAS_MULT:
 				return 2;
 			case BATCH_NORM2D_TEST:
 				return 6;
@@ -264,26 +256,27 @@ public class DnnOp extends MultiThreadedHop
 		if(inputs.size() != getNumExpectedInputs()) 
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		
+		//TODO move these custom rewrites to the general hop rewrites
 		// ---------------------------------------------------------------
 		// Deal with fused operators and contruct lhsInputLop/optionalRhsInputLop
 		Lop lhsInputLop = null; Lop optionalRhsInputLop = null;
 		ArrayList<Hop> inputsOfPotentiallyFusedOp = inputs;
-		OperationTypes lopOp = HopsConv2Lops.get(op);
 		
+		OpOpDnn lopOp = op;
 		// RELU_MAX_POOLING and RELU_MAX_POOLING_BACKWARD is extremely useful for CP backend 
 		// by reducing unnecessary sparse-to-dense-to-sparse conversion.
 		// For other backends, this operators is not necessary as it reduces an additional relu operator.
 		Hop parentReLU = isInputReLU(inputs.get(0));
 		if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == OpOpDnn.MAX_POOL && parentReLU != null) {
 			lhsInputLop = parentReLU.constructLops();
-			lopOp = OperationTypes.RELU_MAX_POOLING;
+			lopOp = OpOpDnn.RELU_MAX_POOL;
 		}
 		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == OpOpDnn.MAX_POOL_BACKWARD && parentReLU != null) {
 			lhsInputLop = parentReLU.constructLops();
-			lopOp = OperationTypes.RELU_MAX_POOLING_BACKWARD;
+			lopOp = OpOpDnn.RELU_MAX_POOL_BACKWARD;
 		}
-		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && op == OpOpDnn.BIASADD && isInputConv2d(inputs.get(0))) {
-			lopOp = OperationTypes.CONV2D_BIAS_ADD;
+		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && op == OpOpDnn.BIAS_ADD && isInputConv2d(inputs.get(0))) {
+			lopOp = OpOpDnn.CONV2D_BIAS_ADD;
 			
 			// the first lop is image 
 			lhsInputLop = inputs.get(0).getInput().get(0).constructLops();
@@ -355,7 +348,7 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		if(getOp() == OpOpDnn.BIASMULT) {
+		if(getOp() == OpOpDnn.BIAS_MULT) {
 			// in non-gpu mode, the worst case size of bias multiply operation is same as that of input.
 			if(DMLScript.USE_ACCELERATOR) 
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
@@ -539,7 +532,7 @@ public class DnnOp extends MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		DataCharacteristics ret = new MatrixCharacteristics();
 		
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
+		if(op == OpOpDnn.BIAS_ADD || op == OpOpDnn.BIAS_MULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
 			op == OpOpDnn.UPDATE_NESTEROV_X) {
 			// Same dimension as the first input
 			DataCharacteristics[] mc = memo.getAllInputStats(getInput());
@@ -673,7 +666,7 @@ public class DnnOp extends MultiThreadedHop
 	 * @return true if the given hop is BIAS_ADD
 	 */
 	private static boolean isInputBiasAdd(Hop hop) {
-		return HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD);
+		return HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD);
 	}
 	
 	/**
@@ -742,7 +735,8 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.UPDATE_NESTEROV_X) {
+		if(op == OpOpDnn.BIAS_ADD || op == OpOpDnn.BIAS_MULT 
+			|| op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.UPDATE_NESTEROV_X) {
 			// Same dimension as the first input
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
@@ -843,7 +837,8 @@ public class DnnOp extends MultiThreadedHop
 	 * @return either -1 or value associated with the dimString
 	 */
 	private long getDim(String dimString) {
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
+		if(op == OpOpDnn.BIAS_ADD || op == OpOpDnn.BIAS_MULT
+			|| op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
 			op == OpOpDnn.UPDATE_NESTEROV_X) {
 			throw new RuntimeException("getDim method should not be invoked for " + op.name());
 		}

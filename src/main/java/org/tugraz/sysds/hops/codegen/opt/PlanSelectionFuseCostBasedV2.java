@@ -41,6 +41,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.AggUnaryOp;
 import org.tugraz.sysds.hops.BinaryOp;
@@ -57,7 +58,6 @@ import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.codegen.opt.ReachabilityGraph.SubProblem;
 import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
 import org.tugraz.sysds.hops.codegen.template.TemplateOuterProduct;
@@ -1139,8 +1139,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		else if( current instanceof DnnOp ) {
 			switch( ((DnnOp)current).getOp() ) {
-				case BIASADD:
-				case BIASMULT:
+				case BIAS_ADD:
+				case BIAS_MULT:
 					costs = 2;
 				default:
 					LOG.warn("Cost model not "

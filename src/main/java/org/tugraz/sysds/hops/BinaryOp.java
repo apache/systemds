@@ -25,6 +25,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
@@ -456,7 +457,7 @@ public class BinaryOp extends MultiThreadedHop
 					!getInput().get(0).isVector() && !getInput().get(1).isVector()
 					&& getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) {
 					binary = new DnnTransform(getInput().get(0).getInput().get(0).constructLops(), 
-						getInput().get(1).constructLops(), DnnTransform.OperationTypes.RELU_BACKWARD,
+						getInput().get(1).constructLops(), OpOpDnn.RELU_BACKWARD,
 						getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				}
 				else

@@ -23,6 +23,7 @@ package org.tugraz.sysds.lops;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOp3;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -31,17 +32,11 @@ import org.tugraz.sysds.common.Types.ValueType;
  */
 public class Ternary extends Lop 
 {
-	public enum OperationType {
-		PLUS_MULT,
-		MINUS_MULT,
-		IFELSE,
-	}
-	
-	private final OperationType _type;
+	private final OpOp3 _op;
 		
-	public Ternary(OperationType op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {
+	public Ternary(OpOp3 op, Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.Ternary, dt, vt);
-		_type = op;
+		_op = op;
 		init(input1, input2, input3, et);
 	}
 
@@ -52,41 +47,27 @@ public class Ternary extends Lop
 		input1.addOutput(this);
 		input2.addOutput(this);
 		input3.addOutput(this);
-		
 		lps.setProperties( inputs, et);
 	}
 	
 	@Override
 	public String toString() {
-		return "Operation = t("+_type.name().toLowerCase()+")";
-	}
-	
-	public String getOpString() {
-		switch( _type ) {
-			case PLUS_MULT: return "+*";
-			case MINUS_MULT: return "-*";
-			case IFELSE: return "ifelse";
-		}
-		return null;
+		return "Operation = t("+_op.toString()+")";
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output) 
-	{
+	public String getInstructions(String input1, String input2, String input3, String output)  {
 		StringBuilder sb = new StringBuilder();
-		
 		sb.append( getExecType() );
-		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpString() );
+		sb.append( _op.toString() );
 		
-		//process three operands
+		//process three operands and output
 		String[] inputs = new String[]{input1, input2, input3};
 		for( int i=0; i<3; i++ ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
-		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output) );
 		

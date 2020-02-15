@@ -22,6 +22,7 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOp4;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -91,9 +92,9 @@ public class QuaternaryOp extends MultiThreadedHop
 	 * @param inW high-level operator W
 	 * @param post post weights
 	 */
-	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o,
-			Hop inX, Hop inU, Hop inV, Hop inW, boolean post) 
-	{			
+	public QuaternaryOp(String l, DataType dt, ValueType vt, OpOp4 o,
+		Hop inX, Hop inU, Hop inV, Hop inW, boolean post) 
+	{
 		this(l, dt, vt, o, inX, inU, inV);
 		getInput().add(3, inW);
 		inW.getParent().add(this);
@@ -114,41 +115,37 @@ public class QuaternaryOp extends MultiThreadedHop
 	 * @param flag1 logout
 	 * @param flag2 minusin
 	 */
-	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o,
-			Hop inX, Hop inU, Hop inV, boolean flag1, boolean flag2) 
+	public QuaternaryOp(String l, DataType dt, ValueType vt, OpOp4 o,
+		Hop inX, Hop inU, Hop inV, boolean flag1, boolean flag2) 
 	{
 		this(l, dt, vt, o, inX, inU, inV);
-		
 		_logout = flag1;
 		_minusin = flag2;
 	}
 
-	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o,
-			Hop inX, Hop inU, Hop inV, Hop inW, int baseType, boolean flag1, boolean flag2) 
+	public QuaternaryOp(String l, DataType dt, ValueType vt, OpOp4 o,
+		Hop inX, Hop inU, Hop inV, Hop inW, int baseType, boolean flag1, boolean flag2) 
 	{
 		this(l, dt, vt, o, inX, inU, inV);
 		if( inW != null ) { //four inputs
 			getInput().add(3, inW);
 			inW.getParent().add(this);
 		}
-		
 		_baseType = baseType;
 		_mult = flag1;
 		_minus = flag2;
 	}
 	
-	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o,
-			Hop inW, Hop inU, Hop inV, boolean umult, OpOp1 uop, OpOp2 sop) 
+	public QuaternaryOp(String l, DataType dt, ValueType vt, OpOp4 o,
+		Hop inW, Hop inU, Hop inV, boolean umult, OpOp1 uop, OpOp2 sop) 
 	{
 		this(l, dt, vt, o, inW, inU, inV);
-		
 		_umult = umult;
 		_uop = uop;
 		_sop = sop;
 	}
 
-	public QuaternaryOp(String l, DataType dt, ValueType vt, Hop.OpOp4 o, Hop inX, Hop inU, Hop inV) 
-	{
+	public QuaternaryOp(String l, DataType dt, ValueType vt, OpOp4 o, Hop inX, Hop inU, Hop inV)  {
 		super(l, dt, vt);
 		_op = o;
 		getInput().add(0, inX);
@@ -260,31 +257,28 @@ public class QuaternaryOp extends MultiThreadedHop
 	
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-				
+
 		return getLops();
 	}
 
 	@Override
 	public String getOpString() {
-		String s = new String("");
-		s += "q(" + HopsOpOp4String.get(_op) + ")";
-		return s;
+		return "q(" + _op.toString() + ")";
 	}
 
 	@Override
-	public boolean allowsAllExecTypes()
-	{
+	public boolean allowsAllExecTypes() {
 		return true;
 	}
 
 	private void constructCPLopsWeightedSquaredLoss(WeightsType wtype) 
 	{
 		WeightedSquaredLoss wsloss = new WeightedSquaredLoss(
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(),
-				getInput().get(3).constructLops(),
-				getDataType(), getValueType(), wtype, ExecType.CP);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getInput().get(3).constructLops(),
+			getDataType(), getValueType(), wtype, ExecType.CP);
 		
 		//set degree of parallelism
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
@@ -316,13 +310,13 @@ public class QuaternaryOp extends MultiThreadedHop
 		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
 		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
 		boolean isMapWsloss = (!wtype.hasFourInputs() && m1Size+m2Size < memBudgetExec
-				&& 2*m1Size < memBudgetLocal && 2*m2Size < memBudgetLocal); 
+			&& 2*m1Size < memBudgetLocal && 2*m2Size < memBudgetLocal); 
 		
 		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
 		{
 			//map-side wsloss always with broadcast
-			Lop wsloss = new WeightedSquaredLoss( X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
-					DataType.SCALAR, ValueType.FP64, wtype, ExecType.SPARK);
+			Lop wsloss = new WeightedSquaredLoss( X.constructLops(), U.constructLops(), V.constructLops(),
+				W.constructLops(), DataType.SCALAR, ValueType.FP64, wtype, ExecType.SPARK);
 			setOutputDimensions(wsloss);
 			setLineNumbers(wsloss);
 			setLops(wsloss);
@@ -336,8 +330,8 @@ public class QuaternaryOp extends MultiThreadedHop
 			
 			//reduce-side wsloss w/ or without broadcast
 			Lop wsloss = new WeightedSquaredLossR( 
-					X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
-					DataType.SCALAR, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
+				X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
+				DataType.SCALAR, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wsloss);
 			setLineNumbers(wsloss);
 			setLops(wsloss);
@@ -346,10 +340,10 @@ public class QuaternaryOp extends MultiThreadedHop
 
 	private void constructCPLopsWeightedSigmoid(WSigmoidType wtype) {
 		WeightedSigmoid wsig = new WeightedSigmoid(
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(),
-				getDataType(), getValueType(), wtype, ExecType.CP);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getDataType(), getValueType(), wtype, ExecType.CP);
 		
 		//set degree of parallelism
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
@@ -400,8 +394,8 @@ public class QuaternaryOp extends MultiThreadedHop
 			
 			//reduce-side wsig w/ or without broadcast
 			Lop wsigmoid = new WeightedSigmoidR( 
-					X.constructLops(), U.constructLops(), V.constructLops(), 
-					DataType.MATRIX, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
+				X.constructLops(), U.constructLops(), V.constructLops(), 
+				DataType.MATRIX, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wsigmoid);
 			setLineNumbers(wsigmoid);
 			setLops(wsigmoid);
@@ -411,11 +405,11 @@ public class QuaternaryOp extends MultiThreadedHop
 	private void constructCPLopsWeightedDivMM(WDivMMType wtype) 
 	{
 		WeightedDivMM wdiv = new WeightedDivMM(
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(),
-				getInput().get(3).constructLops(),
-				getDataType(), getValueType(), wtype, ExecType.CP);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getInput().get(3).constructLops(),
+			getDataType(), getValueType(), wtype, ExecType.CP);
 		
 		//set degree of parallelism
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
@@ -467,8 +461,8 @@ public class QuaternaryOp extends MultiThreadedHop
 			
 			//reduce-side wdivmm w/ or without broadcast
 			Lop wdivmm = new WeightedDivMMR( 
-					W.constructLops(), U.constructLops(), V.constructLops(), X.constructLops(),
-					DataType.MATRIX, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
+				W.constructLops(), U.constructLops(), V.constructLops(), X.constructLops(),
+				DataType.MATRIX, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wdivmm);
 			setLineNumbers(wdivmm);
 			setLops(wdivmm);
@@ -478,11 +472,11 @@ public class QuaternaryOp extends MultiThreadedHop
 	private void constructCPLopsWeightedCeMM(WCeMMType wtype) 
 	{
 		WeightedCrossEntropy wcemm = new WeightedCrossEntropy(
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(),
-				getInput().get(3).constructLops(),
-				getDataType(), getValueType(), wtype, ExecType.CP);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getInput().get(3).constructLops(),
+			getDataType(), getValueType(), wtype, ExecType.CP);
 		
 		//set degree of parallelism
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
@@ -519,8 +513,8 @@ public class QuaternaryOp extends MultiThreadedHop
 		if( !FORCE_REPLICATION && isMapWcemm ) //broadcast
 		{
 			//map-side wcemm always with broadcast
-			Lop wcemm = new WeightedCrossEntropy( X.constructLops(), U.constructLops(), V.constructLops(), eps.constructLops(),
-					DataType.SCALAR, ValueType.FP64, wtype, ExecType.SPARK);
+			Lop wcemm = new WeightedCrossEntropy( X.constructLops(), U.constructLops(), V.constructLops(),
+				eps.constructLops(), DataType.SCALAR, ValueType.FP64, wtype, ExecType.SPARK);
 			setOutputDimensions(wcemm);
 			setLineNumbers(wcemm);
 			setLops(wcemm);
@@ -534,25 +528,24 @@ public class QuaternaryOp extends MultiThreadedHop
 			
 			//reduce-side wcemm w/ or without broadcast
 			Lop wcemm = new WeightedCrossEntropyR( 
-					X.constructLops(), U.constructLops(), V.constructLops(), eps.constructLops(),
-					DataType.SCALAR, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
+				X.constructLops(), U.constructLops(), V.constructLops(), eps.constructLops(),
+				DataType.SCALAR, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wcemm);
 			setLineNumbers(wcemm);
 			setLops(wcemm);
 		}
 	}
 
-	private void constructCPLopsWeightedUMM(WUMMType wtype) 
-	{
+	private void constructCPLopsWeightedUMM(WUMMType wtype) {
 		Unary.OperationTypes uop = _uop!=null ? 
-				HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
-				Unary.OperationTypes.POW2 : Unary.OperationTypes.MULTIPLY2;	
+			HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
+			Unary.OperationTypes.POW2 : Unary.OperationTypes.MULTIPLY2;	
 		
 		WeightedUnaryMM wumm = new WeightedUnaryMM(
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(),
-				getDataType(), getValueType(), wtype, uop, ExecType.CP);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getDataType(), getValueType(), wtype, uop, ExecType.CP);
 		
 		//set degree of parallelism
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
@@ -592,8 +585,8 @@ public class QuaternaryOp extends MultiThreadedHop
 		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
 		{
 			//map-side wumm always with broadcast
-			Lop wumm = new WeightedUnaryMM( X.constructLops(), U.constructLops(), V.constructLops(),  
-					DataType.MATRIX, ValueType.FP64, wtype, uop, ExecType.SPARK);
+			Lop wumm = new WeightedUnaryMM( X.constructLops(), U.constructLops(),
+				V.constructLops(), DataType.MATRIX, ValueType.FP64, wtype, uop, ExecType.SPARK);
 			setOutputDimensions(wumm);
 			setLineNumbers(wumm);
 			setLops( wumm );
@@ -631,9 +624,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		return ret;
 	}
 
-	private WSigmoidType checkWSigmoidType()
-	{
-		
+	private WSigmoidType checkWSigmoidType() {
 		if( _logout && _minusin )
 			return WSigmoidType.LOG_MINUS;
 		else if( _logout )
@@ -673,8 +664,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		return null;
 	}
 
-	private WCeMMType checkWCeMMType()
-	{
+	private WCeMMType checkWCeMMType() {
 		return _baseType == 1 ? WCeMMType.BASIC_EPS : WCeMMType.BASIC;
 	}
 	
@@ -698,8 +688,7 @@ public class QuaternaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz ) 
-	{
+	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz ) {
 		//no intermediates 
 		return 0;
 	}

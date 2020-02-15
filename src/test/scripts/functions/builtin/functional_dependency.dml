@@ -22,5 +22,6 @@
 #-------------------------------------------------------------
 
 X = read($1)
-C = discoverFD(X)
-print(sum(C))
+M = read($2)
+C = discoverFD(X, M, $3)
+write(C, $4)

@@ -2605,7 +2605,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	// Core block operations (called from instructions)
 
 	@Override
-	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) {
+	public MatrixBlock scalarOperations(ScalarOperator op, MatrixValue result) {
 		MatrixBlock ret = checkType(result);
 		
 		// estimate the sparsity structure of result matrix
@@ -2626,7 +2626,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) {
+	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
 		MatrixBlock ret = checkType(result);
 		
 		// estimate the sparsity structure of result matrix

@@ -107,7 +107,7 @@ public class ReorgOp extends MultiThreadedHop
 	
 	@Override
 	public String getOpString() {
-		return "r(" + _op.getOpString() + ")";
+		return "r(" + _op.toString() + ")";
 	}
 	
 	@Override

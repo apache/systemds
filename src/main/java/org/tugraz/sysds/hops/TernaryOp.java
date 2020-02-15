@@ -23,6 +23,7 @@ package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOp3;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -73,7 +74,7 @@ public class TernaryOp extends Hop
 		//default constructor for clone
 	}
 	
-	public TernaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
+	public TernaryOp(String l, DataType dt, ValueType vt, OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3) {
 		super(l, dt, vt);
 		_op = o;
@@ -87,7 +88,7 @@ public class TernaryOp extends Hop
 	
 	// Constructor the case where TertiaryOp (table, in particular) has
 	// output dimensions
-	public TernaryOp(String l, DataType dt, ValueType vt, Hop.OpOp3 o,
+	public TernaryOp(String l, DataType dt, ValueType vt, OpOp3 o,
 			Hop inp1, Hop inp2, Hop inp3, Hop inp4, Hop inp5) {
 		super(l, dt, vt);
 		_op = o;
@@ -240,26 +241,14 @@ public class TernaryOp extends Hop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.QUANTILE + " or " + OpOp3.INTERQUANTILE );
 		
 		ExecType et = optFindExecType();
-		
-		
-		SortKeys sort = SortKeys.constructSortByValueLop(
-				getInput().get(0).constructLops(), 
-				getInput().get(1).constructLops(), 
-				SortKeys.OperationTypes.WithWeights, 
-				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
-		PickByCount pick = new PickByCount(
-				sort,
-				getInput().get(2).constructLops(),
-				getDataType(),
-				getValueType(),
-				(_op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-						: PickByCount.OperationTypes.RANGEPICK, et, true);
-		sort.getOutputParameters().setDimensions(
-				getInput().get(0).getDim1(),
-				getInput().get(0).getDim2(),
-				getInput().get(0).getBlocksize(),
-				getInput().get(0).getNnz());
-		
+		SortKeys sort = SortKeys.constructSortByValueLop(getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(), SortKeys.OperationTypes.WithWeights, 
+			getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+		PickByCount pick = new PickByCount(sort, getInput().get(2).constructLops(),
+			getDataType(), getValueType(), (_op == OpOp3.QUANTILE) ?
+			PickByCount.OperationTypes.VALUEPICK : PickByCount.OperationTypes.RANGEPICK, et, true);
+		sort.getOutputParameters().setDimensions(getInput().get(0).getDim1(),
+			getInput().get(0).getDim2(), getInput().get(0).getBlocksize(), getInput().get(0).getNnz());
 		setOutputDimensions(pick);
 		setLineNumbers(pick);
 		setLops(pick);
@@ -327,7 +316,7 @@ public class TernaryOp extends Hop
 		ExecType et = optFindExecType();
 		if( getInput().stream().allMatch(h -> h.getDataType().isScalar()) )
 			et = ExecType.CP; //always CP for pure scalar operations
-		Ternary plusmult = new Ternary(HopsOpOp3Lops.get(_op),
+		Ternary plusmult = new Ternary(_op,
 			getInput().get(0).constructLops(),
 			getInput().get(1).constructLops(),
 			getInput().get(2).constructLops(), 
@@ -339,9 +328,7 @@ public class TernaryOp extends Hop
 	
 	@Override
 	public String getOpString() {
-		String s = new String("");
-		s += "t(" + HopsOpOp3String.get(_op) + ")";
-		return s;
+		return "t(" + _op.toString() + ")";
 	}
 
 	@Override

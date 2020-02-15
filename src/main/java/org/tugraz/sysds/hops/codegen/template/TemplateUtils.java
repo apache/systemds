@@ -39,9 +39,9 @@ import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.OpOpDnn;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOpDnn;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.codegen.SpoofCompiler;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
@@ -352,7 +352,7 @@ public class TemplateUtils
 	public static boolean isValidSingleOperation(Hop hop) {
 		return HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX)
 			|| HopRewriteUtils.isUnary(hop, OpOp1.EXP, OpOp1.LOG)
-			|| HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT);
+			|| HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT);
 	}
 	
 	public static boolean hasNoOperation(CNodeTpl tpl) {

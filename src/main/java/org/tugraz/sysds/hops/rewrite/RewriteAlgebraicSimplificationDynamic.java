@@ -45,14 +45,14 @@ import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOp4;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.Hop.OpOp3;
-import org.tugraz.sysds.hops.Hop.OpOp4;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.lops.MapMultChain.ChainType;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.common.Types.DataType;
@@ -1357,7 +1357,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 
 						//construct quaternary hop
 						hnew = new QuaternaryOp(hi.getName(), DataType.SCALAR,
-							ValueType.FP64,  OpOp4.WSLOSS, X, U, V, W, true);
+							ValueType.FP64, OpOp4.WSLOSS, X, U, V, W, true);
 						HopRewriteUtils.setOutputParametersForScalar(hnew);
 
 						appliedPattern = true;

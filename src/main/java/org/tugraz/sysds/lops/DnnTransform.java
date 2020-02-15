@@ -22,19 +22,12 @@ package org.tugraz.sysds.lops;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.ValueType;
 
 public class DnnTransform extends Lop
 {
-	public enum OperationTypes {
-		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
-		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
-		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
-		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, BATCH_NORM2D_TEST, 
-		UPDATE_NESTEROV_X
-	}
-	
-	private OperationTypes operation;
+	private OpOpDnn operation;
 	private double intermediateMemBudget;
 	private final int numThreads;
 	
@@ -49,16 +42,14 @@ public class DnnTransform extends Lop
 	 * @param k number of threads
 	 * @param intermediateMemBudget intermediate memory budget
 	 */
-	public DnnTransform(Lop input, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k, double intermediateMemBudget) 
-	{
+	public DnnTransform(Lop input, OpOpDnn op, DataType dt, ValueType vt, ExecType et, int k, double intermediateMemBudget) {
 		super(Lop.Type.Transform, dt, vt);
 		init(input, op, dt, vt, et);
 		numThreads = k;
 		this.intermediateMemBudget = intermediateMemBudget;
 	}
 	
-	public DnnTransform(Lop input1, Lop input2, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
-	{
+	public DnnTransform(Lop input1, Lop input2, OpOpDnn op, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
@@ -67,8 +58,7 @@ public class DnnTransform extends Lop
 		setLevel();
 	}
 	
-	public DnnTransform(Lop input1, Lop input2, Lop input3, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
-	{
+	public DnnTransform(Lop input1, Lop input2, Lop input3, OpOpDnn op, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
@@ -79,7 +69,7 @@ public class DnnTransform extends Lop
 		setLevel();
 	}
 
-	private void init (Lop input, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	private void init (Lop input, OpOpDnn op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
 		this.addInput(input);
 		input.addOutput(this);
@@ -101,8 +91,7 @@ public class DnnTransform extends Lop
 	 * @return operation type
 	 */
 	 
-	public OperationTypes getOperationType()
-	{
+	public OpOpDnn getOp() {
 		return operation;
 	}
 
@@ -112,10 +101,10 @@ public class DnnTransform extends Lop
 		case MAX_POOL:
 			return "maxpooling";
 			
-		case RELU_MAX_POOLING:
+		case RELU_MAX_POOL:
 			return "relu_maxpooling";
 			
-		case RELU_MAX_POOLING_BACKWARD:
+		case RELU_MAX_POOL_BACKWARD:
 			return "relu_maxpooling_backward";
 			
 		case RELU_BACKWARD:
@@ -139,7 +128,7 @@ public class DnnTransform extends Lop
 		case BIAS_ADD:
 			return "bias_add";
 		
-		case BIAS_MULTIPLY:
+		case BIAS_MULT:
 			return "bias_multiply";
 			
 		case CONV2D_BACKWARD_FILTER:
@@ -164,7 +153,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String bias, String output) {
-		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.BIAS_MULTIPLY || operation == OperationTypes.RELU_BACKWARD) {
+		if(operation == OpOpDnn.BIAS_ADD || operation == OpOpDnn.BIAS_MULT || operation == OpOpDnn.RELU_BACKWARD) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			
@@ -195,7 +184,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String C, String HW, String output) {
-		if(operation != OperationTypes.CHANNEL_SUMS)
+		if(operation != OpOpDnn.CHANNEL_SUMS)
 			throw new LopsException("The operation is not supported with three operands:" + operation.name());
 		
 		return InstructionUtils.concatOperands(
@@ -209,7 +198,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
-		if(operation != OperationTypes.UPDATE_NESTEROV_X)
+		if(operation != OpOpDnn.UPDATE_NESTEROV_X)
 			throw new LopsException("The operation is not supported with three operands:" + operation.name());
 			
 		return InstructionUtils.concatOperands(
@@ -239,7 +228,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String output) {
-		if(operation != OperationTypes.BATCH_NORM2D_TEST)
+		if(operation != OpOpDnn.BATCH_NORM2D_TEST)
 			throw new LopsException("The operation is not supported with six operands:" + operation.name());
 		
 		return InstructionUtils.concatOperands(

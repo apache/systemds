@@ -46,9 +46,6 @@ import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.Hop.OpOp3;
-import org.tugraz.sysds.hops.Hop.OpOpDnn;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp;
@@ -75,6 +72,9 @@ import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDnn;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -1063,8 +1063,8 @@ public class DMLTranslator
 							inHops[j] = inHop;
 						}
 						target.setValueType(ValueType.STRING);
-						Hop printfHop = new NaryOp(target.getName(), target.getDataType(), target.getValueType(),
-								OpOpN.PRINTF, inHops);
+						Hop printfHop = new NaryOp(target.getName(), target.getDataType(),
+							target.getValueType(), OpOpN.PRINTF, inHops);
 						output.add(printfHop);
 					}
 
@@ -2290,18 +2290,18 @@ public class DMLTranslator
 				// example: x = mean(Y,W);
 				// stable weighted mean is implemented by using centralMoment with order = 0
 				Hop orderHop = new LiteralOp(0);
-				currBuiltinOp=new TernaryOp(target.getName(), DataType.SCALAR, target.getValueType(), 
-						Hop.OpOp3.MOMENT, expr, expr2, orderHop);
+				currBuiltinOp=new TernaryOp(target.getName(), DataType.SCALAR,
+					target.getValueType(), OpOp3.MOMENT, expr, expr2, orderHop);
 			}
 			break;
 
 		case SD:
 			// stdDev = sqrt(variance)
 			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR,
-					target.getValueType(), AggOp.VAR, Direction.RowCol, expr);
+				target.getValueType(), AggOp.VAR, Direction.RowCol, expr);
 			HopRewriteUtils.setOutputParametersForScalar(currBuiltinOp);
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR,
-					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
+				target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
 			break;
 
 		case MIN:
@@ -2513,8 +2513,8 @@ public class DMLTranslator
 			break;
 		
 		case IFELSE:
-			currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
-				Hop.OpOp3.IFELSE, expr, expr2, expr3);
+			currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), OpOp3.IFELSE, expr, expr2, expr3);
 			break;
 		
 		case SEQ:
@@ -2636,9 +2636,9 @@ public class DMLTranslator
 		}
 		
 		boolean isConvolution = source.getOpCode() == Builtins.CONV2D || source.getOpCode() == Builtins.CONV2D_BACKWARD_DATA ||
-				source.getOpCode() == Builtins.CONV2D_BACKWARD_FILTER || 
-				source.getOpCode() == Builtins.MAX_POOL || source.getOpCode() == Builtins.MAX_POOL_BACKWARD || 
-				source.getOpCode() == Builtins.AVG_POOL || source.getOpCode() == Builtins.AVG_POOL_BACKWARD;
+			source.getOpCode() == Builtins.CONV2D_BACKWARD_FILTER || 
+			source.getOpCode() == Builtins.MAX_POOL || source.getOpCode() == Builtins.MAX_POOL_BACKWARD || 
+			source.getOpCode() == Builtins.AVG_POOL || source.getOpCode() == Builtins.AVG_POOL_BACKWARD;
 		if( !isConvolution) {
 			// Since the dimension of output doesnot match that of input variable for these operations
 			setIdentifierParams(currBuiltinOp, source.getOutput());

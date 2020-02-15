@@ -38,9 +38,7 @@ import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.Nary;
 import org.tugraz.sysds.lops.ReBlock;
-import org.tugraz.sysds.lops.Ternary;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.parser.ParseInfo;
@@ -996,32 +994,6 @@ public abstract class Hop implements ParseInfo
 		BITWAND, BITWOR, BITWXOR, BITWSHIFTL, BITWSHIFTR, //bitwise operations
 	}
 
-	// Operations that require 3 operands
-	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE
-	}
-	
-	// Operations that require 4 operands
-	public enum OpOp4 {
-		WSLOSS, //weighted sloss mm
-		WSIGMOID, //weighted sigmoid mm
-		WDIVMM, //weighted divide mm
-		WCEMM, //weighted cross entropy mm
-		WUMM //weighted unary mm
-	}
-	
-	// Operations that require a variable number of operands
-	public enum OpOpN {
-		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
-	}
-	
-	public enum OpOpDnn {
-		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
-		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
-		BIASADD, BIASMULT, BATCH_NORM2D_TEST, CHANNEL_SUMS,
-		UPDATE_NESTEROV_X
-	}
-	
 	public enum DataGenMethod {
 		RAND, SEQ, SINIT, SAMPLE, INVALID, TIME
 	}
@@ -1041,23 +1013,6 @@ public abstract class Hop implements ParseInfo
 		HopsData2Lops.put(DataOpTypes.PERSISTENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
 		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, org.tugraz.sysds.lops.Data.OperationTypes.READ);
-	}
-	
-	protected static final HashMap<OpOpDnn, org.tugraz.sysds.lops.DnnTransform.OperationTypes> HopsConv2Lops;
-	static {
-		HopsConv2Lops = new HashMap<>();
-		HopsConv2Lops.put(OpOpDnn.MAX_POOL, org.tugraz.sysds.lops.DnnTransform.OperationTypes.MAX_POOL);
-		HopsConv2Lops.put(OpOpDnn.MAX_POOL_BACKWARD, org.tugraz.sysds.lops.DnnTransform.OperationTypes.MAX_POOL_BACKWARD);
-		HopsConv2Lops.put(OpOpDnn.AVG_POOL, org.tugraz.sysds.lops.DnnTransform.OperationTypes.AVG_POOL);
-		HopsConv2Lops.put(OpOpDnn.AVG_POOL_BACKWARD, org.tugraz.sysds.lops.DnnTransform.OperationTypes.AVG_POOL_BACKWARD);
-		HopsConv2Lops.put(OpOpDnn.CONV2D, org.tugraz.sysds.lops.DnnTransform.OperationTypes.CONV2D);
-		HopsConv2Lops.put(OpOpDnn.BIASADD, org.tugraz.sysds.lops.DnnTransform.OperationTypes.BIAS_ADD);
-		HopsConv2Lops.put(OpOpDnn.BIASMULT, org.tugraz.sysds.lops.DnnTransform.OperationTypes.BIAS_MULTIPLY);
-		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_FILTER, org.tugraz.sysds.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_FILTER);
-		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_DATA, org.tugraz.sysds.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_DATA);
-		HopsConv2Lops.put(OpOpDnn.BATCH_NORM2D_TEST, org.tugraz.sysds.lops.DnnTransform.OperationTypes.BATCH_NORM2D_TEST);
-		HopsConv2Lops.put(OpOpDnn.CHANNEL_SUMS, org.tugraz.sysds.lops.DnnTransform.OperationTypes.CHANNEL_SUMS);
-		HopsConv2Lops.put(OpOpDnn.UPDATE_NESTEROV_X, org.tugraz.sysds.lops.DnnTransform.OperationTypes.UPDATE_NESTEROV_X);
 	}
 
 	protected static final HashMap<Hop.OpOp2, Binary.OperationTypes> HopsOpOp2LopsB;
@@ -1233,32 +1188,6 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.DETECTSCHEMA, UnaryCP.OperationTypes.DETECTSCHEMA);
 	}
 
-	protected static final HashMap<OpOp3, Ternary.OperationType> HopsOpOp3Lops;
-	static {
-		HopsOpOp3Lops = new HashMap<>();
-		HopsOpOp3Lops.put(OpOp3.PLUS_MULT, Ternary.OperationType.PLUS_MULT);
-		HopsOpOp3Lops.put(OpOp3.MINUS_MULT, Ternary.OperationType.MINUS_MULT);
-		HopsOpOp3Lops.put(OpOp3.IFELSE, Ternary.OperationType.IFELSE);
-	}
-	
-	/**
-	 * Maps from a multiple (variable number of operands) Hop operation type to
-	 * the corresponding Lop operation type. This is called in the MultipleOp
-	 * constructLops() method that is used to construct the Lops that correspond
-	 * to a Hop.
-	 */
-	protected static final HashMap<OpOpN, Nary.OperationType> HopsOpOpNLops;
-	static {
-		HopsOpOpNLops = new HashMap<>();
-		HopsOpOpNLops.put(OpOpN.PRINTF, Nary.OperationType.PRINTF);
-		HopsOpOpNLops.put(OpOpN.CBIND, Nary.OperationType.CBIND);
-		HopsOpOpNLops.put(OpOpN.RBIND, Nary.OperationType.RBIND);
-		HopsOpOpNLops.put(OpOpN.MIN, Nary.OperationType.MIN);
-		HopsOpOpNLops.put(OpOpN.MAX, Nary.OperationType.MAX);
-		HopsOpOpNLops.put(OpOpN.EVAL, Nary.OperationType.EVAL);
-		HopsOpOpNLops.put(OpOpN.LIST, Nary.OperationType.LIST);
-	}
-
 	protected static final HashMap<OpOp1, String> HopsOpOp12String;
 	protected static final HashMap<String, OpOp1> HopsStringOpOp1;
 	
@@ -1361,42 +1290,6 @@ public abstract class Hop implements ParseInfo
 		return HopsStringOpOp2.get(op);
 	}
 	
-	protected static final HashMap<Hop.OpOp3, String> HopsOpOp3String;
-	protected static final HashMap<String,OpOp3> HopsStringOpOp3;
-	static {
-		HopsOpOp3String = new HashMap<>();
-		HopsOpOp3String.put(OpOp3.QUANTILE, "quantile");
-		HopsOpOp3String.put(OpOp3.INTERQUANTILE, "interquantile");
-		HopsOpOp3String.put(OpOp3.CTABLE, "ctable");
-		HopsOpOp3String.put(OpOp3.MOMENT, "cm");
-		HopsOpOp3String.put(OpOp3.COV, "cov");
-		HopsOpOp3String.put(OpOp3.PLUS_MULT, "+*");
-		HopsOpOp3String.put(OpOp3.MINUS_MULT, "-*");
-		HopsOpOp3String.put(OpOp3.IFELSE, "ifelse");
-		
-		HopsStringOpOp3 = new HashMap<>();
-		for( Entry<OpOp3,String> e : HopsOpOp3String.entrySet() )
-			HopsStringOpOp3.put(e.getValue(), e.getKey());
-	}
-	
-	public static String getTernaryOpCode(OpOp3 op) {
-		return HopsOpOp3String.get(op);
-	}
-	
-	public static OpOp3 getTernaryOpCode(String op) {
-		return HopsStringOpOp3.get(op);
-	}
-	
-	protected static final HashMap<Hop.OpOp4, String> HopsOpOp4String;
-	static {
-		HopsOpOp4String = new HashMap<>();
-		HopsOpOp4String.put(OpOp4.WSLOSS,   "wsloss");
-		HopsOpOp4String.put(OpOp4.WSIGMOID, "wsigmoid");
-		HopsOpOp4String.put(OpOp4.WCEMM,    "wcemm");
-		HopsOpOp4String.put(OpOp4.WDIVMM,   "wdivmm");
-		HopsOpOp4String.put(OpOp4.WUMM,     "wumm");
-	}
-
 	protected static final HashMap<DataOpTypes, String> HopsData2String;
 	static {
 		HopsData2String = new HashMap<>();

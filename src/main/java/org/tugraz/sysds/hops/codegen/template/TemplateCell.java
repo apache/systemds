@@ -43,9 +43,6 @@ import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.Hop.OpOp3;
-import org.tugraz.sysds.hops.Hop.OpOpDnn;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeCell;
@@ -60,6 +57,9 @@ import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDnn;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 
@@ -89,7 +89,7 @@ public class TemplateCell extends TemplateBase
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(hop, DataGenMethod.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(hop, true))
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
 
@@ -103,7 +103,7 @@ public class TemplateCell extends TemplateBase
 			|| (HopRewriteUtils.isTransposeOperation(hop) 
 				&& hop.getDim1()==1 && hop.getDim2()>1))
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
 
@@ -116,7 +116,7 @@ public class TemplateCell extends TemplateBase
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, DataGenMethod.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false))
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
 
@@ -241,7 +241,7 @@ public class TemplateCell extends TemplateBase
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
 				TernaryType.valueOf(top.getOp().name()));
 		}
-		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT) ) {
+		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT) ) {
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());

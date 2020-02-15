@@ -185,7 +185,26 @@ public class Types
 	
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE
+		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE;
+		
+		@Override
+		public String toString() {
+			switch(this) {
+				case MOMENT:     return "cm";
+				case PLUS_MULT:  return "+*";
+				case MINUS_MULT: return "-*";
+				default:         return name().toLowerCase();
+			}
+		}
+		
+		public static OpOp3 valueOfCode(String code) {
+			switch(code) {
+				case "cm": return OpOp3.MOMENT;
+				case "+*": return OpOp3.PLUS_MULT;
+				case "-*": return OpOp3.MINUS_MULT;
+				default:   return OpOp3.valueOf(code);
+			}
+		}
 	}
 	
 	// Operations that require 4 operands
@@ -194,7 +213,12 @@ public class Types
 		WSIGMOID, //weighted sigmoid mm
 		WDIVMM, //weighted divide mm
 		WCEMM, //weighted cross entropy mm
-		WUMM //weighted unary mm
+		WUMM; //weighted unary mm
+		
+		@Override
+		public String toString() {
+			return name().toLowerCase();
+		}
 	}
 	
 	// Operations that require a variable number of operands
@@ -203,24 +227,16 @@ public class Types
 	}
 	
 	public enum ReOrgOp {
-		TRANS("t"),
-		RESHAPE("rshape"), 
 		DIAG, //DIAG_V2M and DIAG_M2V could not be distinguished if sizes unknown
-		SORT, 
-		REV;
+		RESHAPE, REV, SORT, TRANS;
 		
-		private ReOrgOp() {
-			_opString = name().toLowerCase();
-		}
-		
-		private ReOrgOp(String opString) {
-			_opString = opString; //custom hop label
-		}
-		
-		private final String _opString;
-		
-		public String getOpString() {
-			return _opString;
+		@Override
+		public String toString() {
+			switch(this) {
+				case TRANS:   return "t";
+				case RESHAPE: return "rshape";
+				default:      return name().toLowerCase();
+			}
 		}
 	}
 	
@@ -234,7 +250,9 @@ public class Types
 	public enum OpOpDnn {
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
-		BIASADD, BIASMULT, BATCH_NORM2D_TEST, CHANNEL_SUMS,
-		UPDATE_NESTEROV_X
+		BIAS_ADD, BIAS_MULT, BATCH_NORM2D_TEST, CHANNEL_SUMS,
+		UPDATE_NESTEROV_X,
+		//fused operators
+		CONV2D_BIAS_ADD, RELU_MAX_POOL, RELU_MAX_POOL_BACKWARD, RELU_BACKWARD
 	}
 }

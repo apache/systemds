@@ -23,6 +23,7 @@ package org.tugraz.sysds.lops;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ValueType;
 
 /**
@@ -30,14 +31,9 @@ import org.tugraz.sysds.common.Types.ValueType;
  * 
  */
 public class Nary extends Lop {
+	private OpOpN operationType;
 
-	public enum OperationType {
-		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
-	}
-	
-	private OperationType operationType;
-
-	public Nary(OperationType operationType, DataType dt, ValueType vt, Lop[] inputLops, ExecType et)
+	public Nary(OpOpN operationType, DataType dt, ValueType vt, Lop[] inputLops, ExecType et)
 	{
 		super(Lop.Type.Nary, dt, vt);
 		this.operationType = operationType;
@@ -59,7 +55,7 @@ public class Nary extends Lop {
 		return "Operation Type: " + operationType;
 	}
 
-	public OperationType getOperationType() {
+	public OpOpN getOp() {
 		return operationType;
 	}
 

@@ -19,7 +19,7 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.lops.Nary;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
@@ -72,7 +72,7 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 			return new MatrixBuiltinNaryCPInstruction(new SimpleOperator(func), 
 					opcode, str, outputOperand, inputOperands);
 		} 
-		else if (Nary.OperationType.EVAL.name().equalsIgnoreCase(opcode)) {
+		else if (OpOpN.EVAL.name().equalsIgnoreCase(opcode)) {
 			return new EvalNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
 		}
 		

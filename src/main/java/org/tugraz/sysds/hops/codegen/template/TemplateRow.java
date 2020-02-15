@@ -40,9 +40,6 @@ import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.Hop.OpOp3;
-import org.tugraz.sysds.hops.Hop.OpOpDnn;
-import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
@@ -61,6 +58,9 @@ import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDnn;
+import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixMult;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
@@ -112,7 +112,7 @@ public class TemplateRow extends TemplateBase
 			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim1() > 1
 				&& hop.getInput().get(0).getDim2() >= 0
 				&& HopRewriteUtils.isColumnRangeIndexing((IndexingOp)hop))
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1)
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL, OpOpDnn.CONV2D)
@@ -138,7 +138,7 @@ public class TemplateRow extends TemplateBase
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && isFuseSkinnyMatrixMult(hop) //MM
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1)
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL, OpOpDnn.CONV2D)
@@ -156,7 +156,7 @@ public class TemplateRow extends TemplateBase
 				&& hop.getDim1() > 1 && input.getDim1()>1)
 			|| isValidBinaryNaryCBind(hop)
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1 )
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL, OpOpDnn.CONV2D)
@@ -481,7 +481,7 @@ public class TemplateRow extends TemplateBase
 					TernaryType.valueOf(top.getOp().name()));
 			}
 		}
-		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT) ) {
+		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT) ) {
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			out = new CNodeBinary(cdata1, cdata2,

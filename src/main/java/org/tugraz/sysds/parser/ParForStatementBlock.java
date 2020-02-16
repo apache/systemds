@@ -96,7 +96,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	private static HashMap<String, LinearFunction> _fncache; //slower for most (small cases) cases
 	
 	//instance members
-	private final long _ID;
+	private final long _PID;
 	private VariableSet          _vsParent   = null;
 	private ArrayList<ResultVar> _resultVars = null;
 	private Bounds               _bounds     = null;
@@ -153,14 +153,14 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	public ParForStatementBlock() {
-		_ID = _idSeq.getNextID();
+		_PID = _idSeq.getNextID();
 		_resultVars = new ArrayList<>();
 		
-		LOG.trace("PARFOR("+_ID+"): ParForStatementBlock instance created");
+		LOG.trace("PARFOR("+_PID+"): ParForStatementBlock instance created");
 	}
 	
 	public long getID() {
-		return _ID;
+		return _PID;
 	}
 
 	public ArrayList<ResultVar> getResultVariables() {
@@ -179,7 +179,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional)
 	{
-		LOG.trace("PARFOR("+_ID+"): validating ParForStatementBlock.");
+		LOG.trace("PARFOR("+_PID+"): validating ParForStatementBlock.");
 		
 		//create parent variable set via cloning
 		_vsParent = new VariableSet( ids );
@@ -326,7 +326,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			}
 		}
 		else {
-			LOG.debug("INFO: PARFOR("+_ID+"): loop dependency analysis skipped.");
+			LOG.debug("INFO: PARFOR("+_PID+"): loop dependency analysis skipped.");
 		}
 		
 		//if successful, prepare result variables (all distinct vars in all candidates)
@@ -348,7 +348,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( USE_FN_CACHE )
 			_fncache.clear();
 		
-		LOG.debug("INFO: PARFOR("+_ID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
+		LOG.debug("INFO: PARFOR("+_PID+"): validate successful (no dependencies) in "+time.stop()+"ms.");
 		
 		return vs;
 	}

@@ -17,7 +17,6 @@
 
 package org.tugraz.sysds.runtime.controlprogram.federated;
 
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -32,46 +31,52 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.apache.log4j.Logger;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.tugraz.sysds.conf.DMLConfig;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
-	
-	public int _port;
+
+	private int _port;
+	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
 	private IDSequence _seq = new IDSequence();
 	private Map<Long, CacheableData<?>> _vars = new HashMap<>();
-	
+
 	public FederatedWorker(int port) {
-		_port = port;
+		_port = (port == -1) ? 
+			Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT) : port;
 	}
-	
-	public void run() throws Exception {
-		log.debug("[Federated Worker] Setting up...");
-		EventLoopGroup bossGroup = new NioEventLoopGroup(10);
-		EventLoopGroup workerGroup = new NioEventLoopGroup(10);
+
+	public void run() {
+		log.info("Setting up Federated Worker");
+		EventLoopGroup bossGroup = new NioEventLoopGroup(_nrThreads);
+		EventLoopGroup workerGroup = new NioEventLoopGroup(_nrThreads);
+		ServerBootstrap b = new ServerBootstrap();
+		b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+			.childHandler(new ChannelInitializer<SocketChannel>() {
+				@Override
+				public void initChannel(SocketChannel ch) {
+					ch.pipeline()
+						.addLast("ObjectDecoder",
+							new ObjectDecoder(Integer.MAX_VALUE,
+								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
+						.addLast("ObjectEncoder", new ObjectEncoder())
+						.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_seq, _vars));
+				}
+			}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 		try {
-			ServerBootstrap b = new ServerBootstrap();
-			b.group(bossGroup, workerGroup)
-				.channel(NioServerSocketChannel.class)
-				.childHandler(new ChannelInitializer<SocketChannel>() {
-					@Override
-					public void initChannel(SocketChannel ch) {
-						ch.pipeline().addLast("ObjectDecoder",
-							new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
-								.addLast("ObjectEncoder", new ObjectEncoder())
-								.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_seq, _vars));
-					}
-				})
-				.option(ChannelOption.SO_BACKLOG, 128)
-				.childOption(ChannelOption.SO_KEEPALIVE, true);
-			log.debug("[Federated Worker] Starting server at port " + _port);
+			log.info("Starting Federated Worker server at port: " + _port);
 			ChannelFuture f = b.bind(_port).sync();
+			log.info("Started Federated Worker at port: " + _port);
 			f.channel().closeFuture().sync();
 		}
+		catch (InterruptedException e) {
+			log.error("Federated worker interrupted", e);
+		}
 		finally {
-			log.debug("[Federated Worker] Shutting down.");
+			log.info("Federated Worker Shutting down.");
 			workerGroup.shutdownGracefully();
 			bossGroup.shutdownGracefully();
 		}

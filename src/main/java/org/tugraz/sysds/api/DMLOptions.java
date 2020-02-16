@@ -47,7 +47,7 @@ import org.tugraz.sysds.utils.Explain.ExplainType;
 public class DMLOptions {
 	public final Options        options;
 	public Map<String, String>  argVals       = new HashMap<>();  // Arguments map containing either named arguments or arguments by position for a DML program
-	public String               configFile    = null;             // Path to config file if default config and default config is to be overriden
+	public String               configFile    = null;             // Path to config file if default config and default config is to be overridden
 	public boolean              clean         = false;            // Whether to clean up all SystemDS working directories (FS, DFS)
 	public boolean              stats         = false;            // Whether to record and print the statistics
 	public int                  statsCount    = 10;               // Default statistics count
@@ -271,8 +271,8 @@ public class DMLOptions {
 			.create("help");
 		Option lineageOpt = OptionBuilder.withDescription("computes lineage traces")
 			.hasOptionalArgs().create("lineage");
-		Option fedOpt = OptionBuilder.withDescription("starts a federated worker.")
-			.hasArg().create("w");
+		Option fedOpt = OptionBuilder.withDescription("starts a federated worker with the given argument as the port.")
+			.hasOptionalArg().create("w");
 		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
@@ -288,7 +288,11 @@ public class DMLOptions {
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()
-			.addOption(scriptOpt).addOption(fileOpt).addOption(cleanOpt).addOption(helpOpt);
+			.addOption(scriptOpt)
+			.addOption(fileOpt)
+			.addOption(cleanOpt)
+			.addOption(helpOpt)
+			.addOption(fedOpt);
 		fileOrScriptOpt.setRequired(true);
 		options.addOptionGroup(fileOrScriptOpt);
 		

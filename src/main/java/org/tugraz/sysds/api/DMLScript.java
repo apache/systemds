@@ -162,7 +162,7 @@ public class DMLScript
 		}
 		catch (ParseException | DMLScriptException e) {
 			// In case of DMLScriptException, simply print the error message.
-			
+			System.err.println(e.getMessage());
 		}
 	}
 

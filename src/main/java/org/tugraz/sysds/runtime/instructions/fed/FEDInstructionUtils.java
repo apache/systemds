@@ -65,8 +65,8 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof AggregateUnarySPInstruction) {
 			AggregateUnarySPInstruction instruction = (AggregateUnarySPInstruction) inst;
-			MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
-			if (mo1.isFederated())
+			Data data = ec.getVariable(instruction.input1);
+			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated())
 				return AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
 		}
 		else if (inst instanceof WriteSPInstruction) {

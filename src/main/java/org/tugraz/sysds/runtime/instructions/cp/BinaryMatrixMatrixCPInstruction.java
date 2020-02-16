@@ -49,7 +49,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 		
 		// Perform computation using input matrices, and produce the result matrix
 		BinaryOperator bop = (BinaryOperator) _optr;
-		MatrixBlock retBlock = (MatrixBlock) (inBlock1.binaryOperations (bop, inBlock2, new MatrixBlock()));
+		MatrixBlock retBlock = inBlock1.binaryOperations (bop, inBlock2, new MatrixBlock());
 		
 		// Release the memory occupied by input matrices
 		ec.releaseMatrixInput(input1.getName(), input2.getName());

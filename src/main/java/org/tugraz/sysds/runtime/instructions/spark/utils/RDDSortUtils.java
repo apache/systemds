@@ -253,8 +253,7 @@ public class RDDSortUtils
 
 		//in-memory sort operation (w/ index return: source index in target position)
 		ReorgOperator lrop = new ReorgOperator(new SortIndex(1, !asc, true));
-		MatrixBlock sortedIx = (MatrixBlock) inMatBlock
-				.reorgOperations(lrop, new MatrixBlock(), -1, -1, -1);
+		MatrixBlock sortedIx = inMatBlock.reorgOperations(lrop, new MatrixBlock(), -1, -1, -1);
 		
 		//flip sort indices from <source ix in target pos> to <target ix in source pos>
 		MatrixBlock sortedIxSrc = new MatrixBlock(sortedIx.getNumRows(), 1, false); 

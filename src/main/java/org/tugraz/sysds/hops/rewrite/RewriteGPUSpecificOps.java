@@ -134,11 +134,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	}
 	
 	private static boolean isBiasAdd(Hop h) {
-		return HopRewriteUtils.isDnn(h, OpOpDnn.BIAS_ADD);
+		return HopRewriteUtils.isDnn(h, OpOpDnn.BIASADD);
 	}
 	
 	private static boolean isBiasMultiply(Hop h) {
-		return HopRewriteUtils.isDnn(h, OpOpDnn.BIAS_MULT);
+		return HopRewriteUtils.isDnn(h, OpOpDnn.BIASMULT);
 	}
 	
 	private static boolean fitsOnGPU(Hop h, double multiplier) {

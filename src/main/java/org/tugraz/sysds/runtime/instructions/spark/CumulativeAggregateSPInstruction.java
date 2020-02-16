@@ -116,7 +116,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 				aop.indexFn.execute(ixIn, ixOut);
 				if( _uop == null )
 					_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"));
-				MatrixBlock t1 = (MatrixBlock) blkIn.unaryOperations(_uop, new MatrixBlock());
+				MatrixBlock t1 = blkIn.unaryOperations(_uop, new MatrixBlock());
 				MatrixBlock t2 = blkIn.slice(0, blkIn.getNumRows()-1, 1, 1, new MatrixBlock());
 				blkOut.reset(1, 2);
 				blkOut.quickSetValue(0, 0, t1.quickGetValue(t1.getNumRows()-1, 0));

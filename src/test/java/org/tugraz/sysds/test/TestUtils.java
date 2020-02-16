@@ -1382,7 +1382,7 @@ public class TestUtils
 		for(int i = 0; i < cols; i++)
 			names[i] = schema[i].toString();
 		FrameBlock frameBlock = new FrameBlock(schema, names);
-		frameBlock.ensureAllocatedColumns((int)rows);
+		frameBlock.ensureAllocatedColumns(rows);
 		for(int row = 0; row < rows; row++)
 			for(int col = 0; col < cols; col++)
 				frameBlock.set(row, col, generateRandomValueFromValueType(schema[col], random));

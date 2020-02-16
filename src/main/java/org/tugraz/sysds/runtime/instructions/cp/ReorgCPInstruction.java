@@ -138,7 +138,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 		}
 		
 		//execute operation
-		MatrixBlock soresBlock = (MatrixBlock) (matBlock.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
+		MatrixBlock soresBlock = matBlock.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 		
 		//release inputs/outputs
 		if( r_op.fn instanceof SortIndex && _col.getDataType().isMatrix() )

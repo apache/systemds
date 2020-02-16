@@ -71,18 +71,15 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> next() 
-		{
+		public Tuple2<MatrixIndexes, MatrixBlock> next() {
 			Tuple2<MatrixIndexes,MatrixBlock> ret = null;
-			
-			try
-			{
+			try {
 				//produce next output tuple
 				MatrixIndexes ix = _currBlk._1();
 				MatrixBlock in1 = _currBlk._2();
 				
 				MatrixBlock in2 = _pmV.getBlock(1, _currPos);
-				MatrixBlock resultBlk = (MatrixBlock)in1.binaryOperations (_op, in2, new MatrixBlock());
+				MatrixBlock resultBlk = in1.binaryOperations (_op, in2, new MatrixBlock());
 				resultBlk.examSparsity(); 
 				ret = new Tuple2<>(new MatrixIndexes(ix.getRowIndex(), _currPos), resultBlk);
 				_currPos ++;
@@ -90,7 +87,6 @@ public class OuterVectorBinaryOpFunction implements PairFlatMapFunction<Tuple2<M
 			catch(Exception ex) {
 				throw new RuntimeException(ex);
 			}
-			
 			return ret;
 		}
 

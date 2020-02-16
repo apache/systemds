@@ -1139,8 +1139,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		else if( current instanceof DnnOp ) {
 			switch( ((DnnOp)current).getOp() ) {
-				case BIAS_ADD:
-				case BIAS_MULT:
+				case BIASADD:
+				case BIASMULT:
 					costs = 2;
 				default:
 					LOG.warn("Cost model not "

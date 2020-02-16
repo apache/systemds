@@ -101,7 +101,7 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 		
 			//perform binary operation
 			MatrixBlock out2 = new MatrixBlock();
-			return (MatrixBlock) arg0.binaryOperations(_bOp, out1, out2);
+			return arg0.binaryOperations(_bOp, out1, out2);
 		}
 	}
 }

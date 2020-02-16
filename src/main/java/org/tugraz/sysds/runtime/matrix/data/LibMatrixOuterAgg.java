@@ -175,7 +175,7 @@ public class LibMatrixOuterAgg
 			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
 			
 			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.CUMMAX));
-			MatrixBlock mbResult = (MatrixBlock) mbix.unaryOperations(u_op, new MatrixBlock());
+			MatrixBlock mbResult = mbix.unaryOperations(u_op, new MatrixBlock());
 			
 			vixCumSum = DataConverter.convertToIntVector(mbResult);  
 			if (bPrimeCumSum)
@@ -254,19 +254,19 @@ public class LibMatrixOuterAgg
 			MatrixBlock mbix = DataConverter.convertToMatrixBlock(dvix, true);
 			
 			UnaryOperator u_op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.CUMMIN));
-			MatrixBlock mbResult = (MatrixBlock) mbix.unaryOperations(u_op, new MatrixBlock());
+			MatrixBlock mbResult = mbix.unaryOperations(u_op, new MatrixBlock());
 			
-			vixCumSum = DataConverter.convertToIntVector(mbResult);  
+			vixCumSum = DataConverter.convertToIntVector(mbResult);
 			if (bPrimeCumSum)
 				for (int i = 0; i< (vixCumSum.length+1)/2; i++) {
 					int iTemp = vixCumSum[vixCumSum.length-1-i];
 					vixCumSum[vixCumSum.length-1-i] = vixCumSum[i];
 					vixCumSum[i] = iTemp;
 				}
-							
-			adjustRowIndicesMin(vixCumSum, vmb, bOp);
 			
-		} else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
+			adjustRowIndicesMin(vixCumSum, vmb, bOp);
+		}
+		else if(bOp.fn instanceof Equals || bOp.fn instanceof NotEquals) {
 			adjustRowIndicesMin(vix, vmb, bOp);
 			vixCumSum = vix;
 		}

@@ -352,7 +352,7 @@ public class TemplateUtils
 	public static boolean isValidSingleOperation(Hop hop) {
 		return HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX)
 			|| HopRewriteUtils.isUnary(hop, OpOp1.EXP, OpOp1.LOG)
-			|| HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT);
+			|| HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT);
 	}
 	
 	public static boolean hasNoOperation(CNodeTpl tpl) {

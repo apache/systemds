@@ -94,7 +94,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					} 
 					else {
 						MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
-						MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
+						MatrixBlock resultBlock = matBlock.pickValues(quantiles, new MatrixBlock());
 						quantiles = null;
 						ec.releaseMatrixInput(input2.getName());
 						ec.setMatrixOutput(output.getName(), resultBlock);

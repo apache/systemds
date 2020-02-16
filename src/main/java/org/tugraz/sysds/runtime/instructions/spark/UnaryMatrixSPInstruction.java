@@ -76,11 +76,9 @@ public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public MatrixBlock call(MatrixBlock arg0) 
-			throws Exception 
-		{
-			return (MatrixBlock) arg0.unaryOperations(_op, new MatrixBlock());
-		}		
+		public MatrixBlock call(MatrixBlock arg0) throws Exception {
+			return arg0.unaryOperations(_op, new MatrixBlock());
+		}
 	}
 }
 

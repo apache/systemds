@@ -90,7 +90,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 		//final transpose of result (for t(t(y)%*%X))), if transpose rewrite
 		if( _tRewrite ) {
 			ReorgOperator rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
-			out2 = (MatrixBlock)out2.reorgOperations(rop, new MatrixBlock(), 0, 0, 0);
+			out2 = out2.reorgOperations(rop, new MatrixBlock(), 0, 0, 0);
 		}
 		
 		//put output block into symbol table (no lineage because single block)
@@ -122,7 +122,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock in2 = _tRewrite ? arg0._2() : arg0._1();
 			
 			//transpose right input (for vectors no-op)
-			MatrixBlock tmp = (MatrixBlock)in2.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
+			MatrixBlock tmp = in2.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
 			
 			//core matrix multiplication (for t(y)%*%X or t(X)%*%y)
 			return OperationsOnMatrixValues.matMult(tmp, in1, new MatrixBlock(), _abop);

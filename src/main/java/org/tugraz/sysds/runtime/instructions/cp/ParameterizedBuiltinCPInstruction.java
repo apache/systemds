@@ -224,7 +224,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
 			double pattern = Double.parseDouble( params.get("pattern") );
 			double replacement = Double.parseDouble( params.get("replacement") );
-			MatrixBlock ret = (MatrixBlock) target.replaceOperations(new MatrixBlock(), pattern, replacement);
+			MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}

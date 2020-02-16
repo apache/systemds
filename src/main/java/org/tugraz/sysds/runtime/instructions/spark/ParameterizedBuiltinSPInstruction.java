@@ -516,7 +516,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) {
-			return (MatrixBlock) arg0.replaceOperations(new MatrixBlock(), _pattern, _replacement);
+			return arg0.replaceOperations(new MatrixBlock(), _pattern, _replacement);
 		}
 	}
 	

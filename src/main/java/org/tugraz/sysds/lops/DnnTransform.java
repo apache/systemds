@@ -125,10 +125,10 @@ public class DnnTransform extends Lop
 		case CONV2D_BIAS_ADD:
 			return "conv2d_bias_add";
 		
-		case BIAS_ADD:
+		case BIASADD:
 			return "bias_add";
 		
-		case BIAS_MULT:
+		case BIASMULT:
 			return "bias_multiply";
 			
 		case CONV2D_BACKWARD_FILTER:
@@ -153,7 +153,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String bias, String output) {
-		if(operation == OpOpDnn.BIAS_ADD || operation == OpOpDnn.BIAS_MULT || operation == OpOpDnn.RELU_BACKWARD) {
+		if(operation == OpOpDnn.BIASADD || operation == OpOpDnn.BIASMULT || operation == OpOpDnn.RELU_BACKWARD) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			

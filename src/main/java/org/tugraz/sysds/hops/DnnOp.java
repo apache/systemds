@@ -130,8 +130,8 @@ public class DnnOp extends MultiThreadedHop
 			case CONV2D:
 			case CONV2D_BACKWARD_DATA:
 			case CONV2D_BACKWARD_FILTER:
-			case BIAS_ADD:
-			case BIAS_MULT: {
+			case BIASADD:
+			case BIASMULT: {
 				if(et == ExecType.CP || et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
 					break;
@@ -169,8 +169,8 @@ public class DnnOp extends MultiThreadedHop
 			case CONV2D_BACKWARD_FILTER:
 			case CONV2D_BACKWARD_DATA:
 				return 14;
-			case BIAS_ADD:
-			case BIAS_MULT:
+			case BIASADD:
+			case BIASMULT:
 				return 2;
 			case BATCH_NORM2D_TEST:
 				return 6;
@@ -275,7 +275,7 @@ public class DnnOp extends MultiThreadedHop
 			lhsInputLop = parentReLU.constructLops();
 			lopOp = OpOpDnn.RELU_MAX_POOL_BACKWARD;
 		}
-		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && op == OpOpDnn.BIAS_ADD && isInputConv2d(inputs.get(0))) {
+		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && op == OpOpDnn.BIASADD && isInputConv2d(inputs.get(0))) {
 			lopOp = OpOpDnn.CONV2D_BIAS_ADD;
 			
 			// the first lop is image 
@@ -348,7 +348,7 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		if(getOp() == OpOpDnn.BIAS_MULT) {
+		if(getOp() == OpOpDnn.BIASMULT) {
 			// in non-gpu mode, the worst case size of bias multiply operation is same as that of input.
 			if(DMLScript.USE_ACCELERATOR) 
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
@@ -532,7 +532,7 @@ public class DnnOp extends MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		DataCharacteristics ret = new MatrixCharacteristics();
 		
-		if(op == OpOpDnn.BIAS_ADD || op == OpOpDnn.BIAS_MULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
 			op == OpOpDnn.UPDATE_NESTEROV_X) {
 			// Same dimension as the first input
 			DataCharacteristics[] mc = memo.getAllInputStats(getInput());
@@ -666,7 +666,7 @@ public class DnnOp extends MultiThreadedHop
 	 * @return true if the given hop is BIAS_ADD
 	 */
 	private static boolean isInputBiasAdd(Hop hop) {
-		return HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD);
+		return HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD);
 	}
 	
 	/**
@@ -735,7 +735,7 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIAS_ADD || op == OpOpDnn.BIAS_MULT 
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT 
 			|| op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.UPDATE_NESTEROV_X) {
 			// Same dimension as the first input
 			Hop input1 = getInput().get(0);
@@ -837,7 +837,7 @@ public class DnnOp extends MultiThreadedHop
 	 * @return either -1 or value associated with the dimString
 	 */
 	private long getDim(String dimString) {
-		if(op == OpOpDnn.BIAS_ADD || op == OpOpDnn.BIAS_MULT
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT
 			|| op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
 			op == OpOpDnn.UPDATE_NESTEROV_X) {
 			throw new RuntimeException("getDim method should not be invoked for " + op.name());

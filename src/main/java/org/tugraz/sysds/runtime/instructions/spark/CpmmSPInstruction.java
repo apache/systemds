@@ -232,11 +232,9 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			}
 			//prepare inputs, including transpose of right-hand-side
 			MatrixBlock in1 = arg0._1();
-			MatrixBlock in2 = (MatrixBlock)arg0._2()
-				.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
+			MatrixBlock in2 = arg0._2().reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
 			//core block matrix multiplication
-			return OperationsOnMatrixValues
-				.matMult(in1, in2, new MatrixBlock(), _op);
+			return OperationsOnMatrixValues.matMult(in1, in2, new MatrixBlock(), _op);
 		}
 	}
 }

@@ -91,7 +91,7 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 	@SuppressWarnings("unused")
 	private static MatrixBlock transpose(MatrixBlock m1) {
 		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), 1);
-		return (MatrixBlock) (m1.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
+		return m1.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 	}
 
 	@SuppressWarnings("unused")

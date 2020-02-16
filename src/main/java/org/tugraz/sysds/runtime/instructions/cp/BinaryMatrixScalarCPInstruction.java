@@ -43,7 +43,7 @@ public class BinaryMatrixScalarCPInstruction extends BinaryCPInstruction {
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op = sc_op.setConstant(constant.getDoubleValue());
 		
-		MatrixBlock retBlock = (MatrixBlock) inBlock.scalarOperations(sc_op, new MatrixBlock());
+		MatrixBlock retBlock = inBlock.scalarOperations(sc_op, new MatrixBlock());
 		
 		ec.releaseMatrixInput(mat.getName());
 		

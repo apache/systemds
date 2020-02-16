@@ -357,7 +357,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				throw new Exception("Error while getting range for zero-out");
 			}
 			
-			MatrixBlock zeroBlk = (MatrixBlock) kv._2.zeroOutOperations(new MatrixBlock(), range, _complement);
+			MatrixBlock zeroBlk = kv._2.zeroOutOperations(new MatrixBlock(), range, _complement);
 			return new Tuple2<>(kv._1, zeroBlk);
 		}
 	}

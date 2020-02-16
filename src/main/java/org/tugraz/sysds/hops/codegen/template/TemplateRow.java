@@ -112,7 +112,7 @@ public class TemplateRow extends TemplateBase
 			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim1() > 1
 				&& hop.getInput().get(0).getDim2() >= 0
 				&& HopRewriteUtils.isColumnRangeIndexing((IndexingOp)hop))
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1)
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL, OpOpDnn.CONV2D)
@@ -138,7 +138,7 @@ public class TemplateRow extends TemplateBase
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && isFuseSkinnyMatrixMult(hop) //MM
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1)
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL, OpOpDnn.CONV2D)
@@ -156,7 +156,7 @@ public class TemplateRow extends TemplateBase
 				&& hop.getDim1() > 1 && input.getDim1()>1)
 			|| isValidBinaryNaryCBind(hop)
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
-			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1 )
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL, OpOpDnn.CONV2D)
@@ -481,7 +481,7 @@ public class TemplateRow extends TemplateBase
 					TernaryType.valueOf(top.getOp().name()));
 			}
 		}
-		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIAS_ADD, OpOpDnn.BIAS_MULT) ) {
+		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT) ) {
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			out = new CNodeBinary(cdata1, cdata2,

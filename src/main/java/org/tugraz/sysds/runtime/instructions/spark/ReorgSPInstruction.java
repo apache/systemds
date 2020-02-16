@@ -264,7 +264,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			//compute output indexes and reorg data
 			long rix = ixIn.getRowIndex();
 			MatrixIndexes ixOut = new MatrixIndexes(rix, rix);
-			MatrixBlock blkOut = (MatrixBlock) blkIn.reorgOperations(_reorgOp, new MatrixBlock(), -1, -1, -1);
+			MatrixBlock blkOut = blkIn.reorgOperations(_reorgOp, new MatrixBlock(), -1, -1, -1);
 			ret.add(new Tuple2<>(ixOut,blkOut));
 			
 			// insert newly created empty blocks for entire row

@@ -25,9 +25,7 @@ import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 
 import scala.Tuple2;
 
-public class MatrixMatrixBinaryOpFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> 
-{
-	
+public class MatrixMatrixBinaryOpFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> {
 	private static final long serialVersionUID = -2683276102742977900L;
 	
 	private BinaryOperator _bop;
@@ -37,9 +35,7 @@ public class MatrixMatrixBinaryOpFunction implements Function<Tuple2<MatrixBlock
 	}
 
 	@Override
-	public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
-			throws Exception 
-	{
-		return (MatrixBlock) arg0._1().binaryOperations(_bop, arg0._2(), new MatrixBlock());
+	public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0) throws Exception {
+		return arg0._1().binaryOperations(_bop, arg0._2(), new MatrixBlock());
 	}
 }

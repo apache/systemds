@@ -63,9 +63,9 @@ public class DataCorruptionTest
 	// Reset lists and output frame
 	@Before
 	public void testInit() {
-		numerics = new ArrayList<Integer>();
-		stringpos = new ArrayList<Integer>();
-		swappable = new ArrayList<Integer>();
+		numerics = new ArrayList<>();
+		stringpos = new ArrayList<>();
+		swappable = new ArrayList<>();
 		Xp = DataAugmentation.preprocessing(X, numerics, stringpos, swappable);
 	}
 	
@@ -165,9 +165,9 @@ public class DataCorruptionTest
 			ori.appendRow(row);
 		}
 		
-		List<Integer> numerics = new ArrayList<Integer>();
-		List<Integer> strings = new ArrayList<Integer>();
-		List<Integer> swappable = new ArrayList<Integer>();
+		List<Integer> numerics = new ArrayList<>();
+		List<Integer> strings = new ArrayList<>();
+		List<Integer> swappable = new ArrayList<>();
 		
 		FrameBlock changed = DataAugmentation.preprocessing(ori, numerics, strings, swappable);
 		

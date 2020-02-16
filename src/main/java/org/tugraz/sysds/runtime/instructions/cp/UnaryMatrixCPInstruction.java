@@ -41,7 +41,7 @@ public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
 		}
 		else {
 			UnaryOperator u_op = (UnaryOperator) _optr;
-			retBlock = (MatrixBlock) (inBlock.unaryOperations(u_op, new MatrixBlock()));
+			retBlock = inBlock.unaryOperations(u_op, new MatrixBlock());
 			ec.releaseMatrixInput(input1.getName());
 			// Ensure right dense/sparse output representation (guarded by released input memory)
 			if( checkGuardedRepresentationChange(inBlock, retBlock) )

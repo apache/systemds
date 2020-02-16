@@ -23,21 +23,17 @@ import org.apache.spark.api.java.function.Function;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
 
-public class MatrixScalarUnaryFunction implements Function<MatrixBlock,MatrixBlock> 
-{	
-	
+public class MatrixScalarUnaryFunction implements Function<MatrixBlock,MatrixBlock> {
 	private static final long serialVersionUID = 7246757780621114500L;
 	
 	private ScalarOperator _op;
 	
-	public MatrixScalarUnaryFunction(ScalarOperator sc_op) {	
+	public MatrixScalarUnaryFunction(ScalarOperator sc_op) {
 		_op = sc_op;
 	}
 
 	@Override
-	public MatrixBlock call(MatrixBlock arg0) 
-		throws Exception 
-	{
-		return (MatrixBlock) arg0.scalarOperations(_op, new MatrixBlock());
+	public MatrixBlock call(MatrixBlock arg0) throws Exception {
+		return arg0.scalarOperations(_op, new MatrixBlock());
 	}
 }

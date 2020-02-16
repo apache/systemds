@@ -74,7 +74,7 @@ public class FrameReaderJSONL
 	}
 
 
-	protected final int readJSONLFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> inputFormat,
+	protected static int readJSONLFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> inputFormat,
 		JobConf jobConf, Types.ValueType[] schema, Map<String, Integer> schemaMap, FrameBlock dest, int currentRow)
 			throws IOException, JSONException 
 	{
@@ -100,7 +100,7 @@ public class FrameReaderJSONL
 		return row;
 	}
 	// TODO Needs Optimisation! "split" is inefficient
-	private String getStringFromJSONPath(JSONObject jsonObject, String path) 
+	private static String getStringFromJSONPath(JSONObject jsonObject, String path) 
 		throws IOException 
 	{
 		String[] splitPath = path.split("/");
@@ -131,7 +131,7 @@ public class FrameReaderJSONL
 	}
 
 
-	private String[] createOutputNamesFromSchemaMap(Map<String, Integer> schemaMap) {
+	private static String[] createOutputNamesFromSchemaMap(Map<String, Integer> schemaMap) {
 		String[] names = new String[schemaMap.size()];
 		schemaMap.forEach((key, value) -> names[value] = key);
 		return names;

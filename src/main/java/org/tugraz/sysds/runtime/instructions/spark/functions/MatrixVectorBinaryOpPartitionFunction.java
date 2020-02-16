@@ -76,10 +76,10 @@ public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunctio
 			int rix= (int)((_vtype==VectorType.COL_VECTOR) ? ix.getRowIndex() : 1);
 			int cix= (int)((_vtype==VectorType.COL_VECTOR) ? 1 : ix.getColumnIndex());
 			MatrixBlock in2 = _pmV.getBlock(rix, cix);
-				
+			
 			//execute the binary operation
-			MatrixBlock ret = (MatrixBlock) (in1.binaryOperations (_op, in2, new MatrixBlock()));
-			return new Tuple2<>(ix, ret);	
-		}			
+			MatrixBlock ret = in1.binaryOperations (_op, in2, new MatrixBlock());
+			return new Tuple2<>(ix, ret);
+		}
 	}
 }

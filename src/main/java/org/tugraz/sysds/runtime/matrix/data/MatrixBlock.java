@@ -2779,7 +2779,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
+	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = checkType(thatValue);
 		MatrixBlock ret = checkType(result);
 		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
@@ -3326,7 +3326,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
+	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
 	{
 		if ( !( op.fn instanceof SwapIndex || op.fn instanceof DiagIndex 
 			|| op.fn instanceof SortIndex || op.fn instanceof RevIndex ) )
@@ -4113,7 +4113,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
+	public MatrixBlock zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
 		checkType(result);
 		double currentSparsity=(double)nonZeros/rlen/clen;
 		double estimatedSps=currentSparsity*(range.rowEnd-range.rowStart+1)
@@ -4217,17 +4217,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				
 			}
 		}
-		return result;
+		return (MatrixBlock)result;
 	}
 	
 	@Override
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
+	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int blen, MatrixIndexes indexesIn) {
 		return aggregateUnaryOperations(op, result, blen, indexesIn, false);
 	}
 	
 	@Override
-	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result,
+	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result,
 			int blen, MatrixIndexes indexesIn, boolean inCP)  {
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
@@ -4612,7 +4612,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return covobj;
 	}
 
-	public MatrixValue sortOperations(MatrixValue weights, MatrixValue result) {
+	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
 		boolean wtflag = (weights!=null);
 		
 		MatrixBlock wts= (weights == null ? null : checkType(weights));
@@ -4671,7 +4671,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		// Sort td and tw based on values inside td (ascending sort), incl copy into result
 		SortIndex sfn = new SortIndex(1, false, false);
 		ReorgOperator rop = new ReorgOperator(sfn);
-		LibMatrixReorg.reorg(tdw, (MatrixBlock)result, rop);
+		LibMatrixReorg.reorg(tdw, result, rop);
 		
 		return result;
 	}
@@ -4712,7 +4712,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return (sum + q25Part*q25Val - q75Part*q75Val) / (sum_wt*0.5); 
 	}
 	
-	public MatrixValue pickValues(MatrixValue quantiles, MatrixValue ret) {
+	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
 	
 		MatrixBlock qs=checkType(quantiles);
 		
@@ -4979,7 +4979,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	
 	@Override
-	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) {
+	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
 		MatrixBlock ret = checkType(result);
 		examSparsity(); //ensure its in the right format
 		ret.reset(rlen, clen, sparse);

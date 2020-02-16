@@ -26,7 +26,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.RightIndex;
@@ -793,16 +792,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		ExecMode platformOld = rtplatform;
-		switch( instType ) {
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		ExecMode platformOld = setExecMode(instType);
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
@@ -856,11 +847,9 @@ public class RowAggTmplTest extends AutomatedTestBase
 			if( testname.equals(TEST_NAME46) )
 				Assert.assertTrue(!heavyHittersContainsSubString("conv2d") 
 					&& !heavyHittersContainsSubString("spoof", 2));
-			
 		}
 		finally {
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;

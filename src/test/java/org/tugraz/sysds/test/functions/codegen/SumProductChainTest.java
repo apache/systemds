@@ -26,7 +26,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -102,15 +101,7 @@ public class SumProductChainTest extends AutomatedTestBase
 	private void testSumProductChain(String testname, boolean vectors, boolean sparse, boolean rewrites, ExecType instType)
 	{	
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		ExecMode platformOld = setExecMode(instType);
 		
 		try
 		{
@@ -125,7 +116,7 @@ public class SumProductChainTest extends AutomatedTestBase
 					"-args", input("X"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			//generate input data
 			int cols = vectors ? cols1 : cols2;
@@ -134,7 +125,7 @@ public class SumProductChainTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("X", X, true);
 			
 			//run tests
-			runTest(true, false, null, -1); 
+			runTest(true, false, null, -1);
 			runRScript(true); 
 			
 			//compare matrices 
@@ -146,13 +137,12 @@ public class SumProductChainTest extends AutomatedTestBase
 						|| heavyHittersContainsSubString("sp_spoofCell"));
 		}
 		finally {
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrites;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
-	}	
+	}
 
 	/**
 	 * Override default configuration with custom test configuration to ensure

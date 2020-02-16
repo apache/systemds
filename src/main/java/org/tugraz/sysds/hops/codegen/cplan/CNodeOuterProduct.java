@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +24,7 @@ package org.tugraz.sysds.hops.codegen.cplan;
 import java.util.ArrayList;
 
 import org.tugraz.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.tugraz.sysds.lops.MMTSJ;
 import org.tugraz.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -50,10 +53,22 @@ public class CNodeOuterProduct extends CNodeTpl
 			+ "}\n";
 	
 	private OutProdType _type = null;
+
+	public MMTSJ.MMTSJType getMMTSJtype() {
+		return _mmtsj;
+	}
+
+	MMTSJ.MMTSJType _mmtsj;
+
 	private boolean _transposeOutput = false;
 	
-	public CNodeOuterProduct(ArrayList<CNode> inputs, CNode output ) {
+	public CNodeOuterProduct(ArrayList<CNode> inputs, CNode output, MMTSJ.MMTSJType mmtsj) {
 		super(inputs,output);
+		_mmtsj = mmtsj;
+
+		// In case of a self transpose we need to add a duplicate input
+		if(_mmtsj != MMTSJ.MMTSJType.NONE)
+			_inputs.add(1,inputs.get(1));
 	}
 	
 	@Override
@@ -138,7 +153,7 @@ public class CNodeOuterProduct extends CNodeTpl
 
 	@Override
 	public CNodeTpl clone() {
-		return new CNodeOuterProduct(_inputs, _output);
+		return new CNodeOuterProduct(_inputs, _output, _mmtsj);
 	}
 	
 	@Override

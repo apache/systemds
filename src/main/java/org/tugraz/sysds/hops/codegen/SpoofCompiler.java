@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -70,6 +72,7 @@ import org.tugraz.sysds.hops.rewrite.ProgramRewriteStatus;
 import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
 import org.tugraz.sysds.hops.rewrite.RewriteCommonSubexpressionElimination;
 import org.tugraz.sysds.hops.rewrite.RewriteRemoveUnnecessaryCasts;
+import org.tugraz.sysds.lops.MMTSJ;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.ForStatement;
 import org.tugraz.sysds.parser.ForStatementBlock;
@@ -602,10 +605,12 @@ public class SpoofCompiler
 			hnew = new SpoofFusedOp(hop.getName(), hop.getDataType(), hop.getValueType(), 
 					tmpCla.getValue(), false, tmpCNode.getOutputDimType());
 			Hop[] inHops = tmpCla.getKey();
-			for( int i=0; i<inHops.length; i++ ) {
-				if( tmpCNode instanceof CNodeOuterProduct 
+
+			for(int i=0; i<inHops.length; i++) {
+				if(tmpCNode instanceof CNodeOuterProduct
 					&& inHops[i].getHopID()==((CNodeData)tmpCNode.getInput().get(2)).getHopID()
-					&& !TemplateUtils.hasTransposeParentUnderOuterProduct(inHops[i]) ) {
+					&& (!TemplateUtils.hasTransposeParentUnderOuterProduct(inHops[i]) ||
+						(((CNodeOuterProduct) tmpCNode).getMMTSJtype() == MMTSJ.MMTSJType.LEFT))) {
 					hnew.addInput(HopRewriteUtils.createTranspose(inHops[i]));
 				}
 				else

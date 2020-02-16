@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,8 +43,9 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	}
 	
 	public void addInput(CNode in) {
-		//check for duplicate entries or literals
-		if( containsInput(in) || in.isLiteral() )
+		// check for duplicate entries or literals
+		// Note: this duplicate check is circumvented for tsmm based outer products (see CNodeOuterProduct constructor)
+		if(containsInput(in) || in.isLiteral())
 			return;
 		
 		_inputs.add(in);

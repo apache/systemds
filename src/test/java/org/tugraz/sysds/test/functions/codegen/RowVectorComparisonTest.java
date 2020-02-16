@@ -26,7 +26,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -79,17 +78,17 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testCodegenRowComparison4() {
-		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );	
+		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );
 	}
 	
 	@Test
 	public void testCodegenRowComparison5() {
-		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );	
+		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );
 	}
 	
 	@Test
 	public void testCodegenRowComparison6() {
-		testCodegenIntegration( TEST_NAME6, false, ExecType.CP );	
+		testCodegenIntegration( TEST_NAME6, false, ExecType.CP );
 	}
 	
 	@Test	
@@ -109,32 +108,24 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testCodegenRowComparisonRewrite4() {
-		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );	
+		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );
 	}
 	
 	@Test
 	public void testCodegenRowComparisonRewrite5() {
-		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );	
+		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );
 	}
 	
 	@Test
 	public void testCodegenRowComparisonRewrite6() {
-		testCodegenIntegration( TEST_NAME6, true, ExecType.CP );	
+		testCodegenIntegration( TEST_NAME6, true, ExecType.CP );
 	}
 	
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		ExecMode platformOld = setExecMode(instType);
 		
 		try
 		{
@@ -146,7 +137,7 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain", "-stats", "-args", output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
@@ -161,13 +152,12 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 					|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
-	}	
+	}
 
 	/**
 	 * Override default configuration with custom test configuration to ensure

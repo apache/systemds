@@ -26,7 +26,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -60,107 +59,107 @@ public class MultiAggTmplTest extends AutomatedTestBase
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAggRewrite1CP() {
 		testCodegenIntegration( TEST_NAME1, true, ExecType.CP );
 	}
 
-	@Test	
+	@Test
 	public void testCodegenMultiAgg1CP() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.CP );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAgg1Spark() {
 		testCodegenIntegration( TEST_NAME1, false, ExecType.SPARK );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAggRewrite2CP() {
 		testCodegenIntegration( TEST_NAME2, true, ExecType.CP );
 	}
 
-	@Test	
+	@Test
 	public void testCodegenMultiAgg2CP() {
 		testCodegenIntegration( TEST_NAME2, false, ExecType.CP );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAgg2Spark() {
 		testCodegenIntegration( TEST_NAME2, false, ExecType.SPARK );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAggRewrite3CP() {
 		testCodegenIntegration( TEST_NAME3, true, ExecType.CP );
 	}
 
-	@Test	
+	@Test
 	public void testCodegenMultiAgg3CP() {
 		testCodegenIntegration( TEST_NAME3, false, ExecType.CP );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAgg3Spark() {
 		testCodegenIntegration( TEST_NAME3, false, ExecType.SPARK );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAggRewrite4CP() {
 		testCodegenIntegration( TEST_NAME4, true, ExecType.CP );
 	}
 
-	@Test	
+	@Test
 	public void testCodegenMultiAgg4CP() {
 		testCodegenIntegration( TEST_NAME4, false, ExecType.CP );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAgg4Spark() {
 		testCodegenIntegration( TEST_NAME4, false, ExecType.SPARK );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAggRewrite5CP() {
 		testCodegenIntegration( TEST_NAME5, true, ExecType.CP );
 	}
 
-	@Test	
+	@Test
 	public void testCodegenMultiAgg5CP() {
 		testCodegenIntegration( TEST_NAME5, false, ExecType.CP );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAgg5Spark() {
 		testCodegenIntegration( TEST_NAME5, false, ExecType.SPARK );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAggRewrite6CP() {
 		testCodegenIntegration( TEST_NAME6, true, ExecType.CP );
 	}
 
-	@Test	
+	@Test
 	public void testCodegenMultiAgg6CP() {
 		testCodegenIntegration( TEST_NAME6, false, ExecType.CP );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAgg6Spark() {
 		testCodegenIntegration( TEST_NAME6, false, ExecType.SPARK );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAggRewrite7CP() {
 		testCodegenIntegration( TEST_NAME7, true, ExecType.CP );
 	}
 
-	@Test	
+	@Test
 	public void testCodegenMultiAgg7CP() {
 		testCodegenIntegration( TEST_NAME7, false, ExecType.CP );
 	}
 	
-	@Test	
+	@Test
 	public void testCodegenMultiAgg7Spark() {
 		testCodegenIntegration( TEST_NAME7, false, ExecType.SPARK );
 	}
@@ -168,16 +167,8 @@ public class MultiAggTmplTest extends AutomatedTestBase
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		ExecMode platformOld = rtplatform;
-		switch( instType ) {
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		ExecMode platformOld = setExecMode(instType);
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
@@ -188,7 +179,7 @@ public class MultiAggTmplTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
@@ -203,13 +194,12 @@ public class MultiAggTmplTest extends AutomatedTestBase
 					|| heavyHittersContainsSubString("sp_spoofMA"));
 		}
 		finally {
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
-	}	
+	}
 
 	/**
 	 * Override default configuration with custom test configuration to ensure

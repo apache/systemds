@@ -16,22 +16,14 @@
 #
 #-------------------------------------------------------------
 
-def logic_comparator(list_a, list_b, attributes):
-    result = [int(x) == y for (x, y) in zip(list_a, list_b)]
-    counter = 0
-    for item in result:
-        if item:
-            counter = counter + 1
-    return counter == attributes
-
-
 class Node:
+    error: float
     name: ""
     attributes: []
     parents: []
     children: []
     size: int
-    l2_error: float
+    loss: float
     score: float
     e_max: float
     s_upper: int
@@ -40,48 +32,78 @@ class Node:
     c_upper: float
     e_max_upper: float
 
-    def __init__(self, enc, model, complete_x, complete_y, f_l2, x_size, x_test, y_test):
+    def __init__(self, all_features, model, complete_x, loss, x_size, y_test, preds):
+        self.error = loss,
         self.parents = []
         self.attributes = []
         self.size = 0
         self.score = 0
-        self.enc = enc
         self.model = model
         self.complete_x = complete_x
-        self.complete_y = complete_y
-        self.f_l2 = f_l2
+        self.loss = 0
         self.x_size = x_size
-        self.x_test = x_test
+        self.preds = preds
         self.y_test = y_test
-        self.all_features = enc.get_feature_names()
+        self.all_features = all_features
 
     def calc_c_upper(self, w):
-        upper_score = w * (self.e_upper / self.s_lower) / (self.f_l2 / self.x_size) + (1 - w) * self.s_upper
+        upper_score = w * (self.e_upper / self.s_lower) / (float(self.error) / self.x_size) + (1 - w) * self.s_upper
         return float(upper_score)
-
-    def eval_c_upper(self, w):
-        upper_score = w * (self.e_max_upper / (self.f_l2 / self.x_size)) + (1 - w) * self.s_upper
-        return upper_score
 
     def make_slice_mask(self):
         mask = []
-        attributes_indexes = []
         for feature in self.attributes:
-            attributes_indexes.append(feature[1])
-        i = 0
-        while i < len(list(self.all_features)):
-            if i in attributes_indexes:
-                mask.append(1)
-            else:
-                mask.append(-1)
-            i = i + 1
+            mask.append(feature[1])
         return mask
 
-    def make_slice(self):
+    def process_slice(self, loss_type):
         mask = self.make_slice_mask()
-        subset = list(filter(lambda row: logic_comparator(list(row[1]), mask, len(self.attributes)) == True,
-                                                                                            self.complete_x))
-        return subset
+        if loss_type == 0:
+            self.calc_l2(mask)
+        if loss_type == 1:
+            self.calc_class(mask)
+
+    def calc_class(self, mask):
+        self.e_max = 1
+        size = 0
+        mistakes = 0
+        for row in self.complete_x:
+            flag = True
+            for attr in mask:
+                if row[1][attr] == 0:
+                    flag = False
+            if flag:
+                size = size + 1
+                if self.y_test[row[0]][1] != self.preds[row[0]][1]:
+                    mistakes = mistakes + 1
+        self.size = size
+        if size != 0:
+            self.loss = mistakes / size
+        else:
+            self.loss = 0
+        self.e_upper = self.loss
+
+    def calc_l2(self, mask):
+        max_tuple_error = 0
+        sum_error = 0
+        size = 0
+        for row in self.complete_x:
+            flag = True
+            for attr in mask:
+                if row[1][attr] == 0:
+                    flag = False
+            if flag:
+                size = size + 1
+                if float(self.preds[row[0]][1]) > max_tuple_error:
+                    max_tuple_error = float(self.preds[row[0]][1])
+                sum_error = sum_error + float(self.preds[row[0]][1])
+        self.e_max = max_tuple_error
+        self.e_upper = max_tuple_error
+        if size != 0:
+            self.loss = sum_error/size
+        else:
+            self.loss = 0
+        self.size = size
 
     def calc_s_upper(self, cur_lvl):
         cur_min = self.parents[0].size
@@ -119,6 +141,13 @@ class Node:
             prev_e_uppers.append(parent.e_upper)
         return float(min(prev_e_uppers))
 
+    def calc_bounds(self, cur_lvl, w):
+        self.s_upper = self.calc_s_upper(cur_lvl)
+        self.s_lower = self.calc_s_lower(cur_lvl)
+        self.e_upper = self.calc_e_upper()
+        self.e_max_upper = self.calc_e_max_upper(cur_lvl)
+        self.c_upper = self.calc_c_upper(w)
+
     def make_name(self):
         name = ""
         for attribute in self.attributes:
@@ -129,19 +158,8 @@ class Node:
     def make_key(self, new_id):
         return new_id, self.name
 
-    def calc_l2_error(self, subset):
-        fi_l2 = 0
-        for i in range(0, len(subset)):
-            fi_l2_sample = (self.model.predict(subset[i][1].reshape(1, -1)) - self.complete_y[subset[i][0]][1]) ** 2
-            fi_l2 = fi_l2 + float(fi_l2_sample)
-        if len(subset) > 0:
-            fi_l2 = fi_l2 / len(subset)
-        else:
-            fi_l2 = 0
-        return float(fi_l2)
-
     def print_debug(self, topk, level):
-        print("new node has been added: " + self.make_name() + "\n")
+        print("new node has been created: " + self.make_name() + "\n")
         if level >= 1:
             print("s_upper = " + str(self.s_upper))
             print("s_lower = " + str(self.s_lower))
@@ -150,5 +168,7 @@ class Node:
         print("size = " + str(self.size))
         print("score = " + str(self.score))
         print("current topk min score = " + str(topk.min_score))
+        print("-------------------------------------------------------------------------------------")
+core))
         print("-------------------------------------------------------------------------------------")
 

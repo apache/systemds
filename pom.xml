@@ -887,6 +887,46 @@
 			</build>
 		</profile>
 
+		<!-- Profile to make standalone jar file for execution-->
+		<profile>
+			<id>standalone</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>3.2.0</version>
+						<configuration>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+							<finalName>SystemDS-StandAlone</finalName>
+							<archive>
+								<manifest>
+									<mainClass>org.tugraz.sysds.api.DMLScript</mainClass>
+								</manifest>
+							</archive>
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
+						<executions>
+							<execution>
+								<id>make-assembly</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+			<dependencies>
+				<dependency>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-all</artifactId>
+					<version>4.0.42.Final</version>
+				</dependency>
+			</dependencies>
+		</profile>
 
 	</profiles>
 

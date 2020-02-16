@@ -20,6 +20,12 @@
 
 package org.tugraz.sysds.runtime.matrix.data;
 
+import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_BINARY;
+import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_CSV;
+import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_LIBSVM;
+import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
+import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_TEXT;
+
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -139,6 +145,20 @@ public class OutputInfo implements Serializable
 			return DataExpression.FORMAT_TYPE_VALUE_BINARY;
 		else
 			return "specialized";
+	}
+	
+	public static OutputInfo outputInfoFromStringExternal(String format) {
+		if (format.equalsIgnoreCase(FORMAT_TYPE_VALUE_TEXT))
+			return OutputInfo.TextCellOutputInfo;
+		else if (format.equalsIgnoreCase(FORMAT_TYPE_VALUE_BINARY))
+			return OutputInfo.BinaryBlockOutputInfo;
+		else if (format.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET))
+			return OutputInfo.MatrixMarketOutputInfo;
+		else if (format.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM))
+			return OutputInfo.LIBSVMOutputInfo;
+		else if (format.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV))
+			return OutputInfo.CSVOutputInfo;
+		throw new DMLRuntimeException("Invalid external file format: "+format);
 	}
 	
 	@Override 

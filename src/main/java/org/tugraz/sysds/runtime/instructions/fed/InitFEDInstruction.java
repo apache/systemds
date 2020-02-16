@@ -145,9 +145,14 @@ public class InitFEDInstruction extends FEDInstruction {
 			if (port.equals("-1"))
 				port = DMLConfig.DEFAULT_FEDERATED_PORT;
 			String filePath = address.getPath();
-			if (filePath.length() == 0)
+			if (filePath.length() <= 1)
 				throw new IllegalArgumentException("Missing File path for federated address");
-
+			// Remove the first character making the path Dynamic from the location of the worker.
+			// This is in contrast to before where it was static paths
+			filePath = filePath.substring(1);
+			// To make static file paths use double "//" EG:
+			// example.dom//staticFile.txt
+			// example.dom/dynamicFile.txt 
 			if (address.getQuery() != null)
 				throw new IllegalArgumentException("Query is not supported");
 

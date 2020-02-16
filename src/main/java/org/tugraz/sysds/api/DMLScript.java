@@ -150,21 +150,19 @@ public class DMLScript
 	/**
 	 *
 	 * @param args command-line arguments
-	 * @throws IOException if an IOException occurs
+	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
 	public static void main(String[] args)
 		throws IOException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		
 		try {
 			DMLScript.executeScript(conf, otherArgs);
-		} catch (ParseException pe) {
-			System.err.println(pe.getMessage());
-		} catch (DMLScriptException e){
+		}
+		catch (ParseException | DMLScriptException e) {
 			// In case of DMLScriptException, simply print the error message.
-			System.err.println(e.getMessage());
+			
 		}
 	}
 
@@ -216,8 +214,8 @@ public class DMLScript
 				return true;
 			}
 			
-			if( dmlOptions.fedWorker ) {
-				startFederatedWorker(dmlOptions.fedWorkerPort);
+			if (dmlOptions.fedWorker) {
+				new FederatedWorker(dmlOptions.fedWorkerPort).run();
 				return true;
 			}
 			
@@ -539,18 +537,7 @@ public class DMLScript
 			throw new DMLException("Failed to run SystemDS workspace cleanup.", ex);
 		}
 	}
-	
-	private static void startFederatedWorker(int port) {
-		try {
-			new FederatedWorker(port).run();
-		} catch (ParseException e) {
-			System.err.println("-w flag should be followed by valid port number");
-		}
-		catch (Exception e) {
-			System.err.println(e.getMessage());
-		}
-	}
-	
+
 	public static ExecMode getGlobalExecMode() {
 		return EXEC_MODE;
 	}

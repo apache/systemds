@@ -153,6 +153,7 @@ SYSTEMDS-190 New Builtin Functions III
  * 196 Builtin function intersect (set intersection)                  OK
  * 197 Builtin function for functional dependency discovery           OK
  * 198 Extended slice finding (classification)                        OK
+ * 199 Builtin function Multinominal Logistic Regression Predict      OK
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK

@@ -73,7 +73,7 @@ public class FederatedWorker {
 			f.channel().closeFuture().sync();
 		}
 		catch (InterruptedException e) {
-			log.error("Federated worker interrupted", e);
+			log.error("Federated worker interrupted");
 		}
 		finally {
 			log.info("Federated Worker Shutting down.");

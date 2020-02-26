@@ -95,11 +95,17 @@ public class OutputInfo implements Serializable
 	public static OutputInfo stringToOutputInfo (String str) {
 		if ( str.equalsIgnoreCase("textcell"))
 			return TextCellOutputInfo;
+		if ( str.equalsIgnoreCase("text"))
+			return TextCellOutputInfo;
 		else if ( str.equalsIgnoreCase("matrixmarket"))
+			return MatrixMarketOutputInfo;
+		else if ( str.equalsIgnoreCase("mm"))
 			return MatrixMarketOutputInfo;
 		else if ( str.equalsIgnoreCase("binarycell"))
 			return BinaryCellOutputInfo;
 		else if (str.equalsIgnoreCase("binaryblock"))
+			return BinaryBlockOutputInfo;
+		else if (str.equalsIgnoreCase("binary"))
 			return BinaryBlockOutputInfo;
 		else if (str.equalsIgnoreCase("binarytensorblock"))
 			return BinaryTensorBlockOutputInfo;

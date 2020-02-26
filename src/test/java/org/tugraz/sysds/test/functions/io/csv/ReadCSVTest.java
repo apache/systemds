@@ -36,6 +36,7 @@ import org.tugraz.sysds.test.TestUtils;
  *
  */
 
+@net.jcip.annotations.NotThreadSafe
 public class ReadCSVTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME = "ReadCSVTest";

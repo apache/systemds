@@ -30,98 +30,87 @@ import org.tugraz.sysds.test.TestUtils;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static java.lang.Thread.sleep;
-
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class FederatedConstructionTest extends AutomatedTestBase {
-	
+
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME = "FederatedConstructionTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedConstructionTest.class.getSimpleName() + "/";
-	
-	private final static int port = 1222;
+
 	private int blocksize = 1024;
 	private int rows, cols;
-	
+
 	public FederatedConstructionTest(int rows, int cols) {
+
 		this.rows = rows;
 		this.cols = cols;
 	}
-	
+
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		Object[][] data = new Object[][] {{1, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}};
 		return Arrays.asList(data);
 	}
-	
+
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
-	
+
 	@Test
 	public void federatedConstructionCP() {
 		federatedConstruction(Types.ExecMode.SINGLE_NODE);
 	}
-	
+
 	@Test
 	public void federatedConstructionSP() {
 		federatedConstruction(Types.ExecMode.SPARK);
 	}
-	
+
 	public void federatedConstruction(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
-		
+
 		Thread t = null;
-		try {
-			getAndLoadTestConfiguration(TEST_NAME);
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			
-			// FIXME thread is not stopped
-			// empty script name because we don't execute any script, just start the worker
-			fullDMLScriptName = "";
-			programArgs = new String[] {"-w", Integer.toString(port)};
-			
-			// write input matrix
-			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
-			writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
-			t = new Thread(() -> runTest(true, false, null, -1));
-			t.start();
-			sleep(FED_WORKER_WAIT);
-			
-			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
-			loadTestConfiguration(config);
-			
-			// we need the reference file to not be written to hdfs, so we get the correct format
-			rtplatform = Types.ExecMode.SINGLE_NODE;
-			// Run reference dml script with normal matrix
-			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-args", input("A"), expected("B")};
-			runTest(true, false, null, -1);
-			
-			// reference file should not be written to hdfs
-			rtplatform = execMode;
-			if (rtplatform == Types.ExecMode.SPARK) {
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			}
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "-args", "\"localhost:" + port + "/" + input("A") + "\"",
-					Integer.toString(rows), Integer.toString(cols), Integer.toString(rows * 2), output("B")};
-			
-			runTest(true, false, null, -1);
-			// compare via files
-			compareResults(1e-12);
+
+		getAndLoadTestConfiguration(TEST_NAME);
+		String HOME = SCRIPT_DIR + TEST_DIR;
+
+		// write input matrix
+		double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+
+		int port = getRandomAvailablePort();
+		t = startLocalFedWorker(port);
+
+		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
+		loadTestConfiguration(config);
+
+		// we need the reference file to not be written to hdfs, so we get the correct format
+		rtplatform = Types.ExecMode.SINGLE_NODE;
+		// Run reference dml script with normal matrix
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		programArgs = new String[] {"-args", input("A"), expected("B")};
+		runTest(true, false, null, -1);
+
+		// reference file should not be written to hdfs
+		rtplatform = execMode;
+		if(rtplatform == Types.ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
-		catch (InterruptedException e) {
-			e.printStackTrace();
-			assert (false);
-		}
-		finally {
-			TestUtils.shutdownThread(t);
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-		}
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
+			Integer.toString(cols), Integer.toString(rows * 2), output("B")};
+
+		runTest(true, false, null, -1);
+		// compare via files
+		compareResults(1e-12);
+
+		TestUtils.shutdownThread(t);
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+
 	}
 }

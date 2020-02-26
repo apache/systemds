@@ -53,6 +53,7 @@ import org.tugraz.sysds.utils.JSONHelper;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -132,15 +133,17 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
 			try (FileSystem fs = IOUtilFunctions.getFileSystem(mtdname)) {
-				try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-					JSONObject mtd = JSONHelper.parse(br);
-					if (mtd == null)
-						return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
-					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
-					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-					String format = mtd.getString(DataExpression.FORMAT_TYPE);
-					oi = OutputInfo.stringToOutputInfo(format);
-					ii = OutputInfo.getMatchingInputInfo(oi);
+				try(Reader resource = new InputStreamReader(fs.open(path))){
+					try(BufferedReader br = new BufferedReader(resource)){
+						JSONObject mtd = JSONHelper.parse(br);
+						if (mtd == null)
+							return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
+						mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
+						mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
+						String format = mtd.getString(DataExpression.FORMAT_TYPE);
+						oi = OutputInfo.stringToOutputInfo(format);
+						ii = OutputInfo.getMatchingInputInfo(oi);
+					}	
 				}
 			}
 		}

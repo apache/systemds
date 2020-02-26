@@ -35,6 +35,7 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class CSVParametersTest extends AutomatedTestBase 
 {
 	

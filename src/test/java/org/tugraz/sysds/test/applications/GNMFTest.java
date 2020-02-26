@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -52,11 +52,15 @@ public class GNMFTest extends AutomatedTestBase
 	}
 	
 	@Parameters
-	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { { 100, 50, 5 }, { 2000, 1500, 50 }, { 7000, 1500, 50 }};
-	   return Arrays.asList(data);
-	 }
-	 
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] { 
+			{ 100, 50, 5 }, // ~4 sec
+			{ 2000, 1500, 50 }, 
+			{ 7000, 1500, 50 } // ~25 sec
+		};
+		return Arrays.asList(data);
+	}
+	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);

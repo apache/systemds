@@ -127,8 +127,7 @@ public abstract class AutomatedTestBase
 						);
 			}
 
-
-		    // Need to muck around with the classloader to get it to use the new
+			// Need to muck around with the classloader to get it to use the new
 			// value of java.library.path.
 			try {
 				final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
@@ -218,7 +217,6 @@ public abstract class AutomatedTestBase
 
 
 	private boolean isOutAndExpectedDeletionDisabled = false;
-	private long lTimeBeforeTest = 0;
 
 	private String expectedStdOut;
 	private int iExpectedStdOutState = 0;
@@ -277,7 +275,7 @@ public abstract class AutomatedTestBase
 		expectedFiles = new ArrayList<>();
 		outputDirectories = new String[0];
 		setOutAndExpectedDeletionDisabled(false);
-		lTimeBeforeTest = System.currentTimeMillis();
+		// lTimeBeforeTest = System.currentTimeMillis();
 
 		TestUtils.clearAssertionInformation();
 	}
@@ -906,7 +904,7 @@ public abstract class AutomatedTestBase
 			
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 
-			System.out.printf("This test case will use SystemDS config file %s\n", getCurConfigFile());
+			// System.out.printf("This test case will use SystemDS config file %s\n", getCurConfigFile());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -1463,7 +1461,7 @@ public abstract class AutomatedTestBase
 
 	@After
 	public void tearDown() {
-		System.out.println("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
+		// System.out.println("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
 
 
 		assertTrue("expected String did not occur: " + expectedStdOut, iExpectedStdOutState == 0

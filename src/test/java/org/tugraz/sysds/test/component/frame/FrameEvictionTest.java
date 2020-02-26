@@ -38,6 +38,7 @@ import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
+@net.jcip.annotations.NotThreadSafe
 public class FrameEvictionTest extends AutomatedTestBase
 {
 	private final static int rows = 1593;

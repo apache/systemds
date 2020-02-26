@@ -33,7 +33,7 @@ import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.utils.Explain;
 
-
+@net.jcip.annotations.NotThreadSafe
 public class CLIOptionsParserTest {
 
 	@Test(expected = MissingOptionException.class)

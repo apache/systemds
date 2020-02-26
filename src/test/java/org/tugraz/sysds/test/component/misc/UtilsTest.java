@@ -19,7 +19,6 @@
 
 package org.tugraz.sysds.test.component.misc;
 
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -30,11 +29,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * To test utility functions scattered throughout the codebase
  */
 public class UtilsTest {
+
+	// start logging environment to avoid multiple loggers.
+	protected static final Log LOG = LogFactory.getLog(UtilsTest.class.getName());
 
 	@Test
 	public void testParseListString0() {
@@ -48,35 +52,35 @@ public class UtilsTest {
 
 	@Test
 	public void testParseListString2() {
-		Assert.assertEquals(Arrays.asList(0,1,2,3), GPUContextPool.parseListString("-1", 4));
+		Assert.assertEquals(Arrays.asList(0, 1, 2, 3), GPUContextPool.parseListString("-1", 4));
 	}
 
 	@Test
 	public void testParseListString3() {
-		Assert.assertEquals(Arrays.asList(0,1,2,3), GPUContextPool.parseListString("0,1,2,3", 6));
+		Assert.assertEquals(Arrays.asList(0, 1, 2, 3), GPUContextPool.parseListString("0,1,2,3", 6));
 	}
 
 	@Test
 	public void testParseListString4() {
-		Assert.assertEquals(Arrays.asList(0,1,2,3), GPUContextPool.parseListString("0-3", 6));
+		Assert.assertEquals(Arrays.asList(0, 1, 2, 3), GPUContextPool.parseListString("0-3", 6));
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testParseListStringFail0() {
 		GPUContextPool.parseListString("7", 4);
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testParseListStringFail1() {
 		GPUContextPool.parseListString("0,1,2,3", 2);
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testParseListStringFail2() {
 		GPUContextPool.parseListString("0,1,2,3-4", 2);
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testParseListStringFail4() {
 		GPUContextPool.parseListString("-1-4", 6);
 	}
@@ -103,18 +107,12 @@ public class UtilsTest {
 	@Test
 	public void testDMLConfig2() throws IOException {
 
-		String testStr = "<root>"
-				+ "<A>a</A>"
-				+ "<B>b</B>"
-				+ "<C>2</C>"
-				+ "<D>5</D>"
-				+ "<E>5.01</E>"
-				+ "</root>";
+		String testStr = "<root>" + "<A>a</A>" + "<B>b</B>" + "<C>2</C>" + "<D>5</D>" + "<E>5.01</E>" + "</root>";
 		File temp = File.createTempFile("tempfile", null);
-		try( BufferedWriter bw = new BufferedWriter(new FileWriter(temp)) ) {
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(temp))) {
 			bw.write(testStr);
 		}
-		
+
 		DMLConfig dmlConfig = new DMLConfig(temp.getAbsolutePath());
 
 		Assert.assertEquals("a", dmlConfig.getTextValue("A"));

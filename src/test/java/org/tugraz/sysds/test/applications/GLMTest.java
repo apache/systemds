@@ -39,6 +39,7 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class GLMTest extends AutomatedTestBase
 {
 	protected final static String TEST_DIR = "applications/glm/";

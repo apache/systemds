@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-dist: trusty
+dist: xenial
 
 language: java
 
@@ -45,8 +45,9 @@ before_script:
 #  - chmod -R 755 *
 
 script:
-#  - mvn clean verify jacoco:report coveralls:report
-  - mvn clean verify
+  #  - mvn clean verify jacoco:report coveralls:report
+  - mvn test-compile 
+  - mvn surefire:test -Dtest=org.tugraz.sysds.test.component.**
 
 after_success:
 #  -  mvn test jacoco:report coveralls:report

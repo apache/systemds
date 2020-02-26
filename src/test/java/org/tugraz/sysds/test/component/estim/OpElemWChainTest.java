@@ -132,8 +132,8 @@ public class OpElemWChainTest extends AutomatedTestBase
 				m5 = m1.aggregateBinaryOperations(m4, m3, 
 						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
-				System.out.println(m5.getSparsity());
-				System.out.println(est);
+				// System.out.println(m5.getSparsity());
+				// System.out.println(est);
 				break;
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
@@ -141,8 +141,8 @@ public class OpElemWChainTest extends AutomatedTestBase
 				m5 = m1.aggregateBinaryOperations(m4, m3, 
 						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
-				System.out.println(m5.getSparsity());
-				System.out.println(est);
+				// System.out.println(m5.getSparsity());
+				// System.out.println(est);
 				break;
 			default:
 				throw new NotImplementedException();

@@ -33,6 +33,7 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class PageRankTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "applications/page_rank/";

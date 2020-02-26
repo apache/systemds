@@ -33,6 +33,7 @@ SYSTEMDS-30 Builtin and Packaging
  * 34 Wrapper blocks for sequence files
  * 35 Replace unnecessary dependencies w/ custom
  * 36 Shell script for AWS execution                                  OK
+ * 37 Cleanup mvn package, compile, test                              OK
 
 SYSTEMDS-40 Preprocessing builtins
  * 41 Add new winsorize builtin function                              OK

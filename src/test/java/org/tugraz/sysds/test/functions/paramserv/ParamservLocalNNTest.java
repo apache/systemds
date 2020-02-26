@@ -24,6 +24,7 @@ import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 
+@net.jcip.annotations.NotThreadSafe
 public class ParamservLocalNNTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME = "paramserv-test";

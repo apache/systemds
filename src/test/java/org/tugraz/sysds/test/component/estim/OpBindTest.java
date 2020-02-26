@@ -144,16 +144,16 @@ public class OpBindTest extends AutomatedTestBase
 				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 3);
 				m1.append(m2, m3, false);
 				est = estim.estim(m1, m2, op);
-				System.out.println(est);
-				System.out.println(m3.getSparsity());
+				// System.out.println(est);
+				// System.out.println(m3.getSparsity());
 				break;
 			case CBIND:
 				m1 = MatrixBlock.randOperations(10, 130, sp[0], 1, 1, "uniform", 3);
 				m2 = MatrixBlock.randOperations(10, 70, sp[1], 1, 1, "uniform", 3);
 				m1.append(m2, m3);
 				est = estim.estim(m1, m2, op);
-				System.out.println(est);
-				System.out.println(m3.getSparsity());
+				// System.out.println(est);
+				// System.out.println(m3.getSparsity());
 				break;
 			default:
 				throw new NotImplementedException();

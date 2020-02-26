@@ -1,5 +1,7 @@
 #-------------------------------------------------------------
 #
+# Modifications Copyright 2020 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -21,7 +23,9 @@
 
 custom_install <- function(pkg) {
     if(!is.element(pkg, installed.packages()[,1])) {
- 		install.packages(pkg, repos="https://cran.cnr.berkeley.edu/");
+		# https://cran.r-project.org/mirrors.html
+		# Using Wirtschaftsuniversität Wien Mirror
+ 		install.packages(pkg, repos="https://cran.wu.ac.at/");
 	}
 } 
 

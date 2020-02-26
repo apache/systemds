@@ -46,6 +46,11 @@ conf/systemds-env.sh
 docs/_site
 docs/api
 
+# Test Artifacts
+src/test/scripts/**/*.dmlt
+src/test/scripts/functions/mlcontextin/
+.factorypath
+
 # Excluded sources
 # (we're including the generated files to simply IDE setup w/o mvn build)
 # Since the gitignore file does not ignore tracked files, the auto-generated

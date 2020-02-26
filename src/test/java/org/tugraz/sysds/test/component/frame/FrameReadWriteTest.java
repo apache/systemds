@@ -39,6 +39,7 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
+@net.jcip.annotations.NotThreadSafe
 public class FrameReadWriteTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/io/";

@@ -39,6 +39,7 @@ import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Statistics;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class ID3Test extends AutomatedTestBase
 {
 	protected final static String TEST_DIR = "applications/id3/";

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- * Modifications Copyright 2018 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -171,28 +171,6 @@
 					</filters>
 				</configuration>
 			</plugin>
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>1.8</version>
-				<executions>
-					<execution>
-						<id>add-test-source</id>
-						<phase>generate-test-sources</phase>
-						<goals>
-							<goal>add-test-source</goal>
-						</goals>
-						<configuration>
-							<sources>
-								<!-- Test suite classes kept in a separate folder for compatibility 
-									with the Eclipse JUnit test runner. -->
-								<source>${basedir}/src/test_suites/java</source>
-							</sources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -200,33 +178,6 @@
 					<source>1.8</source>
 					<target>1.8</target>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>net.alchim31.maven</groupId>
-				<artifactId>scala-maven-plugin</artifactId>
-				<version>3.2.2</version>
-				<executions>
-					<execution>
-						<id>eclipse-add-source</id>
-						<goals>
-							<goal>add-source</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>scala-compile-first</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>scala-test-compile-first</id>
-						<phase>process-test-resources</phase>
-						<goals>
-							<goal>testCompile</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -274,27 +225,6 @@
 							<outputDirectory>${basedir}/target/lib/hadoop/bin</outputDirectory>
 						</configuration>
 					</execution>
-
-					<execution>
-						<id>copy-resources-filtered</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<overwrite>true</overwrite>
-							<outputDirectory>${basedir}/target/scripts</outputDirectory>
-							<resources>
-								<resource>
-									<directory>${basedir}/src/main/resources/scripts</directory>
-									<includes>
-										<include>sparkDML.sh</include>
-									</includes>
-									<filtering>true</filtering>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
 				</executions>
 			</plugin>
 
@@ -320,40 +250,15 @@
 			<plugin> <!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.18</version><!--$NO-MVN-MAN-VER$ -->
+				<version>3.0.0-M4</version><!--$NO-MVN-MAN-VER$ -->
 				<configuration>
-					<includes>
-						<include>**/component/*.java</include>
-					</includes>
-					<excludes>
-						<exclude>**/functions/**.java</exclude>
-						<exclude>**/applications/**.java</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-
-			<plugin> <!-- integration tests -->
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
-	
-				<executions>
-					<execution>
-						<goals>
-							<goal>integration-test</goal>
-							<goal>verify</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<!-- STDERR/STDOUT to individual .txt files instead of console -->
-					<redirectTestOutputToFile>true</redirectTestOutputToFile>
-					<includes>
-						<include>**/component/*/*.java</include>
-					</includes>
-					<excludes>
-						<exclude>**/functions/**.java</exclude>
-						<exclude>**/applications/**.java</exclude>
-					</excludes>
+					<parallel>classes</parallel>
+					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
+					<threadCount>12</threadCount>
+					<!-- 1C means the number of threads times 1 posible maximum forks for testing-->
+					<forkCount>1C</forkCount> 
+					<argLine>-Xms4g -Xmx6g</argLine>
+					<reuseForks>false</reuseForks>
 				</configuration>
 			</plugin>
 
@@ -551,22 +456,6 @@
 		</profile>
 
 		<profile>
-			<id>scala-2.10</id>
-			<properties>
-				<scala.version>2.10.5</scala.version>
-				<scala.binary.version>2.10</scala.binary.version>
-			</properties>
-		</profile>
-
-		<profile>
-			<id>scala-2.11</id>
-			<properties>
-				<scala.version>2.11.8</scala.version>
-				<scala.binary.version>2.11</scala.binary.version>
-			</properties>
-		</profile>
-
-		<profile>
 			<!-- Profile for Windows builds. Not currently needed, but might be needed 
 				in the future. -->
 			<id>platform-windows</id>
@@ -634,22 +523,6 @@
 												<versionRange>[2.10,)</versionRange>
 												<goals>
 													<goal>copy-dependencies</goal>
-												</goals>
-											</pluginExecutionFilter>
-											<action>
-												<ignore>
-												</ignore>
-											</action>
-										</pluginExecution>
-										<pluginExecution>
-											<pluginExecutionFilter>
-												<groupId>net.alchim31.maven</groupId>
-												<artifactId>scala-maven-plugin</artifactId>
-												<versionRange>[3.2.2,)</versionRange>
-												<goals>
-													<goal>add-source</goal>
-													<goal>compile</goal>
-													<goal>testCompile</goal>
 												</goals>
 											</pluginExecutionFilter>
 											<action>
@@ -886,51 +759,8 @@
 				</plugins>
 			</build>
 		</profile>
-
-		<!-- Profile to make standalone jar file for execution-->
-		<profile>
-			<id>standalone</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>3.2.0</version>
-						<configuration>
-							<descriptorRefs>
-								<descriptorRef>jar-with-dependencies</descriptorRef>
-							</descriptorRefs>
-							<finalName>SystemDS-StandAlone</finalName>
-							<archive>
-								<manifest>
-									<mainClass>org.tugraz.sysds.api.DMLScript</mainClass>
-								</manifest>
-							</archive>
-							<appendAssemblyId>false</appendAssemblyId>
-						</configuration>
-						<executions>
-							<execution>
-								<id>make-assembly</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-			<dependencies>
-				<dependency>
-					<groupId>io.netty</groupId>
-					<artifactId>netty-all</artifactId>
-					<version>4.0.42.Final</version>
-				</dependency>
-			</dependencies>
-		</profile>
-
 	</profiles>
-
-
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.jcuda</groupId>
@@ -1189,46 +1019,29 @@
 			<artifactId>commons-math3</artifactId>
 			<version>3.4.1</version>
 		</dependency>
-
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.15</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.sun.jmx</groupId>
-					<artifactId>jmxri</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.sun.jdmk</groupId>
-					<artifactId>jmxtools</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>javax.jms</groupId>
-					<artifactId>jms</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
 		<dependency>
 			<groupId>org.apache.wink</groupId>
 			<artifactId>wink-json4j</artifactId>
 			<version>1.4</version>
 		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
 			<scope>provided</scope>
 		</dependency>
-
+		<dependency>
+			<!--Used for annotations in tests to execute tests in thread safe manner-->
+			<groupId>com.github.stephenc.jcip</groupId>
+			<artifactId>jcip-annotations</artifactId>
+			<version>1.0-1</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>3.2.1</version>
 		</dependency>
-
 		<!-- fast java compiler for codegen, consistent version w/ spark -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
@@ -1236,7 +1049,6 @@
 			<version>3.0.8</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>
@@ -1254,43 +1066,6 @@
 			<artifactId>antlr4-runtime</artifactId>
 			<version>${antlr.version}</version>
 		</dependency>
-
-		<!-- Libraries for yarn integration -->
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-yarn-api</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-yarn-common</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-yarn-client</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scala-library</artifactId>
-			<version>${scala.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.scala-lang</groupId>
-			<artifactId>scalap</artifactId>
-			<version>${scala.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.scalatest</groupId>
-			<artifactId>scalatest_${scala.binary.version}</artifactId>
-			<version>${scala.test.version}</version>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>org.apache.derby</groupId>
 			<artifactId>derby</artifactId>
@@ -1304,5 +1079,4 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
-
 </project>

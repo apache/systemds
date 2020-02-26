@@ -42,6 +42,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.controlprogram.Program;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
@@ -1076,6 +1077,10 @@ public class SparkExecutionContext extends ExecutionContext
 				int rows = block.getNumRows();
 				int cols = block.getNumColumns();
 				
+				//handle compressed blocks (decompress for robustness)
+				if( block instanceof CompressedMatrixBlock )
+					block = ((CompressedMatrixBlock)block).decompress();
+
 				//append block
 				if( sparse ) { //SPARSE OUTPUT
 					//append block to sparse target in order to avoid shifting, where

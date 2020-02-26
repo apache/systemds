@@ -506,11 +506,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public boolean isEmptyBlock(boolean safe)
 	{
-		boolean ret = false;
-		if( sparse && sparseBlock==null )
-			ret = true;
-		else if( !sparse && denseBlock==null ) 	
-			ret = true;
+		boolean ret = ( sparse && sparseBlock==null ) || ( !sparse && denseBlock==null );
 		if( nonZeros==0 )
 		{
 			//prevent under-estimation
@@ -812,7 +808,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	/**
 	 * Wrapper method for reduceall-product of a matrix.
 	 * 
-	 * @return ?
+	 * @return the product sum of the matrix content
 	 */
 	public double prod() {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
@@ -824,7 +820,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	/**
 	 * Wrapper method for reduceall-mean of a matrix.
 	 * 
-	 * @return ?
+	 * @return the mean value of all values in the matrix
 	 */
 	public double mean() {
 		MatrixBlock out = new MatrixBlock(1, 3, false);
@@ -836,7 +832,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	/**
 	 * Wrapper method for reduceall-min of a matrix.
 	 * 
-	 * @return ?
+	 * @return the minimum value of all values in the matrix
 	 */
 	public double min() {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
@@ -848,7 +844,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	/**
 	 * Wrapper method for reduceall-max of a matrix.
 	 * 
-	 * @return ?
+	 * @return the maximum value of all values in the matrix
 	 */
 	public double max() {
 		MatrixBlock out = new MatrixBlock(1, 1, false);

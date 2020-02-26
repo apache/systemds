@@ -34,6 +34,7 @@ import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.BinaryScalar;
 import org.tugraz.sysds.lops.CSVReBlock;
 import org.tugraz.sysds.lops.Checkpoint;
+import org.tugraz.sysds.lops.Compression;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -98,6 +99,10 @@ public abstract class Hop implements ParseInfo
 	// indicates if the output of this hop needs to be reblocked
 	// (usually this happens on persistent reads dataops)
 	protected boolean _requiresReblock = false;
+
+	// indicates if the output of this hop needs to be compressed
+	// (this happens on persistent reads after reblock but before checkpoint)
+	protected boolean _requiresCompression = false;
 	
 	// indicates if the output of this hop needs to be checkpointed (cached)
 	// (the default storage level for caching is not yet exposed here)
@@ -248,11 +253,22 @@ public abstract class Hop implements ParseInfo
 	public boolean requiresCheckpoint() {
 		return _requiresCheckpoint;
 	}
+
+	public void setRequiresCompression(boolean flag) {
+		_requiresCompression = flag;
+	}
+	
+	public boolean requiresCompression() {
+		return _requiresCompression;
+	}
 	
 	public void constructAndSetLopsDataFlowProperties() {
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
 		
+		//Step 2: construct compression lop if required
+		constructAndSetCompressionLopIfRequired();
+
 		//Step 3: construct checkpoint lop if required (output of hop or reblock)
 		constructAndSetCheckpointLopIfRequired();
 	}
@@ -341,6 +357,43 @@ public abstract class Hop implements ParseInfo
 				throw new HopsException(ex);
 			}
 		}	
+	}
+
+	private void constructAndSetCompressionLopIfRequired() 
+	{
+		//determine execution type
+		ExecType et = ExecType.CP;
+		if( OptimizerUtils.isSparkExecutionMode() 
+			&& getDataType()!=DataType.SCALAR )
+		{
+			//conditional checkpoint based on memory estimate in order to avoid unnecessary 
+			//persist and unpersist calls (4x the memory budget is conservative)
+			if(    OptimizerUtils.isHybridExecutionMode() 
+				&& 2*_outputMemEstimate < OptimizerUtils.getLocalMemBudget()
+				|| _etypeForced == ExecType.CP )
+			{
+				et = ExecType.CP;
+			}
+			else //default case
+			{
+				et = ExecType.SPARK;
+			}
+		}
+
+		//add reblock lop to output if required
+		if( _requiresCompression )
+		{
+			try
+			{
+				Lop compress = new Compression(getLops(), getDataType(), getValueType(), et);
+				setOutputDimensions( compress );
+				setLineNumbers( compress );
+				setLops( compress );
+			}
+			catch( LopsException ex ) {
+				throw new HopsException(ex);
+			}
+		}
 	}
 
 	public static Lop createOffsetLop( Hop hop, boolean repCols ) 
@@ -1628,6 +1681,7 @@ public abstract class Hop implements ParseInfo
 		_requiresRecompile = that._requiresRecompile;
 		_requiresReblock = that._requiresReblock;
 		_requiresCheckpoint = that._requiresCheckpoint;
+		_requiresCompression = that._requiresCompression;
 		_outputEmptyBlocks = that._outputEmptyBlocks;
 		
 		_beginLine = that._beginLine;

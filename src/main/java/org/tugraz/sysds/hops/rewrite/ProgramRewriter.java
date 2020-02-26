@@ -105,6 +105,7 @@ public class ProgramRewriter
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding
 				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches
 			}
+			_sbRuleSet.add(      new RewriteCompressedReblock()                  ); // Compression Rewrite
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks
  			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )

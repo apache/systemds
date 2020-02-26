@@ -45,7 +45,7 @@ IF "%SYSTEMDS_STANDALONE_OPTS%" == "" (
 set CMD=java %SYSTEMDS_STANDALONE_OPTS% ^
      -cp %CLASSPATH% ^
      -Dlog4j.configuration=file:%LOG4JPROP% ^
-     org.apache.sysml.api.DMLScript ^
+     org.tugraz.sysds.api.DMLScript ^
      -f %1 ^
      -exec singlenode ^
      -config SystemDS-config.xml ^
@@ -74,6 +74,6 @@ GOTO Msg
 :Msg
 ECHO Usage: runStandaloneSystemDS.bat ^<dml-filename^> [arguments] [-help]
 ECHO Default Java options (-Xmx4g -Xms4g -Xmn400m) can be overridden by setting SYSTEMDS_STANDALONE_OPTS.
-ECHO Script internally invokes 'java [SYSTEMDS_STANDALONE_OPTS] -cp ./lib/* -Dlog4j.configuration=file:log4j.properties org.apache.sysml.api.DMLScript -f ^<dml-filename^> -exec singlenode -config SystemDS-config.xml [arguments]'
+ECHO Script internally invokes 'java [SYSTEMDS_STANDALONE_OPTS] -cp ./lib/* -Dlog4j.configuration=file:log4j.properties org.tugraz.sysds.api.DMLScript -f ^<dml-filename^> -exec singlenode -config SystemDS-config.xml [arguments]'
 
 :End

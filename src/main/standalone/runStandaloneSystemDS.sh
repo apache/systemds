@@ -75,7 +75,7 @@ CMD="\
 java ${SYSTEMDS_STANDALONE_OPTS} \
 -cp ${CLASSPATH} \
 -Dlog4j.configuration=file:${LOG4JPROP} \
-org.apache.sysml.api.DMLScript \
+org.tugraz.sysds.api.DMLScript \
 -f ${SCRIPT_FILE} \
 -exec singlenode \
 -config $CURRENT_PATH"/SystemDS-config.xml" \

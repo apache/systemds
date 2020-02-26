@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,6 +21,7 @@
 package org.tugraz.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
+import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -46,7 +47,8 @@ public class CreateSparseBlockFunction implements Function<MatrixBlock,MatrixBlo
 	{
 		//convert given block to CSR representation if in sparse format
 		//but allow shallow pass-through if already in CSR representation. 
-		if( arg0.isInSparseFormat() && !arg0.isEmptyBlock(false) )
+		if( arg0.isInSparseFormat() && !arg0.isEmptyBlock(false) 
+			&& !(arg0 instanceof CompressedMatrixBlock) )
 			return new MatrixBlock(arg0, _stype, false);
 		else //pass through dense
 			return arg0;

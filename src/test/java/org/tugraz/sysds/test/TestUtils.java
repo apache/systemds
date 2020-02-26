@@ -613,8 +613,7 @@ public class TestUtils
 	 * 
 	 * @param v1
 	 * @param v2
-	 * @param t
-	 *            Tolerance
+	 * @param t Tolerance
 	 * @return
 	 */
 	public static boolean compareCellValue(Double v1, Double v2, double t, boolean ignoreNaN) {
@@ -630,6 +629,8 @@ public class TestUtils
 		if(AutomatedTestBase.TEST_GPU) {
 			return Math.abs(v1 - v2) <= Math.max(t, AutomatedTestBase.GPU_TOLERANCE);
 		}
+
+
 		return Math.abs(v1 - v2) <= t;
 	}
 	
@@ -639,20 +640,13 @@ public class TestUtils
 	}
 	
 	/**
-	 * <p>
 	 * Compares two matrices in array format.
-	 * </p>
 	 * 
-	 * @param expectedMatrix
-	 *            expected values
-	 * @param actualMatrix
-	 *            actual values
-	 * @param rows
-	 *            number of rows
-	 * @param cols
-	 *            number of columns
-	 * @param epsilon
-	 *            tolerance for value comparison
+	 * @param expectedMatrix expected values
+	 * @param actualMatrix actual values
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param epsilon tolerance for value comparison
 	 */
 	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
 			double epsilon) {
@@ -683,9 +677,50 @@ public class TestUtils
 	}
 	
 	public static void compareScalars(double d1, double d2, double tol) {
-		if(!compareCellValue(d1, d2, tol, false)) {
-			assertTrue("Given scalars do not match: " + d1 + " != " + d2 , false);
+		assertTrue("Given scalars do not match: " + d1 + " != " + d2 , compareCellValue(d1, d2, tol, false));	
+	}
+
+	public static void compareMatricesBit(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
+		long maxUnitsOfLeastPrecision){
+		int countErrors = 0;
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				if( !compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j], maxUnitsOfLeastPrecision)){
+					System.out.println(expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+					countErrors++;
+				}
+			}
 		}
+		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
+	}
+
+	/**
+	 * Compare two double precision floats for equality within a margin of error.
+	 *  
+	 * This can be used to compensate for inequality caused by accumulated
+	 * floating point math errors.
+	 * 
+	 * The error margin is specified in ULPs (units of least precision).
+	 * A one-ULP difference means there are no representable floats in between.
+	 * E.g. 0f and 1.4e-45f are one ULP apart. So are -6.1340704f and -6.13407f.
+	 * Depending on the number of calculations involved, typically a margin of
+	 * 1-5 ULPs should be enough.
+	 * 
+	 * @param d1 The expected value.
+	 * @param d2 The actual value.
+	 * @param maxUnitsOfLeastPrecision The maximum difference in units of least precision.
+	 * @return Whether they are equal or not.
+	 */
+	public static boolean compareScalarBits(double d1, double d2, long maxUnitsOfLeastPrecision) {
+		long expectedBits = Double.doubleToLongBits(d1) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d1) : Double.doubleToLongBits(d1);
+		long actualBits = Double.doubleToLongBits(d2) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d2) : Double.doubleToLongBits(d2);
+		long difference = expectedBits > actualBits ? expectedBits - actualBits : actualBits - expectedBits;
+		return !Double.isNaN(d1) && !Double.isNaN(d2) && difference <= maxUnitsOfLeastPrecision;
+	}
+
+	public static void compareScalarBitsJUnit(double d1, double d2, long maxUnitsOfLeastPrecision){
+
+		assertTrue("Given scalars do not match: " + d1 + " != " + d2 ,compareScalarBits(d1,d2,maxUnitsOfLeastPrecision));
 	}
 	
 	public static void compareScalars(String expected, String actual) {

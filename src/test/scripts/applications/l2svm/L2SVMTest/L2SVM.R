@@ -27,14 +27,16 @@ args <- commandArgs(TRUE)
 library("Matrix")
 
 X = readMM(paste(args[1], "X.mtx", sep=""));
-Y = readMM(paste(args[1], "Y.mtx", sep=""));
+Y = round(readMM(paste(args[1], "Y.mtx", sep="")));
 
 check_min = min(Y)
 check_max = max(Y)
 num_min = sum(Y == check_min)
 num_max = sum(Y == check_max)
-if(num_min + num_max != nrow(Y)){ 
-	print("please check Y, it should contain only 2 labels") 
+if(num_min + num_max != nrow(Y)){
+	print("please check Y, it should contain only 2 labels")
+	print(num_min,num_max)
+	stop()
 }else{
 	if(check_min != -1 | check_max != +1) 
 		Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)

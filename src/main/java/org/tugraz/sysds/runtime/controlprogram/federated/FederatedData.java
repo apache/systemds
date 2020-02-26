@@ -30,10 +30,13 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.util.concurrent.Promise;
+
+import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
+
 
 public class FederatedData {
 	private InetSocketAddress _address;
@@ -42,7 +45,9 @@ public class FederatedData {
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
 	 */
 	private long _varID = -1; // -1 is never valid since varIDs start at 0
-	
+	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
+
+
 	public FederatedData(InetSocketAddress address, String filepath) {
 		_address = address;
 		_filepath = filepath;
@@ -118,7 +123,9 @@ public class FederatedData {
 	 * @return the response
 	 */
 	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest request) {
-		EventLoopGroup workerGroup = new NioEventLoopGroup(10);
+		// Careful with the number of threads. Each thread opens connections to multiple files making resulting in 
+		// java.io.IOException: Too many open files
+		EventLoopGroup workerGroup = new NioEventLoopGroup(_nrThreads);
 		try {
 			Bootstrap b = new Bootstrap();
 			final DataRequestHandler handler = new DataRequestHandler(workerGroup);

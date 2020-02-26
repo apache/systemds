@@ -1031,26 +1031,24 @@ public abstract class AutomatedTestBase
 			// has been printed
 			//
 			child.waitFor();
-	//		Thread.sleep(30000);
 
 			try {
 				if (child.exitValue() != 0) {
-					throw new Exception("ERROR: R has ended irregularly\n" + outputR + "\nscript file: "
-							+ executionFile);
+					throw new Exception("ERROR: R has ended irregularly\n" 
+						+ outputR + "\nscript file: " + executionFile);
 				}
-			} catch (IllegalThreadStateException ie) {
-				//
+			}
+			catch (IllegalThreadStateException ie) {
 				// In UNIX JVM does not seem to be able to close threads
 				// correctly. However, give it a try, since R processed the
 				// script, therefore we can terminate the process.
-				//
 				child.destroy();
 			}
 
 			long t1 = System.nanoTime();
 			System.out.println("R is finished (in "+((double)t1-t0)/1000000000+" sec)");
-
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 			StringBuilder errorMessage = new StringBuilder();
 			errorMessage.append("failed to run script " + executionFile);

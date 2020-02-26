@@ -27,6 +27,7 @@ import java.util.List;
 import org.tugraz.sysds.common.Types.CorrectionLocationType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
@@ -225,13 +226,19 @@ public class OperationsOnMatrixValues
 		//compute output index
 		indexesOut.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
 		//perform on the value
-		return value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
+		if (value2 instanceof CompressedMatrixBlock)
+			return value2.aggregateBinaryOperations(value1, value2, valueOut, op);
+		else
+			return value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
 	public static MatrixBlock matMult(MatrixBlock value1, MatrixBlock value2,
 			MatrixBlock valueOut, AggregateBinaryOperator op) {
 		//perform on the value
-		return value1.aggregateBinaryOperations(value1, value2, valueOut, op);
+		if( value2 instanceof CompressedMatrixBlock )
+			return value2.aggregateBinaryOperations(value1, value2, valueOut, op);
+		else
+			return value1.aggregateBinaryOperations(value1, value2, valueOut, op);
 	}
 
 	@SuppressWarnings("rawtypes")

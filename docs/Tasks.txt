@@ -199,5 +199,9 @@ SYSTEMDS-260 Misc Tools
  * 261 Stable marriage algorithm                                      OK
  * 262 Data augmentation tool for data cleaning                       OK
 
+SYSTEMDS-270 Compressed Matrix Blocks
+ * 271 Reintroduce compressed matrix blocks from SystemML             OK
+ * 272 Simplify and speedup compression tests                         OK
+
 Others:
  * Break append instruction to cbind and rbind 

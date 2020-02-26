@@ -22,6 +22,7 @@ package org.tugraz.sysds.runtime.instructions.cp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.functionobjects.Multiply;
 import org.tugraz.sysds.runtime.functionobjects.Plus;
@@ -68,7 +69,8 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		
 		//compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
-		MatrixBlock ret = matBlock1.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
+		MatrixBlock main = (matBlock2 instanceof CompressedMatrixBlock) ? matBlock2 : matBlock1;
+		MatrixBlock ret = main.aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op);
 		
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName());

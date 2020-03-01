@@ -31,6 +31,7 @@ class Node:
     e_upper: float
     c_upper: float
     e_max_upper: float
+    key: ""
 
     def __init__(self, all_features, model, complete_x, loss, x_size, y_test, preds):
         self.error = loss,
@@ -43,11 +44,13 @@ class Node:
         self.loss = 0
         self.x_size = x_size
         self.preds = preds
+        self.s_lower = 1
         self.y_test = y_test
         self.all_features = all_features
+        self.key = ''
 
     def calc_c_upper(self, w):
-        upper_score = w * (self.e_upper / self.s_lower) / (float(self.error) / self.x_size) + (1 - w) * self.s_upper
+        upper_score = w * (self.e_upper / self.s_lower) / (float(self.error[0]) / self.x_size) + (1 - w) * self.s_upper
         return float(upper_score)
 
     def make_slice_mask(self):
@@ -129,10 +132,7 @@ class Node:
     def calc_s_lower(self, cur_lvl):
         size_value = self.x_size
         for parent in self.parents:
-            if cur_lvl == 1:
-                size_value = size_value - (self.x_size - parent.size)
-            else:
-                size_value = size_value - (self.x_size - parent.s_lower)
+            size_value = size_value - (self.x_size - parent.s_lower)
         return max(size_value, 1)
 
     def calc_e_upper(self):
@@ -158,6 +158,12 @@ class Node:
     def make_key(self, new_id):
         return new_id, self.name
 
+    def check_constraint(self, top_k, x_size, alpha):
+        return self.score >= top_k.min_score and self.size >= x_size / alpha
+
+    def check_bounds(self, top_k, x_size, alpha):
+        return self.s_upper >= x_size / alpha and self.c_upper >= top_k.min_score
+
     def print_debug(self, topk, level):
         print("new node has been created: " + self.make_name() + "\n")
         if level >= 1:
@@ -169,6 +175,3 @@ class Node:
         print("score = " + str(self.score))
         print("current topk min score = " + str(topk.min_score))
         print("-------------------------------------------------------------------------------------")
-core))
-        print("-------------------------------------------------------------------------------------")
-

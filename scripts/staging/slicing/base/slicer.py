@@ -30,7 +30,7 @@ def opt_fun(fi, si, f, x_size, w):
 
 
 # slice_name_nonsense function defines if combination of nodes on current level is fine or impossible:
-# there is dependency between common nodes' common attributes number and current level is such that:
+# there is a dependency between common nodes' attributes number and current level is such that:
 # commons == cur_lvl - 1
 # valid combination example: node ABC + node BCD (on 4th level) // three attributes nodes have two common attributes
 # invalid combination example: node ABC + CDE (on 4th level) // result node - ABCDE (absurd for 4th level)
@@ -46,10 +46,6 @@ def slice_name_nonsense(node_i, node_j, cur_lvl):
 def union(lst1, lst2):
     final_list = sorted(set(list(lst1) + list(lst2)))
     return final_list
-
-
-def check_for_slicing(node, topk, x_size, alpha):
-    return node.s_upper >= x_size / alpha and node.c_upper >= topk.min_score
 
 
 # alpha is size significance coefficient (required for optimization function)
@@ -79,7 +75,7 @@ def process(all_features, model, complete_x, loss, x_size, y_test, errors, debug
         first_level.append(new_node)
         new_node.print_debug(top_k, 0)
         # constraints for 1st level nodes to be problematic candidates
-        if new_node.score > 1 and new_node.size >= x_size / alpha:
+        if new_node.check_constraint(top_k, x_size, alpha):
             # this method updates top k slices if needed
             top_k.add_new_top_slice(new_node)
         counter = counter + 1
@@ -121,15 +117,20 @@ def process(all_features, model, complete_x, loss, x_size, y_test, errors, debug
                         all_nodes[new_node.key[1]] = new_node
                         # check if concrete data should be extracted or not (only for those that have score upper
                         # big enough and if size of subset is big enough
-                        to_slice = check_for_slicing(new_node, top_k, x_size, alpha)
+                        to_slice = new_node.check_bounds(top_k, x_size, alpha)
                         if to_slice:
                             new_node.process_slice(loss_type)
                             new_node.score = opt_fun(new_node.loss, new_node.size, loss, x_size, w)
                             # we decide to add node to current level nodes (in order to make new combinations
                             # on the next one or not basing on its score value
-                            if new_node.score >= top_k.min_score:
+                            if new_node.check_constraint(top_k, x_size, alpha) and new_node.key not in top_k.keys:
                                 cur_lvl_nodes.append(new_node)
                                 top_k.add_new_top_slice(new_node)
+                            elif new_node.check_bounds(top_k, x_size, alpha):
+                                cur_lvl_nodes.append(new_node)
+                        else:
+                            if new_node.check_bounds(top_k, x_size, alpha):
+                                cur_lvl_nodes.append(new_node)
                         if debug:
                             new_node.print_debug(top_k, cur_lvl)
         print("Level " + str(cur_lvl + 1) + " had " + str(len(levels[cur_lvl - 1]) * (len(levels[cur_lvl - 1]) - 1)) +
@@ -141,4 +142,3 @@ def process(all_features, model, complete_x, loss, x_size, y_test, errors, debug
     print()
     print("Selected slices are: ")
     top_k.print_topk()
-

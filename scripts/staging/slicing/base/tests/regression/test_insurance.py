@@ -1,3 +1,21 @@
+#-------------------------------------------------------------
+#
+# Copyright 2020 Graz University of Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
@@ -46,5 +64,15 @@ for pred in preds:
 # verbose option is for returning debug info while creating slices and printing it
 # k is number of top-slices we want
 # w is a weight of error function significance (1 - w) is a size significance propagated into optimization function
-slicer.process(all_features, model, complete_x, f_l2, x_size, y_test, errors, debug=True, alpha=5, k=10,
-               w=0.5, loss_type=0)
+
+# enumerator <union>/<join> indicates an approach of next level slices combination process:
+# in case of <join> in order to create new node of current level slicer
+# combines only nodes of previous layer with each other
+# <union> case implementation is based on DPSize algorithm
+enumerator = "union"
+if enumerator == "join":
+    slicer.process(all_features, model, complete_x, f_l2, x_size, y_test, errors, debug=True, alpha=5, k=10,
+                   w=0.5, loss_type=0)
+elif enumerator == "union":
+    union_slicer.process(all_features, model, complete_x, f_l2, x_size, y_test, errors, debug=True, alpha=5, k=10,
+                   w=0.5, loss_type=0)

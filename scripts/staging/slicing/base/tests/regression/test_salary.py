@@ -64,6 +64,21 @@ for pred in preds:
 # verbose option is for returning debug info while creating slices and printing it
 # k is number of top-slices we want
 # w is a weight of error function significance (1 - w) is a size significance propagated into optimization function
+<<<<<<< HEAD:scripts/staging/slicing/base/tests/regression/test_salary.py
 slicer.process(all_features, model, complete_x, f_l2, x_size, y_test, errors, debug=True, alpha=4, k=10, w=0.5,
                loss_type=0)
 
+=======
+
+# enumerator <union>/<join> indicates an approach of next level slices combination process:
+# in case of <join> in order to create new node of current level slicer
+# combines only nodes of previous layer with each other
+# <union> case implementation is based on DPSize algorithm
+enumerator = "union"
+if enumerator == "join":
+    slicer.process(all_features, model, complete_x, f_l2, x_size, y_test, errors, debug=True, alpha=4, k=10, w=0.5,
+               loss_type=0)
+elif enumerator == "union":
+    union_slicer.process(all_features, model, complete_x, f_l2, x_size, y_test, errors, debug=True, alpha=4, k=10, w=0.5,
+               loss_type=0)
+>>>>>>> [SYSTEMDS-xxx] Alternative slice enumeration algorithm:scripts/staging/slicing/base/tests/regression/test_salary.py

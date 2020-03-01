@@ -20,10 +20,12 @@ class Topk:
     k: int
     min_score: float
     slices: []
+    keys: []
 
     def __init__(self, k):
         self.k = k
         self.slices = []
+        self.keys = []
         self.min_score = 1
 
     def top_k_min_score(self):
@@ -35,12 +37,16 @@ class Topk:
         self.min_score = new_top_slice.score
         if len(self.slices) < self.k:
             self.slices.append(new_top_slice)
+            self.keys.append(new_top_slice.key)
             return self.top_k_min_score()
         else:
             self.slices[len(self.slices) - 1] = new_top_slice
+            self.keys[len(self.slices) - 1] = new_top_slice.key
             return self.top_k_min_score()
 
     def print_topk(self):
         for candidate in self.slices:
+            print(candidate.name + ": " + "score = " + str(candidate.score) + "; size = " + str(candidate.size))
+
             print(candidate.name + ": " + "score = " + str(candidate.score) + "; size = " + str(candidate.size))
 

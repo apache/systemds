@@ -27,15 +27,20 @@ import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.OpOpN;
+import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.hops.AggBinaryOp;
+import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
+import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.parser.DataExpression;
@@ -250,6 +255,12 @@ public class LineageItemUtils {
 							operands.put(item.getId(), unary);
 							break;
 						}
+						case Reorg: {
+							Hop input = operands.get(item.getInputs()[0].getId());
+							Hop reorg = HopRewriteUtils.createReorg(input, ReOrgOp.TRANS);
+							operands.put(item.getId(), reorg);
+							break;
+						}
 						case Binary: {
 							//handle special cases of binary operations 
 							String opcode = ("^2".equals(item.getOpcode()) 
@@ -259,6 +270,13 @@ public class LineageItemUtils {
 							Hop input2 = operands.get(item.getInputs()[1].getId());
 							Hop binary = HopRewriteUtils.createBinary(input1, input2, opcode);
 							operands.put(item.getId(), binary);
+							break;
+						}
+						case AggregateBinary: {
+							Hop input1 = operands.get(item.getInputs()[0].getId());
+							Hop input2 = operands.get(item.getInputs()[1].getId());
+							Hop aggbinary = HopRewriteUtils.createMatrixMultiply(input1, input2);
+							operands.put(item.getId(), aggbinary);
 							break;
 						}
 						case Ternary: {
@@ -334,6 +352,62 @@ public class LineageItemUtils {
 		}
 		
 		item.setVisited();
+	}
+
+	public static void constructLineageFromHops(Hop root, String claName) {
+		//probe existence and only generate lineage if non-existing
+		//(a fused operator might be used in multiple places of a program)
+		if( LineageCodegenItem.getCodegenLTrace(claName) == null ) {
+			//recursively construct lineage for fused operator
+			Map<Long, LineageItem> operands = new HashMap<>();
+			root.resetVisitStatus(); // ensure non-visited
+			rConstructLineageFromHops(root, operands);
+			
+			//cache to avoid reconstruction
+			LineageCodegenItem.setCodegenLTrace(claName, operands.get(root.getHopID()));
+		}
+	}
+
+	public static void rConstructLineageFromHops(Hop root, Map<Long, LineageItem> operands) {
+		if (root.isVisited())
+			return;
+
+		for (int i = 0; i < root.getInput().size(); i++) 
+			rConstructLineageFromHops(root.getInput().get(i), operands);
+	
+		if ((root instanceof DataOp) && (((DataOp)root).getDataOpType() == DataOpTypes.TRANSIENTREAD)) {
+			LineageItem li = new LineageItem(root.getName(), "InputPlaceholder", "Create"+String.valueOf(root.getHopID()));
+			operands.put(root.getHopID(), li);
+			return;
+		}
+
+		LineageItem li = null;
+		ArrayList<LineageItem> LIinputs = new ArrayList<>();
+		root.getInput().forEach(input->LIinputs.add(operands.get(input.getHopID())));
+		String name = Dag.getNextUniqueVarname(root.getDataType());
+		
+		if (root instanceof ReorgOp)
+			li = new LineageItem(name, "r'", LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		else if (root instanceof AggBinaryOp)
+			li = new LineageItem(name, "ba+*", LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		else if (root instanceof BinaryOp)
+			li = new LineageItem(name, Binary.getOpcode(Hop.HopsOpOp2LopsB.get(((BinaryOp)root).getOp())),
+				LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		
+		else if (root instanceof LiteralOp) {  //TODO: remove redundancy
+			StringBuilder sb = new StringBuilder(root.getName());
+			sb.append(Instruction.VALUETYPE_PREFIX);
+			sb.append(root.getDataType().toString());
+			sb.append(Instruction.VALUETYPE_PREFIX);
+			sb.append(root.getValueType().toString());
+			sb.append(Instruction.VALUETYPE_PREFIX);
+			sb.append(true); //isLiteral = true
+			li = new LineageItem(root.getName(), sb.toString());
+		}
+		//TODO: include all the other hops
+		operands.put(root.getHopID(), li);
+		
+		root.setVisited();
 	}
 	
 	private static Hop constructIndexingOp(LineageItem item, Map<Long, Hop> operands) {
@@ -436,6 +510,35 @@ public class LineageItemUtils {
 		current.setVisited();
 	}
 	
+	public static void replaceDagLeaves(ExecutionContext ec, LineageItem root, CPOperand[] newLeaves) {
+		LineageItem[] newLIleaves = LineageItemUtils.getLineage(ec, newLeaves);
+		HashMap<String, LineageItem> newLImap = new HashMap<>();
+		for (int i=0; i<newLIleaves.length; i++)
+			newLImap.put(newLeaves[i].getName(), newLIleaves[i]);
+
+		//find and replace the old leaves
+		HashSet<LineageItem> oldLeaves = new HashSet<>();
+		root.resetVisitStatus();
+		rGetDagLeaves(oldLeaves, root);
+		for (LineageItem leaf : oldLeaves) {
+			if (leaf.getType() != LineageItemType.Literal)
+				replace(root, leaf, newLImap.get(leaf.getName()));
+		}
+	}
+
+	public static void rGetDagLeaves(HashSet<LineageItem> leaves, LineageItem root) {
+		if (root.isVisited())
+			return;
+		
+		if (root.isLeaf())
+			leaves.add(root);
+		else {
+			for (LineageItem li : root.getInputs())
+				rGetDagLeaves(leaves, li);
+		}
+		root.setVisited();
+	}
+	
 	private static Hop[] createNaryInputs(LineageItem item, Map<Long, Hop> operands) {
 		int len = item.getInputs().length;
 		Hop[] ret = new Hop[len];
@@ -502,4 +605,5 @@ public class LineageItemUtils {
 		return(CPOpInputs != null ? LineageItemUtils.getLineage(ec, 
 			CPOpInputs.toArray(new CPOperand[CPOpInputs.size()])) : null);
 	}
+	
 }

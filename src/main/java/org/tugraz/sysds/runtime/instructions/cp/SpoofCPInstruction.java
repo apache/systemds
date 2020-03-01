@@ -28,6 +28,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
+import org.tugraz.sysds.runtime.lineage.LineageCodegenItem;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 public class SpoofCPInstruction extends ComputationCPInstruction {
@@ -96,8 +97,17 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
-		return new LineageItem[]{new LineageItem(output.getName(),
-			getOpcode(), LineageItemUtils.getLineage(ec, _in))};
+	public LineageItem[] getLineageItems(ExecutionContext ec) 
+	{
+		//read and deepcopy the corresponding lineage DAG (pre-codegen)
+		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(this.getOperatorClass().getName()).deepCopy();
+
+		//replace the placeholders with original instruction inputs. 
+		LineageItemUtils.replaceDagLeaves(ec, LIroot, _in);
+
+		//replace the placeholder name with original output's name
+		LIroot.setName(output.getName());
+
+		return new LineageItem[] {LIroot};
 	}
 }

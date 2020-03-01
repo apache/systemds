@@ -1068,7 +1068,7 @@ public abstract class Hop implements ParseInfo
 		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, org.tugraz.sysds.lops.Data.OperationTypes.READ);
 	}
 
-	protected static final HashMap<Hop.OpOp2, Binary.OperationTypes> HopsOpOp2LopsB;
+	public static final HashMap<Hop.OpOp2, Binary.OperationTypes> HopsOpOp2LopsB;
 	static {
 		HopsOpOp2LopsB = new HashMap<>();
 		HopsOpOp2LopsB.put(OpOp2.PLUS, Binary.OperationTypes.ADD);

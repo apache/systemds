@@ -184,7 +184,7 @@ SYSTEMDS-220 Federated Tensors and Instructions
 
 SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool
- * 232 Lineage of code generated operators
+ * 232 Lineage of code generated operators                            OK
  * 233 Lineage cache and reuse of function results                    OK
  * 234 Lineage tracing for spark instructions                         OK
  * 235 Lineage tracing for remote-spark parfor                        OK

@@ -25,7 +25,7 @@ public class LineageItem {
 	
 	private final long _id;
 	private final String _opcode;
-	private final String _name;
+	private String _name;
 	private final String _data;
 	private final LineageItem[] _inputs;
 	private int _hash = 0;
@@ -82,6 +82,10 @@ public class LineageItem {
 	
 	public String getName() {
 		return _name;
+	}
+	
+	public void setName(String name) {
+		_name = name;
 	}
 	
 	public String getData() {
@@ -174,6 +178,16 @@ public class LineageItem {
 				_data.replace(_name, "") : _data).hashCode());
 		}
 		return _hash;
+	}
+
+	public LineageItem deepCopy() { //bottom-up
+		if (isLeaf())
+			return new LineageItem(this);
+		
+		LineageItem[] copyInputs = new LineageItem[getInputs().length];
+		for (int i=0; i<_inputs.length; i++) 
+			copyInputs[i] = _inputs[i].deepCopy();
+		return new LineageItem(_name, _opcode, copyInputs);
 	}
 	
 	public boolean isLeaf() {

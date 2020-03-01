@@ -97,6 +97,7 @@ import org.tugraz.sysds.runtime.controlprogram.Program;
 import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 import org.tugraz.sysds.utils.Explain;
 import org.tugraz.sysds.utils.Statistics;
@@ -400,7 +401,7 @@ public class SpoofCompiler
 					
 					//compile generated java source code
 					cla = CodegenUtils.compileClass("codegen."+
-							tmp.getValue().getClassname(), src);
+						tmp.getValue().getClassname(), src);
 					
 					//maintain plan cache
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
@@ -420,6 +421,7 @@ public class SpoofCompiler
 			//create modified hop dag (operator replacement and CSE)
 			if( !cplans.isEmpty() ) 
 			{
+
 				//generate final hop dag
 				ret = constructModifiedHopDag(roots, cplans, clas);
 				
@@ -557,8 +559,8 @@ public class SpoofCompiler
 		//generate cplan for existing memo table entry
 		if( memo.containsTopLevel(hop.getHopID()) ) {
 			cplans.put(hop.getHopID(), TemplateUtils
-					.createTemplate(memo.getBest(hop.getHopID()).type)
-					.constructCplan(hop, memo, compileLiterals));
+				.createTemplate(memo.getBest(hop.getHopID()).type)
+				.constructCplan(hop, memo, compileLiterals));
 			if (DMLScript.STATISTICS)
 				Statistics.incrementCodegenCPlanCompile(1);
 		}
@@ -602,6 +604,12 @@ public class SpoofCompiler
 			//replace sub-dag with generated operator
 			Pair<Hop[], Class<?>> tmpCla = clas.get(hop.getHopID());
 			CNodeTpl tmpCNode = cplans.get(hop.getHopID()).getValue();
+
+			if (DMLScript.LINEAGE) {
+				//construct and save lineage DAG from pre-modification HOP DAG
+				LineageItemUtils.constructLineageFromHops(hop, tmpCla.getValue().getName());
+			}
+
 			hnew = new SpoofFusedOp(hop.getName(), hop.getDataType(), hop.getValueType(), 
 					tmpCla.getValue(), false, tmpCNode.getOutputDimType());
 			Hop[] inHops = tmpCla.getKey();

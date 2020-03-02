@@ -77,7 +77,7 @@ public class SumTest extends AutomatedTestBase
         writeInputMatrix("vector", vector);
         writeExpectedHelperMatrix("vector_sum", vectorSum);
 
-        double[][] matrix = getRandomMatrix(rows, cols, 0, 1, 1, -1);
+        double[][] matrix = getRandomMatrix(rows, cols, -10, 10, 0.4, 7);
         double matrixSum = 0;
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {

@@ -579,7 +579,14 @@ public class UtilFunctions
 	}
 	
 	public static int[] getSortedSampleIndexes(int range, int sampleSize) {
+		return getSortedSampleIndexes(range, sampleSize, -1);
+	}
+
+	public static int[] getSortedSampleIndexes(int range, int sampleSize, long seed) {
 		RandomDataGenerator rng = new RandomDataGenerator();
+		if (seed != -1){
+			rng.reSeed(seed);
+		}
 		int[] sample = rng.nextPermutation(range, sampleSize);
 		Arrays.sort(sample);
 		return sample;

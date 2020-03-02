@@ -34,38 +34,29 @@ import org.tugraz.sysds.test.TestConstants.ValueType;
 
 public class CompressedTestBase extends AutomatedTestBase {
 
-	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {
-		SparsityType.DENSE, 
-		SparsityType.SPARSE,
+	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.DENSE, SparsityType.SPARSE,
 		// SparsityType.EMPTY
 	};
 	protected static ValueType[] usedValueTypes = new ValueType[] {
-		ValueType.RAND,
-		ValueType.CONST,
-		ValueType.RAND_ROUND_DDC,
-		ValueType.RAND_ROUND_OLE,
-	};
+		// ValueType.RAND,
+		ValueType.CONST, ValueType.RAND_ROUND_DDC, ValueType.RAND_ROUND_OLE,};
 
-	protected static ValueRange[] usedValueRanges = new ValueRange[] {
-		ValueRange.SMALL,
-		ValueRange.LARGE,
-	};
+	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL, ValueRange.LARGE,};
 
-	protected static CompressionType[] usedCompressionTypes = new CompressionType[] {
-		CompressionType.LOSSLESS,
+	protected static CompressionType[] usedCompressionTypes = new CompressionType[] {CompressionType.LOSSLESS,
 		// CompressionType.LOSSY,
 	};
 
-	protected static MatrixType[] usedMatrixType = new MatrixType[] {
-		MatrixType.SMALL,
+	protected static MatrixType[] usedMatrixType = new MatrixType[] {MatrixType.SMALL,
 		// MatrixType.LARGE,
-		MatrixType.FEW_COL,
-		MatrixType.FEW_ROW,
-		MatrixType.SINGLE_COL,
-		MatrixType.SINGLE_ROW,
+		MatrixType.FEW_COL, MatrixType.FEW_ROW,
+		// MatrixType.SINGLE_COL,
+		// MatrixType.SINGLE_ROW,
+		MatrixType.L_ROWS,
+		// MatrixType.XL_ROWS,
 	};
 
-
+	public static double[] samplingRatio = {0.05, 1.00};
 
 	protected ValueType valType;
 	protected ValueRange valRange;
@@ -79,7 +70,7 @@ public class CompressedTestBase extends AutomatedTestBase {
 	protected double sparsity;
 
 	public CompressedTestBase(SparsityType sparType, ValueType valType, ValueRange valueRange, CompressionType compType,
-		MatrixType matrixType, boolean compress) {
+		MatrixType matrixType, boolean compress, double samplingRatio) {
 		this.sparsity = TestConstants.getSparsityValue(sparType);
 		this.rows = TestConstants.getNumberOfRows(matrixType);
 		this.cols = TestConstants.getNumberOfColumns(matrixType);
@@ -114,14 +105,16 @@ public class CompressedTestBase extends AutomatedTestBase {
 
 		// Only add a single selected test of constructor with no compression
 		tests.add(new Object[] {SparsityType.SPARSE, ValueType.RAND, ValueRange.SMALL, CompressionType.LOSSLESS,
-			MatrixType.SMALL, false});
+			MatrixType.SMALL, false, 1.0});
 
 		for(SparsityType st : usedSparsityTypes) {
 			for(ValueType vt : usedValueTypes) {
 				for(ValueRange vr : usedValueRanges) {
 					for(CompressionType ct : usedCompressionTypes) {
 						for(MatrixType mt : usedMatrixType) {
-							tests.add(new Object[] {st, vt, vr, ct, mt, true});
+							for(double sr : samplingRatio) {
+								tests.add(new Object[] {st, vt, vr, ct, mt, true, sr});
+							}
 						}
 					}
 				}
@@ -145,15 +138,15 @@ public class CompressedTestBase extends AutomatedTestBase {
 
 		builder.append("args: ");
 
-		builder.append(String.format("%6s%14s","Vt:", valType));
-		builder.append(String.format("%6s%8s","Vr:" , valRange));
-		builder.append(String.format("%6s%8s","CP:" , compType));
-		builder.append(String.format("%6s%5s","CD:" , compress));
-		builder.append(String.format("%6s%5s","Rows:" , rows));
-		builder.append(String.format("%6s%5s","Cols:" , cols));
-		builder.append(String.format("%6s%12s","Min:" , min));
-		builder.append(String.format("%6s%12s","Max:" , max));
-		builder.append(String.format("%6s%4s","Spar:" , sparsity));
+		builder.append(String.format("%6s%14s", "Vt:", valType));
+		builder.append(String.format("%6s%8s", "Vr:", valRange));
+		builder.append(String.format("%6s%8s", "CP:", compType));
+		builder.append(String.format("%6s%5s", "CD:", compress));
+		builder.append(String.format("%6s%5s", "Rows:", rows));
+		builder.append(String.format("%6s%5s", "Cols:", cols));
+		builder.append(String.format("%6s%12s", "Min:", min));
+		builder.append(String.format("%6s%12s", "Max:", max));
+		builder.append(String.format("%6s%4s", "Spar:", sparsity));
 
 		return builder.toString();
 	}

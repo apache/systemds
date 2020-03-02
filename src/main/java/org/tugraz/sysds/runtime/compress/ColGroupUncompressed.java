@@ -223,7 +223,8 @@ public class ColGroupUncompressed extends ColGroup {
 		// Run through the rows, putting values into the appropriate locations
 		for(int row = 0; row < _data.getNumRows(); row++) {
 			double cellVal = _data.quickGetValue(row, colpos);
-			target.quickSetValue(row, 0, cellVal);
+			// Apparently rows are cols here.
+			target.quickSetValue(0, row, cellVal);
 		}
 	}
 
@@ -309,15 +310,15 @@ public class ColGroupUncompressed extends ColGroup {
 		// execute unary aggregate operations
 		LibMatrixAgg.aggregateUnaryMatrix(_data, ret, op);
 
-		//shift result into correct column indexes
-		if( op.indexFn instanceof ReduceRow ) {
-			//shift partial results, incl corrections
-			for( int i=_colIndexes.length-1; i>=0; i-- ) {
+		// shift result into correct column indexes
+		if(op.indexFn instanceof ReduceRow) {
+			// shift partial results, incl corrections
+			for(int i = _colIndexes.length - 1; i >= 0; i--) {
 				double val = ret.quickGetValue(0, i);
 				ret.quickSetValue(0, i, 0);
 				ret.quickSetValue(0, _colIndexes[i], val);
-				if( op.aggOp.existsCorrection() )
-					for(int j=1; j<ret.getNumRows(); j++) {
+				if(op.aggOp.existsCorrection())
+					for(int j = 1; j < ret.getNumRows(); j++) {
 						double corr = ret.quickGetValue(j, i);
 						ret.quickSetValue(j, i, 0);
 						ret.quickSetValue(j, _colIndexes[i], corr);

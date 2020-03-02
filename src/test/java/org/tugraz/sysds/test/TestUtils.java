@@ -694,6 +694,26 @@ public class TestUtils
 		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
 	}
 
+	public static void compareMatricesBitAvgDistance(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
+		long maxUnitsOfLeastPrecision, long maxAvgDistance){
+		int countErrors = 0;
+		long sumDistance = 0;
+		long distance;
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				distance = compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j]);
+				sumDistance += distance;
+				if(distance > maxUnitsOfLeastPrecision){
+					System.out.println(expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+					countErrors++;
+				}
+			}
+		}
+		long avgDistance = sumDistance / (rows * cols); 
+		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
+		assertTrue("The avg distance in bits: "+ avgDistance +" was higher than max: " + maxAvgDistance, avgDistance <= maxAvgDistance);
+	}
+
 	/**
 	 * Compare two double precision floats for equality within a margin of error.
 	 *  
@@ -708,14 +728,22 @@ public class TestUtils
 	 * 
 	 * @param d1 The expected value.
 	 * @param d2 The actual value.
-	 * @param maxUnitsOfLeastPrecision The maximum difference in units of least precision.
 	 * @return Whether they are equal or not.
 	 */
-	public static boolean compareScalarBits(double d1, double d2, long maxUnitsOfLeastPrecision) {
+	public static long compareScalarBits(double d1, double d2) {
 		long expectedBits = Double.doubleToLongBits(d1) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d1) : Double.doubleToLongBits(d1);
 		long actualBits = Double.doubleToLongBits(d2) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d2) : Double.doubleToLongBits(d2);
 		long difference = expectedBits > actualBits ? expectedBits - actualBits : actualBits - expectedBits;
-		return !Double.isNaN(d1) && !Double.isNaN(d2) && difference <= maxUnitsOfLeastPrecision;
+		return difference;
+	}
+
+	public static boolean compareScalarBits(double d1, double d2, long maxUnitsOfLeastPrecision) {
+		if (Double.isNaN(d1) || Double.isNaN(d2))
+			return false;
+		long expectedBits = Double.doubleToLongBits(d1) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d1) : Double.doubleToLongBits(d1);
+		long actualBits = Double.doubleToLongBits(d2) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d2) : Double.doubleToLongBits(d2);
+		long difference = expectedBits > actualBits ? expectedBits - actualBits : actualBits - expectedBits;
+		return difference <= maxUnitsOfLeastPrecision;
 	}
 
 	public static void compareScalarBitsJUnit(double d1, double d2, long maxUnitsOfLeastPrecision){

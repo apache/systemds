@@ -62,11 +62,13 @@ public class CompressedMatrixTest extends CompressedTestBase {
 	protected double[][] deCompressed;
 
 	public CompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange, CompressionType compType,
-		MatrixType matrixType, boolean compress) {
-		super(sparType, valType, valRange, compType, matrixType, compress);
+		MatrixType matrixType, boolean compress, double samplingRatio) {
+		super(sparType, valType, valRange, compType, matrixType, compress, samplingRatio);
 		input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7);
 		mb = getMatrixBlockInput(input);
 		cmb = new CompressedMatrixBlock(mb);
+		cmb.setSeed(1);
+		cmb.setSamplingRatio(samplingRatio);
 		if(compress) {
 			cmbResult = cmb.compress();
 		}
@@ -83,11 +85,10 @@ public class CompressedMatrixTest extends CompressedTestBase {
 				// Assert.assertTrue("Compression Failed \n" + this.toString(), false);
 			}
 
-			double epsilon = 0.0;
-
-			TestUtils.compareMatrices(input, deCompressed, rows, cols, epsilon);
+			TestUtils.compareMatricesBitAvgDistance(input, deCompressed, rows, cols, 0, 0);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -106,6 +107,7 @@ public class CompressedMatrixTest extends CompressedTestBase {
 				}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -130,9 +132,10 @@ public class CompressedMatrixTest extends CompressedTestBase {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			TestUtils.compareMatrices(d1, d2, rows, cols + 1, 0);
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, rows, cols + 1, 0, 1);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -166,12 +169,11 @@ public class CompressedMatrixTest extends CompressedTestBase {
 				// compare result with input
 				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-				TestUtils.compareMatricesBit(d1, d2, cols, 1, 50);
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, cols, 1, 512, 15);
 			}
-			// ChainType.XtXvy
-
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -194,10 +196,11 @@ public class CompressedMatrixTest extends CompressedTestBase {
 				// compare result with input
 				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-				TestUtils.compareMatricesBit(d1, d2, cols, cols, 100);
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, cols, cols, 2048, 20);
 			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -224,9 +227,10 @@ public class CompressedMatrixTest extends CompressedTestBase {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			TestUtils.compareMatricesBit(d1, d2, rows, 1, 256);
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, rows, 1, 1024, 1);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -253,9 +257,10 @@ public class CompressedMatrixTest extends CompressedTestBase {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			TestUtils.compareMatricesBit(d1, d2, 1, cols, 256);
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, 1, cols, 10000, 500);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -279,9 +284,10 @@ public class CompressedMatrixTest extends CompressedTestBase {
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 
-			TestUtils.compareMatricesBit(d1, d2, rows, cols, 150);
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, rows, cols, 150, 1);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -305,14 +311,15 @@ public class CompressedMatrixTest extends CompressedTestBase {
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 
-			TestUtils.compareMatricesBit(d1, d2, rows, cols, 150);
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, rows, cols, 150, 1);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
 
-	//TODO replace with Direction x Types.AggOp
+	// TODO replace with Direction x Types.AggOp
 	enum AggType {
 		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN,
 	}
@@ -378,10 +385,11 @@ public class CompressedMatrixTest extends CompressedTestBase {
 				int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
 					aggType == AggType.COLMINS) ? cols : 1;
 
-				TestUtils.compareMatricesBit(d1, d2, dim1, dim2, 150);
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, dim1, dim2, 1024, 20);
 			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -410,9 +418,10 @@ public class CompressedMatrixTest extends CompressedTestBase {
 			double[][] d1 = DataConverter.convertToDoubleMatrix(mb);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(tmp);
 
-			TestUtils.compareMatricesBit(d1, d2, rows, cols, 0);
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, rows, cols, 0, 0);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}

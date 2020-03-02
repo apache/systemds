@@ -21,8 +21,8 @@ package org.tugraz.sysds.test;
  */
 public class TestConstants {
 
-	private static final int rows[] = {4, 3 * 1000 + 7, 1283, 5, 1, 251, 10000, 100000};
-	private static final int cols[] = {20, 20, 13, 998, 321, 1, 30, 21};
+	private static final int rows[] = {4, 2008, 1283, 5, 1, 251, 5000, 100000, 3123};
+	private static final int cols[] = {20, 20, 13, 998, 321, 1, 30, 21, 1};
 	private static final double[] sparsityValues = {0.9, 0.1, 0.0};
 
 	private static final int[] mins = {-10, -2147};
@@ -46,8 +46,7 @@ public class TestConstants {
 		FEW_COL, // A Matrix with a large number of columns
 		SINGLE_ROW, // Single Row with some columns
 		SINGLE_COL, // Single Column with some rows
-		L_ROWS,
-		XL_ROWS,
+		L_ROWS, XL_ROWS, SINGLE_COL_L, // Single Column large.
 	}
 
 	public enum ValueRange {
@@ -111,6 +110,8 @@ public class TestConstants {
 				return rows[6];
 			case XL_ROWS:
 				return rows[7];
+			case SINGLE_COL_L:
+				return rows[8];
 			default:
 				return 0; // Never Happens
 		}
@@ -134,6 +135,8 @@ public class TestConstants {
 				return cols[6];
 			case XL_ROWS:
 				return cols[7];
+			case SINGLE_COL_L:
+				return cols[8];
 			default:
 				return 0; // Never Happens
 		}

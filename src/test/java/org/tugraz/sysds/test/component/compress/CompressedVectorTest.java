@@ -57,9 +57,8 @@ public class CompressedVectorTest extends CompressedTestBase {
 	MatrixBlock cmbDeCompressed;
 	double[][] deCompressed;
 
-	protected static MatrixType[] usedMatrixType = new MatrixType[] {
-		MatrixType.SINGLE_COL
-	};
+	protected static MatrixType[] usedMatrixType = new MatrixType[] {// types
+		MatrixType.SINGLE_COL, MatrixType.SINGLE_COL_L};
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -69,22 +68,25 @@ public class CompressedVectorTest extends CompressedTestBase {
 				for(ValueRange vr : usedValueRanges) {
 					for(CompressionType ct : usedCompressionTypes) {
 						for(MatrixType mt : usedMatrixType) {
-							tests.add(new Object[] {st, vt, vr, ct, mt, true});
+							for(double sr : samplingRatio) {
+								tests.add(new Object[] {st, vt, vr, ct, mt, true, sr});
+							}
 						}
 					}
 				}
 			}
 		}
-
 		return tests;
 	}
 
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange, CompressionType compType,
-		MatrixType matrixType, boolean compress) {
-		super(sparType, valType, valRange, compType, matrixType, compress);
+		MatrixType matrixType, boolean compress, double samplingRatio) {
+		super(sparType, valType, valRange, compType, matrixType, compress, samplingRatio);
 		input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7);
 		mb = getMatrixBlockInput(input);
 		cmb = new CompressedMatrixBlock(mb);
+		cmb.setSeed(1);
+		cmb.setSamplingRatio(samplingRatio);
 		if(compress) {
 			cmbResult = cmb.compress();
 		}
@@ -98,7 +100,6 @@ public class CompressedVectorTest extends CompressedTestBase {
 		try {
 			if(!(cmbResult instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-			
 
 			// quantile uncompressed
 			AggregateOperationTypes opType = CMOperator.getCMAggOpType(2);
@@ -109,7 +110,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 			// quantile compressed
 			double ret2 = cmb.cmOperations(cm).getRequiredResult(opType);
 			// compare result with input allowing 1 bit difference in least significant location
-			TestUtils.compareScalarBitsJUnit(ret1, ret2, 1);
+			TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
 
 		}
 		catch(Exception e) {
@@ -132,7 +133,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 			double ret2 = tmp2.pickValue(0.95);
 
 			// compare result with input
-			TestUtils.compareScalars(ret1, ret2, 0.0000001);
+			TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
 		}
 		catch(Exception e) {
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);

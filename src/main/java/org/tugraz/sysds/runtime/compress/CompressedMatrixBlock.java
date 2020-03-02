@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -125,6 +126,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	protected ArrayList<ColGroup> _colGroups = null;
 	protected CompressionStatistics _stats = null;
 	protected boolean _sharedDDC1Dict = false;
+	protected long seed = -1; // I the seed is -1 then the system used system millisecond time and class hash for
+								// seeding.
+	protected double sampling_ratio = 0.05;
 
 	/**
 	 * Constructor for building an empty Compressed Matrix block object.
@@ -173,6 +177,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	public int getNumColGroups() {
 		return _colGroups.size();
+	}
+
+	public void setSeed(long seed) {
+		this.seed = seed;
+	}
+
+	public void setSamplingRatio(double sampling_ratio) {
+		this.sampling_ratio = sampling_ratio;
 	}
 
 	/**
@@ -238,8 +250,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			.transpose(this, new MatrixBlock(numCols, numRows, sparse), k);
 
 		// construct sample-based size estimator
-		CompressedSizeEstimator bitmapSizeEstimator = CompressedSizeEstimatorFactory.getSizeEstimator(rawblock,
-			numRows);
+		CompressedSizeEstimator bitmapSizeEstimator = CompressedSizeEstimatorFactory
+			.getSizeEstimator(rawblock, numRows, seed, sampling_ratio);
 
 		// PHASE 1: Classify columns by compression type
 		// We start by determining which columns are amenable to compression
@@ -380,11 +392,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		rawblock.cleanupBlock(true, true);
 		this.cleanupBlock(true, true);
 
+		_stats.timePhase5 = time.stop();
+		int[] counts = getColGroupCounts(_colGroups);
+		LOG.info("--num col groups: " + _colGroups.size() + ", -- num input cols: " + numCols);
 		if(LOG.isDebugEnabled()) {
-			_stats.timePhase5 = time.stop();
-			int[] counts = getColGroupCounts(_colGroups);
 			LOG.debug("--compression phase 5: " + _stats.timePhase5);
-			LOG.debug("--num col groups: " + _colGroups.size());
+
 			LOG.debug("--col groups types (OLE,RLE,DDC1,DDC2,UC): " + counts[2] + "," + counts[1] + "," + counts[3]
 				+ "," + counts[4] + "," + counts[0]);
 			LOG.debug("--col groups sizes (OLE,RLE,DDC1,DDC2,UC): " + counts[7] + "," + counts[6] + "," + counts[8]
@@ -977,6 +990,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return super.chainMatrixMultOperations(v, w, out, ctype);
 		}
 
+		if(this.getNumColumns() != v.getNumRows())
+			throw new DMLRuntimeException(
+				"Dimensions mismatch on mmchain operation (" + this.getNumColumns() + " != " + v.getNumRows() + ")");
+		if(v.getNumColumns() != 1)
+			throw new DMLRuntimeException(
+				"Invalid input vector (column vector expected, but ncol=" + v.getNumColumns() + ")");
+		if(w != null && w.getNumColumns() != 1)
+			throw new DMLRuntimeException(
+				"Invalid weight vector (column vector expected, but ncol=" + w.getNumColumns() + ")");
+
 		// single-threaded mmchain of single uncompressed colgroup
 		if(isSingleUncompressedGroup()) {
 			return ((ColGroupUncompressed) _colGroups.get(0)).getData().chainMatrixMultOperations(v, w, out, ctype);
@@ -1016,12 +1039,22 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return super.chainMatrixMultOperations(v, w, out, ctype, k);
 		}
 
+		if(this.getNumColumns() != v.getNumRows())
+			throw new DMLRuntimeException(
+				"Dimensions mismatch on mmchain operation (" + this.getNumColumns() + " != " + v.getNumRows() + ")");
+		if(v.getNumColumns() != 1)
+			throw new DMLRuntimeException(
+				"Invalid input vector (column vector expected, but ncol=" + v.getNumColumns() + ")");
+		if(w != null && w.getNumColumns() != 1)
+			throw new DMLRuntimeException(
+				"Invalid weight vector (column vector expected, but ncol=" + w.getNumColumns() + ")");
+
 		// multi-threaded mmchain of single uncompressed colgroup
 		if(isSingleUncompressedGroup()) {
 			return ((ColGroupUncompressed) _colGroups.get(0)).getData().chainMatrixMultOperations(v, w, out, ctype, k);
 		}
 
-		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
+		// Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
 
 		// prepare result
 		if(out != null)
@@ -1042,8 +1075,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		}
 		leftMultByVectorTranspose(_colGroups, tmp, out, true, k);
 
-		if(LOG.isDebugEnabled())
-			LOG.debug("Compressed MMChain k=" + k + " in " + time.stop());
+		// if(LOG.isDebugEnabled())
+		// LOG.debug("Compressed MMChain k=" + k + " in " + time.stop());
 
 		return out;
 	}
@@ -1390,8 +1423,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 					tret.get(); // check for errors
 				pool.shutdown();
 			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
+			catch(InterruptedException | ExecutionException e) {
+				LOG.error(e.getMessage());
+				throw new DMLRuntimeException(e);
 			}
 
 			// post-processing
@@ -1566,7 +1600,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			// compute uncompressed column group in parallel
 			ColGroupUncompressed uc = getUncompressedColGroup();
 			if(uc != null)
-				uc.leftMultByRowVector(vector, result, k);
+				uc.leftMultByRowVector(rowVector, result, k);
 
 			// compute remaining compressed column groups in parallel
 			ExecutorService pool = CommonThreadPool.get(Math.min(colGroups.size() - ((uc != null) ? 1 : 0), k));

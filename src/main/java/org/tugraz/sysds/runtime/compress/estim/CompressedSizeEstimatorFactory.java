@@ -19,12 +19,10 @@ package org.tugraz.sysds.runtime.compress.estim;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorFactory {
-	public static final double SAMPLING_RATIO = 0.05; // conservative default
 	public static final boolean EXTRACT_SAMPLE_ONCE = true;
 
-	@SuppressWarnings("unused")
-	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, int numRows) {
-		return (SAMPLING_RATIO == 1.0) ? new CompressedSizeEstimatorExact(data) : new CompressedSizeEstimatorSample(
-			data, (int) Math.ceil(numRows * SAMPLING_RATIO));
+	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, int numRows, long seed, double sampling_ratio) {
+		return (sampling_ratio == 1.0) ? new CompressedSizeEstimatorExact(data) : new CompressedSizeEstimatorSample(
+			data, (int) Math.ceil(numRows * sampling_ratio), seed);
 	}
 }

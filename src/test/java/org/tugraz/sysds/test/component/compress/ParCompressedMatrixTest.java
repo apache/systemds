@@ -61,32 +61,14 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 
 	int k = InfrastructureAnalyzer.getLocalParallelism();
 
-	protected static MatrixType[] usedMatrixType = new MatrixType[] {MatrixType.LARGE};
-
-	@Parameters
-	public static Collection<Object[]> data() {
-		ArrayList<Object[]> tests = new ArrayList<>();
-		for(SparsityType st : usedSparsityTypes) {
-			for(ValueType vt : usedValueTypes) {
-				for(ValueRange vr : usedValueRanges) {
-					for(CompressionType ct : usedCompressionTypes) {
-						for(MatrixType mt : usedMatrixType) {
-							tests.add(new Object[] {st, vt, vr, ct, mt, true});
-						}
-					}
-				}
-			}
-		}
-
-		return tests;
-	}
-
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionType compType, MatrixType matrixType, boolean compress) {
-		super(sparType, valType, valRange, compType, matrixType, compress);
+		CompressionType compType, MatrixType matrixType, boolean compress, double samplingRatio) {
+		super(sparType, valType, valRange, compType, matrixType, compress, samplingRatio);
 		input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7);
 		mb = getMatrixBlockInput(input);
 		cmb = new CompressedMatrixBlock(mb);
+		cmb.setSeed(1);
+		cmb.setSamplingRatio(samplingRatio);
 		if(compress) {
 			cmbResult = cmb.compress(k);
 		}
@@ -103,11 +85,10 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 				// Assert.assertTrue("Compression Failed \n" + this.toString(), false);
 			}
 
-			double epsilon = 0.0;
-
-			TestUtils.compareMatrices(input, deCompressed, rows, cols, epsilon);
+			TestUtils.compareMatricesBitAvgDistance(input, deCompressed, rows, cols, 0, 0);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -126,6 +107,7 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 				}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -158,12 +140,11 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 				// compare result with input
 				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-				TestUtils.compareMatricesBit(d1, d2, cols, 1, 200);
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, cols, 1, 2048, 10);
 			}
-			// ChainType.XtXvy
-
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -186,11 +167,12 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 				// compare result with input
 				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-				// High probability that The value is off by some amount 
-				TestUtils.compareMatricesBit(d1, d2, cols, cols, 2048); 
+				// High probability that The value is off by some amount
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, cols, cols, 2048, 20);
 			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -215,13 +197,13 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			TestUtils.compareMatricesBit(d1, d2, rows, 1, 256);
+			TestUtils.compareMatricesBitAvgDistance(d1, d2, rows, 1, 256, 1);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
-
 
 	enum AggType {
 		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN,
@@ -236,45 +218,44 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 				AggregateUnaryOperator auop = null;
 				switch(aggType) {
 					case SUM:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", k);
 						break;
 					case ROWSUMS:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", k);
 						break;
 					case COLSUMS:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+", k);
 						break;
 					case SUMSQ:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", k);
 						break;
 					case ROWSUMSSQ:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", k);
 						break;
 					case COLSUMSSQ:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+", k);
 						break;
 					case MAX:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
 						break;
 					case ROWMAXS:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", k);
 						break;
 					case COLMAXS:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", k);
 						break;
 					case MIN:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin", k);
 						break;
 					case ROWMINS:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", k);
 						break;
 					case COLMINS:
-						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin",k);
+						auop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", k);
 						break;
 				}
 				// matrix-vector uncompressed
-				MatrixBlock ret1 = (MatrixBlock) mb
-					.aggregateUnaryOperations(auop, new MatrixBlock(), 1000, null, true);
+				MatrixBlock ret1 = (MatrixBlock) mb.aggregateUnaryOperations(auop, new MatrixBlock(), 1000, null, true);
 
 				// matrix-vector compressed
 				MatrixBlock ret2 = (MatrixBlock) cmb
@@ -288,10 +269,11 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 				int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
 					aggType == AggType.COLMINS) ? cols : 1;
 
-				TestUtils.compareMatricesBit(d1, d2, dim1, dim2, 200);
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, dim1, dim2, 512, 20);
 			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}

@@ -46,10 +46,16 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	private int[] _sampleRows = null;
 	private HashMap<Integer, Double> _solveCache = null;
 
-	public CompressedSizeEstimatorSample(MatrixBlock data, int sampleSize) {
+	/**
+	 * CompressedSizeEstimatorSample, samples from the input data and estimates the size of the compressed matrix.
+	 * @param data the input data sampled from
+	 * @param sampleSize size of the sampling used
+	 * @param seed Seed for the sampling of the matrix if set to -1 random seed based on system time and class hash is selected
+	 */
+	public CompressedSizeEstimatorSample(MatrixBlock data, int sampleSize, long seed) {
 		super(data);
 		// get sample of rows, incl eager extraction
-		_sampleRows = getSortedUniformSample(_numRows, sampleSize);
+		_sampleRows = getSortedUniformSample(_numRows, sampleSize, seed);
 		if(CompressedSizeEstimatorFactory.EXTRACT_SAMPLE_ONCE) {
 			MatrixBlock select = new MatrixBlock(_numRows, 1, false);
 			for(int i = 0; i < sampleSize; i++)
@@ -289,10 +295,10 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	 * @param smplSize sample size
 	 * @return sorted array of integers
 	 */
-	private static int[] getSortedUniformSample(int range, int smplSize) {
+	private static int[] getSortedUniformSample(int range, int smplSize, long seed) {
 		if(smplSize == 0)
 			return new int[] {};
-		return UtilFunctions.getSortedSampleIndexes(range, smplSize);
+		return UtilFunctions.getSortedSampleIndexes(range, smplSize, seed);
 	}
 
 	/////////////////////////////////////////////////////

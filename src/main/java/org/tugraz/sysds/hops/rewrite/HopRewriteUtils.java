@@ -1138,6 +1138,10 @@ public class HopRewriteUtils
 			&& HopRewriteUtils.isLiteralOfValue(
 				((ParameterizedBuiltinOp)hop).getParameterHop("margin"), rows?"rows":"cols");
 	}
+
+	public static boolean isRemoveEmpty(Hop hop) {
+		return isParameterBuiltinOp(hop, ParamBuiltinOp.RMEMPTY);
+	}
 	
 	public static boolean isNary(Hop hop, OpOpN type) {
 		return hop instanceof NaryOp && ((NaryOp)hop).getOp()==type;

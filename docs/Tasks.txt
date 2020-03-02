@@ -206,5 +206,8 @@ SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK
  * 272 Simplify and speedup compression tests                         OK
 
+SYSTEMDS-280 New Rewrites
+ * 281 New rewrites sum(rmEmpty), sum(table)                          OK
+
 Others:
  * Break append instruction to cbind and rbind 

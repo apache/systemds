@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -147,6 +149,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyBinaryToUnaryOperation(hop, hi, i);     //e.g., X*X -> X^2 (pow2), X+X -> X*2, (X>0)-(X<0) -> sign(X)
 			hi = canonicalizeMatrixMultScalarAdd(hi);            //e.g., eps+U%*%t(V) -> U%*%t(V)+eps, U%*%t(V)-eps -> U%*%t(V)+(-eps) 
 			hi = simplifyCTableWithConstMatrixInputs(hi);        //e.g., table(X, matrix(1,...)) -> table(X, 1)
+			hi = removeUnnecessaryCTable(hop, hi, i);            //e.g., sum(table(X, 1)) -> nrow(X) and sum(table(1, Y)) -> nrow(Y) and sum(table(X, Y)) -> nrow(X)
 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
@@ -685,6 +688,20 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						+ i + " (line "+hi.getBeginLine()+").");
 				}
 			}
+		}
+		return hi;
+	}
+
+	private static Hop removeUnnecessaryCTable( Hop parent, Hop hi, int pos ) {
+		if ( HopRewriteUtils.isAggUnaryOp(hi, AggOp.SUM) 
+			&& HopRewriteUtils.isTernary(hi.getInput().get(0), OpOp3.CTABLE)
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(0).getInput().get(2), 1.0))
+		{
+			Hop matrixInput = hi.getInput().get(0).getInput().get(0);
+			HopRewriteUtils.removeChildReference(hi, hi.getInput().get(0));
+			Hop newOpLength = new UnaryOp("length", DataType.SCALAR, ValueType.INT64, OpOp1.LENGTH, matrixInput);
+			HopRewriteUtils.replaceChildReference(parent, hi, newOpLength, pos);
+			hi = parent.getInput().get(pos);
 		}
 		return hi;
 	}
@@ -1617,34 +1634,62 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return hi;
 	}
 	
+	/* 
+	 * Eliminate RemoveEmpty for SUM, SUM_SQ, and NNZ (number of non-zeros)
+	 */
 	private static Hop removeUnnecessaryRemoveEmpty(Hop parent, Hop hi, int pos)
 	{
-		Hop hnew = null;
+		//check if SUM or SUM_SQ is computed with input rmEmpty without select vector
+		//rewrite pattern:
+		//sum(removeEmpty(target=X)) -> sum(X)
+		//rowSums(removeEmpty(target=X,margin="cols")) -> rowSums(X)
+		//colSums(removeEmpty(target=X,margin="rows")) -> colSums(X)
+		if( (HopRewriteUtils.isSum(hi) || HopRewriteUtils.isSumSq(hi))
+			&& HopRewriteUtils.isRemoveEmpty(hi.getInput().get(0))
+			&& hi.getInput().get(0).getParent().size() == 1 )
+		{
+			AggUnaryOp agg = (AggUnaryOp)hi;
+			ParameterizedBuiltinOp rmEmpty = (ParameterizedBuiltinOp) hi.getInput().get(0);
+			boolean needRmEmpty = (agg.getDirection() == Direction.Row && HopRewriteUtils.isRemoveEmpty(rmEmpty, true))
+				|| (agg.getDirection() == Direction.Col && HopRewriteUtils.isRemoveEmpty(rmEmpty, false));
+			
+			if (rmEmpty.getParameterHop("select") == null && !needRmEmpty) {
+				Hop input = rmEmpty.getTargetHop();
+				if( input != null )  {
+					HopRewriteUtils.replaceChildReference(hi, rmEmpty, input);
+					return hi; //eliminate rmEmpty
+				}
+			}
+		}
 		
+		//check if nrow is called on the output of removeEmpty
 		if( HopRewriteUtils.isUnary(hi, OpOp1.NROW)
 			&& HopRewriteUtils.isRemoveEmpty(hi.getInput().get(0), true)
 			&& hi.getInput().get(0).getParent().size() == 1 )
 		{
 			ParameterizedBuiltinOp rm = (ParameterizedBuiltinOp) hi.getInput().get(0);
 			//obtain optional select vector or input if col vector
+			//(nnz will be the same as the select vector if 
+			// the select vector is provided and it will be the same
+			// as the input if the select vector is not provided)
 			//NOTE: part of static rewrites despite size dependence for phase 
 			//ordering before rewrite for DAG splits after table/removeEmpty
 			Hop input = (rm.getParameterHop("select") != null) ?
 				rm.getParameterHop("select") :
 				(rm.getDim2() == 1) ? rm.getTargetHop() : null;
-			
+		
 			//create new expression w/o rmEmpty if applicable
 			if( input != null ) {
 				HopRewriteUtils.removeAllChildReferences(rm);
-				hnew = HopRewriteUtils.createComputeNnz(input);
+				Hop hnew = HopRewriteUtils.createComputeNnz(input);
+
+				//modify dag if nnz is called on the output of removeEmpty
+				if( hnew != null ){
+					HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
+					hi = hnew;
+					LOG.debug("Applied removeUnnecessaryRemoveEmpty (line " + hi.getBeginLine() + ")");
+				}
 			}
-		}
-		
-		//modify dag if one of the above rules applied
-		if( hnew != null ){ 
-			HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
-			hi = hnew;
-			LOG.debug("Applied removeUnnecessaryRemoveEmpty (line " + hi.getBeginLine() + ")");
 		}
 		
 		return hi;

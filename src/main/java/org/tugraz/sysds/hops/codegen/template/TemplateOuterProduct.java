@@ -134,10 +134,15 @@ public class TemplateOuterProduct extends TemplateBase {
 		Hop U = inHops2.get("_U");
 		Hop V = inHops2.get("_V");
 		LinkedList<Hop> sinHops = new LinkedList<>(inHops);
-		sinHops.remove(V); sinHops.addFirst(V);
-		sinHops.remove(U); sinHops.addFirst(U);
-		sinHops.remove(X); sinHops.addFirst(X);
-		
+
+		// order of adds and removes is important here
+		sinHops.remove(V);
+		sinHops.remove(U);
+		sinHops.remove(X);
+		sinHops.addFirst(V);
+		sinHops.addFirst(U);
+		sinHops.addFirst(X);
+
 		//construct template node
 		ArrayList<CNode> inputs = new ArrayList<>();
 		for( Hop in : sinHops )
@@ -160,7 +165,7 @@ public class TemplateOuterProduct extends TemplateBase {
 		if( tmp.containsKey(hop.getHopID()) )
 			return;
 		
-		//recursively process required childs
+		//recursively process required children
 		MemoTableEntry me = memo.getBest(hop.getHopID(), TemplateType.OUTER, TemplateType.CELL);
 		for( int i=0; i<hop.getInput().size(); i++ ) {
 			Hop c = hop.getInput().get(i);
@@ -223,10 +228,13 @@ public class TemplateOuterProduct extends TemplateBase {
 				else
 					inHops2.put("_V", hop.getInput().get(1));
 				
-				//TODO find out why we need to propagate this at all 
-				//(maybe a more generic treatment will yield the same result?)
-				if(hop instanceof AggBinaryOp)
-					mmtsj = ((AggBinaryOp) hop).checkTransposeSelf(); //determine tsmm pattern
+				/* TODO find out why we need to propagate this at all
+				 * (maybe a more generic treatment will yield the same result?)
+				 * At the moment this is needed to decide whether we need to add
+				 * a duplicate input (CNodeOuterProduct constructor) and if we
+				 * need to fill in a transpose in rConstructModifiedHopDag in SpoofCompiler.
+				 */
+				mmtsj = ((AggBinaryOp) hop).checkTransposeSelf(); //determine tsmm pattern
 
 				out = new CNodeBinary(cdata1, cdata2, BinType.DOT_PRODUCT);
 			}

@@ -25,6 +25,7 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
@@ -37,8 +38,10 @@ import org.tugraz.sysds.test.TestUtils;
 public class LineageCodegenTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "LineageCodegen1"; //rand - matrix result
-	
+	protected static final String TEST_NAME1 = "LineageCodegenTrace"; //rand - matrix result
+	protected static final String TEST_NAME2 = "CodegenReuse1"; 
+	protected static final String TEST_NAME3 = "CodegenReuse2"; 
+
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageCodegenTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
@@ -50,14 +53,26 @@ public class LineageCodegenTest extends AutomatedTestBase {
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}) );
 	}
 	
 	@Test
-	public void testLineageTraceExec1() {
-		testLineageTraceExec(TEST_NAME1);
+	public void testCodegenLineageTrace() {  //Tracing of spoof instruction
+		testLineageTrace(TEST_NAME1);
+	}
+
+	@Test
+	public void testCodegenReuse1() {  //Cache hit
+		testLineageTrace(TEST_NAME2);
+	}
+
+	@Test
+	public void testCodegenReuse2() {  //Cache miss
+		testLineageTrace(TEST_NAME3);
 	}
 	
-	private void testLineageTraceExec(String testname) {
+	private void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
@@ -70,7 +85,9 @@ public class LineageCodegenTest extends AutomatedTestBase {
 			List<String> proArgs = new ArrayList<>();
 			
 			proArgs.add("-explain");
+			proArgs.add("-stats");
 			proArgs.add("-lineage");
+			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			proArgs.add(String.valueOf(numRecords));

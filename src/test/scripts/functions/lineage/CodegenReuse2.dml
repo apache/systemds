@@ -21,7 +21,12 @@ U = matrix( 4, rows=4000, cols=10)
 V = matrix( 5, rows=2000, cols=10)
 while(FALSE){}
 eps = 0.1
-R= t(t(U) %*% (X/(U%*%t(V)+eps)))
+R1 = t(t(U) %*% (X/(U%*%t(V)+eps)))
+
+while(FALSE){}
+eps = 0.2;                           #generate cache miss
+R2 = t(t(U) %*% (X/(U%*%t(V)+eps)))  #cache miss
+R = R1 + R2;
 
 write(R, $1)
 

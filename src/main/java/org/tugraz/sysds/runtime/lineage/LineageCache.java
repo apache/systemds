@@ -316,7 +316,8 @@ public class LineageCache {
 				|| inst.getOpcode().equalsIgnoreCase("groupedagg")
 				|| inst.getOpcode().equalsIgnoreCase("r'")
 				|| (inst.getOpcode().equalsIgnoreCase("append") && isVectorAppend(inst, ec))
-				|| inst.getOpcode().equalsIgnoreCase("solve");
+				|| inst.getOpcode().equalsIgnoreCase("solve")
+				|| inst.getOpcode().contains("spoof");
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
@@ -380,7 +381,8 @@ public class LineageCache {
 	private static double getRecomputeEstimate(Instruction inst, ExecutionContext ec) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		double nflops = 0;
-		CPType cptype = CPInstructionParser.String2CPInstructionType.get(inst.getOpcode());
+		String instop= inst.getOpcode().contains("spoof") ? "spoof" : inst.getOpcode();
+		CPType cptype = CPInstructionParser.String2CPInstructionType.get(instop);
 		//TODO: All other relevant instruction types.
 		switch (cptype)
 		{
@@ -497,6 +499,12 @@ public class LineageCache {
 				double s2 = OptimizerUtils.getSparsity(r2, c2, nnz2);
 				boolean rsparse = MatrixBlock.evalSparseFormatInMemory(r2, c2, nnz2);
 				nflops = 1.0 * ((lsparse ? r1*c1*s1 : r1*c1) + (rsparse ? r2*c2*s2 : r2*c2));
+				break;
+			}
+			
+			case SpoofFused:  //spoof
+			{
+				nflops = 0; //FIXME: this method will be deprecated
 				break;
 			}
 

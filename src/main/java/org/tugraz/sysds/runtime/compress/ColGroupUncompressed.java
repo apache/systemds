@@ -300,7 +300,7 @@ public class ColGroupUncompressed extends ColGroup {
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {
 		// execute scalar operations
-		MatrixBlock retContent = (MatrixBlock) _data.scalarOperations(op, new MatrixBlock());
+		MatrixBlock retContent = _data.scalarOperations(op, new MatrixBlock());
 		// construct new uncompressed column group
 		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
 	}

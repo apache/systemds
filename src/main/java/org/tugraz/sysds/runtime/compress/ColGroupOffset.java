@@ -472,12 +472,12 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	}
 
 	protected class ZeroValueIterator implements Iterator<Integer> {
-		private final boolean[] _zeros;
+		private final boolean[] _zeroVect;
 		private final int _ru;
 		private int _rpos;
 
 		public ZeroValueIterator(int rl, int ru) {
-			_zeros = computeZeroIndicatorVector();
+			_zeroVect = computeZeroIndicatorVector();
 			_ru = ru;
 			_rpos = rl - 1;
 			getNextValue();
@@ -499,7 +499,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 			do {
 				_rpos++;
 			}
-			while(_rpos < _ru && !_zeros[_rpos]);
+			while(_rpos < _ru && !_zeroVect[_rpos]);
 		}
 	}
 

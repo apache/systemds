@@ -57,7 +57,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 	MatrixBlock cmbDeCompressed;
 	double[][] deCompressed;
 
-	protected static MatrixType[] usedMatrixType = new MatrixType[] {// types
+	protected static MatrixType[] usedMatrixTypeLocal = new MatrixType[] {// types
 		MatrixType.SINGLE_COL, MatrixType.SINGLE_COL_L};
 
 	@Parameters
@@ -67,7 +67,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 			for(ValueType vt : usedValueTypes) {
 				for(ValueRange vr : usedValueRanges) {
 					for(CompressionType ct : usedCompressionTypes) {
-						for(MatrixType mt : usedMatrixType) {
+						for(MatrixType mt : usedMatrixTypeLocal) {
 							for(double sr : samplingRatio) {
 								tests.add(new Object[] {st, vt, vr, ct, mt, true, sr});
 							}
@@ -125,11 +125,11 @@ public class CompressedVectorTest extends CompressedTestBase {
 	public void testQuantile() {
 		try {
 			// quantile uncompressed
-			MatrixBlock tmp1 = (MatrixBlock) mb.sortOperations(null, new MatrixBlock());
+			MatrixBlock tmp1 = mb.sortOperations(null, new MatrixBlock());
 			double ret1 = tmp1.pickValue(0.95);
 
 			// quantile compressed
-			MatrixBlock tmp2 = (MatrixBlock) cmb.sortOperations(null, new MatrixBlock());
+			MatrixBlock tmp2 = cmb.sortOperations(null, new MatrixBlock());
 			double ret2 = tmp2.pickValue(0.95);
 
 			// compare result with input

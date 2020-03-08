@@ -23,14 +23,14 @@ package org.tugraz.sysds.lops;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.OutputParameters.Format;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -51,7 +51,7 @@ public class DataGen extends Lop
 	private String baseDir;
 	
 	private HashMap<String, Lop> _inputParams;
-	DataGenMethod method;
+	private final OpOpDG _op;
 	
 	/**
 	 * <p>Creates a new Rand-LOP. The target identifier has to hold the dimensions of the new random object.</p>
@@ -64,12 +64,12 @@ public class DataGen extends Lop
 	 * @param vt Value type
 	 * @param et Execution type
 	 */
-	public DataGen(DataGenMethod mthd, DataIdentifier id, HashMap<String, Lop> 
+	public DataGen(OpOpDG op, DataIdentifier id, HashMap<String, Lop> 
 		inputParametersLops, String baseDir, DataType dt, ValueType vt, ExecType et)
 	{
 		super(Type.DataGen, dt, vt);
-		method = mthd;
-				
+		_op = op;
+		
 		for (Lop lop : inputParametersLops.values()) {
 			this.addInput(lop);
 			lop.addOutput(this);
@@ -80,12 +80,12 @@ public class DataGen extends Lop
 		init(id, baseDir, et);
 	}
 
-	public DataGenMethod getDataGenMethod() {
-		return method;
+	public OpOpDG getDataGenMethod() {
+		return _op;
 	}
 	
 	public void init(DataIdentifier id, String baseDir, ExecType et) {
-		getOutputParameters().setFormat(Format.BINARY);
+		getOutputParameters().setFormat(FileFormat.BINARY);
 		getOutputParameters().setBlocked(true);
 		// TODO size for tensor
 		getOutputParameters().setNumRows(id.getDim1());
@@ -101,10 +101,8 @@ public class DataGen extends Lop
 	 * passed from piggybacking as the function argument <code>output</code>. 
 	 */
 	@Override
-	public String getInstructions(String output)
-	{
-		switch( method ) 
-		{
+	public String getInstructions(String output) {
+		switch( _op ) {
 			case RAND:
 				return getRandInstructionCPSpark(output);
 			case SINIT:
@@ -115,9 +113,8 @@ public class DataGen extends Lop
 				return getSampleInstructionCPSpark(output);
 			case TIME:
 				return getTimeInstructionCP(output);
-				
 			default:
-				throw new LopsException("Unknown data generation method: " + method);
+				throw new LopsException("Unknown data generation method: " + _op);
 		}
 	}
 	
@@ -130,8 +127,8 @@ public class DataGen extends Lop
 	private String getRandInstructionCPSpark(String output) 
 	{
 		//sanity checks
-		if ( method != DataGenMethod.RAND )
-			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		if ( _op != OpOpDG.RAND )
+			throw new LopsException("Invalid instruction generation for data generation method " + _op);
 		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length - 2 && // tensor
 				getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length - 1 ) { // matrix
 			throw new LopsException(printErrorLocation() + "Invalid number of operands (" 
@@ -213,8 +210,8 @@ public class DataGen extends Lop
 
 	private String getSInitInstructionCPSpark(String output) 
 	{
-		if ( method != DataGenMethod.SINIT )
-			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		if ( _op != OpOpDG.SINIT )
+			throw new LopsException("Invalid instruction generation for data generation method " + _op);
 		
 		//prepare instruction parameters
 		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS);
@@ -254,8 +251,8 @@ public class DataGen extends Lop
 	}
 	
 	private String getSampleInstructionCPSpark(String output) {
-		if ( method != DataGenMethod.SAMPLE )
-			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		if ( _op != OpOpDG.SAMPLE )
+			throw new LopsException("Invalid instruction generation for data generation method " + _op);
 		
 		//prepare instruction parameters
 		Lop lsize = _inputParams.get(DataExpression.RAND_ROWS.toString());
@@ -276,8 +273,8 @@ public class DataGen extends Lop
 	
 	private String getTimeInstructionCP(String output)
 	{
-		if (method != DataGenMethod.TIME )
-			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		if (_op != OpOpDG.TIME )
+			throw new LopsException("Invalid instruction generation for data generation method " + _op);
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
@@ -295,8 +292,8 @@ public class DataGen extends Lop
 	 * @return cp instruction for seq
 	 */
 	private String getSeqInstructionCPSpark(String output) {
-		if ( method != DataGenMethod.SEQ )
-			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		if ( _op != OpOpDG.SEQ )
+			throw new LopsException("Invalid instruction generation for data generation method " + _op);
 		
 		StringBuilder sb = new StringBuilder( );
 		ExecType et = getExecType();
@@ -340,7 +337,7 @@ public class DataGen extends Lop
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(method.toString());
+		sb.append(_op.toString());
 		sb.append(" ; num_rows=" + getOutputParameters().getNumRows());
 		sb.append(" ; num_cols=" + getOutputParameters().getNumCols());
 		sb.append(" ; nnz=" + getOutputParameters().getNnz());

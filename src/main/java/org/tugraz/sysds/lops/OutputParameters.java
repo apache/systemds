@@ -19,6 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
+import org.tugraz.sysds.common.Types.FileFormat;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
@@ -30,10 +31,6 @@ import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 public class OutputParameters 
 {
-	public enum Format {
-		TEXT, BINARY, MM, CSV, LIBSVM
-	}
-
 	private boolean _blocked = true;
 	private long _num_rows = -1;
 	private long _num_cols = -1;
@@ -43,7 +40,7 @@ public class OutputParameters
 	private String _file_name = null;
 	private String _file_label = null;
 
-	Format matrix_format = Format.BINARY;
+	FileFormat matrix_format = FileFormat.BINARY;
 	
 	public String getFile_name() {
 		return _file_name;
@@ -93,11 +90,11 @@ public class OutputParameters
 		_blocksize = input._blocksize;
 	}
 	
-	public Format getFormat() {
+	public FileFormat getFormat() {
 		return matrix_format;
 	}
 
-	public void setFormat(Format fmt) {
+	public void setFormat(FileFormat fmt) {
 		matrix_format = fmt;
 	}
 
@@ -105,28 +102,23 @@ public class OutputParameters
 		return _blocked;
 	}
 
-	public void setBlocked(boolean blocked)
-	{
+	public void setBlocked(boolean blocked) {
 		_blocked = blocked;
 	}
 	
-	public long getNumRows()
-	{
+	public long getNumRows() {
 		return _num_rows;
 	}
 	
-	public void setNumRows(long rows)
-	{
+	public void setNumRows(long rows) {
 		_num_rows = rows;
 	}
 	
-	public long getNumCols()
-	{
+	public long getNumCols() {
 		return _num_cols;
 	}
 	
-	public void setNumCols(long cols)
-	{
+	public void setNumCols(long cols) {
 		_num_cols = cols;
 	}
 	
@@ -134,8 +126,7 @@ public class OutputParameters
 		return _nnz;
 	}
 	
-	public void setNnz(long nnz)
-	{
+	public void setNnz(long nnz) {
 		_nnz = nnz;
 	}
 	
@@ -143,8 +134,7 @@ public class OutputParameters
 		return _updateType;
 	}
 	
-	public void setUpdateType(UpdateType update)
-	{
+	public void setUpdateType(UpdateType update) {
 		_updateType = update;
 	}
 

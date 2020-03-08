@@ -27,8 +27,6 @@ import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
@@ -40,6 +38,8 @@ import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpDG;
+import org.tugraz.sysds.common.Types.OpOpData;
 
 /**
  * This rewrite identifies binary operations with constant matrices 
@@ -87,9 +87,9 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 			return;
 		
 		for( Hop root : roots )
-			if( root instanceof DataOp && ((DataOp)root).getDataOpType()==DataOpTypes.TRANSIENTWRITE
+			if( root instanceof DataOp && ((DataOp)root).getOp()==OpOpData.TRANSIENTWRITE
 			   && root.getInput().get(0) instanceof DataGenOp
-			   && ((DataGenOp)root.getInput().get(0)).getOp()==DataGenMethod.RAND
+			   && ((DataGenOp)root.getInput().get(0)).getOp()==OpOpDG.RAND
 			   && ((DataGenOp)root.getInput().get(0)).hasConstantValue(1.0)) 
 			{
 				mOnes.put(root.getName(),root.getInput().get(0));

@@ -29,11 +29,11 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
@@ -493,7 +493,7 @@ public class FunctionCallGraph
 			for( Hop root : sb.getHops() ) {
 				ret |= HopRewriteUtils.isUnary(root, OpOp1.PRINT)
 					|| HopRewriteUtils.isNary(root, OpOpN.PRINTF)
-					|| HopRewriteUtils.isData(root, DataOpTypes.PERSISTENTWRITE)
+					|| HopRewriteUtils.isData(root, OpOpData.PERSISTENTWRITE)
 					|| root instanceof FunctionOp;
 			}
 		}

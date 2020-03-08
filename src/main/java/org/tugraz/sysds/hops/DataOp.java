@@ -22,6 +22,8 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -45,11 +47,11 @@ import java.util.Map.Entry;
  */
 public class DataOp extends Hop 
 {
-	private DataOpTypes _dataop;
+	private OpOpData _op;
 	private String _fileName = null;
 	
 	//read dataop properties
-	private FileFormatTypes _inFormat = FileFormatTypes.TEXT;
+	private FileFormat _inFormat = FileFormat.TEXT;
 	private long _inBlocksize = -1;
 	
 	private boolean _recompileRead = true;
@@ -82,10 +84,10 @@ public class DataOp extends Hop
 	 * @param nnz number of non-zeros
 	 * @param blen rows/cols per block
 	 */
-	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
+	public DataOp(String l, DataType dt, ValueType vt, OpOpData dop,
 			String fname, long dim1, long dim2, long nnz, int blen) {
 		super(l, dt, vt);
-		_dataop = dop;
+		_op = dop;
 		
 		_fileName = fname;
 		setDim1(dim1);
@@ -93,11 +95,11 @@ public class DataOp extends Hop
 		setBlocksize(blen);
 		setNnz(nnz);
 		
-		if( dop == DataOpTypes.TRANSIENTREAD )
-			setInputFormatType(FileFormatTypes.BINARY);
+		if( dop == OpOpData.TRANSIENTREAD )
+			setInputFormatType(FileFormat.BINARY);
 	}
 
-	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
+	public DataOp(String l, DataType dt, ValueType vt, OpOpData dop,
 			String fname, long dim1, long dim2, long nnz, UpdateType update, int blen) {
 		this(l, dt, vt, dop, fname, dim1, dim2, nnz, blen);
 		setUpdateType(update);
@@ -114,10 +116,9 @@ public class DataOp extends Hop
 	 * @param params input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt,
-			DataOpTypes dop, HashMap<String, Hop> params) {
+			OpOpData dop, HashMap<String, Hop> params) {
 		super(l, dt, vt);
-
-		_dataop = dop;
+		_op = dop;
 
 		int index = 0;
 		for( Entry<String, Hop> e : params.entrySet() ) {
@@ -129,8 +130,8 @@ public class DataOp extends Hop
 			_paramIndexMap.put(s, index);
 			index++;
 		}
-		if (dop == DataOpTypes.TRANSIENTREAD ){
-			setInputFormatType(FileFormatTypes.BINARY);
+		if (dop == OpOpData.TRANSIENTREAD ){
+			setInputFormatType(FileFormat.BINARY);
 		}
 		
 		if( params.containsKey(DataExpression.READROWPARAM) )
@@ -144,15 +145,15 @@ public class DataOp extends Hop
 	// WRITE operation
 	// This constructor does not support any expression in parameters
 	public DataOp(String l, DataType dt, ValueType vt, Hop in,
-			DataOpTypes dop, String fname) {
+			OpOpData dop, String fname) {
 		super(l, dt, vt);
-		_dataop = dop;
+		_op = dop;
 		getInput().add(0, in);
 		in.getParent().add(this);
 		_fileName = fname;
 
-		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
-			setInputFormatType(FileFormatTypes.BINARY);
+		if (dop == OpOpData.TRANSIENTWRITE || dop == OpOpData.FUNCTIONOUTPUT )
+			setInputFormatType(FileFormat.BINARY);
 	}
 	
 	/**
@@ -167,10 +168,9 @@ public class DataOp extends Hop
 	 * @param inputParameters input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
-		DataOpTypes dop, Hop in, HashMap<String, Hop> inputParameters) {
+		OpOpData dop, Hop in, HashMap<String, Hop> inputParameters) {
 		super(l, dt, vt);
-
-		_dataop = dop;
+		_op = dop;
 		
 		getInput().add(0, in);
 		in.getParent().add(this);
@@ -190,8 +190,8 @@ public class DataOp extends Hop
 		
 		}
 
-		if (dop == DataOpTypes.TRANSIENTWRITE)
-			setInputFormatType(FileFormatTypes.BINARY);
+		if (dop == OpOpData.TRANSIENTWRITE)
+			setInputFormatType(FileFormat.BINARY);
 	}
 
 	/** Check for N (READ) or N+1 (WRITE) inputs. */
@@ -199,20 +199,19 @@ public class DataOp extends Hop
 	public void checkArity() {
 		int sz = _input.size();
 		int pz = _paramIndexMap.size();
-		switch (_dataop) {
+		switch (_op) {
 			case PERSISTENTREAD:
 			case TRANSIENTREAD:
 			case SQLREAD:
 				HopsException.check(sz == pz, this,
-						"in %s operator type has %d inputs and %d parameters",
-						_dataop.name(), sz, pz);
+					"in %s operator type has %d inputs and %d parameters", _op.name(), sz, pz);
 				break;
 			case PERSISTENTWRITE:
 			case TRANSIENTWRITE:
 			case FUNCTIONOUTPUT:
 				HopsException.check(sz == pz + 1, this,
 						"in %s operator type has %d inputs and %d parameters (expect 1 more input for write operator type)",
-						_dataop.name(), sz, pz);
+						_op.name(), sz, pz);
 				break;
 			
 			case FEDERATED:
@@ -222,14 +221,12 @@ public class DataOp extends Hop
 		}
 	}
 
-	public DataOpTypes getDataOpType()
-	{
-		return _dataop;
+	public OpOpData getOp() {
+		return _op;
 	}
 	
-	public void setDataOpType( DataOpTypes type )
-	{
-		_dataop = type;
+	public void setDataOpType(OpOpData type) {
+		_op = type;
 	}
 	
 	public void setOutputParams(long dim1, long dim2, long nnz, UpdateType update, int blen) {
@@ -275,50 +272,44 @@ public class DataOp extends Hop
 		}
 
 		// Create the lop
-		switch(_dataop) 
+		switch(_op) 
 		{
 			case TRANSIENTREAD:
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, 
-						getDataType(), getValueType(), true, getInputFormatType());
+				l = new Data(_op, null, inputLops, getName(), null, 
+						getDataType(), getValueType(), getInputFormatType());
 				setOutputDimensions(l);
 				break;
 				
 			case PERSISTENTREAD:
-				l = new Data(HopsData2Lops.get(_dataop), null, inputLops, getName(), null, 
-						getDataType(), getValueType(), false, getInputFormatType());
+				l = new Data(_op, null, inputLops, getName(), null, 
+						getDataType(), getValueType(), getInputFormatType());
 				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
 				break;
 				
 			case PERSISTENTWRITE:
-				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null, 
-						getDataType(), getValueType(), false, getInputFormatType());
+			case FUNCTIONOUTPUT:
+				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null, 
+					getDataType(), getValueType(), getInputFormatType());
 				((Data)l).setExecType(et);
 				setOutputDimensions(l);
 				break;
 				
 			case TRANSIENTWRITE:
-				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null,
-						getDataType(), getValueType(), true, getInputFormatType());
-				setOutputDimensions(l);
-				break;
-				
-			case FUNCTIONOUTPUT:
-				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null, 
-						getDataType(), getValueType(), true, getInputFormatType());
-				((Data)l).setExecType(et);
+				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null,
+						getDataType(), getValueType(), getInputFormatType());
 				setOutputDimensions(l);
 				break;
 				
 			case SQLREAD:
 				l = new Sql(inputLops, getDataType(), getValueType());
 				break;
-				
+			
 			case FEDERATED:
 				l = new Federated(inputLops, getDataType(), getValueType());
 				break;
-				
+			
 			default:
-				throw new LopsException("Invalid operation type for Data LOP: " + _dataop);	
+				throw new LopsException("Invalid operation type for Data LOP: " + _op);
 		}
 		
 		setLineNumbers(l);
@@ -331,11 +322,11 @@ public class DataOp extends Hop
 
 	}
 
-	public void setInputFormatType(FileFormatTypes ft) {
+	public void setInputFormatType(FileFormat ft) {
 		_inFormat = ft;
 	}
 
-	public FileFormatTypes getInputFormatType() {
+	public FileFormat getInputFormatType() {
 		return _inFormat;
 	}
 	
@@ -348,21 +339,21 @@ public class DataOp extends Hop
 	}
 	
 	public boolean isRead() {
-		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.TRANSIENTREAD );
+		return( _op == OpOpData.PERSISTENTREAD || _op == OpOpData.TRANSIENTREAD );
 	}
 	
 	public boolean isWrite() {
-		return( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE );
+		return( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE );
 	}
 	
 	public boolean isPersistentReadWrite() {
-		return( _dataop == DataOpTypes.PERSISTENTREAD || _dataop == DataOpTypes.PERSISTENTWRITE );
+		return( _op == OpOpData.PERSISTENTREAD || _op == OpOpData.PERSISTENTWRITE );
 	}
 
 	@Override
 	public String getOpString() {
 		String s = new String("");
-		s += HopsData2String.get(_dataop);
+		s += _op.toString();
 		s += " "+getName();
 		return s;
 	}
@@ -399,8 +390,8 @@ public class DataOp extends Hop
 		}
 		else //MATRIX / FRAME
 		{
-			if(   _dataop == DataOpTypes.PERSISTENTREAD 
-			   || _dataop == DataOpTypes.TRANSIENTREAD ) 
+			if(   _op == OpOpData.PERSISTENTREAD 
+			   || _op == OpOpData.TRANSIENTREAD ) 
 			{
 				double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
@@ -419,12 +410,12 @@ public class DataOp extends Hop
 	@Override
 	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo ) {
 		DataCharacteristics ret = null;
-		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )  {
+		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE )  {
 			DataCharacteristics tmp = memo.getAllInputStats(getInput().get(0));
 			if( tmp.dimsKnown() )
 				ret = tmp;
 		}
-		else if( _dataop == DataOpTypes.TRANSIENTREAD ) {
+		else if( _op == OpOpData.TRANSIENTREAD ) {
 			//prepare statistics, passed from cross-dag transient writes
 			DataCharacteristics tmp = memo.getAllInputStats(this);
 			if( tmp.dimsKnown() )
@@ -443,7 +434,7 @@ public class DataOp extends Hop
 		ExecType letype = (OptimizerUtils.isMemoryBasedOptLevel()) ? findExecTypeByMemEstimate() : null;
 		
 		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
-		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
+		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE )
 		{
 			checkAndSetForcedPlatform();
 
@@ -495,7 +486,7 @@ public class DataOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
+		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE )
 		{
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
@@ -530,7 +521,7 @@ public class DataOp extends Hop
 		ret.clone(this, false);
 		
 		//copy specific attributes
-		ret._dataop = _dataop;
+		ret._op = _op;
 		ret._fileName = _fileName;
 		ret._inFormat = _inFormat;
 		ret._inBlocksize = _inBlocksize;
@@ -554,8 +545,8 @@ public class DataOp extends Hop
 		DataOp that2 = (DataOp)that;
 		boolean ret = ( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION 
 			&& ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_CSE_PERSISTENT_READS) 
-			&&_dataop == that2._dataop
-			&& _dataop == DataOpTypes.PERSISTENTREAD
+			&& _op == that2._op
+			&& _op == OpOpData.PERSISTENTREAD
 			&& _fileName.equals(that2._fileName)
 			&& _inFormat == that2._inFormat
 			&& _inBlocksize == that2._inBlocksize

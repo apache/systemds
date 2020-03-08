@@ -23,10 +23,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.parser.DataExpression;
 
 /**
@@ -94,9 +94,9 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 		if( hop instanceof DataOp )
 		{
 			DataOp dop = (DataOp)hop;
-			if( dop.getDataOpType()==DataOpTypes.PERSISTENTREAD )
+			if( dop.getOp()==OpOpData.PERSISTENTREAD )
 				pReads.put(dop.getFileName(), dop);
-			else if( dop.getDataOpType()==DataOpTypes.PERSISTENTWRITE )
+			else if( dop.getOp()==OpOpData.PERSISTENTWRITE )
 			{
 				Hop fname = dop.getInput().get(dop.getParameterIndex(DataExpression.IO_FILENAME));
 				if( fname instanceof LiteralOp ) //only constant writes

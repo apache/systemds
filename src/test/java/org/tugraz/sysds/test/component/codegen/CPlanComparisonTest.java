@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
@@ -34,6 +33,7 @@ import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.test.AutomatedTestBase;
@@ -240,11 +240,11 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	private Hop createDataOp(DataType dt) {
 		return new DataOp("tmp"+_seq.getNextID(), dt, ValueType.FP64, 
-			DataOpTypes.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000);
+			OpOpData.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000);
 	}
 	
 	private static Hop createDataOp(String name, DataType dt) {
 		return new DataOp(name, dt, ValueType.FP64, 
-			DataOpTypes.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000);
+			OpOpData.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000);
 	}
 }

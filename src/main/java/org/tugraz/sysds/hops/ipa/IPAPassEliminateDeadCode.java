@@ -24,9 +24,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.ForStatement;
@@ -75,7 +75,7 @@ public class IPAPassEliminateDeadCode extends IPAPass
 				List<Hop> roots = sbs.get(i).getHops();
 				for( int j=0; j<roots.size(); j++ ) {
 					Hop root = roots.get(j);
-					boolean isTWrite = HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE);
+					boolean isTWrite = HopRewriteUtils.isData(root, OpOpData.TRANSIENTWRITE);
 					boolean isFCall = isFunctionCallWithUnusedOutputs(root, usedVars, fgraph);
 					if( (isTWrite && !usedVars.contains(root.getName())) || isFCall ) {
 						if( isFCall ) {
@@ -161,7 +161,7 @@ public class IPAPassEliminateDeadCode extends IPAPass
 			return varNames;
 		for( Hop c : hop.getInput() )
 			rCollectReadVariableNames(c, varNames);
-		if( HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) )
+		if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) )
 			varNames.add(hop.getName());
 		hop.setVisited();
 		return varNames;

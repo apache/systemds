@@ -26,6 +26,8 @@ import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.recompile.Recompiler;
@@ -292,8 +294,8 @@ public abstract class Hop implements ParseInfo
 			try
 			{
 				if( this instanceof DataOp  // CSV
-					&& ((DataOp)this).getDataOpType() == DataOpTypes.PERSISTENTREAD
-					&& ((DataOp)this).getInputFormatType() == FileFormatTypes.CSV  )
+					&& ((DataOp)this).getOp() == OpOpData.PERSISTENTREAD
+					&& ((DataOp)this).getInputFormatType() == FileFormat.CSV  )
 				{
 					reblock = new CSVReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), et);
@@ -1047,27 +1049,6 @@ public abstract class Hop implements ParseInfo
 		BITWAND, BITWOR, BITWXOR, BITWSHIFTL, BITWSHIFTR, //bitwise operations
 	}
 
-	public enum DataGenMethod {
-		RAND, SEQ, SINIT, SAMPLE, INVALID, TIME
-	}
-
-	public enum FileFormatTypes {
-		TEXT, BINARY, MM, CSV, LIBSVM
-	}
-
-	public enum DataOpTypes {
-		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE, FUNCTIONOUTPUT, SQLREAD, FEDERATED
-	}
-
-	protected static final HashMap<DataOpTypes, org.tugraz.sysds.lops.Data.OperationTypes> HopsData2Lops;
-	static {
-		HopsData2Lops = new HashMap<>();
-		HopsData2Lops.put(DataOpTypes.PERSISTENTREAD, org.tugraz.sysds.lops.Data.OperationTypes.READ);
-		HopsData2Lops.put(DataOpTypes.PERSISTENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
-		HopsData2Lops.put(DataOpTypes.TRANSIENTWRITE, org.tugraz.sysds.lops.Data.OperationTypes.WRITE);
-		HopsData2Lops.put(DataOpTypes.TRANSIENTREAD, org.tugraz.sysds.lops.Data.OperationTypes.READ);
-	}
-
 	public static final HashMap<Hop.OpOp2, Binary.OperationTypes> HopsOpOp2LopsB;
 	static {
 		HopsOpOp2LopsB = new HashMap<>();
@@ -1341,16 +1322,6 @@ public abstract class Hop implements ParseInfo
 	
 	public static OpOp2 getBinaryOpCode(String op) {
 		return HopsStringOpOp2.get(op);
-	}
-	
-	protected static final HashMap<DataOpTypes, String> HopsData2String;
-	static {
-		HopsData2String = new HashMap<>();
-		HopsData2String.put(DataOpTypes.PERSISTENTREAD, "PRead");
-		HopsData2String.put(DataOpTypes.PERSISTENTWRITE, "PWrite");
-		HopsData2String.put(DataOpTypes.TRANSIENTWRITE, "TWrite");
-		HopsData2String.put(DataOpTypes.TRANSIENTREAD, "TRead");
-		HopsData2String.put(DataOpTypes.FUNCTIONOUTPUT, "FunOut");
 	}
 
 	public static OpOp2 getOpOp2ForOuterVectorOperation(String op) 
@@ -1629,7 +1600,7 @@ public abstract class Hop implements ParseInfo
 				{
 					switch( broot.getOp() )
 					{
-						case PLUS:	ret = lret + rret; break;
+						case PLUS:  ret = lret + rret; break;
 						case MULT:  ret = lret * rret; break;
 						case MIN:   ret = Math.min(lret, rret); break;
 						case MAX:   ret = Math.max(lret, rret); break;

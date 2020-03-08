@@ -25,10 +25,10 @@ import java.util.List;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.LeftIndexingOp;
 import org.tugraz.sysds.hops.UnaryOp;
@@ -191,7 +191,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		if( hop.isVisited() )
 			return false;
 		boolean valid = !(hop instanceof LeftIndexingOp)
-			&& !(HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) && hop.getName().equals(varname));
+			&& !(HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) && hop.getName().equals(varname));
 		for( Hop c : hop.getInput() )
 			valid &= rProbeOtherRoot(c, varname);
 		hop.setVisited();

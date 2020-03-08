@@ -41,6 +41,8 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.OpOpDG;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.AggUnaryOp;
@@ -55,8 +57,6 @@ import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.codegen.opt.ReachabilityGraph.SubProblem;
 import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
@@ -426,7 +426,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	private static double sumTmpInputOutputSize(CPlanMemoTable memo, CostVector vect) {
 		//size of intermediate inputs and outputs, i.e., output and inputs other than treads
 		return vect.outSize + vect.inSizes.entrySet().stream()
-			.filter(e -> !HopRewriteUtils.isData(memo.getHopRefs().get(e.getKey()), DataOpTypes.TRANSIENTREAD))
+			.filter(e -> !HopRewriteUtils.isData(memo.getHopRefs().get(e.getKey()), OpOpData.TRANSIENTREAD))
 			.mapToDouble(e -> e.getValue()).sum();
 	}
 	
@@ -722,7 +722,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				|| (hop.getDim1()!=1 && hop.getDim2()!=1)))
 			|| (HopRewriteUtils.isTransposeOperation(hop)
 				&& (hop.getDim1()!=1 && hop.getDim2()!=1)
-				&& !HopRewriteUtils.isDataGenOp(hop.getInput().get(0),DataGenMethod.SEQ))
+				&& !HopRewriteUtils.isDataGenOp(hop.getInput().get(0),OpOpDG.SEQ))
 			|| (hop instanceof AggUnaryOp && inRow);
 	}
 	

@@ -25,14 +25,14 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Checkpoint;
@@ -913,8 +913,8 @@ public class OptimizerUtils
 			ret &= ( p.getExecType()==ExecType.CP 
 				||(p instanceof AggBinaryOp && allowsToFilterEmptyBlockOutputs(p) )
 				||(HopRewriteUtils.isReorg(p, ReOrgOp.RESHAPE, ReOrgOp.TRANS) && allowsToFilterEmptyBlockOutputs(p) )
-				||(HopRewriteUtils.isData(p, DataOpTypes.PERSISTENTWRITE) && ((DataOp)p).getInputFormatType()==FileFormatTypes.TEXT))
-				&& !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getInputFormatType()!=FileFormatTypes.TEXT) ); //no function call or transient write
+				||(HopRewriteUtils.isData(p, OpOpData.PERSISTENTWRITE) && ((DataOp)p).getInputFormatType()==FileFormat.TEXT))
+				&& !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getInputFormatType()!=FileFormat.TEXT) ); //no function call or transient write
 		}
 		return ret;
 	}

@@ -34,12 +34,12 @@ import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.Expression.BinaryOp;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
@@ -515,7 +515,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		for(Hop read : datsRead) {
 			if( read instanceof IndexingOp && var.equals( read.getInput().get(0).getName() ) )
 				C.add( determineAccessPattern((IndexingOp) read) );
-			else if( HopRewriteUtils.isData(read, DataOpTypes.TRANSIENTREAD) && var.equals(read.getName()) )
+			else if( HopRewriteUtils.isData(read, OpOpData.TRANSIENTREAD) && var.equals(read.getName()) )
 				C.add( PartitionFormat.NONE );
 		}
 	}
@@ -859,9 +859,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	private static boolean isDataIdentifier(Hop hop) {
-		return HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD)
+		return HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD)
 			|| (hop instanceof IndexingOp && HopRewriteUtils.isData(
-			hop.getInput().get(0), DataOpTypes.TRANSIENTREAD))
+			hop.getInput().get(0), OpOpData.TRANSIENTREAD))
 			|| hop instanceof LiteralOp;
 	}
 	
@@ -1560,7 +1560,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			else if( hop.getInput().get(1) instanceof org.tugraz.sysds.hops.BinaryOp )
 				return rParseBinaryExpression(hop.getInput().get(1));
 		}
-		else if( HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) )
+		else if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) )
 			return new LinearFunction(0, 1, hop.getName());
 		
 		return null;
@@ -1768,9 +1768,9 @@ public class ParForStatementBlock extends ForStatementBlock
 			//atomic case (only recursion for MULT expressions, where one side is a constant)
 			Long cvalL = parseLongConstant(l);
 			Long cvalR = parseLongConstant(r);
-			if( cvalL != null && HopRewriteUtils.isData(r, DataOpTypes.TRANSIENTREAD) )
+			if( cvalL != null && HopRewriteUtils.isData(r, OpOpData.TRANSIENTREAD) )
 				return new LinearFunction(0, cvalL, r.getName());
-			else if( cvalR != null && HopRewriteUtils.isData(l, DataOpTypes.TRANSIENTREAD) )
+			else if( cvalR != null && HopRewriteUtils.isData(l, OpOpData.TRANSIENTREAD) )
 				return new LinearFunction(0, cvalR, l.getName());
 			else if( cvalL != null && r instanceof org.tugraz.sysds.hops.BinaryOp )
 				return rParseBinaryExpression(r).scale(cvalL);

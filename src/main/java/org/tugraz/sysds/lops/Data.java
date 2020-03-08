@@ -21,11 +21,11 @@ package org.tugraz.sysds.lops;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.OutputParameters.Format;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
@@ -37,14 +37,10 @@ import org.tugraz.sysds.common.Types.ValueType;
 
 public class Data extends Lop
 {
-	public enum OperationTypes {READ,WRITE}
-	public static final String PREAD_PREFIX = "p"+OperationTypes.READ.name();
-
-	FileFormatTypes formatType = FileFormatTypes.BINARY;
-	OperationTypes operation;
-	boolean literal_var = false;
-	boolean transient_var = false;
-	
+	public static final String PREAD_PREFIX = "pREAD";
+	private final FileFormat formatType;
+	private final OpOpData _op;
+	private final boolean literal_var;
 	private HashMap<String, Lop> _inputParams;
 
 	/**
@@ -56,7 +52,7 @@ public class Data extends Lop
 	 */
 	public static Data createLiteralLop(ValueType vt, String literalValue) {
 		// All literals have default format type of TEXT
-		return new Data(OperationTypes.READ, null, null, null, literalValue, DataType.SCALAR, vt, false, FileFormatTypes.BINARY);
+		return new Data(OpOpData.PERSISTENTREAD, null, null, null, literalValue, DataType.SCALAR, vt, FileFormat.BINARY);
 	}
 	
 	/**
@@ -74,27 +70,27 @@ public class Data extends Lop
 	 * @param isTransient true if transient
 	 * @param fmt file format
 	 */
-	public Data(Data.OperationTypes op, Lop input, HashMap<String, Lop> 
-	inputParametersLops, String name, String literal, DataType dt, ValueType vt, boolean isTransient, FileFormatTypes fmt) 
+	public Data(OpOpData op, Lop input, HashMap<String, Lop> 
+	inputParametersLops, String name, String literal, DataType dt, ValueType vt, FileFormat fmt) 
 	{
-		super(Lop.Type.Data, dt, vt);	
-		
-		operation = op;	
-		
-		transient_var = isTransient;
+		super(Lop.Type.Data, dt, vt);
+		_op = op;
+		literal_var = (literal != null);
 		
 		// Either <code>name</code> or <code>literal</code> can be non-null.
-		if(literal != null){
-			if (transient_var )
+		if(literal_var){
+			if ( _op.isTransient() )
 				throw new LopsException("Invalid parameter values while setting up a Data LOP -- transient flag is invalid for a literal.");
-			literal_var = true;
-			this.getOutputParameters().setLabel(literal);
+			getOutputParameters().setLabel(literal);
 		}
 		else if(name != null) {
-			if ( transient_var )
-				this.getOutputParameters().setLabel(name); // tvar+name
-			else
-				this.getOutputParameters().setLabel("p"+op+name);
+			if ( _op.isTransient() )
+				getOutputParameters().setLabel(name); // tvar+name
+			else {
+				String code = _op == OpOpData.FUNCTIONOUTPUT ? "" :
+					_op.isRead() ? "pREAD" : "pWRITE";
+				getOutputParameters().setLabel(code+name);
+			}
 		}
 		else {
 			throw new LopsException("Invalid parameter values while setting up a Data LOP -- the lop must have either literal value or a name.");
@@ -103,8 +99,7 @@ public class Data extends Lop
 		// WRITE operation must have an input Lops, we always put this
 		// input Lops as the first element of WRITE input. The parameters of
 		// WRITE operation are then put as the following input elements.
-		if(input != null && operation == OperationTypes.WRITE)
-		{
+		if(input != null && op.isWrite()) {
 			this.addInput(input);
 			input.addOutput(this);
 		}
@@ -125,7 +120,10 @@ public class Data extends Lop
 			}
 		}
 		
-		setFileFormatAndProperties(fmt);
+		//set output format
+		formatType = fmt;
+		outParams.setFormat(fmt);
+		setLopProperties();
 	}
 
 	private void setLopProperties() {
@@ -138,49 +136,25 @@ public class Data extends Lop
 	 * 
 	 * @param et execution type
 	 */
-	public void setExecType( ExecType et )
-	{
+	public void setExecType( ExecType et ) {
 		lps.execType = et;
-	}
-	
-	/**
-	 * Method to set format types for input, output files. 
-	 * @param type file format
-	 */
-	public void setFileFormatAndProperties(FileFormatTypes type) 
-	{
-		this.formatType = type ;
-		if(type == FileFormatTypes.BINARY)
-			this.outParams.setFormat(Format.BINARY) ;
-		else if(type == FileFormatTypes.TEXT)
-			this.outParams.setFormat(Format.TEXT) ;
-		else if (type == FileFormatTypes.MM)
-			this.outParams.setFormat(Format.MM);
-		else if (type == FileFormatTypes.CSV )
-			this.outParams.setFormat(Format.CSV);
-		else if (type == FileFormatTypes.LIBSVM )
-			this.outParams.setFormat(Format.LIBSVM);
-		else 
-			throw new LopsException("Unexpected format: " + type);
-		setLopProperties();
 	}
 
 	/**
 	 * method to get format type for input, output files. 
 	 * @return file format
 	 */
-	public FileFormatTypes getFileFormatType() 
-	{
+	public FileFormat getFileFormatType() {
 		return formatType ;
 	}
  
 	@Override
 	public String toString() {
-		
-		return getID() + ":" + "File_Name: " + this.getOutputParameters().getFile_name() + " " + 
-		"Label: " + this.getOutputParameters().getLabel() + " " + "Operation: = " + operation + " " + 
-		"Format: " + this.outParams.getFormat() +  " Datatype: " + getDataType() + " Valuetype: " + getValueType() + " num_rows = " + this.getOutputParameters().getNumRows() + " num_cols = " + 
-		this.getOutputParameters().getNumCols() + " UpdateInPlace: " + this.getOutputParameters().getUpdateType();
+		return getID() + ":" + "File_Name: " + getOutputParameters().getFile_name() + " "
+			+ "Label: " + getOutputParameters().getLabel() + " " + "Operation: = " + _op + " "
+			+ "Format: " + outParams.getFormat() +  " Datatype: " + getDataType() + " Valuetype: " + getValueType()
+			+ " num_rows = " + getOutputParameters().getNumRows() + " num_cols = " + getOutputParameters().getNumCols()
+			+ " UpdateInPlace: " + getOutputParameters().getUpdateType();
 	}
 
 	/**
@@ -188,9 +162,8 @@ public class Data extends Lop
 	 * @return operation type
 	 */
 	 
-	public OperationTypes getOperationType()
-	{
-		return operation;
+	public OpOpData getOperationType() {
+		return _op;
 	}
 	
 	/**
@@ -261,20 +234,13 @@ public class Data extends Lop
 			throw new LopsException("Cannot obtain the value of a non-literal variable at compile time.");
 	}
 	
-	/**
-	 * Method to check if this represents a transient variable.
-	 * @return true if this data lop is a transient variable
-	 */
-	public boolean isTransient() {
-		return transient_var;
-	}
-	
 	public boolean isPersistentWrite() {
-		return operation == OperationTypes.WRITE && !transient_var;
+		return _op == OpOpData.PERSISTENTWRITE;
 	}
 	
 	public boolean isPersistentRead() {
-		return operation == OperationTypes.READ && !transient_var;
+		return _op == OpOpData.PERSISTENTREAD
+			&& !literal_var;
 	}
 	
 	/**
@@ -284,7 +250,7 @@ public class Data extends Lop
 	@Override
 	public String getInstructions(String input1, String input2) 
 	{
-		if ( getOutputParameters().getFile_name() == null && operation == OperationTypes.READ ) 
+		if ( getOutputParameters().getFile_name() == null && _op.isRead() ) 
 			throw new LopsException(this.printErrorLocation() + "Data.getInstructions(): Exepecting a SCALAR data type, encountered " + getDataType());
 			
 		StringBuilder sb = new StringBuilder();
@@ -293,20 +259,18 @@ public class Data extends Lop
 		else
 			sb.append( "CP" );
 		sb.append( OPERAND_DELIMITOR );
-		if ( operation == OperationTypes.READ ) 
-		{
+		if (_op.isRead()) {
 			sb.append( "read" );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append ( this.prepInputOperand(input1) );
 		}
-		else if ( operation == OperationTypes.WRITE)
-		{
+		else if (_op.isWrite()) {
 			sb.append( "write" );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append ( getInputs().get(0).prepInputOperand(input1) );
 		}
 		else
-			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + operation);
+			throw new LopsException(this.printErrorLocation() + "In Data Lop, Unknown operation: " + _op);
 		
 		sb.append( OPERAND_DELIMITOR );
 		Lop fnameLop = _inputParams.get(DataExpression.IO_FILENAME);
@@ -315,19 +279,19 @@ public class Data extends Lop
 		
 		// attach outputInfo in case of matrices
 		OutputParameters oparams = getOutputParameters();
-		if ( operation == OperationTypes.WRITE ) {
+		if ( _op.isWrite() ) {
 			sb.append( OPERAND_DELIMITOR );
 			String fmt = "";
 			if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME ) {
-				if ( oparams.getFormat() == Format.MM )
+				if ( oparams.getFormat() == FileFormat.MM )
 					fmt = "matrixmarket";
-				else if (oparams.getFormat() == Format.TEXT)
+				else if (oparams.getFormat() == FileFormat.TEXT)
 					fmt = "textcell";
-				else if (oparams.getFormat() == Format.CSV)
+				else if (oparams.getFormat() == FileFormat.CSV)
 					fmt = "csv";
-				else if (oparams.getFormat() == Format.LIBSVM)
+				else if (oparams.getFormat() == FileFormat.LIBSVM)
 					fmt = "libsvm";
-				else if ( oparams.getFormat() == Format.BINARY )
+				else if ( oparams.getFormat() == FileFormat.BINARY )
 					fmt = oparams.getBlocksize() > 0 ? "binaryblock" : "binarycell" ;
 				else
 					throw new LopsException("Unexpected format: " + oparams.getFormat());
@@ -339,7 +303,7 @@ public class Data extends Lop
 			
 			sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING, true));
 			
-			if(oparams.getFormat() == Format.CSV) {
+			if(oparams.getFormat() == FileFormat.CSV) {
 				Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
 				Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
 				Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE);
@@ -371,7 +335,7 @@ public class Data extends Lop
 				}
 			}
 			
-			if(oparams.getFormat() == Format.LIBSVM) {
+			if(oparams.getFormat() == FileFormat.LIBSVM) {
 				Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE);
 				
 				if (sparseLop.isVariable())
@@ -385,7 +349,7 @@ public class Data extends Lop
 			
 		}
 
-		if (operation == OperationTypes.WRITE) {
+		if (_op.isWrite()) {
 			sb.append(OPERAND_DELIMITOR);
 			Lop descriptionLop = getInputParams().get(DataExpression.DESCRIPTIONPARAM);
 			if (descriptionLop != null) {
@@ -417,18 +381,18 @@ public class Data extends Lop
 	public String getCreateVarInstructions(String outputFileName, String outputLabel) {
 		if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME ) {
 			
-			if ( isTransient() )
+			if ( _op.isTransient() )
 				throw new LopsException("getInstructions() should not be called for transient nodes.");
 			
 			OutputParameters oparams = getOutputParameters();
 			String fmt = "";
-			if ( oparams.getFormat() == Format.TEXT )
+			if ( oparams.getFormat() == FileFormat.TEXT )
 				fmt = "textcell";
-			else if ( oparams.getFormat() == Format.MM )
+			else if ( oparams.getFormat() == FileFormat.MM )
 				fmt = "matrixmarket";
-			else if ( oparams.getFormat() == Format.CSV )
+			else if ( oparams.getFormat() == FileFormat.CSV )
 				fmt = "csv";
-			else if ( oparams.getFormat() == Format.LIBSVM )
+			else if ( oparams.getFormat() == FileFormat.LIBSVM )
 				fmt = "libsvm";
 			else { //binary
 				fmt = ( getDataType() == DataType.FRAME || oparams.getBlocksize() > 0
@@ -461,12 +425,12 @@ public class Data extends Lop
 			sb.append( oparams.getUpdateType().toString().toLowerCase() );
 			
 			// Format-specific properties
-			if ( oparams.getFormat() == Format.CSV ) {
+			if ( oparams.getFormat() == FileFormat.CSV ) {
 				sb.append( OPERAND_DELIMITOR );
 				sb.append( createVarCSVHelper() );
 			}
 			// Format-specific properties
-			if ( oparams.getFormat() == Format.LIBSVM ) { 
+			if ( oparams.getFormat() == FileFormat.LIBSVM ) { 
 				sb.append( createVarLIBSVMHelper() );
 			}
 			
@@ -492,7 +456,7 @@ public class Data extends Lop
 	 */
 	private String createVarCSVHelper() {
 		StringBuilder sb = new StringBuilder();
-		if ( operation == OperationTypes.READ ) {
+		if ( _op.isRead() ) {
 			Data headerLop = (Data) getNamedInputLop(DataExpression.DELIM_HAS_HEADER_ROW);
 			Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
 			Data fillLop = (Data) getNamedInputLop(DataExpression.DELIM_FILL); 
@@ -540,7 +504,7 @@ public class Data extends Lop
 
 	private String createVarLIBSVMHelper() {
 		StringBuilder sb = new StringBuilder();
-		if ( operation == OperationTypes.READ ) {
+		if ( _op.isRead() ) {
 			Data naLop = (Data) getNamedInputLop(DataExpression.DELIM_NA_STRINGS);
 			
 			if ( naLop != null ) {

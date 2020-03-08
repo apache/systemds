@@ -27,6 +27,9 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.jmlc.JMLCUtils;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpDG;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
@@ -36,9 +39,6 @@ import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.FunctionOp.FunctionType;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.IndexingOp;
@@ -1158,7 +1158,7 @@ public class Recompiler
 
 	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars, boolean overwrite)
 	{
-		if( hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE ) //for all writes to symbol table
+		if( hop instanceof DataOp && ((DataOp)hop).getOp()==OpOpData.TRANSIENTWRITE ) //for all writes to symbol table
 		{
 			String varName = hop.getName();
 			if( !vars.keySet().contains(varName) || overwrite ) //not existing so far
@@ -1321,7 +1321,7 @@ public class Recompiler
 		
 		//update statistics for transient reads according to current statistics
 		//(with awareness not to override persistent reads to an existing name)
-		if( HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) ) {
+		if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) ) {
 			DataOp d = (DataOp) hop;
 			String varName = d.getName();
 			if( vars.keySet().contains( varName ) ) {
@@ -1346,8 +1346,8 @@ public class Recompiler
 			}
 		}
 		//special case for persistent reads with unknown size (read-after-write)
-		else if( HopRewriteUtils.isData(hop, DataOpTypes.PERSISTENTREAD)
-			&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.CSV
+		else if( HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD)
+			&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormat.CSV
 			&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA) )
 		{
 			//update hop with read meta data
@@ -1359,8 +1359,8 @@ public class Recompiler
 		{
 			DataGenOp d = (DataGenOp) hop;
 			HashMap<String,Integer> params = d.getParamIndexMap();
-			if (   d.getOp() == DataGenMethod.RAND || d.getOp()==DataGenMethod.SINIT 
-				|| d.getOp() == DataGenMethod.SAMPLE ) 
+			if (   d.getOp() == OpOpDG.RAND || d.getOp()==OpOpDG.SINIT 
+				|| d.getOp() == OpOpDG.SAMPLE ) 
 			{
 				boolean initUnknown = !d.dimsKnown();
 				// TODO refresh tensor size information
@@ -1375,7 +1375,7 @@ public class Recompiler
 						d.refreshSizeInformation();
 				}
 			} 
-			else if ( d.getOp() == DataGenMethod.SEQ ) 
+			else if ( d.getOp() == OpOpDG.SEQ ) 
 			{
 				boolean initUnknown = !d.dimsKnown();
 				int ix1 = params.get(Statement.SEQ_FROM);
@@ -1399,7 +1399,7 @@ public class Recompiler
 				if( !(initUnknown & d.dimsKnown()) )
 					d.refreshSizeInformation();
 			}
-			else if (d.getOp() == DataGenMethod.TIME) {
+			else if (d.getOp() == OpOpDG.TIME) {
 				d.refreshSizeInformation();
 			}
 			else {

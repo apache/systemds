@@ -25,12 +25,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.AggUnaryOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
@@ -239,7 +239,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		//to logical variable name and not used)
 		if( hop.requiresCheckpoint() && hop.getParent().size()==1 
 			&& hop.getParent().get(0) instanceof DataOp
-			&& ((DataOp)hop.getParent().get(0)).getDataOpType()==DataOpTypes.TRANSIENTWRITE)
+			&& ((DataOp)hop.getParent().get(0)).getOp()==OpOpData.TRANSIENTWRITE)
 		{
 			checkpoints.add(hop);
 		}
@@ -257,13 +257,13 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 			return;
 
 		//remove checkpoint on pread if only consumed by pwrite or uagg
-		if( (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTWRITE)
+		if( (hop instanceof DataOp && ((DataOp)hop).getOp()==OpOpData.PERSISTENTWRITE)
 			|| hop instanceof AggUnaryOp )	
 		{
 			//(pwrite|uagg) - pread
 			Hop c0 = hop.getInput().get(0);
 			if( c0.requiresCheckpoint() && c0.getParent().size() == 1
-				&& c0 instanceof DataOp && ((DataOp)c0).getDataOpType()==DataOpTypes.PERSISTENTREAD )
+				&& c0 instanceof DataOp && ((DataOp)c0).getOp()==OpOpData.PERSISTENTREAD )
 			{
 				c0.setRequiresCheckpoint(false);
 			}
@@ -273,7 +273,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 				&& (((UnaryOp)c0).getOp()==OpOp1.CAST_AS_FRAME || ((UnaryOp)c0).getOp()==OpOp1.CAST_AS_MATRIX ) 
 				&& c0.getInput().get(0).requiresCheckpoint() && c0.getInput().get(0).getParent().size() == 1
 				&& c0.getInput().get(0) instanceof DataOp 
-				&& ((DataOp)c0.getInput().get(0)).getDataOpType()==DataOpTypes.PERSISTENTREAD )
+				&& ((DataOp)c0.getInput().get(0)).getOp()==OpOpData.PERSISTENTREAD )
 			{
 				c0.getInput().get(0).setRequiresCheckpoint(false);
 			}

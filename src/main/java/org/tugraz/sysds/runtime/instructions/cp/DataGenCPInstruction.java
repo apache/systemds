@@ -22,9 +22,9 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.DataGen;
 import org.tugraz.sysds.lops.Lop;
@@ -42,7 +42,7 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class DataGenCPInstruction extends UnaryCPInstruction {
 
-	private DataGenMethod method;
+	private OpOpDG method;
 
 	private final CPOperand rows, cols, dims;
 	private final int blocksize;
@@ -64,7 +64,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	private static final int SEED_POSITION_RAND = 8;
 	private static final int SEED_POSITION_SAMPLE = 4;
 
-	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
+	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, 
 			CPOperand rows, CPOperand cols, CPOperand dims, int blen, String minValue, String maxValue, double sparsity, long seed,
 			String probabilityDensityFunction, String pdfParams, int k, 
 			CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, boolean replace, String opcode, String istr) {
@@ -106,25 +106,25 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		this.replace = replace;
 	}
 	
-	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
+	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 			CPOperand dims, int blen, String minValue, String maxValue, double sparsity, long seed,
 			String probabilityDensityFunction, String pdfParams, int k, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, minValue, maxValue, sparsity, seed,
 			probabilityDensityFunction, pdfParams, k, null, null, null, false, opcode, istr);
 	}
 
-	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
+	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 			CPOperand dims, int blen, String maxValue, boolean replace, long seed, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, "0", maxValue, 1.0, seed,
 			null, null, 1, null, null, null, replace, opcode, istr);
 	}
 
-	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
+	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 			CPOperand dims, int blen, CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, "0", "1", 1.0, -1,
 			null, null, 1, seqFrom, seqTo, seqIncr, false, opcode, istr);
 	}
-	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand out, String opcode, String istr) {
+	private DataGenCPInstruction(Operator op, OpOpDG mthd, CPOperand out, String opcode, String istr) {
 		this(op, mthd, null, out, null, null, null, 0, "0", "0", 0, 0,
 			null, null, 1, null, null, null, false, opcode, istr);
 	}
@@ -169,27 +169,26 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 
 	public static DataGenCPInstruction parseInstruction(String str)
 	{
-		DataGenMethod method = DataGenMethod.INVALID;
-
+		OpOpDG method = null;
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = s[0];
 		
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
-			method = DataGenMethod.RAND;
+			method = OpOpDG.RAND;
 			InstructionUtils.checkNumFields ( s, 10, 11 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
-			method = DataGenMethod.SEQ;
+			method = OpOpDG.SEQ;
 			// 8 operands: rows, cols, blen, from, to, incr, outvar
 			InstructionUtils.checkNumFields ( s, 7 ); 
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
-			method = DataGenMethod.SAMPLE;
+			method = OpOpDG.SAMPLE;
 			// 7 operands: range, size, replace, seed, blen, outvar
 			InstructionUtils.checkNumFields ( s, 6 ); 
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.TIME_OPCODE) ) {
-			method = DataGenMethod.TIME;
+			method = OpOpDG.TIME;
 			// 1 operand: outvar
 			InstructionUtils.checkNumFields ( s, 1 ); 
 		}
@@ -197,7 +196,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		CPOperand out = new CPOperand(s[s.length-1]);
 		Operator op = null;
 		
-		if ( method == DataGenMethod.RAND ) 
+		if ( method == OpOpDG.RAND ) 
 		{
 			int missing; // number of missing params (row & cols or dims)
 			CPOperand rows = null, cols = null, dims = null;
@@ -223,7 +222,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			return new DataGenCPInstruction(op, method, null, out, rows, cols, dims, blen,
 				s[5 - missing], s[6 - missing], sparsity, seed, pdf, pdfParams, k, opcode, str);
 		}
-		else if ( method == DataGenMethod.SEQ) 
+		else if ( method == OpOpDG.SEQ) 
 		{
 			int blen = Integer.parseInt(s[3]);
 			CPOperand from = new CPOperand(s[4]);
@@ -232,7 +231,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			
 			return new DataGenCPInstruction(op, method, null, out, null, null, null, blen, from, to, incr, opcode, str);
 		}
-		else if ( method == DataGenMethod.SAMPLE) 
+		else if ( method == OpOpDG.SAMPLE) 
 		{
 			CPOperand rows = new CPOperand(s[2]);
 			CPOperand cols = new CPOperand("1", ValueType.INT64, DataType.SCALAR);
@@ -244,7 +243,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			
 			return new DataGenCPInstruction(op, method, null, out, rows, cols, null, blen, s[1], replace, seed, opcode, str);
 		}
-		else if ( method == DataGenMethod.TIME) 
+		else if ( method == OpOpDG.TIME)
 		{
 			return new DataGenCPInstruction(op, method, out, opcode, str);
 		}
@@ -260,7 +259,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		ScalarObject soresScalar = null;
 		
 		//process specific datagen operator
-		if ( method == DataGenMethod.RAND ) {
+		if ( method == OpOpDG.RAND ) {
 			long lrows = -1, lcols = -1;
 			if (dims == null) {
 				lrows = ec.getScalarInput(rows).getLongValue();
@@ -313,7 +312,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			//reset runtime seed (e.g., when executed in loop)
 			runtimeSeed = null;
 		}
-		else if ( method == DataGenMethod.SEQ ) 
+		else if ( method == OpOpDG.SEQ ) 
 		{
 			double lfrom = ec.getScalarInput(seq_from).getDoubleValue();
 			double lto = ec.getScalarInput(seq_to).getDoubleValue();
@@ -327,7 +326,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			
 			soresBlock = MatrixBlock.seqOperations(lfrom, lto, lincr);
 		}
-		else if ( method == DataGenMethod.SAMPLE ) 
+		else if ( method == OpOpDG.SAMPLE ) 
 		{
 			long lrows = ec.getScalarInput(rows).getLongValue();
 			long range = UtilFunctions.toLong(maxValue);
@@ -342,7 +341,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			//TODO handle runtime seed
 			soresBlock = MatrixBlock.sampleOperations(range, (int)lrows, replace, seed);
 		}
-		else if ( method == DataGenMethod.TIME ) {
+		else if ( method == OpOpDG.TIME ) {
 			soresScalar = new IntObject(System.nanoTime());
 		}
 		
@@ -375,8 +374,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			if (runtimeSeed == null)
 				runtimeSeed = (minValue == maxValue && sparsity == 1) ? 
 					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
-			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND :
-					(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
+			int position = (method == OpOpDG.RAND) ? SEED_POSITION_RAND :
+					(method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
 			tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
 							tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
 		}

@@ -42,8 +42,6 @@ import org.tugraz.sysds.hops.DnnOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.FunctionOp.FunctionType;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.HopsException;
@@ -73,6 +71,8 @@ import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDG;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
@@ -965,7 +965,7 @@ public class DMLTranslator
 					DataIdentifier var = liveIn.getVariables().get(varName);
 					long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 					long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
-					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getBlocksize());
+					DataOp read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), OpOpData.TRANSIENTREAD, null, actualDim1, actualDim2, var.getNnz(), var.getBlocksize());
 					read.setParseInfo(var);
 					ids.put(varName, read);
 				}
@@ -1109,7 +1109,7 @@ public class DMLTranslator
 						//add transient write if needed
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
-							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
+							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, OpOpData.TRANSIENTWRITE, null);
 							transientwrite.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
 							transientwrite.setParseInfo(target);
 							updatedLiveOut.addVariable(target.getName(), target);
@@ -1139,7 +1139,7 @@ public class DMLTranslator
 						
 						Integer statementId = liveOutToTemp.get(target.getName());
 						if ((statementId != null) && (statementId.intValue() == i)) {
-							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, DataOpTypes.TRANSIENTWRITE, null);
+							DataOp transientwrite = new DataOp(target.getName(), target.getDataType(), target.getValueType(), ae, OpOpData.TRANSIENTWRITE, null);
 							transientwrite.setOutputParams(origDim1, origDim2, ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
 							transientwrite.setParseInfo(target);
 							updatedLiveOut.addVariable(target.getName(), target);
@@ -1353,7 +1353,7 @@ public class DMLTranslator
 				long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 				long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
 				
-				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
+				read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), OpOpData.TRANSIENTREAD,
 						null, actualDim1, actualDim2, var.getNnz(), var.getBlocksize());
 				read.setParseInfo(var);
 			}
@@ -1398,7 +1398,7 @@ public class DMLTranslator
 		//create transient write to internal variable name on top of expression
 		//in order to ensure proper instruction generation
 		predicateHops = HopRewriteUtils.createDataOp(
-			ProgramBlock.PRED_VAR, predicateHops, DataOpTypes.TRANSIENTWRITE);
+			ProgramBlock.PRED_VAR, predicateHops, OpOpData.TRANSIENTWRITE);
 		
 		if (passedSB instanceof WhileStatementBlock)
 			((WhileStatementBlock)passedSB).setPredicateHops(predicateHops);
@@ -1439,7 +1439,7 @@ public class DMLTranslator
 					else {
 						long actualDim1 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim1() : var.getDim1();
 						long actualDim2 = (var instanceof IndexedIdentifier) ? ((IndexedIdentifier)var).getOrigDim2() : var.getDim2();
-						read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), DataOpTypes.TRANSIENTREAD,
+						read = new DataOp(var.getName(), var.getDataType(), var.getValueType(), OpOpData.TRANSIENTREAD,
 								null, actualDim1, actualDim2,  var.getNnz(), var.getBlocksize());
 						read.setParseInfo(var);
 					}
@@ -1452,7 +1452,7 @@ public class DMLTranslator
 			Hop predicateHops = processTempIntExpression(expr, _ids);
 			if( predicateHops != null )
 				predicateHops = HopRewriteUtils.createDataOp(
-					ProgramBlock.PRED_VAR, predicateHops, DataOpTypes.TRANSIENTWRITE);
+					ProgramBlock.PRED_VAR, predicateHops, OpOpData.TRANSIENTWRITE);
 			
 			//construct hops for from, to, and increment expressions		
 			if( i == 0 )
@@ -1487,8 +1487,8 @@ public class DMLTranslator
 				return processParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, target, hops);
 			else if( source instanceof DataExpression ) {
 				Hop ae = processDataExpression((DataExpression)source, target, hops);
-				if (ae instanceof DataOp && ((DataOp) ae).getDataOpType() != DataOpTypes.SQLREAD &&
-						((DataOp) ae).getDataOpType() != DataOpTypes.FEDERATED) {
+				if (ae instanceof DataOp && ((DataOp) ae).getOp() != OpOpData.SQLREAD &&
+						((DataOp) ae).getOp() != OpOpData.FEDERATED) {
 					String formatName = ((DataExpression)source).getVarParam(DataExpression.FORMAT_TYPE).toString();
 					((DataOp)ae).setInputFormatType(Expression.convertFormatType(formatName));
 				}
@@ -1889,8 +1889,8 @@ public class DMLTranslator
 				String[] outputNames = new String[targetList.size()]; 
 				outputNames[0] = targetList.get(0).getName();
 				outputNames[1] = targetList.get(1).getName();
-				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.FP64, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
-				outputs.add(new DataOp(outputNames[1], DataType.FRAME, ValueType.STRING, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
+				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.FP64, inputs.get(0), OpOpData.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
+				outputs.add(new DataOp(outputNames[1], DataType.FRAME, ValueType.STRING, inputs.get(0), OpOpData.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
 				
 				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
 				break;
@@ -2035,19 +2035,19 @@ public class DMLTranslator
 		// construct hop based on opcode
 		switch(source.getOpCode()) {
 		case READ:
-			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), DataOpTypes.PERSISTENTREAD, paramHops);
+			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), OpOpData.PERSISTENTREAD, paramHops);
 			((DataOp)currBuiltinOp).setFileName(((StringIdentifier)source.getVarParam(DataExpression.IO_FILENAME)).getValue());
 			break;
 			
 		case WRITE:
 			currBuiltinOp = new DataOp(target.getName(), target.getDataType(), target.getValueType(), 
-				DataOpTypes.PERSISTENTWRITE, hops.get(target.getName()), paramHops);
+				OpOpData.PERSISTENTWRITE, hops.get(target.getName()), paramHops);
 			break;
 			
 		case RAND:
 			// We limit RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, and RAND_PDF to be constants
-			DataGenMethod method = (paramHops.get(DataExpression.RAND_MIN).getValueType()==ValueType.STRING &&
-					target.getDataType() == DataType.MATRIX) ? DataGenMethod.SINIT : DataGenMethod.RAND;
+			OpOpDG method = (paramHops.get(DataExpression.RAND_MIN).getValueType()==ValueType.STRING &&
+					target.getDataType() == DataType.MATRIX) ? OpOpDG.SINIT : OpOpDG.RAND;
 			currBuiltinOp = new DataGenOp(method, target, paramHops);
 			break;
 
@@ -2066,12 +2066,12 @@ public class DMLTranslator
 			
 		case SQL:
 			currBuiltinOp = new DataOp(target.getName(), target.getDataType(),
-				target.getValueType(), DataOpTypes.SQLREAD, paramHops);
+				target.getValueType(), OpOpData.SQLREAD, paramHops);
 			break;
 			
 		case FEDERATED:
 			currBuiltinOp = new DataOp(target.getName(), target.getDataType(),
-					target.getValueType(), DataOpTypes.FEDERATED, paramHops);
+					target.getValueType(), OpOpData.FEDERATED, paramHops);
 			break;
 
 		default:
@@ -2135,7 +2135,7 @@ public class DMLTranslator
 				String[] outputNames = new String[targetList.size()]; 
 				for ( int i=0; i < targetList.size(); i++ ) {
 					outputNames[i] = targetList.get(i).getName();
-					Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.FP64, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
+					Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.FP64, inputs.get(0), OpOpData.FUNCTIONOUTPUT, inputs.get(0).getFilename());
 					outputs.add(output);
 				}
 				
@@ -2523,11 +2523,11 @@ public class DMLTranslator
 			randParams.put(Statement.SEQ_TO, expr2);
 			randParams.put(Statement.SEQ_INCR, (expr3!=null)?expr3 : new LiteralOp(1)); 
 			//note incr: default -1 (for from>to) handled during runtime
-			currBuiltinOp = new DataGenOp(DataGenMethod.SEQ, target, randParams);
+			currBuiltinOp = new DataGenOp(OpOpDG.SEQ, target, randParams);
 			break;
 
 		case TIME:
-			currBuiltinOp = new DataGenOp(DataGenMethod.TIME, target);
+			currBuiltinOp = new DataGenOp(OpOpDG.TIME, target);
 			break;
 			
 		case SAMPLE: 
@@ -2570,7 +2570,7 @@ public class DMLTranslator
 				tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 			}
 			
-			currBuiltinOp = new DataGenOp(DataGenMethod.SAMPLE, target, tmpparams);
+			currBuiltinOp = new DataGenOp(OpOpDG.SAMPLE, target, tmpparams);
 			break;
 		}
 		

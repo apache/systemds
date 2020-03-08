@@ -25,7 +25,7 @@ import java.util.HashMap;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -106,7 +106,7 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		
 		int ret = 0;
 		if( hop.getInput().isEmpty() //LEAF NODE
-			|| HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) )
+			|| HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) )
 		{
 			if( hop instanceof LiteralOp ) {
 				LiteralKey key = new LiteralKey(hop.getValueType(), hop.getName());

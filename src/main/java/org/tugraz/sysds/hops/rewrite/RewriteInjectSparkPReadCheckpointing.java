@@ -21,10 +21,10 @@ package org.tugraz.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 
 /**
  * Rule: BlockSizeAndReblock. For all statement blocks, determine
@@ -61,7 +61,7 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 			return;
 		
 		// The reblocking is performed after transform, and hence checkpoint only non-transformed reads.
-		if( (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD)
+		if( (hop instanceof DataOp && ((DataOp)hop).getOp()==OpOpData.PERSISTENTREAD)
 			|| hop.requiresReblock() )
 		{
 			//make given hop for checkpointing (w/ default storage level)

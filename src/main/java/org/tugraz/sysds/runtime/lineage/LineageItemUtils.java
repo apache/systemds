@@ -26,6 +26,8 @@ import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpDG;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -37,8 +39,6 @@ import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.ReorgOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.Lop;
@@ -198,7 +198,7 @@ public class LineageItemUtils {
 					params.put(DataExpression.RAND_LAMBDA, new LiteralOp(rand.getPdfParams()));
 					params.put(DataExpression.RAND_SPARSITY, new LiteralOp(rand.getSparsity()));
 					params.put(DataExpression.RAND_SEED, new LiteralOp(rand.getSeed()));
-					Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+					Hop datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params);
 					datagen.setBlocksize(rand.getBlocksize());
 					operands.put(item.getId(), datagen);
 				} else if (inst instanceof VariableCPInstruction
@@ -212,7 +212,7 @@ public class LineageItemUtils {
 					params.put(DataExpression.READCOLPARAM, new LiteralOp(Long.parseLong(parts[7])));
 					params.put(DataExpression.READNNZPARAM, new LiteralOp(Long.parseLong(parts[8])));
 					params.put(DataExpression.FORMAT_TYPE, new LiteralOp(parts[5]));
-					DataOp pread = new DataOp(parts[1].substring(5), dt, vt, DataOpTypes.PERSISTENTREAD, params);
+					DataOp pread = new DataOp(parts[1].substring(5), dt, vt, OpOpData.PERSISTENTREAD, params);
 					pread.setFileName(parts[2]);
 					operands.put(item.getId(), pread);
 				}
@@ -231,7 +231,7 @@ public class LineageItemUtils {
 					params.put(DataExpression.RAND_LAMBDA, new LiteralOp(rand.getPdfParams()));
 					params.put(DataExpression.RAND_SPARSITY, new LiteralOp(rand.getSparsity()));
 					params.put(DataExpression.RAND_SEED, new LiteralOp(rand.getSeed()));
-					Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+					Hop datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params);
 					datagen.setBlocksize(rand.getBlocksize());
 					operands.put(item.getId(), datagen);
 				}
@@ -375,7 +375,7 @@ public class LineageItemUtils {
 		for (int i = 0; i < root.getInput().size(); i++) 
 			rConstructLineageFromHops(root.getInput().get(i), operands);
 	
-		if ((root instanceof DataOp) && (((DataOp)root).getDataOpType() == DataOpTypes.TRANSIENTREAD)) {
+		if ((root instanceof DataOp) && (((DataOp)root).getOp() == OpOpData.TRANSIENTREAD)) {
 			LineageItem li = new LineageItem(root.getName(), "InputPlaceholder", "Create"+String.valueOf(root.getHopID()));
 			operands.put(root.getHopID(), li);
 			return;

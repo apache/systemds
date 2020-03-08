@@ -22,9 +22,9 @@ package org.tugraz.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.estim.MMNode;
 import org.tugraz.sysds.hops.estim.EstimatorMatrixHistogram;
 import org.tugraz.sysds.hops.estim.EstimatorMatrixHistogram.MatrixHistogram;
@@ -131,7 +131,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 		LocalVariableMap vars = state.getVariables();
 		
 		for( int i=0; i<chain.size(); i++ ) {
-			inputsAvail &= HopRewriteUtils.isData(chain.get(0), DataOpTypes.TRANSIENTREAD);
+			inputsAvail &= HopRewriteUtils.isData(chain.get(0), OpOpData.TRANSIENTREAD);
 			if( inputsAvail )
 				sketchArray[i] = new MMNode(getMatrix(chain.get(i).getName(), vars));
 			else 

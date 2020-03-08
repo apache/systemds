@@ -35,6 +35,7 @@ import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
@@ -49,7 +50,7 @@ public class DataGenOp extends MultiThreadedHop
 	public static final long UNSPECIFIED_SEED = -1;
 	
 	 // defines the specific data generation method
-	private DataGenMethod _op;
+	private OpOpDG _op;
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -87,7 +88,7 @@ public class DataGenOp extends MultiThreadedHop
 	 * @param id the target identifier
 	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
-	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters) {
+	public DataGenOp(OpOpDG mthd, DataIdentifier id, HashMap<String, Hop> inputParameters) {
 		super(id.getName(),
 			id.getDataType().isUnknown() ? DataType.MATRIX : id.getDataType(),
 			id.getValueType().isUnknown() ? ValueType.FP64 : id.getValueType());
@@ -111,7 +112,7 @@ public class DataGenOp extends MultiThreadedHop
 		}
 		
 		Hop sparsityOp = inputParameters.get(DataExpression.RAND_SPARSITY);
-		if ( mthd == DataGenMethod.RAND && sparsityOp instanceof LiteralOp)
+		if ( mthd == OpOpDG.RAND && sparsityOp instanceof LiteralOp)
 			_sparsity = HopRewriteUtils.getDoubleValue((LiteralOp)sparsityOp);
 		
 		//generate base dir
@@ -124,7 +125,7 @@ public class DataGenOp extends MultiThreadedHop
 		refreshSizeInformation();
 	}
 
-	public DataGenOp(DataGenMethod mthd, DataIdentifier id)
+	public DataGenOp(OpOpDG mthd, DataIdentifier id)
 	{
 		super(id.getName(), DataType.SCALAR, ValueType.INT64);
 		
@@ -152,7 +153,7 @@ public class DataGenOp extends MultiThreadedHop
 		return "dg(" + _op.toString().toLowerCase() +")";
 	}
 	
-	public DataGenMethod getOp() {
+	public OpOpDG getOp() {
 		return _op;
 	}
 	
@@ -163,7 +164,7 @@ public class DataGenOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isMultiThreadedOpType() {
-		return _op == DataGenMethod.RAND;
+		return _op == OpOpDG.RAND;
 	}
 	
 	@Override
@@ -196,7 +197,7 @@ public class DataGenOp extends MultiThreadedHop
 				//robust handling for blocksize (important for -exec singlenode; otherwise incorrect results)
 				(getBlocksize()>0)?getBlocksize():ConfigurationManager.getBlocksize(),
 				//actual rand nnz might differ (in cp/mr they are corrected after execution)
-				(_op==DataGenMethod.RAND && et==ExecType.SPARK && getNnz()!=0) ? -1 : getNnz(),
+				(_op==OpOpDG.RAND && et==ExecType.SPARK && getNnz()!=0) ? -1 : getNnz(),
 				getUpdateType());
 		
 		setLineNumbers(rnd);
@@ -219,7 +220,7 @@ public class DataGenOp extends MultiThreadedHop
 	{		
 		double ret;
 		
-		if ( _op == DataGenMethod.RAND && _sparsity != -1 ) {
+		if ( _op == OpOpDG.RAND && _sparsity != -1 ) {
 			if( hasConstantValue(0.0) ) { //if empty block
 				ret = OptimizerUtils.estimateSizeEmptyBlock(dim1, dim2);
 			}
@@ -239,7 +240,7 @@ public class DataGenOp extends MultiThreadedHop
 	@Override
 	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
 	{
-		if ( _op == DataGenMethod.RAND && dimsKnown() ) {
+		if ( _op == OpOpDG.RAND && dimsKnown() ) {
 			long numBlocks = (long) (Math.ceil((double)dim1/ConfigurationManager.getBlocksize()) 
 					* Math.ceil((double)dim2/ConfigurationManager.getBlocksize()));
 			return 32 + numBlocks*8.0; // 32 bytes of overhead for an array of long & numBlocks long values.
@@ -252,7 +253,7 @@ public class DataGenOp extends MultiThreadedHop
 	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{
 		//infer rows and 
-		if( (_op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ) &&
+		if( (_op == OpOpDG.RAND || _op == OpOpDG.SINIT ) &&
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION )
 		{
 			if (_paramIndexMap.containsKey(DataExpression.RAND_DIMS)) {
@@ -267,7 +268,7 @@ public class DataGenOp extends MultiThreadedHop
 					return new MatrixCharacteristics(dim1, dim2, -1, nnz);
 			}
 		}
-		else if ( _op == DataGenMethod.SEQ )
+		else if ( _op == OpOpDG.SEQ )
 		{
 			Hop from = getInput().get(_paramIndexMap.get(Statement.SEQ_FROM));
 			Hop to = getInput().get(_paramIndexMap.get(Statement.SEQ_TO));
@@ -319,7 +320,7 @@ public class DataGenOp extends MultiThreadedHop
 
 		//always force string initialization into CP (not supported in MR)
 		//similarly, sample is currently not supported in MR either
-		if( _op == DataGenMethod.SINIT || _op == DataGenMethod.TIME ) {
+		if( _op == OpOpDG.SINIT || _op == OpOpDG.TIME ) {
 			_etype = ExecType.CP;
 		}
 		
@@ -333,7 +334,7 @@ public class DataGenOp extends MultiThreadedHop
 		Hop input2;
 		Hop input3;
 
-		if ( _op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ) 
+		if ( _op == OpOpDG.RAND || _op == OpOpDG.SINIT ) 
 		{
 			if (_dataType != DataType.TENSOR) {
 				input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows
@@ -347,7 +348,7 @@ public class DataGenOp extends MultiThreadedHop
 			}
 			// TODO size information for tensor
 		}
-		else if (_op == DataGenMethod.SEQ ) 
+		else if (_op == OpOpDG.SEQ ) 
 		{
 			input1 = getInput().get(_paramIndexMap.get(Statement.SEQ_FROM));
 			input2 = getInput().get(_paramIndexMap.get(Statement.SEQ_TO)); 
@@ -372,7 +373,7 @@ public class DataGenOp extends MultiThreadedHop
 				_incr = incr;
 			}
 		}
-		else if (_op == DataGenMethod.TIME ) {
+		else if (_op == OpOpDG.TIME ) {
 			setDim1(0);
 			setDim2(0);
 			_dataType = DataType.SCALAR;
@@ -380,7 +381,7 @@ public class DataGenOp extends MultiThreadedHop
 		}
 		
 		//refresh nnz information (for seq, sparsity is always -1)
-		if( _op == DataGenMethod.RAND && hasConstantValue(0.0) )
+		if( _op == OpOpDG.RAND && hasConstantValue(0.0) )
 			setNnz(0);
 		else if ( dimsKnown() && _sparsity>=0 ) //general case
 			setNnz((long) (_sparsity * getLength()));
@@ -414,7 +415,7 @@ public class DataGenOp extends MultiThreadedHop
 	public boolean hasConstantValue() 
 	{
 		//robustness for other operations, not specifying min/max/sparsity
-		if( _op != DataGenMethod.RAND )
+		if( _op != OpOpDG.RAND )
 			return false;
 		
 		Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN)); //min 
@@ -444,7 +445,7 @@ public class DataGenOp extends MultiThreadedHop
 	public boolean hasConstantValue(double val) 
 	{
 		//string initialization does not exhibit constant values
-		if( _op != DataGenMethod.RAND )
+		if( _op != OpOpDG.RAND )
 			return false;
 		
 		boolean ret = false;
@@ -516,7 +517,7 @@ public class DataGenOp extends MultiThreadedHop
 		 // This compare() method currently is invoked from Hops RewriteCommonSubexpressionElimination,
 		 // which tries to merge two hops if this function returns true. However, two TIME hops should
 		 // never be merged, and hence returning false.
-		if (_op == DataGenMethod.TIME)
+		if (_op == OpOpDG.TIME)
 			return false;
 		
 		DataGenOp that2 = (DataGenOp)that;
@@ -537,7 +538,7 @@ public class DataGenOp extends MultiThreadedHop
 			
 			//special case for rand seed (no CSE if unspecified seed because runtime generated)
 			//note: if min and max is constant, we can safely merge those hops
-			if( _op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ){
+			if( _op == OpOpDG.RAND || _op == OpOpDG.SINIT ){
 				Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
 				Hop min = getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
 				Hop max = getInput().get(_paramIndexMap.get(DataExpression.RAND_MAX));

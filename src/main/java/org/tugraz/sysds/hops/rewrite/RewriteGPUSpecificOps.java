@@ -36,8 +36,8 @@ import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.FunctionOp.FunctionType;
 import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.hops.Hop.OpOp1;
@@ -686,7 +686,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 */
 	private static boolean isAnyPersistentWrite(Hop [] outputHops) {
 		for(Hop outHop : outputHops) {
-			if(HopRewriteUtils.isData(outHop, DataOpTypes.PERSISTENTWRITE))
+			if(HopRewriteUtils.isData(outHop, OpOpData.PERSISTENTWRITE))
 				return true;
 		}
 		return false;
@@ -703,10 +703,10 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		ArrayList<Hop> ret = new ArrayList<>();
 		for(int i = 0; i < oldHops.length; i++) {
 			// Create a transient read as FunctionOp will add a transient write.
-			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE))
+			if(HopRewriteUtils.isData(oldHops[i], OpOpData.PERSISTENTWRITE))
 				throw new RuntimeException("Persistent write is not supported as output for the given rewrite." + oldHops[i]);
 			// Generate a new name if the old output was not transient write.
-			String name = HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) ? oldHops[i].getName() : "_genGPU" + (_seq++);
+			String name = HopRewriteUtils.isData(oldHops[i], OpOpData.TRANSIENTWRITE) ? oldHops[i].getName() : "_genGPU" + (_seq++);
 			DataOp tRead = HopRewriteUtils.createTransientRead(name, oldHops[i]);
 			HopRewriteUtils.rewireAllParentChildReferences(oldHops[i], tRead);
 			ret.add(tRead);

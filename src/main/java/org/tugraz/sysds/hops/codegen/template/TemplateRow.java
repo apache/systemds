@@ -37,7 +37,6 @@ import org.tugraz.sysds.hops.NaryOp;
 import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
@@ -59,6 +58,7 @@ import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;
@@ -162,7 +162,7 @@ public class TemplateRow extends TemplateBase
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL, OpOpDnn.CONV2D)
 				&& hop.getInput().get(0).dimsKnown() && ((DnnOp)hop).isStride1Pad0()
 				&& hop.getInput().get(1).dimsKnown() && hop.getInput().get(1)!=input) //for conv2d
-			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, DataGenMethod.SEQ)
+			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, OpOpDG.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false))
 			|| (hop instanceof AggBinaryOp
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
@@ -364,7 +364,7 @@ public class TemplateRow extends TemplateBase
 				}
 			}
 		}
-		else if( HopRewriteUtils.isDataGenOp(hop, DataGenMethod.SEQ) ) {
+		else if( HopRewriteUtils.isDataGenOp(hop, OpOpDG.SEQ) ) {
 			CNodeData from = TemplateUtils.getLiteral(tmp.get(((DataGenOp)hop).getParam(Statement.SEQ_FROM).getHopID()));
 			CNodeData to = TemplateUtils.getLiteral(tmp.get(((DataGenOp)hop).getParam(Statement.SEQ_TO).getHopID()));
 			CNodeData incr = TemplateUtils.getLiteral(tmp.get(((DataGenOp)hop).getParam(Statement.SEQ_INCR).getHopID()));
@@ -375,7 +375,7 @@ public class TemplateRow extends TemplateBase
 			out = new CNodeBinary(from, incr, BinType.SEQ_RIX);
 		}
 		else if( HopRewriteUtils.isTransposeOperation(hop) ) {
-			out = TemplateUtils.skipTranspose(tmp.get(hop.getHopID()), 
+			out = TemplateUtils.skipTranspose(tmp.get(hop.getHopID()),
 				hop, tmp, compileLiterals);
 			if( out instanceof CNodeData && !inHops.contains(hop.getInput().get(0)) )
 				inHops.add(hop.getInput().get(0));

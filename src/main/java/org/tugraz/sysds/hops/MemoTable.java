@@ -22,7 +22,7 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.recompile.RecompileStatus;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
@@ -78,7 +78,7 @@ public class MemoTable
 		//extract all transient writes (must be dag root)
 		for( Hop hop : hops ) {
 			if(    hop instanceof DataOp 
-				&& ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE )
+				&& ((DataOp)hop).getOp()==OpOpData.TRANSIENTWRITE )
 			{
 				String varname = hop.getName();
 				Hop input = hop.getInput().get(0); //child
@@ -176,7 +176,7 @@ public class MemoTable
 		
 		//determine if hop itself has worst-case stats (this is important
 		//for transient read with cross-dag worst-case estimates)
-		if(   (h instanceof DataOp && ((DataOp)h).getDataOpType()==DataOpTypes.TRANSIENTREAD)
+		if(   (h instanceof DataOp && ((DataOp)h).getOp()==OpOpData.TRANSIENTREAD)
 		    ||(h instanceof DataGenOp) ) 
 		{
 			ret = true;
@@ -192,7 +192,7 @@ public class MemoTable
 		
 		//probe status of previous twrites
 		if(    hop instanceof DataOp && hop.getDataType() == DataType.MATRIX
-			&& ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTREAD )
+			&& ((DataOp)hop).getOp()==OpOpData.TRANSIENTREAD )
 		{
 			String varname = hop.getName();
 			DataCharacteristics dc = status.getTWriteStats().get(varname);

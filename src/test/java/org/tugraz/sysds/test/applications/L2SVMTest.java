@@ -108,6 +108,7 @@ public class L2SVMTest extends ApplicationTestBase {
 	}
 
 	@After
+	@Override
 	public void teardown() {
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

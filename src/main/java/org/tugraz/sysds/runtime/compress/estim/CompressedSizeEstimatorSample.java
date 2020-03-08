@@ -406,7 +406,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		 * 		
 		 *
 		 */
-		double A = (int) nRows - NTilde;
+		double A = nRows - NTilde;
 		double B = A - sampleSize + 1;
 		double C = nRows;
 		double D = nRows - sampleSize + 1;

@@ -109,7 +109,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	static {
 		// for internal debugging only
 		if(LOCAL_DEBUG) {
-			Logger.getLogger("org.tugraz.sysds.runtime.compress").setLevel((Level) LOCAL_DEBUG_LEVEL);
+			Logger.getLogger("org.tugraz.sysds.runtime.compress").setLevel(LOCAL_DEBUG_LEVEL);
 		}
 	}
 	// ------------------------------

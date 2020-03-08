@@ -16,13 +16,9 @@
 
 package org.tugraz.sysds.test.component.compress;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
 import org.tugraz.sysds.lops.MapMultChain.ChainType;
 import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
@@ -130,12 +126,10 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 					.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 0, 1, 1.0, 3)) : null;
 
 				// matrix-vector uncompressed
-				MatrixBlock ret1 = (MatrixBlock) mb
-					.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, k);
+				MatrixBlock ret1 = mb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, k);
 
 				// matrix-vector compressed
-				MatrixBlock ret2 = (MatrixBlock) cmb
-					.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, k);
+				MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, k);
 
 				// compare result with input
 				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
@@ -255,11 +249,10 @@ public class ParCompressedMatrixTest extends CompressedTestBase {
 						break;
 				}
 				// matrix-vector uncompressed
-				MatrixBlock ret1 = (MatrixBlock) mb.aggregateUnaryOperations(auop, new MatrixBlock(), 1000, null, true);
+				MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), 1000, null, true);
 
 				// matrix-vector compressed
-				MatrixBlock ret2 = (MatrixBlock) cmb
-					.aggregateUnaryOperations(auop, new MatrixBlock(), 1000, null, true);
+				MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), 1000, null, true);
 
 				// compare result with input
 				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);

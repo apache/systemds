@@ -1179,16 +1179,13 @@ public abstract class AutomatedTestBase {
 	}
 
 	protected int getRandomAvailablePort(){
-		try {
-			ServerSocket availableSocket = new ServerSocket(0);
-			int port = availableSocket.getLocalPort();
-			availableSocket.close();
-			return port;
+		try (ServerSocket availableSocket = new ServerSocket(0) ) {
+			return availableSocket.getLocalPort();
 		}
 		catch(IOException e) {
 			// If no port was found just use 9999
+			return 9990;
 		}
-		return 9999;
 	}
 
 	protected Thread startLocalFedWorker(int port) {

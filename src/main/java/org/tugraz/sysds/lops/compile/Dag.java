@@ -25,17 +25,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Data.OperationTypes;
 import org.tugraz.sysds.lops.FunctionCallCP;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.Lop.Type;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.OutputParameters;
-import org.tugraz.sysds.lops.OutputParameters.Format;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -219,7 +219,7 @@ public class Dag<N extends Lop>
 		// filter out non-executable nodes
 		List<Lop> execNodes = nodes.stream()
 			.filter(l -> (!l.isDataExecLocation() 
-				|| (((Data)l).getOperationType()==OperationTypes.WRITE && !isTransientWriteRead((Data)l))
+				|| (((Data)l).getOperationType().isWrite() && !isTransientWriteRead((Data)l))
 				|| (((Data)l).isPersistentRead() && l.getDataType().isScalar())))
 			.collect(Collectors.toList());
 		
@@ -235,8 +235,8 @@ public class Dag<N extends Lop>
 	
 	private static boolean isTransientWriteRead(Data dnode) {
 		Lop input = dnode.getInputs().get(0);
-		return dnode.isTransient() 
-			&& input.isDataExecLocation() && ((Data)input).isTransient() 
+		return dnode.getOperationType().isTransient() 
+			&& input.isDataExecLocation() && ((Data)input).getOperationType().isTransient() 
 			&& dnode.getOutputParameters().getLabel().equals(input.getOutputParameters().getLabel());
 	}
 	
@@ -259,8 +259,8 @@ public class Dag<N extends Lop>
 		// first capture all transient read variables
 		for ( Lop node : nodeV ) {
 			if (node.isDataExecLocation()
-					&& ((Data) node).isTransient()
-					&& ((Data) node).getOperationType() == OperationTypes.READ
+					&& ((Data) node).getOperationType().isTransient()
+					&& ((Data) node).getOperationType().isRead()
 					&& ((Data) node).getDataType() == DataType.MATRIX) {
 				// "node" is considered as updated ONLY IF the old value is not used any more
 				// So, make sure that this READ node does not feed into any (transient/persistent) WRITE
@@ -283,8 +283,8 @@ public class Dag<N extends Lop>
 		// capture updated transient write variables
 		for ( Lop node : nodeV ) {
 			if (node.isDataExecLocation()
-					&& ((Data) node).isTransient()
-					&& ((Data) node).getOperationType() == OperationTypes.WRITE
+					&& ((Data) node).getOperationType().isTransient()
+					&& ((Data) node).getOperationType().isWrite()
 					&& ((Data) node).getDataType() == DataType.MATRIX
 					&& labelNodeMapping.containsKey(node.getOutputParameters().getLabel()) // check to make sure corresponding (i.e., with the same label/name) transient read is present
 					&& !labelNodeMapping.containsValue(node.getInputs().get(0)) ){ // check to avoid cases where transient read feeds into a transient write
@@ -344,9 +344,11 @@ public class Dag<N extends Lop>
 	private static ArrayList<Instruction> generateInstructionsForInputVariables(List<Lop> nodes_v) {
 		ArrayList<Instruction> insts = new ArrayList<>();
 		for(Lop n : nodes_v) {
-			if (n.isDataExecLocation() && !((Data) n).isTransient()
-					&& ((Data) n).getOperationType() == OperationTypes.READ
-					&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME) ) {
+			if (n.isDataExecLocation() 
+				&& !((Data) n).getOperationType().isTransient()
+				&& ((Data) n).getOperationType().isRead()
+				&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME) )
+			{
 				if ( !((Data)n).isLiteral() ) {
 					try {
 						String inst_string = n.getInstructions();
@@ -441,7 +443,7 @@ public class Dag<N extends Lop>
 
 			// mark input scalar read nodes for deletion
 			if (node.isDataExecLocation()
-					&& ((Data) node).getOperationType() == Data.OperationTypes.READ
+					&& ((Data) node).getOperationType().isRead()
 					&& ((Data) node).getDataType() == DataType.SCALAR 
 					&& node.getOutputParameters().getFile_name() == null ) {
 				markedNodes.add(node);
@@ -467,8 +469,8 @@ public class Dag<N extends Lop>
 					boolean hasTransientWriteParent = false;
 					for ( Lop parent : node.getOutputs() ) {
 						if ( parent.isDataExecLocation() 
-								&& ((Data)parent).getOperationType() == Data.OperationTypes.WRITE 
-								&& ((Data)parent).isTransient() ) {
+								&& ((Data)parent).getOperationType().isWrite() 
+								&& ((Data)parent).getOperationType().isTransient() ) {
 							hasTransientWriteParent = true;
 							break;
 						}
@@ -610,9 +612,9 @@ public class Dag<N extends Lop>
 			}
 			else if (node.isDataExecLocation() ) {
 				Data dnode = (Data)node;
-				Data.OperationTypes op = dnode.getOperationType();
+				OpOpData op = dnode.getOperationType();
 				
-				if ( op == Data.OperationTypes.WRITE ) {
+				if ( op.isWrite() ) {
 					NodeOutput out = null;
 						out = setupNodeOutputs(node, ExecType.CP, false, false);
 						if ( dnode.getDataType() == DataType.SCALAR ) {
@@ -622,7 +624,7 @@ public class Dag<N extends Lop>
 						}
 						else {
 							// setupNodeOutputs() handles both transient and persistent matrix writes 
-							if ( dnode.isTransient() ) {
+							if ( dnode.getOperationType().isTransient() ) {
 								deleteInst.addAll(out.getLastInstructions());
 								doRmVar = false;
 							}
@@ -717,9 +719,9 @@ public class Dag<N extends Lop>
 				}
 			}
 		} else {
-			if (oparams.getFormat() == Format.TEXT || oparams.getFormat() == Format.MM)
+			if (oparams.getFormat() == FileFormat.TEXT || oparams.getFormat() == FileFormat.MM)
 				oinfo = OutputInfo.TextCellOutputInfo;
-			else if ( oparams.getFormat() == Format.CSV ) {
+			else if ( oparams.getFormat() == FileFormat.CSV ) {
 				oinfo = OutputInfo.CSVOutputInfo;
 			}
 			else {
@@ -873,7 +875,7 @@ public class Dag<N extends Lop>
 				}
 			}
 			else {
-				if ( ((Data)node).isTransient() ) {
+				if ( ((Data)node).getOperationType().isTransient() ) {
 					
 					if ( et == ExecType.CP ) {
 						// If transient matrix write is in CP then its input MUST be executed in CP as well.

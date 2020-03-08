@@ -30,8 +30,8 @@ import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.common.Types.AggOp;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.lops.Compression.CompressConfig;
@@ -112,7 +112,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	}
 	
 	private static boolean satisfiesCompressionCondition(Hop hop) {
-		return HopRewriteUtils.isData(hop, DataOpTypes.PERSISTENTREAD)
+		return HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD)
 			&& hop.getDim1() > 1 && hop.getDim2() > 1; //multi-column matrix
 	}
 	
@@ -256,10 +256,10 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 			}
 		}
 		//b) handle transient reads and writes (name mapping)
-		else if( HopRewriteUtils.isData(current, DataOpTypes.TRANSIENTWRITE)
+		else if( HopRewriteUtils.isData(current, OpOpData.TRANSIENTWRITE)
 			&& status.compMtx.contains(getTmpName(current.getInput().get(0))))
 			status.compMtx.add(current.getName());
-		else if( HopRewriteUtils.isData(current, DataOpTypes.TRANSIENTREAD)
+		else if( HopRewriteUtils.isData(current, OpOpData.TRANSIENTREAD)
 		&& status.compMtx.contains(current.getName()) )
 			status.compMtx.add(getTmpName(current));
 		//c) handle applicable operations

@@ -40,9 +40,9 @@ import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
@@ -213,7 +213,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				if( left.getDataType() == DataType.MATRIX && right instanceof DataGenOp )
 				{
 					DataGenOp dright = (DataGenOp) right;
-					if( dright.getOp()==DataGenMethod.RAND && dright.hasConstantValue() )
+					if( dright.getOp()==OpOpDG.RAND && dright.hasConstantValue() )
 					{
 						Hop drightIn = dright.getInput().get(dright.getParamIndex(DataExpression.RAND_MIN));
 						HopRewriteUtils.replaceChildReference(bop, dright, drightIn, 1);
@@ -226,7 +226,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				else if( right.getDataType() == DataType.MATRIX && left instanceof DataGenOp )
 				{
 					DataGenOp dleft = (DataGenOp) left;
-					if( dleft.getOp()==DataGenMethod.RAND && dleft.hasConstantValue()
+					if( dleft.getOp()==OpOpDG.RAND && dleft.hasConstantValue()
 						&& (left.getDim2()==1 || right.getDim2()>1) 
 						&& (left.getDim1()==1 || right.getDim1()>1))
 					{
@@ -359,7 +359,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//the creation of multiple datagen ops and thus potentially different results if seed not specified)
 			
 			//left input rand and hence output matrix double, right scalar literal
-			if( HopRewriteUtils.isDataGenOp(left, DataGenMethod.RAND) &&
+			if( HopRewriteUtils.isDataGenOp(left, OpOpDG.RAND) &&
 				right instanceof LiteralOp && left.getParent().size()==1 )
 			{
 				DataGenOp inputGen = (DataGenOp)left;
@@ -394,7 +394,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//right input rand and hence output matrix double, left scalar literal
-			else if( right instanceof DataGenOp && ((DataGenOp)right).getOp()==DataGenMethod.RAND &&
+			else if( right instanceof DataGenOp && ((DataGenOp)right).getOp()==OpOpDG.RAND &&
 				left instanceof LiteralOp && right.getParent().size()==1 )
 			{
 				DataGenOp inputGen = (DataGenOp)right;
@@ -427,7 +427,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 			//left input rand and hence output matrix double, right scalar variable
-			else if( HopRewriteUtils.isDataGenOp(left, DataGenMethod.RAND) 
+			else if( HopRewriteUtils.isDataGenOp(left, OpOpDG.RAND) 
 				&& right.getDataType().isScalar() && left.getParent().size()==1 )
 			{
 				DataGenOp gen = (DataGenOp)left;
@@ -482,7 +482,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			Hop left = bop.getInput().get(0);
 			Hop right = bop.getInput().get(1);
 			
-			if( right instanceof DataGenOp && ((DataGenOp)right).getOp()==DataGenMethod.RAND &&
+			if( right instanceof DataGenOp && ((DataGenOp)right).getOp()==OpOpDG.RAND &&
 				left instanceof LiteralOp && ((LiteralOp)left).getDoubleValue()==0.0 )
 			{
 				DataGenOp inputGen = (DataGenOp)right;
@@ -1390,7 +1390,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		{
 			Hop hi2 = hi.getInput().get(0);
 			
-			if( hi2 instanceof DataGenOp && ((DataGenOp)hi2).getOp()==DataGenMethod.RAND
+			if( hi2 instanceof DataGenOp && ((DataGenOp)hi2).getOp()==OpOpDG.RAND
 				&& ((DataGenOp)hi2).hasConstantValue() 
 				&& hi.getInput().get(3) instanceof LiteralOp ) //known indexreturn
 			{
@@ -1428,7 +1428,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		{
 			Hop hi2 = hi.getInput().get(0);
 			
-			if( hi2 instanceof DataGenOp && ((DataGenOp)hi2).getOp()==DataGenMethod.SEQ )
+			if( hi2 instanceof DataGenOp && ((DataGenOp)hi2).getOp()==OpOpDG.SEQ )
 			{
 				Hop incr = hi2.getInput().get(((DataGenOp)hi2).getParamIndex(Statement.SEQ_INCR));
 				//check for known ascending ordering and known indexreturn

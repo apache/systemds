@@ -21,9 +21,9 @@ package org.tugraz.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 
 /**
  * Rule: Eliminate for Transient Write DataHops to have no parents
@@ -49,7 +49,7 @@ public class RewriteTransientWriteParentHandling extends HopRewriteRule
 
 	private void rule_RehangTransientWriteParents(Hop hop, ArrayList<Hop> sbHops) 
 	{
-		if (hop instanceof DataOp && ((DataOp) hop).getDataOpType() == DataOpTypes.TRANSIENTWRITE
+		if (hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.TRANSIENTWRITE
 				&& !hop.getParent().isEmpty()) {
 
 			// update parents inputs with data op input

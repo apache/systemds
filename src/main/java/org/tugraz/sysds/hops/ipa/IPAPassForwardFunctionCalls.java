@@ -25,10 +25,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.stream.IntStream;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.FunctionStatement;
@@ -96,7 +96,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 	
 	private static boolean hasOnlySimplyArguments(FunctionOp fop) {
 		return fop.getInput().stream().allMatch(h -> h instanceof LiteralOp 
-			|| HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTREAD));
+			|| HopRewriteUtils.isData(h, OpOpData.TRANSIENTREAD));
 	}
 	
 	private static boolean hasConsistentOutputOrdering(FunctionStatement fstmt, FunctionOp fop2) {

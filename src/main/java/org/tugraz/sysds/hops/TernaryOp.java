@@ -24,6 +24,7 @@ package org.tugraz.sysds.hops;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -621,7 +622,7 @@ public class TernaryOp extends Hop
 					if( left && input1 instanceof DataGenOp )
 					{
 						DataGenOp dgop = (DataGenOp) input1;
-						if( dgop.getOp() == DataGenMethod.SEQ ){
+						if( dgop.getOp() == OpOpDG.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 							ret = (incr instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)incr)==1)
 								  || dgop.getIncrementValue()==1.0; //set by recompiler
@@ -631,21 +632,19 @@ public class TernaryOp extends Hop
 					if( !left && input2 instanceof DataGenOp )
 					{
 						DataGenOp dgop = (DataGenOp) input2;
-						if( dgop.getOp() == DataGenMethod.SEQ ){
+						if( dgop.getOp() == OpOpDG.SEQ ){
 							Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 							ret |= (incr instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)incr)==1)
 								   || dgop.getIncrementValue()==1.0; //set by recompiler;
 						}
 					}
-				}			
+				}
 			}
 		}
-		catch(Exception ex)
-		{
-			throw new RuntimeException(ex);
-			//ret = false;
+		catch(Exception ex) {
+			throw new HopsException(ex);
 		}
-			
+		
 		return ret;
 	}
 	

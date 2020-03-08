@@ -25,7 +25,10 @@ import org.apache.commons.lang.ArrayUtils;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.FileFormat;
 import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDG;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
@@ -40,10 +43,7 @@ import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.DnnOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.HopsException;
@@ -316,7 +316,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
-		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		Hop datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params);
 		datagen.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, datagen);
 		
@@ -376,7 +376,7 @@ public class HopRewriteUtils
 		params2.put(DataExpression.RAND_SEED, seed );
 		
 		//note internal refresh size information
-		DataGenOp datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params2);
+		DataGenOp datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params2);
 		datagen.setBlocksize(inputGen.getBlocksize());
 		copyLineNumbers(inputGen, datagen);
 		
@@ -405,7 +405,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
-		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		Hop datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params);
 		datagen.setBlocksize(rowInput.getBlocksize());
 		copyLineNumbers(rowInput, datagen);
 		
@@ -437,7 +437,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
-		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		Hop datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params);
 		datagen.setBlocksize(colInput.getBlocksize());
 		copyLineNumbers(rowInput, datagen);
 		
@@ -468,7 +468,7 @@ public class HopRewriteUtils
 		DataIdentifier di = new DataIdentifier("tmp");
 		di.setDataType(dt);
 		di.setValueType(vt);
-		Hop datagen = new DataGenOp(DataGenMethod.RAND, di, params);
+		Hop datagen = new DataGenOp(OpOpDG.RAND, di, params);
 		datagen.setBlocksize(rowInput.getBlocksize());
 		copyLineNumbers(rowInput, datagen);
 		
@@ -495,7 +495,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_MAX, str);
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED));
 		
-		Hop datagen = new DataGenOp(DataGenMethod.SINIT,
+		Hop datagen = new DataGenOp(OpOpDG.SINIT,
 			new DataIdentifier("tmp", DataType.MATRIX), params);
 		datagen.setBlocksize(ConfigurationManager.getBlocksize());
 		copyLineNumbers(values.get(0), datagen);
@@ -503,12 +503,12 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
-	public static boolean isDataGenOp(Hop hop, DataGenMethod... ops) {
+	public static boolean isDataGenOp(Hop hop, OpOpDG... ops) {
 		return (hop instanceof DataGenOp 
 			&& ArrayUtils.contains(ops, ((DataGenOp)hop).getOp()));
 	}
 	
-	public static boolean isDataGenOpWithLiteralInputs(Hop hop, DataGenMethod... ops) {
+	public static boolean isDataGenOpWithLiteralInputs(Hop hop, OpOpDG... ops) {
 		boolean ret = isDataGenOp(hop, ops);
 		for( Hop c : hop.getInput() )
 			ret &= c instanceof LiteralOp;
@@ -517,13 +517,13 @@ public class HopRewriteUtils
 	
 	public static boolean isDataGenOpWithConstantValue(Hop hop) {
 		return hop instanceof DataGenOp
-			&& ((DataGenOp)hop).getOp()==DataGenMethod.RAND
+			&& ((DataGenOp)hop).getOp()==OpOpDG.RAND
 			&& ((DataGenOp)hop).hasConstantValue();
 	}
 	
 	public static boolean isDataGenOpWithConstantValue(Hop hop, double value) {
 		return hop instanceof DataGenOp
-			&& ((DataGenOp)hop).getOp()==DataGenMethod.RAND
+			&& ((DataGenOp)hop).getOp()==OpOpDG.RAND
 			&& ((DataGenOp)hop).hasConstantValue(value);
 	}
 	
@@ -534,7 +534,7 @@ public class HopRewriteUtils
 	public static DataOp createTransientRead(String name, Hop h) {
 		//note: different constructor necessary for formattype
 		DataOp tread = new DataOp(name, h.getDataType(), h.getValueType(),
-			DataOpTypes.TRANSIENTREAD, null, h.getDim1(), h.getDim2(), h.getNnz(),
+			OpOpData.TRANSIENTREAD, null, h.getDim1(), h.getDim2(), h.getNnz(),
 			h.getUpdateType(), h.getBlocksize());
 		tread.setVisited();
 		copyLineNumbers(h, tread);
@@ -542,7 +542,7 @@ public class HopRewriteUtils
 	}
 	
 	public static DataOp createTransientRead(String name, MatrixBlock mb) {
-		DataOp tread = new DataOp(name, DataType.MATRIX, ValueType.FP64, DataOpTypes.TRANSIENTREAD,
+		DataOp tread = new DataOp(name, DataType.MATRIX, ValueType.FP64, OpOpData.TRANSIENTREAD,
 			null, mb.getNumRows(), mb.getNumColumns(), mb.getNonZeros(), UpdateType.COPY, 
 			ConfigurationManager.getBlocksize());
 		tread.setVisited();
@@ -552,7 +552,7 @@ public class HopRewriteUtils
 	}
 	
 	public static DataOp createTransientRead(String name, MatrixObject mo) {
-		DataOp tread = new DataOp(name, DataType.MATRIX, ValueType.FP64, DataOpTypes.TRANSIENTREAD,
+		DataOp tread = new DataOp(name, DataType.MATRIX, ValueType.FP64, OpOpData.TRANSIENTREAD,
 			null, mo.getNumRows(), mo.getNumColumns(), mo.getNnz(), UpdateType.COPY,
 			(int)mo.getBlocksize());
 		tread.setVisited();
@@ -562,10 +562,10 @@ public class HopRewriteUtils
 	}
 	
 	public static DataOp createTransientWrite(String name, Hop in) {
-		return createDataOp(name, in, DataOpTypes.TRANSIENTWRITE);
+		return createDataOp(name, in, OpOpData.TRANSIENTWRITE);
 	}
 	
-	public static DataOp createDataOp(String name, Hop in, DataOpTypes type) {
+	public static DataOp createDataOp(String name, Hop in, OpOpData type) {
 		DataOp dop = new DataOp(name, in.getDataType(),
 			in.getValueType(), in, type, null);
 		dop.setVisited();
@@ -763,7 +763,7 @@ public class HopRewriteUtils
 		}
 		
 		//note internal refresh size information
-		DataGenOp datagen = new DataGenOp(DataGenMethod.SEQ, new DataIdentifier("tmp"), params);
+		DataGenOp datagen = new DataGenOp(OpOpDG.SEQ, new DataIdentifier("tmp"), params);
 		datagen.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, datagen);
 		
@@ -1083,9 +1083,8 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
-	public static boolean isData(Hop hop, DataOpTypes type) {
-		return hop instanceof DataOp
-			&& ((DataOp)hop).getDataOpType()==type;
+	public static boolean isData(Hop hop, OpOpData type) {
+		return hop instanceof DataOp && ((DataOp)hop).getOp()==type;
 	}
 	
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {
@@ -1261,7 +1260,7 @@ public class HopRewriteUtils
 	}
 	
 	public static boolean isBasic1NSequence(Hop hop) {
-		if( hop instanceof DataGenOp && ((DataGenOp)hop).getOp() == DataGenMethod.SEQ  ) {
+		if( hop instanceof DataGenOp && ((DataGenOp)hop).getOp() == OpOpDG.SEQ  ) {
 			DataGenOp dgop = (DataGenOp) hop;
 			Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
 			Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
@@ -1272,7 +1271,7 @@ public class HopRewriteUtils
 	}
 	
 	public static boolean isBasic1NSequence(Hop seq, Hop input, boolean row) {
-		if( seq instanceof DataGenOp && ((DataGenOp)seq).getOp() == DataGenMethod.SEQ  ) {
+		if( seq instanceof DataGenOp && ((DataGenOp)seq).getOp() == OpOpDG.SEQ  ) {
 			DataGenOp dgop = (DataGenOp) seq;
 			Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
 			Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
@@ -1290,7 +1289,7 @@ public class HopRewriteUtils
 		if( hop instanceof DataGenOp )
 		{
 			DataGenOp dgop = (DataGenOp) hop;
-			if( dgop.getOp() == DataGenMethod.SEQ ){
+			if( dgop.getOp() == OpOpDG.SEQ ){
 				Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
 				Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 				ret = (to instanceof LiteralOp && getDoubleValueSafe((LiteralOp)to)==1)
@@ -1302,7 +1301,7 @@ public class HopRewriteUtils
 	}
 
 	public static Hop getBasic1NSequenceMax(Hop hop) {
-		if( isDataGenOp(hop, DataGenMethod.SEQ) ) {
+		if( isDataGenOp(hop, OpOpDG.SEQ) ) {
 			DataGenOp dgop = (DataGenOp) hop;
 			return dgop.getInput()
 				.get(dgop.getParamIndex(Statement.SEQ_TO));
@@ -1321,12 +1320,12 @@ public class HopRewriteUtils
 		ArrayList<Hop> parents = hop.getParent();
 		for( Hop p : parents ) {
 			if( inclTransient && inclPersistent )
-				ret &= ( p instanceof DataOp && (((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE
-				|| ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE));
+				ret &= ( p instanceof DataOp && (((DataOp)p).getOp()==OpOpData.TRANSIENTWRITE
+				|| ((DataOp)p).getOp()==OpOpData.PERSISTENTWRITE));
 			else if(inclTransient)
-				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE);
+				ret &= ( p instanceof DataOp && ((DataOp)p).getOp()==OpOpData.TRANSIENTWRITE);
 			else if(inclPersistent)
-				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE);
+				ret &= ( p instanceof DataOp && ((DataOp)p).getOp()==OpOpData.PERSISTENTWRITE);
 		}
 		return ret;
 	}
@@ -1341,8 +1340,8 @@ public class HopRewriteUtils
 	
 	public static boolean alwaysRequiresReblock(Hop hop) {
 		return (hop instanceof DataOp
-			&& ((DataOp)hop).getDataOpType()==DataOpTypes.PERSISTENTREAD
-			 && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.BINARY);
+			&& ((DataOp)hop).getOp()==OpOpData.PERSISTENTREAD
+			 && ((DataOp)hop).getInputFormatType()!=FileFormat.BINARY);
 	}
 	
 	public static boolean containsOp(ArrayList<Hop> candidates, Class<? extends Hop> clazz) {

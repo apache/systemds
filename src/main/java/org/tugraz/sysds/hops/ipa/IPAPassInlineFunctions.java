@@ -24,12 +24,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
@@ -110,7 +110,7 @@ public class IPAPassInlineFunctions extends IPAPass
 						outMap.put(fstmt.getOutputParams().get(j).getName(), opOutputs[j]);
 					for(int j=0; j<hops2.size(); j++) {
 						Hop out = hops2.get(j);
-						if( HopRewriteUtils.isData(out, DataOpTypes.TRANSIENTWRITE) ) {
+						if( HopRewriteUtils.isData(out, OpOpData.TRANSIENTWRITE) ) {
 							out.setName(outMap.get(out.getName()));
 							if( out.getName() == null )
 								hops2.remove(j);
@@ -179,7 +179,7 @@ public class IPAPassInlineFunctions extends IPAPass
 		for( int i=0; i<current.getInput().size(); i++ ) {
 			Hop c = current.getInput().get(i);
 			rReplaceTransientReads(c, inMap);
-			if( HopRewriteUtils.isData(c, DataOpTypes.TRANSIENTREAD) )
+			if( HopRewriteUtils.isData(c, OpOpData.TRANSIENTREAD) )
 				HopRewriteUtils.replaceChildReference(current, c, inMap.get(c.getName()));
 		}
 		current.setVisited();

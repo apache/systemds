@@ -25,12 +25,12 @@ import java.util.List;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.VariableSet;
@@ -151,8 +151,8 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 		if( hop instanceof DataOp )
 		{
 			DataOp dop = (DataOp) hop;
-			if(    dop.getDataOpType() == DataOpTypes.PERSISTENTREAD
-				&& dop.getInputFormatType() == FileFormatTypes.CSV
+			if(    dop.getOp() == OpOpData.PERSISTENTREAD
+				&& dop.getInputFormatType() == FileFormat.CSV
 				&& !dop.dimsKnown()
 				&& !HopRewriteUtils.hasOnlyWriteParents(dop, true, false) )
 			{

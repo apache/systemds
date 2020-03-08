@@ -26,8 +26,8 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.FileFormat;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -212,26 +212,26 @@ public abstract class Expression implements ParseInfo
 	 * {@code FileFormatTypes.MM}, or {@code FileFormatTypes.CSV}. Unrecognized
 	 * type is set to {@code FileFormatTypes.TEXT}.
 	 */
-	public static FileFormatTypes convertFormatType(String format) {
+	public static FileFormat convertFormatType(String format) {
 		if (format == null)
-			return FileFormatTypes.TEXT;
+			return FileFormat.TEXT;
 		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)) {
-			return FileFormatTypes.TEXT;
+			return FileFormat.TEXT;
 		}
 		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)) {
-			return FileFormatTypes.BINARY;
+			return FileFormat.BINARY;
 		}
 		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
-			return FileFormatTypes.MM;
+			return FileFormat.MM;
 		}
 		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV))  {
-			return FileFormatTypes.CSV;
+			return FileFormat.CSV;
 		}
 		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_LIBSVM))  {
-			return FileFormatTypes.LIBSVM;
+			return FileFormat.LIBSVM;
 		}
 		// ToDo : throw parse exception for invalid / unsupported format type
-		return FileFormatTypes.TEXT;
+		return FileFormat.TEXT;
 	}
     
 	/**

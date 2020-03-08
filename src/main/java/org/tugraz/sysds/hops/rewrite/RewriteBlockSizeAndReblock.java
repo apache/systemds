@@ -23,13 +23,14 @@ import java.util.ArrayList;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.FileFormat;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.common.Types.DataType;
 
 /**
@@ -91,18 +92,18 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			// if block size does not match
 			if( canReblock && 
 				( (dop.getDataType() == DataType.MATRIX && (dop.getBlocksize() != blocksize))
-				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && (dop.getInputFormatType()==FileFormatTypes.TEXT
-						  || dop.getInputFormatType()==FileFormatTypes.CSV))) ) 
+				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && (dop.getInputFormatType()==FileFormat.TEXT
+						  || dop.getInputFormatType()==FileFormat.CSV))) )
 			{
-				if( dop.getDataOpType() == DataOp.DataOpTypes.PERSISTENTREAD) 
+				if( dop.getOp() == OpOpData.PERSISTENTREAD)
 				{
 					// insert reblock after the hop
 					dop.setRequiresReblock(true);
 					dop.setBlocksize(blocksize);
 				} 
-				else if( dop.getDataOpType() == DataOp.DataOpTypes.PERSISTENTWRITE ) 
+				else if( dop.getOp() == OpOpData.PERSISTENTWRITE )
 				{
-					if (dop.getBlocksize() == -1) 
+					if (dop.getBlocksize() == -1)
 					{
 						// if this dataop is for cell output, then no reblock is needed 
 						// as (A) all jobtypes can produce block2cell and cell2cell and 
@@ -122,8 +123,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						dop.setBlocksize(blocksize);
 					}
 				} 
-				else if (dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTWRITE
-						|| dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTREAD) {
+				else if (dop.getOp().isTransient()) {
 					if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
 						// simply copy the values from its input
 						dop.setBlocksize(hop.getInput().get(0).getBlocksize());
@@ -133,7 +133,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						dop.setBlocksize(blocksize);
 					}
 				}
-				else if (dop.getDataOpType() == Hop.DataOpTypes.FEDERATED) {
+				else if (dop.getOp() == OpOpData.FEDERATED) {
 					// TODO maybe do something here?
 				} else {
 					throw new HopsException(hop.printErrorLocation() + "unexpected non-scalar Data HOP in reblock.\n");

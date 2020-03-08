@@ -36,7 +36,6 @@ import org.tugraz.sysds.utils.Statistics;
  */
 public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase 
 {
-	
 	private static final String TEST_NAME1 = "RewriteRowSumsMVMult";
 	private static final String TEST_NAME2 = "RewriteRowSumsMVMult";
 	private static final String TEST_DIR = "functions/misc/";
@@ -47,45 +46,34 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 	private static final double eps = Math.pow(10, -10);
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 	}
 
 	@Test
-	public void testMultiScalarToBinaryNoRewrite() 
-	{
+	public void testMultiScalarToBinaryNoRewrite() {
 		testRewriteRowColSumsMVMult( TEST_NAME1, false );
 	}
 	
 	@Test
-	public void testMultiScalarToBinaryRewrite() 
-	{
+	public void testMultiScalarToBinaryRewrite() {
 		testRewriteRowColSumsMVMult( TEST_NAME1, true );
 	}
 	
 	@Test
-	public void testMultiBinaryToScalarNoRewrite() 
-	{
+	public void testMultiBinaryToScalarNoRewrite() {
 		testRewriteRowColSumsMVMult( TEST_NAME2, false );
 	}
 	
 	@Test
-	public void testMultiBinaryToScalarRewrite() 
-	{
+	public void testMultiBinaryToScalarRewrite() {
 		testRewriteRowColSumsMVMult( TEST_NAME2, true );
 	}
 	
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
 	private void testRewriteRowColSumsMVMult( String testname, boolean rewrites )
-	{	
+	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try
@@ -98,7 +86,7 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 			programArgs = new String[]{ "-stats","-args", input("X"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
@@ -119,9 +107,8 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 			boolean isMatmultPresent = Statistics.getCPHeavyHitterOpCodes().contains(ba) ||  Statistics.getCPHeavyHitterOpCodes().contains(gpuBa);
 			Assert.assertTrue( isMatmultPresent == rewrites );
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
-	}	
+	}
 }

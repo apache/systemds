@@ -41,7 +41,6 @@ import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.TernaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.codegen.cplan.CNode;
 import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
@@ -58,6 +57,7 @@ import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.OpOpDnn;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
@@ -86,7 +86,7 @@ public class TemplateCell extends TemplateBase
 				&& !(hop.getDim1()==1 && hop.getDim2()==1) 
 			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim2() >= 0
 				&& (((IndexingOp)hop).isColLowerEqualsUpper() || hop.getDim2()==1))
-			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(hop, DataGenMethod.SEQ)
+			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(hop, OpOpDG.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(hop, true))
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
@@ -113,7 +113,7 @@ public class TemplateCell extends TemplateBase
 		return (!isClosed() && (isValidOperation(hop) 
 			|| (hop instanceof AggBinaryOp && hop.getInput().indexOf(input)==0 
 				&& HopRewriteUtils.isTransposeOperation(input))))
-			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, DataGenMethod.SEQ)
+			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, OpOpDG.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false))
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
@@ -275,7 +275,7 @@ public class TemplateCell extends TemplateBase
 				TemplateUtils.createCNodeData(hop.getInput().get(4), true),
 				TernaryType.LOOKUP_RC1);
 		}
-		else if( HopRewriteUtils.isDataGenOp(hop, DataGenMethod.SEQ) ) {
+		else if( HopRewriteUtils.isDataGenOp(hop, OpOpDG.SEQ) ) {
 			CNodeData from = TemplateUtils.getLiteral(tmp.get(((DataGenOp)hop).getParam(Statement.SEQ_FROM).getHopID()));
 			CNodeData to = TemplateUtils.getLiteral(tmp.get(((DataGenOp)hop).getParam(Statement.SEQ_TO).getHopID()));
 			CNodeData incr = TemplateUtils.getLiteral(tmp.get(((DataGenOp)hop).getParam(Statement.SEQ_INCR).getHopID()));

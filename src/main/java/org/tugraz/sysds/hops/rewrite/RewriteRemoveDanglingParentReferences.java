@@ -21,13 +21,13 @@ package org.tugraz.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.NaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 
 /**
@@ -104,6 +104,6 @@ public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.ASSERT)
 			|| (hop instanceof NaryOp && ((NaryOp)hop).getOp()==OpOpN.PRINTF)
 			|| (hop instanceof FunctionOp)
-			|| (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.FUNCTIONOUTPUT);
+			|| (hop instanceof DataOp && ((DataOp)hop).getOp()==OpOpData.FUNCTIONOUTPUT);
 	}
 }

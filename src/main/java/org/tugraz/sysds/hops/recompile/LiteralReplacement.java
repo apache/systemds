@@ -30,13 +30,13 @@ import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.NaryOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.Direction;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
@@ -121,7 +121,7 @@ public class LiteralReplacement
 		LiteralOp ret = null;
 		
 		//scalar read - literal replacement
-		if( c instanceof DataOp && ((DataOp)c).getDataOpType() != DataOpTypes.PERSISTENTREAD 
+		if( c instanceof DataOp && ((DataOp)c).getOp() != OpOpData.PERSISTENTREAD 
 			&& c.getDataType()==DataType.SCALAR )
 		{
 			Data dat = vars.get(c.getName());
@@ -343,7 +343,7 @@ public class LiteralReplacement
 		if( HopRewriteUtils.isUnary(c, OpOp1.CAST_AS_MATRIX) ) {
 			Hop in = c.getInput().get(0);
 			if( in.getDataType() == DataType.LIST
-				&& HopRewriteUtils.isData(in, DataOpTypes.TRANSIENTREAD) ) {
+				&& HopRewriteUtils.isData(in, OpOpData.TRANSIENTREAD) ) {
 				ListObject list = (ListObject)ec.getVariables().get(in.getName());
 				if( list.getLength() == 1 ) {
 					String varname = Dag.getNextUniqueVarname(DataType.MATRIX);
@@ -364,7 +364,7 @@ public class LiteralReplacement
 		if( HopRewriteUtils.isNary(c, OpOpN.CBIND, OpOpN.RBIND)) {
 			Hop in = c.getInput().get(0);
 			if( in.getDataType() == DataType.LIST
-				&& HopRewriteUtils.isData(in, DataOpTypes.TRANSIENTREAD) ) {
+				&& HopRewriteUtils.isData(in, OpOpData.TRANSIENTREAD) ) {
 				ListObject list = (ListObject)ec.getVariables().get(in.getName());
 				if( list.getLength() <= 128 ) {
 					ArrayList<Hop> tmp = new ArrayList<>();
@@ -392,7 +392,7 @@ public class LiteralReplacement
 			Hop ix = c.getInput().get(0);
 			Hop ixIn = c.getInput().get(0).getInput().get(0);
 			if( ixIn.getDataType() == DataType.LIST
-				&& HopRewriteUtils.isData(ixIn, DataOpTypes.TRANSIENTREAD)
+				&& HopRewriteUtils.isData(ixIn, OpOpData.TRANSIENTREAD)
 				&& ix.getInput().get(1) instanceof LiteralOp 
 				&& ix.getInput().get(2) instanceof LiteralOp
 				&& ix.getInput().get(1) == ix.getInput().get(2) ) {
@@ -415,7 +415,7 @@ public class LiteralReplacement
 			Hop ix = c.getInput().get(0);
 			Hop ixIn = c.getInput().get(0).getInput().get(0);
 			if( ixIn.getDataType() == DataType.LIST
-				&& HopRewriteUtils.isData(ixIn, DataOpTypes.TRANSIENTREAD)
+				&& HopRewriteUtils.isData(ixIn, OpOpData.TRANSIENTREAD)
 				&& ix.getInput().get(1) instanceof LiteralOp 
 				&& ix.getInput().get(2) instanceof LiteralOp
 				&& ix.getInput().get(1) == ix.getInput().get(2) ) {

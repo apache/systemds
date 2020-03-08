@@ -29,12 +29,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.tugraz.sysds.common.Types.OpOpDG;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.ForStatement;
@@ -138,10 +138,10 @@ public class RewriteHoistLoopInvariantOperations extends StatementBlockRewriteRu
 			rTagLoopInvariantOperations(c, candInputs, memo);
 		
 		//flag operation if all inputs are loop invariant
-		boolean invariant = !HopRewriteUtils.isDataGenOp(hop, DataGenMethod.RAND)
+		boolean invariant = !HopRewriteUtils.isDataGenOp(hop, OpOpDG.RAND)
 			&& (!(hop instanceof FunctionOp) || _sideEffectFreeFuns)
-			&& !HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD)
-			&& !HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTWRITE);
+			&& !HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD)
+			&& !HopRewriteUtils.isData(hop, OpOpData.TRANSIENTWRITE);
 		for( Hop c : hop.getInput() ) {
 			invariant &= (candInputs.contains(c.getName()) 
 				|| memo.contains(c.getHopID()) || c instanceof LiteralOp);

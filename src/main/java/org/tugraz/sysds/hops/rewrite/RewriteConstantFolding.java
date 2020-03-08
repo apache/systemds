@@ -28,13 +28,13 @@ import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.Program;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -146,7 +146,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 	{
 		//Timing time = new Timing( true );
 		
-		DataOp tmpWrite = new DataOp(TMP_VARNAME, bop.getDataType(), bop.getValueType(), bop, DataOpTypes.TRANSIENTWRITE, TMP_VARNAME);
+		DataOp tmpWrite = new DataOp(TMP_VARNAME, bop.getDataType(),
+			bop.getValueType(), bop, OpOpData.TRANSIENTWRITE, TMP_VARNAME);
 		
 		//generate runtime instruction
 		Dag<Lop> dag = new Dag<>();

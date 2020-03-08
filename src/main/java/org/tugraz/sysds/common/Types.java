@@ -255,4 +255,47 @@ public class Types
 		//fused operators
 		CONV2D_BIAS_ADD, RELU_MAX_POOL, RELU_MAX_POOL_BACKWARD, RELU_BACKWARD
 	}
+	
+	public enum OpOpDG {
+		RAND, SEQ, SINIT, SAMPLE, TIME
+	}
+	
+	public enum OpOpData {
+		PERSISTENTREAD, PERSISTENTWRITE, 
+		TRANSIENTREAD, TRANSIENTWRITE,
+		FUNCTIONOUTPUT, 
+		SQLREAD, FEDERATED;
+		
+		public boolean isTransient() {
+			return this == TRANSIENTREAD || this == TRANSIENTWRITE;
+		}
+		public boolean isPersistent() {
+			return this == PERSISTENTREAD || this == PERSISTENTWRITE;
+		}
+		public boolean isWrite() {
+			return this == TRANSIENTWRITE || this == PERSISTENTWRITE;
+		}
+		public boolean isRead() {
+			return this == TRANSIENTREAD || this == PERSISTENTREAD;
+		}
+		
+		@Override
+		public String toString() {
+			switch(this) {
+				case PERSISTENTREAD:  return "PRead";
+				case PERSISTENTWRITE: return "PWrite";
+				case TRANSIENTREAD:   return "TRead";
+				case TRANSIENTWRITE:  return "TWrite";
+				case FUNCTIONOUTPUT:  return "FunOut";
+				case SQLREAD:         return "Sql";
+				case FEDERATED:       return "Fed";
+				default:              return "Invalid";
+			}
+		}
+	}
+	
+
+	public enum FileFormat {
+		TEXT, BINARY, MM, CSV, LIBSVM
+	}
 }

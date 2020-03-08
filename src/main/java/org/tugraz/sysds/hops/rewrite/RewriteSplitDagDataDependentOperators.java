@@ -28,6 +28,7 @@ import java.util.List;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.OpOp3;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.common.Types.ParamBuiltinOp;
 import org.tugraz.sysds.common.Types.ReOrgOp;
@@ -39,7 +40,6 @@ import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.TernaryOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.parser.DataIdentifier;
@@ -301,7 +301,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 		}
 		
 		//#5 sql
-		if( hop instanceof DataOp && ((DataOp) hop).getDataOpType() == DataOpTypes.SQLREAD && !noSplitRequired) {
+		if( hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.SQLREAD && !noSplitRequired) {
 			cand.add(hop);
 			investigateChilds = false;
 		}
@@ -317,14 +317,14 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 
 	private static boolean hasTransientWriteParents( Hop hop ) {
 		for( Hop p : hop.getParent() )
-			if( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE )
+			if( p instanceof DataOp && ((DataOp)p).getOp()==OpOpData.TRANSIENTWRITE )
 				return true;
 		return false;
 	}
 
 	private static Hop getFirstTransientWriteParent( Hop hop ) {
 		for( Hop p : hop.getParent() )
-			if( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE )
+			if( p instanceof DataOp && ((DataOp)p).getOp()==OpOpData.TRANSIENTWRITE )
 				return p;
 		return null;
 	}

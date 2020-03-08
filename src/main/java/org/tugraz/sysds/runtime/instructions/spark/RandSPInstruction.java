@@ -34,9 +34,9 @@ import org.apache.spark.util.random.SamplingUtils;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.DataGen;
 import org.tugraz.sysds.lops.Lop;
@@ -80,7 +80,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 	// internal configuration
 	private static final long INMEMORY_NUMBLOCKS_THRESHOLD = 1024 * 1024;
 
-	private DataGenMethod method = DataGenMethod.INVALID;
+	private OpOpDG _method = null;
 	private final CPOperand rows, cols, dims;
 	private int blocksize;
 	//private boolean minMaxAreDoubles;
@@ -100,13 +100,13 @@ public class RandSPInstruction extends UnarySPInstruction {
 	private static final int SEED_POSITION_RAND = 8;
 	private static final int SEED_POSITION_SAMPLE = 4;
 
-	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows,
+	private RandSPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows,
 		CPOperand cols, CPOperand dims, int blen, String minValue, String maxValue,
 		double sparsity, long seed, String dir, String probabilityDensityFunction, String pdfParams,
 		CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, boolean replace, String opcode, String istr)
 	{
 		super(SPType.Rand, op, in, out, opcode, istr);
-		this.method = mthd;
+		this._method = mthd;
 		this.rows = rows;
 		this.cols = cols;
 		this.dims = dims;
@@ -143,7 +143,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		this.replace = replace;
 	}
 	
-	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows,
+	private RandSPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows,
 		CPOperand cols, CPOperand dims, int blen, String minValue, String maxValue, double sparsity, long seed,
 		String dir, String probabilityDensityFunction, String pdfParams, String opcode, String istr)
 	{
@@ -151,14 +151,14 @@ public class RandSPInstruction extends UnarySPInstruction {
 			probabilityDensityFunction, pdfParams, null, null, null, false, opcode, istr);
 	}
 
-	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows,
+	private RandSPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows,
 		CPOperand cols, CPOperand dims, int blen, CPOperand seqFrom, CPOperand seqTo,
 		CPOperand seqIncr, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, "-1", "-1", -1, -1, null,
 			null, null, seqFrom, seqTo, seqIncr, false, opcode, istr);
 	}
 
-	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
+	private RandSPInstruction(Operator op, OpOpDG mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 		CPOperand dims, int blen, String maxValue, boolean replace, long seed, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, dims, blen, "-1", maxValue, -1, seed, null,
 			null, null, null, null, null, replace, opcode, istr);
@@ -206,18 +206,18 @@ public class RandSPInstruction extends UnarySPInstruction {
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = s[0];
 		
-		DataGenMethod method = DataGenMethod.INVALID;
+		OpOpDG method = null;
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
-			method = DataGenMethod.RAND;
+			method = OpOpDG.RAND;
 			InstructionUtils.checkNumFields ( str, 10, 11 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
-			method = DataGenMethod.SEQ;
+			method = OpOpDG.SEQ;
 			// 8 operands: rows, cols, blen, from, to, incr, outvar
 			InstructionUtils.checkNumFields ( str, 7 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
-			method = DataGenMethod.SAMPLE;
+			method = OpOpDG.SAMPLE;
 			// 7 operands: range, size, replace, seed, blen, outvar
 			InstructionUtils.checkNumFields ( str, 6 );
 		}
@@ -226,7 +226,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		// output is specified by the last operand
 		CPOperand out = new CPOperand(s[s.length-1]); 
 
-		if ( method == DataGenMethod.RAND ) {
+		if ( method == OpOpDG.RAND ) {
 			int missing; // number of missing params (row & cols or dims)
 			CPOperand rows = null, cols = null, dims = null;
 			if (s.length == 12) {
@@ -251,7 +251,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			return new RandSPInstruction(op, method, null, out, rows, cols, dims,
 				blen, s[5 - missing], s[6 - missing], sparsity, seed, dir, pdf, pdfParams, opcode, str);
 		}
-		else if ( method == DataGenMethod.SEQ) {
+		else if ( method == OpOpDG.SEQ) {
 			int blen = Integer.parseInt(s[3]);
 			CPOperand from = new CPOperand(s[4]);
 			CPOperand to = new CPOperand(s[5]);
@@ -261,7 +261,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			return new RandSPInstruction(op, method, in, out, null,
 				null, null, blen, from, to, incr, opcode, str);
 		}
-		else if ( method == DataGenMethod.SAMPLE) 
+		else if ( method == OpOpDG.SAMPLE) 
 		{
 			String max = !s[1].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
 				s[1] : "0";
@@ -285,12 +285,12 @@ public class RandSPInstruction extends UnarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//process specific datagen operator
-		switch( method ) {
+		switch( _method ) {
 			case RAND: generateRandData(sec); break;
 			case SEQ: generateSequence(sec); break;
 			case SAMPLE: generateSample(sec); break;
 			default: 
-				throw new DMLRuntimeException("Invalid datagen method: "+method); 
+				throw new DMLRuntimeException("Invalid datagen method: "+_method); 
 		}
 	}
 
@@ -1008,8 +1008,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 			if (runtimeSeed == null)
 				runtimeSeed = (minValue == maxValue && sparsity == 1) ?
 					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
-			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND :
-				(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
+			int position = (_method == OpOpDG.RAND) ? SEED_POSITION_RAND :
+				(_method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(
 				tmpInstStr, position, String.valueOf(runtimeSeed));
 		}

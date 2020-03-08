@@ -22,9 +22,9 @@
 package org.tugraz.sysds.hops.rewrite;
 
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -105,13 +105,13 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 		if( hop instanceof DataOp )
 		{
 			DataOp dop = (DataOp) hop;
-			DataOpTypes dotype = dop.getDataOpType();
+			OpOpData dotype = dop.getOp();
 			
 			switch( dotype ) 
 			{
 				case PERSISTENTREAD:
 					if( _inputs.contains(dop.getName()) ) {
-						dop.setDataOpType(DataOpTypes.TRANSIENTREAD);
+						dop.setDataOpType(OpOpData.TRANSIENTREAD);
 						if (hop.getDataType() == DataType.SCALAR) {
 							dop.removeInput("iofilename");
 						}
@@ -135,7 +135,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 					break;
 				case PERSISTENTWRITE:
 					if( _outputs.contains(dop.getName()) ) {
-						dop.setDataOpType(DataOpTypes.TRANSIENTWRITE);
+						dop.setDataOpType(OpOpData.TRANSIENTWRITE);
 						dop.setBlocksize(dop.getInput().get(0).getBlocksize());
 						if (hop.getDataType() == DataType.SCALAR) {
 							dop.removeInput("iofilename");

@@ -25,9 +25,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.VariableSet;
 
@@ -94,7 +94,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 					Hop.resetVisitStatus(sb1Hops);
 					for( Hop root : sb1Hops ) {
 						//connect transient writes s1 and reads s2
-						if( HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE) 
+						if( HopRewriteUtils.isData(root, OpOpData.TRANSIENTWRITE) 
 							&& treads.containsKey(root.getName()) ) {
 							//rewire transient write and transient read
 							Hop tread = treads.get(root.getName());
@@ -106,11 +106,11 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 							if( !twrites.containsKey(root.getName()) 
 								&& sb2.liveOut().containsVariable(root.getName()) ) {
 								newHops.add(HopRewriteUtils.createDataOp(
-									root.getName(), in, DataOpTypes.TRANSIENTWRITE));
+									root.getName(), in, OpOpData.TRANSIENTWRITE));
 							}
 						}
 						//add remaining roots from s1 to s2
-						else if( !(HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE)
+						else if( !(HopRewriteUtils.isData(root, OpOpData.TRANSIENTWRITE)
 							&& (twrites.containsKey(root.getName()) || !sb2.liveOut().containsVariable(root.getName()))) ) {
 							newHops.add(root);
 						}
@@ -160,9 +160,9 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		for( Hop c : current.getInput() )
 			rCollectTransientReadWrites(c, treads, twrites);
 		//collect all transient reads
-		if( HopRewriteUtils.isData(current, DataOpTypes.TRANSIENTREAD) )
+		if( HopRewriteUtils.isData(current, OpOpData.TRANSIENTREAD) )
 			treads.put(current.getName(), current);
-		else if( HopRewriteUtils.isData(current, DataOpTypes.TRANSIENTWRITE) )
+		else if( HopRewriteUtils.isData(current, OpOpData.TRANSIENTWRITE) )
 			twrites.put(current.getName(), current);
 		else if( current instanceof FunctionOp ) {
 			for( String output : ((FunctionOp)current).getOutputVariableNames() )

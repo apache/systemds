@@ -22,11 +22,11 @@ package org.tugraz.sysds.hops.ipa;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
@@ -106,7 +106,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 			//extract literal assignments
 			if( HopRewriteUtils.isLastLevelStatementBlock(sb) ) {
 				for( Hop root : sb.getHops() )
-					if( HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE)
+					if( HopRewriteUtils.isData(root, OpOpData.TRANSIENTWRITE)
 						&& root.getInput().get(0) instanceof LiteralOp) {
 						constants.put(root.getName(), ScalarObjectFactory
 							.createScalarObject((LiteralOp)root.getInput().get(0)));

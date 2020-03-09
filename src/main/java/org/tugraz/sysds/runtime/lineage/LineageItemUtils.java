@@ -60,7 +60,6 @@ import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 
@@ -548,14 +547,16 @@ public class LineageItemUtils {
 	}
 	
 	public static boolean containsRandDataGen(HashSet<LineageItem> entries, LineageItem root) {
-		boolean isRand = false;
-		if (entries.contains(root))
+		if (entries.contains(root) || root.isVisited())
 			return false;
+
+		boolean isRand = false;
 		if (isNonDeterministic(root))
 			isRand |= true;
 		if (!root.isLeaf()) 
 			for (LineageItem input : root.getInputs())
 				isRand = isRand ? true : containsRandDataGen(entries, input);
+		root.setVisited();
 		return isRand;
 		//TODO: unmark for caching in compile time
 	}
@@ -565,16 +566,26 @@ public class LineageItemUtils {
 			return false;
 
 		boolean isND = false;
-		CPInstruction CPins = (CPInstruction) InstructionParser.parseSingleInstruction(li.getData());
-		if (!(CPins instanceof DataGenCPInstruction))
+		DataGenCPInstruction cprand = null;
+		RandSPInstruction sprand = null;
+		Instruction ins = InstructionParser.parseSingleInstruction(li.getData());
+
+		if (ins instanceof DataGenCPInstruction)
+			cprand = (DataGenCPInstruction)ins;
+		else if (ins instanceof RandSPInstruction)
+			sprand = (RandSPInstruction)ins;
+		else 
 			return false;
 
-		DataGenCPInstruction ins = (DataGenCPInstruction)CPins;
 		switch(li.getOpcode().toUpperCase())
 		{
 			case "RAND":
-				if ((ins.getMinValue() != ins.getMaxValue()) || (ins.getSparsity() != 1))
-					isND = true;
+				if (cprand != null)
+					if ((cprand.getMinValue() != cprand.getMaxValue()) || (cprand.getSparsity() != 1))
+						isND = true;
+				if (sprand!= null)
+					if ((sprand.getMinValue() != sprand.getMaxValue()) || (sprand.getSparsity() != 1))
+						isND = true;
 					//NOTE:It is hard to detect in runtime if rand was called with unspecified seed
 					//as -1 is already replaced by computed seed. Solution is to unmark for caching in 
 					//compile time. That way we can differentiate between given and unspecified seed.

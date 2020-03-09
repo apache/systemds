@@ -218,6 +218,8 @@ public class LineageCache {
 			String boundVarName = outputs.get(i);
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
 			Data boundValue = ec.getVariable(boundVarName);
+			if (boundLI != null)
+				boundLI.resetVisitStatus();
 			if (boundLI == null 
 				|| !LineageCache.probe(li)
 				|| LineageItemUtils.containsRandDataGen(new HashSet<>(Arrays.asList(liInputs)), boundLI)

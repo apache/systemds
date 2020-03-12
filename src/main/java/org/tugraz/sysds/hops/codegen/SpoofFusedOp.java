@@ -145,6 +145,10 @@ public class SpoofFusedOp extends MultiThreadedHop
 		return "spoof("+_class.getSimpleName()+")";
 	}
 	
+	public String getClassName() {
+		return _class.getName();
+	}
+	
 	@Override
 	protected DataCharacteristics inferOutputCharacteristics( MemoTable memo )
 	{

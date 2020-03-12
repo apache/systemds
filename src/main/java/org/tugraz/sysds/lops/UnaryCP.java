@@ -72,9 +72,13 @@ public class UnaryCP extends Lop
 		return "Operation: " + operation;
 
 	}
-
+	
 	private String getOpCode() {
-		switch (operation) {
+		return getOpCode(operation);
+	}
+
+	public static String getOpCode(OperationTypes op) {
+		switch (op) {
 		case NOT:
 			return "!";
 
@@ -168,7 +172,7 @@ public class UnaryCP extends Lop
 			return "softmax";
 			
 		default:
-			throw new LopsException(this.printErrorLocation() + "Unknown operation: " + operation);
+			throw new LopsException("Unknown operation: " + op);
 		}
 	}
 	

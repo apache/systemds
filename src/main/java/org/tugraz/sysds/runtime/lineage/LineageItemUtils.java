@@ -25,7 +25,9 @@ import org.tugraz.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
+import org.tugraz.sysds.common.Types.AggOp;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.Direction;
 import org.tugraz.sysds.common.Types.OpOpDG;
 import org.tugraz.sysds.common.Types.OpOpData;
 import org.tugraz.sysds.common.Types.OpOpN;
@@ -33,15 +35,22 @@ import org.tugraz.sysds.common.Types.ReOrgOp;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.AggBinaryOp;
+import org.tugraz.sysds.hops.AggUnaryOp;
 import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
+import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.ReorgOp;
+import org.tugraz.sysds.hops.TernaryOp;
+import org.tugraz.sysds.hops.UnaryOp;
+import org.tugraz.sysds.hops.codegen.SpoofFusedOp;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.PartialAggregate;
+import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
@@ -387,11 +396,29 @@ public class LineageItemUtils {
 		
 		if (root instanceof ReorgOp)
 			li = new LineageItem(name, "r'", LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		else if (root instanceof UnaryOp) {
+			String opcode = UnaryCP.getOpCode(Hop.HopsOpOp1LopsUS.get(((UnaryOp) root).getOp()));
+			li = new LineageItem(name, opcode, LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		}
 		else if (root instanceof AggBinaryOp)
 			li = new LineageItem(name, "ba+*", LIinputs.toArray(new LineageItem[LIinputs.size()]));
 		else if (root instanceof BinaryOp)
 			li = new LineageItem(name, Binary.getOpcode(Hop.HopsOpOp2LopsB.get(((BinaryOp)root).getOp())),
 				LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		else if (root instanceof TernaryOp) {
+			String opcode = ((TernaryOp) root).getOp().toString();
+			li = new LineageItem(name, opcode, LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		}
+		else if (root instanceof AggUnaryOp) {
+			AggOp op = ((AggUnaryOp) root).getOp();
+			Direction dir = ((AggUnaryOp) root).getDirection();
+			String opcode = PartialAggregate.getOpcode(op, dir);
+			li = new LineageItem(name, opcode, LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		}
+		else if (root instanceof IndexingOp)
+			li = new LineageItem(name, "rightIndex", LIinputs.toArray(new LineageItem[LIinputs.size()]));
+		else if (root instanceof SpoofFusedOp)
+			li = LineageCodegenItem.getCodegenLTrace(((SpoofFusedOp) root).getClassName());
 		
 		else if (root instanceof LiteralOp) {  //TODO: remove redundancy
 			StringBuilder sb = new StringBuilder(root.getName());
@@ -403,6 +430,8 @@ public class LineageItemUtils {
 			sb.append(true); //isLiteral = true
 			li = new LineageItem(root.getName(), sb.toString());
 		}
+		else
+			throw new DMLRuntimeException("Unsupported hop: "+root.getOpString());
 		//TODO: include all the other hops
 		operands.put(root.getHopID(), li);
 		

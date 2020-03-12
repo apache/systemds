@@ -1184,7 +1184,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.tugraz.sysds.lops.Unary.OperationTypes.CAST_AS_FRAME);
 	}
 
-	protected static final HashMap<Hop.OpOp1, org.tugraz.sysds.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
+	public static final HashMap<Hop.OpOp1, org.tugraz.sysds.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
 	static {
 		HopsOpOp1LopsUS = new HashMap<>();
 		HopsOpOp1LopsUS.put(OpOp1.NOT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.NOT);

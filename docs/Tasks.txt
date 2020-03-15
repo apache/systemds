@@ -181,6 +181,7 @@ SYSTEMDS-220 Federated Tensors and Instructions
  * 225 Federated elementwise operations
  * 226 Federated rbind and cbind                                      OK
  * 227 Federated worker setup and infrastructure                      OK
+ * 228 Federated matrix-matrix multiplication                         OK
 
 SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool

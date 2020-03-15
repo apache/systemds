@@ -152,7 +152,7 @@ public class InitFEDInstruction extends FEDInstruction {
 			filePath = filePath.substring(1);
 			// To make static file paths use double "//" EG:
 			// example.dom//staticFile.txt
-			// example.dom/dynamicFile.txt 
+			// example.dom/dynamicFile.txt
 			if (address.getQuery() != null)
 				throw new IllegalArgumentException("Query is not supported");
 

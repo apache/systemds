@@ -45,7 +45,7 @@ public class FederatedWorker {
 	private Map<Long, CacheableData<?>> _vars = new HashMap<>();
 
 	public FederatedWorker(int port) {
-		_port = (port == -1) ? 
+		_port = (port == -1) ?
 			Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT) : port;
 	}
 

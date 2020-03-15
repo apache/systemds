@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Graz University of Technology
+ * Copyright 2020 Graz University of Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,16 @@ import org.tugraz.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.WriteSPInstruction;
 
 public class FEDInstructionUtils {
+	// This is currently a rather simplistic to our solution of replacing instructions with their correct federated
+	// counterpart, since we do not propagate the information that a matrix is federated, therefore we can not decide
+	// to choose a federated instruction earlier.
 	public static Instruction checkAndReplaceCP(Instruction inst, ExecutionContext ec) {
 		if (inst instanceof AggregateBinaryCPInstruction) {
 			AggregateBinaryCPInstruction instruction = (AggregateBinaryCPInstruction) inst;
 			if( instruction.input1.isMatrix() && instruction.input2.isMatrix() ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
-				if (mo1.isFederated() && mo2.getNumColumns() == 1 || mo1.getNumRows() == 1 && mo2.isFederated()) {
-					// currently only vm/mv is supported
+				if (mo1.isFederated() || mo2.isFederated()) {
 					return AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}
@@ -58,9 +60,9 @@ public class FEDInstructionUtils {
 			MapmmSPInstruction instruction = (MapmmSPInstruction) inst;
 			Data data = ec.getVariable(instruction.input1);
 			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+				// TODO correct FED instruction string
 				return new AggregateBinaryFEDInstruction(instruction.getOperator(),
 					instruction.input1, instruction.input2, instruction.output, "ba+*", "FED...");
-				// TODO correct FED instruction string
 			}
 		}
 		else if (inst instanceof AggregateUnarySPInstruction) {
@@ -73,7 +75,8 @@ public class FEDInstructionUtils {
 			WriteSPInstruction instruction = (WriteSPInstruction) inst;
 			Data data = ec.getVariable(instruction.input1);
 			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
-				// Write spark instruction can not be executed for federeted matrix objects (tries to get rdds which do not exist)
+				// Write spark instruction can not be executed for federated matrix objects (tries to get rdds which do
+				// not exist), therefore we replace the instruction with the VariableCPInstruction.
 				return VariableCPInstruction.parseInstruction(instruction.getInstructionString());
 			}
 		}

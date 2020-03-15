@@ -23,7 +23,11 @@ import org.tugraz.sysds.runtime.matrix.operators.Operator;
 public abstract class FEDInstruction extends Instruction {
 	
 	public enum FEDType {
-		Init, AggregateBinary, AggregateUnary, Append
+		Init,
+		AggregateBinary,
+		AggregateUnary,
+		Append,
+		Binary
 	}
 	
 	protected final FEDType _fedType;

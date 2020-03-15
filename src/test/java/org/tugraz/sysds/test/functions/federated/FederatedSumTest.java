@@ -117,6 +117,5 @@ public class FederatedSumTest extends AutomatedTestBase {
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-
 	}
 }

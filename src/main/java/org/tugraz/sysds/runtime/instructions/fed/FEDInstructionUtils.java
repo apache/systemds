@@ -19,10 +19,7 @@ package org.tugraz.sysds.runtime.instructions.fed;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.*;
 import org.tugraz.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.MapmmSPInstruction;
@@ -49,6 +46,19 @@ public class FEDInstructionUtils {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
 					return AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			}
+		}
+		else if (inst instanceof BinaryCPInstruction) {
+			BinaryCPInstruction instruction = (BinaryCPInstruction) inst;
+			if( instruction.input1.isMatrix() && instruction.input2.isScalar() ){
+				MatrixObject mo = ec.getMatrixObject(instruction.input1);
+				if(mo.isFederated())
+					return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			}
+			if( instruction.input2.isMatrix() && instruction.input1.isScalar() ){
+				MatrixObject mo = ec.getMatrixObject(instruction.input2);
+				if(mo.isFederated())
+					return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}
 		return inst;

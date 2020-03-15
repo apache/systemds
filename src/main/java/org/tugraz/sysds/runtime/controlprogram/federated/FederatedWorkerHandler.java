@@ -47,13 +47,13 @@ import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.utils.JSONHelper;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -89,31 +89,26 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse constructResponse(FederatedRequest request) {
 		FederatedRequest.FedMethod method = request.getMethod();
-		FederatedResponse response;
 		try {
 			switch (method) {
 				case READ:
-					response = readMatrix(request);
-					break;
+					return readMatrix(request);
 				case MATVECMULT:
-					response = executeMatVecMult(request);
-					break;
+					return executeMatVecMult(request);
 				case TRANSFER:
-					response = getVariableData(request);
-					break;
+					return getVariableData(request);
 				case AGGREGATE:
-					response = executeAggregation(request);
-					break;
-
+					return executeAggregation(request);
+				case SCALAR:
+					return executeScalarOperation(request);
 				default:
 					String message = String.format("Method %s is not supported.", method);
-					response = new FederatedResponse(FederatedResponse.Type.ERROR, message);
+					return new FederatedResponse(FederatedResponse.Type.ERROR, message);
 			}
 		}
 		catch (Exception exception) {
-			response = new FederatedResponse(FederatedResponse.Type.ERROR, ExceptionUtils.getFullStackTrace(exception));
+			return new FederatedResponse(FederatedResponse.Type.ERROR, ExceptionUtils.getFullStackTrace(exception));
 		}
-		return response;
 	}
 
 	private FederatedResponse readMatrix(FederatedRequest request) {
@@ -133,17 +128,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
 			try (FileSystem fs = IOUtilFunctions.getFileSystem(mtdname)) {
-				try(Reader resource = new InputStreamReader(fs.open(path))){
-					try(BufferedReader br = new BufferedReader(resource)){
-						JSONObject mtd = JSONHelper.parse(br);
-						if (mtd == null)
-							return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
-						mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
-						mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-						String format = mtd.getString(DataExpression.FORMAT_TYPE);
-						oi = OutputInfo.stringToOutputInfo(format);
-						ii = OutputInfo.getMatchingInputInfo(oi);
-					}	
+				try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+					JSONObject mtd = JSONHelper.parse(br);
+					if (mtd == null)
+						return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
+					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
+					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
+					String format = mtd.getString(DataExpression.FORMAT_TYPE);
+					oi = OutputInfo.outputInfoFromStringExternal(format);
+					ii = OutputInfo.getMatchingInputInfo(oi);
 				}
 			}
 		}
@@ -176,7 +169,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// TODO other datatypes
 		AggregateBinaryOperator ab_op = new AggregateBinaryOperator(
 			Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()));
-		MatrixBlock result = isMatVecMult ? 
+		MatrixBlock result = isMatVecMult ?
 			matBlock1.aggregateBinaryOperations(matBlock1, vector, new MatrixBlock(), ab_op) :
 			vector.aggregateBinaryOperations(vector, matBlock1, new MatrixBlock(), ab_op);
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, result);
@@ -189,26 +182,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse getVariableData(long varID) {
-		FederatedResponse response;
 		Data dataObject = _vars.get(varID);
 		switch (dataObject.getDataType()) {
 			case TENSOR:
-				response = new FederatedResponse(FederatedResponse.Type.SUCCESS,
+				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
 					((TensorObject) dataObject).acquireReadAndRelease());
-				break;
 			case MATRIX:
-				response = new FederatedResponse(FederatedResponse.Type.SUCCESS,
+				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
 					((MatrixObject) dataObject).acquireReadAndRelease());
-				break;
 			case LIST:
-				response = new FederatedResponse(FederatedResponse.Type.SUCCESS, ((ListObject) dataObject).getData());
-				break;
+				return new FederatedResponse(FederatedResponse.Type.SUCCESS, ((ListObject) dataObject).getData());
 			// TODO rest of the possible datatypes
 			default:
-				response = new FederatedResponse(FederatedResponse.Type.ERROR,
+				return new FederatedResponse(FederatedResponse.Type.ERROR,
 					"FederatedWorkerHandler: Not possible to send datatype " + dataObject.getDataType().name());
 		}
-		return response;
 	}
 
 	private FederatedResponse executeAggregation(FederatedRequest request) {
@@ -252,6 +240,27 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// result block without correction
 		ret.dropLastRowsOrColumns(operator.aggOp.correction);
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, ret);
+	}
+
+	private FederatedResponse executeScalarOperation(FederatedRequest request) {
+		checkNumParams(request.getNumParams(), 2);
+		ScalarOperator operator = (ScalarOperator) request.getParam(0);
+		long varID = (Long) request.getParam(1);
+		return executeScalarOperation(varID, operator);
+	}
+
+	private FederatedResponse executeScalarOperation(long varID, ScalarOperator operator) {
+		Data dataObject = _vars.get(varID);
+		if (dataObject.getDataType() != Types.DataType.MATRIX) {
+			return new FederatedResponse(FederatedResponse.Type.ERROR,
+				"FederatedWorkerHandler: ScalarOperator dont support "
+					+ dataObject.getDataType().name());
+		}
+
+		MatrixObject matrixObject = (MatrixObject) dataObject;
+		MatrixBlock inBlock = matrixObject.acquireRead();
+		MatrixBlock retBlock = inBlock.scalarOperations(operator, new MatrixBlock());
+		return new FederatedResponse(FederatedResponse.Type.SUCCESS, retBlock);
 	}
 
 	@SuppressWarnings("unused")

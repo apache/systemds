@@ -97,6 +97,9 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 		try {
+			//TODO test correctness
+			//assertTrue("the test is not done, needs comparison, of result.", false);
+
 			getAndLoadTestConfiguration(TEST_NAME);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -110,7 +113,6 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase {
 					Integer.toString(_dimsRight.length), _lvalue, _rvalue, output("A")};
 
 			runTest(true, false, null, -1);
-			//TODO test correctness
 		}
 		finally {
 			rtplatform = platformOld;

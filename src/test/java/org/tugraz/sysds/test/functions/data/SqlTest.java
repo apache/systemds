@@ -95,6 +95,9 @@ public class SqlTest extends AutomatedTestBase {
 			throw new RuntimeException(e);
 		}
 		try {
+			//TODO test correctness
+			//assertTrue("the test is not done, needs comparison, of result.", false);
+
 			getAndLoadTestConfiguration(SqlTest.TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			

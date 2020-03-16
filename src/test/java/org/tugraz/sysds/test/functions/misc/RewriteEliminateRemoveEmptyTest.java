@@ -133,7 +133,7 @@ public class RewriteEliminateRemoveEmptyTest extends AutomatedTestBase
 		testRewriteEliminateRmEmpty(TEST_NAME6, true, A, AColSum, false);
 	}
 
-	private double sum(double[][] A) {
+	private static double sum(double[][] A) {
 		double sum = 0;
 		for (double[] na : A) {
 			for (double n : na) {
@@ -143,7 +143,7 @@ public class RewriteEliminateRemoveEmptyTest extends AutomatedTestBase
 		return sum;
 	}
 
-	private double[][] rowSum(double[][] A) {
+	private static double[][] rowSum(double[][] A) {
 		double[][] matrixRowSum = new double[rows][1];
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -153,7 +153,7 @@ public class RewriteEliminateRemoveEmptyTest extends AutomatedTestBase
 		return matrixRowSum;
 	}
 
-	private double[][] colSum(double[][] A) {
+	private static double[][] colSum(double[][] A) {
 		double[][] matrixColSum = new double[1][cols];
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {

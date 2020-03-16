@@ -98,7 +98,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	 * @param mo2 the other matrix object
 	 * @param out output matrix object
 	 */
-	private void federatedAggregateBinary(MatrixObject mo1, MatrixObject mo2, MatrixObject out) {
+	private static void federatedAggregateBinary(MatrixObject mo1, MatrixObject mo2, MatrixObject out) {
 		boolean distributeCols = false;
 		// if distributeCols = true we distribute cols of mo2 and do a MV multiplications, otherwise we
 		// distribute rows of mo1 and do VM multiplications
@@ -138,7 +138,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		out.release();
 	}
 	
-	private MatrixBlock combinePartialMMResults(ArrayList<Pair<FederatedRange, MatrixBlock>> results, 
+	private static MatrixBlock combinePartialMMResults(ArrayList<Pair<FederatedRange, MatrixBlock>> results, 
 		int rows, int cols) {
 		// TODO support large blocks with > int size
 		MatrixBlock resultBlock = new MatrixBlock(rows, cols, false);

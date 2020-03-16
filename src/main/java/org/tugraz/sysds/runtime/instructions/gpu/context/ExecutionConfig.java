@@ -43,8 +43,13 @@ public class ExecutionConfig {
 	private static HashMap<Integer, Integer> maxBlockDimForDevice = new HashMap<>();
 
 	/**
-	 * See last instance of the ExecutionConfig constructor for parameter details
-     */
+	 * Convenience constructor for setting the number of blocks, number of threads and the
+	 * shared memory size
+	 *
+	 * @param gridDimX       Number of blocks on the horizontal axis of the grid (for CUDA Kernel)
+	 * @param blockDimX      Number of threads on the horizontal axis of a block (for CUDA Kernel)
+	 * @param sharedMemBytes Amount of Shared memory (for CUDA Kernel)
+	 */
 	public ExecutionConfig(int gridDimX, int blockDimX, int sharedMemBytes) {
 		this.gridDimX = gridDimX;
 		this.blockDimX = blockDimX;
@@ -52,7 +57,11 @@ public class ExecutionConfig {
 	}
 
 	/**
-	 * See last instance of the ExecutionConfig constructor for parameter details
+	 * Convenience constructor for setting the number of blocks, number of threads and the
+	 * shared memory size
+	 *
+	 * @param gridDimX       Number of blocks on the horizontal axis of the grid (for CUDA Kernel)
+	 * @param blockDimX      Number of threads on the horizontal axis of a block (for CUDA Kernel)
 	 */
 	public ExecutionConfig(int gridDimX, int blockDimX) {
 		this.gridDimX = gridDimX;
@@ -60,7 +69,13 @@ public class ExecutionConfig {
 	}
 
 	/**
-	 * See last instance of the ExecutionConfig constructor for parameter details
+	 * Convenience constructor for setting the number of blocks, number of threads and the
+	 * shared memory size
+	 *
+	 * @param gridDimX       Number of blocks on the horizontal axis of the grid (for CUDA Kernel)
+	 * @param gridDimY       Number of blocks on the vertical axis of the grid (for CUDA Kernel)
+	 * @param blockDimX      Number of threads on the horizontal axis of a block (for CUDA Kernel)
+	 * @param blockDimY      Number of threads on the vertical axis of a block (for CUDA Kernel)=
 	 */
 	public ExecutionConfig(int gridDimX, int gridDimY, int blockDimX, int blockDimY) {
 		this.gridDimX = gridDimX;

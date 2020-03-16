@@ -25,27 +25,9 @@
 args <- commandArgs(TRUE)
 options(digits=22)
 
-options(repos="http://cran.stat.ucla.edu/") 
-is.installed <- function(mypkg) is.element(mypkg, installed.packages()[,1])
-
-is_plotrix = is.installed("plotrix");
-if ( !is_plotrix ) {
-install.packages("plotrix");
-} 
 library("plotrix");
-
-is_psych = is.installed("psych");
-if ( !is_psych ) {
-install.packages("psych");
-} 
 library("psych")
-
-is_moments = is.installed("moments");
-if( !is_moments){
-install.packages("moments");
-}
 library("moments")
-
 #library("batch")
 library("Matrix")
 

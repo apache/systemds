@@ -69,7 +69,7 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	/**
 	 * Create a <code>TensorBlock</code> with the given dimensions and the given data representation (basic/data).
 	 * @param dims dimensions
-	 * @param basic true -> basic, false -> data
+	 * @param basic if true then basic <code>TensorBlock</code> else a data type of <code>TensorBlock</code>.
 	 */
 	public TensorBlock(int[] dims, boolean basic) {
 		_dims = dims;
@@ -500,6 +500,7 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	 * @param lower lower index of elements to copy (inclusive)
 	 * @param upper upper index of elements to copy (exclusive)
 	 * @param src source <code>TensorBlock</code>
+	 * @return the shallow copy of the src <code>TensorBlock</code>
 	 */
 	public TensorBlock copy(int[] lower, int[] upper, TensorBlock src) {
 		if (_basic) {
@@ -528,6 +529,7 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	 * @param lower lower index of elements to copy (inclusive)
 	 * @param upper upper index of elements to copy (exclusive)
 	 * @param src source <code>TensorBlock</code>
+	 * @return the deep copy of the src <code>TensorBlock</code>
 	 */
 	public TensorBlock copyExact(int[] lower, int[] upper, TensorBlock src) {
 		int[] destIx = lower.clone();
@@ -579,6 +581,7 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	 * Get the exact serialized size of a <code>BasicTensorBlock</code> if written by
 	 * <code>TensorBlock.writeBlockData(DataOutput,BasicTensorBlock)</code>.
 	 * @param bt <code>BasicTensorBlock</code>
+	 * @return the size of the block data in serialized form
 	 */
 	public long getExactBlockDataSerializedSize(BasicTensorBlock bt) {
 		// nnz, BlockType

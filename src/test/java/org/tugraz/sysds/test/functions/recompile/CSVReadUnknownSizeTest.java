@@ -99,7 +99,10 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("X"), output("R") };
+			programArgs = new String[]{
+				// "-explain",
+				"-stats",
+				"-args", input("X"), output("R") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();

@@ -1,0 +1,30 @@
+name: Documentation
+
+on:   
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    name: Documentation
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Java
+      uses: actions/setup-java@v1
+      with:
+        java-version:  1.8
+
+    - name: Make Documentation
+      run: mvn -P distribution package
+    
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: documentation
+        path: target/apidocs

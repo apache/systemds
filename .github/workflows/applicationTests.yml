@@ -1,0 +1,45 @@
+name: Application Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  applicationsTests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        tests: [A,B,C,G,H,I,L,M,N,O,P,S,U,W]
+        os: [ubuntu-latest]
+        java: [ 1.8 ]
+    name:  Ap Test ${{ matrix.tests }} 
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+
+    - name: clean, compile & test-compile
+      run: mvn clean compile test-compile
+
+    - name: install R
+      run: sudo apt -y install r-base
+    
+    - name: set R environment
+      run: |
+        echo "R_LIBS=/tmp/Rpackages/" > ~/.Renviron
+        mkdir /tmp/Rpackages
+
+    - name: install R Dependencies
+      # TODO: Find out how to make if statement correctly: suggestion but not working: if: ${{ matrix.tests }} == P
+      run: Rscript ./src/test/scripts/installDependencies.R "/tmp/Rpackages/"
+
+    - name: Run all tests starting with "${{ matrix.tests }}"
+      run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.applications.${{ matrix.tests }}**

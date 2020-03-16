@@ -21,22 +21,32 @@
 #
 #-------------------------------------------------------------
 
+print("Starting install RScripts")
+
+args <- commandArgs(TRUE)
+
 custom_install <- function(pkg) {
     if(!is.element(pkg, installed.packages()[,1])) {
-		# https://cran.r-project.org/mirrors.html
-		# Using Wirtschaftsuniversität Wien Mirror
- 		install.packages(pkg, repos="https://cran.wu.ac.at/");
+		# Installing to temp folder, if you want to permenently install change lib path
+		if (length(args)==0) {
+ 			install.packages(pkg);
+		} else if (length(args) == 1){
+			install.packages(pkg, lib= args[1]);
+		}
 	}
 } 
 
 custom_install("Matrix");
-custom_install("plotrix");
 custom_install("psych");
 custom_install("moments");
-custom_install("batch");
+custom_install("boot");
 custom_install("matrixStats");
-custom_install("outliers");
-custom_install("caret");
-custom_install("Sigmoid");
-custom_install("DescTools");
 
+# custom_install("plotrix");
+# custom_install("batch");
+# custom_install("outliers");
+# custom_install("caret");
+# custom_install("Sigmoid");
+# custom_install("DescTools");
+
+print("Done")

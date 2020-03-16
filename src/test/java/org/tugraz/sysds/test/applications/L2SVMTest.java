@@ -40,6 +40,7 @@ import org.tugraz.sysds.test.TestConstants.MatrixType;
 import org.tugraz.sysds.test.TestConstants.SparsityType;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class L2SVMTest extends ApplicationTestBase {
 	protected final static String TEST_DIR = "applications/l2svm/";
 	private final static String TEST_CONF = "SystemDS-config-L2SVM.xml";
@@ -49,7 +50,7 @@ public class L2SVMTest extends ApplicationTestBase {
 
 	protected boolean intercept;
 
-	protected double epsilon = 1e-10;
+	protected double epsilon = 1e-6;
 	protected double lambda = 1.0;
 	protected int maxiterations = 3;
 	protected int maxNumberOfMRJobs = 49;

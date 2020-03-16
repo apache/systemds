@@ -89,6 +89,8 @@ public class TensorRandTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 		try {
+			//TODO test correctness
+			//assertTrue("the test is not done, needs comparison, of result.", false);
 			getAndLoadTestConfiguration(testName);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 

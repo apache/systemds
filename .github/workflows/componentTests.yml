@@ -1,0 +1,26 @@
+name: Component Test
+
+on: [push, pull_request]
+
+jobs:
+  componentTests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: [ 1.8 ]
+    name: Component Tests ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+
+    - name: clean compile & test-compile
+      run: mvn clean compile test-compile
+
+    - name: Component Tests
+      run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.component.*.**

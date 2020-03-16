@@ -50,6 +50,7 @@
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.1.0</jcuda.version>
+		<skipTests>true</skipTests>
 		<integrationTestExtraJVMArgs />
 	</properties>
 
@@ -252,6 +253,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M4</version><!--$NO-MVN-MAN-VER$ -->
 				<configuration>
+					<skipTests>${skipTests}</skipTests>
 					<parallel>classes</parallel>
 					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
 					<threadCount>12</threadCount>
@@ -759,6 +761,7 @@
 				</plugins>
 			</build>
 		</profile>
+		
 	</profiles>
 	
 	<dependencies>

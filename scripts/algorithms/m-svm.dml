@@ -114,7 +114,7 @@ w = matrix(0, rows=num_rows_in_w, cols=num_classes)
 
 debug_mat = matrix(-1, rows=maxiterations, cols=num_classes)
 
-parfor(iter_class in 1:num_classes){		  
+parfor(iter_class in 1:num_classes){
   Y_local = 2 * (Y == iter_class) - 1
   w_class = matrix(0, rows=num_features, cols=1)
   

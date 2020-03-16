@@ -136,7 +136,7 @@ public class RemoveUnnecessaryCTableTest extends AutomatedTestBase
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
 
-			ArrayList<String> programArgsBuilder = new ArrayList<String>(
+			ArrayList<String> programArgsBuilder = new ArrayList<>(
 				Arrays.asList("-explain", "-stats", "-args" ));
 			// Get Matrix Input
 			if (A != null){
@@ -155,7 +155,7 @@ public class RemoveUnnecessaryCTableTest extends AutomatedTestBase
 			programArgsBuilder.add(output(config.getOutputFiles()[0]));
 
 			String[] argsArray = new String[programArgsBuilder.size()];
-			argsArray = (String[]) programArgsBuilder.toArray(argsArray);
+			argsArray = programArgsBuilder.toArray(argsArray);
 			programArgs =  argsArray;
 			
 			//run test

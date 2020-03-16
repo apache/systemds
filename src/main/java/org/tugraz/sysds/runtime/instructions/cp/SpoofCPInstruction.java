@@ -100,8 +100,8 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	public LineageItem[] getLineageItems(ExecutionContext ec) 
 	{
 		//read and deepcopy the corresponding lineage DAG (pre-codegen)
-		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(this.getOperatorClass().getName()).deepCopy();
-
+		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(getOperatorClass().getName()).deepCopy();
+		
 		//replace the placeholders with original instruction inputs. 
 		LineageItemUtils.replaceDagLeaves(ec, LIroot, _in);
 

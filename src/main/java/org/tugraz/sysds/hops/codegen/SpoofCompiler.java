@@ -604,15 +604,17 @@ public class SpoofCompiler
 			//replace sub-dag with generated operator
 			Pair<Hop[], Class<?>> tmpCla = clas.get(hop.getHopID());
 			CNodeTpl tmpCNode = cplans.get(hop.getHopID()).getValue();
+			
+			hnew = new SpoofFusedOp(hop.getName(), hop.getDataType(), hop.getValueType(),
+				tmpCla.getValue(), false, tmpCNode.getOutputDimType());
+			Hop[] inHops = tmpCla.getKey();
 
 			if (DMLScript.LINEAGE) {
 				//construct and save lineage DAG from pre-modification HOP DAG
-				LineageItemUtils.constructLineageFromHops(hop, tmpCla.getValue().getName());
+				Hop[] roots = !(tmpCNode instanceof CNodeMultiAgg) ? new Hop[]{hop} :
+					((CNodeMultiAgg)tmpCNode).getRootNodes().toArray(new Hop[0]);
+				LineageItemUtils.constructLineageFromHops(roots, tmpCla.getValue().getName(), inHops);
 			}
-
-			hnew = new SpoofFusedOp(hop.getName(), hop.getDataType(), hop.getValueType(), 
-					tmpCla.getValue(), false, tmpCNode.getOutputDimType());
-			Hop[] inHops = tmpCla.getKey();
 
 			for(int i=0; i<inHops.length; i++) {
 				if(tmpCNode instanceof CNodeOuterProduct

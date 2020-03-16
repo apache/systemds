@@ -18,6 +18,7 @@
 package org.tugraz.sysds.runtime.lineage;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -362,28 +363,44 @@ public class LineageItemUtils {
 		item.setVisited();
 	}
 
-	public static void constructLineageFromHops(Hop root, String claName) {
+	public static void constructLineageFromHops(Hop[] roots, String claName, Hop[] inputs) {
 		//probe existence and only generate lineage if non-existing
 		//(a fused operator might be used in multiple places of a program)
 		if( LineageCodegenItem.getCodegenLTrace(claName) == null ) {
 			//recursively construct lineage for fused operator
 			Map<Long, LineageItem> operands = new HashMap<>();
-			root.resetVisitStatus(); // ensure non-visited
-			rConstructLineageFromHops(root, operands);
+			//reset visit status once for entire sub DAG
+			for( Hop root : roots )
+				root.resetVisitStatus();
+			//construct lineage dags for roots (potentially overlapping)
+			for( Hop root : roots )
+				rConstructLineageFromHops(root, inputs, operands);
+			
+			//create single lineage item (single root or multiagg)
+			LineageItem out = operands.get(roots[0].getHopID());
+			if( roots.length > 1 ) { //multi-agg
+				LineageItem[] outputs = Arrays.stream(roots)
+					.map(h -> new LineageItem("", UnaryCP.CAST_AS_MATRIX_OPCODE,
+						new LineageItem[]{operands.get(h.getHopID())}))
+					.toArray(LineageItem[]::new);
+				out = new LineageItem("", "cbind", outputs);
+			}
 			
 			//cache to avoid reconstruction
-			LineageCodegenItem.setCodegenLTrace(claName, operands.get(root.getHopID()));
+			LineageCodegenItem.setCodegenLTrace(claName, out);
 		}
 	}
 
-	public static void rConstructLineageFromHops(Hop root, Map<Long, LineageItem> operands) {
+	public static void rConstructLineageFromHops(Hop root, Hop[] inputs, Map<Long, LineageItem> operands) {
 		if (root.isVisited())
 			return;
 
 		for (int i = 0; i < root.getInput().size(); i++) 
-			rConstructLineageFromHops(root.getInput().get(i), operands);
+			rConstructLineageFromHops(root.getInput().get(i), inputs, operands);
 	
-		if ((root instanceof DataOp) && (((DataOp)root).getOp() == OpOpData.TRANSIENTREAD)) {
+		if (HopRewriteUtils.isData(root, OpOpData.TRANSIENTREAD)
+			|| ArrayUtils.contains(inputs, root))
+		{
 			LineageItem li = new LineageItem(root.getName(), "InputPlaceholder", "Create"+String.valueOf(root.getHopID()));
 			operands.put(root.getHopID(), li);
 			return;
@@ -527,6 +544,8 @@ public class LineageItemUtils {
 	private static void rReplace(LineageItem current, LineageItem liOld, LineageItem liNew) {
 		if( current.isVisited() || current.getInputs() == null )
 			return;
+		if( liNew == null )
+			throw new DMLRuntimeException("Invalid null lineage item for "+liOld.getName());
 		//process children until old item found, then replace
 		for(int i=0; i<current.getInputs().length; i++) {
 			LineageItem tmp = current.getInputs()[i];
@@ -543,7 +562,7 @@ public class LineageItemUtils {
 		HashMap<String, LineageItem> newLImap = new HashMap<>();
 		for (int i=0; i<newLIleaves.length; i++)
 			newLImap.put(newLeaves[i].getName(), newLIleaves[i]);
-
+		
 		//find and replace the old leaves
 		HashSet<LineageItem> oldLeaves = new HashSet<>();
 		root.resetVisitStatus();

@@ -693,15 +693,16 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	}
 
 	private static Hop removeUnnecessaryCTable( Hop parent, Hop hi, int pos ) {
-		if ( HopRewriteUtils.isAggUnaryOp(hi, AggOp.SUM) 
+		if ( HopRewriteUtils.isAggUnaryOp(hi, AggOp.SUM, Direction.RowCol) 
 			&& HopRewriteUtils.isTernary(hi.getInput().get(0), OpOp3.CTABLE)
 			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(0).getInput().get(2), 1.0))
 		{
 			Hop matrixInput = hi.getInput().get(0).getInput().get(0);
-			HopRewriteUtils.removeChildReference(hi, hi.getInput().get(0));
-			Hop newOpLength = new UnaryOp("length", DataType.SCALAR, ValueType.INT64, OpOp1.LENGTH, matrixInput);
+			OpOp1 opcode = matrixInput.getDim2() == 1 ? OpOp1.NROW : OpOp1.LENGTH;
+			Hop newOpLength = new UnaryOp("tmp", DataType.SCALAR, ValueType.INT64, opcode, matrixInput);
 			HopRewriteUtils.replaceChildReference(parent, hi, newOpLength, pos);
-			hi = parent.getInput().get(pos);
+			HopRewriteUtils.cleanupUnreferenced(hi, hi.getInput().get(0));
+			hi = newOpLength;
 		}
 		return hi;
 	}

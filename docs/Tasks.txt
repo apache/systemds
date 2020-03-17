@@ -215,5 +215,8 @@ SYSTEMDS-300 Github Workflow/Actions
  * 303 Workflow for Function tests                                    OK
  * 304 Workflow make documentation                                    OK
 
+SYSTEMDS-310 Python Bindings
+ * 311 Initial Python Binding for federated execution                 OK
+
 Others:
  * Break append instruction to cbind and rbind 

@@ -65,7 +65,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 			CPOperand out = new CPOperand(parts[2]);
 			OperationTypes ptype = OperationTypes.valueOf(parts[3]);
 			boolean inmem = Boolean.parseBoolean(parts[4]);
-			return new QuantilePickCPInstruction(null, in1, out, ptype, inmem, opcode, str);
+			return new QuantilePickCPInstruction(null, in1, new CPOperand(), out, ptype, inmem, opcode, str);
 		}
 		else if( parts.length == 6 ) {
 			CPOperand in1 = new CPOperand(parts[1]);

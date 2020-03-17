@@ -340,9 +340,7 @@ public class GLMTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("betas_R");
 		
 		double eps = 0.000001;
-		if( (distParam==0 && linkType==1) // Gaussian.log
-			|| (distParam==1 && linkType==5) )
-		{
+		if( (distParam==0 && linkType==1) ) { // Gaussian.*
 			//NOTE MB: Gaussian.log was the only test failing when we introduced multi-threaded
 			//matrix multplications (mmchain). After discussions with Sasha, we decided to change the eps
 			//because accuracy is anyway affected by various rewrites like binary to unary (-1*x->-x),
@@ -353,7 +351,7 @@ public class GLMTest extends AutomatedTestBase
 			//(at least for the final aggregation of partial results from individual threads).
 			
 			//NOTE MB: similar issues occurred with other tests when moving to github action tests
-			eps *= 2;
+			eps *=  (linkPower==-1) ? 4 : 2; //Gaussian.inverse vs Gaussian.*;
 		}
 		TestUtils.compareMatrices (wR, wSYSTEMDS, eps * max_abs_beta, "wR", "wSYSTEMDS");
 	}

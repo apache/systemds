@@ -25,7 +25,6 @@
 args <- commandArgs(TRUE)
 options(digits=22)
 
-#library("batch")
 library("Matrix")
 # Usage: R --vanilla -args Xfile X < DescriptiveStatistics.R
 

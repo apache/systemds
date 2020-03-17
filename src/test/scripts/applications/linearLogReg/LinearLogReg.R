@@ -26,7 +26,6 @@
 args <- commandArgs(TRUE)
 
 library("Matrix")
-#library("batch")
 # Usage:  /home/vikas/R-2.10.1/bin/R --vanilla --args Xfile X yfile y Cval 2 tol 0.01 maxiter 100 < linearLogReg.r
 
 # Solves Linear Logistic Regression using Trust Region methods. 

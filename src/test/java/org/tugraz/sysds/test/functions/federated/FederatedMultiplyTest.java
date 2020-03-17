@@ -113,7 +113,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-explain", "-nvargs",
+		programArgs = new String[] {"-nvargs",
 			"X1=" + TestUtils.federatedAddress("localhost", port1, input("X1")),
 			"X2=" + TestUtils.federatedAddress("localhost", port2, input("X2")),
 			"Y1=" + TestUtils.federatedAddress("localhost", port1, input("Y1")),

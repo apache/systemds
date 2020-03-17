@@ -35,6 +35,7 @@ import static java.lang.Thread.sleep;
 
 
 @RunWith(Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase
 {
 	@Parameterized.Parameters

@@ -340,7 +340,8 @@ public class GLMTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("betas_R");
 		
 		double eps = 0.000001;
-		if( distParam==0 && linkType==1 ) // Gaussian.log
+		if( (distParam==0 && linkType==1) // Gaussian.log
+			|| (distParam==1 && linkType==5) )
 		{
 			//NOTE MB: Gaussian.log was the only test failing when we introduced multi-threaded
 			//matrix multplications (mmchain). After discussions with Sasha, we decided to change the eps
@@ -350,8 +351,10 @@ public class GLMTest extends AutomatedTestBase
 			//of rows if these rewrites are enabled. Users can turn off rewrites if high accuracy is required. 
 			//However, in the future we might also consider to use Kahan plus for aggregations in matrix mult 
 			//(at least for the final aggregation of partial results from individual threads).
-			eps = 0.000002; //2x the error threshold
-		}		
+			
+			//NOTE MB: similar issues occurred with other tests when moving to github action tests
+			eps *= 2;
+		}
 		TestUtils.compareMatrices (wR, wSYSTEMDS, eps * max_abs_beta, "wR", "wSYSTEMDS");
 	}
 	

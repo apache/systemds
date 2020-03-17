@@ -25,10 +25,8 @@
 args <- commandArgs(TRUE)
 options(digits=22)
 
-library("plotrix");
 library("psych")
 library("moments")
-#library("batch")
 library("Matrix")
 
 # Usage: R --vanilla -args Xfile X < DescriptiveStatistics.R
@@ -59,7 +57,7 @@ var = var(V)
 std_dev = sd(V, na.rm = FALSE)
 
 # standard errors of mean
-SE = std.error(V, na.rm)
+SE = sd(V)/sqrt(sum(!is.na(V)))
 
 # coefficients of variation
 cv = std_dev/mu

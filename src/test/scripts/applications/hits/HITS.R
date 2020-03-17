@@ -19,7 +19,6 @@
 #
 #-------------------------------------------------------------
 
-#library("batch")
 # Usage:  R --vanilla --args graphfile G tol 1e-8 maxiter 100 < HITS.R
 #parseCommandArgs()
 # JUnit test class: dml.test.integration.applications.HITSTest.java

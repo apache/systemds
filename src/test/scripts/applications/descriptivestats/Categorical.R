@@ -25,7 +25,6 @@
 args <- commandArgs(TRUE)
 options(digits=22)
 
-#library("batch")
 library("Matrix")
 
 V = readMM(paste(args[1], "vector.mtx", sep=""))

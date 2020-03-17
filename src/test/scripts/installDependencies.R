@@ -41,11 +41,9 @@ custom_install("psych");
 custom_install("moments");
 custom_install("boot");
 custom_install("matrixStats");
-
-# custom_install("batch");
-# custom_install("outliers");
-# custom_install("caret");
-# custom_install("Sigmoid");
-# custom_install("DescTools");
+custom_install("outliers");
+custom_install("caret");
+custom_install("sigmoid");
+custom_install("DescTools");
 
 print("Done")

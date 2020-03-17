@@ -258,7 +258,7 @@
 					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
 					<threadCount>12</threadCount>
 					<!-- 1C means the number of threads times 1 posible maximum forks for testing-->
-					<forkCount>1C</forkCount> 
+					<forkCount>1C</forkCount>
 					<argLine>-Xms4g -Xmx6g</argLine>
 					<reuseForks>false</reuseForks>
 				</configuration>
@@ -763,7 +763,7 @@
 		</profile>
 		
 	</profiles>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>org.jcuda</groupId>

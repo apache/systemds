@@ -37,6 +37,12 @@ buildNumber.properties
 .metadata
 .cache*
 
+# Python artifacts
+src/main/python/systemds/systemds-java/
+src/main/python/systemds.egg-info/
+src/main/python/build/
+
+
 # User configuration files
 conf/SystemDS-config.xml
 conf/log4j.properties

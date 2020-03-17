@@ -1,0 +1,52 @@
+name: Python Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  applicationsTests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: [ 1.8 ]
+    name:  Python Test
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+
+    - name: clean, compile
+      run: mvn clean compile
+
+    - name: Setup Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.7' 
+        architecture: 'x64' 
+
+    - name: Install pip Dependencies
+      run: pip install numpy py4j
+
+    - name: Build Python Package
+      # TODO: Find out how to make if statement correctly: suggestion but not working: if: ${{ matrix.tests }} == P
+      run: |
+        cd src/main/python
+        python pre_setup.py
+        python setup.py build
+
+    - name: Run all python tests
+      run: |
+        cd src/main/python
+        python tests/test_l2svm.py
+        python tests/test_matrix_aggregations.py
+        python tests/test_matrix_binary_op.py

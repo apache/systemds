@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -52,8 +52,6 @@ import scala.Tuple2;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -102,54 +100,6 @@ public class RDDConverterUtilsExt
 		return df.select(columns.get(0), scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen) {
-		return convertPy4JArrayToMB(data, (int)rlen, (int)clen, false);
-	}
-
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen) {
-		return convertPy4JArrayToMB(data, rlen, clen, false);
-	}
-
-	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, long rlen, long clen, long nnz) {
-		return convertSciPyCOOToMB(data, row, col, (int)rlen, (int)clen, (int)nnz);
-	}
-
-	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, int rlen, int clen, int nnz) {
-		MatrixBlock mb = new MatrixBlock(rlen, clen, true);
-		mb.allocateSparseRowsBlock(false);
-		ByteBuffer buf1 = ByteBuffer.wrap(data);
-		buf1.order(ByteOrder.nativeOrder());
-		ByteBuffer buf2 = ByteBuffer.wrap(row);
-		buf2.order(ByteOrder.nativeOrder());
-		ByteBuffer buf3 = ByteBuffer.wrap(col);
-		buf3.order(ByteOrder.nativeOrder());
-		for(int i = 0; i < nnz; i++) {
-			double val = buf1.getDouble();
-			int rowIndex = buf2.getInt();
-			int colIndex = buf3.getInt();
-			mb.setValue(rowIndex, colIndex, val);
-		}
-		mb.recomputeNonZeros();
-		mb.examSparsity();
-		return mb;
-	}
-
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse) {
-		return convertPy4JArrayToMB(data, (int) rlen, (int) clen, isSparse);
-	}
-
-	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
-		MatrixBlock ret = new MatrixBlock(rlen, clen, isSparse);
-		ret.allocateBlock();
-		return ret;
-	}
-	public static MatrixBlock allocateDenseOrSparse(long rlen, long clen, boolean isSparse) {
-		if(rlen > Integer.MAX_VALUE || clen > Integer.MAX_VALUE) {
-			throw new DMLRuntimeException("Dimensions of matrix are too large to be passed via NumPy/SciPy:" + rlen + " X " + clen);
-		}
-		return allocateDenseOrSparse(rlen, clen, isSparse);
-	}
-
 	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) {
 		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
 	}
@@ -170,59 +120,7 @@ public class RDDConverterUtilsExt
 		ret.recomputeNonZeros();
 		ret.examSparsity();
 	}
-
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) {
-		MatrixBlock mb = new MatrixBlock(rlen, clen, isSparse, -1);
-		if(isSparse) {
-			throw new DMLRuntimeException("Convertion to sparse format not supported");
-		}
-		else {
-			long limit = rlen*clen;
-			if( limit > Integer.MAX_VALUE )
-				throw new DMLRuntimeException("Dense NumPy array of size " + limit + " cannot be converted to MatrixBlock");
-			double [] denseBlock = new double[(int) limit];
-			ByteBuffer buf = ByteBuffer.wrap(data);
-			buf.order(ByteOrder.nativeOrder());
-			for(int i = 0; i < rlen*clen; i++) {
-				denseBlock[i] = buf.getDouble();
-			}
-			mb.init( denseBlock, rlen, clen );
-		}
-		mb.recomputeNonZeros();
-		mb.examSparsity();
-		return mb;
-	}
-
-	public static byte [] convertMBtoPy4JDenseArr(MatrixBlock mb) {
-		byte [] ret = null;
-		if(mb.isInSparseFormat()) {
-			mb.sparseToDense();
-		}
-
-		long limit = mb.getNumRows()*mb.getNumColumns();
-		int times = Double.SIZE / Byte.SIZE;
-		if( limit > Integer.MAX_VALUE / times )
-			throw new DMLRuntimeException("MatrixBlock of size " + limit + " cannot be converted to dense numpy array");
-		ret = new byte[(int) (limit * times)];
-
-		double [] denseBlock = mb.getDenseBlockValues();
-		if(mb.isEmptyBlock()) {
-			for(int i=0;i < limit;i++){
-		        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(0);
-			}
-		}
-		else if(denseBlock == null) {
-			throw new DMLRuntimeException("Error while dealing with empty blocks.");
-		}
-		else {
-			for(int i=0;i < denseBlock.length;i++){
-		        ByteBuffer.wrap(ret, i*times, times).order(ByteOrder.nativeOrder()).putDouble(denseBlock[i]);
-			}
-		}
-
-		return ret;
-	}
-
+	
 	public static class AddRowID implements Function<Tuple2<Row,Long>, Row> {
 		private static final long serialVersionUID = -3733816995375745659L;
 

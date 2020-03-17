@@ -19,7 +19,6 @@
 args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
-library("stats")
 library("DescTools")
 
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))

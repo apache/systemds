@@ -94,6 +94,8 @@ public class Py4jConverterUtils {
 					for (int i = 0; i < rlen * clen; i++)
 						denseBlock[i] = buf.getDouble();
 					break;
+				default:
+					throw new DMLRuntimeException("Unsupported value type: "+valueType.name());
 			}
 			mb.init(denseBlock, rlen, clen);
 		}

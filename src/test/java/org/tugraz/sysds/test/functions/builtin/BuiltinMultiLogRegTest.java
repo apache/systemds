@@ -27,7 +27,7 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class BuiltinMultiLogRegTest extends AutomatedTestBase {
 
-	private final static String TEST_NAME = "multiLogReg";
+	private final static String TEST_NAME = "MultiLogReg";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinMultiLogRegTest.class.getSimpleName() + "/";
 

@@ -42,7 +42,6 @@ custom_install("moments");
 custom_install("boot");
 custom_install("matrixStats");
 
-# custom_install("plotrix");
 # custom_install("batch");
 # custom_install("outliers");
 # custom_install("caret");

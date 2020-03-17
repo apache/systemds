@@ -25,10 +25,8 @@
 args <- commandArgs(TRUE)
 options(digits=22)
 
-library("plotrix");
 library("psych")
 library("moments")
-#library("batch")
 library("Matrix")
 
 V = readMM(paste(args[1], "vector.mtx", sep=""))
@@ -46,7 +44,7 @@ var = var(V[,1])
 std_dev = sd(V[,1], na.rm = FALSE)
 
 # standard errors of mean
-SE = std.error(V[,1], na.rm)
+SE = sd(V[,1])/sqrt(sum(!is.na(V[,1])))
 
 # coefficients of variation
 cv = std_dev/mu
@@ -118,5 +116,3 @@ write(iqm, paste(args[2], "iqm", sep=""));
 writeMM(as(t(out_minus),"CsparseMatrix"), paste(args[2], "out_minus", sep=""), format="text");
 writeMM(as(t(out_plus),"CsparseMatrix"), paste(args[2], "out_plus", sep=""), format="text");
 writeMM(as(t(Q),"CsparseMatrix"), paste(args[2], "quantile", sep=""), format="text");
-
-

@@ -59,5 +59,8 @@ R = data.frame(complete(imputeD,3))
 n =select_if(R, is.numeric)
 c = select_if(R, is.factor)
 
+# convert factor into numeric before casting to matrix
+c =  sapply(c, function(x) as.numeric(as.character(x)))
+            
 writeMM(as(as.matrix(n), "CsparseMatrix"), paste(args[3], "N", sep=""));
 writeMM(as(as.matrix(c), "CsparseMatrix"), paste(args[3], "C", sep=""));

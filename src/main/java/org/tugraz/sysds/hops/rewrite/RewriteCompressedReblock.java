@@ -119,6 +119,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	private static boolean satisfiesAutoCompressionCondition(Hop hop, DMLProgram prog) {
 		//check for basic compression condition
 		if( !(satisfiesCompressionCondition(hop) 
+			&& hop.getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
 			&& OptimizerUtils.isSparkExecutionMode()) )
 			return false;
 		

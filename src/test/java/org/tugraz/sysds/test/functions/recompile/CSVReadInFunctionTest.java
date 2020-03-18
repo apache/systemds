@@ -83,9 +83,7 @@ public class CSVReadInFunctionTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{
-				"-stats", 
-				// "-explain",
-				"-args", input("A"), input("B"), output("R") };
+				"-stats", "-args", input("A"), input("B"), output("R") };
 
 			//write csv matrix without size information (no mtd file)
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1.0d, 7);

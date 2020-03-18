@@ -29,10 +29,10 @@ public class CNodeTernary extends CNode
 {
 	public enum TernaryType {
 		PLUS_MULT, MINUS_MULT,
-		BIAS_ADD, BIAS_MULT,
+		BIASADD, BIASMULT,
 		REPLACE, REPLACE_NAN, IFELSE,
 		LOOKUP_RC1, LOOKUP_RVECT1;
-		
+	
 		public static boolean contains(String value) {
 			return Arrays.stream(values()).anyMatch(tt -> tt.name().equals(value));
 		}
@@ -45,10 +45,10 @@ public class CNodeTernary extends CNode
 				case MINUS_MULT:
 					return "    double %TMP% = %IN1% - %IN2% * %IN3%;\n";
 				
-				case BIAS_ADD:
+				case BIASADD:
 					return "    double %TMP% = %IN1% + getValue(%IN2%, cix/%IN3%);\n";
 				
-				case BIAS_MULT:
+				case BIASMULT:
 					return "    double %TMP% = %IN1% * getValue(%IN2%, cix/%IN3%);\n";
 				
 				case REPLACE:
@@ -134,8 +134,8 @@ public class CNodeTernary extends CNode
 		switch(_type) {
 			case PLUS_MULT:     return "t(+*)";
 			case MINUS_MULT:    return "t(-*)";
-			case BIAS_ADD:      return "t(bias+)";
-			case BIAS_MULT:     return "t(bias*)";
+			case BIASADD:       return "t(bias+)";
+			case BIASMULT:      return "t(bias*)";
 			case REPLACE:
 			case REPLACE_NAN:   return "t(rplc)";
 			case IFELSE:        return "t(ifelse)";
@@ -150,8 +150,8 @@ public class CNodeTernary extends CNode
 		switch(_type) {
 			case PLUS_MULT: 
 			case MINUS_MULT:
-			case BIAS_ADD:
-			case BIAS_MULT:
+			case BIASADD:
+			case BIASMULT:
 			case REPLACE:
 			case REPLACE_NAN:
 			case IFELSE:

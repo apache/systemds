@@ -23,6 +23,7 @@ A = read($1, rows=$2, cols=$3, format="text");
 B = table(seq(1, nrow(A)), A);
 
 if( $4==1 ){ #withAgg
+   while(FALSE){} # prevent other rewrites
    print("sum="+sum(B));
 }
 while(FALSE){}

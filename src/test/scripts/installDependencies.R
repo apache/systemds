@@ -45,5 +45,6 @@ custom_install("outliers");
 custom_install("caret");
 custom_install("sigmoid");
 custom_install("DescTools");
+custom_install("mice");
 
 print("Done")

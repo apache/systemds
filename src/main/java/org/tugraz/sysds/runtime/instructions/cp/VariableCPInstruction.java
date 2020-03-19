@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
+ * Modifications Copyright 2019 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -117,7 +117,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private final CPOperand output;
 	private final MetaData metadata;
 	private final UpdateType _updateType;
-	private final boolean _markForLinCache;
 	
 	// Frame related members
 	private final String _schema;
@@ -126,7 +125,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private final FileFormatProperties _formatProperties;
 
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			MetaData meta, FileFormatProperties fprops, String schema, UpdateType utype, String sopcode, String istr, boolean linCache) {
+			MetaData meta, FileFormatProperties fprops, String schema, UpdateType utype, String sopcode, String istr) {
 		super(CPType.Variable, sopcode, istr);
 		opcode = op;
 		inputs = new ArrayList<>();
@@ -138,25 +137,24 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		_formatProperties = fprops;
 		_schema = schema;
 		_updateType = utype;
-		_markForLinCache = linCache;
 	}
 	
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String sopcode, String istr) {
-		this(op, in1, in2, in3, out, null, null, null, null, sopcode, istr, false);
+		this(op, in1, in2, in3, out, null, null, null, null, sopcode, istr);
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
-			UpdateType updateType, String schema, String sopcode, String istr, boolean lineageCache) {
-		this(op, in1, in2, in3, null, md, null, schema, updateType, sopcode, istr, lineageCache);
+			UpdateType updateType, String schema, String sopcode, String istr) {
+		this(op, in1, in2, in3, null, md, null, schema, updateType, sopcode, istr);
 	}
 
 	// This version of the constructor is used only in case of CreateVariable
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
 			UpdateType updateType, FileFormatProperties formatProperties, String schema, String sopcode,
 			String istr) {
-		this(op, in1, in2, in3, null, md, formatProperties, schema, updateType, sopcode, istr, false);
+		this(op, in1, in2, in3, null, md, formatProperties, schema, updateType, sopcode, istr);
 	}
 
 	private static VariableOperationCode getVariableOperationCode ( String str ) {
@@ -356,7 +354,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
-				if ( parts.length != 6 && parts.length != 11+extSchema && parts.length != 12+extSchema )
+				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
@@ -398,12 +396,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			UpdateType updateType = UpdateType.COPY;
 			if ( parts.length >= 11 )
 				updateType = UpdateType.valueOf(parts[10].toUpperCase());
-			boolean lineageCache = false;
-			if (parts.length >= 12)
-				lineageCache = Boolean.parseBoolean(parts[11]); 
 			
 			//handle frame schema
-			String schema = (dt==DataType.FRAME && parts.length>=13) ? parts[parts.length-1] : null;
+			String schema = (dt==DataType.FRAME && parts.length>=12) ? parts[parts.length-1] : null;
 			
 			if ( fmt.equalsIgnoreCase("csv") ) {
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.
@@ -430,7 +425,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
 			else {
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, schema, opcode, str, lineageCache);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, schema, opcode, str);
 			}
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
@@ -496,7 +491,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				in4 = new CPOperand(parts[4]); // description
 			}
 			VariableCPInstruction inst = new VariableCPInstruction(
-				getVariableOperationCode(opcode), in1, in2, in3, out, null, fprops, null, null, opcode, str, false);
+				getVariableOperationCode(opcode), in1, in2, in3, out, null, fprops, null, null, opcode, str);
 			inst.addInput(in4);
 			
 			return inst;
@@ -535,7 +530,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//is potential for hidden side effects between variables.
 				obj.setMetaData((MetaData)metadata.clone());
 				obj.setFileFormatProperties(_formatProperties);
-				obj.setMarkForLinCache(_markForLinCache);
 				obj.enableCleanup(!getInput1().getName()
 					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), obj);
@@ -1138,16 +1132,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		
 		String str = sb.toString();
 
-		return parseInstruction(str);
-	}
-
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update, boolean linCacheCand) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(prepareCreateVariableInstruction(varName,fileName, fNameOverride, dt, format, mc, update));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(linCacheCand);
-
-		String str = sb.toString();
 		return parseInstruction(str);
 	}
 	

@@ -805,7 +805,7 @@ public class Dag<N extends Lop>
 					oparams.getLabel(), oparams.getFile_name(), true, node.getDataType(),
 					OutputInfo.outputInfoToString(getOutputInfo(node, false)),
 					new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), blen, oparams.getNnz()),
-					oparams.getUpdateType(), oparams.getLinCacheMarking());
+					oparams.getUpdateType());
 				
 				createvarInst.setLocation(node);
 				

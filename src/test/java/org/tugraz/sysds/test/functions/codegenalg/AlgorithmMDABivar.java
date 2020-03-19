@@ -29,6 +29,7 @@ import org.tugraz.sysds.test.applications.MDABivariateStatsTest;
 import java.io.File;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class AlgorithmMDABivar extends MDABivariateStatsTest 
 {
 	private final static String LOCAL_TEST_DIR = "functions/codegenalg/";

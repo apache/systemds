@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class TensorConstructionTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/data/";

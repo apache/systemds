@@ -37,6 +37,7 @@ import org.tugraz.sysds.test.TestConfiguration;
  * 
  */
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class SampleTest extends AutomatedTestBase 
 {
 

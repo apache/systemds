@@ -44,9 +44,9 @@ import org.tugraz.sysds.test.TestUtils;
  */
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class RandRuntimePlatformTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_DIR = "functions/data/";
 	private final static String TEST_NAME = "RandRuntimePlatformTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + RandRuntimePlatformTest.class.getSimpleName() + "/";

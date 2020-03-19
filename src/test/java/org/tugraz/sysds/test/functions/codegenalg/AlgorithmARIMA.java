@@ -29,6 +29,7 @@ import org.tugraz.sysds.test.applications.ArimaTest;
 import java.io.File;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class AlgorithmARIMA extends ArimaTest 
 {
 	private final static String LOCAL_TEST_DIR = "functions/codegenalg/";

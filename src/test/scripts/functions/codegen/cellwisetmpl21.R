@@ -27,6 +27,7 @@ X = matrix(seq(7, 1006), 500, 2, byrow=TRUE);
 
 R1 = (X/3) %% 0.6;
 R2 = (X/3) %/% 0.6;
+R1 = ifelse(R1<1e-7, 0, R1);
 R = (R1 > 0) * R2
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

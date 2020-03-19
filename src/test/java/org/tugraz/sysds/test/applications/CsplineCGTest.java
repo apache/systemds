@@ -37,40 +37,40 @@ import org.tugraz.sysds.test.TestUtils;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class CsplineCGTest extends AutomatedTestBase {
-    protected final static String TEST_DIR = "applications/cspline/";
-    protected final static String TEST_NAME = "CsplineCG";
-    protected String TEST_CLASS_DIR = TEST_DIR + CsplineCGTest.class.getSimpleName() + "/";
-    protected int numRecords, numDim;
-    public CsplineCGTest(int rows, int cols) {
-        numRecords = rows;
-        numDim = 1; // we have cubic spline which is always one dimensional
-    }
-    @Parameters
-    public static Collection<Object[]> data() {
-        Object[][] data = new Object[][] {
-                {10, 1},
-                {100, 1},
-                {1000, 1},
-        };
-        return Arrays.asList(data);
-    }
-    @Override
-    public void setUp() {
-        addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-    }
+	protected final static String TEST_DIR = "applications/cspline/";
+	protected final static String TEST_NAME = "CsplineCG";
+	protected String TEST_CLASS_DIR = TEST_DIR + CsplineCGTest.class.getSimpleName() + "/";
+	protected int numRecords, numDim;
+	public CsplineCGTest(int rows, int cols) {
+		numRecords = rows;
+		numDim = 1; // we have cubic spline which is always one dimensional
+	}
+	@Parameters
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] {
+				{10, 1},
+				{100, 1},
+				{1000, 1},
+		};
+		return Arrays.asList(data);
+	}
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+	}
 
-    @Test
-    public void testCsplineCG()
-    {
+	@Test
+	public void testCsplineCG()
+	{
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numDim
 				+ "} ------------");
 		
-        int rows = numRecords;
-        int cols = numDim;
-        int numIter = rows; // since CG will converse in worse case n
+		int rows = numRecords;
+		int cols = numDim;
+		int numIter = rows; // since CG will converse in worse case n
 
-        getAndLoadTestConfiguration(TEST_NAME);
-        
+		getAndLoadTestConfiguration(TEST_NAME);
+		
 		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-nvargs");
 		proArgs.add("X=" + input("X"));
@@ -84,28 +84,28 @@ public class CsplineCGTest extends AutomatedTestBase {
 		fullDMLScriptName = getScript();
 		
 		rCmd = getRCmd(input("X.mtx"), input("Y.mtx"), Double.toString(4.5), expected("pred_y"));
-        
-        double[][] X = new double[rows][cols];
+		
+		double[][] X = new double[rows][cols];
 
-        // X axis is given in the increasing order
-        for (int rid = 0; rid < rows; rid++) {
-            for (int cid = 0; cid < cols; cid++) {
-                X[rid][cid] = rid+1;
-            }
-        }
+		// X axis is given in the increasing order
+		for (int rid = 0; rid < rows; rid++) {
+			for (int cid = 0; cid < cols; cid++) {
+				X[rid][cid] = rid+1;
+			}
+		}
 
-        double[][] Y = getRandomMatrix(rows, cols, 0, 5, 1.0, -1);
+		double[][] Y = getRandomMatrix(rows, cols, 0, 5, 1.0, -1);
 
-        writeInputMatrixWithMTD("X", X, true);
-        writeInputMatrixWithMTD("Y", Y, true);
+		writeInputMatrixWithMTD("X", X, true);
+		writeInputMatrixWithMTD("Y", Y, true);
 
-        runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
-        runRScript(true);
+		runRScript(true);
 
-        HashMap<CellIndex, Double> pred_y_R = readRMatrixFromFS("pred_y");
-        HashMap<CellIndex, Double> pred_y_SYSTEMDS= readDMLMatrixFromHDFS("pred_y");
+		HashMap<CellIndex, Double> pred_y_R = readRMatrixFromFS("pred_y");
+		HashMap<CellIndex, Double> pred_y_SYSTEMDS= readDMLMatrixFromHDFS("pred_y");
 
-        TestUtils.compareMatrices(pred_y_R, pred_y_SYSTEMDS, Math.pow(10, -5), "k_R", "k_SYSTEMDS");
-    }
+		TestUtils.compareMatrices(pred_y_R, pred_y_SYSTEMDS, Math.pow(10, -5), "k_R", "k_SYSTEMDS");
+	}
 }

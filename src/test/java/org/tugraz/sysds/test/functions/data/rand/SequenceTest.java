@@ -40,6 +40,7 @@ import java.util.HashMap;
  * runtime platforms.
  */
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class SequenceTest extends AutomatedTestBase 
 {
 	private final static String TEST_DIR = "functions/data/";

@@ -479,15 +479,14 @@ public class LiteralReplacement
 		return value;
 	}
 	
-	
 	private static boolean isReplaceableUnaryAggregate( AggUnaryOp auop ) {
 		boolean cdir = (auop.getDirection() == Direction.RowCol);
 		boolean cop = (auop.getOp() == AggOp.SUM
 			|| auop.getOp() == AggOp.SUM_SQ
 			|| auop.getOp() == AggOp.MIN
 			|| auop.getOp() == AggOp.MAX);
-		
-		return cdir && cop && auop.getDataType().isMatrix();
+		boolean matrixInput = auop.getInput().get(0).getDataType().isMatrix();
+		return cdir && cop && matrixInput;
 	}
 	
 	private static double replaceUnaryAggregate( AggUnaryOp auop, MatrixBlock mb )

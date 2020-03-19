@@ -12,10 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.tensor;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,47 +30,47 @@ import java.util.Arrays;
 import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
-public class TensorRandTest extends AutomatedTestBase {
+public class TensorConstructionTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/data/";
-	private final static String TEST_NAME = "RandTensorTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TensorRandTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "TensorConstruction";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TensorConstructionTest.class.getSimpleName() + "/";
 
-	private String min, max;
-	private int seed;
+	private String value;
 	private long[] dimensions;
 
-	public TensorRandTest(long[] dims, String min, String max, int seed) {
-		this.dimensions = dims;
-		this.min = min;
-		this.max = max;
-		this.seed = seed;
+	public TensorConstructionTest(long[] dims, String v) {
+		dimensions = dims;
+		value = v;
 	}
 
 	@Parameters
 	public static Collection<Object[]> data() {
 		Object[][] data = new Object[][]{
-				{new long[]{3, 4, 5}, "3", "50", 1},
-				{new long[]{1, 1}, "8", "100", 10},
-				{new long[]{7, 1, 1}, "0.5", "1", 43},
-				{new long[]{7, 8, 8}, "0.5", "0.6", 42},
-				{new long[]{1030, 600, 2}, "0.5", "0.6", 4},
+				{new long[]{1024, 600, 2}, "3"},
+				{new long[]{1, 1}, "8"},
+				{new long[]{7, 1, 1}, "0.5"},
+				{new long[]{10, 2, 4}, "TRUE"},
+				{new long[]{30, 40, 50}, "FALSE"},
+				{new long[]{1000, 20}, "0"},
+				{new long[]{100, 10, 10, 10, 10}, "1.0"},
+				{new long[]{1, 1, 1, 1, 1, 1, 100}, "1"},
 		};
 		return Arrays.asList(data);
 	}
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, null));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"A"}));
 	}
 
 	@Test
-	public void tensorRandTestCP() {
+	public void tensorConstructionTestCP() {
 		testTensorConstruction(TEST_NAME, LopProperties.ExecType.CP);
 	}
 
 	@Test
-	public void tensorRandTestSpark() {
+	public void tensorConstructionTestSpark() {
 		testTensorConstruction(TEST_NAME, LopProperties.ExecType.SPARK);
 	}
 
@@ -91,14 +90,19 @@ public class TensorRandTest extends AutomatedTestBase {
 		try {
 			//TODO test correctness
 			//assertTrue("the test is not done, needs comparison, of result.", false);
+
 			getAndLoadTestConfiguration(testName);
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + testName + ".dml";
-			String dimensionsString = Arrays.toString(dimensions).replace(",", "");
-			dimensionsString = dimensionsString.substring(1, dimensionsString.length() - 1);
+			StringBuilder dimensionsStringBuilder = new StringBuilder();
+			long[] dims = Arrays.copyOf(dimensions, dimensions.length);
+			Arrays.stream(dims).forEach((dim) -> dimensionsStringBuilder.append(dim).append(" "));
+			String dimensionsString = dimensionsStringBuilder.toString();
 
-			programArgs = new String[]{"-explain", "-args", dimensionsString, min, max, Integer.toString(seed)};
+			programArgs = new String[]{"-explain", "-args",
+				dimensionsString, Integer.toString(dims.length), value};
 
 			// TODO check tensors (write not implemented yet, so not possible)
 			runTest(true, false, null, -1);

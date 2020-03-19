@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.paramserv;
+package org.tugraz.sysds.test.component.paramserv;
 
 import java.util.Arrays;
 

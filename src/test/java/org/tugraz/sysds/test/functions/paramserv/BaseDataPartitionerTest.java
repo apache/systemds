@@ -30,9 +30,9 @@ import org.tugraz.sysds.runtime.util.DataConverter;
 
 public abstract class BaseDataPartitionerTest {
 
-	protected static final int ROW_SIZE = 4000;
-	protected static final int COL_SIZE = 2000;
-	protected static final int WORKER_NUM = 4;
+	protected static final int ROW_SIZE = 2000;
+	protected static final int COL_SIZE = 1000;
+	protected static final int WORKER_NUM = 2;
 
 	protected MatrixBlock[] generateData() {
 		double[][] df = new double[BaseDataPartitionerTest.ROW_SIZE][BaseDataPartitionerTest.COL_SIZE];

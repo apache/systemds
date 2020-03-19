@@ -62,6 +62,7 @@ import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class GNMFTest extends MLContextTestBase
 {
 	private final static String TEST_DIR = "applications/gnmf/";

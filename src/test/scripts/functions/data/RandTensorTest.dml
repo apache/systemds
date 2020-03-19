@@ -17,4 +17,5 @@
 #-------------------------------------------------------------
 
 A = rand(dims=$1, min=$2, max=$3, seed=$4)
-print(toString(A))
+if( as.scalar(rand(rows=1,cols=1))<0 )
+  print(toString(A))

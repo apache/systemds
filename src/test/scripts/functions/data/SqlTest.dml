@@ -17,4 +17,5 @@
 #-------------------------------------------------------------
 
 X = sql($1, $2);
-print(toString(X));
+if( as.scalar(rand(rows=1,cols=1))<0 )
+  print(toString(X));

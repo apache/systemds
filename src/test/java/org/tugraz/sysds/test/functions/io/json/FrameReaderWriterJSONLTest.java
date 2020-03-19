@@ -32,7 +32,7 @@ import java.util.Random;
 
 public class FrameReaderWriterJSONLTest
 {
-	private static final String FILENAME_SINGLE = "target/testTemp/functions/data/FrameJSONTest/testFrameBlock.json";
+	private static final String FILENAME_SINGLE = "target/testTemp/functions/data/FrameJSONLTest/testFrameBlock.json";
 
 	@Test
 	public void testWriteReadFrameBlockSingleSingleFromHDFS() throws IOException, JSONException {

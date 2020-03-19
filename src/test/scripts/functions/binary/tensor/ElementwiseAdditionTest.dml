@@ -21,4 +21,5 @@ d2 = matrix($3, 1, $4);
 A = tensor($5, d1);
 B = tensor($6, d2);
 C = A + B;
-print(toString(C))
+while(FALSE){}
+print(sum(C))

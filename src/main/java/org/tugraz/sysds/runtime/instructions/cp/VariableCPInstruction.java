@@ -530,6 +530,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//is potential for hidden side effects between variables.
 				obj.setMetaData((MetaData)metadata.clone());
 				obj.setFileFormatProperties(_formatProperties);
+				obj.setMarkForLinCache(true);
 				obj.enableCleanup(!getInput1().getName()
 					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), obj);

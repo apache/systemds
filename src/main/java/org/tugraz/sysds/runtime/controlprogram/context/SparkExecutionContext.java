@@ -39,6 +39,7 @@ import org.tugraz.sysds.api.mlcontext.MLContextUtil;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -214,7 +215,9 @@ public class SparkExecutionContext extends ExecutionContext
 			if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
 				// For now set 4 cores for integration testing :)
 				SparkConf conf = createSystemDSSparkConf()
-						.setMaster("local[*]").setAppName("My local integration test app");
+						.setMaster("local[" +
+							ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_SPARK_NUM_THREADS)+
+							"]").setAppName("My local integration test app");
 				// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
 				// conf.set("spark.driver.allowMultipleContexts", "true");
 				conf.set("spark.ui.enabled", "false");

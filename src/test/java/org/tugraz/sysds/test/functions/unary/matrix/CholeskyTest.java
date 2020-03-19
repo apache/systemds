@@ -25,10 +25,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
+import java.util.HashMap;
 
 /**
  * Tests for the Cholesky matrix factorization
@@ -109,8 +111,10 @@ public class CholeskyTest extends AutomatedTestBase
 			
 			//run tests and compare results
 			runTest(true, false, null, -1);
-			Assert.assertEquals(0, readDMLMatrixFromHDFS("D")
-				.get(new CellIndex(1,1)), 1e-5);
+			HashMap<CellIndex, Double> dmlOut = readDMLMatrixFromHDFS("D");
+			MatrixValue.CellIndex index = dmlOut.keySet().iterator().next();
+			double d = dmlOut.get(index);
+			Assert.assertEquals(0, d, 1e-5);
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

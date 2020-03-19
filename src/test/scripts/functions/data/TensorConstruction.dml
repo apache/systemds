@@ -16,24 +16,19 @@
 #
 #-------------------------------------------------------------
 
+check = rand(rows=3, cols=1);
+
 print("Dimension matrix:");
 d = matrix($1, 1, $2);
 dimStr = toString(d, decimal=1)
-print(dimStr)
+if( as.scalar(check[1,1])<0 )
+  print(dimStr)
 
 print("Tensor A: Fillvalue=" + $3 + ", dims=" + dimStr);
 A = tensor($3, d); # fill with value, dimensions given by matrix
-print(toString(A))
+if( as.scalar(check[2,1])<0 )
+  print(toString(A))
 
-#TODO reactivate once reshape is implemented for spark
-#print("Tensor B: Reshape A, dims=" + $5);
-#B = tensor(A, $5); # reshape tensor, dimensions given by string
-#print(toString(B))
-#
-#print("Tensor C: Reshape dimension matrix, dims=1 " + $2);
-#C = tensor(d, list(1, $2)); # values given by matrix, dimensions given by list
-#print(toString(C, decimal=1))
-
-print("Tensor D: Values=tst, dims=" + dimStr);
 D = tensor("tst", d); # fill with string, dimensions given by tensor/ for now given by matrix
-print(toString(D))
+if( as.scalar(check[3,1])<0 )
+  print(toString(D))

@@ -282,10 +282,10 @@ public class LiteralReplacement
 				MatrixBlock mBlock = mo.acquireRead();
 				double value = replaceUnaryAggregate((AggUnaryOp)c, mBlock);
 				mo.release();
-					
+				
 				//literal substitution (always double)
 				ret = new LiteralOp(value);
-			}		
+			}
 		}
 		
 		return ret;
@@ -480,15 +480,14 @@ public class LiteralReplacement
 	}
 	
 	
-	private static boolean isReplaceableUnaryAggregate( AggUnaryOp auop )
-	{
+	private static boolean isReplaceableUnaryAggregate( AggUnaryOp auop ) {
 		boolean cdir = (auop.getDirection() == Direction.RowCol);
 		boolean cop = (auop.getOp() == AggOp.SUM
 			|| auop.getOp() == AggOp.SUM_SQ
 			|| auop.getOp() == AggOp.MIN
 			|| auop.getOp() == AggOp.MAX);
 		
-		return cdir && cop;
+		return cdir && cop && auop.getDataType().isMatrix();
 	}
 	
 	private static double replaceUnaryAggregate( AggUnaryOp auop, MatrixBlock mb )

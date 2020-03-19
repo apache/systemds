@@ -189,16 +189,14 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			
-			if ( !pdf.equalsIgnoreCase("poisson"))
-			{
+			if ( !pdf.equalsIgnoreCase("poisson")) {
 				fullDMLScriptName = HOME + TEST_NAME + ".dml";
 				programArgs = new String[]{"-args", 
 					Integer.toString(rows), Integer.toString(cols),
 					Double.toString(sparsity), Long.toString(seed), pdf, 
 					output("A_CP") };
 			}
-			else 
-			{
+			else {
 				Random r = new Random(System.nanoTime());
 				double mean = r.nextDouble()*100;
 				fullDMLScriptName = HOME + TEST_NAME + "Poisson" + ".dml";
@@ -209,12 +207,6 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			}
 	
 			boolean exceptionExpected = false;
-			
-			// Generate Data in CP
-			rtplatform = ExecMode.SINGLE_NODE;
-			programArgs[programArgs.length-1] = output("A_SN"); // data file generated from CP
-			runTest(true, exceptionExpected, null, -1); 
-						
 			
 			// Generate Data in CP
 			rtplatform = ExecMode.HYBRID;
@@ -233,14 +225,12 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 				DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			}
 		
-			//compare matrices (1-2, 2-3 -> transitively 1-3)
+			//compare matrices
 			HashMap<CellIndex, Double> cpfile = readDMLMatrixFromHDFS("A_CP");
 			HashMap<CellIndex, Double> spfile = readDMLMatrixFromHDFS("A_SPARK");
 			TestUtils.compareMatrices(spfile, cpfile, eps, "SPFile", "CPFile");
-			
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 		}
 	}

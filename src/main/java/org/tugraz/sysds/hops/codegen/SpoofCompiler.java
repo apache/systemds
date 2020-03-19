@@ -585,15 +585,16 @@ public class SpoofCompiler
 			HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, HashMap<Long, Pair<Hop[],Class<?>>> cla)
 	{
 		HashSet<Long> memo = new HashSet<>();
+		HashMap<Long, Hop> spoofmap = new HashMap<>();
 		for( int i=0; i<orig.size(); i++ ) {
 			Hop hop = orig.get(i); //w/o iterator because modified
-			rConstructModifiedHopDag(hop, cplans, cla, memo);
+			rConstructModifiedHopDag(hop, cplans, cla, memo, spoofmap);
 		}
 		return orig;
 	}
 	
 	private static void rConstructModifiedHopDag(Hop hop,  HashMap<Long, Pair<Hop[],CNodeTpl>> cplans,
-			HashMap<Long, Pair<Hop[],Class<?>>> clas, HashSet<Long> memo)
+			HashMap<Long, Pair<Hop[],Class<?>>> clas, HashSet<Long> memo, HashMap<Long, Hop> spoofmap)
 	{
 		if( memo.contains(hop.getHopID()) )
 			return; //already processed
@@ -608,12 +609,16 @@ public class SpoofCompiler
 			hnew = new SpoofFusedOp(hop.getName(), hop.getDataType(), hop.getValueType(),
 				tmpCla.getValue(), false, tmpCNode.getOutputDimType());
 			Hop[] inHops = tmpCla.getKey();
+			
 
 			if (DMLScript.LINEAGE) {
 				//construct and save lineage DAG from pre-modification HOP DAG
 				Hop[] roots = !(tmpCNode instanceof CNodeMultiAgg) ? new Hop[]{hop} :
 					((CNodeMultiAgg)tmpCNode).getRootNodes().toArray(new Hop[0]);
-				LineageItemUtils.constructLineageFromHops(roots, tmpCla.getValue().getName(), inHops);
+				LineageItemUtils.constructLineageFromHops(roots, tmpCla.getValue().getName(), inHops, spoofmap);
+
+				for (Hop root : roots)
+					spoofmap.put(hnew.getHopID(), root);
 			}
 
 			for(int i=0; i<inHops.length; i++) {
@@ -661,7 +666,7 @@ public class SpoofCompiler
 		//process hops recursively (parent-child links modified)
 		for( int i=0; i<hnew.getInput().size(); i++ ) {
 			Hop c = hnew.getInput().get(i);
-			rConstructModifiedHopDag(c, cplans, clas, memo);
+			rConstructModifiedHopDag(c, cplans, clas, memo, spoofmap);
 		}
 		memo.add(hnew.getHopID());
 	}

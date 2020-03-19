@@ -363,7 +363,7 @@ public class LineageItemUtils {
 		item.setVisited();
 	}
 
-	public static void constructLineageFromHops(Hop[] roots, String claName, Hop[] inputs) {
+	public static void constructLineageFromHops(Hop[] roots, String claName, Hop[] inputs, HashMap<Long, Hop> spoofmap) {
 		//probe existence and only generate lineage if non-existing
 		//(a fused operator might be used in multiple places of a program)
 		if( LineageCodegenItem.getCodegenLTrace(claName) == null ) {
@@ -372,9 +372,10 @@ public class LineageItemUtils {
 			//reset visit status once for entire sub DAG
 			for( Hop root : roots )
 				root.resetVisitStatus();
+
 			//construct lineage dags for roots (potentially overlapping)
 			for( Hop root : roots )
-				rConstructLineageFromHops(root, inputs, operands);
+				rConstructLineageFromHops(root, inputs, operands, spoofmap);
 			
 			//create single lineage item (single root or multiagg)
 			LineageItem out = operands.get(roots[0].getHopID());
@@ -388,52 +389,58 @@ public class LineageItemUtils {
 			
 			//cache to avoid reconstruction
 			LineageCodegenItem.setCodegenLTrace(claName, out);
+			
+			for (Hop root : roots)
+				root.resetVisitStatus();
 		}
 	}
 
-	public static void rConstructLineageFromHops(Hop root, Hop[] inputs, Map<Long, LineageItem> operands) {
+	public static void rConstructLineageFromHops(Hop root, Hop[] inputs, Map<Long, LineageItem> operands, HashMap<Long, Hop> spoofmap) {
 		if (root.isVisited())
 			return;
-
-		for (int i = 0; i < root.getInput().size(); i++) 
-			rConstructLineageFromHops(root.getInput().get(i), inputs, operands);
-	
-		if (HopRewriteUtils.isData(root, OpOpData.TRANSIENTREAD)
-			|| ArrayUtils.contains(inputs, root))
-		{
-			LineageItem li = new LineageItem(root.getName(), "InputPlaceholder", "Create"+String.valueOf(root.getHopID()));
-			operands.put(root.getHopID(), li);
+		
+		boolean spoof = root instanceof SpoofFusedOp && ArrayUtils.contains(inputs, spoofmap.get(root.getHopID())); 
+		if (ArrayUtils.contains(inputs, root) || spoof) {
+			Hop tmp = spoof ? spoofmap.get(root.getHopID()) : root;
+			int pos = ArrayUtils.indexOf(inputs, tmp);
+			LineageItem li = new LineageItem(String.valueOf(pos), "InputPlaceholder", "Create"+String.valueOf(root.getHopID()));
+			operands.put(tmp.getHopID(), li);
 			return;
 		}
 
+		for (int i = 0; i < root.getInput().size(); i++) 
+			rConstructLineageFromHops(root.getInput().get(i), inputs, operands, spoofmap);
+	
 		LineageItem li = null;
-		ArrayList<LineageItem> LIinputs = new ArrayList<>();
-		root.getInput().forEach(input->LIinputs.add(operands.get(input.getHopID())));
+		LineageItem[] LIinputs = root.getInput().stream()
+			.map(h->ArrayUtils.contains(inputs, spoofmap.get(h.getHopID())) ? spoofmap.get(h.getHopID()) : h)
+			.map(h->operands.get(h.getHopID()))
+			.toArray(LineageItem[]::new);
+
 		String name = Dag.getNextUniqueVarname(root.getDataType());
 		
 		if (root instanceof ReorgOp)
-			li = new LineageItem(name, "r'", LIinputs.toArray(new LineageItem[LIinputs.size()]));
+			li = new LineageItem(name, "r'", LIinputs);
 		else if (root instanceof UnaryOp) {
 			String opcode = UnaryCP.getOpCode(Hop.HopsOpOp1LopsUS.get(((UnaryOp) root).getOp()));
-			li = new LineageItem(name, opcode, LIinputs.toArray(new LineageItem[LIinputs.size()]));
+			li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof AggBinaryOp)
-			li = new LineageItem(name, "ba+*", LIinputs.toArray(new LineageItem[LIinputs.size()]));
+			li = new LineageItem(name, "ba+*", LIinputs);
 		else if (root instanceof BinaryOp)
-			li = new LineageItem(name, Binary.getOpcode(Hop.HopsOpOp2LopsB.get(((BinaryOp)root).getOp())),
-				LIinputs.toArray(new LineageItem[LIinputs.size()]));
+			li = new LineageItem(name, Binary.getOpcode(Hop.HopsOpOp2LopsB.get(((BinaryOp)root).getOp())), LIinputs);
 		else if (root instanceof TernaryOp) {
 			String opcode = ((TernaryOp) root).getOp().toString();
-			li = new LineageItem(name, opcode, LIinputs.toArray(new LineageItem[LIinputs.size()]));
+			li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof AggUnaryOp) {
 			AggOp op = ((AggUnaryOp) root).getOp();
 			Direction dir = ((AggUnaryOp) root).getDirection();
 			String opcode = PartialAggregate.getOpcode(op, dir);
-			li = new LineageItem(name, opcode, LIinputs.toArray(new LineageItem[LIinputs.size()]));
+			li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof IndexingOp)
-			li = new LineageItem(name, "rightIndex", LIinputs.toArray(new LineageItem[LIinputs.size()]));
+			li = new LineageItem(name, "rightIndex", LIinputs);
 		else if (root instanceof SpoofFusedOp)
 			li = LineageCodegenItem.getCodegenLTrace(((SpoofFusedOp) root).getClassName());
 		
@@ -449,9 +456,9 @@ public class LineageItemUtils {
 		}
 		else
 			throw new DMLRuntimeException("Unsupported hop: "+root.getOpString());
+
 		//TODO: include all the other hops
 		operands.put(root.getHopID(), li);
-		
 		root.setVisited();
 	}
 	
@@ -549,7 +556,7 @@ public class LineageItemUtils {
 		//process children until old item found, then replace
 		for(int i=0; i<current.getInputs().length; i++) {
 			LineageItem tmp = current.getInputs()[i];
-			if( tmp.equals(liOld) )
+			if (liOld.equals(tmp))
 				current.getInputs()[i] = liNew;
 			else
 				rReplace(tmp, liOld, liNew);
@@ -558,19 +565,26 @@ public class LineageItemUtils {
 	}
 	
 	public static void replaceDagLeaves(ExecutionContext ec, LineageItem root, CPOperand[] newLeaves) {
-		LineageItem[] newLIleaves = LineageItemUtils.getLineage(ec, newLeaves);
-		HashMap<String, LineageItem> newLImap = new HashMap<>();
-		for (int i=0; i<newLIleaves.length; i++)
-			newLImap.put(newLeaves[i].getName(), newLIleaves[i]);
-		
-		//find and replace the old leaves
-		HashSet<LineageItem> oldLeaves = new HashSet<>();
+		//find and replace the placeholder leaves
 		root.resetVisitStatus();
-		rGetDagLeaves(oldLeaves, root);
-		for (LineageItem leaf : oldLeaves) {
-			if (leaf.getType() != LineageItemType.Literal)
-				replace(root, leaf, newLImap.get(leaf.getName()));
+		rReplaceDagLeaves(root, LineageItemUtils.getLineage(ec, newLeaves));
+		root.resetVisitStatus();
+	}
+	
+	public static void rReplaceDagLeaves(LineageItem root, LineageItem[] newleaves) {
+		if (root.isVisited() || root.isLeaf())
+			return;
+		
+		for (int i=0; i<root.getInputs().length; i++) {
+			LineageItem li = root.getInputs()[i];
+			if (li.isLeaf() && li.getType() != LineageItemType.Literal)
+				//order-preserving replacement. Name represents relative position.
+				root.getInputs()[i] = newleaves[Integer.parseInt(li.getName())];
+			else
+				rReplaceDagLeaves(li, newleaves);
 		}
+
+		root.setVisited();
 	}
 
 	public static void rGetDagLeaves(HashSet<LineageItem> leaves, LineageItem root) {

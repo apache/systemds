@@ -19,7 +19,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.misc;
 
 import java.io.IOException;
 

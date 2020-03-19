@@ -17,61 +17,58 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.misc;
 
 import org.junit.Test;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 
 
+
 /**
- * <p>
- * <b>Positive tests:</b>
- * </p>
+ * <p><b>Positive tests:</b></p>
  * <ul>
- * <li>random matrix generation (rows, cols, min, max)</li>
- * <li>random scalar generation (min, max)</li>
+ * 	<li>copy a variable</li>
  * </ul>
- * <p>
- * <b>Negative tests:</b>
- * </p>
+ * <p><b>Negative tests:</b></p>
  * 
  * 
  */
-public class RandTest2 extends AutomatedTestBase 
+public class VariableTest extends AutomatedTestBase 
 {
 
 	private static final String TEST_DIR = "functions/data/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + RandTest2.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + VariableTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
-		addTestConfiguration("MatrixTest", new TestConfiguration(TEST_CLASS_DIR, "RandTest2", new String[] { "rand" }));
+		addTestConfiguration("CopyVariableTest",
+			new TestConfiguration(TEST_CLASS_DIR, "CopyVariableTest", new String[] { "a", "b" }));
 		
 		// negative tests
 	}
-
+	
 	@Test
-	public void testMatrix() {
+	public void testCopyVariable() {
 		int rows = 10;
-		double cols = 10.4;
-		double min = -1;
-		double max = 1;
-
-		TestConfiguration config = availableTestConfigurations.get("MatrixTest");
+		int cols = 10;
+		
+		TestConfiguration config = availableTestConfigurations.get("CopyVariableTest");
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
-		config.addVariable("min", min);
-		config.addVariable("max", max);
-
+		
 		loadTestConfiguration(config);
-
+		
+		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
+		writeInputMatrix("a", a);
+		writeExpectedMatrix("a", a);
+		writeExpectedMatrix("b", a);
+		
 		runTest();
-
-		checkResults(rows*5, (int)cols, min, max);
+		
+		compareResults();
 	}
-
 
 }

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,9 +19,10 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.misc;
 
 import org.junit.Test;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 
@@ -28,43 +31,39 @@ import org.tugraz.sysds.test.TestConfiguration;
 /**
  * <p><b>Positive tests:</b></p>
  * <ul>
- * 	<li>copy a variable</li>
+ * 	<li>decrease block size</li>
  * </ul>
  * <p><b>Negative tests:</b></p>
  * 
  * 
  */
-public class VariableTest extends AutomatedTestBase 
+public class ReblockTest extends AutomatedTestBase 
 {
 
 	private static final String TEST_DIR = "functions/data/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + VariableTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReblockTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		
 		// positive tests
-		addTestConfiguration("CopyVariableTest",
-			new TestConfiguration(TEST_CLASS_DIR, "CopyVariableTest", new String[] { "a", "b" }));
+		addTestConfiguration("ReblockTest", 
+			new TestConfiguration(TEST_CLASS_DIR, "ReblockTest", new String[] { "a" }));
 		
 		// negative tests
 	}
 	
 	@Test
-	public void testCopyVariable() {
-		int rows = 10;
-		int cols = 10;
-		
-		TestConfiguration config = availableTestConfigurations.get("CopyVariableTest");
-		config.addVariable("rows", rows);
-		config.addVariable("cols", cols);
-		
+	public void testReblock() {
+		TestConfiguration config = getTestConfiguration("ReblockTest");
 		loadTestConfiguration(config);
 		
-		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
-		writeInputMatrix("a", a);
+		int rows = 10;
+		int cols = 10;
+
+		double[][] a = getRandomMatrix(rows, cols, 1, 1, 1, System.currentTimeMillis());
+		writeInputMatrixWithMTD("a", a, false, new MatrixCharacteristics(rows,cols,1000,1000));
 		writeExpectedMatrix("a", a);
-		writeExpectedMatrix("b", a);
 		
 		runTest();
 		

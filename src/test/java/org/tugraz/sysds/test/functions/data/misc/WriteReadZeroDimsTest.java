@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.misc;
 
 import org.junit.Assert;
 import org.junit.Test;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.rand;
 
 import org.junit.Test;
 import org.tugraz.sysds.test.AutomatedTestBase;
@@ -30,6 +30,7 @@ import org.tugraz.sysds.test.TestConfiguration;
  * </p>
  * <ul>
  * <li>random matrix generation (rows, cols, min, max)</li>
+ * <li>random scalar generation (min, max)</li>
  * </ul>
  * <p>
  * <b>Negative tests:</b>
@@ -37,17 +38,17 @@ import org.tugraz.sysds.test.TestConfiguration;
  * 
  * 
  */
-public class RandTest4 extends AutomatedTestBase 
+public class RandTest3 extends AutomatedTestBase 
 {
 
 	private static final String TEST_DIR = "functions/data/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + RandTest4.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + RandTest3.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-
+	
 		// positive tests
-		addTestConfiguration("MatrixTest", new TestConfiguration(TEST_CLASS_DIR, "RandTest4", new String[] { "rand" }));
+		addTestConfiguration("MatrixTest", new TestConfiguration(TEST_CLASS_DIR, "RandTest3", new String[] { "rand" }));
 		
 		// negative tests
 	}
@@ -64,21 +65,12 @@ public class RandTest4 extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		config.addVariable("min", min);
 		config.addVariable("max", max);
-		config.addVariable("format", "text");
 
 		loadTestConfiguration(config);
 
-		double[][] a = getRandomMatrix(rows, cols, 0, 1, 0.5, 7);
-		writeInputMatrix("a", a);
-		double sum = 0;
-		for (int i = 0; i< rows; i++){
-			for (int j = 0; j < cols; j++){
-				sum += a[i][j];
-			}
-		}
 		runTest();
 
-		checkResults((int)sum, cols, min, max);
+		checkResults(rows, cols, min, max);
 	}
 
 

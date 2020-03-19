@@ -19,7 +19,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.misc;
 
 import static org.junit.Assert.fail;
 

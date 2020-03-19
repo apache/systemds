@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data;
+package org.tugraz.sysds.test.functions.data.rand;
 
 import java.util.Arrays;
 import java.util.Collection;

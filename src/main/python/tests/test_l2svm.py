@@ -24,7 +24,7 @@ import numpy as np
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
-from systemds import Matrix
+from systemds.matrix import Matrix
 
 
 class TestAPI(unittest.TestCase):

@@ -219,6 +219,8 @@ SYSTEMDS-300 Github Workflow/Actions
 
 SYSTEMDS-310 Python Bindings
  * 311 Initial Python Binding for federated execution                 OK
+ * 312 Python 3.6 compatibility                                       OK
+ * 313 Python Documentation upload via Github Actions                 OK
 
 Others:
  * Break append instruction to cbind and rbind 

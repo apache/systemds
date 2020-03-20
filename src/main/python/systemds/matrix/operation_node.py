@@ -14,22 +14,20 @@
 #  limitations under the License.
 # ------------------------------------------------------------------------------
 
-from __future__ import annotations
-
-__all__ = ['OperationNode']
-
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
 
-from .utils import get_gateway, create_params_string
-from .converters import matrix_block_to_numpy
-from .script import DMLScript
-from .dag import OutputType, DAGNode, VALID_INPUT_TYPES
+from ..utils.helpers import get_gateway, create_params_string
+from ..utils.converters import matrix_block_to_numpy
+from ..script_building.script import DMLScript
+from ..script_building.dag import OutputType, DAGNode, VALID_INPUT_TYPES
 from typing import Union, Optional, Iterable, Dict, Sequence
 
 BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=']
 # TODO add numpy array
 VALID_ARITHMETIC_TYPES = Union[DAGNode, int, float]
+
+__all__ = ["OperationNode"]
 
 
 class OperationNode(DAGNode):
@@ -39,6 +37,15 @@ class OperationNode(DAGNode):
     def __init__(self, operation: str, unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
                  output_type: OutputType = OutputType.MATRIX, is_python_local_data: bool = False):
+        """
+        Create general `OperationNode`
+
+        :param operation: The name of the DML function to execute
+        :param unnamed_input_nodes: inputs identified by their position, not name
+        :param named_input_nodes: inputs with their respective parameter name
+        :param output_type: type of the output in DML (double, matrix etc.)
+        :param is_python_local_data: if the data is local in python e.g. numpy arrays
+        """
         if unnamed_input_nodes is None:
             unnamed_input_nodes = []
         if named_input_nodes is None:
@@ -101,7 +108,7 @@ class OperationNode(DAGNode):
     def __floordiv__(self, other: VALID_ARITHMETIC_TYPES):
         return OperationNode('//', [self, other])
 
-    def __lt__(self, other) -> OperationNode:
+    def __lt__(self, other) -> 'OperationNode':
         return OperationNode('<', [self, other])
 
     def __le__(self, other):
@@ -119,7 +126,7 @@ class OperationNode(DAGNode):
     def __ne__(self, other):
         return OperationNode('!=', [self, other])
 
-    def l2svm(self, labels: DAGNode, **kwargs) -> OperationNode:
+    def l2svm(self, labels: DAGNode, **kwargs) -> 'OperationNode':
         """Perform l2svm on matrix with labels given.
 
         :return: `OperationNode` representing operation
@@ -129,7 +136,7 @@ class OperationNode(DAGNode):
         params_dict.update(kwargs)
         return OperationNode('l2svm', named_input_nodes=params_dict)
 
-    def sum(self, axis: int = None) -> OperationNode:
+    def sum(self, axis: int = None) -> 'OperationNode':
         """Calculate sum of matrix.
 
         :param axis: can be 0 or 1 to do either row or column sums
@@ -144,7 +151,7 @@ class OperationNode(DAGNode):
             return OperationNode('sum', [self], output_type=OutputType.DOUBLE)
         raise ValueError(f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
-    def mean(self, axis: int = None) -> OperationNode:
+    def mean(self, axis: int = None) -> 'OperationNode':
         """Calculate mean of matrix.
 
         :param axis: can be 0 or 1 to do either row or column means
@@ -159,7 +166,7 @@ class OperationNode(DAGNode):
             return OperationNode('mean', [self], output_type=OutputType.DOUBLE)
         raise ValueError(f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
-    def var(self, axis: int = None) -> OperationNode:
+    def var(self, axis: int = None) -> 'OperationNode':
         """Calculate variance of matrix.
 
         :param axis: can be 0 or 1 to do either row or column vars
@@ -174,14 +181,14 @@ class OperationNode(DAGNode):
             return OperationNode('var', [self], output_type=OutputType.DOUBLE)
         raise ValueError(f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
-    def abs(self) -> OperationNode:
+    def abs(self) -> 'OperationNode':
         """Calculate absolute.
 
         :return: `OperationNode` representing operation
         """
         return OperationNode('abs', [self])
 
-    def moment(self, moment, weights: DAGNode = None) -> OperationNode:
+    def moment(self, moment, weights: DAGNode = None) -> 'OperationNode':
         # TODO write tests
         self._check_matrix_op()
         unnamed_inputs = [self]

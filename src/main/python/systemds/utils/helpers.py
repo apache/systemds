@@ -15,34 +15,16 @@
 # ------------------------------------------------------------------------------
 
 import os
-import platform
 import subprocess
-from fnmatch import fnmatch
 from itertools import chain
-from typing import List, Iterable, Dict
+from typing import Iterable, Dict
 from importlib.util import find_spec
 
 from py4j.java_gateway import JavaGateway
-
-__all__ = ['get_gateway', 'create_params_string']
+from py4j.protocol import Py4JNetworkError
 
 JAVA_GATEWAY = None
 MODULE_NAME = 'systemds'
-# TODO remove standalone
-JAR_FILE_STANDALONE = 'systemds-*-standalone.jar'
-JAR_FILE_NAMES = ['systemds-*-SNAPSHOT.jar', 'systemds-*.jar', JAR_FILE_STANDALONE]
-AUTO_START_JMLC_SERVER = True
-
-
-def set_auto_start_jmlc(should_start_server: bool) -> None:
-    """
-    Can activate/deactivate automatic start of JMLC API Gateway.
-    Has to be called before any communication took place (`.compute()` was called).
-
-    :param should_start_server: activate/deactivate
-    """
-    global AUTO_START_JMLC_SERVER
-    AUTO_START_JMLC_SERVER = should_start_server
 
 
 def get_gateway() -> JavaGateway:
@@ -54,13 +36,21 @@ def get_gateway() -> JavaGateway:
     """
     global JAVA_GATEWAY
     if JAVA_GATEWAY is None:
-        if AUTO_START_JMLC_SERVER:
-            classpath = os.path.join(_get_module_dir(), 'systemds-java', 'lib', '*')
+        try:
+            JAVA_GATEWAY = JavaGateway(eager_load=True)
+        except Py4JNetworkError:  # if no java instance is running start it
+            systemds_java_path = os.path.join(_get_module_dir(), 'systemds-java')
+            cp_separator = ':'
+            if os.name == 'nt':  # nt means its Windows
+                cp_separator = ';'
+            lib_cp = os.path.join(systemds_java_path, 'lib', '*')
+            systemds_cp = os.path.join(systemds_java_path, '*')
+            classpath = cp_separator.join([lib_cp, systemds_cp])
             process = subprocess.Popen(['java', '-cp', classpath, 'org.tugraz.sysds.pythonapi.PythonDMLScript'],
                                        stdout=subprocess.PIPE)
-            process.stdout.readline()  # wait for 'Gateway Server Started\n' written by server
+            print(process.stdout.readline())  # wait for 'Gateway Server Started\n' written by server
             assert process.poll() is None, "Could not start JMLC server"
-        JAVA_GATEWAY = JavaGateway()
+            JAVA_GATEWAY = JavaGateway()
     return JAVA_GATEWAY
 
 

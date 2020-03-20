@@ -32,9 +32,9 @@ on:
       - master
 
 jobs:
-  documentation:
+  documentation1:
     runs-on: ubuntu-latest
-    name: Documentation
+    name: Documentation Java
     steps:
     - uses: actions/checkout@v2
 
@@ -43,11 +43,39 @@ jobs:
       with:
         java-version:  1.8
 
-    - name: Make Documentation
+    - name: Make Documentation SystemDS Java
       run: mvn -P distribution package
-    
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v1
       with:
-        name: documentation
+        name: Java-documentation
         path: target/apidocs
+
+  documentation2:
+    runs-on: ubuntu-latest
+    name: Documentation Python
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+        architecture: 'x64'
+        
+    - name: Install Dependencies
+      run: |
+        cd src/main/python/docs
+        python3 -m pip install -r requires-docs.txt
+
+    - name: Make Documentation SystemDS-Python
+      run: |
+        cd src/main/python/docs
+        make html
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: Python-documentation
+        path: src/main/python/docs/build

@@ -32,8 +32,7 @@ sys.path.insert(0, path)
 import unittest
 import numpy as np
 
-import systemds as sds
-from systemds import Matrix
+from systemds.matrix import Matrix, full, seq
 
 dim = 5
 m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)
@@ -63,10 +62,10 @@ class TestMatrixAggFn(unittest.TestCase):
         self.assertTrue(np.allclose(Matrix(m1).mean(axis=1).compute(), m1.mean(axis=1).reshape(dim, 1)))
 
     def test_full(self):
-        self.assertTrue(np.allclose(sds.full((2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
+        self.assertTrue(np.allclose(full((2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
 
     def test_seq(self):
-        self.assertTrue(np.allclose(sds.seq(3).compute(), np.arange(4).reshape(4, 1)))
+        self.assertTrue(np.allclose(seq(3).compute(), np.arange(4).reshape(4, 1)))
 
     def test_var1(self):
         self.assertTrue(np.allclose(Matrix(m1).var().compute(), m1.var(ddof=1)))

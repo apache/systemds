@@ -41,7 +41,11 @@ buildNumber.properties
 src/main/python/systemds/systemds-java/
 src/main/python/systemds.egg-info/
 src/main/python/build/
-
+src/main/python/LICENSE
+src/main/python/NOTICE
+src/main/python/dist
+src/main/python/docs/build
+src/main/python/docs/source/_build
 
 # User configuration files
 conf/SystemDS-config.xml

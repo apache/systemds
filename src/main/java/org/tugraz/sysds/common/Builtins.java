@@ -19,6 +19,7 @@ package org.tugraz.sysds.common;
 import java.util.EnumSet;
 import java.util.HashMap;
 
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ReturnType;
 
 /**
@@ -292,5 +293,9 @@ public enum Builtins {
 		sb.append(name);
 		sb.append(".dml");
 		return sb.toString();
+	}
+	
+	public static String getInternalFName(String name, DataType dt) {
+		return (dt.isMatrix() ? "m_" : "s_") + name;
 	}
 }

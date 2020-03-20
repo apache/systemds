@@ -117,23 +117,11 @@ public class DMLTranslator
 		//STEP2: Actual Validate
 		if( inclFuns ) {
 			// handle functions in namespaces (current program has default namespace)
-			for (String namespaceKey : dmlp.getNamespaces().keySet()){
-			
+			for (String namespaceKey : dmlp.getNamespaces().keySet()) {
 				// for each function defined in the namespace
 				for (String fname :  dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 					FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				
-					HashMap<String, ConstIdentifier> constVars = new HashMap<>();
-					VariableSet vs = new VariableSet();
-				
-					// add the input variables for the function to input variable list
-					FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
-					for (DataIdentifier currVar : fstmt.getInputParams()) {
-						if (currVar.getDataType() == DataType.SCALAR)
-							currVar.setDimensions(0, 0);
-						vs.addVariable(currVar.getName(), currVar);
-					}
-					fblock.validate(dmlp, vs, constVars, false);
+					validateFunction(dmlp, fblock);
 				}
 			}
 		}
@@ -163,6 +151,20 @@ public class DMLTranslator
 			}
 		}
 	}
+	
+	public void validateFunction(DMLProgram dmlp, FunctionStatementBlock fsb) {
+		HashMap<String, ConstIdentifier> constVars = new HashMap<>();
+		VariableSet vs = new VariableSet();
+	
+		// add the input variables for the function to input variable list
+		FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+		for (DataIdentifier currVar : fstmt.getInputParams()) {
+			if (currVar.getDataType() == DataType.SCALAR)
+				currVar.setDimensions(0, 0);
+			vs.addVariable(currVar.getName(), currVar);
+		}
+		fsb.validate(dmlp, vs, constVars, false);
+	}
 
 	public void liveVariableAnalysis(DMLProgram dmlp) {
 		liveVariableAnalysis(dmlp, true);
@@ -170,44 +172,14 @@ public class DMLTranslator
 	
 	public void liveVariableAnalysis(DMLProgram dmlp, boolean inclFuns) {
 	
-		// for each namespace, handle function program blocks -- forward direction
+		// for each namespace, handle function statement blocks
 		if( inclFuns ) {
 			for (String namespaceKey : dmlp.getNamespaces().keySet()) {
 				for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 					FunctionStatementBlock fsb = dmlp.getFunctionStatementBlock(namespaceKey, fname);
-					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-					
-					// perform function inlining
-					fstmt.setBody(StatementBlock.mergeFunctionCalls(fstmt.getBody(), dmlp));
-					
-					VariableSet activeIn = new VariableSet();
-					for (DataIdentifier id : fstmt.getInputParams()){
-						activeIn.addVariable(id.getName(), id); 
-					}
-					fsb.initializeforwardLV(activeIn);
+					liveVariableAnalysisFunction(dmlp, fsb);
 				}
 			}
-		
-			// for each namespace, handle function program blocks -- backward direction
-			for (String namespaceKey : dmlp.getNamespaces().keySet()) {	
-				for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
-					
-					// add output variables to liveout / activeout set
-					FunctionStatementBlock fsb = dmlp.getFunctionStatementBlock(namespaceKey, fname);
-					VariableSet currentLiveOut = new VariableSet();
-					VariableSet currentLiveIn = new VariableSet();
-					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-					
-					for (DataIdentifier id : fstmt.getInputParams())
-						currentLiveIn.addVariable(id.getName(), id);
-					
-					for (DataIdentifier id : fstmt.getOutputParams())
-						currentLiveOut.addVariable(id.getName(), id);
-					
-					fsb._liveOut = currentLiveOut;
-					fsb.analyze(currentLiveIn, currentLiveOut);	
-				}
-			} 
 		}
 		
 		// handle regular program blocks 
@@ -230,6 +202,33 @@ public class DMLTranslator
 				currentLiveOut = sb.analyze(currentLiveOut);
 			}
 		}
+	}
+	
+	public void liveVariableAnalysisFunction(DMLProgram dmlp, FunctionStatementBlock fsb) {
+		//STEP 1: forward direction
+		FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+		
+		// perform function inlining
+		fstmt.setBody(StatementBlock.mergeFunctionCalls(fstmt.getBody(), dmlp));
+		
+		VariableSet activeIn = new VariableSet();
+		for (DataIdentifier id : fstmt.getInputParams()){
+			activeIn.addVariable(id.getName(), id); 
+		}
+		fsb.initializeforwardLV(activeIn);
+		
+		//STEP 2: backward direction
+		VariableSet currentLiveOut = new VariableSet();
+		VariableSet currentLiveIn = new VariableSet();
+		
+		for (DataIdentifier id : fstmt.getInputParams())
+			currentLiveIn.addVariable(id.getName(), id);
+		
+		for (DataIdentifier id : fstmt.getOutputParams())
+			currentLiveOut.addVariable(id.getName(), id);
+		
+		fsb._liveOut = currentLiveOut;
+		fsb.analyze(currentLiveIn, currentLiveOut);
 	}
 
 	public void constructHops(DMLProgram dmlp) {
@@ -656,7 +655,7 @@ public class DMLTranslator
 		return retPB;
 	}
 
-	public void refreshMemEstimates(DMLProgram dmlp) {
+	public static void refreshMemEstimates(DMLProgram dmlp) {
 
 		// for each namespace, handle function program blocks -- forward direction
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
@@ -672,8 +671,8 @@ public class DMLTranslator
 			refreshMemEstimates(current);
 		}
 	}
-			
-	public void refreshMemEstimates(StatementBlock current) {
+	
+	public static void refreshMemEstimates(StatementBlock current) {
 	
 		MemoTable memo = new MemoTable();
 		

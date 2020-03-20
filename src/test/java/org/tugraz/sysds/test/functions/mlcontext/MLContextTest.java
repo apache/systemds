@@ -109,6 +109,16 @@ public class MLContextTest extends MLContextTestBase {
 		ml.execute(script);
 		Assert.assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
 	}
+	
+	@Test
+	public void testExecuteEvalBuiltinTest() {
+		System.out.println("MLContextTest - eval builtin test");
+		setExpectedStdOut("TRUE");
+		ml.setExplain(true);
+		Script script = dmlFromFile(baseDirectory + File.separator + "eval3-builtin-test.dml");
+		ml.execute(script);
+		ml.setExplain(false);
+	}
 
 	@Test
 	public void testCreateDMLScriptBasedOnStringAndExecute() {

@@ -210,6 +210,12 @@ SYSTEMDS-270 Compressed Matrix Blocks
 
 SYSTEMDS-280 New Rewrites
  * 281 New rewrites sum(rmEmpty), sum(table)                          OK
+
+SYSTEMDS-290 Misc Compiler Features
+ * 291 Eval function calls of dml-bodied builtin functions            OK
+ * 292 Eval function calls of native builtin functions (genate fun)
+ * 293 Compiler rewrites for eval to normal function calls
+ * 294 DML-bodied builtin functions with frames as main input
  
 SYSTEMDS-300 Github Workflow/Actions
  * 301 Initial Setup of GitHub Actions for automatic testing          OK

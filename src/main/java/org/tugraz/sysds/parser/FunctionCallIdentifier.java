@@ -28,10 +28,9 @@ import org.tugraz.sysds.common.Types.DataType;
 
 public class FunctionCallIdentifier extends DataIdentifier 
 {
-	
 	private ArrayList<ParameterExpression> _paramExprs;
-	private FunctCallOp _opcode;	// stores whether internal or external
-	private String _namespace;		// namespace of the function being called (null if current namespace is to be used)
+	private FunctCallOp _opcode; // stores whether internal or external
+	private String _namespace;   // namespace of the function being called (null if current namespace is to be used)
 
 	/**
 	 * sets the function namespace (if specified) and name
@@ -132,7 +131,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 		if( Builtins.contains(_name, true, false)
 			&& _namespace.equals(DMLProgram.DEFAULT_NAMESPACE) ) {
 			DataType dt = _paramExprs.get(0).getExpr().getOutput().getDataType();
-			_name = (dt.isMatrix() ? "m_" : "s_") +_name;
+			_name = Builtins.getInternalFName(_name, dt);
 			_namespace = DMLProgram.DEFAULT_NAMESPACE;
 			fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
 		}

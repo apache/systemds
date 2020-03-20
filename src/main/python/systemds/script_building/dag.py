@@ -14,14 +14,11 @@
 #  limitations under the License.
 # ------------------------------------------------------------------------------
 
-from __future__ import annotations
 from enum import Enum, auto
 from typing import Any, Dict, Union, Sequence
 from abc import ABC
 
 from py4j.java_gateway import JavaObject, JVMView
-
-__all__ = ['OutputType', 'DAGNode', 'VALID_INPUT_TYPES']
 
 
 class OutputType(Enum):
@@ -31,8 +28,8 @@ class OutputType(Enum):
 
 class DAGNode(ABC):
     """A Node in the directed-acyclic-graph (DAG) defining all operations."""
-    unnamed_input_nodes: Sequence[Union[DAGNode, str, int, float, bool]]
-    named_input_nodes: Dict[str, Union[DAGNode, str, int, float, bool]]
+    unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
+    named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
     output_type: OutputType
     is_python_local_data: bool
 

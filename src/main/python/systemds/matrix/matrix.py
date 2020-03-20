@@ -22,8 +22,8 @@ from typing import Union, Optional, Iterable, Dict, Tuple, Sequence
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
 
-from .converters import numpy_to_matrix_block
-from .dag import VALID_INPUT_TYPES
+from ..utils.converters import numpy_to_matrix_block
+from ..script_building.dag import VALID_INPUT_TYPES
 from .operation_node import OperationNode
 
 
@@ -32,7 +32,7 @@ from .operation_node import OperationNode
 class Matrix(OperationNode):
     np_array: Optional[np.array]
 
-    def __init__(self, mat: Union[os.PathLike, np.array], *args: Sequence[VALID_INPUT_TYPES],
+    def __init__(self, mat: Union[np.array, os.PathLike], *args: Sequence[VALID_INPUT_TYPES],
                  **kwargs: Dict[str, VALID_INPUT_TYPES]) -> None:
         """Generate DAGNode representing matrix with data either given by a numpy array, which will be sent to SystemDS
         on need, or a path pointing to a matrix.
@@ -85,7 +85,7 @@ def federated(addresses: Iterable[str], ranges: Iterable[Tuple[Iterable[int], It
     :param ranges: for each federated worker a pair of begin and end index of their held matrix
     :param args: unnamed params
     :param kwargs: named params
-    :return: the DAGNode representing this operation
+    :return: the OperationNode representing this operation
     """
     addresses_str = 'list(' + ','.join(map(lambda s: f'"{s}"', addresses)) + ')'
     ranges_str = 'list('
@@ -102,7 +102,7 @@ def full(shape: Tuple[int, int], value: Union[float, int]) -> OperationNode:
 
     :param shape: shape (rows and cols) of the matrix TODO tensor
     :param value: the value to fill all cells with
-    :return: the DAGNode representing this operation
+    :return: the OperationNode representing this operation
     """
     unnamed_input_nodes = [value]
     named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
@@ -117,7 +117,7 @@ def seq(start: Union[float, int], stop: Union[float, int] = None, step: Union[fl
     :param start: the starting value
     :param stop: the maximum value
     :param step: the step size
-    :return: the DAGNode representing this operation
+    :return: the OperationNode representing this operation
     """
     if stop is None:
         stop = start

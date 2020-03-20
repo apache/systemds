@@ -14,10 +14,4 @@
 #  limitations under the License.
 # ------------------------------------------------------------------------------
 
-from .script import *
-from .matrix import *
-from .utils import *
-
-__all__ = script.__all__
-__all__ += matrix.__all__
-__all__ += utils.__all__
+__all__ = ['matrix']

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # ------------------------------------------------------------------------------
 #  Copyright 2020 Graz University of Technology
 #
@@ -14,8 +13,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 # ------------------------------------------------------------------------------
-import subprocess
-subprocess.run("python3 pre_setup.py",shell=True, check=True)
-subprocess.run("python3 setup.py sdist bdist_wheel",shell=True, check=True)
-# post_setup.py moves the files from dist to target which we probably don't want for uploading them to pypi
-#subprocess.run(["python3", "post_setup.py"]).check_returncode()
+
+from .matrix import *
+from .operation_node import *
+
+__all__ = matrix.__all__
+__all__ += operation_node.__all__

@@ -36,14 +36,12 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 JAR_FILE_NAMES = ['systemds-*-SNAPSHOT.jar', 'systemds-*.jar', 'systemds-*-SNAPSHOT-extra', 'systemds-*-extra.jar']
 EXCLUDE_JAR_FILE_NAMES = ['systemds-*javadoc.jar', 'systemds-*sources.jar', 'systemds-*standalone.jar',
                           'systemds-*lite.jar']
-os.makedirs(os.path.join(java_dir_full_path, 'lib'), exist_ok=True)
 for file in os.listdir(os.path.join(root_dir, 'target')):
     if any((fnmatch.fnmatch(file, valid_name) for valid_name in JAR_FILE_NAMES)) and not any(
             (fnmatch.fnmatch(file, exclude_name) for exclude_name in EXCLUDE_JAR_FILE_NAMES)):
-        shutil.copyfile(os.path.join(root_dir, 'target', file), os.path.join(java_dir_full_path, 'lib', file))
-    if file == "lib":
-        shutil.copytree(os.path.join(root_dir, 'target', file), os.path.join(java_dir_full_path, 'lib', file))
-		
+        shutil.copyfile(os.path.join(root_dir, 'target', file), os.path.join(java_dir_full_path, file))
+    if file == 'lib':
+        shutil.copytree(os.path.join(root_dir, 'target', file), os.path.join(java_dir_full_path, file))
 
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 shutil.copyfile(os.path.join(root_dir, 'LICENSE'), 'LICENSE')

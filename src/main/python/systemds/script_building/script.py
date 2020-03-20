@@ -14,17 +14,13 @@
 #  limitations under the License.
 # ------------------------------------------------------------------------------
 
-from __future__ import annotations
-
 from typing import Any, Dict, Optional, Collection, KeysView, Union
 
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaObject
 
-from .utils import get_gateway
-from .dag import DAGNode, VALID_INPUT_TYPES
-
-__all__ = ['DMLScript']
+from ..utils.helpers import get_gateway
+from ..script_building.dag import DAGNode, VALID_INPUT_TYPES
 
 
 class DMLScript:
@@ -32,7 +28,9 @@ class DMLScript:
     get the results.
 
     TODO caching
+
     TODO multiple outputs
+
     TODO rerun with different inputs without recompilation
     """
     dml_script: str

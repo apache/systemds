@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # ------------------------------------------------------------------------------
 #  Copyright 2020 Graz University of Technology
 #
@@ -14,8 +13,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 # ------------------------------------------------------------------------------
-import subprocess
-subprocess.run("python3 pre_setup.py",shell=True, check=True)
-subprocess.run("python3 setup.py sdist bdist_wheel",shell=True, check=True)
-# post_setup.py moves the files from dist to target which we probably don't want for uploading them to pypi
-#subprocess.run(["python3", "post_setup.py"]).check_returncode()
+# Minimal makefile for Sphinx documentation
+#
+
+# You can set these variables from the command line, and also
+# from the environment for the first two.
+SPHINXOPTS    ?=
+SPHINXBUILD   ?= sphinx-build
+SOURCEDIR     = source
+BUILDDIR      = build
+
+# Put it first so that "make" without argument is like "make help".
+help:
+	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+.PHONY: help Makefile
+
+# Catch-all target: route all unknown targets to Sphinx using the new
+# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
+%: Makefile
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

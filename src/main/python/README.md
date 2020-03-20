@@ -15,18 +15,3 @@ as well as distributed operations on Apache Spark. In contrast to existing syste
 provide homogeneous tensors or 2D Datasets - and in order to serve the entire
 data science lifecycle, the underlying data model are DataTensors, i.e.,
 tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.
-
-## Build instructions
-
-- Cd to this folder.
-- Run pre_setup.py
-
-```bash
-python3 pre_setup.py
-```
-
-- Run setup.py
-
-```bash
-python3 setup.py build
-```

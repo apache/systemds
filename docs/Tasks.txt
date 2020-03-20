@@ -192,6 +192,7 @@ SYSTEMDS-230 Lineage Integration
  * 235 Lineage tracing for remote-spark parfor                        OK
  * 236 Extended multi-level lineage cache for statement blocks        OK
  * 237 Unmark loop dependent operations                               OK
+ * 238 Robustness parfor lineage merge (flaky tests)                  OK
 
 SYSTEMDS-240 GPU Backend Improvements
  * 241 Dense GPU cumulative aggregates                                OK

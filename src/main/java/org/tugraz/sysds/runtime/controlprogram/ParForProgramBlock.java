@@ -777,8 +777,10 @@ public class ParForProgramBlock extends ForProgramBlock
 				numExecutedTasks += workers[i].getExecutedTasks();
 				numExecutedIterations += workers[i].getExecutedIterations();
 			}
-			//lineage maintenance
+			// lineage maintenance (but filter out lineage DAGs of workers that 
+			// did not execute a single tasks as this would corrupt the merge)
 			Lineage [] lineages = Arrays.stream(workers)
+				.filter(w -> w.getExecutedTasks() >= 1)
 				.map(w -> w.getExecutionContext().getLineage())
 				.toArray(Lineage[]::new);
 			mergeLineage(ec, lineages);

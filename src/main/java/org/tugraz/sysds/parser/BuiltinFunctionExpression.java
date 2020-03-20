@@ -556,6 +556,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkValueTypeParam(_args[0], ValueType.STRING);
 			output.setDataType(DataType.MATRIX);
 			output.setValueType(ValueType.FP64);
+			output.setDimensions(-1, -1);
 			output.setBlocksize(ConfigurationManager.getBlocksize());
 			break;
 		case COLSUM:

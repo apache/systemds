@@ -22,6 +22,13 @@ package org.tugraz.sysds.runtime.instructions.cp;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
+import org.tugraz.sysds.parser.DMLProgram;
+import org.tugraz.sysds.parser.DMLTranslator;
+import org.tugraz.sysds.parser.FunctionStatementBlock;
+import org.tugraz.sysds.parser.dml.DmlSyntacticValidator;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.Program;
@@ -62,13 +69,20 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//2. copy the created output matrix
 		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
 
-		//3. call the function
+		//3. lazy loading of dml-bodied builtin functions
+		if( !ec.getProgram().containsFunctionProgramBlock(null, funcName) ) {
+			FunctionProgramBlock fpb = compileFunctionProgramBlock(
+				funcName, boundInputs[0].getDataType(), ec.getProgram());
+			ec.getProgram().addFunctionProgramBlock(null, funcName, fpb);
+		}
+		
+		//4. call the function
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, funcName);
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(null, funcName,
 			boundInputs, boundInputNames, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 
-		//4. convert the result to matrix
+		//5. convert the result to matrix
 		Data newOutput = ec.getVariable(output);
 		if (newOutput instanceof MatrixObject) {
 			return;
@@ -85,5 +99,34 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		outputMO.acquireModify(mb);
 		outputMO.release();
 		ec.setVariable(output.getName(), outputMO);
+	}
+	
+	private static FunctionProgramBlock compileFunctionProgramBlock(String name, DataType dt, Program prog) {
+		//load builtin file and parse function statement block
+		FunctionStatementBlock fsb = DmlSyntacticValidator
+			.loadAndParseBuiltinFunction(name, DMLProgram.DEFAULT_NAMESPACE, dt);
+		
+		// validate function (could be avoided for performance because known builtin functions)
+		DMLProgram dmlp = fsb.getDMLProg();
+		DMLTranslator dmlt = new DMLTranslator(dmlp);
+		dmlt.liveVariableAnalysisFunction(dmlp, fsb);
+		dmlt.validateFunction(dmlp, fsb);
+		
+		// compile hop dags, rewrite hop dags and compile lop dags
+		dmlt.constructHops(fsb);
+		ProgramRewriter rewriter = new ProgramRewriter(true, false);
+		rewriter.rewriteHopDAGsFunction(fsb, false); //rewrite and merge
+		DMLTranslator.resetHopsDAGVisitStatus(fsb);
+		rewriter.rewriteHopDAGsFunction(fsb, true); //rewrite and split
+		DMLTranslator.resetHopsDAGVisitStatus(fsb);
+		ProgramRewriter rewriter2 = new ProgramRewriter(false, true);
+		rewriter2.rewriteHopDAGsFunction(fsb, true);
+		DMLTranslator.resetHopsDAGVisitStatus(fsb);
+		DMLTranslator.refreshMemEstimates(fsb);
+		dmlt.constructLops(fsb);
+		
+		// compile runtime program
+		return (FunctionProgramBlock) dmlt.createRuntimeProgramBlock(
+			prog, fsb, ConfigurationManager.getDMLConfig());
 	}
 }

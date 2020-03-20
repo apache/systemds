@@ -209,9 +209,7 @@ public class ProgramRewriter
 		for (String namespaceKey : dmlp.getNamespaces().keySet())
 			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
-				rRewriteStatementBlockHopDAGs(fsblock, state);
-				if( !_sbRuleSet.isEmpty() )
-					rRewriteStatementBlock(fsblock, state, splitDags);
+				rewriteHopDAGsFunction(fsblock, state, splitDags);
 			}
 		
 		// handle regular statement blocks in "main" method
@@ -224,6 +222,16 @@ public class ProgramRewriter
 				dmlp.getStatementBlocks(), state, splitDags));
 		
 		return state;
+	}
+	
+	public void rewriteHopDAGsFunction(FunctionStatementBlock fsb, boolean splitDags) {
+		rewriteHopDAGsFunction(fsb, new ProgramRewriteStatus(), splitDags);
+	}
+	
+	public void rewriteHopDAGsFunction(FunctionStatementBlock fsb, ProgramRewriteStatus state, boolean splitDags) {
+		rRewriteStatementBlockHopDAGs(fsb, state);
+		if( !_sbRuleSet.isEmpty() )
+			rRewriteStatementBlock(fsb, state, splitDags);
 	}
 	
 	public void rRewriteStatementBlockHopDAGs(StatementBlock current, ProgramRewriteStatus state) {

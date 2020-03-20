@@ -130,6 +130,7 @@ import org.tugraz.sysds.parser.dml.DmlParser.TypedArgNoAssignContext;
 import org.tugraz.sysds.parser.dml.DmlParser.UnaryExpressionContext;
 import org.tugraz.sysds.parser.dml.DmlParser.ValueTypeContext;
 import org.tugraz.sysds.parser.dml.DmlParser.WhileStatementContext;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
@@ -607,6 +608,20 @@ public class DmlSyntacticValidator implements DmlListener {
 			for( Entry<String,FunctionStatementBlock> f : prog.getNamedFunctionStatementBlocks().entrySet() )
 				builtinFuns.addFunctionStatementBlock(f.getKey(), f.getValue());
 		}
+	}
+	
+	public static FunctionStatementBlock loadAndParseBuiltinFunction(String name, String namespace, DataType dt) {
+		if( !Builtins.contains(name, true, false) ) {
+			throw new DMLRuntimeException("Function "
+				+ DMLProgram.constructFunctionKey(namespace, name)+" is not a builtin function.");
+		}
+		//load and add builtin DML-bodied functions (via tmp validator instance)
+		DmlSyntacticValidator tmp = new DmlSyntacticValidator(
+			new CustomErrorListener(), new HashMap<>(), namespace, new HashSet<>());
+		String filePath = Builtins.getFilePath(name);
+		DMLProgram prog = tmp.parseAndAddImportedFunctions(namespace, filePath, null);
+		String name2 = Builtins.getInternalFName(name, dt);
+		return prog.getNamedFunctionStatementBlocks().get(name2);
 	}
 
 

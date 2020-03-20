@@ -39,27 +39,24 @@ public class Program
 	
 	public Program() {
 		_namespaceFunctions = new HashMap<>();
+		_namespaceFunctions.put(DMLProgram.DEFAULT_NAMESPACE, new HashMap<>());
 		_programBlocks = new ArrayList<>();
 	}
 
-	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb)
-	{
-		if (namespace == null) 
-			namespace = DMLProgram.DEFAULT_NAMESPACE;
-		
-		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
-		namespaceBlocks = _namespaceFunctions.get(namespace);
+	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb) {
+		if( fpb == null )
+			throw new DMLRuntimeException("Invalid null function program block.");
+		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
+		HashMap<String,FunctionProgramBlock> namespaceBlocks = _namespaceFunctions.get(namespace);
 		if (namespaceBlocks == null){
 			namespaceBlocks = new HashMap<>();
 			_namespaceFunctions.put(namespace,namespaceBlocks);
 		}
-		
 		namespaceBlocks.put(fname,fpb);
 	}
 
 	public synchronized void removeFunctionProgramBlock(String namespace, String fname) {
-		if (namespace == null) 
-			namespace = DMLProgram.DEFAULT_NAMESPACE;
+		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
 		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
 		if( _namespaceFunctions.containsKey(namespace) ){
 			namespaceBlocks = _namespaceFunctions.get(namespace);
@@ -84,10 +81,15 @@ public class Program
 		
 		return retVal;
 	}
-
-	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname){
-		if (namespace == null) namespace = DMLProgram.DEFAULT_NAMESPACE;
-		
+	
+	public synchronized boolean containsFunctionProgramBlock(String namespace, String fname) {
+		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
+		return _namespaceFunctions.containsKey(namespace)
+			&& _namespaceFunctions.get(namespace).containsKey(fname);
+	}
+	
+	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) {
+		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
 		HashMap<String,FunctionProgramBlock> namespaceFunctBlocks = _namespaceFunctions.get(namespace);
 		if (namespaceFunctBlocks == null)
 			throw new DMLRuntimeException("namespace " + namespace + " is undefined.");

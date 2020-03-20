@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -35,6 +34,7 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
+@net.jcip.annotations.NotThreadSafe
 public class LineageTraceParforTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
@@ -124,9 +124,6 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 			proArgs.add(String.valueOf(ncol));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			fullDMLScriptName = getScript();
-			
-			System.out.println(rtplatform);
-			System.out.println(DMLScript.USE_LOCAL_SPARK_CONFIG);
 			 
 			//run the test
 			Lineage.resetInternalState();
@@ -135,15 +132,13 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 			//get lineage and generate program
 			String Rtrace = readDMLLineageFromHDFS("R");
 			LineageItem R = LineageParser.parseLineageTrace(Rtrace);
-			
 			Data ret = LineageItemUtils.computeByLineage(R);
 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			System.out.println(dmlfile);
 			MatrixBlock tmp = ((MatrixObject) ret).acquireReadAndRelease();
 			TestUtils.compareMatrices(dmlfile, tmp, 1e-6);
-			
-		} finally {
+		}
+		finally {
 			Recompiler.reinitRecompiler();
 		}
 	}

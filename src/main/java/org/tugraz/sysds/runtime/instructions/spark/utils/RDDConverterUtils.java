@@ -168,25 +168,26 @@ public class RDDConverterUtils
 			JavaPairRDD<LongWritable, Text> input, DataCharacteristics mc,
 			boolean hasHeader, String delim, boolean fill, double fillValue) {
 		//determine unknown dimensions and sparsity if required
+		//(w/ robustness for mistakenly counted header in nnz)
 		if( !mc.dimsKnown(true) ) {
 			LongAccumulator aNnz = sc.sc().longAccumulator("nnz");
 			JavaRDD<String> tmp = input.values()
-					.map(new CSVAnalysisFunction(aNnz, delim));
+				.map(new CSVAnalysisFunction(aNnz, delim));
 			long rlen = tmp.count() - (hasHeader ? 1 : 0);
 			long clen = tmp.first().split(delim).length;
-			long nnz = UtilFunctions.toLong(aNnz.value());
+			long nnz = Math.min(rlen*clen, UtilFunctions.toLong(aNnz.value()));
 			mc.set(rlen, clen, mc.getBlocksize(), nnz);
 		}
 		
 		//prepare csv w/ row indexes (sorted by filenames)
 		JavaPairRDD<Text,Long> prepinput = input.values()
-				.zipWithIndex(); //zip row index
+			.zipWithIndex(); //zip row index
 		
 		//convert csv rdd to binary block rdd (w/ partial blocks)
 		boolean sparse = requiresSparseAllocation(prepinput, mc);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-				prepinput.mapPartitionsToPair(new CSVToBinaryBlockFunction(
-						mc, sparse, hasHeader, delim, fill, fillValue));
+			prepinput.mapPartitionsToPair(new CSVToBinaryBlockFunction(
+				mc, sparse, hasHeader, delim, fill, fillValue));
 		
 		//aggregate partial matrix blocks (w/ preferred number of output 
 		//partitions as the data is likely smaller in binary block format,
@@ -201,7 +202,7 @@ public class RDDConverterUtils
 	{
 		//convert string rdd to serializable longwritable/text
 		JavaPairRDD<LongWritable, Text> prepinput =
-				input.mapToPair(new StringToSerTextFunction());
+			input.mapToPair(new StringToSerTextFunction());
 		
 		//convert to binary block
 		return csvToBinaryBlock(sc, prepinput, mcOut, hasHeader, delim, fill, fillValue);

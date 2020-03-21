@@ -2340,6 +2340,14 @@ public class TestUtils
 		return nnz;
 	}
 	
+	public static double[][] seq(int from, int to, int incr) {
+		int len = (int)UtilFunctions.getSeqLength(from, to, incr);
+		double[][] ret = new double[len][1];
+		for(int i=0, val=from; val<=to; i++, val+=incr)
+			ret[i][0] = val;
+		return ret;
+	}
+	
 	public static void shutdownThreads(Thread... ts) {
 		for( Thread t : ts )
 			shutdownThread(t);

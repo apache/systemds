@@ -48,6 +48,5 @@ m_intersect = function(Matrix[Double] X, Matrix[Double] Y)
   I = X[1:n,] * Y[1:n,]
 
   # reconstruct integer values and create output
-  Iv = I * seq(1,n)
-  R = removeEmpty(target=Iv, margin="rows", select=I)
+  R = removeEmpty(target=seq(1,n), margin="rows", select=I)
 }

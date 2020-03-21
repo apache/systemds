@@ -16,19 +16,18 @@
 
 package org.tugraz.sysds.test.functions.builtin;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.lops.LopProperties;
-import org.tugraz.sysds.runtime.matrix.data.MatrixValue;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
-public class BuiltinIntersectionTest extends AutomatedTestBase {
+public class BuiltinIntersectionTest extends AutomatedTestBase
+{
 	private final static String TEST_NAME = "intersection";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinIntersectionTest.class.getSimpleName() + "/";
@@ -41,63 +40,41 @@ public class BuiltinIntersectionTest extends AutomatedTestBase {
 
 	@Test
 	public void testIntersect1CP() {
-		double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9}, {12}, {12}};
-		double[][] Y = {{1},{2},{11},{12},{13}, {18},{20},{21},{12}};
-		X = TestUtils.round(X);
-		Y = TestUtils.round(Y);
-		runIntersectTest(X, Y, LopProperties.ExecType.CP);
+		double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
+		double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
+		double[][] expected = {{12},{13}};
+		runIntersectTest(X, Y, expected, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testIntersect1Spark() {
-		double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9}, {12}, {12}};
-		double[][] Y = {{1},{2},{11},{12},{13}, {18},{20},{21},{12}};
-		X = TestUtils.round(X);
-		Y = TestUtils.round(Y);
-		runIntersectTest(X, Y, LopProperties.ExecType.SPARK);
+		double[][] X = {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
+		double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
+		double[][] expected = {{12},{13}};
+		runIntersectTest(X, Y, expected, LopProperties.ExecType.SPARK);
 	}
 
 	@Test
 	public void testIntersect2CP() {
-		double[][] X =  new double[50][1];
-		double[][] Y = new double[50][1];
-		for(int i =0, j=2; i<50; i++, j+=4)
-			X[i][0] = j;
-		for(int i =0, j=2; i<50; i++, j+=2)
-			Y[i][0] = j;
-		runIntersectTest(X, Y, LopProperties.ExecType.CP);
-		HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-		Object[]  out = dmlfile.values().toArray();
-		Arrays.sort(out);
-		for(int i = 0; i< out.length; i++)
-			Assert.assertEquals(out[i], Double.valueOf(X[i][0]));
+		double[][] X = TestUtils.seq(2, 200, 4);
+		double[][] Y = TestUtils.seq(2, 100, 2);
+		double[][] expected = TestUtils.seq(2, 100, 4);
+		runIntersectTest(X, Y, expected, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testIntersect2Spark() {
-		double[][] X =  new double[50][1];
-		double[][] Y = new double[50][1];
-		for(int i =0, j=2; i<50; i++, j+=4)
-			X[i][0] = j;
-		for(int i =0, j=2; i<50; i++, j+=2)
-			Y[i][0] = j;
-		runIntersectTest(X, Y, LopProperties.ExecType.SPARK);
-		HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-		Object[]  out = dmlfile.values().toArray();
-		Arrays.sort(out);
-		for(int i = 0; i< out.length; i++)
-			Assert.assertEquals(out[i], Double.valueOf(X[i][0]));
+		double[][] X = TestUtils.seq(2, 200, 4);
+		double[][] Y = TestUtils.seq(2, 100, 2);
+		double[][] expected = TestUtils.seq(2, 100, 4);
+		runIntersectTest(X, Y, expected, LopProperties.ExecType.SPARK);
 	}
 
-
-
-	private void runIntersectTest(double X[][], double Y[][], LopProperties.ExecType instType)
+	private void runIntersectTest(double X[][], double Y[][], double[][] expected, LopProperties.ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
-		//TODO compare with R instead of custom output comparison
 		
-		try
-		{
+		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -106,8 +83,16 @@ public class BuiltinIntersectionTest extends AutomatedTestBase {
 			//generate actual datasets
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
-
+			
+			//run test
 			runTest(true, false, null, -1);
+		
+			//compare expected results
+			HashMap<CellIndex, Double> R = new HashMap<>();
+			for(int i=0; i<expected.length; i++)
+				R.put(new CellIndex(i+1,1), expected[i][0]);
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
+			TestUtils.compareMatrices(dmlfile, R, 1e-10, "dml", "expected");
 		}
 		finally {
 			rtplatform = platformOld;

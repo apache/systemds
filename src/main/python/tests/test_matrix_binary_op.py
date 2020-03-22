@@ -24,13 +24,15 @@
 # Make the `systemds` package importable
 import os
 import sys
+import warnings
+import unittest
+import numpy as np
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 
-import unittest
 from systemds.matrix import Matrix
-import numpy as np
+from systemds.utils import helpers
 
 dim = 5
 m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)
@@ -41,6 +43,16 @@ s = 3.02
 
 
 class TestBinaryOp(unittest.TestCase):
+
+    def setUp(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
+
+    def tearDown(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
 
     def test_plus(self):
         self.assertTrue(np.allclose((Matrix(m1) + Matrix(m2)).compute(), m1 + m2))
@@ -89,4 +101,5 @@ class TestBinaryOp(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(exit=False)
+    helpers.shutdown()

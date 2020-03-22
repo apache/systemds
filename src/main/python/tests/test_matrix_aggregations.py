@@ -25,14 +25,15 @@
 # Make the `systemds` package importable
 import os
 import sys
+import warnings
+import unittest
+import numpy as np
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 
-import unittest
-import numpy as np
-
 from systemds.matrix import Matrix, full, seq
+from systemds.utils import helpers
 
 dim = 5
 m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)
@@ -42,6 +43,16 @@ m2.shape = (dim, dim)
 
 
 class TestMatrixAggFn(unittest.TestCase):
+
+    def setUp(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
+
+    def tearDown(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
 
     def test_sum1(self):
         self.assertTrue(np.allclose(Matrix(m1).sum().compute(), m1.sum()))
@@ -78,4 +89,5 @@ class TestMatrixAggFn(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(exit=False)
+    helpers.shutdown()

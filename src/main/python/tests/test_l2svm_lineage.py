@@ -13,21 +13,32 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 # ------------------------------------------------------------------------------
+
+import warnings
 import unittest
 import re
-
 import os
 import sys
 from typing import Tuple
-
 import numpy as np
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 from systemds.matrix import Matrix
-
+from systemds.utils import helpers
 
 class TestAPI(unittest.TestCase):
+
+    def setUp(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
+
+    def tearDown(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
+
     def test_getl2svm_lineage(self):
         features, labels = generate_matrices_for_l2svm(10, seed=1304)
         #get the lineage trace
@@ -64,5 +75,5 @@ def reVars(s: str) -> str:
     
 
 if __name__ == "__main__":
-    unittest.main()
-
+    unittest.main(exit=False)
+    helpers.shutdown()

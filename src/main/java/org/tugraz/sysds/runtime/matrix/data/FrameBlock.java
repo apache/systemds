@@ -1791,7 +1791,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				//read a not null sample value
 				while (dataValue == null) {
 					int randomIndex = ThreadLocalRandom.current().nextInt(0, rows - 1);
-					dataValue = obj.get(randomIndex).toString().trim().replace("\"", "").toLowerCase();
+					dataValue = ((obj.get(randomIndex) != null)?obj.get(randomIndex).toString().trim().replace("\"", "").toLowerCase():null);
 				}
 
 				if (isType(dataValue) == ValueType.STRING) {

@@ -22,9 +22,9 @@ from typing import Union, Optional, Iterable, Dict, Tuple, Sequence
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
 
-from ..utils.converters import numpy_to_matrix_block
-from ..script_building.dag import VALID_INPUT_TYPES
-from .operation_node import OperationNode
+from systemds.utils.converters import numpy_to_matrix_block
+from systemds.script_building.dag import VALID_INPUT_TYPES
+from systemds.matrix.operation_node import OperationNode
 
 
 # TODO maybe instead of having a new class we could have a function `matrix` instead, adding behaviour to

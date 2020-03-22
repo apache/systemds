@@ -31,13 +31,13 @@ SystemDS is a java-project, the `pip` package contains all the necessary `jars`,
 but you will need java version 8 installed. Do not use an older or newer
 version of java, because SystemDS is non compatible with other java versions.
 
-Check the output of ``java -version``. Output should look similiar to::
+Check the output of ``java -version``. The output should look similar to::
 
   openjdk version "1.8.0_242"
   OpenJDK Runtime Environment (build 1.8.0_242-b08)
   OpenJDK 64-Bit Server VM (build 25.242-b08, mixed mode)
 
-The important part is in the first line ``opendjdk version "1.8.0_xxx"``,
+The important part is in the first line ``openjdk version "1.8.0_xxx"``,
 please make sure this is the case.
 
 
@@ -54,16 +54,17 @@ Install Dependencies
 
 Once installed you please verify your version numbers. 
 Additionally you have to install a few python packages.
-Note depending on your installation you might need to use pip3 instead of pip.
+Note depending on your installation you might need to use pip3 instead of pip::
 
-- ``pip install numpy py4j wheel``
+  pip install numpy py4j wheel
 
-Then to build the system you  do the following
+Then to build the system you do the following
 
-- Clone the Git Repository <https://github.com/tugraz-isds/systemds.git>.
+- Clone the Git Repository: https://github.com/tugraz-isds/systemds.git
 - Open an terminal at the root of the repository.
 - Package the Java code using the ``mvn package`` command
-- ``cd src/main/python`` to point at the root of the SystemDS python library.
-- Execute ``python create_python_dist.py``
+- ``cd src/main/python`` to point at the root of the SystemDS Python library.
+- Copy `jars` with ``python pre_setup.py``
+- Install with ``pip install .``
 
 After this you are ready to go.

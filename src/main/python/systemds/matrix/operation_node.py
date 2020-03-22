@@ -16,12 +16,12 @@
 
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
-
-from ..utils.helpers import get_gateway, create_params_string
-from ..utils.converters import matrix_block_to_numpy
-from ..script_building.script import DMLScript
-from ..script_building.dag import OutputType, DAGNode, VALID_INPUT_TYPES
 from typing import Union, Optional, Iterable, Dict, Sequence
+
+from systemds.utils.helpers import get_gateway, create_params_string
+from systemds.utils.converters import matrix_block_to_numpy
+from systemds.script_building.script import DMLScript
+from systemds.script_building.dag import OutputType, DAGNode, VALID_INPUT_TYPES
 
 BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=']
 # TODO add numpy array

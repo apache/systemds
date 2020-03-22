@@ -14,17 +14,23 @@
 ..  limitations under the License.
 .. ------------------------------------------------------------------------------
 
+
 Matrix API
 ==========
 
 OperationNode
 -------------
 
+  .. todo
+    The explanation for overloade methods seems weird and does not really describe which
+    methods we mean (magic methods for operators like `+`, `*` etc.).
+    Also I don't understand why that would mean that they return an ``OpeartionNode``.
+
 An ``OperationNode`` represents an operation that executes in SystemDS.
 Most methods are overloaded for ``OperationNode``.
 This means that they return an ``OperationNode``.
-To get the result from an `OperationNode` you simply call ``.compute()`` on it, thereby getting the numpy equivalent result.
-Even comparisons like ``__eq__``, ``__lt__`` etc. gives `OperationNode`s.
+To get the result from an ``OperationNode`` you simply call ``.compute()`` on it, thereby getting the numpy equivalent result.
+Even comparisons like ``__eq__``, ``__lt__`` etc. return ``OperationNode``.
 
 .. note::
 
@@ -37,14 +43,14 @@ Even comparisons like ``__eq__``, ``__lt__`` etc. gives `OperationNode`s.
 Matrix
 ------
 
-A `Matrix` is represented either by an `OperationNode`, or the derived class `Matrix`.
+A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
 An Matrix can recognized it by checking the ``output_type`` of the object.
 
 Matrices are the most fundamental objects we operate on.
 If one generate the matrix in SystemDS directly via a function call,
-it can be used in an function which will generate an `OperationNode` e.g. `federated`, `full`, `seq`.
+it can be used in an function which will generate an ``OperationNode`` e.g. ``federated``, ``full``, ``seq``.
 
-If we want to work on an numpy array we need to use the class `Matrix`.
+If we want to work on an numpy array we need to use the class ``Matrix``.
 
 .. autoclass:: systemds.matrix.Matrix
     :members:

@@ -27,7 +27,7 @@ sys.path.insert(0, path)
 from systemds.matrix import Matrix
 
 
-class TestAPI(unittest.TestCase):
+class TestL2svm(unittest.TestCase):
 
     def test_10x10(self):
         features, labels = generate_matrices_for_l2svm(10, seed=1304)

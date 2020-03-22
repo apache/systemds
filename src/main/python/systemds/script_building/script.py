@@ -14,13 +14,14 @@
 #  limitations under the License.
 # ------------------------------------------------------------------------------
 
-from typing import Any, Dict, Optional, Collection, KeysView, Union
+from typing import Any, Collection, KeysView
 
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaObject
 
-from ..utils.helpers import get_gateway
-from ..script_building.dag import DAGNode, VALID_INPUT_TYPES
+from systemds.utils.helpers import get_gateway
+from systemds.script_building.dag import DAGNode, VALID_INPUT_TYPES
+from typing import Union, Optional, Dict
 
 
 class DMLScript:

@@ -16,7 +16,7 @@
 
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
-from typing import Union, Optional, Iterable, Dict, Sequence
+from typing import Union, Optional, Iterable, Dict, Sequence, Tuple
 
 from systemds.utils.helpers import get_gateway, create_params_string
 from systemds.utils.converters import matrix_block_to_numpy
@@ -32,6 +32,7 @@ __all__ = ["OperationNode"]
 
 class OperationNode(DAGNode):
     result_var: Optional[Union[float, np.array]]
+    lineage_trace: str
     script: Optional[DMLScript]
 
     def __init__(self, operation: str, unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
@@ -56,13 +57,17 @@ class OperationNode(DAGNode):
         self.output_type = output_type
         self.is_python_local_data = is_python_local_data
         self.result_var = None
+        self.lineage_trace = None
         self.script = None
 
-    def compute(self, verbose: bool = False) -> Union[float, np.array]:
+    def compute(self, verbose: bool = False, lineage: bool = False) -> Union[float, np.array, Tuple[Union[float, np.array], str]]:
         if self.result_var is None:
             self.script = DMLScript()
             self.script.build_code(self)
-            result_variables = self.script.execute()
+            if lineage:
+                result_variables, ltrace = self.script.execute(lineage)
+            else:
+                result_variables = self.script.execute(lineage)
             if self.output_type == OutputType.DOUBLE:
                 self.result_var = result_variables.getDouble(self.script.out_var_name)
             elif self.output_type == OutputType.MATRIX:
@@ -71,7 +76,24 @@ class OperationNode(DAGNode):
         if verbose:
             print(self.script.dml_script)
             # TODO further info
-        return self.result_var
+
+        if lineage:
+            return self.result_var, ltrace
+        else:
+            return self.result_var
+
+    def getLineageTrace(self) -> str:
+        """Get the lineage trace for this node.
+
+        :return: Lineage trace
+        """
+        if self.lineage_trace is None:
+            self.script = DMLScript()
+            self.script.build_code(self)
+            self.lineage_trace = self.script.getlineage()
+
+        return self.lineage_trace
+        
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:

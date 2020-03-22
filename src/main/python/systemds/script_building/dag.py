@@ -33,12 +33,18 @@ class DAGNode(ABC):
     output_type: OutputType
     is_python_local_data: bool
 
-    def compute(self, verbose: bool = False) -> Any:
+    def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
         """Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
         all operations are only building the DAG without actually executing (lazy evaluation).
 
         :param verbose: Can be activated to print additional information such as created DML-Script
+        :lineage: Can be activated to print lineage trace till this node
         :return: the output as an python builtin data type or numpy array
+        """
+        raise NotImplementedError
+
+    def getLineageTrace(self) -> str:
+        """Get lineage trace of this operation. This executes the dml script but unlike compute, doesn't store the results
         """
         raise NotImplementedError
 

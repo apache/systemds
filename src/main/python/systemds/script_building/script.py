@@ -14,7 +14,7 @@
 #  limitations under the License.
 # ------------------------------------------------------------------------------
 
-from typing import Any, Collection, KeysView
+from typing import Any, Dict, Optional, Collection, KeysView, Union, Tuple
 
 from py4j.java_collections import JavaArray
 from py4j.java_gateway import JavaObject
@@ -62,7 +62,7 @@ class DMLScript:
         """
         self.inputs[var_name] = input_var
 
-    def execute(self) -> JavaObject:
+    def execute(self, lineage: bool = False) -> Union[JavaObject, Tuple[JavaObject, str]]:
         """If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
         script, then execute our script and return the resultVariables
 
@@ -80,7 +80,34 @@ class DMLScript:
                                                             _list_to_java_array([self.out_var_name]))
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(gateway.jvm, name, self.prepared_script)
-        return self.prepared_script.executeScript()
+
+            if lineage:
+                connection.setLineage(True)
+
+        ret = self.prepared_script.executeScript()
+        if lineage:
+            return ret, self.prepared_script.getLineageTrace(self.out_var_name)
+
+        return ret
+
+    def getlineage(self) -> str:
+        gateway = get_gateway()
+        entry_point = gateway.entry_point
+        if self.prepared_script is None:
+            input_names = self.inputs.keys()
+            connection = entry_point.getConnection()
+            self.prepared_script = connection.prepareScript(self.dml_script,
+                                                            _list_to_java_array(input_names),
+                                                            _list_to_java_array([self.out_var_name]))
+            for (name, input_node) in self.inputs.items():
+                input_node.pass_python_data_to_prepared_script(gateway.jvm, name, self.prepared_script)
+
+            connection.setLineage(True)
+
+        ret = self.prepared_script.executeScript()
+        lineage = self.prepared_script.getLineageTrace(self.out_var_name)
+        return lineage
+        
 
     def build_code(self, dag_root: DAGNode) -> None:
         """Builds code from our DAG

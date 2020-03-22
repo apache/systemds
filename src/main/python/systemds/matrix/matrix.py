@@ -65,13 +65,13 @@ class Matrix(OperationNode):
             code_line = code_line.format(file_name=var_name)
         return code_line
 
-    def compute(self, verbose: bool = False) -> Union[np.array]:
+    def compute(self, verbose: bool = False, lineage: bool = False) -> Union[np.array]:
         if self._is_numpy():
             if verbose:
                 print('[Numpy Array - No Compilation necessary]')
             return self.np_array
         else:
-            return super().compute(verbose)
+            return super().compute(verbose, lineage)
 
     def _is_numpy(self) -> bool:
         return self.np_array is not None

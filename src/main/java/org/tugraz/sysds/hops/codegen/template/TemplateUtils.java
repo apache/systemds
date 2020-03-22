@@ -350,7 +350,7 @@ public class TemplateUtils
 	}
 	
 	public static boolean isValidSingleOperation(Hop hop) {
-		return HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX)
+		return HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS)
 			|| HopRewriteUtils.isUnary(hop, OpOp1.EXP, OpOp1.LOG)
 			|| HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT);
 	}

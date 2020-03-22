@@ -108,15 +108,15 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			if( rewrites ) {
 				boolean expectedReuse = lineage && instType == ExecType.CP;
 				String[] codes = (instType==ExecType.CP) ?
-					new String[]{"rbind","tsmm","ba+*","+"} :
-					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_+"};
+					new String[]{"rbind","tsmm","ba+*","n+"} :
+					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_n+"};
 				Assert.assertTrue(!heavyHittersContainsString(codes[0]));
 				Assert.assertEquals( (expectedReuse ? 7 : 7*6), //per fold
 					Statistics.getCPHeavyHitterCount(codes[1]));
 				Assert.assertEquals( (expectedReuse ? 7 : 7*6) + 1, //per fold
 					Statistics.getCPHeavyHitterCount(codes[2]));
 				//for intermediates tsmm/ba+* + 7 diag (in spark sp_map+ vs sp_+)
-				Assert.assertEquals( 7*5 + (instType==ExecType.CP?7*6:7),
+				Assert.assertEquals( 7*2,
 					Statistics.getCPHeavyHitterCount(codes[3]));
 			}
 		}

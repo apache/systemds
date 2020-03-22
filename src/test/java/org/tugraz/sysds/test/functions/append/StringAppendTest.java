@@ -22,7 +22,6 @@ package org.tugraz.sysds.test.functions.append;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.test.AutomatedTestBase;
@@ -31,10 +30,9 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class StringAppendTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_NAME1 = "basic_string_append";
 	private final static String TEST_NAME2 = "loop_string_append";
-		
+	
 	private final static String TEST_DIR = "functions/append/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + StringAppendTest.class.getSimpleName() + "/";
 
@@ -98,39 +96,23 @@ public class StringAppendTest extends AutomatedTestBase
 	
 	public void runStringAppendTest(String TEST_NAME, int iters, boolean exceptionExpected, ExecType et)
 	{
-		ExecMode oldPlatform = rtplatform;
-
-	    if(et == ExecType.SPARK) {
-	    	rtplatform = ExecMode.SPARK;
-	    }
-	    else {
-			rtplatform = ExecMode.HYBRID;
-	    }
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
-		try
-		{
+		ExecMode oldPlatform = setExecMode(et);
+		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",  Integer.toString(iters),
-					                             output("C") };
+			programArgs = new String[]{
+				"-args", Integer.toString(iters), output("C") };
 			
 			runTest(true, exceptionExpected, DMLException.class, 0);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
-		finally
-		{
-			rtplatform = oldPlatform;	
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			resetExecMode(oldPlatform);
 		}
-		
 	}
 }

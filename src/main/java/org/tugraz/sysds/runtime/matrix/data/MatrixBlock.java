@@ -49,6 +49,7 @@ import org.tugraz.sysds.runtime.functionobjects.CM;
 import org.tugraz.sysds.runtime.functionobjects.CTable;
 import org.tugraz.sysds.runtime.functionobjects.DiagIndex;
 import org.tugraz.sysds.runtime.functionobjects.Divide;
+import org.tugraz.sysds.runtime.functionobjects.FunctionObject;
 import org.tugraz.sysds.runtime.functionobjects.IfElse;
 import org.tugraz.sysds.runtime.functionobjects.KahanFunction;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
@@ -3504,13 +3505,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public static MatrixBlock naryOperations(Operator op, MatrixBlock[] matrices, ScalarObject[] scalars, MatrixBlock ret) {
-		//note: currently only min and max supported and hence specialized implementation
-		
+		//note: currently only min max, plus supported and hence specialized implementation
 		//prepare operator
-		Builtin fn = (Builtin)((SimpleOperator)op).fn;
+		FunctionObject fn = ((SimpleOperator)op).fn;
+		boolean plus = fn instanceof Plus;
+		Builtin bfn = !plus ? (Builtin)((SimpleOperator)op).fn : null;
 		
 		//process all scalars
-		double init = (fn.getBuiltinCode() == BuiltinCode.MIN) ?
+		double init = plus ? 0 :(bfn.getBuiltinCode() == BuiltinCode.MIN) ?
 			Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
 		for( ScalarObject so : scalars )
 			init = fn.execute(init, so.getDoubleValue());
@@ -3519,8 +3521,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		final int m = matrices.length > 0 ? matrices[0].rlen : 1;
 		final int n = matrices.length > 0 ? matrices[0].clen : 1;
 		final long mn = (long) m * n;
-		final long nnz = (fn.getBuiltinCode()==BuiltinCode.MIN && init < 0)
-			|| (fn.getBuiltinCode()==BuiltinCode.MAX && init > 0) ? mn :
+		final long nnz = (!plus && bfn.getBuiltinCode()==BuiltinCode.MIN && init < 0)
+			|| (!plus && bfn.getBuiltinCode()==BuiltinCode.MAX && init > 0) ? mn :
 			Math.min(Arrays.stream(matrices).mapToLong(mb -> mb.nonZeros).sum(), mn);
 		boolean sp = evalSparseFormatInMemory(m, n, nnz);
 		
@@ -3533,14 +3535,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//main processing
 		if( matrices.length > 0 ) {
 			ret.allocateBlock();
-			int[] cnt = Arrays.stream(matrices).allMatch(mb -> 
-				mb.sparse || mb.isEmpty()) ? new int[n] : null;
+			int[] cnt = !plus && Arrays.stream(matrices).allMatch(
+				mb -> mb.sparse || mb.isEmpty()) ? new int[n] : null;
 			if( ret.isInSparseFormat() ) {
 				double[] tmp = new double[n];
 				for(int i = 0; i < m; i++) {
 					//reset tmp and compute row output
-					Arrays.fill(tmp, 0);
-					processMinMaxRow(fn, matrices, init, tmp, 0, n, i, cnt);
+					Arrays.fill(tmp, init);
+					if( plus )
+						processAddRow(matrices, tmp, 0, n, i);
+					else
+						processMinMaxRow(bfn, matrices, tmp, 0, n, i, cnt);
 					//copy to sparse output
 					for(int j = 0; j < n; j++)
 						if( tmp[j] != 0 )
@@ -3549,10 +3554,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			}
 			else {
 				DenseBlock c = ret.getDenseBlock();
+				long lnnz = 0;
 				for(int i = 0; i < m; i++) {
-					processMinMaxRow(fn, matrices, init,
-						c.values(i), c.pos(i), n, i, cnt);
+					if( init != 0 )
+						Arrays.fill(c.values(i), c.pos(i), c.pos(i)+n, init);
+					if( plus )
+						processAddRow(matrices, c.values(i), c.pos(i), n, i);
+					else
+						processMinMaxRow(bfn, matrices, c.values(i), c.pos(i), n, i, cnt);
+					lnnz += UtilFunctions.countNonZeros(c.values(i), c.pos(i), n);
 				}
+				ret.setNonZeros(lnnz);
 			}
 		}
 		else {
@@ -3562,9 +3574,24 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 	
-	private static void processMinMaxRow(Builtin fn, MatrixBlock[] inputs, double init, double[] c, int cix, int n, int i, int[] cnt) {
-		//always init entire output vector
-		Arrays.fill(c, cix, cix+n, init);
+	private static void processAddRow(MatrixBlock[] inputs, double[] c, int cix, int n, int i) {
+		//sparse-safe update over all input matrices
+		for( MatrixBlock in : inputs ) {
+			if( in.isEmptyBlock(false) )
+				continue;
+			if( in.isInSparseFormat() ) {
+				SparseBlock a = in.getSparseBlock();
+				if( a.isEmpty(i) ) continue;
+				LibMatrixMult.vectAdd(a.values(i), c, a.indexes(i), a.pos(i), cix, a.size(i));
+			}
+			else {
+				DenseBlock a = in.getDenseBlock();
+				LibMatrixMult.vectAdd(in.getDenseBlock().values(i), c, a.pos(i), cix, n);
+			}
+		}
+	}
+	
+	private static void processMinMaxRow(Builtin fn, MatrixBlock[] inputs, double[] c, int cix, int n, int i, int[] cnt) {
 		if( cnt != null )
 			Arrays.fill(cnt, 0);
 		

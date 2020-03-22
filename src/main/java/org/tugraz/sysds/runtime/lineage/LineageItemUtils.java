@@ -296,9 +296,9 @@ public class LineageItemUtils {
 							break;
 						}
 						case BuiltinNary: {
+							String opcode = item.getOpcode().equals("n+") ? "plus" : item.getOpcode();
 							operands.put(item.getId(), HopRewriteUtils.createNary(
-								OpOpN.valueOf(item.getOpcode().toUpperCase()),
-								createNaryInputs(item, operands)));
+								OpOpN.valueOf(opcode.toUpperCase()), createNaryInputs(item, operands)));
 							break;
 						}
 						case MatrixIndexing: {

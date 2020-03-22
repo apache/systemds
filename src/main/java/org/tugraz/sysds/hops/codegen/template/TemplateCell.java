@@ -88,7 +88,7 @@ public class TemplateCell extends TemplateBase
 				&& (((IndexingOp)hop).isColLowerEqualsUpper() || hop.getDim2()==1))
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(hop, OpOpDG.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(hop, true))
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) && hop.isMatrix())
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
@@ -102,7 +102,7 @@ public class TemplateCell extends TemplateBase
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
 			|| (HopRewriteUtils.isTransposeOperation(hop) 
 				&& hop.getDim1()==1 && hop.getDim2()>1))
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) && hop.isMatrix())
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
@@ -115,7 +115,7 @@ public class TemplateCell extends TemplateBase
 				&& HopRewriteUtils.isTransposeOperation(input))))
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, OpOpDG.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false))
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) && hop.isMatrix())
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
@@ -250,7 +250,7 @@ public class TemplateCell extends TemplateBase
 			out = new CNodeTernary(cdata1, cdata2, cdata3,
 				TernaryType.valueOf(((DnnOp)hop).getOp().name()));
 		}
-		else if( HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) ) {
+		else if( HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) ) {
 			String op = ((NaryOp)hop).getOp().name();
 			CNode[] inputs = hop.getInput().stream().map(c -> 
 				TemplateUtils.wrapLookupIfNecessary(tmp.get(c.getHopID()), c)).toArray(CNode[]::new);

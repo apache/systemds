@@ -223,7 +223,11 @@ public class Types
 	
 	// Operations that require a variable number of operands
 	public enum OpOpN {
-		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
+		PRINTF, CBIND, RBIND, MIN, MAX, PLUS, EVAL, LIST;
+		
+		public boolean isCellOp() {
+			return this == MIN || this == MAX || this == PLUS;
+		}
 	}
 	
 	public enum ReOrgOp {

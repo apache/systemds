@@ -173,7 +173,8 @@ public class NaryOp extends Hop {
 		if ( _op == OpOpN.PRINTF  || _op == OpOpN.EVAL || _op == OpOpN.LIST
 			//TODO: cbind/rbind of lists only support in CP right now
 			|| (_op == OpOpN.CBIND && getInput().get(0).getDataType().isList())
-			|| (_op == OpOpN.RBIND && getInput().get(0).getDataType().isList()))
+			|| (_op == OpOpN.RBIND && getInput().get(0).getDataType().isList())
+			|| _op.isCellOp() && getInput().stream().allMatch(h -> h.getDataType().isScalar()))
 			_etype = ExecType.CP;
 
 		return _etype;
@@ -200,9 +201,10 @@ public class NaryOp extends Hop {
 					HopRewriteUtils.getMaxInputDim(dc, false), -1,
 					HopRewriteUtils.getSumValidInputNnz(dc, true));
 				case MIN:
-				case MAX: return new MatrixCharacteristics(
-					HopRewriteUtils.getMaxInputDim(this, true),
-					HopRewriteUtils.getMaxInputDim(this, false), -1, -1);
+				case MAX:
+				case PLUS: return new MatrixCharacteristics(
+						HopRewriteUtils.getMaxInputDim(this, true),
+						HopRewriteUtils.getMaxInputDim(this, false), -1, -1);
 				case LIST:
 					return new MatrixCharacteristics(getInput().size(), 1, -1, -1);
 			}
@@ -225,6 +227,7 @@ public class NaryOp extends Hop {
 				break;
 			case MIN:
 			case MAX:
+			case PLUS:
 				setDim1(getDataType().isScalar() ? 0 : HopRewriteUtils.getMaxInputDim(this, true));
 				setDim2(getDataType().isScalar() ? 0 : HopRewriteUtils.getMaxInputDim(this, false));
 				break;

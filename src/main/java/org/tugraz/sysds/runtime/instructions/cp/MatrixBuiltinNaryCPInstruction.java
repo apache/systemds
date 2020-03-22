@@ -21,6 +21,7 @@ package org.tugraz.sysds.runtime.instructions.cp;
 
 import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
@@ -48,7 +49,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 				.toArray(new MatrixBlock[0]), new MatrixBlock(), cbind);
 		}
 		
-		else if( "nmin".equals(getOpcode()) || "nmax".equals(getOpcode()) ) {
+		else if( ArrayUtils.contains(new String[]{"nmin", "nmax", "n+"}, getOpcode()) ) {
 			outBlock = MatrixBlock.naryOperations(_optr, matrices.toArray(new MatrixBlock[0]),
 				scalars.toArray(new ScalarObject[0]), new MatrixBlock());
 		}

@@ -22,6 +22,7 @@ package org.tugraz.sysds.runtime.instructions.cp;
 import org.tugraz.sysds.common.Types.OpOpN;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
+import org.tugraz.sysds.runtime.functionobjects.Plus;
 import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
@@ -60,18 +61,22 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 		
 		if( "printf".equals(opcode) || "list".equals(opcode)) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
-			return new ScalarBuiltinNaryCPInstruction(new SimpleOperator(func), 
-				opcode, str, outputOperand, inputOperands);
+			return new ScalarBuiltinNaryCPInstruction(
+				new SimpleOperator(func), opcode, str, outputOperand, inputOperands);
 		}
 		else if( opcode.equals("cbind") || opcode.equals("rbind") ) {
-			return new MatrixBuiltinNaryCPInstruction(null, 
-				opcode, str, outputOperand, inputOperands);
+			return new MatrixBuiltinNaryCPInstruction(
+				null, opcode, str, outputOperand, inputOperands);
 		}
 		else if( opcode.equals("nmin") || opcode.equals("nmax") ) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode.substring(1));
-			return new MatrixBuiltinNaryCPInstruction(new SimpleOperator(func), 
-					opcode, str, outputOperand, inputOperands);
-		} 
+			return new MatrixBuiltinNaryCPInstruction(
+				new SimpleOperator(func), opcode, str, outputOperand, inputOperands);
+		}
+		else if( opcode.equals("n+") ) {
+			return new MatrixBuiltinNaryCPInstruction(
+				new SimpleOperator(Plus.getPlusFnObject()), opcode, str, outputOperand, inputOperands);
+		}
 		else if (OpOpN.EVAL.name().equalsIgnoreCase(opcode)) {
 			return new EvalNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
 		}

@@ -133,7 +133,7 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
+			TestUtils.compareMatrices(dmlfile, rfile, 1e-10, "Stat-DML", "Stat-R");
 			
 			//check expected number of compiled and executed Spark jobs
 			int expectedNumCompiled = (IPA) ? ((TEST_NAME.equals(TEST_NAME5))?2:1) : 

@@ -499,10 +499,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		{
 			List<Hop> inputs = hi.getInput().get(1).getInput();
 			if( HopRewriteUtils.checkAvgRowsGteCols(inputs) ) {
-				hnew = HopRewriteUtils.createTSMM(inputs.get(0), true);
-				for( int i=1; i<inputs.size(); i++ )
-					hnew = HopRewriteUtils.createBinary(hnew,
-						HopRewriteUtils.createTSMM(inputs.get(i), true), OpOp2.PLUS);
+				Hop[] tsmms = inputs.stream()
+					.map(h -> HopRewriteUtils.createTSMM(h, true)).toArray(Hop[]::new);
+				hnew = HopRewriteUtils.createNary(OpOpN.PLUS, tsmms);
 				//cleanup parent references from rbind
 				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(1));
 				branch = 1;
@@ -520,20 +519,17 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& HopRewriteUtils.checkAvgRowsGteCols(inputs2) 
 				&& HopRewriteUtils.checkConsistentRows(inputs1, inputs2) ) 
 			{
-				hnew = HopRewriteUtils.createMatrixMultiply(
-					HopRewriteUtils.createTranspose(inputs1.get(0)), inputs2.get(0));
-				for( int i=1; i<inputs1.size(); i++ )
-					hnew = HopRewriteUtils.createBinary(hnew,
-						HopRewriteUtils.createMatrixMultiply(
-							HopRewriteUtils.createTranspose(inputs1.get(i)), inputs2.get(i)), OpOp2.PLUS);
+				Hop[] mms = new Hop[inputs1.size()];
+				for( int i=0; i<inputs1.size(); i++ )
+					mms[i] = HopRewriteUtils.createMatrixMultiply(
+						HopRewriteUtils.createTranspose(inputs1.get(i)), inputs2.get(i));
+				hnew = HopRewriteUtils.createNary(OpOpN.PLUS, mms);
 				//cleanup parent references from rbind left/right
 				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(0).getInput().get(0));
 				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(1));
 				branch = 2;
 			}
 		}
-		
-		//TODO introduce nary plus for more efficient aggregation
 		
 		//modify dag if one of the above rules applied
 		if( hnew != null ){ 
@@ -2688,8 +2684,10 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	
 	private static Hop foldMultipleMinMaxOperations(Hop hi) 
 	{
-		if( (HopRewriteUtils.isBinary(hi, OpOp2.MIN, OpOp2.MAX) 
-			|| HopRewriteUtils.isNary(hi, OpOpN.MIN, OpOpN.MAX)) )
+		if( (HopRewriteUtils.isBinary(hi, OpOp2.MIN, OpOp2.MAX, OpOp2.PLUS) 
+			|| HopRewriteUtils.isNary(hi, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS))
+			&& hi.getValueType() != ValueType.STRING //exclude string concat
+			&& HopRewriteUtils.isNotMatrixVectorBinaryOperation(hi))
 		{
 			OpOp2 bop = (hi instanceof BinaryOp) ? ((BinaryOp)hi).getOp() :
 				OpOp2.valueOf(((NaryOp)hi).getOp().name());
@@ -2724,7 +2722,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					for( Hop p : parents )
 						HopRewriteUtils.replaceChildReference(p, hi, hnew);
 					hi = hnew;
-					LOG.debug("Applied foldMultipleMinMaxOperations (line "+hi.getBeginLine()+").");
+					LOG.debug("Applied foldMultipleMinMaxPlusOperations (line "+hi.getBeginLine()+").");
 				}
 				else {
 					converged = true;

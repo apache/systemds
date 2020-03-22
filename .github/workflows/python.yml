@@ -73,7 +73,15 @@ jobs:
         ls tests/
         echo "Beginning tests"
         python tests/test_matrix_binary_op.py
+        echo "Exit Status: " $?
+        sleep 3
         python tests/test_matrix_aggregations.py
+        echo "Exit Status: " $?
+        sleep 3
         python tests/test_l2svm.py
+        echo "Exit Status: " $?
         python tests/test_lineagetrace.py
+        sleep 3
+        echo "Exit Status: " $?
         python tests/test_l2svm_lineage.py
+        echo "Exit Status: " $?

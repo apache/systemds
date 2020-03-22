@@ -25,6 +25,7 @@ from py4j.protocol import Py4JNetworkError
 
 JAVA_GATEWAY = None
 MODULE_NAME = 'systemds'
+PROC = None
 
 
 def get_gateway() -> JavaGateway:
@@ -35,6 +36,7 @@ def get_gateway() -> JavaGateway:
     :return: the java gateway object
     """
     global JAVA_GATEWAY
+    global PROC
     if JAVA_GATEWAY is None:
         try:
             JAVA_GATEWAY = JavaGateway(eager_load=True)
@@ -47,11 +49,19 @@ def get_gateway() -> JavaGateway:
             systemds_cp = os.path.join(systemds_java_path, '*')
             classpath = cp_separator.join([lib_cp, systemds_cp])
             process = subprocess.Popen(['java', '-cp', classpath, 'org.tugraz.sysds.pythonapi.PythonDMLScript'],
-                                       stdout=subprocess.PIPE)
+                                       stdout=subprocess.PIPE, stdin=subprocess.PIPE)
             print(process.stdout.readline())  # wait for 'Gateway Server Started\n' written by server
             assert process.poll() is None, "Could not start JMLC server"
             JAVA_GATEWAY = JavaGateway()
+            PROC = process
     return JAVA_GATEWAY
+
+
+def shutdown():
+    global JAVA_GATEWAY
+    global PROC
+    JAVA_GATEWAY.shutdown()
+    PROC.communicate(input=b'\n')
 
 
 def create_params_string(unnamed_parameters: Iterable[str], named_parameters: Dict[str, str]) -> str:

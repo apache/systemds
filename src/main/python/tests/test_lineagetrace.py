@@ -13,18 +13,29 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 # ------------------------------------------------------------------------------
-import unittest
+import warnings
 import unittest
 import os
 import sys
-import numpy as np
 import re
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 from systemds.matrix import Matrix, full, seq
+from systemds.utils import helpers
 
 class TestLineageTrace(unittest.TestCase):
+
+    def setUp(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
+
+    def tearDown(self):
+        warnings.filterwarnings(action="ignore",
+                                message="unclosed",
+                                category=ResourceWarning)
+
     def test_compare_trace1(self): #test getLineageTrace() on an intermediate
         m = full((5, 10), 4.20)
         m_res = m * 3.1
@@ -51,5 +62,5 @@ def reVars(s: str) -> str:
     return s
 
 if __name__ == "__main__":
-    unittest.main()
-
+    unittest.main(exit=False)
+    helpers.shutdown()

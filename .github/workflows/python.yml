@@ -75,3 +75,5 @@ jobs:
         python tests/test_matrix_binary_op.py
         python tests/test_matrix_aggregations.py
         python tests/test_l2svm.py
+        python tests/test_lineagetrace.py
+        python tests/test_l2svm_lineage.py

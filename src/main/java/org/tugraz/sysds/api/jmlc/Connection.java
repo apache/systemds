@@ -59,6 +59,7 @@ import org.tugraz.sysds.runtime.io.FrameReaderFactory;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.io.MatrixReader;
 import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -179,6 +180,15 @@ public class Connection implements Closeable
 	 * @param stats boolean value with true indicating statistics should be gathered
 	 */
 	public void setStatistics(boolean stats) { DMLScript.STATISTICS = stats; }
+
+	/**
+	 * Sets a boolean flag indicating if lineage trace should be captured 
+	 * @param lt boolean value with true indicating lineage should be captured 
+	 */
+	public void setLineage(boolean lt) { 
+		DMLScript.LINEAGE = lt; 
+		Lineage.resetInternalState();
+	}
 
 	/**
 	 * Sets a boolean flag indicating if memory profiling statistics should be

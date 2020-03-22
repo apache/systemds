@@ -81,6 +81,7 @@ public class PreparedScript implements ConfigurableAPI
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
+	private HashMap<String, String> _outVarLineage;
 	
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
@@ -109,6 +110,7 @@ public class PreparedScript implements ConfigurableAPI
 	protected PreparedScript( Program prog, String[] inputs, String[] outputs, DMLConfig dmlconf, CompilerConfig cconf ) {
 		_prog = prog;
 		_vars = new LocalVariableMap();
+		_outVarLineage = new HashMap<>();
 		
 		//populate input/output vars
 		_inVarnames = new HashSet<>();
@@ -443,8 +445,11 @@ public class PreparedScript implements ConfigurableAPI
 		ResultVariables rvars = new ResultVariables();
 		for( String ovar : _outVarnames ) {
 			Data tmpVar = _vars.get(ovar);
-			if( tmpVar != null )
+			if( tmpVar != null ) {
 				rvars.addResult(ovar, tmpVar);
+				if (ec.getLineage() != null)
+					_outVarLineage.put(ovar, Explain.explain(ec.getLineage().get(ovar)));
+			}
 		}
 		
 		//clear thread-local configurations
@@ -462,6 +467,15 @@ public class PreparedScript implements ConfigurableAPI
 		return Explain.explain(_prog);
 	}
 
+	/**
+	 * Capture lineage of the DML/PyDML program and view result as a string.
+	 * 
+	 * @return string results of lineage trace
+	 */
+	public String getLineageTrace(String var) {
+		return _outVarLineage.get(var);
+	}
+	
 	/**
 	 * Return a string containing runtime statistics. Note: these are not thread local
 	 * and will reflect execution in all threads

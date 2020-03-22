@@ -21,12 +21,14 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
+import org.tugraz.sysds.runtime.functionobjects.Plus;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
@@ -97,7 +99,7 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 			int numPartOut = SparkUtils.getNumPreferredPartitions(mcOut);
 			out = RDDAggregateUtils.mergeByKey(out, numPartOut, false);
 		}
-		else if( getOpcode().equals("nmin") || getOpcode().equals("nmax") ) {
+		else if( ArrayUtils.contains(new String[]{"nmin","nmax","n+"}, getOpcode()) ) {
 			//compute output characteristics
 			mcOut = computeMinMaxOutputDataCharacteristics(sec, inputs);
 			
@@ -113,7 +115,7 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 			}
 			
 			//compute nary min/max (partitioning-preserving)
-			out = in.mapValues(new MinMaxFunction(getOpcode(), scalars));
+			out = in.mapValues(new MinMaxAddFunction(getOpcode(), scalars));
 		}
 		
 		//set output RDD and add lineage
@@ -182,15 +184,17 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 		}
 	}
 	
-	private static class MinMaxFunction implements Function<MatrixBlock[], MatrixBlock> {
+	private static class MinMaxAddFunction implements Function<MatrixBlock[], MatrixBlock> {
 		private static final long serialVersionUID = -4227447915387484397L;
 		
 		private final SimpleOperator _op;
 		private final ScalarObject[] _scalars;
 		
-		public MinMaxFunction(String opcode, List<ScalarObject> scalars) {
+		public MinMaxAddFunction(String opcode, List<ScalarObject> scalars) {
 			_scalars = scalars.toArray(new ScalarObject[0]);
-			_op = new SimpleOperator(Builtin.getBuiltinFnObject(opcode.substring(1)));
+			_op = new SimpleOperator(opcode.equals("n+") ?
+				Plus.getPlusFnObject() :
+				Builtin.getBuiltinFnObject(opcode.substring(1)));
 		}
 		
 		@Override

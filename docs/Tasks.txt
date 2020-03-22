@@ -212,6 +212,7 @@ SYSTEMDS-270 Compressed Matrix Blocks
 
 SYSTEMDS-280 New Rewrites
  * 281 New rewrites sum(rmEmpty), sum(table)                          OK
+ * 282 New rewrite binary add chain to nary plus                      OK
 
 SYSTEMDS-290 Misc Compiler Features
  * 291 Eval function calls of dml-bodied builtin functions            OK

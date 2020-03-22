@@ -1125,7 +1125,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			}
 		}
 		else if( current instanceof NaryOp ) {
-			costs = HopRewriteUtils.isNary(current, OpOpN.MIN, OpOpN.MAX) ?
+			costs = HopRewriteUtils.isNary(current, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) ?
 				current.getInput().size() : 1;
 		}
 		else if( current instanceof ParameterizedBuiltinOp ) {

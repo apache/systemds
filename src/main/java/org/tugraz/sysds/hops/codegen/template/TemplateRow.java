@@ -94,7 +94,7 @@ public class TemplateRow extends TemplateBase
 				&& TemplateCell.isValidOperation(hop) && hop.getDim1() > 1)
 			|| HopRewriteUtils.isTernary(hop, OpOp3.PLUS_MULT, OpOp3.MINUS_MULT)
 			|| isValidBinaryNaryCBind(hop)
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) && hop.isMatrix())
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && hop.getDim2()==1 //MV
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && LibMatrixMult.isSkinnyRightHandSide(
@@ -125,7 +125,7 @@ public class TemplateRow extends TemplateBase
 		return !isClosed() && 
 			(  (hop instanceof BinaryOp && isValidBinaryOperation(hop)) 
 			|| isValidBinaryNaryCBind(hop)
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) && hop.isMatrix())
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 				&& TemplateCell.isValidOperation(hop))
 			|| HopRewriteUtils.isTernary(hop, OpOp3.PLUS_MULT, OpOp3.MINUS_MULT)
@@ -155,7 +155,7 @@ public class TemplateRow extends TemplateBase
 			((hop instanceof BinaryOp && isValidBinaryOperation(hop)
 				&& hop.getDim1() > 1 && input.getDim1()>1)
 			|| isValidBinaryNaryCBind(hop)
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) && hop.isMatrix())
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1 )
@@ -515,10 +515,10 @@ public class TemplateRow extends TemplateBase
 			if( HopRewriteUtils.isNary(hop, OpOpN.CBIND) ) {
 				out = new CNodeNary(inputs, NaryType.VECT_CBIND);
 			}
-			else if( HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) ) {
-				out = getVectorBinary(inputs[0], inputs[1], ((NaryOp)hop).getOp().name());
+			else if( HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) ) {
+				out = getVectorOrScalarBinary(inputs[0], inputs[1], ((NaryOp)hop).getOp().name());
 				for( int i=2; i<hop.getInput().size(); i++ )
-					out = getVectorBinary(out, inputs[i], ((NaryOp)hop).getOp().name());
+					out = getVectorOrScalarBinary(out, inputs[i], ((NaryOp)hop).getOp().name());
 			}
 		}
 		else if( hop instanceof ParameterizedBuiltinOp ) {
@@ -548,6 +548,14 @@ public class TemplateRow extends TemplateBase
 		}
 		
 		tmp.put(hop.getHopID(), out);
+	}
+	
+	private static CNodeBinary getVectorOrScalarBinary(CNode cdata1, CNode cdata2, String name) {
+		if( (TemplateUtils.isColVector(cdata1) || cdata1.getDataType().isScalar())
+			&& (TemplateUtils.isColVector(cdata2) || cdata2.getDataType().isScalar()))
+			return new CNodeBinary(cdata1, cdata2, BinType.valueOf(name));
+		else
+			return getVectorBinary(cdata1, cdata2, name);
 	}
 	
 	private static CNodeBinary getVectorBinary(CNode cdata1, CNode cdata2, String name) {

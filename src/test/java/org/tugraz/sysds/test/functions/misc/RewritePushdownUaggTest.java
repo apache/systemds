@@ -114,7 +114,7 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 			programArgs = new String[]{ "-stats","-args", input("X"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 

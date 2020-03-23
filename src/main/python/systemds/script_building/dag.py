@@ -20,10 +20,14 @@
 #-------------------------------------------------------------
 
 from enum import Enum, auto
-from typing import Any, Dict, Union, Sequence
+from typing import Any, Dict, Union, Sequence, TYPE_CHECKING
 from abc import ABC
 
 from py4j.java_gateway import JavaObject, JVMView
+
+if TYPE_CHECKING:
+    # so we don't get cyclic dependencies during runtime
+    from systemds.context import SystemDSContext
 
 
 class OutputType(Enum):
@@ -33,6 +37,7 @@ class OutputType(Enum):
 
 class DAGNode(ABC):
     """A Node in the directed-acyclic-graph (DAG) defining all operations."""
+    sds_context: 'SystemDSContext'
     unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
     named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
     output_type: OutputType
@@ -43,14 +48,16 @@ class DAGNode(ABC):
         all operations are only building the DAG without actually executing (lazy evaluation).
 
         :param verbose: Can be activated to print additional information such as created DML-Script
-        :lineage: Can be activated to print lineage trace till this node
+        :param lineage: Can be activated to print lineage trace till this node
         :return: the output as an python builtin data type or numpy array
         """
         raise NotImplementedError
 
-    def getLineageTrace(self) -> str:
-        """Get lineage trace of this operation. This executes the dml script but unlike compute, doesn't store the results
-        """
+    def get_lineage_trace(self) -> str:
+        """Get lineage trace of this operation. This executes the dml script but unlike compute,
+        doesn't store the results"""
+        # TODO why do we not want to store the results? The execution script will should stay the same
+        #  therefore we could cache the result.
         raise NotImplementedError
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
@@ -71,6 +78,3 @@ class DAGNode(ABC):
         :param prepared_script: the prepared script
         """
         raise NotImplementedError
-
-
-VALID_INPUT_TYPES = Union[DAGNode, str, int, float, bool]

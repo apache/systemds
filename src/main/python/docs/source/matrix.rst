@@ -23,6 +23,23 @@
 Matrix API
 ==========
 
+SystemDSContext
+---------------
+
+Since we always need a java instance running which will can execute operations in SystemDS, we
+need to start this connection at some point. We do this with ``SystemDSContext``. A ``SystemDSContext``
+object has to be created and once we are finished ``.close()`` has to be called on it, or
+we can use it by doing ``with SystemDSContext() as context:``, which will automatically close
+the context if an error occurs or we are finished with our operations. Creating an context is
+an expensive procedure, because we might have to start a subprocess running java, therefore
+try to do this only once for your program.
+
+Our SystemDS operations always start with an call on a ``SystemDSContext``, most likely to generate
+a matrix on which we can operate.
+
+.. autoclass:: systemds.context.SystemDSContext
+  :members:
+
 OperationNode
 -------------
 

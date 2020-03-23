@@ -19,11 +19,7 @@
 
 package org.tugraz.sysds.hops.codegen.template;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -327,7 +323,49 @@ public class TemplateUtils
 			return cdataOrig;
 		}
 	}
-	
+
+	public static LinkedList<Long> findRemovableConditionalPatternInOuterProduct(Hop hop) {
+		LinkedList<Long> removableHopIDs = new LinkedList<>();
+		if(((BinaryOp) hop).getOp() == Hop.OpOp2.MULT) {
+			if (hop.getInput().get(0) instanceof BinaryOp &&
+					((BinaryOp) hop.getInput().get(0)).getOp() == Hop.OpOp2.NOTEQUAL) {
+				removableHopIDs.add(hop.getHopID());
+				removableHopIDs.add(hop.getInput().get(0).getHopID());
+				removableHopIDs.add(hop.getInput().get(0).getInput().get(0).getHopID());
+				removableHopIDs.add(hop.getInput().get(0).getInput().get(1).getHopID());
+			}
+			else if (hop.getInput().get(1) instanceof BinaryOp &&
+					((BinaryOp) hop.getInput().get(1)).getOp() == Hop.OpOp2.NOTEQUAL) {
+				removableHopIDs.add(hop.getHopID());
+				removableHopIDs.add(hop.getInput().get(1).getHopID());
+				removableHopIDs.add(hop.getInput().get(1).getInput().get(0).getHopID());
+				removableHopIDs.add(hop.getInput().get(1).getInput().get(1).getHopID());
+			}
+		}
+		return removableHopIDs;
+	}
+
+	public static long skipConditionalInOuterProduct(Hop hop, HashMap<Long, CNode> tmp, HashSet<Hop> inHops) {
+		LinkedList<Long> ll = findRemovableConditionalPatternInOuterProduct(hop);
+		if(!ll.isEmpty()) {
+			for (long hopid : ll) {
+				boolean is_input = false;
+				for (Hop in : inHops) {
+					is_input = in.getHopID() == hopid;
+					if (is_input)
+						break;
+				}
+				if(!is_input)
+					tmp.remove(hopid);
+			}
+			if(tmp.containsKey(hop.getInput().get(0).getHopID()))
+				return hop.getInput().get(0).getHopID();
+			else
+				return hop.getInput().get(1).getHopID();
+		}
+		else return hop.getHopID();
+	}
+
 	public static boolean hasTransposeParentUnderOuterProduct(Hop hop) {
 		for( Hop p : hop.getParent() )
 			if( HopRewriteUtils.isTransposeOperation(p) )

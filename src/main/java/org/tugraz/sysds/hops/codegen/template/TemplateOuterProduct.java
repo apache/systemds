@@ -128,14 +128,22 @@ public class TemplateOuterProduct extends TemplateBase {
 		hop.resetVisitStatus();
 		rConstructCplan(hop, memo, tmp, inHops, inHops2, compileLiterals);
 		hop.resetVisitStatus();
-		
+
+		// Remove CNodes that would produce the following unnecessary
+		// line of code: "double tmpX = (a != 0) ? 1 : 0"
+		// This is unnecessary with SpoofOuterProduct, since code for tmpX==0
+		// is not invoked anyway.
+		long outputHopID = hop.getHopID();
+		if(hop instanceof BinaryOp)
+			outputHopID = TemplateUtils.skipConditionalInOuterProduct(hop, tmp, inHops);
+
 		//reorder inputs (ensure matrix is first input)
 		Hop X = inHops2.get("_X");
 		Hop U = inHops2.get("_U");
 		Hop V = inHops2.get("_V");
 		LinkedList<Hop> sinHops = new LinkedList<>(inHops);
 
-		// order of adds and removes is important here
+		// order of adds and removes is important here (all removes before adds)
 		sinHops.remove(V);
 		sinHops.remove(U);
 		sinHops.remove(X);
@@ -149,7 +157,7 @@ public class TemplateOuterProduct extends TemplateBase {
 			if( in != null )
 				inputs.add(tmp.get(in.getHopID()));
 
-		CNode output = tmp.get(hop.getHopID());
+		CNode output = tmp.get(outputHopID);
 		CNodeOuterProduct tpl = new CNodeOuterProduct(inputs, output, mmtsj);
 		tpl.setOutProdType(TemplateUtils.getOuterProductType(X, U, V, hop));
 		tpl.setTransposeOutput(!HopRewriteUtils.isTransposeOperation(hop)

@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 
 class Matrix(OperationNode):
-    np_array: Optional[np.array]
+    _np_array: Optional[np.array]
 
     def __init__(self, sds_context: 'SystemDSContext', mat: Union[np.array, os.PathLike],
                  *args: Sequence[VALID_INPUT_TYPES],
@@ -56,11 +56,11 @@ class Matrix(OperationNode):
         if isinstance(mat, str):
             unnamed_params = [f'\'{mat}\'']
             named_params = {}
-            self.np_array = None
+            self._np_array = None
         else:
             unnamed_params = ['\'./tmp/{file_name}\'']  # TODO better alternative than format string?
             named_params = {'rows': -1, 'cols': -1}
-            self.np_array = mat
+            self._np_array = mat
         unnamed_params.extend(args)
         named_params.update(kwargs)
         super().__init__(sds_context, 'read', unnamed_params, named_params, is_python_local_data=self._is_numpy())
@@ -68,7 +68,7 @@ class Matrix(OperationNode):
     def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
         assert self.is_python_local_data, 'Can only pass data to prepared script if it is python local!'
         if self._is_numpy():
-            prepared_script.setMatrix(var_name, numpy_to_matrix_block(jvm, self.np_array), True)  # True for reuse
+            prepared_script.setMatrix(var_name, numpy_to_matrix_block(jvm, self._np_array), True)  # True for reuse
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
@@ -81,12 +81,12 @@ class Matrix(OperationNode):
         if self._is_numpy():
             if verbose:
                 print('[Numpy Array - No Compilation necessary]')
-            return self.np_array
+            return self._np_array
         else:
             return super().compute(verbose, lineage)
 
     def _is_numpy(self) -> bool:
-        return self.np_array is not None
+        return self._np_array is not None
 
 
 def federated(sds_context: 'SystemDSContext', addresses: Iterable[str],

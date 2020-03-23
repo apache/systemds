@@ -39,7 +39,7 @@ class SystemDSContext(object):
     """A context with a connection to the java instance with which we execute SystemDS operations.
     If necessary this class might also start a java process which we use for the SystemDS operations,
     before connecting."""
-    java_gateway: Optional[JavaGateway]
+    _java_gateway: Optional[JavaGateway]
 
     def __init__(self):
         global PROCESS_LOCK
@@ -50,7 +50,7 @@ class SystemDSContext(object):
         PROCESS_LOCK.acquire()
         try:
             # attempt connection to manually started java instance
-            self.java_gateway = JavaGateway(eager_load=True)
+            self._java_gateway = JavaGateway(eager_load=True)
         except Py4JNetworkError:
             # if no java instance is running start it
             systemds_java_path = os.path.join(get_module_dir(), 'systemds-java')
@@ -64,11 +64,15 @@ class SystemDSContext(object):
                                        stdout=subprocess.PIPE, stdin=subprocess.PIPE)
             process.stdout.readline()  # wait for 'Gateway Server Started\n' written by server
             assert process.poll() is None, "Could not start JMLC server"
-            self.java_gateway = JavaGateway()
+            self._java_gateway = JavaGateway()
             PROCESS = process
         if PROCESS is not None:
             ACTIVE_PROCESS_CONNECTIONS += 1
         PROCESS_LOCK.release()
+
+    @property
+    def java_gateway(self):
+        return self._java_gateway
 
     def __enter__(self):
         return self
@@ -85,7 +89,7 @@ class SystemDSContext(object):
         global PROCESS_LOCK
         global PROCESS
         global ACTIVE_PROCESS_CONNECTIONS
-        self.java_gateway.shutdown()
+        self._java_gateway.shutdown()
         PROCESS_LOCK.acquire()
         # check if no other thread is connected to the process, if we had to start one
         if PROCESS is not None and ACTIVE_PROCESS_CONNECTIONS == 1:

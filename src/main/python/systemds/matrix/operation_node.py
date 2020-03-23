@@ -39,9 +39,9 @@ __all__ = ["OperationNode"]
 
 class OperationNode(DAGNode):
     """A Node representing an operation in SystemDS"""
-    result_var: Optional[Union[float, np.array]]
-    lineage_trace: Optional[str]
-    script: Optional[DMLScript]
+    _result_var: Optional[Union[float, np.array]]
+    _lineage_trace: Optional[str]
+    _script: Optional[DMLScript]
 
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
                  unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
@@ -63,48 +63,48 @@ class OperationNode(DAGNode):
         if named_input_nodes is None:
             named_input_nodes = {}
         self.operation = operation
-        self.unnamed_input_nodes = unnamed_input_nodes
-        self.named_input_nodes = named_input_nodes
+        self._unnamed_input_nodes = unnamed_input_nodes
+        self._named_input_nodes = named_input_nodes
         self.output_type = output_type
-        self.is_python_local_data = is_python_local_data
-        self.result_var = None
-        self.lineage_trace = None
-        self.script = None
+        self._is_python_local_data = is_python_local_data
+        self._result_var = None
+        self._lineage_trace = None
+        self._script = None
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
-        if self.result_var is None or self.lineage_trace is None:
-            self.script = DMLScript(self.sds_context)
-            self.script.build_code(self)
+        if self._result_var is None or self._lineage_trace is None:
+            self._script = DMLScript(self.sds_context)
+            self._script.build_code(self)
             if lineage:
-                result_variables, self.lineage_trace = self.script.execute(lineage)
+                result_variables, self._lineage_trace = self._script.execute(lineage)
             else:
-                result_variables = self.script.execute(lineage)
+                result_variables = self._script.execute(lineage)
             if self.output_type == OutputType.DOUBLE:
-                self.result_var = result_variables.getDouble(self.script.out_var_name)
+                self._result_var = result_variables.getDouble(self._script.out_var_name)
             elif self.output_type == OutputType.MATRIX:
-                self.result_var = matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
-                                                        result_variables.getMatrixBlock(self.script.out_var_name))
+                self._result_var = matrix_block_to_numpy(self.sds_context._java_gateway.jvm,
+                                                         result_variables.getMatrixBlock(self._script.out_var_name))
         if verbose:
-            print(self.script.dml_script)
+            print(self._script.dml_script)
             # TODO further info
 
         if lineage:
-            return self.result_var, self.lineage_trace
+            return self._result_var, self._lineage_trace
         else:
-            return self.result_var
+            return self._result_var
 
     def get_lineage_trace(self) -> str:
         """Get the lineage trace for this node.
 
         :return: Lineage trace
         """
-        if self.lineage_trace is None:
-            self.script = DMLScript(self.sds_context)
-            self.script.build_code(self)
-            self.lineage_trace = self.script.get_lineage()
+        if self._lineage_trace is None:
+            self._script = DMLScript(self.sds_context)
+            self._script.build_code(self)
+            self._lineage_trace = self._script.get_lineage()
 
-        return self.lineage_trace
+        return self._lineage_trace
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:

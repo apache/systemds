@@ -225,6 +225,7 @@ SYSTEMDS-300 Github Workflow/Actions
  * 302 Workflow for Application tests                                 OK
  * 303 Workflow for Function tests                                    OK
  * 304 Workflow make documentation                                    OK
+ * 305 Workflow run docker containers for speedup                     OK
 
 SYSTEMDS-310 Python Bindings
  * 311 Initial Python Binding for federated execution                 OK

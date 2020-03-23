@@ -1,6 +1,7 @@
+#/bin/bash 
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2020 Graz University of Technology
+# Copyright 2020 Graz University of Technology
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -21,33 +22,8 @@
 #
 #-------------------------------------------------------------
 
-name: Application Test
-
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
-
-jobs:
-  applicationsTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        tests: [A,B,C,G,H,I,L,M,N,O,P,S,U,W]
-        os: [ubuntu-latest]
-    name:  Ap Test ${{ matrix.tests }} 
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Run all tests starting with "${{ matrix.tests }}"
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: org.tugraz.sysds.test.applications.${{ matrix.tests }}**
-
-    - name: Output
-      run: echo "Output ${{ steps.test.outputs.value }}"
+# The image is on docker so it is posible to run from here.
+# Execute the docker container
+docker run \
+  -v $(pwd)/docker/mountFolder:/input \
+  --rm sebaba/sysds:0.2

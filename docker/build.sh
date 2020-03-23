@@ -1,6 +1,7 @@
+#/bin/bash 
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2020 Graz University of Technology
+# Copyright 2020 Graz University of Technology
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -21,33 +22,13 @@
 #
 #-------------------------------------------------------------
 
-name: Application Test
+# Build the docker containers
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+# The first build is for running systemds through docker.
+docker image build -f docker/sysds.Dockerfile -t sebaba/sysds:0.2 .
 
-jobs:
-  applicationsTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        tests: [A,B,C,G,H,I,L,M,N,O,P,S,U,W]
-        os: [ubuntu-latest]
-    name:  Ap Test ${{ matrix.tests }} 
-    steps:
-    - uses: actions/checkout@v2
+# The second build is for testing systemds. This image installs the R dependencies needed to run the tests.
+docker image build -f docker/testsysds.Dockerfile -t sebaba/testingsysds:0.2 .
 
-    - name: Run all tests starting with "${{ matrix.tests }}"
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: org.tugraz.sysds.test.applications.${{ matrix.tests }}**
-
-    - name: Output
-      run: echo "Output ${{ steps.test.outputs.value }}"
+# You might want to prune the docker system afterwards using
+# docker system prune

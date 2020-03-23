@@ -66,13 +66,17 @@ Matrix
 ------
 
 A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
-An Matrix can recognized it by checking the ``output_type`` of the object.
+An Matrix can be recognized it by checking the ``output_type`` of the object.
 
 Matrices are the most fundamental objects we operate on.
+
+Although we can generate matrices with the function calls or object construction specified below,
+the recommended way is to use the methods defined on ``SystemDSContext``.
+
 If one generate the matrix in SystemDS directly via a function call,
 it can be used in an function which will generate an ``OperationNode`` e.g. ``federated``, ``full``, ``seq``.
 
-If we want to work on an numpy array we need to use the class ``Matrix``.
+If we want to work on an numpy array, or want to read a matrix from a file, we need to use the class ``Matrix``.
 
 .. autoclass:: systemds.matrix.Matrix
     :members:

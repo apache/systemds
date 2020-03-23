@@ -21,8 +21,10 @@
 #
 #-------------------------------------------------------------
 
-# Use Alpine OpenJDK 8 base
-FROM openjdk:8-alpine
+# Use OpenJDK 8 debian base
+FROM openjdk:8
+# Use R official debian release 
+FROM r-base
 
 WORKDIR /usr/src/
 
@@ -39,21 +41,13 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
   mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 # Install Extras
-RUN apk update && \
-    apk upgrade && \
-    apk add git && \ 
-    apk add bash
+RUN apt-get update -qq && \
+    apt-get upgrade -y
 
 COPY ./src/test/scripts/installDependencies.R installDependencies.R
 
 # Install R + Dependencies
-RUN apk add libc-dev && \
-    apk add R && \
-    apk add R-dev && \
-	Rscript installDependencies.R
-
-    # echo "R_LIBS=/Rpackages/" > ~/.Renviron && \
-    # mkdir /Rpackages && \
+RUN Rscript installDependencies.R
 
 COPY ./docker/entrypoint.sh /entrypoint.sh
 

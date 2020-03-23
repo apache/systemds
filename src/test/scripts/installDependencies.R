@@ -1,3 +1,4 @@
+
 #-------------------------------------------------------------
 #
 # Modifications Copyright 2020 Graz University of Technology
@@ -25,6 +26,8 @@ print("Starting install RScripts")
 
 args <- commandArgs(TRUE)
 
+options(repos=structure(c(CRAN="http://cran.r-project.org")))
+
 custom_install <- function(pkg) {
     if(!is.element(pkg, installed.packages()[,1])) {
 		# Installing to temp folder, if you want to permenently install change lib path
@@ -35,6 +38,15 @@ custom_install <- function(pkg) {
 		}
 	}
 } 
+
+list_user_pkgs <- function() {
+	print("List of user installed packages:")
+
+	ip <- as.data.frame(installed.packages()[,c(1,3:4)])
+	rownames(ip) <- NULL
+	ip <- ip[is.na(ip$Priority),1:2,drop=FALSE]
+	print(ip, row.names=FALSE)
+}
 
 custom_install("Matrix");
 custom_install("psych");
@@ -47,4 +59,11 @@ custom_install("sigmoid");
 custom_install("DescTools");
 custom_install("mice");
 
-print("Done")
+print("Installation Done")
+
+
+# supply any two parameters to list all user installed packages
+# e.g. "sudo Rscript installDependencies.R a b"
+if (length(args) == 2) {
+	list_user_pkgs()
+}

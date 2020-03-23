@@ -133,19 +133,19 @@ if [ -z ${SKIP_SIGN} ]; then
       echo
       stty -echo && printf "GPG key ID: " && read GPG_KEYID && printf '\n' && stty echo
   fi
+fi
 
-  # Commit ref to checkout when building
-  GIT_REF=${GIT_REF:-master}
-  if [[ "$RELEASE_PUBLISH" == "true" && "$GIT_TAG" ]]; then
-      GIT_REF="tags/$GIT_TAG"
-  fi
+# Commit ref to checkout when building
+GIT_REF=${GIT_REF:-master}
+if [[ "$RELEASE_PUBLISH" == "true" && "$GIT_TAG" ]]; then
+    GIT_REF="tags/$GIT_TAG"
+fi
 
-  # Commit ref to checkout when building
-  GIT_REF=${GIT_REF:-master}
-  if [[ -z "$GIT_URL" ]]; then
-      echo "Using default URL"
-      GIT_URL="https://github.com/tugraz-isds/systemds.git"
-  fi
+# Commit ref to checkout when building
+GIT_REF=${GIT_REF:-master}
+if [[ -z "$GIT_URL" ]]; then
+    echo "Using default URL"
+    GIT_URL="https://github.com/tugraz-isds/systemds.git"
 fi
 
 BASE_DIR=$(pwd)

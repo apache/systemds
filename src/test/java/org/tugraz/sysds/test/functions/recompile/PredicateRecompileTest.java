@@ -251,7 +251,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","-args",
+			programArgs = new String[]{"-args",
 				Integer.toString(rows),
 				Integer.toString(cols),
 				Integer.toString(val),

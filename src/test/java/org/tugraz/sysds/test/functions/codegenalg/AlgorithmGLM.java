@@ -319,7 +319,7 @@ public class AlgorithmGLM extends AutomatedTestBase
 			}
 			
 			fullDMLScriptName = "scripts/algorithms/GLM.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
+			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
 				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "moi="+String.valueOf(maxiter), 
 				"dfam="+addArgs[0], "vpow="+addArgs[1], "link="+addArgs[2], param4Name+addArgs[3], "B="+output("w")};
 

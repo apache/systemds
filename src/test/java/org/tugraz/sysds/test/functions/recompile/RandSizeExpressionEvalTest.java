@@ -77,7 +77,7 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testName + ".dml";
-			programArgs = new String[]{"-explain", "-args",
+			programArgs = new String[]{"-args",
 				Integer.toString(rows), Integer.toString(cols), output("R") };
 	
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = evalExpr;

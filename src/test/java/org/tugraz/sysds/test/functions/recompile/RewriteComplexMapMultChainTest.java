@@ -85,7 +85,7 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args",
+			programArgs = new String[]{"-args",
 				input("X"), input("P"), input("v"), output("HV") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";

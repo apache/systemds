@@ -117,7 +117,7 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "-args",
+			programArgs = new String[]{"-args",
 				input("V"), Double.toString(val), output("R") };
 
 			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;

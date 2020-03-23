@@ -195,7 +195,7 @@ public class AlgorithmMSVM extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			fullDMLScriptName = "scripts/algorithms/m-svm.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
+			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
 					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
 					"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
 			if( lineage )

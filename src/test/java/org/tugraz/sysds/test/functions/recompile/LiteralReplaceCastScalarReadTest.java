@@ -79,7 +79,7 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			//note: stats required for runtime check of rewrite
-			programArgs = new String[]{"-explain","-stats","-args", val };
+			programArgs = new String[]{"-stats","-args", val };
 			
 			runTest(true, false, null, -1); 
 		

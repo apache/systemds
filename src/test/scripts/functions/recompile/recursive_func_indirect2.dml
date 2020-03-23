@@ -23,7 +23,9 @@
 foo1 = function (Matrix[Double] X)
     return (Matrix[Double] Y)
 {  
-   print(ncol(X)+" cols -> "+sum(X)); 
+   s = sum(X);
+   if( s > 0 )
+      print(ncol(X)+" cols -> "+s); 
    for( i in 1:10 ) {
       batch = ncol(X)/10;
       tmp = X[,((i-1)*batch+1):(i*batch)];      

@@ -327,7 +327,7 @@ public class AlgorithmKMeans extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			fullDMLScriptName = "scripts/algorithms/Kmeans.dml";
-			programArgs = new String[]{ "-explain", "-stats",
+			programArgs = new String[]{ "-stats",
 				"-nvargs", "X="+input("X"), "k="+String.valueOf(centroids), "runs="+String.valueOf(runs), 
 				"tol="+String.valueOf(epsilon), "maxi="+String.valueOf(maxiter), "C="+output("C")};
 

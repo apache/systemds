@@ -149,7 +149,7 @@ public class AlgorithmPageRank extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			fullDMLScriptName = "scripts/staging/PageRank.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-args", input("G"), 
+			programArgs = new String[]{ "-stats", "-args", input("G"), 
 				input("p"), input("e"), input("u"), String.valueOf(alpha), 
 				String.valueOf(maxiter), output("p")};
 			rCmd = getRCmd(inputDir(), String.valueOf(alpha),

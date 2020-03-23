@@ -1,6 +1,7 @@
+#!/bin/bash
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2020 Graz University of Technology
+# Copyright 2020 Graz University of Technology
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -21,33 +22,36 @@
 #
 #-------------------------------------------------------------
 
-name: Application Test
+# A script to execute the tests inside the docker container.
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+cd /github/workspace
 
-jobs:
-  applicationsTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        tests: [A,B,C,G,H,I,L,M,N,O,P,S,U,W]
-        os: [ubuntu-latest]
-    name:  Ap Test ${{ matrix.tests }} 
-    steps:
-    - uses: actions/checkout@v2
+build="$(mvn -T 2 clean compile test-compile surefire:test | grep 'BUILD')"
 
-    - name: Run all tests starting with "${{ matrix.tests }}"
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: org.tugraz.sysds.test.applications.${{ matrix.tests }}**
+if [[ $build == *"SUCCESS"* ]]; then
+  echo "Successfull build"
+else
+  echo "failed building"
+  exit 1
+fi
 
-    - name: Output
-      run: echo "Output ${{ steps.test.outputs.value }}"
+grep_args="SUCCESS"
+log="/tmp/sysdstest.log"
+
+echo "Starting Tests"
+
+grepvals="$(mvn surefire:test -DskipTests=false -Dtest=$1 | tee $log | grep $grep_args)"
+
+if [[ $grepvals == *"SUCCESS"* ]]; then
+	echo "--------------------- last 100 lines from test ------------------------"
+	tail -n 100 $log
+	echo "------------------ last 100 lines from test end -----------------------"
+	echo "::set-output name=value::Successs"
+	sleep 3
+	exit 0
+else
+	echo "\n $(cat $log)"
+	echo "::set-output name=value::Failed"
+	sleep 3
+	exit 1
+fi

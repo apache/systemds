@@ -27,9 +27,6 @@ inputs:
   test-to-run: 
     description: 'Full package name of the test to be executed, does support wildcards *'
     required: true
-outputs:
-  values:
-    description: 'An output value could be any string' 
 runs:
   using: 'docker'
   image: 'Dockerfile'

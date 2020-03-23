@@ -252,13 +252,13 @@ public class AlgorithmDatagen extends AutomatedTestBase
 			
 			if( type ==  DatagenType.LINREG) {
 				fullDMLScriptName = "scripts/datagen/genRandData4LinearRegression.dml";
-				programArgs = new String[]{ "-explain", "-stats", "-args",
+				programArgs = new String[]{ "-stats", "-args",
 					String.valueOf(rows), String.valueOf(cols), "10", "1", output("w"),
 					output("X"), output("y"), "1", "1", String.valueOf(sparsity), "binary"};
 			}
 			else { //LOGREG
 				fullDMLScriptName = "scripts/datagen/genRandData4LogisticRegression.dml";
-				programArgs = new String[]{ "-explain", "-stats", "-args",
+				programArgs = new String[]{ "-stats", "-args",
 					String.valueOf(rows), String.valueOf(cols), "10", "1", output("w"),
 					output("X"), output("y"), "1", "1", String.valueOf(sparsity), "binary", "1"};
 			}

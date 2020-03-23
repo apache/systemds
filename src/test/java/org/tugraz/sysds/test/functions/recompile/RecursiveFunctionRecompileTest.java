@@ -52,10 +52,9 @@ public class RecursiveFunctionRecompileTest extends AutomatedTestBase
 		RecursiveFunctionRecompileTest.class.getSimpleName() + "/";
 	
 	private final static long rows = 5000;
-	private final static long cols = 10000;    
-	private final static double sparsity = 0.00001d;    
+	private final static long cols = 10000;
+	private final static double sparsity = 0.00001d;
 	private final static double val = 7.0;
-	
 	
 	@Override
 	public void setUp() {
@@ -121,7 +120,7 @@ public class RecursiveFunctionRecompileTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","-stats","-args",
+			programArgs = new String[]{"-stats","-args",
 				input("V"), Double.toString(val), output("R") };
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;

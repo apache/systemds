@@ -224,7 +224,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			//note: stats required for runtime check of rewrite
-			programArgs = new String[]{"-explain","-stats","-args",
+			programArgs = new String[]{"-stats","-args",
 				input("X"), Integer.toString(type.ordinal()), output("R") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";

@@ -83,7 +83,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("V"), 
+			programArgs = new String[]{"-args", input("V"), 
 				Integer.toString(rows), Integer.toString(cols), output("R") };
 			
 			fullRScriptName = HOME + TEST_NAME1 + ".R";

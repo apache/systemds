@@ -328,7 +328,7 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			fullDMLScriptName = "scripts/algorithms/LinearRegCG.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("y"),
+			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"), "Y="+input("y"),
 				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon),
 				"maxi="+String.valueOf(maxiter), "reg=0.001", "B="+output("w")};
 

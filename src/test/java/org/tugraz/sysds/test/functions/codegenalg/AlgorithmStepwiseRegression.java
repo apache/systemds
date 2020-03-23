@@ -192,13 +192,13 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 			
 			if( type ==  StepwiseType.LINREG_DS) {
 				fullDMLScriptName = "scripts/algorithms/StepLinearRegDS.dml";
-				programArgs = new String[]{ "-explain", "-stats", "-nvargs",
+				programArgs = new String[]{ "-stats", "-nvargs",
 					"X="+input("X"), "Y="+input("Y"), "icpt="+String.valueOf(icpt),
 					"thr="+String.valueOf(thr), "B="+output("B"), "S="+output("S")};
 			}
 			else { //GLM binomial probit
 				fullDMLScriptName = "scripts/algorithms/StepGLM.dml";
-				programArgs = new String[]{ "-explain", "-stats", "-nvargs",
+				programArgs = new String[]{ "-stats", "-nvargs",
 					"X="+input("X"), "Y="+input("Y"), "icpt="+String.valueOf(icpt),
 					"thr="+String.valueOf(thr), "link=3", "yneg=0",
 					"moi=5", "mii=5", "B="+output("B"), "S="+output("S")};

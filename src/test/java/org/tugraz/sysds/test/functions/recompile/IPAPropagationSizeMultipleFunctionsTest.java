@@ -115,7 +115,7 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", input("V"), output("R") };
+			programArgs = new String[]{"-args", input("V"), output("R") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();

@@ -131,7 +131,7 @@ public class AlgorithmPNMF extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			fullDMLScriptName = "scripts/staging/PNMF.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-args", input("X"), 
+			programArgs = new String[]{ "-stats", "-args", input("X"), 
 				input("W"), input("H"), String.valueOf(rank), String.valueOf(epsilon), 
 				String.valueOf(maxiter), output("W"), output("H")};
 

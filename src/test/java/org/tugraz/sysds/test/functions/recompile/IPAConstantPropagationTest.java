@@ -98,7 +98,7 @@ public class IPAConstantPropagationTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-args", 
+			programArgs = new String[]{"-args", 
 				Integer.toString(rows), Integer.toString(cols), output("X") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";

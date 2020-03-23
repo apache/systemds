@@ -191,7 +191,7 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			fullDMLScriptName = "scripts/staging/autoencoder-2layer.dml";
-			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"),
+			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"),
 				"H1="+H1, "H2="+H2, "EPOCH="+epochs, "BATCH="+batchsize, 
 				"W1_out="+output("W1"), "b1_out="+output("b1"),
 				"W2_out="+output("W2"), "b2_out="+output("b2"),

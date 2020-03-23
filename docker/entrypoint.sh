@@ -40,7 +40,7 @@ log="/tmp/sysdstest.log"
 
 echo "Starting Tests"
 
-grepvals="$(mvn surefire:test -DskipTests=false -Dtest=$1 | tee $log | grep $grep_args)"
+grepvals="$(mvn surefire:test -DskipTests=false -Dtest=$1 2>&1 | tee $log | grep $grep_args)"
 
 if [[ $grepvals == *"SUCCESS"* ]]; then
 	echo "--------------------- last 100 lines from test ------------------------"

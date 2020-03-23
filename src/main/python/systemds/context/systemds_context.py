@@ -25,8 +25,7 @@ import numpy as np
 from py4j.java_gateway import JavaGateway
 from py4j.protocol import Py4JNetworkError
 
-from systemds.matrix import full, seq, federated, Matrix
-from systemds.matrix.operation_node import OperationNode
+from systemds.matrix import full, seq, federated, Matrix, OperationNode
 from systemds.utils.helpers import get_module_dir
 from systemds.utils.consts import VALID_INPUT_TYPES
 

@@ -32,7 +32,7 @@ object has to be created and once we are finished ``.close()`` has to be called 
 we can use it by doing ``with SystemDSContext() as context:``, which will automatically close
 the context if an error occurs or we are finished with our operations. Creating an context is
 an expensive procedure, because we might have to start a subprocess running java, therefore
-try to do this only once for your program.
+try to do this only once for your program, or always leave at least one context open.
 
 Our SystemDS operations always start with an call on a ``SystemDSContext``, most likely to generate
 a matrix on which we can operate.

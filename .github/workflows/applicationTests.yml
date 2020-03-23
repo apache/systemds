@@ -48,6 +48,3 @@ jobs:
       id: test
       with:
         test-to-run: org.tugraz.sysds.test.applications.${{ matrix.tests }}**
-
-    - name: Output
-      run: echo "Output ${{ steps.test.outputs.value }}"

@@ -78,3 +78,12 @@ docker push sebaba/testingsysds:0.2
 ```
 
 For each of the tests that require R, this image is simply used, because it skips the installation of the R packages, since they are installed in this image.
+
+Test your testing image locally by running the following command:
+
+```bash
+docker run \
+  -v $(pwd):/github/workspace \
+  sebaba/testingsysds:0.2 \
+  org.tugraz.sysds.test.component.*.**
+```

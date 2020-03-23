@@ -21,13 +21,13 @@ limitations under the License.
 
 # SystemDS
 
-### Overview
+## Overview
 
  SystemDS is a versatile system for the end-to-end data science lifecycle from data integration, cleaning, and feature engineering, over efficient, local and distributed ML model training, to deployment and serving. To this end, we aim to provide a stack of declarative languages with R-like syntax for (1) the different tasks of the data-science lifecycle, and (2) users with different expertise. These high-level scripts are compiled into hybrid execution plans of local, in-memory CPU and GPU operations, as well as distributed operations on Apache Spark. In contrast to existing systems - that either provide homogeneous tensors or 2D Datasets - and in order to serve the entire data science lifecycle, the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.
 
 **Documentation:** [SystemDS Documentation](https://github.com/tugraz-isds/systemds/tree/master/docs)
 
-#### Getting started
+## Getting started
 
 Requirements for running SystemDS are a bash shell and OpenJDK 8 or a Spark 2 cluster installation (to run distributed jobs). 
 These requirements should be available via standard system packages in all major Linux distributions 
@@ -51,13 +51,13 @@ of sparsity. As you can see, DML can access these parameters by specifying $1, $
 
 **Execution:** Now run that first script you created by running one of the following commands depending on your operating system:
 
-##### Running a script locally 
+#### Running a script locally 
 
 ```shell script
 $ ./systemds.sh hello.dml -args 10 10 1.0
 ```
 
-##### Running a script locally, providing your own SystemDS.jar file
+#### Running a script locally, providing your own SystemDS.jar file
  
 If you compiled SystemDS from source, you can of course use the created JAR file with the run script. 
 
@@ -65,14 +65,14 @@ If you compiled SystemDS from source, you can of course use the created JAR file
 $ ./systemds.sh path/to/the/SystemDS.jar hello.dml -args 10 10 1.0
 ```
 
-##### Running a script locally, in your SystemDS source environment
+#### Running a script locally, in your SystemDS source environment
 If you have cloned the SystemDS source repository and want to run your DML script with that, you can point the
 shell script to the source directory by setting the `SYSTEMDS_ROOT` environment variable.
 ```shell script
 $ SYSTEMDS_ROOT=../../code/my-systemds/source  ./systemds.sh hello.dml -args 10 10 1.0
 ```
 
-##### Running a script distributed on a Spark cluster 
+#### Running a script distributed on a Spark cluster 
 For running on a Spark cluster, the env variable SYSDS_DISTRIBUTED needs to be set (to something other than 0).
 Per default, SystemDS will run in hybrid mode, pushing some instructions to the cluster and running others locally.
 To force cluster mode in this little test, we will increase the matrix size to give the woker nodes in the cluster 
@@ -104,3 +104,7 @@ Total execution time:           0,122 sec.
 
 20/03/09 16:40:30 INFO api.DMLScript: END DML run 03/09/2020 16:40:30
 ```
+
+## Further reading 
+
+More documentation is available in the [docs directory of our github repository](https://github.com/tugraz-isds/systemds/tree/master/docs) 

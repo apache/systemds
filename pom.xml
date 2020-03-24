@@ -513,6 +513,7 @@
 								<exclude>**/target/**</exclude>
 								<exclude>**/README.md</exclude>
 								<exclude>**/*.svg</exclude>
+								<exclude>dev/release/damslab-pubkey.asc</exclude>
 								<!-- Jupyter Notebooks -->
 								<exclude>**/*.ipynb</exclude>
 								<!-- Generated antlr files -->

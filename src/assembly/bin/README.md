@@ -32,7 +32,8 @@ limitations under the License.
 Requirements for running SystemDS are a bash shell and OpenJDK 8 or a Spark 2 cluster installation (to run distributed jobs). 
 These requirements should be available via standard system packages in all major Linux distributions 
 (make sure to have the right JDK version enabled, if you have multiple versions in your system).
-For Windows, a bash comes with git (http://git-scm.com) and OpenJDK builds can be optained at http://adoptopenjdk.net.  
+For Windows, a bash comes with [git for windows](http://git-scm.com) and OpenJDK builds can be optained at http://adoptopenjdk.net
+(tested version [jdk8u232-b09](https://adoptopenjdk.net/archive.html))  
 
 To start out with an example after having installed the requirements mentioned above, create a text file  
 `hello.dml` in your unzipped SystemDS directory containing the following content: 

@@ -19,7 +19,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.test.functions.codegenalg;
+package org.tugraz.sysds.test.functions.codegenalg.partone;
 
 import java.io.File;
 import java.util.HashMap;

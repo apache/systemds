@@ -19,7 +19,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.test.functions.codegenalg;
+package org.tugraz.sysds.test.functions.codegenalg.parttwo;
 
 import java.io.File;
 import java.util.HashMap;
@@ -35,32 +35,30 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-public class AlgorithmL2SVM extends AutomatedTestBase 
-{	
-	private final static String TEST_NAME1 = "Algorithm_L2SVM";
+public class AlgorithmPageRank extends AutomatedTestBase 
+{
+	private final static String TEST_NAME1 = "Algorithm_PageRank";
 	private final static String TEST_DIR = "functions/codegenalg/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmL2SVM.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmPageRank.class.getSimpleName() + "/";
 	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
 	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
 	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
 	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
 	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
+	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_NO_REDUNDANCY);
 
 	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
+
+	//absolute diff for large output scale in the +E12
+	private final static double eps = 0.1;
 	
-	private final static double eps = 1e-5;
+	private final static int rows = 1468;
+	private final static int cols = 1468;
 	
-	private final static int rows = 3468;
-	private final static int cols1 = 1007;
-	private final static int cols2 = 987;
+	private final static double sparsity1 = 0.41; //dense
+	private final static double sparsity2 = 0.05; //sparse
 	
-	private final static double sparsity1 = 0.7; //dense
-	private final static double sparsity2 = 0.1; //sparse
-	
-	private final static int intercept = 0;
-	private final static double epsilon = 0.000000001;
+	private final static double alpha = 0.85;
 	private final static double maxiter = 10;
 	
 	private TestType currentTestType = TestType.DEFAULT;
@@ -72,86 +70,66 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 	}
 
 	@Test
-	public void testL2SVMDenseRewritesCP() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, TestType.DEFAULT);
+	public void testPageRankDenseCP() {
+		runPageRankTest(TEST_NAME1, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
-	public void testL2SVMSparseRewritesCP() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, TestType.DEFAULT);
+	public void testPageRankSparseCP() {
+		runPageRankTest(TEST_NAME1, true, true, ExecType.CP, TestType.DEFAULT);
+	}
+
+	@Test
+	public void testPageRankDenseCPFuseAll() {
+		runPageRankTest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testPageRankSparseCPFuseAll() {
+		runPageRankTest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testPageRankDenseCPFuseNoRedundancy() {
+		runPageRankTest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testPageRankSparseCPFuseNoRedundancy() {
+		runPageRankTest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
 	
 	@Test
-	public void testL2SVMDenseCP() {
-		runL2SVMTest(TEST_NAME1, false, false, ExecType.CP, TestType.DEFAULT);
+	public void testPageRankDenseCPNoR() {
+		runPageRankTest(TEST_NAME1, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
-	public void testL2SVMSparseCP() {
-		runL2SVMTest(TEST_NAME1, false, true, ExecType.CP, TestType.DEFAULT);
+	public void testPageRankSparseCPNoR() {
+		runPageRankTest(TEST_NAME1, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 
 	@Test
-	public void testL2SVMDenseRewritesSP() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testL2SVMSparseRewritesSP() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testL2SVMDenseSP() {
-		runL2SVMTest(TEST_NAME1, false, false, ExecType.SPARK, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testL2SVMSparseSP() {
-		runL2SVMTest(TEST_NAME1, false, true, ExecType.SPARK, TestType.DEFAULT);
+	public void testPageRankDenseCPFuseAllNoR() {
+		runPageRankTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_ALL);
 	}
 
 	@Test
-	public void testL2SVMDenseRewritesCPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_ALL);
+	public void testPageRankSparseCPFuseAllNoR() {
+		runPageRankTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_ALL);
 	}
 
 	@Test
-	public void testL2SVMSparseRewritesCPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_ALL);
+	public void testPageRankDenseCPFuseNoRedundancyNoR() {
+		runPageRankTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
-	public void testL2SVMDenseRewritesSPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+	public void testPageRankSparseCPFuseNoRedundancyNoR() {
+		runPageRankTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
 
-	@Test
-	public void testL2SVMSparseRewritesSPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, TestType.FUSE_ALL);
-	}
-
-	@Test
-	public void testL2SVMDenseRewritesCPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
-	}
-
-	@Test
-	public void testL2SVMSparseRewritesCPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
-	}
-
-	@Test
-	public void testL2SVMDenseRewritesSPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
-	}
-
-	@Test
-	public void testL2SVMSparseRewritesSPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
-	}
-	
-	private void runL2SVMTest( String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
+	private void runPageRankTest( String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -160,7 +138,6 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			default: rtplatform = ExecMode.HYBRID; break;
 		}
 		currentTestType = testType;
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -171,31 +148,32 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			fullDMLScriptName = "scripts/algorithms/l2-svm.dml";
-			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
-				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
-				"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
-
-			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
+			fullDMLScriptName = "scripts/staging/PageRank.dml";
+			programArgs = new String[]{ "-stats", "-args", input("G"), 
+				input("p"), input("e"), input("u"), String.valueOf(alpha), 
+				String.valueOf(maxiter), output("p")};
+			rCmd = getRCmd(inputDir(), String.valueOf(alpha),
 				String.valueOf(maxiter), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
+			OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
 			
 			//generate actual datasets
-			int cols = (instType==ExecType.SPARK) ? cols2 : cols1;
-			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 714);
-			writeInputMatrixWithMTD("X", X, true);
-			double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 0, 1, 1.0, 136));
-			writeInputMatrixWithMTD("Y", y, true);
+			double[][] G = getRandomMatrix(rows, cols, 1, 1, sparse?sparsity2:sparsity1, 234);
+			writeInputMatrixWithMTD("G", G, true);
+			writeInputMatrixWithMTD("p", getRandomMatrix(cols, 1, 0, 1e-14, 1, 71), true);
+			writeInputMatrixWithMTD("e", getRandomMatrix(rows, 1, 0, 1e-14, 1, 72), true);
+			writeInputMatrixWithMTD("u", getRandomMatrix(1, cols, 0, 1e-14, 1, 73), true);
 			
-			runTest(true, false, null, -1); 
+			runTest(true, false, null, -1);
 			runRScript(true); 
 			
 			//compare matrices 
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("w");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			HashMap<CellIndex, Double> dml = readDMLMatrixFromHDFS("p");
+			HashMap<CellIndex, Double> r = readRMatrixFromFS("p");
+			TestUtils.compareMatrices(dml, r, eps, "Stat-DML", "Stat-R");
+			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
+				|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {
 			rtplatform = platformOld;

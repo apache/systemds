@@ -19,9 +19,10 @@
  * under the License.
  */
  
-package org.tugraz.sysds.test.functions.codegenalg;
+package org.tugraz.sysds.test.functions.codegenalg.parttwo;
 
 import java.io.File;
+import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,15 +30,16 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-public class AlgorithmAutoEncoder extends AutomatedTestBase 
-{
-	private final static String TEST_NAME1 = "Algorithm_AutoEncoder";
+public class AlgorithmPNMF extends AutomatedTestBase 
+{	
+	private final static String TEST_NAME1 = "Algorithm_PNMF";
 	private final static String TEST_DIR = "functions/codegenalg/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmAutoEncoder.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmPNMF.class.getSimpleName() + "/";
 	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
 	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
 	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
@@ -47,16 +49,18 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 			TEST_CONF_FUSE_NO_REDUNDANCY);
 
 	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
+
+	private final static double eps = 1e-5;
 	
-	private final static int rows = 2468;
-	private final static int cols = 784;
+	private final static int rows = 1468;
+	private final static int cols = 1207;
+	private final static int rank = 20;
 	
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
-	private final static int H1 = 500;
-	private final static int H2 = 2;
-	private final static double epochs = 2; 
+	private final static double epsilon = 0.000000001;
+	private final static double maxiter = 10;
 	
 	private TestType currentTestType = TestType.DEFAULT;
 	
@@ -66,110 +70,48 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "w" })); 
 	}
 
-	//Note: limited cases for SPARK, as lazy evaluation 
-	//causes very long execution time for this algorithm
-
 	@Test
-	public void testAutoEncoder256DenseCP() {
-		runAutoEncoderTest(256, false, false, ExecType.CP, TestType.DEFAULT);
+	public void testPNMFDenseCP() {
+		runPNMFTest(TEST_NAME1, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
-	public void testAutoEncoder256DenseRewritesCP() {
-		runAutoEncoderTest(256, false, true, ExecType.CP, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder256SparseCP() {
-		runAutoEncoderTest(256, true, false, ExecType.CP, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder256SparseRewritesCP() {
-		runAutoEncoderTest(256, true, true, ExecType.CP, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder512DenseCP() {
-		runAutoEncoderTest(512, false, false, ExecType.CP, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder512DenseRewritesCP() {
-		runAutoEncoderTest(512, false, true, ExecType.CP, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder512SparseCP() {
-		runAutoEncoderTest(512, true, false, ExecType.CP, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder512SparseRewritesCP() {
-		runAutoEncoderTest(512, true, true, ExecType.CP, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder256DenseRewritesSpark() {
-		runAutoEncoderTest(256, false, true, ExecType.SPARK, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder256SparseRewritesSpark() {
-		runAutoEncoderTest(256, true, true, ExecType.SPARK, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder512DenseRewritesSpark() {
-		runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.DEFAULT);
-	}
-	
-	@Test
-	public void testAutoEncoder512SparseRewritesSpark() {
-		runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.DEFAULT);
+	public void testPNMFSparseCP() {
+		runPNMFTest(TEST_NAME1, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 
 	@Test
-	public void testAutoEncoder512DenseRewritesCPFuseAll() {
-		runAutoEncoderTest(512, false, true, ExecType.CP, TestType.FUSE_ALL);
+	public void testPNMFDenseCPFuseAll() {
+		runPNMFTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_ALL);
 	}
 
 	@Test
-	public void testAutoEncoder512SparseRewritesCPFuseAll() {
-		runAutoEncoderTest(512, true, true, ExecType.CP, TestType.FUSE_ALL);
+	public void testPNMFSparseCPFuseAll() {
+		runPNMFTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_ALL);
 	}
 
 	@Test
-	public void testAutoEncoder512DenseRewritesSparkFuseAll() {
-		runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.FUSE_ALL);
+	public void testPNMFDenseCPFuseNoRedundancy() {
+		runPNMFTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
-	public void testAutoEncoder512SparseRewritesSparkFuseAll() {
-		runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+	public void testPNMFSparseCPFuseNoRedundancy() {
+		runPNMFTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
+	
+	//TODO requires proper handling of blocksize constraints
+	//@Test
+	//public void testPNMFDenseSP() {
+	//	runPNMFTest(TEST_NAME1, false, false, ExecType.SPARK);
+	//}
+	
+	//@Test
+	//public void testPNMFSparseSP() {
+	//	runPNMFTest(TEST_NAME1, false, true, ExecType.SPARK);
+	//}
 
-	@Test
-	public void testAutoEncoder512DenseRewritesCPFuseNoRedundancy() {
-		runAutoEncoderTest(512, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
-	}
-
-	@Test
-	public void testAutoEncoder512SparseRewritesCPFuseNoRedundancy() {
-		runAutoEncoderTest(512, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
-	}
-
-	@Test
-	public void testAutoEncoder512DenseRewritesSparkFuseNoRedundancy() {
-		runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
-	}
-
-	@Test
-	public void testAutoEncoder512SparseRewritesSparkFuseNoRedundancy() {
-		runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
-	}
-
-	private void runAutoEncoderTest(int batchsize, boolean sparse, boolean rewrites, ExecType instType, TestType testType)
+	private void runPNMFTest( String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -177,38 +119,46 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 			case SPARK: rtplatform = ExecMode.SPARK; break;
 			default: rtplatform = ExecMode.HYBRID; break;
 		}
-
 		currentTestType = testType;
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try
 		{
-			String TEST_NAME = TEST_NAME1;
+			String TEST_NAME = testname;
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			fullDMLScriptName = "scripts/staging/autoencoder-2layer.dml";
-			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"),
-				"H1="+H1, "H2="+H2, "EPOCH="+epochs, "BATCH="+batchsize, 
-				"W1_out="+output("W1"), "b1_out="+output("b1"),
-				"W2_out="+output("W2"), "b2_out="+output("b2"),
-				"W3_out="+output("W3"), "b3_out="+output("b3"),
-				"W4_out="+output("W4"), "b4_out="+output("b4")};
+			fullDMLScriptName = "scripts/staging/PNMF.dml";
+			programArgs = new String[]{ "-stats", "-args", input("X"), 
+				input("W"), input("H"), String.valueOf(rank), String.valueOf(epsilon), 
+				String.valueOf(maxiter), output("W"), output("H")};
+
+			rCmd = getRCmd(inputDir(), String.valueOf(rank), String.valueOf(epsilon), 
+				String.valueOf(maxiter), expectedDir());
+
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			//generate actual datasets
-			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 714);
+			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 234);
 			writeInputMatrixWithMTD("X", X, true);
+			double[][] W = getRandomMatrix(rows, rank, 0, 0.025, 1.0, 3);
+			writeInputMatrixWithMTD("W", W, true);
+			double[][] H = getRandomMatrix(rank, cols, 0, 0.025, 1.0, 7);
+			writeInputMatrixWithMTD("H", H, true);
 			
-			//run script
 			runTest(true, false, null, -1); 
-			//TODO R script
+			runRScript(true); 
 			
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") 
-				|| heavyHittersContainsSubString("sp_spoof"));
+			//compare matrices 
+			HashMap<CellIndex, Double> dmlW = readDMLMatrixFromHDFS("W");
+			HashMap<CellIndex, Double> dmlH = readDMLMatrixFromHDFS("H");
+			HashMap<CellIndex, Double> rW = readRMatrixFromFS("W");
+			HashMap<CellIndex, Double> rH = readRMatrixFromFS("H");
+			TestUtils.compareMatrices(dmlW, rW, eps, "Stat-DML", "Stat-R");
+			TestUtils.compareMatrices(dmlH, rH, eps, "Stat-DML", "Stat-R");
+			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {
 			rtplatform = platformOld;

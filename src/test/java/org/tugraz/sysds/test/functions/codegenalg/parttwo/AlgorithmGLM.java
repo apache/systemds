@@ -19,7 +19,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.test.functions.codegenalg;
+package org.tugraz.sysds.test.functions.codegenalg.parttwo;
 
 import java.io.File;
 

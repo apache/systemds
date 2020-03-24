@@ -94,62 +94,57 @@ public abstract class AutomatedTestBase {
 
 	public static final int FED_WORKER_WAIT = 500; // in ms
 
-	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
-	// Hadoop 2.4.1 doesn't work on Windows unless winutils.exe is available
-	// under $HADOOP_HOME/bin and hadoop.dll is available in the Java library
-	// path. The following static initializer sets up JVM variables so that
-	// Hadoop can find these native binaries, assuming that any Hadoop code
-	// loads after this class and that the JVM's current working directory
-	// is the root of this project.
-	static {
+	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing to set the native library paths internally thus breaking the code. 
+	// That is why, these static assignments to java.library.path and hadoop.home.dir are commented out.
 
-		/* For testing MKL BLAS on Windows run "mklvars.bat intel64" or "compilervars.bat intel64" (this script
-		 * comes with the mkl software package and sets the env var MKLROOT). Then start SystemDS or
-		 * your IDE from that environment (e.g. from that command prompt).
-		 * Alternatively you can set MKLROOT and your PATH variables manually to make it permanent.
-		 * Same for Linux but with compilervars.sh intel64.
-		 * For OpenBLAS point your PATH to the shared library.
-		 */
-
-		// the JNI implementation will be in a SO/DLL in that directory
-		// after a successful mvn package
-		appendToJavaLibraryPath("target" + File.separator + "classes" + File.separator + "lib");
-
-		if(SystemUtils.IS_OS_WINDOWS) {
-			System.err.println("AutomatedTestBase has detected a Windows OS and is overriding\n"
-				+ "hadoop.home.dir and java.library.path.\n");
-			String cwd = System.getProperty("user.dir");
-			System.setProperty("hadoop.home.dir", cwd + File.separator + "src" + File.separator + "test" +
-					File.separator + "config" +
-					File.separator + "hadoop_bin_windows");
-
-			appendToJavaLibraryPath(cwd);
-			appendToJavaLibraryPath(cwd + File.separator + "src" + File.separator + "test" + File.separator + "config" +
-					File.separator + "hadoop_bin_windows" + File.separator + "bin");
-			appendToJavaLibraryPath("lib");
-
-			if(TEST_GPU) {
-				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin";
-				appendToJavaLibraryPath(CUDA_LIBRARY_PATH);
-			}
-
-			// Need to muck around with the classloader to get it to use the new
-			// value of java.library.path.
-			try {
-				final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
-				sysPathsField.setAccessible(true);
-
-				sysPathsField.set(null, null);
-			}
-			catch(Exception e) {
-				// IBM Java throws an exception here, so don't print the stack trace.
-				// e.printStackTrace();
-				// System.err.printf("Caught exception while attempting to override library path. Attempting to
-				// continue.");
-			}
-		}
-	}
-	// *** END HACK ***
+//	static {
+//
+//		/* For testing MKL BLAS on Windows run "mklvars.bat intel64" or "compilervars.bat intel64" (this script
+//		 * comes with the mkl software package and sets the env var MKLROOT). Then start SystemDS or
+//		 * your IDE from that environment (e.g. from that command prompt).
+//		 * Alternatively you can set MKLROOT and your PATH variables manually to make it permanent.
+//		 * Same for Linux but with compilervars.sh intel64.
+//		 * For OpenBLAS point your PATH to the shared library.
+//		 */
+//
+//		// the JNI implementation will be in a SO/DLL in that directory
+//		// after a successful mvn package
+//		appendToJavaLibraryPath("target" + File.separator + "classes" + File.separator + "lib");
+//
+//		if(SystemUtils.IS_OS_WINDOWS) {
+//			System.err.println("AutomatedTestBase has detected a Windows OS and is overriding\n"
+//				+ "hadoop.home.dir and java.library.path.\n");
+//			String cwd = System.getProperty("user.dir");
+//			System.setProperty("hadoop.home.dir", cwd + File.separator + "src" + File.separator + "test" +
+//					File.separator + "config" +
+//					File.separator + "hadoop_bin_windows");
+//
+//			appendToJavaLibraryPath(cwd);
+//			appendToJavaLibraryPath(cwd + File.separator + "src" + File.separator + "test" + File.separator + "config" +
+//					File.separator + "hadoop_bin_windows" + File.separator + "bin");
+//			appendToJavaLibraryPath("lib");
+//
+//			if(TEST_GPU) {
+//				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin";
+//				appendToJavaLibraryPath(CUDA_LIBRARY_PATH);
+//			}
+//
+//			// Need to muck around with the classloader to get it to use the new
+//			// value of java.library.path.
+//			try {
+//				final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
+//				sysPathsField.setAccessible(true);
+//
+//				sysPathsField.set(null, null);
+//			}
+//			catch(Exception e) {
+//				// IBM Java throws an exception here, so don't print the stack trace.
+//				// e.printStackTrace();
+//				// System.err.printf("Caught exception while attempting to override library path. Attempting to
+//				// continue.");
+//			}
+//		}
+//	}
 
 	/**
 	 * Script source directory for .dml and .r files only (TEST_DATA_DIR for generated test data artifacts).

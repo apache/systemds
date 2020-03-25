@@ -1546,15 +1546,28 @@ public class DMLTranslator
 			} else if ((predicate instanceof IntIdentifier && ((IntIdentifier) predicate).getValue() == 1)
 					|| (predicate instanceof DoubleIdentifier && ((DoubleIdentifier) predicate).getValue() == 1.0)) {
 				cp.setPredicate(new BooleanIdentifier(true, predicate));
-			} else if (predicate instanceof IntIdentifier || predicate instanceof DoubleIdentifier) {
-				cp.setPredicate(new BooleanIdentifier(true, predicate));
-				LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString()
-						+ "' (!= 0/1) is converted to boolean TRUE by DML");
-			} else if (predicate instanceof StringIdentifier) {
-				throw new ParseException(predicate.printErrorLocation() + "String value '" + predicate.toString()
-						+ "' is not allowed for iterable predicate");
-			}
-			predicateHops = processExpression(cp.getPredicate(), null, _ids);
+                        } else if (predicate instanceof IntIdentifier) {
+                          if (((IntIdentifier) predicate).getValue() < 0) {
+                            cp.setPredicate(new BooleanIdentifier(false, predicate));
+                            LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' (!= 0/1) is converted to boolean FALSE by DML");
+                          }
+                          else {
+                            cp.setPredicate(new BooleanIdentifier(true, predicate));
+                            LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' (!= 0/1) is converted to boolean TRUE by DML");
+                          }
+                        } else if (predicate instanceof DoubleIdentifier) {
+                          if (((DoubleIdentifier) predicate).getValue() < 0) {
+                            cp.setPredicate(new BooleanIdentifier(false, predicate));
+                            LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' (!= 0/1) is converted to boolean FALSE by DML");
+                          } else {
+                            cp.setPredicate(new BooleanIdentifier(true, predicate));
+                            LOG.warn(predicate.printWarningLocation() + "Numerical value '" + predicate.toString() + "' (!= 0/1) is converted to boolean TRUE by DML");
+                          }
+                        } else if (predicate instanceof StringIdentifier) {
+                                throw new ParseException(predicate.printErrorLocation() + "String value '" + predicate.toString()
+                                                + "' is not allowed for iterable predicate");
+                        }
+                        predicateHops = processExpression(cp.getPredicate(), null, _ids);
 		}
 		
 		//create transient write to internal variable name on top of expression

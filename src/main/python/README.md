@@ -1,4 +1,7 @@
-# Python Readme
+# SystemDS
+
+[![Build Status](https://travis-ci.com/tugraz-isds/systemds.svg?branch=master)](https://travis-ci.com/tugraz-isds/systemds)
+[![License](https://img.shields.io/badge/License-Apache%202.0-gre.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This package provides a Pythonic interface for working with SystemDS.
 

@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.functionobjects;
+package org.apache.sysds.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class BitwXor extends ValueFunction implements Serializable
 {

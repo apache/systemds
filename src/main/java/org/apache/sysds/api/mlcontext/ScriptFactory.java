@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.mlcontext;
+package org.apache.sysds.api.mlcontext;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +30,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 
 /**
  * Factory for creating DML and PYDML Script objects from strings, files, URLs,

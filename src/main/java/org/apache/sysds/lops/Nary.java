@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.lops;
+package org.apache.sysds.lops;
 
  
-import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.LopProperties.ExecType;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.OpOpN;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ValueType;
 
 /**
  * Lop to perform an operation on a variable number of operands.

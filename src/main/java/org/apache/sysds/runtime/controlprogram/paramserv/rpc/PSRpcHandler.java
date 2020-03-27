@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv.rpc;
+package org.apache.sysds.runtime.controlprogram.paramserv.rpc;
 
-import static org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall.PULL;
-import static org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall.PUSH;
+import static org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall.PULL;
+import static org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall.PUSH;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -31,10 +31,10 @@ import org.apache.spark.network.client.TransportClient;
 import org.apache.spark.network.server.OneForOneStreamManager;
 import org.apache.spark.network.server.RpcHandler;
 import org.apache.spark.network.server.StreamManager;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.LocalParamServer;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse.Type;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse.Type;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 
 public final class PSRpcHandler extends RpcHandler {
 

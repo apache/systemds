@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
 
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Types.ValueType;
 
 public class IntObject extends ScalarObject
 {

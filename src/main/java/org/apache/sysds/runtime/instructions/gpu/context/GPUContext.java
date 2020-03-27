@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- package org.tugraz.sysds.runtime.instructions.gpu.context;
+
+ package org.apache.sysds.runtime.instructions.gpu.context;
 
 import static jcuda.jcublas.JCublas2.cublasCreate;
 import static jcuda.jcublas.JCublas2.cublasDestroy;
@@ -35,10 +34,10 @@ import static jcuda.runtime.JCuda.cudaSetDeviceFlags;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.utils.GPUStatistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.utils.GPUStatistics;
 
 import jcuda.Pointer;
 import jcuda.jcublas.cublasHandle;
@@ -174,7 +173,7 @@ public class GPUContext {
 	/**
 	 * Sets the device for the calling thread.
 	 * This method must be called after
-	 * {@link org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext#getGPUContext(int)}
+	 * {@link org.apache.sysds.runtime.controlprogram.context.ExecutionContext#getGPUContext(int)}
 	 * If in a multi-threaded environment like parfor, this method must be called when in the
 	 * appropriate thread.
 	 *
@@ -244,9 +243,9 @@ public class GPUContext {
 	}
 
 	/**
-	 * Instantiates a new {@link GPUObject} initialized with the given {@link org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject MatrixObject}.
+	 * Instantiates a new {@link GPUObject} initialized with the given {@link org.apache.sysds.runtime.controlprogram.caching.MatrixObject MatrixObject}.
 	 *
-	 * @param mo a {@link org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject MatrixObject} that represents a matrix
+	 * @param mo a {@link org.apache.sysds.runtime.controlprogram.caching.MatrixObject MatrixObject} that represents a matrix
 	 * @return a new {@link GPUObject} instance
 	 */
 	public GPUObject createGPUObject(MatrixObject mo) {

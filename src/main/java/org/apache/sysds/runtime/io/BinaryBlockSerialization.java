@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,13 +26,13 @@ import java.io.OutputStream;
 import org.apache.hadoop.io.serializer.Deserializer;
 import org.apache.hadoop.io.serializer.Serialization;
 import org.apache.hadoop.io.serializer.Serializer;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.FastBufferedDataInputStream;
-import org.tugraz.sysds.runtime.util.FastBufferedDataOutputStream;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
+import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 
 /**
  * This custom serialization class can be used via 
- * job.set(MRConfigurationNames.IO_SERIALIZATIONS, "org.tugraz.sysds.runtime.io.BinaryBlockSerialization");
+ * job.set(MRConfigurationNames.IO_SERIALIZATIONS, "org.apache.sysds.runtime.io.BinaryBlockSerialization");
  * 
  * 
  */

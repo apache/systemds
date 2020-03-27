@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
  * Base class for all hop rewrites in order to enable generic

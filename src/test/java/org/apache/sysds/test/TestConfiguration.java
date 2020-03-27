@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test;
+package org.apache.sysds.test;
 
 import java.util.HashMap;
 

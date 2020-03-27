@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.compress;
+package org.apache.sysds.test.component.compress;
 
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
-import org.tugraz.sysds.runtime.functionobjects.CM;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.functionobjects.CM;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.test.TestUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,11 +34,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.tugraz.sysds.test.TestConstants.CompressionType;
-import org.tugraz.sysds.test.TestConstants.MatrixType;
-import org.tugraz.sysds.test.TestConstants.SparsityType;
-import org.tugraz.sysds.test.TestConstants.ValueType;
-import org.tugraz.sysds.test.TestConstants.ValueRange;
+import org.apache.sysds.test.TestConstants.CompressionType;
+import org.apache.sysds.test.TestConstants.MatrixType;
+import org.apache.sysds.test.TestConstants.SparsityType;
+import org.apache.sysds.test.TestConstants.ValueType;
+import org.apache.sysds.test.TestConstants.ValueRange;
 
 @RunWith(value = Parameterized.class)
 public class CompressedVectorTest extends CompressedTestBase {

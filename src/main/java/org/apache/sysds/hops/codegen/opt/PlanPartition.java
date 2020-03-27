@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.opt;
+package org.apache.sysds.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.HashSet;

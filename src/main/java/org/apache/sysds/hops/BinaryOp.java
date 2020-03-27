@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,37 +17,37 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.common.Types.OpOpDnn;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Append;
-import org.tugraz.sysds.lops.AppendG;
-import org.tugraz.sysds.lops.AppendGAlignedSP;
-import org.tugraz.sysds.lops.AppendM;
-import org.tugraz.sysds.lops.AppendR;
-import org.tugraz.sysds.lops.Binary;
-import org.tugraz.sysds.lops.BinaryM;
-import org.tugraz.sysds.lops.BinaryScalar;
-import org.tugraz.sysds.lops.BinaryUAggChain;
-import org.tugraz.sysds.lops.CentralMoment;
-import org.tugraz.sysds.lops.CoVariance;
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.DnnTransform;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.PickByCount;
-import org.tugraz.sysds.lops.SortKeys;
-import org.tugraz.sysds.lops.Unary;
-import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOpDnn;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.lops.Append;
+import org.apache.sysds.lops.AppendG;
+import org.apache.sysds.lops.AppendGAlignedSP;
+import org.apache.sysds.lops.AppendM;
+import org.apache.sysds.lops.AppendR;
+import org.apache.sysds.lops.Binary;
+import org.apache.sysds.lops.BinaryM;
+import org.apache.sysds.lops.BinaryScalar;
+import org.apache.sysds.lops.BinaryUAggChain;
+import org.apache.sysds.lops.CentralMoment;
+import org.apache.sysds.lops.CoVariance;
+import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.DnnTransform;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.PickByCount;
+import org.apache.sysds.lops.SortKeys;
+import org.apache.sysds.lops.Unary;
+import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 
 /* Binary (cell operations): aij + bij

@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.gpu;
+package org.apache.sysds.runtime.instructions.gpu;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixCUDA;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.utils.GPUStatistics;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.utils.GPUStatistics;
 
 public class MatrixMatrixBuiltinGPUInstruction extends BuiltinBinaryGPUInstruction {
 

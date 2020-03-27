@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.jmlc;
+package org.apache.sysds.test.functions.jmlc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,13 +28,13 @@ import java.util.concurrent.Future;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.jmlc.Connection;
-import org.tugraz.sysds.api.jmlc.PreparedScript;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.jmlc.Connection;
+import org.apache.sysds.api.jmlc.PreparedScript;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.utils.Statistics;
 
 public class JMLCClonedPreparedScriptTest extends AutomatedTestBase 
 {

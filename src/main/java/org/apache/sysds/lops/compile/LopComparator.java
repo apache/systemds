@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.lops.compile;
+package org.apache.sysds.lops.compile;
 
 import java.util.Comparator;
 
-import org.tugraz.sysds.lops.Lop;
+import org.apache.sysds.lops.Lop;
 
 
 /**

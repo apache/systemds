@@ -17,25 +17,25 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram;
+package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.DMLScriptException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.lineage.Lineage;
-import org.tugraz.sysds.runtime.lineage.LineagePath;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineagePath;
 
 public class ForProgramBlock extends ProgramBlock
 {

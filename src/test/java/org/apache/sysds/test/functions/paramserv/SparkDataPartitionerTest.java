@@ -17,21 +17,21 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.paramserv;
+package org.apache.sysds.test.functions.paramserv;
 
 import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 

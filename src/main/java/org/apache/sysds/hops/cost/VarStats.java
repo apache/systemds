@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.cost;
+package org.apache.sysds.hops.cost;
 
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class VarStats 
 {

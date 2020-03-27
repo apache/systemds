@@ -17,22 +17,22 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram;
+package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.hops.recompile.Recompiler.ResetType;
-import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.DMLScriptException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.recompile.Recompiler.ResetType;
+import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.utils.Statistics;
 
 
 public class FunctionProgramBlock extends ProgramBlock 

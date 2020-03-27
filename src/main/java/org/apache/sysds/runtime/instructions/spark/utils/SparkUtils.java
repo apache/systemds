@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,8 +17,7 @@
  * under the License.
  */
 
-
-package org.tugraz.sysds.runtime.instructions.spark.utils;
+package org.apache.sysds.runtime.instructions.spark.utils;
 
 import org.apache.spark.HashPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -29,30 +26,30 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.storage.StorageLevel;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.Checkpoint;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.data.IndexedTensorBlock;
-import org.tugraz.sysds.runtime.data.BasicTensorBlock;
-import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.data.TensorIndexes;
-import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyMatrixBlockFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyMatrixBlockPairFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyTensorBlockFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyTensorBlockPairFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.RecomputeNnzFunction;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.IndexedTensorBlock;
+import org.apache.sysds.runtime.data.BasicTensorBlock;
+import org.apache.sysds.runtime.data.TensorBlock;
+import org.apache.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyMatrixBlockFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyMatrixBlockPairFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyTensorBlockFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyTensorBlockPairFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.RecomputeNnzFunction;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
 
 import java.util.Iterator;

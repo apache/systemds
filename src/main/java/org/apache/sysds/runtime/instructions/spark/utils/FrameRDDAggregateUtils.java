@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.utils;
+package org.apache.sysds.runtime.instructions.spark.utils;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 
 public class FrameRDDAggregateUtils 

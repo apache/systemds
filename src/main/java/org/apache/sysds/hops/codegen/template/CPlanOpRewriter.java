@@ -17,19 +17,19 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.template;
+package org.apache.sysds.hops.codegen.template;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.codegen.cplan.CNode;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeMultiAgg;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeOuterProduct;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary.BinType;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeData;
+import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
+import org.apache.sysds.hops.codegen.cplan.CNodeOuterProduct;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
 
 /**
  * This cplan rewriter is meant to be the central place for any cplan 

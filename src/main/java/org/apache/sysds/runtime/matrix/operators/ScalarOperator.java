@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,21 +17,21 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
-import org.tugraz.sysds.runtime.functionobjects.And;
-import org.tugraz.sysds.runtime.functionobjects.BitwShiftL;
-import org.tugraz.sysds.runtime.functionobjects.BitwShiftR;
-import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.functionobjects.Equals;
-import org.tugraz.sysds.runtime.functionobjects.Minus;
-import org.tugraz.sysds.runtime.functionobjects.MinusNz;
-import org.tugraz.sysds.runtime.functionobjects.Multiply;
-import org.tugraz.sysds.runtime.functionobjects.Multiply2;
-import org.tugraz.sysds.runtime.functionobjects.NotEquals;
-import org.tugraz.sysds.runtime.functionobjects.Power2;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
-import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.And;
+import org.apache.sysds.runtime.functionobjects.BitwShiftL;
+import org.apache.sysds.runtime.functionobjects.BitwShiftR;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Equals;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.MinusNz;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Multiply2;
+import org.apache.sysds.runtime.functionobjects.NotEquals;
+import org.apache.sysds.runtime.functionobjects.Power2;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
 
 /**

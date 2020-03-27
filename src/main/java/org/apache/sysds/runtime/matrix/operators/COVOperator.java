@@ -18,9 +18,9 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
-import org.tugraz.sysds.runtime.functionobjects.COV;
+import org.apache.sysds.runtime.functionobjects.COV;
 
 public class COVOperator extends Operator 
 {

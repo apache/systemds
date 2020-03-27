@@ -17,22 +17,22 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.estim.MMNode;
-import org.tugraz.sysds.hops.estim.EstimatorMatrixHistogram;
-import org.tugraz.sysds.hops.estim.EstimatorMatrixHistogram.MatrixHistogram;
-import org.tugraz.sysds.hops.estim.SparsityEstimator.OpCode;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.estim.MMNode;
+import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorMatrixHistogram.MatrixHistogram;
+import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * Rule: Determine the optimal order of execution for a chain of

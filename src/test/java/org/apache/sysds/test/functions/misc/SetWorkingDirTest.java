@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.misc;
+package org.apache.sysds.test.functions.misc;
 
 import static org.junit.Assert.fail;
 
@@ -28,9 +28,9 @@ import java.io.PrintStream;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 /**
  *   

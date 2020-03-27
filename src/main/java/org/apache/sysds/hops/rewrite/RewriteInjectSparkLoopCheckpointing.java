@@ -17,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.IndexedIdentifier;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.VariableSet;
-import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.IndexedIdentifier;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.VariableSet;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ValueType;
 
 /**
  * Rule: Insert checkpointing operations for caching purposes. Currently, we

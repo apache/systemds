@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.cplan;
+package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.hops.codegen.template.TemplateUtils;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class CNode
 {

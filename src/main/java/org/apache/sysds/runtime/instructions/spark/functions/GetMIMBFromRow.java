@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.functions;
+package org.apache.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.sql.Row;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 
 import scala.Tuple2;
 

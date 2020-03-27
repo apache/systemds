@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,10 +26,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import org.tugraz.sysds.hops.AggBinaryOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.utils.Explain;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.utils.Explain;
 
 /**
  * Rule: Determine the optimal order of execution for a chain of
@@ -49,7 +47,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.tugraz.sysds.hops.rewrite.RewriteMatrixMultChainOptimization")
+			Logger.getLogger("org.apache.sysds.hops.rewrite.RewriteMatrixMultChainOptimization")
 				.setLevel(Level.TRACE);
 		}
 	}

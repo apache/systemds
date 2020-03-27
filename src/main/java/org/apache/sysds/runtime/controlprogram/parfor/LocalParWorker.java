@@ -17,19 +17,19 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.util.Collection;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Stat;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
 /**
  * Instances of this class can be used to execute tasks in parallel. Within each ParWorker 

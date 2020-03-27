@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv.dp;
+package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
-import static org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils.SEED;
+import static org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils.SEED;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -27,12 +27,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.DataConverter;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 
 public class SparkDataPartitioner implements Serializable {
 

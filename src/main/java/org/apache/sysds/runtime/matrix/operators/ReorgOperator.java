@@ -18,11 +18,11 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.runtime.functionobjects.IndexFunction;
+import org.apache.sysds.runtime.functionobjects.IndexFunction;
 
 public class ReorgOperator  extends Operator implements Serializable
 {

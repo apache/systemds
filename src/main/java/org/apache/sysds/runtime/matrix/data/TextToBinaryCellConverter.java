@@ -18,11 +18,11 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.tugraz.sysds.runtime.util.FastStringTokenizer;
+import org.apache.sysds.runtime.util.FastStringTokenizer;
 
 
 public class TextToBinaryCellConverter 

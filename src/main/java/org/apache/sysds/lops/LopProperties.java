@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.lops;
+package org.apache.sysds.lops;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 
 public class LopProperties 
 {

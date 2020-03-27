@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- package org.tugraz.sysds.runtime.matrix.data;
+
+package org.apache.sysds.runtime.matrix.data;
 
 import static jcuda.jcudnn.JCudnn.cudnnActivationForward;
 import static jcuda.jcudnn.JCudnn.cudnnConvolutionBackwardData;
@@ -51,16 +50,16 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.gpu.context.CSRPointer;
-import org.tugraz.sysds.runtime.instructions.gpu.context.ExecutionConfig;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
+import org.apache.sysds.runtime.instructions.gpu.context.ExecutionConfig;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
+import org.apache.sysds.utils.Statistics;
 
 import static jcuda.jcudnn.cudnnSoftmaxAlgorithm.CUDNN_SOFTMAX_ACCURATE;
 import static jcuda.jcudnn.cudnnSoftmaxMode.CUDNN_SOFTMAX_MODE_CHANNEL;

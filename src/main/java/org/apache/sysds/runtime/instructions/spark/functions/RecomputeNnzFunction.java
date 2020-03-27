@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.functions;
+package org.apache.sysds.runtime.instructions.spark.functions;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class RecomputeNnzFunction implements FlatMapFunction<Iterator<MatrixBlock>, Long>
 {

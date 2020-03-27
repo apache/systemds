@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
-import org.tugraz.sysds.api.DMLException;
+import org.apache.sysds.api.DMLException;
 
 /**
  * <p>Exception occurring at the Language level.</p>

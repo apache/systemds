@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.lops;
+package org.apache.sysds.lops;
 
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.common.Builtins;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 
 public class FunctionCallCP extends Lop
 {	

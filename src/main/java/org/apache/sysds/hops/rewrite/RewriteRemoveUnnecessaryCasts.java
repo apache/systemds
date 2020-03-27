@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.common.Types.ValueType;
 
 /**
  * Rule: RemoveUnnecessaryCasts. For all value type casts check

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.HashMap;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.tugraz.sysds.parser.Expression.DataOp;
+import org.apache.sysds.parser.Expression.DataOp;
 
 public class OutputStatement extends Statement
 {

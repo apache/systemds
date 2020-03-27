@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data.rand;
+package org.apache.sysds.test.functions.data.rand;
 
 import org.junit.Test;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 
 /**

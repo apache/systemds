@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.unary.scalar;
+package org.apache.sysds.test.functions.unary.scalar;
 
 import org.junit.Test;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 
 /**

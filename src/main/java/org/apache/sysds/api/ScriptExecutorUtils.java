@@ -17,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api;
+package org.apache.sysds.api;
 
 import java.util.List;
 import java.util.Set;
 
-import org.tugraz.sysds.api.mlcontext.ScriptExecutor;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUObject;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.mlcontext.ScriptExecutor;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysds.utils.Statistics;
 
 public class ScriptExecutorUtils {
 

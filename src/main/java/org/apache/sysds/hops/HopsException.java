@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
-import org.tugraz.sysds.api.DMLException;
+import org.apache.sysds.api.DMLException;
 
 /**
  * <p>Exception occurring in the HOP level.</p>

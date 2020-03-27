@@ -18,17 +18,17 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
-import org.tugraz.sysds.lops.WeightedCrossEntropy.WCeMMType;
-import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
-import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
-import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
-import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
-import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.functionobjects.Multiply2;
-import org.tugraz.sysds.runtime.functionobjects.Power2;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
+import org.apache.sysds.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysds.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Multiply2;
+import org.apache.sysds.runtime.functionobjects.Power2;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
 public class QuaternaryOperator extends Operator 
 {

@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 
 public class ProgramRewriteStatus 
 {

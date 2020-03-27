@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.data;
+package org.apache.sysds.runtime.instructions.spark.data;
 
 import java.lang.ref.SoftReference;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 
 public class BroadcastObject<T extends CacheBlock> extends LineageObject {
 	//soft reference storage for graceful cleanup in case of memory pressure

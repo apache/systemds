@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.ipa;
+package org.apache.sysds.hops.ipa;
 
 
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
-import org.tugraz.sysds.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.LanguageException;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.LanguageException;
 
 /**
  * This rewrite applies static hop dag and statement block

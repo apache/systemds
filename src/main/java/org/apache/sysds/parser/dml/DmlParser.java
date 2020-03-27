@@ -1,9 +1,7 @@
-// Generated from org\tugraz\sysds\parser\dml\Dml.g4 by ANTLR 4.5.3
-package org.tugraz.sysds.parser.dml;
+// Generated from org\apache\sysds\parser\dml\Dml.g4 by ANTLR 4.5.3
+package org.apache.sysds.parser.dml;
 
 /*
- * Modifications Copyright 2018 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -214,7 +212,7 @@ public class DmlParser extends Parser {
 	}
 
 	public static class StatementContext extends ParserRuleContext {
-		public org.tugraz.sysds.parser.dml.StatementInfo info;
+		public org.apache.sysds.parser.dml.StatementInfo info;
 		public StatementContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -491,7 +489,7 @@ public class DmlParser extends Parser {
 		enterRule(_localctx, 2, RULE_statement);
 
 		       // This actions occurs regardless of how many alternatives in this rule
-		       ((StatementContext)_localctx).info =  new org.tugraz.sysds.parser.dml.StatementInfo();
+		       ((StatementContext)_localctx).info =  new org.apache.sysds.parser.dml.StatementInfo();
 
 		int _la;
 		try {
@@ -1319,7 +1317,7 @@ public class DmlParser extends Parser {
 	}
 
 	public static class IterablePredicateContext extends ParserRuleContext {
-		public org.tugraz.sysds.parser.dml.ExpressionInfo info;
+		public org.apache.sysds.parser.dml.ExpressionInfo info;
 		public IterablePredicateContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -1377,7 +1375,7 @@ public class DmlParser extends Parser {
 		enterRule(_localctx, 4, RULE_iterablePredicate);
 
 		         // This actions occurs regardless of how many alternatives in this rule
-		         ((IterablePredicateContext)_localctx).info =  new org.tugraz.sysds.parser.dml.ExpressionInfo();
+		         ((IterablePredicateContext)_localctx).info =  new org.apache.sysds.parser.dml.ExpressionInfo();
 		  
 		int _la;
 		try {
@@ -1439,7 +1437,7 @@ public class DmlParser extends Parser {
 	}
 
 	public static class FunctionStatementContext extends ParserRuleContext {
-		public org.tugraz.sysds.parser.dml.StatementInfo info;
+		public org.apache.sysds.parser.dml.StatementInfo info;
 		public FunctionStatementContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -1524,7 +1522,7 @@ public class DmlParser extends Parser {
 		enterRule(_localctx, 6, RULE_functionStatement);
 
 		       // This actions occurs regardless of how many alternatives in this rule
-		       ((FunctionStatementContext)_localctx).info =  new org.tugraz.sysds.parser.dml.StatementInfo();
+		       ((FunctionStatementContext)_localctx).info =  new org.apache.sysds.parser.dml.StatementInfo();
 
 		int _la;
 		try {
@@ -1817,7 +1815,7 @@ public class DmlParser extends Parser {
 	}
 
 	public static class DataIdentifierContext extends ParserRuleContext {
-		public org.tugraz.sysds.parser.dml.ExpressionInfo dataInfo;
+		public org.apache.sysds.parser.dml.ExpressionInfo dataInfo;
 		public DataIdentifierContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -1894,8 +1892,8 @@ public class DmlParser extends Parser {
 		enterRule(_localctx, 8, RULE_dataIdentifier);
 
 		       // This actions occurs regardless of how many alternatives in this rule
-		       ((DataIdentifierContext)_localctx).dataInfo =  new org.tugraz.sysds.parser.dml.ExpressionInfo();
-		       // _localctx.dataInfo.expr = new org.tugraz.sysds.parser.DataIdentifier();
+		       ((DataIdentifierContext)_localctx).dataInfo =  new org.apache.sysds.parser.dml.ExpressionInfo();
+		       // _localctx.dataInfo.expr = new org.apache.sysds.parser.DataIdentifier();
 
 		int _la;
 		try {
@@ -2001,7 +1999,7 @@ public class DmlParser extends Parser {
 	}
 
 	public static class ExpressionContext extends ParserRuleContext {
-		public org.tugraz.sysds.parser.dml.ExpressionInfo info;
+		public org.apache.sysds.parser.dml.ExpressionInfo info;
 		public ExpressionContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -2346,8 +2344,8 @@ public class DmlParser extends Parser {
 		enterRecursionRule(_localctx, 10, RULE_expression, _p);
 
 		       // This actions occurs regardless of how many alternatives in this rule
-		       ((ExpressionContext)_localctx).info =  new org.tugraz.sysds.parser.dml.ExpressionInfo();
-		       // _localctx.info.expr = new org.tugraz.sysds.parser.BinaryExpression(org.tugraz.sysds.parser.Expression.BinaryOp.INVALID);
+		       ((ExpressionContext)_localctx).info =  new org.apache.sysds.parser.dml.ExpressionInfo();
+		       // _localctx.info.expr = new org.apache.sysds.parser.BinaryExpression(org.apache.sysds.parser.Expression.BinaryOp.INVALID);
 
 		int _la;
 		try {

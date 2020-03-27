@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv;
+package org.apache.sysds.runtime.controlprogram.paramserv;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,13 +26,13 @@ import java.util.Map;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.util.LongAccumulator;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.codegen.CodegenUtils;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
-import org.tugraz.sysds.runtime.controlprogram.parfor.RemoteParForUtils;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
+import org.apache.sysds.runtime.controlprogram.parfor.RemoteParForUtils;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.ProgramConverter;
 
 import scala.Tuple2;
 

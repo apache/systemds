@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.io.IOException;
 
-import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 
 /**
  * Any data input that is intended to support fast deserialization / read

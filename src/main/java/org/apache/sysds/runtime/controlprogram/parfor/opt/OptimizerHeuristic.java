@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
 
 
 /**

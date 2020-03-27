@@ -17,34 +17,34 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.hops.AggUnaryOp;
-import org.tugraz.sysds.hops.BinaryOp;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.DnnOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.ReorgOp;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.FunctionOp.FunctionType;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.OpOpDnn;
-import org.tugraz.sysds.common.Types.ReOrgOp;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.DnnOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.ReorgOp;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.FunctionOp.FunctionType;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.OpOpDnn;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 
 /*
  * This class contains GPU-specific rewrites for following patterns:

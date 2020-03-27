@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,34 +27,34 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.ipa.InterProceduralAnalysis;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.hops.recompile.Recompiler.ResetType;
-import org.tugraz.sysds.hops.rewrite.HopRewriteRule;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriteStatus;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
-import org.tugraz.sysds.hops.rewrite.RewriteConstantFolding;
-import org.tugraz.sysds.hops.rewrite.RewriteRemoveUnnecessaryBranches;
-import org.tugraz.sysds.hops.rewrite.StatementBlockRewriteRule;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ForStatement;
-import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Stat;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.ipa.InterProceduralAnalysis;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.recompile.Recompiler.ResetType;
+import org.apache.sysds.hops.rewrite.HopRewriteRule;
+import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.hops.rewrite.RewriteConstantFolding;
+import org.apache.sysds.hops.rewrite.RewriteRemoveUnnecessaryBranches;
+import org.apache.sysds.hops.rewrite.StatementBlockRewriteRule;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ParForStatementBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Statistics;
 
 
 /**
@@ -83,7 +83,7 @@ public class OptimizationWrapper
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.parfor.opt")
+			Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
 				.setLevel(Level.DEBUG);
 		}
 	}
@@ -125,7 +125,7 @@ public class OptimizationWrapper
 	public static void setLogLevel( Level optLogLevel )
 	{
 		if( !LDEBUG ){ //set log level if not overwritten by internal flag
-			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.parfor.opt")
+			Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
 				.setLevel( optLogLevel );
 		}
 	}

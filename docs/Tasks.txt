@@ -232,10 +232,10 @@ SYSTEMDS-310 Python Bindings
  * 312 Python 3.6 compatibility                                       OK
  * 313 Python Documentation upload via Github Actions                 OK
 
-SYSTEMDS-320 Merge SystemDS into Apache SystemML
- * 321 Merge histories of SystemDS and SystemML
- * 322 Change global package names
- * 323 Fix licenses and notice file 
+SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
+ * 321 Merge histories of SystemDS and SystemML                       OK
+ * 322 Change global package names                                    OK
+ * 323 Fix licenses and notice file                                   OK 
 
 Others:
  * Break append instruction to cbind and rbind 

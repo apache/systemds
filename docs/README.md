@@ -1,7 +1,5 @@
 <!--
 {% comment %}
-Modifications Copyright 2020 Graz University of Technology
-
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
 this work for additional information regarding copyright ownership.
@@ -9,7 +7,7 @@ The ASF licenses this file to you under the Apache License, Version 2.0
 (the "License"); you may not use this file except in compliance with
 the License.  You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,10 +27,10 @@ In this directory you'll find
 * an enumerated list of open and completed tasks
 
 ### Pointers to more documentation
-* A [hello world example](https://github.com/tugraz-isds/systemds/blob/master/src/assembly/bin/README.md) (shipped with the binary distribution) to get you started on how to run SystemDS
-* An extended introductory [example](https://github.com/tugraz-isds/systemds/blob/master/bin/README.md)
-* Instructions on how to build the [python bindings documentation](https://github.com/tugraz-isds/systemds/blob/master/src/main/python/docs/README.md)
-* [Packaging](https://github.com/tugraz-isds/systemds/blob/master/src/main/python/BUILD_INSTRUCTIONS.md)
+* A [hello world example](https://github.com/apache/systemml/blob/master/src/assembly/bin/README.md) (shipped with the binary distribution) to get you started on how to run SystemDS
+* An extended introductory [example](https://github.com/apache/systemml/blob/master/bin/README.md)
+* Instructions on how to build the [python bindings documentation](https://github.com/apache/systemml/blob/master/src/main/python/docs/README.md)
+* [Packaging](https://github.com/apache/systemml/blob/master/src/main/python/BUILD_INSTRUCTIONS.md)
  the python bindings yourself 
-* The generated javadoc output will be available from the [releases page](https://github.com/tugraz-isds/systemds/releases)
+* The generated javadoc output will be available from the [releases page](https://github.com/apache/systemml/releases)
   

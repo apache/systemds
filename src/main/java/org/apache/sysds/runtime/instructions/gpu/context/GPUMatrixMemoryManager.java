@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.instructions.gpu.context;
+package org.apache.sysds.runtime.instructions.gpu.context;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,7 +26,7 @@ import jcuda.Pointer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class GPUMatrixMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMatrixMemoryManager.class.getName());

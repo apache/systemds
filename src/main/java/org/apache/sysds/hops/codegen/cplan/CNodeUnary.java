@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.cplan;
+package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.Arrays;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 public class CNodeUnary extends CNode

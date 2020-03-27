@@ -17,30 +17,30 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
 import java.util.HashSet;
 
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.LopProperties;
-import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PResultMerge;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.ExecType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.parser.ParForStatementBlock;
+import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PResultMerge;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ExecType;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):

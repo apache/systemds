@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.mlcontext;
+package org.apache.sysds.api.mlcontext;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Types.ValueType;
 
 /**
  * The frame schema, stored as a list of {@code ValueType} values.

@@ -16,17 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
 /**
  * This class contains the set of operators used for performing pooling

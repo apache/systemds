@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions;
+package org.apache.sysds.runtime.instructions;
 
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
-import org.tugraz.sysds.runtime.instructions.fed.FEDInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
-import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
+import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 
 
 public class InstructionParser 

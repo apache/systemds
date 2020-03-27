@@ -1,7 +1,5 @@
 <!--
 {% comment %}
-Modifications Copyright 2020 Graz University of Technology
-
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
 this work for additional information regarding copyright ownership.
@@ -85,5 +83,5 @@ Test your testing image locally by running the following command:
 docker run \
   -v $(pwd):/github/workspace \
   sebaba/testingsysds:0.2 \
-  org.tugraz.sysds.test.component.*.**
+  org.apache.sysds.test.component.*.**
 ```

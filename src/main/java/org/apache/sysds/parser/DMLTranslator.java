@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,65 +29,65 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.AggBinaryOp;
-import org.tugraz.sysds.hops.AggUnaryOp;
-import org.tugraz.sysds.hops.BinaryOp;
-import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.DnnOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.FunctionOp.FunctionType;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.LeftIndexingOp;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.MemoTable;
-import org.tugraz.sysds.hops.NaryOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
-import org.tugraz.sysds.hops.ReorgOp;
-import org.tugraz.sysds.hops.TernaryOp;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler.IntegrationType;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler.PlanCachePolicy;
-import org.tugraz.sysds.hops.ipa.InterProceduralAnalysis;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.compile.Dag;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Builtins;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.common.Types.OpOp3;
-import org.tugraz.sysds.common.Types.OpOpDG;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.OpOpDnn;
-import org.tugraz.sysds.common.Types.OpOpN;
-import org.tugraz.sysds.common.Types.ParamBuiltinOp;
-import org.tugraz.sysds.common.Types.ReOrgOp;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.Expression.FormatType;
-import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.DnnOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.FunctionOp.FunctionType;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LeftIndexingOp;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.MemoTable;
+import org.apache.sysds.hops.NaryOp;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
+import org.apache.sysds.hops.ReorgOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.SpoofCompiler.IntegrationType;
+import org.apache.sysds.hops.codegen.SpoofCompiler.PlanCachePolicy;
+import org.apache.sysds.hops.ipa.InterProceduralAnalysis;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp3;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.OpOpDnn;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.Expression.FormatType;
+import org.apache.sysds.parser.PrintStatement.PRINTTYPE;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.instructions.Instruction;
 
 
 public class DMLTranslator 
@@ -1724,7 +1722,7 @@ public class DMLTranslator
 		} else if (source.getOpCode() == Expression.BinaryOp.INTDIV) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.INTDIV, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.MATMULT) {
-			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, org.tugraz.sysds.common.Types.AggOp.SUM, left, right);
+			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, org.apache.sysds.common.Types.AggOp.SUM, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.POW) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.POW, left, right);
 		}
@@ -2714,7 +2712,7 @@ public class DMLTranslator
 			if (i == numImgIndex) { // skip=1 ==> i==5 and skip=2 => i==6
 				Expression numImg = allExpr[numImgIndex];
 				Expression numChannels = allExpr[numImgIndex + 1];
-				BinaryExpression tmp = new BinaryExpression(org.tugraz.sysds.parser.Expression.BinaryOp.MULT, numImg);
+				BinaryExpression tmp = new BinaryExpression(org.apache.sysds.parser.Expression.BinaryOp.MULT, numImg);
 				tmp.setLeft(numImg);
 				tmp.setRight(numChannels);
 				ret.add(processTempIntExpression(tmp, hops));

@@ -17,22 +17,22 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.lops.FunctionCallCP;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.CostEstimatorHops;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.lops.FunctionCallCP;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimatorHops;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * This FunctionOp represents the call to a DML-bodied or external function.

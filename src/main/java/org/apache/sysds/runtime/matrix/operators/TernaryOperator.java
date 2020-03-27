@@ -18,14 +18,14 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.runtime.functionobjects.IfElse;
-import org.tugraz.sysds.runtime.functionobjects.MinusMultiply;
-import org.tugraz.sysds.runtime.functionobjects.PlusMultiply;
-import org.tugraz.sysds.runtime.functionobjects.TernaryValueFunction;
+import org.apache.sysds.runtime.functionobjects.IfElse;
+import org.apache.sysds.runtime.functionobjects.MinusMultiply;
+import org.apache.sysds.runtime.functionobjects.PlusMultiply;
+import org.apache.sysds.runtime.functionobjects.TernaryValueFunction;
 
 public class TernaryOperator  extends Operator implements Serializable
 {

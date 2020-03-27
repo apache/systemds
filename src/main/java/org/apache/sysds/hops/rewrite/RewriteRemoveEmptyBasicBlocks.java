@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.tugraz.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.StatementBlock;
 
 /**
  * Rule: Simplify program structure by removing empty last-level blocks,

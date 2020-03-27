@@ -17,22 +17,22 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.estim;
+package org.apache.sysds.test.component.estim;
 
 import org.junit.Test;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.estim.EstimationUtils;
-import org.tugraz.sysds.hops.estim.EstimatorBasicAvg;
-import org.tugraz.sysds.hops.estim.EstimatorBasicWorst;
-import org.tugraz.sysds.hops.estim.EstimatorBitsetMM;
-import org.tugraz.sysds.hops.estim.EstimatorDensityMap;
-import org.tugraz.sysds.hops.estim.EstimatorMatrixHistogram;
-import org.tugraz.sysds.hops.estim.EstimatorSample;
-import org.tugraz.sysds.hops.estim.SparsityEstimator;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.estim.EstimationUtils;
+import org.apache.sysds.hops.estim.EstimatorBasicAvg;
+import org.apache.sysds.hops.estim.EstimatorBasicWorst;
+import org.apache.sysds.hops.estim.EstimatorBitsetMM;
+import org.apache.sysds.hops.estim.EstimatorDensityMap;
+import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorSample;
+import org.apache.sysds.hops.estim.SparsityEstimator;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
 
 public class SelfProductTest extends AutomatedTestBase 
 {

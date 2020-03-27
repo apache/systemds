@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.apache.sysds.runtime.io;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.parser.DataExpression;
+import org.apache.sysds.parser.DataExpression;
 
 public class FileFormatPropertiesCSV extends FileFormatProperties implements Serializable
 {

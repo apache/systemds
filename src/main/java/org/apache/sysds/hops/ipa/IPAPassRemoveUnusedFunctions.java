@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.ipa;
+package org.apache.sysds.hops.ipa;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
-import org.tugraz.sysds.parser.LanguageException;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.LanguageException;
 
 /**
  * This rewrite identifies and removes unused functions in order

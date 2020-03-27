@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.gpu.context;
+package org.apache.sysds.runtime.instructions.gpu.context;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 import jcuda.driver.CUdevice;
 import jcuda.driver.CUdevice_attribute;

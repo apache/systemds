@@ -1,7 +1,5 @@
 <!--
 {% comment %}
-Modifications Copyright 2018 Graz University of Technology
-
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
 this work for additional information regarding copyright ownership.
@@ -482,7 +480,7 @@ userParam=value | User-defined parameter to invoke the package. | Yes | Any non-
 
     # example of an external UDF
     time = externalFunction(Integer i) return (Double B)
-           implemented in (classname="org.tugraz.sysds.udf.lib.TimeWrapper", exectype="mem");
+           implemented in (classname="org.apache.sysds.udf.lib.TimeWrapper", exectype="mem");
     t = time(1);
     print("Time: " + t);
 

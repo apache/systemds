@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.util;
+package org.apache.sysds.runtime.util;
 
 public abstract class PRNGenerator {
 

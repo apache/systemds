@@ -47,7 +47,7 @@ before_script:
 script:
   #  - mvn clean verify jacoco:report coveralls:report
   - mvn test-compile 
-  - mvn surefire:test -Dtest=org.tugraz.sysds.test.component.**
+  - mvn surefire:test -Dtest=org.apache.sysds.test.component.**
 
 after_success:
 #  -  mvn test jacoco:report coveralls:report

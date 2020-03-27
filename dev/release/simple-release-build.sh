@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2020 Graz University of Technology
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -41,7 +39,7 @@ OPTIONS
 -v=    --overrideVersion=<no-default>
          Specifies the version of the release
   
--u=    --gitUrl=https://github.com/tugraz-isds/systemds.git
+-u=    --gitUrl=https://github.com/apache/systemml.git
          The URL of the repository to clone
   
 -g=    --gitCommitHash=master
@@ -145,7 +143,7 @@ fi
 GIT_REF=${GIT_REF:-master}
 if [[ -z "$GIT_URL" ]]; then
     echo "Using default URL"
-    GIT_URL="https://github.com/tugraz-isds/systemds.git"
+    GIT_URL="https://github.com/apache/systemml.git"
 fi
 
 BASE_DIR=$(pwd)

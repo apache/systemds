@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.Collections;
 import java.util.Map;
 
-import org.tugraz.sysds.parser.dml.DMLParserWrapper;
-import org.tugraz.sysds.parser.dml.DmlSyntacticValidator;
+import org.apache.sysds.parser.dml.DMLParserWrapper;
+import org.apache.sysds.parser.dml.DmlSyntacticValidator;
 
 public class ParserFactory {
 

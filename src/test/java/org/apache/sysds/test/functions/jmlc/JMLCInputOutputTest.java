@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.jmlc;
+package org.apache.sysds.test.functions.jmlc;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.api.jmlc.Connection;
-import org.tugraz.sysds.api.jmlc.PreparedScript;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.test.AutomatedTestBase;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.api.jmlc.Connection;
+import org.apache.sysds.api.jmlc.PreparedScript;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.test.AutomatedTestBase;
 
 /**
  * Test input and output capabilities of JMLC API.

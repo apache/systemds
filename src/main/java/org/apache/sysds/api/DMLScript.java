@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,8 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
-package org.tugraz.sysds.api;
+
+package org.apache.sysds.api;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -41,39 +39,39 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.DMLTranslator;
-import org.tugraz.sysds.parser.LanguageException;
-import org.tugraz.sysds.parser.ParseException;
-import org.tugraz.sysds.parser.ParserFactory;
-import org.tugraz.sysds.parser.ParserWrapper;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.DMLScriptException;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.federated.FederatedWorker;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDHandler;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.utils.Explain;
-import org.tugraz.sysds.utils.NativeHelper;
-import org.tugraz.sysds.utils.Statistics;
-import org.tugraz.sysds.utils.Explain.ExplainCounts;
-import org.tugraz.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DMLTranslator;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParseException;
+import org.apache.sysds.parser.ParserFactory;
+import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.Explain.ExplainCounts;
+import org.apache.sysds.utils.Explain.ExplainType;
 
 
 public class DMLScript 
@@ -432,7 +430,7 @@ public class DMLScript
 		}
 		
 		DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
-		org.tugraz.sysds.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
+		org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
 		if(DMLScript.FLOATING_POINT_PRECISION.equals("double")) {
 			DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;
 		}

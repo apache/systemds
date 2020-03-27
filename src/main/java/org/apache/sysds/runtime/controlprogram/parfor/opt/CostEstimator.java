@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 
 /**
  * Base class for all potential cost estimators

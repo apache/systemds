@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,7 +6,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
@@ -19,53 +17,53 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions;
+package org.apache.sysds.runtime.instructions;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.lops.Append;
-import org.tugraz.sysds.lops.DataGen;
-import org.tugraz.sysds.lops.LeftIndex;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.RightIndex;
-import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.AppendCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.BinaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
-import org.tugraz.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CompressionCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CovarianceCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CtableCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.DataGenCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.DnnCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.IndexingCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.MMChainCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.MMTSJCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.ReshapeCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.PMMJCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.QuantilePickCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.QuantileSortCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.ReorgCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.SpoofCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.SqlCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.StringInitCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.TernaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.UnaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.lops.Append;
+import org.apache.sysds.lops.DataGen;
+import org.apache.sysds.lops.LeftIndex;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AppendCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CompressionCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DnnCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ReshapeCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.PMMJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.QuantilePickCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.QuantileSortCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.SpoofCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.StringInitCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CPInstructionParser extends InstructionParser 
 {

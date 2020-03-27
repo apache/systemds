@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser.dml;
+package org.apache.sysds.parser.dml;
 
-import org.tugraz.sysds.parser.Expression;
+import org.apache.sysds.parser.Expression;
 
 /**
  * This class exists solely to prevent compiler warnings.

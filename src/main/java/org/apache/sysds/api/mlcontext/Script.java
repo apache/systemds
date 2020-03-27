@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.mlcontext;
+package org.apache.sysds.api.mlcontext;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.instructions.cp.Data;
 
 import java.util.Set;
 

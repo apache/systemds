@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.instructions.spark.functions;
+package org.apache.sysds.runtime.instructions.spark.functions;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 import scala.Tuple2;
 

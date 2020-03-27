@@ -16,18 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNRotate180.Rotate180Worker;
-import org.tugraz.sysds.utils.NativeHelper;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNNRotate180.Rotate180Worker;
+import org.apache.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.Statistics;
 
 /**
  * This class contains the set of operators used for performing conv2d

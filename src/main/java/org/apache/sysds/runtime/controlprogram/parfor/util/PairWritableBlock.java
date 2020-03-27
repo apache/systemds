@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.util;
+package org.apache.sysds.runtime.controlprogram.parfor.util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.hadoop.io.Writable;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Custom writable for a pair of matrix indexes and matrix block

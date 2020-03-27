@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.template;
+package org.apache.sysds.hops.codegen.template;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class TemplateBase 
 {	

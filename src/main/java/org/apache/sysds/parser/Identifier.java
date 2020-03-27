@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 
 public abstract class Identifier extends Expression
 {

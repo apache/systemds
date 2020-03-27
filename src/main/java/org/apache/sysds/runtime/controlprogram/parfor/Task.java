@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
 
 /**
  * A task is a logical group of one or multiple iterations (each iteration is assigned to exactly one task).

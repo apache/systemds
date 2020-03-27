@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.utils;
+package org.apache.sysds.utils;
 
 import static org.junit.Assert.fail;
 
@@ -32,7 +32,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 
 /**
  * Class to help setting variables in a script. 

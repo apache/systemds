@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions;
+package org.apache.sysds.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 
 public abstract class Instruction 
 {
@@ -45,7 +45,7 @@ public abstract class Instruction
 	static {
 		// for internal debugging only
 		if( LTRACE ) {
-			Logger.getLogger("org.tugraz.sysds.runtime.instructions.Instruction").setLevel(Level.TRACE);
+			Logger.getLogger("org.apache.sysds.runtime.instructions.Instruction").setLevel(Level.TRACE);
 		}
 	}
 

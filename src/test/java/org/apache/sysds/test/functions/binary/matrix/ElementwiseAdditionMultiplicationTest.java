@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.binary.matrix;
+package org.apache.sysds.test.functions.binary.matrix;
 
 import java.util.Date;
 
 import org.junit.Test;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 
 public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase 

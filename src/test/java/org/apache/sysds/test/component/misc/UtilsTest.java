@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.misc;
+package org.apache.sysds.test.component.misc;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -27,8 +27,8 @@ import java.util.Arrays;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

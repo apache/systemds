@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.paramserv;
+package org.apache.sysds.test.component.paramserv;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcObject;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcObject;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 
 public class RpcObjectTest {
 

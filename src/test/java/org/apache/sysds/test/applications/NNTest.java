@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
-package org.tugraz.sysds.test.applications;
 
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
+package org.apache.sysds.test.applications;
+
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.test.functions.mlcontext.MLContextTestBase;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.test.functions.mlcontext.MLContextTestBase;
 
 /**
  * Test the SystemDS deep learning library, `nn`.

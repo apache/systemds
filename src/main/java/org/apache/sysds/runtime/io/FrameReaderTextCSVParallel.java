@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,12 +35,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.transform.TfUtils;
-import org.tugraz.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 /**
  * Multi-threaded frame text csv reader.

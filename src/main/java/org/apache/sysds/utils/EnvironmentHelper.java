@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.utils;
+package org.apache.sysds.utils;
 
 
 /**

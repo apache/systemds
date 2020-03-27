@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.List;
 
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.parser.dml.CustomErrorListener;
-import org.tugraz.sysds.parser.dml.CustomErrorListener.ParseIssue;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.dml.CustomErrorListener;
+import org.apache.sysds.parser.dml.CustomErrorListener.ParseIssue;
 
 /**
  * This exception is thrown when parse issues are encountered.

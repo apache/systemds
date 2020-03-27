@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser.dml;
+package org.apache.sysds.parser.dml;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,8 +28,8 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.parser.ParseInfo;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.parser.ParseInfo;
 
 public class CustomErrorListener extends BaseErrorListener {
 

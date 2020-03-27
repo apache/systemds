@@ -18,10 +18,10 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
-import org.tugraz.sysds.runtime.functionobjects.CM;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.functionobjects.CM;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
 public class CMOperator extends Operator 
 {

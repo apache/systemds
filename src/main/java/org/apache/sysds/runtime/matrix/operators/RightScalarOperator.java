@@ -18,17 +18,17 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
-import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.functionobjects.Divide;
-import org.tugraz.sysds.runtime.functionobjects.GreaterThan;
-import org.tugraz.sysds.runtime.functionobjects.GreaterThanEquals;
-import org.tugraz.sysds.runtime.functionobjects.LessThan;
-import org.tugraz.sysds.runtime.functionobjects.LessThanEquals;
-import org.tugraz.sysds.runtime.functionobjects.Power;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
-import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.GreaterThan;
+import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysds.runtime.functionobjects.LessThan;
+import org.apache.sysds.runtime.functionobjects.LessThanEquals;
+import org.apache.sysds.runtime.functionobjects.Power;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
 /**
  * Scalar operator for scalar-matrix operations with scalar 

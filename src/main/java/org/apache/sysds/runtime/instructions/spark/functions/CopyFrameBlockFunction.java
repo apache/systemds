@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.instructions.spark.functions;
+package org.apache.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.apache.sysds.runtime.io;
 
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
 
 public class FrameWriterFactory 
 {

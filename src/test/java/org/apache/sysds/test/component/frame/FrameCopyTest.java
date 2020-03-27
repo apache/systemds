@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.frame;
+package org.apache.sysds.test.component.frame;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.instructions.cp.AppendCPInstruction.AppendType;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.cp.AppendCPInstruction.AppendType;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
 
 public class FrameCopyTest extends AutomatedTestBase
 {

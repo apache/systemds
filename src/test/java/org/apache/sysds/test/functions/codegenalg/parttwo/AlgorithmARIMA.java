@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
-package org.tugraz.sysds.test.functions.codegenalg.parttwo;
+
+package org.apache.sysds.test.functions.codegenalg.parttwo;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.tugraz.sysds.test.applications.ArimaTest;
+import org.apache.sysds.test.applications.ArimaTest;
 
 import java.io.File;
 

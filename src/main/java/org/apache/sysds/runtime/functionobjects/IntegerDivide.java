@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.functionobjects;
+package org.apache.sysds.runtime.functionobjects;
 
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class IntegerDivide extends ValueFunction 
 {

@@ -17,21 +17,21 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data.misc;
+package org.apache.sysds.test.functions.data.misc;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMField;
-import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMFormat;
-import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMSymmetry;
-import org.tugraz.sysds.runtime.matrix.data.IJV;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.FileFormatPropertiesMM.MMField;
+import org.apache.sysds.runtime.io.FileFormatPropertiesMM.MMFormat;
+import org.apache.sysds.runtime.io.FileFormatPropertiesMM.MMSymmetry;
+import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

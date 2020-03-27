@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.api.mlcontext;
+package org.apache.sysds.api.mlcontext;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -27,35 +25,35 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.tugraz.sysds.api.DMLOptions;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.ScriptExecutorUtils;
-import org.tugraz.sysds.api.jmlc.JMLCUtils;
-import org.tugraz.sysds.api.mlcontext.MLContext.ExecutionType;
-import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
-import org.tugraz.sysds.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.DMLTranslator;
-import org.tugraz.sysds.parser.LanguageException;
-import org.tugraz.sysds.parser.ParseException;
-import org.tugraz.sysds.parser.ParserFactory;
-import org.tugraz.sysds.parser.ParserWrapper;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
-import org.tugraz.sysds.utils.Explain;
-import org.tugraz.sysds.utils.Statistics;
-import org.tugraz.sysds.utils.Explain.ExplainCounts;
-import org.tugraz.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.api.DMLOptions;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.ScriptExecutorUtils;
+import org.apache.sysds.api.jmlc.JMLCUtils;
+import org.apache.sysds.api.mlcontext.MLContext.ExecutionType;
+import org.apache.sysds.api.mlcontext.MLContext.ExplainLevel;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.hops.rewrite.RewriteRemovePersistentReadWrite;
+import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DMLTranslator;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParseException;
+import org.apache.sysds.parser.ParserFactory;
+import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.Explain.ExplainCounts;
+import org.apache.sysds.utils.Explain.ExplainType;
 
 /**
  * ScriptExecutor executes a DML or PYDML Script object using SystemDS. This is

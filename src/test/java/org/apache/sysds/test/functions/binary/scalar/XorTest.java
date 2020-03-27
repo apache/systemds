@@ -18,15 +18,15 @@
  */
 
 
-package org.tugraz.sysds.test.functions.binary.scalar;
+package org.apache.sysds.test.functions.binary.scalar;
 
 import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 /**
  * The main purpose of this test is to verify all combinations of

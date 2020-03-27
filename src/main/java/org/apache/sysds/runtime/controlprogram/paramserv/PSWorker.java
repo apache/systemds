@@ -17,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv;
+package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import static org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
+import static org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 
 // TODO use the validate features and labels to calculate the model precision when training
 public abstract class PSWorker implements Serializable 

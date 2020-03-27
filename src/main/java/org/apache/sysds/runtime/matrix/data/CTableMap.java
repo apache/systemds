@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.Iterator;
 
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap;
-import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
-import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap.EntryType;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.util.LongLongDoubleHashMap;
+import org.apache.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
+import org.apache.sysds.runtime.util.LongLongDoubleHashMap.EntryType;
 
 /**
  * Ctable map is an abstraction for the hashmap used for ctable's hash group-by

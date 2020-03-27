@@ -18,13 +18,13 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class WeightedPair extends WeightedCell 
 {

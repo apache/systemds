@@ -1,9 +1,7 @@
-// Generated from org\tugraz\sysds\parser\dml\Dml.g4 by ANTLR 4.5.3
-package org.tugraz.sysds.parser.dml;
+// Generated from org\apache\sysds\parser\dml\Dml.g4 by ANTLR 4.5.3
+package org.apache.sysds.parser.dml;
 
 /*
- * Modifications Copyright 2018 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information

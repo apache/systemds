@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.applications;
+package org.apache.sysds.test.applications;
 
 import org.junit.Test;
-import org.tugraz.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecMode;
 
 /**
  * Tests of univariate statistics built-in functions.

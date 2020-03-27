@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,52 +17,52 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.io.FileFormatProperties;
-import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.io.WriterMatrixMarket;
-import org.tugraz.sysds.runtime.io.WriterTextCSV;
-import org.tugraz.sysds.runtime.lineage.LineageItem;
-import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
-import org.tugraz.sysds.runtime.lineage.LineageTraceable;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.meta.MetaData;
-import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.ProgramConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.data.TensorBlock;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.WriterMatrixMarket;
+import org.apache.sysds.runtime.io.WriterTextCSV;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.lineage.LineageTraceable;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.meta.TensorCharacteristics;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Statistics;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -532,7 +530,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				obj.setFileFormatProperties(_formatProperties);
 				obj.setMarkForLinCache(true);
 				obj.enableCleanup(!getInput1().getName()
-					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
+					.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), obj);
 
 				obj.setUpdateType(_updateType);
@@ -553,7 +551,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				obj.setMetaData((MetaData)metadata.clone());
 				obj.setFileFormatProperties(_formatProperties);
 				obj.enableCleanup(!getInput1().getName()
-						.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
+						.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), obj);
 
 				// TODO update
@@ -566,7 +564,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if( _schema != null )
 					fobj.setSchema(_schema); //after metadata
 				fobj.enableCleanup(!getInput1().getName()
-					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
+					.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), fobj);
 			}
 			else if ( getInput1().getDataType() == DataType.SCALAR ){
@@ -1191,7 +1189,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		LineageItem li = null;
 		switch (getVariableOpcode()) {
 			case CreateVariable:
-				if (!getInput1().getName().contains(org.tugraz.sysds.lops.Data.PREAD_PREFIX))
+				if (!getInput1().getName().contains(org.apache.sysds.lops.Data.PREAD_PREFIX))
 					break; //otherwise fall through
 			
 			case Read: {

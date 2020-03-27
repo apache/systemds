@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.misc;
+package org.apache.sysds.test.functions.misc;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 {

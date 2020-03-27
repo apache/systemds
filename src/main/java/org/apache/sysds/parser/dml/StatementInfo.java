@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser.dml;
+package org.apache.sysds.parser.dml;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.Statement;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.Statement;
 
 /**
  * This class exists solely to prevent compiler warnings.

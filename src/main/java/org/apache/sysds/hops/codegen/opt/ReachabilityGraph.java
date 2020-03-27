@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.opt;
+package org.apache.sysds.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.codegen.opt.PlanSelection.VisitMarkCost;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.codegen.opt.PlanSelection.VisitMarkCost;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  *  

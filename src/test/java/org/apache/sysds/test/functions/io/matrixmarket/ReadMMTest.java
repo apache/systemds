@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.io.matrixmarket;
+package org.apache.sysds.test.functions.io.matrixmarket;
 
 import org.junit.Test;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 public class ReadMMTest extends AutomatedTestBase 
 {

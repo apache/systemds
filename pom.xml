@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- * Modifications Copyright 2020 Graz University of Technology
- * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,12 +26,12 @@
 		<artifactId>apache</artifactId>
 		<version>18</version>
 	</parent>
-	<groupId>org.tugraz.sysds</groupId>
+	<groupId>org.apache.sysds</groupId>
 	<version>0.3.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
-	<url>https://github.com/tugraz-isds/systemds</url>
+	<url>https://github.com/apache/systemml</url>
 	<description>Declarative End-to-End Data Science</description>
 	<licenses>
 		<license>
@@ -66,7 +64,7 @@
 	</repositories>
 
 	<scm>
-		<developerConnection>scm:git:https://github.com/tugraz-isds/systemds.git</developerConnection>
+		<developerConnection>scm:git:https://github.com/apache/systemml.git</developerConnection>
 	</scm>
 
 	<build>
@@ -158,7 +156,7 @@
 							</artifactSet>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.tugraz.sysds.api.DMLScript</mainClass>
+									<mainClass>org.apache.sysds.api.DMLScript</mainClass>
 								</transformer>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
 								</transformer>

@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.ipa;
+package org.apache.sysds.hops.ipa;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DMLProgram;
 
 /**
  * Base class for all IPA passes.

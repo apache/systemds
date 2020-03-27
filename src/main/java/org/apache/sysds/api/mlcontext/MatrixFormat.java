@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.mlcontext;
+package org.apache.sysds.api.mlcontext;
 
 /**
  * MatrixFormat represents the different matrix formats supported by the

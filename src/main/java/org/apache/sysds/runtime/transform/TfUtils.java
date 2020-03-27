@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform;
+package org.apache.sysds.runtime.transform;
 
 import java.io.Serializable;
 import java.util.regex.Pattern;
 
-import org.tugraz.sysds.lops.Lop;
+import org.apache.sysds.lops.Lop;
 
 public class TfUtils implements Serializable
 {	

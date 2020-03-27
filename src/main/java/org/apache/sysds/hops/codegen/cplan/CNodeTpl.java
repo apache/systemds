@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.cplan;
+package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.tugraz.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 
 public abstract class CNodeTpl extends CNode implements Cloneable
 {

@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.codegen;
+package org.apache.sysds.runtime.codegen;
 
 import java.util.Arrays;
 
 import org.apache.commons.math3.util.FastMath;
-import org.tugraz.sysds.runtime.data.DenseBlockFP64;
-import org.tugraz.sysds.runtime.functionobjects.BitwAnd;
-import org.tugraz.sysds.runtime.functionobjects.IntegerDivide;
-import org.tugraz.sysds.runtime.functionobjects.Modulus;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNIm2Col;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNPooling;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixMult;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
+import org.apache.sysds.runtime.functionobjects.BitwAnd;
+import org.apache.sysds.runtime.functionobjects.IntegerDivide;
+import org.apache.sysds.runtime.functionobjects.Modulus;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNNIm2Col;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNNPooling;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
 
 /**
  * This library contains all vector primitives that are used in 

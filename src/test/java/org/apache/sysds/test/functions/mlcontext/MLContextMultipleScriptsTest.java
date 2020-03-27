@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,22 +17,22 @@
  * under the License.
  */
  
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
 import java.io.File;
 
 import org.apache.spark.sql.SparkSession;
 import org.junit.After;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.api.mlcontext.MLContext;
-import org.tugraz.sysds.api.mlcontext.Matrix;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.api.mlcontext.MLContext;
+import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
 
 
 public class MLContextMultipleScriptsTest extends AutomatedTestBase 

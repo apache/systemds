@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Types.ValueType;
 
 public class IntIdentifier extends ConstIdentifier 
 {

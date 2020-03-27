@@ -17,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.cplan;
+package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary.BinType;
-import org.tugraz.sysds.hops.codegen.template.TemplateUtils;
-import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
+import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeRow extends CNodeTpl
 {
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.SpoofRowwise;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;\n"
+			+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
+			+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
+			+ "import org.apache.sysds.runtime.codegen.SpoofRowwise;\n"
+			+ "import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;\n"
 			+ "import org.apache.commons.math3.util.FastMath;\n"
 			+ "\n"
 			+ "public final class %TMP% extends SpoofRowwise { \n"

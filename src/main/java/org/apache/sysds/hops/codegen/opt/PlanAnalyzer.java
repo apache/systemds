@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.opt;
+package org.apache.sysds.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,12 +29,12 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.codegen.opt.InterestingPoint.DecisionType;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.TemplateType;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.codegen.opt.InterestingPoint.DecisionType;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 
 /**
  * Utility functions to extract structural information from the memo table,

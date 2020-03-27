@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
-package org.tugraz.sysds.utils;
 
-import org.tugraz.sysds.api.mlcontext.MLContext;
-import org.tugraz.sysds.api.mlcontext.MLContextException;
-import org.tugraz.sysds.parser.Expression;
+package org.apache.sysds.utils;
+
+import org.apache.sysds.api.mlcontext.MLContext;
+import org.apache.sysds.api.mlcontext.MLContextException;
+import org.apache.sysds.parser.Expression;
 
 /**
  * The purpose of this proxy is to shield systemds internals from direct access to MLContext

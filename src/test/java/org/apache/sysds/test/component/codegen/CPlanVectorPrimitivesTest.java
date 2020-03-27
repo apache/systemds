@@ -17,25 +17,25 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.codegen;
+package org.apache.sysds.test.component.codegen;
 
 import java.lang.reflect.Method;
 
 import org.junit.Test;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary.BinType;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
-import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;
-import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
-import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
 import org.apache.hadoop.util.StringUtils;
 
 public class CPlanVectorPrimitivesTest extends AutomatedTestBase 

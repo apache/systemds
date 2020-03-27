@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.io.csv;
+package org.apache.sysds.test.functions.io.csv;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 /**
  * JUnit Test cases to evaluate the functionality of reading CSV files.

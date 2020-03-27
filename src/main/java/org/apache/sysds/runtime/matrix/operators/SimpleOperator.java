@@ -18,9 +18,9 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
-import org.tugraz.sysds.runtime.functionobjects.FunctionObject;
+import org.apache.sysds.runtime.functionobjects.FunctionObject;
 
 /*
  * Simple operator is just a wrapper for a single function object of any type.

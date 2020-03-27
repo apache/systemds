@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.mlcontext;
+package org.apache.sysds.api.mlcontext;
 
 /**
  * FrameFormat represents the different frame formats supported by the MLContext

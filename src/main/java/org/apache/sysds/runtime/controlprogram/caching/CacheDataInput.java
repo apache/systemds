@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.caching;
+package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataInput;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.MatrixBlockDataInput;
 
 public class CacheDataInput implements DataInput, MatrixBlockDataInput
 {

@@ -17,25 +17,25 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
-import static org.tugraz.sysds.parser.Statement.PSFrequency;
-import static org.tugraz.sysds.parser.Statement.PSModeType;
-import static org.tugraz.sysds.parser.Statement.PSScheme;
-import static org.tugraz.sysds.parser.Statement.PSUpdateType;
-import static org.tugraz.sysds.parser.Statement.PS_AGGREGATION_FUN;
-import static org.tugraz.sysds.parser.Statement.PS_BATCH_SIZE;
-import static org.tugraz.sysds.parser.Statement.PS_EPOCHS;
-import static org.tugraz.sysds.parser.Statement.PS_FEATURES;
-import static org.tugraz.sysds.parser.Statement.PS_FREQUENCY;
-import static org.tugraz.sysds.parser.Statement.PS_HYPER_PARAMS;
-import static org.tugraz.sysds.parser.Statement.PS_LABELS;
-import static org.tugraz.sysds.parser.Statement.PS_MODE;
-import static org.tugraz.sysds.parser.Statement.PS_MODEL;
-import static org.tugraz.sysds.parser.Statement.PS_PARALLELISM;
-import static org.tugraz.sysds.parser.Statement.PS_SCHEME;
-import static org.tugraz.sysds.parser.Statement.PS_UPDATE_FUN;
-import static org.tugraz.sysds.parser.Statement.PS_UPDATE_TYPE;
+import static org.apache.sysds.parser.Statement.PSFrequency;
+import static org.apache.sysds.parser.Statement.PSModeType;
+import static org.apache.sysds.parser.Statement.PSScheme;
+import static org.apache.sysds.parser.Statement.PSUpdateType;
+import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
+import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
+import static org.apache.sysds.parser.Statement.PS_EPOCHS;
+import static org.apache.sysds.parser.Statement.PS_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
+import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
+import static org.apache.sysds.parser.Statement.PS_LABELS;
+import static org.apache.sysds.parser.Statement.PS_MODE;
+import static org.apache.sysds.parser.Statement.PS_MODEL;
+import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
+import static org.apache.sysds.parser.Statement.PS_SCHEME;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,28 +53,28 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.lops.LopProperties;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.LocalParamServer;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamServer;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.SparkPSBody;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.util.ProgramConverter;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
@@ -90,7 +90,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	static {
 		// for internal debugging only
 		if (LDEBUG) {
-			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
+			Logger.getLogger("org.apache.sysds.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
 			Logger.getLogger(ParamservBuiltinCPInstruction.class.getName()).setLevel(Level.DEBUG);
 		}
 	}

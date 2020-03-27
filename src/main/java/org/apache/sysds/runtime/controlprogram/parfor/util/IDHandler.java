@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.util;
+package org.apache.sysds.runtime.controlprogram.parfor.util;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;

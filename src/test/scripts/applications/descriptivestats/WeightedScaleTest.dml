@@ -1,0 +1,125 @@
+#-------------------------------------------------------------
+#
+# Modifications Copyright 2019 Graz University of Technology
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# How to invoke this dml script Scale.dml?
+# Assume S_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for V and rows = 5 for P
+# hadoop jar SystemDS.jar -f $S_HOME/Scale.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/weight "$INPUT_DIR/prob 5
+# "$OUTPUT_DIR/mean" "$OUTPUT_DIR/std" "$OUTPUT_DIR/se" "$OUTPUT_DIR/var" "$OUTPUT_DIR/cv"
+# "$OUTPUT_DIR/min" "$OUTPUT_DIR/max" "$OUTPUT_DIR/rng" 
+# "$OUTPUT_DIR/g1" "$OUTPUT_DIR/se_g1" "$OUTPUT_DIR/g2" "$OUTPUT_DIR/se_g2" 
+# "$OUTPUT_DIR/median" "$OUTPUT_DIR/iqm"
+# "OUTPUT_DIR/out_minus" "$OUTPUT_DIR/out_plus" "$OUTPUT_DIR/quantile" 
+
+V = read($1, rows=$2, cols=1, format="text")
+W = read($3, rows=$2, cols=1, format="text")
+P = read($4, rows=$5, cols=1, format="text")
+
+W = round(W)
+
+n = nrow(V)
+
+wt = sum(W)
+
+# sum
+s1 = sum(V*W)
+
+# 2nd central moment
+m2 = moment(V, W, 2)
+
+# 3rd central moment
+m3 = moment(V, W, 3)
+
+# 4th central moment
+m4 = moment(V, W, 4)
+
+# mean
+mu = mean(V, W)
+
+# variances
+var = m2*wt/(wt-1.0)
+
+# standard deviations
+std_dev = sqrt(var)
+
+# standard errors of mean
+SE = std_dev/sqrt(wt)
+
+# coefficients of variation
+cv = std_dev/mu
+
+# harmonic means (note: may generate out of memory for large sparse matrices becauses of NaNs)
+#har_mu = wt/(sum((1.0/V)*W))
+
+# geometric means is not currently supported.
+#geom_mu = wt*exp(sum(log(V)*W)/wt)
+
+# min and max
+mn=min(V)
+mx=max(V)
+
+# range
+rng = mx - mn
+
+# Skewness
+g1 = wt^2*m3/((wt-1)*(wt-2)*std_dev^3)
+
+# standard error of skewness
+se_g1=sqrt( 6*wt*(wt-1) / ((wt-2)*(wt+1)*(wt+3)) )
+
+# Kurtosis (using binomial formula)
+g2 = (wt^2*(wt+1)*m4-3*m2^2*wt^2*(wt-1))/((wt-1)*(wt-2)*(wt-3)*std_dev^4)
+
+# Standard error of Kurtosis
+se_g2= sqrt( (4*(wt^2-1)*se_g1^2)/((wt+5)*(wt-3)) )
+
+out_minus = (V < (mu-5*std_dev))*V 
+out_plus = (V > (mu+5*std_dev))*V
+
+# median
+md = median(V,W); #quantile(V, W, 0.5)
+
+# quantile
+Q = quantile(V, W, P)
+
+# inter-quartile mean
+iqm = interQuartileMean(V, W)
+
+write(mu, $6);
+write(std_dev, $7);
+write(SE, $8);
+write(var, $9);
+write(cv, $10);
+write(mn, $11);
+write(mx, $12);
+write(rng, $13);
+write(g1, $14);
+write(se_g1, $15);
+write(g2, $16);
+write(se_g2, $17);
+write(md, $18);
+write(iqm, $19);
+write(out_minus, $20, format="text");
+write(out_plus, $21, format="text");
+write(Q, $22, format="text");

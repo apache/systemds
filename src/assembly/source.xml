@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Modifications Copyright 2020 Graz University of Technology
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+		  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		  xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+	<!-- Assembly file for the "source" SystemDS release containing all source files. -->
+	<id>src</id>
+
+	<formats>
+		<format>tgz</format>
+		<format>zip</format>
+	</formats>
+
+	<includeBaseDirectory>true</includeBaseDirectory>
+	<baseDirectory>${artifactId}-${version}-src</baseDirectory>
+
+	<fileSets>
+		<fileSet>
+			<directory>${basedir}</directory>
+			<excludes>
+				<exclude>**/.*</exclude>
+				<exclude>**/.*/**</exclude>
+				<exclude>**/*.log</exclude>
+				<exclude>**/conf/*.properties</exclude>
+				<exclude>**/conf/*.xml</exclude>
+				<exclude>**/dependency-reduced-pom.xml</exclude>
+				<exclude>LICENSE</exclude> <!-- exclude from root dir -->
+				<exclude>**/scratch_space</exclude>
+				<exclude>**/scratch_space/**/*</exclude>
+				<exclude>**/target</exclude>
+				<exclude>**/target/**/*</exclude>
+				<exclude>**/temp</exclude>
+				<exclude>**/temp/**/*</exclude>
+				<exclude>./src/test/config/hadoop_bin_windows/**</exclude>
+				<exclude>./src/main/cpp/lib/**</exclude>
+				<exclude>pom.xml.versionsBackup</exclude>
+			</excludes>
+		</fileSet>
+
+		<!--  add source version of license to root dir-->
+		<fileSet>
+			<directory>${basedir}/src/assembly/source</directory>
+			<includes>
+				<include>LICENSE</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+	</fileSets>
+</assembly>

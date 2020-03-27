@@ -1,0 +1,11 @@
+{
+    "ids": true
+    ,"recode": [ 6 ]
+    
+    ,"bin": [
+                 { "id": 4, "method": "equi-width", "numbins": 2 }
+                ,{ "id": 2, "method": "equi-width", "numbins": 2 }
+            ]
+
+    ,"dummycode": [ 6 ]
+}

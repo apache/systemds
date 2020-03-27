@@ -1,0 +1,62 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scalable_linalg/triangular_inv.dml") as inv
+
+test_inverse = function() {
+  print("Testing inverse of triangular matrices")
+  n = 1000
+  eps = n*n*1e-12
+
+  A = rand(rows=n, cols=n, min=-1.0, max=1.0, pdf="uniform")
+
+  # create lower/upper triangular matrices using lu deomposition
+  [P,L,U] = lu(A)
+
+  # calculate inverse
+  Linv = inv::L_triangular_inv(L)
+  Uinv = inv::U_triangular_inv(U)
+
+  # these products should produce identity matrices
+  LLinv = L %*% Linv
+  UUinv = U %*% Uinv
+
+  # create identity matrix
+  ones = matrix(1.0, n, 1);
+  I = diag(ones);
+
+  # check if LL^-1 = I. Infinity norm of (I - LL^-1) must be close to zero
+  diff = I - LLinv
+  sup_norm = max(abs(diff))
+  if (sup_norm > eps) {
+    print("ERROR: inverse of lower triangular matrix fails")
+  }
+
+  # check if UU^-1 = I. Inifinity norm of (I - UU^-1) must be close to zero
+  diff = I - UUinv
+  sup_norm = max(abs(diff))
+
+  if (sup_norm > eps) {
+    print("ERROR: inverse of upper triangular matrix fails")
+  }
+}
+
+tmp = test_inverse()

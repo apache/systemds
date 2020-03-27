@@ -1,0 +1,9 @@
+{ 
+    "data_type": "matrix"
+    ,"format": "csv"
+    ,"header": true
+    ,"sep": ","
+    ,"rows": 748
+    ,"cols": 5
+    ,"description": { "author": "SystemML" } 
+}

@@ -1,0 +1,66 @@
+#-------------------------------------------------------------
+#
+# Modifications Copyright 2019 Graz University of Technology
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# How to invoke this dml script ScaleCategorical.dml?
+# Assume SC_HOME is set to the home of the dml script
+# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
+# Assume rows = 10000 for A and Y, A is categorical variable and Y is scale variable
+# hadoop jar SystemDS.jar -f $SC_HOME/ScaleCategorical.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/Y" "$INPUT_DIR/WM"
+#         "$OUPUT_DIR/VarY" "$OUTPUT_DIR/MeanY" "$OUTPUT_DIR/CFreqs" "$OUTPUT_DIR/CMeans" "$OUTPUT_DIR/CVars" 
+#         "$OUTPUT_DIR/Eta", "$OUTPUT_DIR/AnovaF"
+
+#A <- nominal variable
+#Y <- scale variable
+#WM <- weights
+
+A = read($1, rows=$2, cols=1, format="text");
+Y = read($3, rows=$2, cols=1, format="text");
+WM = read($4, rows=$2, cols=1, format="text");
+
+W = sum(WM);
+my = sum(Y*WM)/W;
+varY = moment(Y,WM,2) * W/(W-1.0);
+
+CFreqs = aggregate(target=WM, groups=A, fn="sum");
+CMeans = aggregate(target=Y, groups=A, weights=WM, fn="mean");
+CVars =  aggregate(target=Y, groups=A, weights=WM, fn="variance");
+
+# number of categories
+R = nrow(CFreqs);
+
+Eta = sqrt(1 - ( sum((CFreqs-1)*CVars) / ((W-1)*varY) ));
+
+anova_num = sum( (CFreqs*(CMeans-my)^2) )/(R-1);
+anova_den = sum( (CFreqs-1)*CVars )/(W-R);
+ANOVAF = anova_num/anova_den;
+
+# output required statistics
+write(varY, $5);
+write(my, $6);
+
+write(CFreqs, $7, format="text");
+write(CMeans, $8, format="text");
+write(CVars, $9, format="text");
+
+write(Eta, $10);
+write(ANOVAF, $11);

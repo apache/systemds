@@ -1,0 +1,90 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# INPUT PARAMETERS:
+# -----------------------------------------------------------------------------
+# NAME   TYPE   DEFAULT  MEANING
+# -----------------------------------------------------------------------------
+# X      matrix  ---     input matrix to be factorized
+# k      Int     1000    smalles column block of input matrix
+# OUTDIR String  ---     output directory to save the results
+# OFMT   String  CSV     output format
+# -----------------------------------------------------------------------------
+
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# NAME   TYPE    MEANING
+# -----------------------------------------------------------------------------
+# Q      matrix  Orthogonal matrix in thin QR factorization
+# R      matrix  Upper triangular matrix
+# -----------------------------------------------------------------------------
+
+X = read($X);
+k = ifdef($k, 1000);
+# k is used for the base case in the recursive algorithm.
+# If X has very large number of rows, choose k to be smaller
+# to fit the base case on single machine.
+ofmt = ifdef($OFMT, "CSV")
+
+QfromH = function(Matrix[double] H)
+  return(Matrix[double] Q) {
+    m = nrow(H);
+    n = ncol(H);
+    ones = matrix(1, m, 1);
+    eye = diag(ones);
+    Q = eye[,1:n];
+
+    for (j in n:1) {
+      v = H[j:m,j]
+      b = as.scalar(2/(t(v) %*% v))
+      Q[j:m, j:n] = Q[j:m, j:n] - (b * v) %*% (t(v) %*% Q[j:m, j:n])
+    }
+}
+
+QR_recursive = function(Matrix[double] A, int nb)
+  return(Matrix[double] Q, Matrix[double] R) {
+    n = ncol(A)
+
+    if (n <= nb) {
+      [H, R] = qr(A)
+      Q = QfromH(H)
+      R = R[1:n, 1:n]
+    }
+    else {
+      k = floor(n/2)
+      A1 = A[,1:k]
+      A2 = A[,k+1:n]
+
+      [Q1, R11] = QR_recursive(A1, nb)
+      R12 = t(Q1) %*% A2
+      A2 = A2 - Q1 %*% R12
+      [Q2, R22] = QR_recursive(A2, nb)
+
+      R21 = matrix(0, rows = nrow(R22), cols = ncol(R11))
+      Q = cbind(Q1, Q2)
+      R = rbind(cbind(R11, R12), cbind(R21, R22))
+    }
+}
+
+[Q, R] = QR_recursive(X, k)
+
+write(Q, $OUTDIR + "Q.csv", ofmt)
+write(R, $OUTDIR + "R.csv", ofmt)

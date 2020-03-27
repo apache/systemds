@@ -1,0 +1,4 @@
+{
+    "omit": [ "zipcode","district","sqft","numbedrooms","numbathrooms","floors","view","saleprice","askingprice" ]
+    ,"recode": [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
+}

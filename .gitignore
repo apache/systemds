@@ -1,0 +1,103 @@
+# Mac
+.DS_Store
+
+# KDE
+.directory
+
+# Eclipse
+.classpath
+.project
+.settings/
+.externalToolBuilders/
+maven-eclipse.xml
+/src/main/cpp/kernels/.cproject
+
+# Intellij
+.idea/
+.idea_modules/
+*.iml
+*.iws
+
+# vscode
+.vscode
+
+# checksum files
+*.crc
+
+# Build artifacts
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.metadata
+.cache*
+
+# Python artifacts
+src/main/python/systemds/systemds-java/
+src/main/python/systemds.egg-info/
+src/main/python/build/
+src/main/python/LICENSE
+src/main/python/NOTICE
+src/main/python/dist
+src/main/python/docs/build
+src/main/python/docs/source/_build
+
+# User configuration files
+conf/SystemDS-config.xml
+conf/log4j.properties
+conf/systemds-env.sh
+
+# Documentation artifacts
+docs/_site
+docs/api
+
+# Test Artifacts
+src/test/scripts/**/*.dmlt
+src/test/scripts/functions/mlcontextin/
+.factorypath
+
+# Excluded sources
+# (we're including the generated files to simply IDE setup w/o mvn build)
+# Since the gitignore file does not ignore tracked files, the auto-generated
+# parser files need to be ignored by the following command:
+# git update-index --assume-unchanged [<file> ...]
+# This can be undone by git update-index --no-assume-unchanged [<file> ...]
+# Use the command above on these files:
+# src/main/java/Dml.tokens
+# src/main/java/DmlLexer.tokens
+# src/main/java/org/tugraz/sysds/parser/dml/DmlBaseListener.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlLexer.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlListener.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlParser.java
+
+src/test/scripts/**/in
+src/test/scripts/**/out
+src/test/scripts/**/expected
+
+# Working directory and scratch space
+temp/*
+scratch_space/
+
+# Ruby
+Gemfile.lock
+
+# Python
+**/__pycache__
+*.pyc
+
+# Spark
+**/metastore_db
+derby.log
+/systemds/
+
+# native cpp code build artifacts
+src/main/cpp/build
+src/main/cpp/bin
+
+# legacy dml 
+*.dmlt

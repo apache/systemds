@@ -1,0 +1,10 @@
+{
+ "ids": true, "impute": [
+                 { "id": 1, "method": "global_mode" }
+                ,{ "id": 2, "method": "constant", "value": "south" }
+                ,{ "id": 4, "method": "constant", "value": "2" }
+                ,{ "id": 5, "method": "constant", "value": "1" }
+                ,{ "id": 6, "method": "constant", "value": "1" }
+                ,{ "id": 7, "method": "global_mode" }
+                ,{ "id": 9, "method": "global_mean" }
+], "recode": [ 2, 7 ] }

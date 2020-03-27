@@ -1,0 +1,74 @@
+#-------------------------------------------------------------
+#
+# Modifications Copyright 2020 Graz University of Technology
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+rmse = function(Matrix[Double] U, Matrix[Double] V, Matrix[Double] X) return(Double S) {
+  D = sqrt(-2 * U %*% V + rowSums(U^2) + colSums(V^2))
+  S = sum(rowSums((X != 0) * (X - D))^2)
+}
+
+# left tsmm
+# -------------------------------------------------------------------
+U = matrix( 5, rows=2, cols=300)
+X = t(U) %*% U
+X[1:150,] = matrix(0,150,300);
+while(FALSE){}
+D = sqrt(-2 * t(U) %*% U + rowSums(t(U)^2) + colSums(U^2));
+S = sum(rowSums((X != 0) * (X - D))^2)
+
+# right tsmm
+# -------------------------------------------------------------------
+U2 = matrix( 5, rows=300, cols=2)
+X2 = U2 %*% t(U2)
+X2[1:150,] = matrix(0,150,300);
+while(FALSE){}
+D2 = sqrt(-2 * U2 %*% t(U2) + rowSums(U2^2) + colSums(t(U2)^2));
+S2 = sum(rowSums((X2 != 0) * (X2 - D2))^2)
+
+# left tsmm fsb
+# -------------------------------------------------------------------
+V3 = matrix( 5, rows=2, cols=300)
+U3 = t(V3)
+# X3 = rand(rows=300, cols=300, pdf="normal", sparsity=0.2, seed=7)
+X3 = U3 %*% V3
+X3[1:150,] = matrix(0,150,300);
+S3 = rmse(U3, V3, X3)
+
+# right tsmm fsb
+# -------------------------------------------------------------------
+U4 = matrix( 5, rows=300, cols=2)
+V4 = t(U4)
+X4 = U4 %*% V4
+X4[1:150,] = matrix(0,150,300);
+S4 = rmse(U4, V4, X4)
+
+# -------------------------------------------------------------------
+if(S == S2 == S3 == S4)  {
+  print("Test PASSED!")
+  out = as.matrix(S)
+  write(out,$1)
+}
+else
+  print("Test FAILED! S=" + S + " S2=" + S2 + " S3=" + S3 + " S4=" + S4)
+
+
+

@@ -1,0 +1,109 @@
+#-------------------------------------------------------------
+#
+# Copyright 2020 Graz University of Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
+
+# Builtin function for detecting and repairing outliers using standard deviation 
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double   ---       Matrix X  
+# k               Double   1.5       a constant used to discern outliers k*IQR 
+# isIterative     Boolean  TRUE      iterative repair or single repair 
+# repairMethod    Integer  1         values: 0 = delete rows having outliers, 
+#                                    1 = replace outliers as missing values
+# max_iterations  Integer  0         values: 0 = arbitrary number of iteraition until all outliers are removed, 
+#                                    n = any constant defined by user
+# ---------------------------------------------------------------------------------------------
+
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# Y               Double   ---       Matrix X with no outliers
+
+m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1, 
+  Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
+{
+  sumPrevious =0
+  sumNext = 1
+  counter = 0
+
+  while( max_iterations == 0 | counter < max_iterations )
+  {
+    [Q1, Q3, IQR] = compute_quartiles(X)
+    upperBound = (Q3 + (k * IQR));
+    lowerBound = (Q1 - (k * IQR));
+    outlierFilter = X < lowerBound | X > upperBound
+
+    if(sum(outlierFilter) > 1 & sum(X) != 0 & sumPrevious != sumNext ) {
+      #TODO: see outlierBySd why are sumPrevious and sumNext necessary    	
+      sumPrevious = sum(X)
+      X = fix_outliers(X, outlierFilter, repairMethod)
+      sumNext = sum(X)
+    }
+    else
+      max_iterations = -1
+
+    counter = counter + 1; 
+  }
+  Y = X
+  if(verbose) {
+    print("Total executed iterations = "+counter)
+    print("Upper-bound of data was calculated using Q3 + k * IQR")
+    print("lower-bound of data was calculated using Q3 - k * IQR")
+    print("Anything less than the lower-bound and greater than the upper-bound was treated as outlier")
+    if(sum(Y) == 0)
+      print("output is a zero matrix due to iterative evaluation of outliers ")
+    print("output:\n"+ toString(Y))
+  }
+}
+  
+fix_outliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 1)
+  return(Matrix[Double] fixed_X)
+{
+  rows = nrow(X)
+  cols = ncol(X)
+  if(repairMethod == 0) {
+    sel = rowMaxs(outlierFilter) == 0
+    X = removeEmpty(target = X, margin = "rows", select = sel)
+  }
+  else if(repairMethod == 1)
+    X = (outlierFilter == 0) * X
+  else
+    stop("outlierByIQR: invalid argument - repair required 0-1 found: "+repairMethod)
+
+  fixed_X = X
+}
+
+compute_quartiles = function(Matrix[Double] X)
+  return(Matrix[Double] colQ1, Matrix[Double] colQ3, Matrix[Double] IQR)
+{
+  cols = ncol(X)
+  colQ1 = matrix(0, 1, cols)
+  colQ3 = matrix(0, 1, cols)
+  if(nrow(X) > 1) {
+    parfor(i in 1:cols) {
+      colQ1[,i] = quantile(X[,i], 0.25)
+      colQ3[,i] = quantile(X[,i], 0.75)
+    }
+  }
+  IQR = colQ3 - colQ1
+}

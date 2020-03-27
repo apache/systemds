@@ -1,0 +1,21 @@
+{
+    "impute": [
+                 { "name": "zipcode"     , "method": "global_mode" }
+                ,{ "name": "district"    , "method": "constant", "value": "south" }
+                ,{ "name": "numbedrooms" , "method": "constant", "value": "2" }
+                ,{ "name": "numbathrooms", "method": "constant", "value": "1" }
+                ,{ "name": "floors"	     , "method": "constant", "value": "1" }
+                ,{ "name": "view"	     , "method": "global_mode" }
+                ,{ "name": "askingprice"     , "method": "global_mean" }
+              ]
+    
+    ,"recode": [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
+    
+    ,"bin": [
+                 { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
+                ,{ "name": "sqft"       , "method": "equi-width", "numbins": 4 }
+            ]
+
+    ,"dummycode": [ "district", "numbathrooms", "floors", "view", "saleprice", "sqft" ]
+    
+}

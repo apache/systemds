@@ -1,0 +1,95 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * 1D Scale & Shift layer.
+ */
+
+forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta)
+    return (matrix[double] out) {
+  /*
+   * Computes the forward pass for a 1D scale & shift layer. The input
+   * data has N examples, each with D features.
+   *
+   * A 1D scale & shift layer introduces learnable parameters
+   * (gamma, beta) to scale and shift the input on a per-feature basis.
+   *
+   *   `y = x*gamma + beta`
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, D).
+   *  - gamma: Scale parameters, of shape (1, D).
+   *  - beta: Shift parameters, of shape (1, D).
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, D).
+   */
+  # Scale and shift
+  out = X*gamma + beta  # shape (N, D)
+}
+
+backward = function(matrix[double] dout, matrix[double] out,
+                    matrix[double] X, matrix[double] gamma, matrix[double] beta)
+      return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
+  /*
+   * Computes the backward pass for a 1D scale & shift layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of shape (N, D).
+   *  - out: Outputs from the forward pass, of shape (N, D).
+   *  - X: Inputs, of shape (N, D).
+   *  - gamma: Scale parameters, of shape (1, D).
+   *  - beta: Shift parameters, of shape (1, D).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, D).
+   *  - dgamma: Gradient wrt `W`, of shape (1, D).
+   *  - dbeta: Gradient wrt `b`, of shape (1, D).
+   *
+   */
+  # Compute gradients during training
+  dgamma = colSums(dout*X)  # shape (1, D)
+  dbeta = colSums(dout)  # shape (1, D)
+  dX = dout * gamma  # shape (N, D)
+}
+
+init = function(int D)
+    return (matrix[double] gamma, matrix[double] beta) {
+  /*
+   * Initialize the parameters of this layer.
+   *
+   * By default, we initialize to an identity function, with a scale
+   * filler of `1`, and a shift filler of `0`.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   *
+   * Inputs:
+   *  - D: Dimensionality of the input features (number of features).
+   *
+   * Outputs:
+   *  - gamma: Scale parameters, of shape (1, D).
+   *  - beta: Shift parameters, of shape (1, D).
+   */
+   gamma = matrix(1, rows=1, cols=D)
+   beta = matrix(0, rows=1, cols=D)
+}
+

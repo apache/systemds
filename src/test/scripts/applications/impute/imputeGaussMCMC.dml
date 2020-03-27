@@ -1,0 +1,688 @@
+#-------------------------------------------------------------
+#
+# Modifications Copyright 2019 Graz University of Technology
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Implements the MCMC algorithm for imputation of missing data into a time-series of "reports".
+# Each report is a fixed-size vector of attribute values; reports come out each year/quarter/month ("term").
+# Hard linear equality constraints restrict values in/across the reports, e.g. total cost = sum of all costs.
+# Soft linear regression constraints define dependencies between values in/across the reports.
+# Linear regression parameters are unknown and sampled together with the missing values in the reports.
+#
+# INPUT 1: Initial reports matrix [1 : num_attrs, 1 : num_terms] with missing values usually set to zero,
+#          but it MUST BE CONSISTENT with hard constraints! Set some missing values to nonzero if needed.
+#          There are "num_terms" reports in the matrix, each having "num_attrs" attribute values.
+#
+# INPUT 2: Sparse matrix [1 : (num_terms * num_attrs), 1 : num_frees] that defines a linear map from
+#          "free" variables to the reports matrix. A tensor of size (num_terms * num_attrs * num_frees)
+#          where the reports matrix is stretched into a column-vector [1 : (num_terms * num_attrs)].
+#          Term = t, attribute = i  -->  index = (t-1) * num_attrs + i
+#
+# INPUT 3: Sparse matrix [1 : (num_reg_eqs * num_factors), 1 : (num_terms * num_attrs)] that defines
+#          a linear map from the stretched matrix of reports to the stretched matrix of regression factors.
+#
+# INPUT 4: Sparse vector [1 : (num_reg_eqs * num_factors), 1] that defines "default regression factors"
+#          (if nonzero) to be added to the regression factors before they are multiplied by parameters.
+#
+# INPUT 5: Sparse matrix [1 : (num_reg_eqs * num_factors), 1 : num_params] that defines a linear map
+#          from the vector of parameters to the stretched matrix of regression factors.
+#
+# INPUT 6: Sparse vector [1 : (num_reg_eqs * num_factors), 1] that defines default regression coefficients
+#          (if nonzero) to be added to the parameters (if any) before being multiplied by regression factors.
+#
+# INPUT 7: A vector [1 : num_reg_eqs, 1] of scale multipliers, one per regression
+#
+# INPUT 8 : Number of factors in a regression equation, including the estimated value
+# INPUT 9 : Maximum number of burn-in full iterations (that sample each variable and each parameter once)
+#           BUT the actual number of burn-in iterations may be smaller if "free fall" ends sooner
+# INPUT 10: Maximum number of observed full iterations (that sample each variable and each parameter once)
+#
+# INPUT 11: Output file name and path for the average MCMC reports table
+# INPUT 12: Output file for debugging (currently: the average parameters vector)
+#
+# Example:
+# hadoop jar SystemDS.jar -f test/scripts/applications/impute/imputeGaussMCMC.dml -exec singlenode -args
+#    test/scripts/applications/impute/initial_reports
+#    test/scripts/applications/impute/CReps
+#    test/scripts/applications/impute/RegresValueMap
+#    test/scripts/applications/impute/RegresFactorDefault
+#    test/scripts/applications/impute/RegresParamMap
+#    test/scripts/applications/impute/RegresCoeffDefault
+#    test/scripts/applications/impute/RegresScaleMult
+#    4 1000 100
+#    test/scripts/applications/impute/output_reports
+#    test/scripts/applications/impute/debug_info
+
+
+print ("START ImputeGaussMCMC");
+print ("Reading the input files...");
+
+initial_reports = read ($1);
+CReps = read ($2);
+
+num_terms = ncol (initial_reports);   # Number of periods for which reports are produced
+num_attrs = nrow (initial_reports);   # Number of attribute values per each term report
+num_frees = ncol (CReps);   # Number of free variables used to describe all consistent reports
+
+dReps_size = num_terms * num_attrs;
+dReps = matrix (initial_reports, rows = dReps_size, cols = 1, byrow = FALSE);
+
+# We assume that all report-series consistent with hard constraints form an affine set:
+#     reports = CReps %*% freeVars + dReps
+# Here "freeVars" is a vector of "free variables" (degrees of freedom), "CReps" is a linear mapping,
+# and "dReps" are the default values for the reports that correspond to the initial reports matrix.
+
+RegresValueMap = read ($3);
+RegresFactorDefault = read ($4);
+RegresParamMap = read ($5); 
+RegresCoeffDefault = read ($6); 
+RegresScaleMult = read ($7);
+
+num_factors = $8;   # Number of factors in each regression equation, including the estimated value
+num_reg_eqs = nrow (RegresParamMap) / num_factors;   # Number of regression equations
+num_params  = ncol (RegresParamMap);   # Number of parameters used in all regressions
+max_num_burnin_iterations = $9;
+max_num_observed_iterations = $10;
+
+ones_fv = matrix (1.0, rows = 1, cols = num_frees);
+ones_pm = matrix (1.0, rows = 1, cols = num_params);
+twos_re = matrix (2.0, rows = 1, cols = num_reg_eqs);
+
+# Create a summation operator (matrix) that adds the factors in each regression:
+
+ncols_SumFactor = num_reg_eqs * num_factors;
+SumFactor = matrix (0.0, rows = num_reg_eqs, cols = ncols_SumFactor);
+ones_f = matrix (1.0, rows = 1, cols = num_factors);
+SumFactor [1, 1:num_factors] = ones_f;
+nSumFactor = 1;
+while (nSumFactor < num_reg_eqs) {
+    incSumFactor = nSumFactor;
+    if (incSumFactor > num_reg_eqs - nSumFactor) {
+        incSumFactor = num_reg_eqs - nSumFactor;
+    }
+    SumFactor [(nSumFactor + 1) : (nSumFactor + incSumFactor), 
+        (nSumFactor * num_factors + 1) : ((nSumFactor + incSumFactor) * num_factors)] = 
+            SumFactor [1 : incSumFactor, 1 : (incSumFactor * num_factors)];
+    nSumFactor = nSumFactor + incSumFactor;
+}
+
+freeVars = matrix (0.0, rows = num_frees, cols = 1);
+params = matrix (1.0, rows = num_params, cols = 1);
+
+
+
+num_opt_iter = 20;
+print ("Performing initial optimization (" + num_opt_iter + " alternating CG steps)...");
+
+reports = CReps %*% freeVars + dReps;
+regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+regresParams = RegresParamMap %*% params  + RegresCoeffDefault;
+
+bilinear_sums = SumFactor %*% (regresValues * regresParams);
+w_bilinear_sums = RegresScaleMult * bilinear_sums;
+bilinear_form_value = sum (w_bilinear_sums * bilinear_sums);
+
+opt_iter = 1;
+is_step_params = 1;
+is_opt_converged = 0;
+
+print ("Before optimization:    Initial bilinear form value = " + bilinear_form_value);
+
+while (is_opt_converged == 0)
+{
+    deg = is_step_params * num_params + (1 - is_step_params) * num_frees;
+    shift_vector = matrix (0.0, rows = deg, cols = 1);
+
+    # Compute gradient
+
+    if (is_step_params == 1) {
+        gradient = twos_re %*% ((w_bilinear_sums %*% ones_pm) * (SumFactor %*% ((regresValues %*% ones_pm) *  RegresParamMap)));
+    } else {
+        gradient = twos_re %*% ((w_bilinear_sums %*% ones_fv) * (SumFactor %*% ((regresParams %*% ones_fv) * (RegresValueMap %*% CReps))));
+    }
+
+    # Make a few conjugate gradient steps
+    
+    residual = t(gradient);
+    p = - residual;
+    norm_r2 = sum (residual * residual);
+    cg_iter = 1;
+    cg_terminate = 0;
+
+    while (cg_terminate == 0)
+    {
+        # Want: q = A %*% p;
+        # Compute gradient change from 0 to p
+
+        if (is_step_params == 1) {
+            w_bilinear_p = RegresScaleMult * (SumFactor %*% (regresValues * (RegresParamMap %*% p)));
+            gradient_change_p = twos_re %*% ((w_bilinear_p %*% ones_pm) * (SumFactor %*% ((regresValues %*% ones_pm) * RegresParamMap)));
+        } else {
+            w_bilinear_p = RegresScaleMult * (SumFactor %*% ((RegresValueMap %*% CReps %*% p) * regresParams));
+            gradient_change_p = twos_re %*% ((w_bilinear_p %*% ones_fv) * (SumFactor %*% ((regresParams %*% ones_fv) * (RegresValueMap %*% CReps))));
+        }
+        q = t(gradient_change_p);
+        
+        alpha = norm_r2 / as.scalar (t(p) %*% q);
+        shift_vector_change = alpha * p;
+        shift_vector = shift_vector + shift_vector_change;
+        old_norm_r2 = norm_r2;
+        residual = residual + alpha * q;
+        norm_r2 = sum (residual * residual);
+        p = - residual + (norm_r2 / old_norm_r2) * p;
+        cg_iter = cg_iter + 1;
+        if (cg_iter > min (deg, 2 + opt_iter / 3)) {
+            cg_terminate = 1;
+        }
+    }
+
+    if (is_step_params == 1) {
+        params = params + shift_vector;
+        regresParams = RegresParamMap %*% params + RegresCoeffDefault;
+    } else {
+        freeVars = freeVars + shift_vector;
+        reports = CReps %*% freeVars + dReps;
+        regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+    }
+    
+    # Update the bilinear form and check convergence
+
+    if (is_step_params == 1) {
+        old_bilinear_form_value = bilinear_form_value;
+    }
+
+    bilinear_sums = SumFactor %*% (regresValues * regresParams);
+    w_bilinear_sums = RegresScaleMult * bilinear_sums;
+    bilinear_form_value = sum (w_bilinear_sums * bilinear_sums);
+        
+    if (is_step_params == 1) {
+        print ("Optimization step " + opt_iter + " (params) :  bilinear form value = " + bilinear_form_value);
+    } else {
+        print ("Optimization step " + opt_iter + " (reports):  bilinear form value = " + bilinear_form_value);
+    }
+    
+    is_step_params = 1 - is_step_params;
+    opt_iter = opt_iter + 1;
+
+    if (is_step_params == 1 & opt_iter > num_opt_iter) {
+        is_opt_converged = 1;
+    }
+}
+
+
+
+/*  UNCOMMENT TO TRY CONJUGATE GRADIENT DESCENT
+
+
+
+print ("Starting Gradient Descent...");
+### GRADIENT DESCENT WITH MODIFICATIONS TO ENHANCE CONVERGENCE
+
+# num_past_dirVs  = 3;
+# past_dirVFrees  = matrix (0.0, rows = num_frees,  cols = num_past_dirVs);
+# past_dirVParams = matrix (0.0, rows = num_params, cols = num_past_dirVs);
+
+shift_T = -1000.0;
+is_enough_gradient_descent = 0;
+gd_iter = 0;
+
+while (is_enough_gradient_descent == 0)
+{
+### GD-STEP 1: COMPUTE LOSS & GRADIENT AT CURRENT POINT
+
+    reports = CReps %*% freeVars + dReps;
+    regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+    regresParams = RegresParamMap %*% params  + RegresCoeffDefault;
+
+    bilinear_sums = SumFactor %*% (regresValues * regresParams);
+    w_bilinear_sums = RegresScaleMult * bilinear_sums;
+    gradientInFrees  = twos_re %*% ((w_bilinear_sums %*% ones_fv) * (SumFactor %*% ((regresParams %*% ones_fv) * (RegresValueMap %*% CReps))));
+    gradientInParams = twos_re %*% ((w_bilinear_sums %*% ones_pm) * (SumFactor %*% ((regresValues %*% ones_pm) *  RegresParamMap)));
+    
+### CG-STEP 2: MAKE A FEW APPROXIMATE CONJUGATE GRADIENT STEPS
+
+    shift_frees  = matrix (0.0, rows = num_frees,  cols = 1);
+    shift_params = matrix (0.0, rows = num_params, cols = 1);
+
+    residual_frees  = t(gradientInFrees);
+    residual_params = t(gradientInParams);
+    
+    p_frees  = - residual_frees;
+    p_params = - residual_params;
+    
+    norm_r2 = sum (residual_frees * residual_frees) + sum (residual_params * residual_params);
+    
+    cg_iter = 1;
+    cg_terminate = 0;
+    cg_eps = 0.000001;
+
+    while (cg_terminate == 0)
+    {
+        regresValues_eps_p = regresValues + cg_eps * (RegresValueMap %*% CReps %*% p_frees);
+        regresParams_eps_p = regresParams + cg_eps * (RegresParamMap %*% p_params);
+
+        bilinear_sums_eps_p   = SumFactor %*% (regresValues_eps_p * regresParams_eps_p);
+        w_bilinear_sums_eps_p = RegresScaleMult * bilinear_sums_eps_p;
+        
+        gradientInFrees_eps_p  = twos_re %*% ((w_bilinear_sums_eps_p %*% ones_fv) * (SumFactor %*% ((regresParams_eps_p %*% ones_fv) * (RegresValueMap %*% CReps))));
+        gradientInParams_eps_p = twos_re %*% ((w_bilinear_sums_eps_p %*% ones_pm) * (SumFactor %*% ((regresValues_eps_p %*% ones_pm) *  RegresParamMap)));
+        
+        q_frees  = t(gradientInFrees_eps_p  - gradientInFrees)  / cg_eps;
+        q_params = t(gradientInParams_eps_p - gradientInParams) / cg_eps;
+        
+        alpha = norm_r2 / as.scalar (t(p_frees) %*% q_frees + t(p_params) %*% q_params);
+
+        shift_frees  = shift_frees  + alpha * p_frees;
+        shift_params = shift_params + alpha * p_params;
+
+        old_norm_r2 = norm_r2;
+        
+        residual_frees  = residual_frees  + alpha * q_frees;
+        residual_params = residual_params + alpha * q_params;
+        
+        norm_r2 = sum (residual_frees * residual_frees) + sum (residual_params * residual_params);
+        
+        p_frees  = - residual_frees  + (norm_r2 / old_norm_r2) * p_frees;
+        p_params = - residual_params + (norm_r2 / old_norm_r2) * p_params;
+        
+        cg_iter = cg_iter + 1;
+        if (cg_iter > 4) {
+            cg_terminate = 1;
+        }
+    }
+
+### GD-STEP 3: COMPUTE THE NEW DIRECTION VECTOR & "TEST" SHIFT
+    
+    dirVFrees_candidate  = shift_frees;
+    dirVParams_candidate = shift_params;
+  
+#        random_frees  = Rand (rows = num_frees,  cols = 1, min = 0.9, max = 1.1, sparsity = 1.0);
+#        random_params = Rand (rows = num_params, cols = 1, min = 0.9, max = 1.1, sparsity = 1.0);
+#        dirVFrees_candidate  = dirVFrees_candidate  * random_frees;
+#        dirVParams_candidate = dirVParams_candidate * random_params;
+
+    dirVFrees  = dirVFrees_candidate;
+    dirVParams = dirVParams_candidate;
+
+#   dirV_proj_factors =  t(past_dirVFrees) %*% dirVFrees_candidate + t(past_dirVParams) %*% dirVParams_candidate;
+#   dirVFrees  = dirVFrees_candidate  - past_dirVFrees  %*% dirV_proj_factors;
+#   dirVParams = dirVParams_candidate - past_dirVParams %*% dirV_proj_factors;
+    
+    dirV_denom = sqrt (sum (dirVFrees * dirVFrees) + sum (dirVParams * dirVParams));
+    dirVFrees  = dirVFrees  / dirV_denom;
+    dirVParams = dirVParams / dirV_denom;
+
+#   past_dirVFrees  [, 2:num_past_dirVs] = past_dirVFrees  [, 1:(num_past_dirVs-1)];
+#   past_dirVParams [, 2:num_past_dirVs] = past_dirVParams [, 1:(num_past_dirVs-1)];
+#   past_dirVFrees  [, 1] = dirVFrees;
+#   past_dirVParams [, 1] = dirVParams;
+
+        
+### GD-STEP 4: COMPUTE THE POLYNOMIAL FOR  d loss(t) / dt
+
+    dirVRegresValues = RegresValueMap %*% CReps %*% dirVFrees;
+    dirVRegresParams = RegresParamMap %*% dirVParams;
+    dirVdirV_bilinear_sums = SumFactor %*% (dirVRegresValues * dirVRegresParams);
+
+    dirV_bilinear_sums = SumFactor %*% (dirVRegresValues * regresParams + regresValues * dirVRegresParams);
+    L_0 = sum (w_bilinear_sums * bilinear_sums);
+    L_prime_0 = 2.0 * sum (w_bilinear_sums * dirV_bilinear_sums);
+
+    freeVars_T = freeVars + shift_T * dirVFrees;
+    params_T   = params   + shift_T * dirVParams;
+
+    reports_T = CReps %*% freeVars_T + dReps;
+    regresValues_T = RegresValueMap %*% reports_T + RegresFactorDefault;
+    regresParams_T = RegresParamMap %*% params_T  + RegresCoeffDefault;
+
+    bilinear_sums_T = SumFactor %*% (regresValues_T * regresParams_T);
+    w_bilinear_sums_T = RegresScaleMult * bilinear_sums_T;
+    dirV_bilinear_sums_T = SumFactor %*% (dirVRegresValues * regresParams_T + regresValues_T * dirVRegresParams);
+    
+    L_T = sum (w_bilinear_sums_T * bilinear_sums_T);
+    L_prime_T = 2.0 * sum (w_bilinear_sums_T * dirV_bilinear_sums_T);
+    
+    coeff_a = 4.0 * sum (RegresScaleMult * dirVdirV_bilinear_sums * dirVdirV_bilinear_sums);
+    coeff_b = -1.5 * coeff_a * shift_T + 3.0 * (L_prime_0 + L_prime_T + 2.0 * (L_0 - L_T) / shift_T) / (shift_T * shift_T);
+    coeff_c = 0.5 * coeff_a * shift_T * shift_T - 2.0 * (2.0 * L_prime_0 + L_prime_T + 3.0 * (L_0 - L_T) / shift_T) / shift_T;
+    coeff_d = L_prime_0;
+
+### GD-STEP 5: SOLVE CUBIC EQUATION & PICK THE BEST SHIFT (ROOT)
+
+    coeff_aa = coeff_b / coeff_a;
+    coeff_bb = coeff_c / coeff_a;
+    coeff_cc = coeff_d / coeff_a;
+
+    coeff_Q = (coeff_aa * coeff_aa - 3.0 * coeff_bb) / 9.0;
+    coeff_R = (2.0 * coeff_aa * coeff_aa * coeff_aa - 9.0 * coeff_aa * coeff_bb + 27.0 * coeff_cc) / 54.0;
+
+    root_choice = 0.0;
+    if (coeff_R * coeff_R < coeff_Q * coeff_Q * coeff_Q)
+    {
+        two_pi_third = 2.0943951023931954923084289221863;
+        acos_argument = coeff_R / sqrt (coeff_Q * coeff_Q * coeff_Q);
+        
+        x = abs (acos_argument);
+        acos_x = sqrt (1.0 - x) * (1.5707963050 + x * (-0.2145988016
+            + x * ( 0.0889789874 + x * (-0.0501743046
+            + x * ( 0.0308918810 + x * (-0.0170881256
+            + x * ( 0.0066700901 + x * (-0.0012624911))))))));
+        if (acos_argument >= 0.0) {
+            coeff_theta = acos_x;
+        } else {
+            coeff_theta = pi - acos_x;
+        }
+        
+        root_1 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0);
+        root_2 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0 + two_pi_third);
+        root_3 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0 - two_pi_third);
+        root_min = min (min (root_1, root_2), root_3);
+        root_max = max (max (root_1, root_2), root_3);        
+        root_int_diff = (((root_max * coeff_a / 4.0 + coeff_b / 3.0) * root_max + coeff_c / 2.0) * root_max + coeff_d) * root_max
+                      - (((root_min * coeff_a / 4.0 + coeff_b / 3.0) * root_min + coeff_c / 2.0) * root_min + coeff_d) * root_min;
+        if (root_int_diff >= 0.0) {
+            root_choice = root_min;
+        } else {
+            root_choice = root_max;
+        }
+    } else {
+        if (coeff_R >= 0.0) {
+            sgn_coeff_R = 1.0;
+        } else {
+            sgn_coeff_R = -1.0;
+        }
+        coeff_bigA = - sgn_coeff_R * (abs (coeff_R) + sqrt (coeff_R * coeff_R - coeff_Q * coeff_Q * coeff_Q)) ^ (1.0 / 3.0);
+        if (coeff_bigA != 0.0) {
+            root_choice = coeff_bigA + coeff_Q / coeff_bigA - coeff_aa / 3.0;
+        } else {
+            root_choice = - coeff_aa / 3.0;
+        }
+    }
+    
+    root_choice = root_choice - 
+        (((coeff_a * root_choice + coeff_b) * root_choice + coeff_c) * root_choice + coeff_d) 
+            / ((3 * coeff_a * root_choice + 2 * coeff_b) * root_choice + coeff_c);
+    root_choice = root_choice - 
+        (((coeff_a * root_choice + coeff_b) * root_choice + coeff_c) * root_choice + coeff_d) 
+            / ((3 * coeff_a * root_choice + 2 * coeff_b) * root_choice + coeff_c);
+
+
+### GD-STEP 6: FINISH UP THE ITERATION
+
+    freeVars = freeVars + root_choice * dirVFrees;
+    params   = params   + root_choice * dirVParams;
+
+    root_int_diff = (((root_choice * coeff_a / 4.0 + coeff_b / 3.0) * root_choice + coeff_c / 2.0) * root_choice + coeff_d) * root_choice;
+    if (- root_int_diff < 0.00000001 * L_0) {
+        is_enough_gradient_descent = 1;
+    }
+    gd_iter = gd_iter + 1;
+    print ("Grad Descent Iter " + gd_iter + ":  L = " + (L_0 + root_int_diff) + ";  shift = " + root_choice);
+    shift_T = - 100.0 * sqrt (abs(root_choice) * abs(shift_T));
+}
+
+
+print ("Gradient Descent finished.  Starting MCMC...");
+
+
+
+
+END UNCOMMENT TO TRY CONJUGATE GRADIENT DESCENT  */
+
+
+
+
+
+
+
+
+print ("Performing MCMC initialization...");
+
+reports = CReps %*% freeVars + dReps;
+regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+regresParams = RegresParamMap %*% params  + RegresCoeffDefault;
+
+bilinear_vector = regresValues * regresParams;
+bilinear_form = matrix (bilinear_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
+bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
+
+max_num_iter = max_num_burnin_iterations + max_num_observed_iterations;
+dim_sample = num_frees + num_params;
+sample_ones = matrix (1.0, rows = dim_sample, cols = 1);
+
+# Generate a random permutation matrix for the sampling order of freeVars and params
+
+SampleOrder = diag (sample_ones);
+num_swaps = 10 * dim_sample;
+rnd = Rand (rows = num_swaps, cols = 1, min = 0.0, max = 1.0);
+left_swap  = round (0.5 + dim_sample * rnd);
+rnd = Rand (rows = num_swaps, cols = 1, min = 0.0, max = 1.0);
+right_swap = round (0.5 + dim_sample * rnd);
+for (swap_i in 1:num_swaps) {
+    l = as.scalar (left_swap  [swap_i, 1]);
+    r = as.scalar (right_swap [swap_i, 1]);
+    if (l != r) {
+        tmp_row = SampleOrder [l, ];
+        SampleOrder [l, ] = SampleOrder [r, ];
+        SampleOrder [r, ] = tmp_row;
+    }
+}
+
+zero = matrix (0.0, rows = 1, cols = 1);
+
+isVar = colSums (SampleOrder [1 : num_frees, ]);
+sum_of_observed_reports = matrix (0.0, rows = num_attrs, cols = num_terms);
+sum_of_observed_params = matrix (0.0, rows = num_params, cols = 1);
+num_of_observed_reports = 0;
+sum_of_observed_losses = 0.0;
+is_observed = 0;
+
+is_calculating_loss_change = 0;
+is_monitoring_loss_change = 0;
+avg_prob_of_loss_increase = 0;
+update_factor_for_avg_loss_change = 0.02;
+avg_loss_change = -50.0 * update_factor_for_avg_loss_change;
+old_bilinear_form_value = bilinear_form_value;
+
+# Starting MCMC iterations
+
+iter = 0;
+
+while ((iter < max_num_iter) & (num_of_observed_reports < max_num_observed_iterations))
+{
+    iter = iter + 1;
+
+    # Initialize (bi-)linear forms
+    
+    regresValues = RegresValueMap %*% reports + RegresFactorDefault;
+    regresParams = RegresParamMap %*% params + RegresCoeffDefault;
+    bilinear_form_vector = regresValues * regresParams;
+    
+    bilinear_form = matrix (bilinear_form_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
+    bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
+    
+    if (bilinear_form_value > old_bilinear_form_value) {
+        avg_prob_of_loss_increase = avg_prob_of_loss_increase * (1 - update_factor_for_avg_loss_change) + 1 * update_factor_for_avg_loss_change;
+    } else {
+        avg_prob_of_loss_increase = avg_prob_of_loss_increase * (1 - update_factor_for_avg_loss_change);
+    }
+    if (is_calculating_loss_change == 0 & avg_prob_of_loss_increase > 0.4) {
+        is_calculating_loss_change = 1;
+    }
+    if (is_monitoring_loss_change == 0 & avg_prob_of_loss_increase > 0.5) {
+        is_calculating_loss_change = 1;
+        is_monitoring_loss_change = 1;
+        print ("Monitoring the average loss change is ON.        ");
+    }
+    if (is_calculating_loss_change == 1) {
+        avg_loss_change = avg_loss_change * (1 - update_factor_for_avg_loss_change) 
+            + (bilinear_form_value - old_bilinear_form_value) * update_factor_for_avg_loss_change;
+    }
+    if (is_observed == 0 & ((is_monitoring_loss_change == 1 & avg_loss_change > 0) | iter > max_num_burnin_iterations)) {
+        print ("Burn-in ENDS, observation STARTS.        ");
+        is_observed = 1;
+    }
+    
+    old_bilinear_form_value = bilinear_form_value;
+    
+    bilinear_form_value_to_print = bilinear_form_value;
+    if (bilinear_form_value < 100000) {
+        bilinear_form_value_to_print = round (10000 * bilinear_form_value) / 10000;
+    } else {
+    if (bilinear_form_value < 1000000000) {
+        bilinear_form_value_to_print = round (bilinear_form_value);
+    }}
+
+    if (is_monitoring_loss_change == 0) {
+        print ("MCMC iteration " + iter + ":  Prob [loss_increase] = " + (round (10000 * avg_prob_of_loss_increase) / 10000)
+            + ",  bilinear form value = " + bilinear_form_value_to_print);
+    } else {
+        print ("MCMC iteration " + iter + ":  Prob [loss_increase] = " + (round (10000 * avg_prob_of_loss_increase) / 10000) 
+            + ",  bilinear form value = " + bilinear_form_value_to_print + ",  avg_loss_change = " + (round (10000 * avg_loss_change) / 10000));
+    }
+    
+    # Create a normally distributed random sample
+    
+    dim_half_sample = as.scalar (round (dim_sample / 2 + 0.1 + zero));
+    rnd1 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
+    rnd2 = Rand (rows = dim_half_sample, cols = 1, min = 0.0, max = 1.0);
+    rnd_normal_1 = sqrt (- 2.0 * log (rnd1)) * sin (2 * pi * rnd2);
+    rnd_normal_2 = sqrt (- 2.0 * log (rnd1)) * cos (2 * pi * rnd2);
+    rnd_normal = matrix (0.0, rows = dim_sample, cols = 1);
+    rnd_normal [1 : dim_half_sample, ] = rnd_normal_1;
+    rnd_normal [(dim_sample - dim_half_sample + 1) : dim_sample, ] = rnd_normal_2;
+        
+    # Initialize updaters
+    
+    freeVars_updater = freeVars * 0.0;
+    params_updater = params * 0.0;
+    regresValues_updater = regresValues * 0.0;
+    regresParams_updater = regresParams * 0.0;
+    bilinear_updater_vector = bilinear_form_vector * 0.0;
+    
+    # Perform the sampling
+
+    for (idx in 1:dim_sample)
+    {
+        # Generate the sample unit-vector and updaters
+        
+        if (as.scalar (isVar [1, idx]) > 0.5) {
+            freeVars_updater = SampleOrder [1 : num_frees, idx];
+            regresValues_updater = RegresValueMap %*% CReps %*% freeVars_updater;
+            bilinear_updater_vector = regresValues_updater * regresParams;
+        } else {
+            params_updater = SampleOrder [(num_frees + 1) : dim_sample, idx];
+            regresParams_updater = RegresParamMap %*% params_updater;
+            bilinear_updater_vector = regresValues * regresParams_updater;
+        }
+        bilinear_updater = matrix (bilinear_updater_vector, rows = num_reg_eqs, cols = num_factors, byrow = TRUE);
+            
+        # Compute the quadratic by three shift-points: -1, 0, +1
+
+        bilinear_form_value = sum (RegresScaleMult * rowSums (bilinear_form) * rowSums (bilinear_form));
+        q_minus_1 = sum (RegresScaleMult * rowSums (bilinear_form - bilinear_updater) * rowSums (bilinear_form - bilinear_updater));
+        q_plus_1  = sum (RegresScaleMult * rowSums (bilinear_form + bilinear_updater) * rowSums (bilinear_form + bilinear_updater));
+        coeff_b = (q_plus_1 - q_minus_1) / 2.0;
+        coeff_a = (q_plus_1 + q_minus_1) / 2.0 - bilinear_form_value;
+
+        # Find the mean and the sigma for f(x) ~ exp (- (ax^2 + bx + c)),
+        # then compute the shift to get the new sample
+            
+        mean_shift  = - coeff_b / (2.0 * coeff_a);
+        sigma_shift = 1.0 / sqrt (2.0 * coeff_a);
+        shift = mean_shift + sigma_shift * as.scalar (rnd_normal [idx, 1]);
+            
+# BEGIN DEBUG INSERT
+# mmm = 1;
+# if (as.scalar (isVar [1, idx]) > 0.5 &          # IT IS A FREE VARIABLE, NOT A PARAMETER
+#     as.scalar (freeVars_updater [mmm, 1]) > 0)  # IT IS mmm-TH FREE VARIABLE
+# {
+# #   print ("freeVars[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a + ",   coeff_b = " + coeff_b);
+#     print ("freeVars[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   mean_shift = " + mean_shift + ",   sigma_shift = " + sigma_shift + ",   shift = " + shift);
+# }
+# if (as.scalar (isVar [1, idx]) <= 0.5 &       # IT IS A PARAMETER, NOT A FREE VARIABLE
+#     as.scalar (params_updater [mmm, 1]) > 0)  # IT IS mmm-TH PARAMETER
+# {
+# #   print ("  params[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   coeff_a = " + coeff_a + ",   coeff_b = " + coeff_b);
+#     print ("  params[" + mmm + "]:  q_minus_1 = " + q_minus_1 + ",   q_plus_1 = " + q_plus_1 + ",   mean_shift = " + mean_shift + ",   sigma_shift = " + sigma_shift + ",   shift = " + shift);
+# }
+# END DEBUG INSERT
+
+        # Perform the updates
+
+        bilinear_form = bilinear_form + shift * bilinear_updater;
+        if (as.scalar (isVar [1, idx]) > 0.5) {
+            freeVars = freeVars + shift * freeVars_updater;
+            regresValues = regresValues + shift * regresValues_updater;
+        } else {
+            params = params + shift * params_updater;
+            regresParams = regresParams + shift * regresParams_updater;
+        }
+    }
+    
+    # Update / adjust the reports and the parameters
+    
+    reports = CReps %*% freeVars + dReps;
+    reports_matrix = matrix (reports, rows = num_attrs, cols = num_terms, byrow = FALSE);
+        
+    # Make an observation of the reports and/or the parameters
+    
+    if (is_observed > 0)
+    {
+        sum_of_observed_reports = sum_of_observed_reports + reports_matrix;
+        num_of_observed_reports = num_of_observed_reports + 1;
+
+        sum_of_observed_params = sum_of_observed_params + params;
+        sum_of_observed_losses = sum_of_observed_losses + bilinear_form_value;
+    }
+
+# v1 =as.scalar(round(10000*reports[1 + (num_terms - 1) * num_attrs, 1])/10000);
+# v2 =as.scalar(round(10000*reports[2 + (num_terms - 1) * num_attrs, 1])/10000);
+# v3 =as.scalar(round(10000*reports[3 + (num_terms - 1) * num_attrs, 1])/10000);
+# v4 =as.scalar(round(10000*reports[4 + (num_terms - 1) * num_attrs, 1])/10000);
+# w1 =as.scalar(round(10000*reports_matrix[ 1,num_terms])/10000);
+# w2 =as.scalar(round(10000*reports_matrix[ 2,num_terms])/10000);
+# w3 =as.scalar(round(10000*reports_matrix[ 3,num_terms])/10000);
+# w4 =as.scalar(round(10000*reports_matrix[ 4,num_terms])/10000);
+
+# v5 =as.scalar(round(reports_matrix[ 5,num_terms]));
+# v8 =as.scalar(round(reports_matrix[ 8,num_terms]));
+# v9 =as.scalar(round(reports_matrix[ 9,num_terms]));
+# v10=as.scalar(round(reports_matrix[10,num_terms]));
+# v16=as.scalar(round(reports_matrix[16,num_terms]));
+# v19=as.scalar(round(reports_matrix[19,num_terms]));
+
+#print (" Sample = 1:" + v1 + ", 2:" + v2 + ", 3:" + v3 + ", 4:" + v4);
+## + ", 5:" + v5 + ", 8:" + v8 + ", 9:" + v9 + ", 10:" + v10 + ", 16:" + v16 + ", 19:" + v19);
+#print (" Sample = 1:" + w1 + ", 2:" + w2 + ", 3:" + w3 + ", 4:" + w4);
+## + ", 5:" + w5 + ", 8:" + w8 + ", 9:" + w9 + ", 10:" + w10 + ", 16:" + w16 + ", 19:" + w19);
+
+}
+
+print ("Average observed loss = " + (sum_of_observed_losses / num_of_observed_reports));
+print ("Writing out the results...");
+
+avg_reports_matrix = sum_of_observed_reports / num_of_observed_reports;
+avg_params = sum_of_observed_params / num_of_observed_reports;
+write (avg_reports_matrix, $11, format="text");
+write (avg_params, $12, format="text");
+
+print ("END ImputeGaussMCMC");

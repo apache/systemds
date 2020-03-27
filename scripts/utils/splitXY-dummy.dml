@@ -1,0 +1,67 @@
+#-------------------------------------------------------------
+#
+# Modifications Copyright 2019 Graz University of Technology
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Utility script to split X into new X and Y, which can be used for machine learning 
+# algorithms with response variables. This script has the same functionality as splitXY.dml but also
+# handles the case of dummycoded Y variables, where they may have multiple columns. 
+#
+# Parameters:
+#    X       : (input)  filename of data matrix
+#    S       : (input, default ncol(x) - N+1) starting index of dummycoding 
+#    N	     : (input, default 1) number of features present (i.e. dummycoded columns)
+#    OX      : (output) filename of output matrix with all columns except y
+#    OY      : (output) filename of output matrix with y column
+#    ofmt    : (default binary) format of OX and OY output matrix
+#
+# Example:
+#   hadoop jar SystemDS.jar -f algorithms/utils/splitXY-dummy.dml -nvargs X="/tmp/X.mtx" S=4 N=3 OX=/tmp/OX.mtx OY=/tmp/OY.mtx ofmt=csv
+#
+
+
+ofmt = ifdef($ofmt, "binary")
+X = read ($X)
+N = ifdef($N, 1)
+nc = ncol(X)
+S = ifdef($S, nc-N+1) 
+
+if (S==1)
+{
+    OX = X[,N+1:nc]
+    OY = X[,1:N]
+}
+else if (S == nc-N+1) 
+{
+    OX = X[,1:nc-N]
+    OY = X[,nc-N+1:nc]
+}
+else 
+{
+    OX1 = X[,1:S-1]
+    OX2 = X[,S+N:nc]
+    OX = cbind (OX1, OX2)
+    OY = X[,S:S+N-1]
+}
+
+# Write output
+write (OX, $OX, format=ofmt)
+write (OY, $OY, format=ofmt) 

@@ -1,0 +1,6 @@
+{  
+    "data_type": "frame",  
+    "format": "csv",  
+    "header": true,  
+    "na.strings": [ "NA", "" ]
+}

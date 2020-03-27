@@ -1,0 +1,13 @@
+{
+    "data_type": "frame",
+    "rows": 3,
+    "cols": 4,
+    "nnz": -1,
+    "format": "csv",
+    "header": false,
+    "schema": "int64,string,fp64,boolean",
+    "sep": ",",
+    "description": {
+        "author": "SystemDS"
+    }
+}

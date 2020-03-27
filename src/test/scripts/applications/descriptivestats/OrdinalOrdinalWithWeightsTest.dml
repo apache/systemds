@@ -1,0 +1,78 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+#A <- Ordinal
+#B <- Ordinal
+#WM <- Weights
+
+#A = read("$$indir$$A", rows=$$rows$$, cols=1, format="text");
+#B = read("$$indir$$B", rows=$$rows$$, cols=1, format="text");
+#WM = read("$$indir$$WM", rows=$$rows$$, cols=1, format="text");
+
+A = read($1, rows=$2, cols=1, format="text");
+B = read($3, rows=$2, cols=1, format="text");
+WM = read($4, rows=$2, cols=1, format="text");
+
+# compute contingency table
+F = table(A,B,WM);
+
+catA = nrow(F);  # number of categories in A
+catB = ncol(F);  # number of categories in B
+
+# compute category-wise counts for both the attributes
+R = rowSums(F);
+S = colSums(F);
+
+# compute scores, both are column vectors
+[C] = computeRanks(R);
+meanX = mean(C,R); 
+
+columnS = t(S);
+[D] = computeRanks(columnS);
+
+# scores (C,D) are individual values, and counts (R,S) act as weights
+meanY = mean(D,columnS);
+
+W = sum(F); # total weight, or total #cases
+varX = moment(C,R,2)*(W/(W-1.0));
+varY = moment(D,columnS,2)*(W/(W-1.0));
+covXY = sum( t(F/(W-1) * (C-meanX)) * (D-meanY) );
+
+sp = covXY/(sqrt(varX)*sqrt(varY));
+
+#print("X: mean " + meanX + ", var " + varX);
+#print("Y: mean " + meanY + ", var " + varY);
+#print("covXY: " + sp);
+
+#sp = spearman(A,B,WM);
+
+write(sp, $5);
+
+
+#-------------------------------------------------------------------------
+# Function to compute ranks
+# takes a column vector as input, and produces a vector of same size in which each cell denotes to the computed score for that category
+computeRanks = function(Matrix[Double] X) return (Matrix[Double] Ranks) {
+    Ranks = cumsum(X) - X/2 + 1/2;
+}
+#-------------------------------------------------------------------------
+

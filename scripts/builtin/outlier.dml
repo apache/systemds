@@ -1,0 +1,24 @@
+#-------------------------------------------------------------
+#
+# Copyright 2018 Graz University of Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
+m_outlier = function(Matrix[Double] X, Boolean opposite) return (Matrix[Double] Y) {
+  # determine if largest value has largest diff from mean
+	I = (colMaxs(X)-colMeans(X)) > (colMeans(X)-colMins(X));
+  # opposite: if largest value has largest diff from the mean, it gives smallest and vice versa
+	Y = ifelse(xor(I,opposite), colMaxs(X), colMins(X));
+}

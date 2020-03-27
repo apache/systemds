@@ -1,0 +1,269 @@
+#-------------------------------------------------------------
+#
+# Copyright 2019 Graz University of Technology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-------------------------------------------------------------
+
+#-------------------------------------------------------------
+# X    Input matrix
+# W    beta in lm
+# Y    matrix column for training
+# k    top-K subsets / slices
+# paq  amount of values wanted for each col, if = 1 then its off
+# S    amount of subsets to combine (for now supported only 2/1)
+# ------------------------------------------------------------
+
+m_slicefinder = function(Matrix[Double] X, Matrix[Double] W, Matrix[Double] Y, Integer k = 1, Integer paq = 1, Integer S = 2) return(Matrix[Double] result) {
+
+  X0 = cbind(X, Y);
+  beta = W;
+  col = ncol(X0);
+  row = nrow(X0);
+
+  val_matrix = matrix(0, rows = 2, cols = col - 1);
+  vcol = ncol(val_matrix);
+  empty_row = matrix(0, rows = 1, cols = col - 1);
+
+  #first scan, making val_matrix with different values from the each col.
+  #first row or this matrix indicates how many different values are in each col.
+
+  for (j in 1:col - 1) {
+    vector = order(target = X0[, j], by = 1, decreasing = FALSE);
+    val_matrix[2, j] = vector[1, 1];
+    val_counter = 1;
+    for (i in 1:row) {
+      if (as.scalar(val_matrix[val_counter + 1, j]) != as.scalar(vector[i, 1])) {
+        if (nrow(val_matrix) == val_counter + 1)
+          val_matrix = rbind(val_matrix, empty_row);
+        val_counter = val_counter + 1;
+        val_matrix[val_counter + 1, j] = vector[i, 1];
+      }
+    }
+
+    val_matrix[1, j] = val_counter;
+
+    #here I add some condition to split the values from each column if val_counter is too big;
+    ################################################
+    #this code relates to large datasets
+    #packing values according to paq value
+    ## TODO -- this if needs to be checked, is not working properly with all the paq values
+    if (paq != 1) {
+
+      position = floor(val_counter / paq);
+      for (a in 1:paq) {
+        if (a == paq) {
+          pos = as.scalar(val_matrix[1, j]) + 1;
+          tresh = val_matrix[pos, j];
+          val_matrix[a + 1, j] = tresh;
+        } else {
+          pos = position * a;
+          tresh = val_matrix[pos, j];
+          val_matrix[a + 1, j] = tresh;
+        }
+      }
+
+      val_matrix = val_matrix[1:paq + 1,];
+
+    }
+    ##################################################
+  }
+  vrow = nrow(val_matrix);
+  vcol = ncol(val_matrix);
+  totalrows = (vrow - 1) * vcol;
+
+  #######################################
+  Y0 = X0[1:nrow(X0), ncol(X0)];
+  Y = lmpredict(X = X0[1:nrow(X0), 1:col - 1], w = beta, icpt = 0);
+  [error0, diff0] = standart_error(Y, Y0);
+  #####################################################
+  # set_matrix will be the matrix with all slices and combination of them
+  #acctually supporting only combination of 2 slices
+  set_matrix = matrix(0, rows = 1, cols = 2 + (9 * S));
+  set_row = matrix(0, rows = 1, cols = 2 + (9 * S));
+
+
+  # first_slices is returning in slice_matrix single subsets
+
+  set_matrix = first_slices(val_matrix, set_matrix, X0, set_row, beta, paq, S);
+
+  #double_features returns subsets that cover 2 values from the same or different feature
+  if (S == 2)
+  set_matrix = double_features(val_matrix, set_matrix, X0, Y, set_row, beta, paq);
+
+  ress = order(target = set_matrix, by = 1, decreasing = TRUE);
+  set_rows = nrow(set_matrix);
+  set_cols = ncol(set_matrix);
+
+  #checking values by ordering set_matrix col 1 or 2
+  result = ress[1:k,];
+}
+
+standart_error = function(matrix[double] Y, matrix[double] Y0) return(double error, double diff) {
+  diff = var(Y0 - Y);
+  error = sqrt(sum((Y0 - Y) ^ 2) / (nrow(Y) - 2));
+}
+
+#index = binary search
+index = function(matrix[double] X, Integer column, double value, Integer mode) return(Integer pos) {
+  begin = 1;
+  e = nrow(X) + 1;
+  while (begin < e - 1) {
+    pos = as.integer(floor((begin + e) / 2));
+    if (mode == 0) {
+      if (as.scalar(X[pos, column]) < value)
+        begin = pos;
+      else
+        e = pos;
+    }
+    else if (mode == 1) {
+      if (as.scalar(X[pos, column]) <= value)
+        begin = pos;
+      else
+        e = pos;
+    }
+  }
+}
+
+first_slices = function(Matrix[Double] val_matrix, Matrix[Double] set_matrix, Matrix[Double] X0, Matrix[Double] set_row, Matrix[Double] beta, Integer paq, Integer S) return(Matrix[Double] set_matrix) {
+  col = ncol(X0);
+  row = nrow(X0);
+  vrow = nrow(val_matrix);
+  vcol = ncol(val_matrix);
+  cont = nrow(set_matrix);
+  b0 = 1;
+  b1 = col - 1;
+
+  for (j in 1:vcol) {
+    num_value = as.scalar(val_matrix[1, j]);
+
+    if (paq != 1)
+      num_value = paq;
+    x = order(target = X0, by = j, decreasing = FALSE);
+    
+    for (i in 2:num_value + 1) {
+      value1 = as.scalar(val_matrix[i, j]);
+
+      if (paq != 1) {
+        if (i == 2) {
+          a0 = 1;
+          swich = 1;
+          value0 = value1;
+        }
+        else if (as.scalar(val_matrix[i - 1, j]) <= as.scalar(val_matrix[i, j])) {
+          value0 = as.scalar(val_matrix[i - 1, j]);
+          a0 = index(x, j, value0, 1);
+          swich = 1;
+        }
+      }
+      else {
+        swich = 1;
+        value0 = value1;
+        a0 = index(x, j, value0, 0);
+      }
+
+      if (nrow(set_matrix) < cont)
+        set_matrix = rbind(set_matrix, set_row);
+
+      if (swich == 1) {
+        a1 = index(x, j, value1, 1);
+        slice_matrix = x[a0:a1, b0:b1];
+        Y0 = x[a0:a1, col];
+        Y = lmpredict(X = slice_matrix, w = beta, icpt = 0);
+        [error, diff] = standart_error(Y, Y0);
+        ## TODO -  mylist needs to be modified in order to show the total rows of the slice
+        if (S == 1)
+          mylist = as.matrix(list(diff, error, value0, value1, j, nrow(slice_matrix), ncol(slice_matrix), a0, a1, b0, b1))
+        else
+          mylist = as.matrix(list(diff, error, value0, value1, j, nrow(slice_matrix), ncol(slice_matrix), a0, a1, b0, b1, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+
+        set_matrix[cont, 1:ncol(set_matrix)] = t(mylist)
+        cont = cont + 1;
+        swich = 0;
+      }
+    }
+  }
+}
+
+
+double_features = function(Matrix[Double] val_matrix, Matrix[Double] set_matrix, Matrix[Double] X0, Matrix[Double] Y, Matrix[Double] set_row, Matrix[Double] beta, Integer paq) return(Matrix[Double] set_matrix) {
+
+  vrow = nrow(val_matrix);
+  vcol = ncol(val_matrix);
+  cont = nrow(set_matrix);
+  col = ncol(X0);
+  row = nrow(X0);
+  totalrows = (vrow - 1) * vcol;
+  b0 = 1;
+  b1 = col - 1;
+  slice_number = 2;
+
+  #combining subsets from set_matrix with the ones from val_matrix
+  #avoiding repeating subsets, taking in account the amount of values in val_matrix or the paq value if activated.
+  #new subsets checked are stored in set_matrix
+
+  for (j in 1:vcol) {
+    num_value = as.scalar(val_matrix[1, j]);
+    x = order(target = X0, by = j, decreasing = FALSE);
+
+    if (paq != 1)
+      num_value = paq;
+    if (j == num_value + 1)
+      vrow = vrow - 1;
+
+    for (i in 2:num_value + 1) {
+      if (i > 2 | j > 1)
+        slice_number = slice_number + 1;
+
+      for (a in slice_number:totalrows) {
+        num_col = as.scalar(set_matrix[a, 5]);
+        x_x = order(target = X0, by = num_col, decreasing = FALSE);
+
+        value_A0 = as.scalar(set_matrix[a, 3]);
+        value_A1 = as.scalar(set_matrix[a, 4]);
+        a00 = as.scalar(set_matrix[a, 8]);
+        a11 = as.scalar(set_matrix[a, 9]);
+        A = x_x[a00:a11, b0:b1];
+        Ya = x_x[a00:a11, col];
+
+        if (nrow(set_matrix) <= cont)
+          set_matrix = rbind(set_matrix, set_row);
+
+        value_B1 = as.scalar(val_matrix[i, j]);
+
+        if (i == 2) {
+          a0 = 1;
+          value_B0 = value_B1;
+        }
+        else if (as.scalar(val_matrix[i - 1, j]) <= as.scalar(val_matrix[i, j])) {
+          value_B0 = as.scalar(val_matrix[i - 1, j]);
+          a0 = index(x, j, value_B0, 1);
+        }
+
+        a1 = index(x, j, value_B1, 1);
+        B = x[a0:a1, b0:b1];
+        slice_matrix = rbind(A, B);
+        Yb = x[a0:a1, col];
+
+        Y0 = rbind(Ya, Yb);
+        Y = lmpredict(X = slice_matrix, w = beta, icpt = 0);
+        [error, diff] = standart_error(Y, Y0);
+        ## TODO - next code needs to be modified in order to show the total rows of the slice (as in previous function)
+        set_matrix[cont, 1:ncol(set_matrix)] = t(as.matrix(list(diff, error, value_A0, value_A1, num_col, nrow(A),
+          ncol(A), a00, a11, b0, b1, value_B0, value_B1, j, nrow(B), ncol(B), a0, a1, b0, b1)));
+        cont = cont + 1;
+      }
+    }
+  }
+}

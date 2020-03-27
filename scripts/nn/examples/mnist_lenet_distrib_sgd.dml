@@ -1,0 +1,397 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * MNIST LeNet Example
+ */
+# Imports
+source("nn/layers/affine.dml") as affine
+source("nn/layers/conv2d_builtin.dml") as conv2d
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/dropout.dml") as dropout
+source("nn/layers/l2_reg.dml") as l2_reg
+source("nn/layers/max_pool2d_builtin.dml") as max_pool2d
+source("nn/layers/relu.dml") as relu
+source("nn/layers/softmax.dml") as softmax
+source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
+
+train = function(matrix[double] X, matrix[double] Y,
+                 matrix[double] X_val, matrix[double] Y_val,
+                 int C, int Hin, int Win, int batch_size,
+                 int parallel_batches, int epochs)
+    return (matrix[double] W1, matrix[double] b1,
+            matrix[double] W2, matrix[double] b2,
+            matrix[double] W3, matrix[double] b3,
+            matrix[double] W4, matrix[double] b4) {
+  /*
+   * Trains a convolutional net using the "LeNet" architecture using
+   * distributed synchronous SGD.
+   *
+   * The input matrix, X, has N examples, each represented as a 3D
+   * volume unrolled into a single vector.  The targets, Y, have K
+   * classes, and are one-hot encoded.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - Y: Target matrix, of shape (N, K).
+   *  - X_val: Input validation data matrix, of shape (N, C*Hin*Win).
+   *  - Y_val: Target validation matrix, of shape (N, K).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - batch_size: Number of examples in each batch.
+   *  - parallel_batches: Number of batches to run in parallel.
+   *  - epochs: Total number of full training loops over the full data set.
+   *
+   * Outputs:
+   *  - W1: 1st layer weights (parameters) matrix, of shape (F1, C*Hf*Wf).
+   *  - b1: 1st layer biases vector, of shape (F1, 1).
+   *  - W2: 2nd layer weights (parameters) matrix, of shape (F2, F1*Hf*Wf).
+   *  - b2: 2nd layer biases vector, of shape (F2, 1).
+   *  - W3: 3rd layer weights (parameters) matrix, of shape (F2*(Hin/4)*(Win/4), N3).
+   *  - b3: 3rd layer biases vector, of shape (1, N3).
+   *  - W4: 4th layer weights (parameters) matrix, of shape (N3, K).
+   *  - b4: 4th layer biases vector, of shape (1, K).
+   */
+  N = nrow(X)
+  K = ncol(Y)
+
+  # Create network:
+  # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
+  Hf = 5  # filter height
+  Wf = 5  # filter width
+  stride = 1
+  pad = 2  # For same dimensions, (Hf - stride) / 2
+
+  F1 = 32  # num conv filters in conv1
+  F2 = 64  # num conv filters in conv2
+  N3 = 512  # num nodes in affine3
+  # Note: affine4 has K nodes, which is equal to the number of target dimensions (num classes)
+
+  [W1, b1] = conv2d::init(F1, C, Hf, Wf)  # inputs: (N, C*Hin*Win)
+  [W2, b2] = conv2d::init(F2, F1, Hf, Wf)  # inputs: (N, F1*(Hin/2)*(Win/2))
+  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
+  [W4, b4] = affine::init(N3, K)  # inputs: (N, N3)
+  W4 = W4 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
+
+  # Initialize SGD w/ Nesterov momentum optimizer
+  lr = 0.01  # learning rate
+  mu = 0.9  #0.5  # momentum
+  decay = 0.95  # learning rate decay constant
+  vW1 = sgd_nesterov::init(W1); vb1 = sgd_nesterov::init(b1)
+  vW2 = sgd_nesterov::init(W2); vb2 = sgd_nesterov::init(b2)
+  vW3 = sgd_nesterov::init(W3); vb3 = sgd_nesterov::init(b3)
+  vW4 = sgd_nesterov::init(W4); vb4 = sgd_nesterov::init(b4)
+
+  # Regularization
+  lambda = 5e-04
+
+  # Optimize
+  print("Starting optimization")
+  group_batch_size = parallel_batches*batch_size
+  groups = as.integer(ceil(N/group_batch_size))
+  print("Total Epochs: "+epochs+", Batch size: "+batch_size+
+        ", Degree of parallelism: "+parallel_batches+", Group batch size: "+group_batch_size+
+        ", Num groups: "+groups)
+  # Loop over the dataset multiple times
+  for (e in 1:epochs) {
+    # Grab groups of mini-batches
+    for (g in 1:groups) {
+      # Get next group of mini-batches
+      # NOTE: At the end of the dataset, the last mini-batch in this group could be smaller than
+      # the other groups.
+      group_beg = ((g-1) * group_batch_size) %% N + 1
+      group_end = min(N, group_beg + group_batch_size - 1)
+      X_group_batch = X[group_beg:group_end,]
+      y_group_batch = Y[group_beg:group_end,]
+
+      # Data structure to store gradients computed in parallel
+      dW1_agg = matrix(0, rows=parallel_batches, cols=nrow(W1)*ncol(W1))
+      dW2_agg = matrix(0, rows=parallel_batches, cols=nrow(W2)*ncol(W2))
+      dW3_agg = matrix(0, rows=parallel_batches, cols=nrow(W3)*ncol(W3))
+      dW4_agg = matrix(0, rows=parallel_batches, cols=nrow(W4)*ncol(W4))
+      db1_agg = matrix(0, rows=parallel_batches, cols=nrow(b1)*ncol(b1))
+      db2_agg = matrix(0, rows=parallel_batches, cols=nrow(b2)*ncol(b2))
+      db3_agg = matrix(0, rows=parallel_batches, cols=nrow(b3)*ncol(b3))
+      db4_agg = matrix(0, rows=parallel_batches, cols=nrow(b4)*ncol(b4))
+
+      # Run graph on each mini-batch in this group in parallel (ideally on multiple GPUs)
+      parfor (j in 1:parallel_batches) {
+        # Get a mini-batch in this group
+        beg = ((j-1) * batch_size) %% nrow(X_group_batch) + 1
+        end = min(nrow(X_group_batch), beg + batch_size - 1)
+        X_batch = X_group_batch[beg:end,]
+        y_batch = y_group_batch[beg:end,]
+
+        # Enable for debugging:
+        #print("Epoch: "+e+"\t Group: "+g+"\t j: "+j+"\t nrow(X_batch): "+nrow(X_batch))
+
+        # Compute forward pass
+        ## layer 1: conv1 -> relu1 -> pool1
+        [outc1, Houtc1, Woutc1] = conv2d::forward(X_batch, W1, b1, C, Hin, Win, Hf, Wf,
+                                                  stride, stride, pad, pad)
+        outr1 = relu::forward(outc1)
+        [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, F1, Houtc1, Woutc1, Hf=2, Wf=2,
+                                                      strideh=2, stridew=2, pad=0, pad=0)
+        ## layer 2: conv2 -> relu2 -> pool2
+        [outc2, Houtc2, Woutc2] = conv2d::forward(outp1, W2, b2, F1, Houtp1, Woutp1, Hf, Wf,
+                                                  stride, stride, pad, pad)
+        outr2 = relu::forward(outc2)
+        [outp2, Houtp2, Woutp2] = max_pool2d::forward(outr2, F2, Houtc2, Woutc2, Hf=2, Wf=2,
+                                                      strideh=2, stridew=2, pad=0, pad=0)
+        ## layer 3:  affine3 -> relu3 -> dropout
+        outa3 = affine::forward(outp2, W3, b3)
+        outr3 = relu::forward(outa3)
+        [outd3, maskd3] = dropout::forward(outr3, 0.5, -1)
+        ## layer 4:  affine4 -> softmax
+        outa4 = affine::forward(outd3, W4, b4)
+        probs = softmax::forward(outa4)
+
+        # Compute data backward pass
+        ## loss:
+        dprobs = cross_entropy_loss::backward(probs, y_batch)
+        ## layer 4:  affine4 -> softmax
+        douta4 = softmax::backward(dprobs, outa4)
+        [doutd3, dW4, db4] = affine::backward(douta4, outr3, W4, b4)
+        ## layer 3:  affine3 -> relu3 -> dropout
+        doutr3 = dropout::backward(doutd3, outr3, 0.5, maskd3)
+        douta3 = relu::backward(doutr3, outa3)
+        [doutp2, dW3, db3] = affine::backward(douta3, outp2, W3, b3)
+        ## layer 2: conv2 -> relu2 -> pool2
+        doutr2 = max_pool2d::backward(doutp2, Houtp2, Woutp2, outr2, F2, Houtc2, Woutc2, Hf=2, Wf=2,
+                                      strideh=2, stridew=2, pad=0, pad=0)
+        doutc2 = relu::backward(doutr2, outc2)
+        [doutp1, dW2, db2] = conv2d::backward(doutc2, Houtc2, Woutc2, outp1, W2, b2, F1,
+                                              Houtp1, Woutp1, Hf, Wf, stride, stride, pad, pad)
+        ## layer 1: conv1 -> relu1 -> pool1
+        doutr1 = max_pool2d::backward(doutp1, Houtp1, Woutp1, outr1, F1, Houtc1, Woutc1, Hf=2, Wf=2,
+                                      strideh=2, stridew=2, pad=0, pad=0)
+        doutc1 = relu::backward(doutr1, outc1)
+        [dX_batch, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, X_batch, W1, b1, C,
+                                                Hin, Win, Hf, Wf, stride, stride, pad, pad)
+
+        # Compute regularization backward pass
+        dW1_reg = l2_reg::backward(W1, lambda)
+        dW2_reg = l2_reg::backward(W2, lambda)
+        dW3_reg = l2_reg::backward(W3, lambda)
+        dW4_reg = l2_reg::backward(W4, lambda)
+        dW1 = dW1 + dW1_reg
+        dW2 = dW2 + dW2_reg
+        dW3 = dW3 + dW3_reg
+        dW4 = dW4 + dW4_reg
+
+        # Flatten and store gradients for this parallel execution
+        # Note: We multiply by a weighting to allow for proper gradient averaging during the
+        # aggregation even with uneven batch sizes.
+        weighting = nrow(X_batch) / nrow(X_group_batch)
+        dW1_agg[j,] = matrix(dW1, rows=1, cols=nrow(W1)*ncol(W1)) * weighting
+        dW2_agg[j,] = matrix(dW2, rows=1, cols=nrow(W2)*ncol(W2)) * weighting
+        dW3_agg[j,] = matrix(dW3, rows=1, cols=nrow(W3)*ncol(W3)) * weighting
+        dW4_agg[j,] = matrix(dW4, rows=1, cols=nrow(W4)*ncol(W4)) * weighting
+        db1_agg[j,] = matrix(db1, rows=1, cols=nrow(b1)*ncol(b1)) * weighting
+        db2_agg[j,] = matrix(db2, rows=1, cols=nrow(b2)*ncol(b2)) * weighting
+        db3_agg[j,] = matrix(db3, rows=1, cols=nrow(b3)*ncol(b3)) * weighting
+        db4_agg[j,] = matrix(db4, rows=1, cols=nrow(b4)*ncol(b4)) * weighting
+      }
+
+      # Aggregate gradients
+      # Note: The gradients are already pre-multiplied by a weight so that addition here
+      # results in gradient averaging even with different possible mini-batch sizes. I.e.,
+      # the final mini-batch at the end of the dataset could be smaller than the other mini-batches.
+      dW1 = matrix(colSums(dW1_agg), rows=nrow(W1), cols=ncol(W1))
+      dW2 = matrix(colSums(dW2_agg), rows=nrow(W2), cols=ncol(W2))
+      dW3 = matrix(colSums(dW3_agg), rows=nrow(W3), cols=ncol(W3))
+      dW4 = matrix(colSums(dW4_agg), rows=nrow(W4), cols=ncol(W4))
+      db1 = matrix(colSums(db1_agg), rows=nrow(b1), cols=ncol(b1))
+      db2 = matrix(colSums(db2_agg), rows=nrow(b2), cols=ncol(b2))
+      db3 = matrix(colSums(db3_agg), rows=nrow(b3), cols=ncol(b3))
+      db4 = matrix(colSums(db4_agg), rows=nrow(b4), cols=ncol(b4))
+
+      # Optimize with SGD w/ Nesterov momentum
+      [W1, vW1] = sgd_nesterov::update(W1, dW1, lr, mu, vW1)
+      [W2, vW2] = sgd_nesterov::update(W2, dW2, lr, mu, vW2)
+      [W3, vW3] = sgd_nesterov::update(W3, dW3, lr, mu, vW3)
+      [W4, vW4] = sgd_nesterov::update(W4, dW4, lr, mu, vW4)
+      [b1, vb1] = sgd_nesterov::update(b1, db1, lr, mu, vb1)
+      [b2, vb2] = sgd_nesterov::update(b2, db2, lr, mu, vb2)
+      [b3, vb3] = sgd_nesterov::update(b3, db3, lr, mu, vb3)
+      [b4, vb4] = sgd_nesterov::update(b4, db4, lr, mu, vb4)
+
+      # Compute loss & accuracy for training & validation data every 100 iterations.
+      if (g %% 10 == 0) {
+        # Get a mini-batch in this group
+        beg = ((j-1) * batch_size) %% nrow(X_group_batch) + 1
+        end = min(nrow(X_group_batch), beg + batch_size - 1)
+        X_batch = X_group_batch[beg:end,]
+        y_batch = y_group_batch[beg:end,]
+
+        # Compute training loss & accuracy using final
+        probs = predict(X_batch, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+        loss_data = cross_entropy_loss::forward(probs, y_batch)
+        loss_reg_W1 = l2_reg::forward(W1, lambda)
+        loss_reg_W2 = l2_reg::forward(W2, lambda)
+        loss_reg_W3 = l2_reg::forward(W3, lambda)
+        loss_reg_W4 = l2_reg::forward(W4, lambda)
+        loss = loss_data + loss_reg_W1 + loss_reg_W2 + loss_reg_W3 + loss_reg_W4
+        accuracy = mean(rowIndexMax(probs) == rowIndexMax(y_batch))
+
+        # Compute validation loss & accuracy
+        probs_val = predict(X_val, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+        loss_val = cross_entropy_loss::forward(probs_val, Y_val)
+        accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(Y_val))
+
+        # Output results
+        print("Epoch: " + e + ", Group: " + g + ", Train Loss: " + loss + ", Train Accuracy: "
+              + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+      }
+    }
+    # Anneal momentum towards 0.999
+    #mu = mu + (0.999 - mu)/(1+epochs-e)
+    # Decay learning rate
+    lr = lr * decay
+  }
+}
+
+predict = function(matrix[double] X, int C, int Hin, int Win,
+                   matrix[double] W1, matrix[double] b1,
+                   matrix[double] W2, matrix[double] b2,
+                   matrix[double] W3, matrix[double] b3,
+                   matrix[double] W4, matrix[double] b4)
+    return (matrix[double] probs) {
+  /*
+   * Computes the class probability predictions of a convolutional
+   * net using the "LeNet" architecture.
+   *
+   * The input matrix, X, has N examples, each represented as a 3D
+   * volume unrolled into a single vector.
+   *
+   * Inputs:
+   *  - X: Input data matrix, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - W1: 1st layer weights (parameters) matrix, of shape (F1, C*Hf*Wf).
+   *  - b1: 1st layer biases vector, of shape (F1, 1).
+   *  - W2: 2nd layer weights (parameters) matrix, of shape (F2, F1*Hf*Wf).
+   *  - b2: 2nd layer biases vector, of shape (F2, 1).
+   *  - W3: 3rd layer weights (parameters) matrix, of shape (F2*(Hin/4)*(Win/4), N3).
+   *  - b3: 3rd layer biases vector, of shape (1, N3).
+   *  - W4: 4th layer weights (parameters) matrix, of shape (N3, K).
+   *  - b4: 4th layer biases vector, of shape (1, K).
+   *
+   * Outputs:
+   *  - probs: Class probabilities, of shape (N, K).
+   */
+  N = nrow(X)
+
+  # Network:
+  # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
+  Hf = 5  # filter height
+  Wf = 5  # filter width
+  stride = 1
+  pad = 2  # For same dimensions, (Hf - stride) / 2
+
+  F1 = nrow(W1)  # num conv filters in conv1
+  F2 = nrow(W2)  # num conv filters in conv2
+  N3 = ncol(W3)  # num nodes in affine3
+  K = ncol(W4)  # num nodes in affine4, equal to number of target dimensions (num classes)
+
+  # Compute predictions over mini-batches
+  probs = matrix(0, rows=N, cols=K)
+  batch_size = 64
+  iters = ceil(N / batch_size)
+  parfor(i in 1:iters, check=0) {  # complains about `probs` as an inter-loop dependency
+    # Get next batch
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    X_batch = X[beg:end,]
+
+    # Compute forward pass
+    ## layer 1: conv1 -> relu1 -> pool1
+    [outc1, Houtc1, Woutc1] = conv2d::forward(X_batch, W1, b1, C, Hin, Win, Hf, Wf, stride, stride,
+                                              pad, pad)
+    outr1 = relu::forward(outc1)
+    [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, F1, Houtc1, Woutc1, Hf=2, Wf=2,
+                                                  strideh=2, stridew=2, pad=0, pad=0)
+    ## layer 2: conv2 -> relu2 -> pool2
+    [outc2, Houtc2, Woutc2] = conv2d::forward(outp1, W2, b2, F1, Houtp1, Woutp1, Hf, Wf,
+                                              stride, stride, pad, pad)
+    outr2 = relu::forward(outc2)
+    [outp2, Houtp2, Woutp2] = max_pool2d::forward(outr2, F2, Houtc2, Woutc2, Hf=2, Wf=2,
+                                                  strideh=2, stridew=2, pad=0, pad=0)
+    ## layer 3:  affine3 -> relu3
+    outa3 = affine::forward(outp2, W3, b3)
+    outr3 = relu::forward(outa3)
+    ## layer 4:  affine4 -> softmax
+    outa4 = affine::forward(outr3, W4, b4)
+    probs_batch = softmax::forward(outa4)
+
+    # Store predictions
+    probs[beg:end,] = probs_batch
+  }
+}
+
+eval = function(matrix[double] probs, matrix[double] Y)
+    return (double loss, double accuracy) {
+  /*
+   * Evaluates a convolutional net using the "LeNet" architecture.
+   *
+   * The probs matrix contains the class probability predictions
+   * of K classes over N examples.  The targets, Y, have K classes,
+   * and are one-hot encoded.
+   *
+   * Inputs:
+   *  - probs: Class probabilities, of shape (N, K).
+   *  - Y: Target matrix, of shape (N, K).
+   *
+   * Outputs:
+   *  - loss: Scalar loss, of shape (1).
+   *  - accuracy: Scalar accuracy, of shape (1).
+   */
+  # Compute loss & accuracy
+  loss = cross_entropy_loss::forward(probs, Y)
+  correct_pred = rowIndexMax(probs) == rowIndexMax(Y)
+  accuracy = mean(correct_pred)
+}
+
+generate_dummy_data = function(int N, int C, int Hin, int Win, int K)
+    return (matrix[double] X, matrix[double] Y) {
+  /*
+   * Generate a dummy dataset.
+   *
+   * Outputs:
+   *  - X: Input data matrix, of shape (N, D).
+   *  - Y: Target matrix, of shape (N, K).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   */
+  # Generate dummy input data
+  #N = 1024  # num examples
+  #C = 1  # num input channels
+  #Hin = 28  # input height
+  #Win = 28  # input width
+  #K = 10  # num target classes
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal")
+  classes = round(rand(rows=N, cols=1, min=1, max=K, pdf="uniform"))
+  Y = table(seq(1, N), classes, N, K)  # one-hot encoding
+}
+

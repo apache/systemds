@@ -158,7 +158,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testCreateDMLScriptBasedOnURL() throws MalformedURLException {
 		System.out.println("MLContextTest - create DML script based on URL");
-		String urlString = "https://raw.githubusercontent.com/apache/systemml/systemds/master/src/test/scripts/applications/hits/HITS.dml";
+		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
 		URL url = new URL(urlString);
 		Script script = dmlFromUrl(url);
 		String expectedContent = "Licensed to the Apache Software Foundation";

@@ -1,6 +1,0 @@
-{  
-   "bin": [],  
-   "impute": [  { "name": "floors", "method": "global_mean" } ],  
-   "omit": [ "view", "district", "zipcode", "numbathrooms", "numbedrooms" ],  
-   "recode": [ "zipcode", "district", "view", "numbathrooms", "numbedrooms" ]
-}

@@ -1,1 +1,0 @@
-This is the old naive bayes script, implemented via parfor. With the new grouped aggregate over matrices, this is not required anymore. However, for testing purposes we run both naive bayes scripts.

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,21 +17,21 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.fed;
+package org.apache.sysds.runtime.instructions.fed;
 
-import org.tugraz.sysds.common.Types;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.federated.LibFederatedAgg;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.LibFederatedAgg;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	

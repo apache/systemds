@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.data;
+package org.apache.sysds.runtime.instructions.spark.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -28,9 +28,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.FastBufferedDataInputStream;
-import org.tugraz.sysds.runtime.util.FastBufferedDataOutputStream;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
+import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 
 
 public class CorrMatrixBlock implements Externalizable

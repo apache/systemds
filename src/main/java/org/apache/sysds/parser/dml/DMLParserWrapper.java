@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.parser.dml;
+package org.apache.sysds.parser.dml;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -37,17 +35,17 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
-import org.tugraz.sysds.parser.ImportStatement;
-import org.tugraz.sysds.parser.LanguageException;
-import org.tugraz.sysds.parser.ParseException;
-import org.tugraz.sysds.parser.ParserWrapper;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.parser.dml.DmlParser.FunctionStatementContext;
-import org.tugraz.sysds.parser.dml.DmlParser.ProgramrootContext;
-import org.tugraz.sysds.parser.dml.DmlParser.StatementContext;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.ImportStatement;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParseException;
+import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.parser.dml.DmlParser.FunctionStatementContext;
+import org.apache.sysds.parser.dml.DmlParser.ProgramrootContext;
+import org.apache.sysds.parser.dml.DmlParser.StatementContext;
 
 /**
  * This is the main entry point for the Antlr4 parser.

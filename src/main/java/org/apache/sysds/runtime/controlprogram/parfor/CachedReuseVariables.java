@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.lang.ref.SoftReference;
 import java.util.Collection;
@@ -27,11 +27,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.instructions.cp.Data;
 
 public class CachedReuseVariables
 {

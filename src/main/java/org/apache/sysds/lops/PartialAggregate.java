@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package org.tugraz.sysds.lops;
+package org.apache.sysds.lops;
 
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
  
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.CorrectionLocationType;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ValueType;
 
 
 /**

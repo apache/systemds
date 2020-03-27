@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.aggregate;
+package org.apache.sysds.test.functions.aggregate;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 
 /**

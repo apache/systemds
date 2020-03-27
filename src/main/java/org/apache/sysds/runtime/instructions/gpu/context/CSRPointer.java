@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.gpu.context;
+package org.apache.sysds.runtime.instructions.gpu.context;
 
 import static jcuda.jcusparse.JCusparse.cusparseCreateMatDescr;
 import static jcuda.jcusparse.JCusparse.cusparseSetMatIndexBase;
@@ -34,11 +34,11 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixCUDA;
-import org.tugraz.sysds.utils.GPUStatistics;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysds.utils.GPUStatistics;
+import org.apache.sysds.utils.Statistics;
 
 import jcuda.Pointer;
 import jcuda.Sizeof;

@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.lops.Lop;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.Lop;
 
 
 public class WhileStatementBlock extends StatementBlock 

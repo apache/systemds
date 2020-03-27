@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.recompile;
+package org.apache.sysds.test.functions.recompile;
 
 import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.LeftIndex;
-import org.tugraz.sysds.lops.RightIndex;
-import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.LeftIndex;
+import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
 
 /**
  * INTERESTING NOTE: see MINUS_RIGHT; if '(X+1)-X' instead of '(X+2)-X'

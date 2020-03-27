@@ -1,7 +1,5 @@
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2020 Graz University of Technology
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -46,4 +44,4 @@ jobs:
       run: mvn clean compile test-compile
 
     - name: Component Tests
-      run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.component.*.**
+      run: mvn surefire:test -DskipTests=false -Dtest=org.apache.sysds.test.component.*.**

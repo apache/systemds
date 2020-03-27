@@ -17,19 +17,19 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.jmlc;
+package org.apache.sysds.api.jmlc;
 
 import java.util.HashMap;
 import java.util.Set;
 
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.DataConverter;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 
 /**
  * A ResultVariables object holds the data returned by a call

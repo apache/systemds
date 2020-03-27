@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.blocks;
+package org.apache.sysds.test.functions.blocks;
 
 import org.junit.Test;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 
 /**

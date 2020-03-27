@@ -18,38 +18,38 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.runtime.functionobjects.And;
-import org.tugraz.sysds.runtime.functionobjects.BitwAnd;
-import org.tugraz.sysds.runtime.functionobjects.BitwOr;
-import org.tugraz.sysds.runtime.functionobjects.BitwShiftL;
-import org.tugraz.sysds.runtime.functionobjects.BitwShiftR;
-import org.tugraz.sysds.runtime.functionobjects.BitwXor;
-import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.functionobjects.Divide;
-import org.tugraz.sysds.runtime.functionobjects.Equals;
-import org.tugraz.sysds.runtime.functionobjects.GreaterThan;
-import org.tugraz.sysds.runtime.functionobjects.GreaterThanEquals;
-import org.tugraz.sysds.runtime.functionobjects.IntegerDivide;
-import org.tugraz.sysds.runtime.functionobjects.LessThan;
-import org.tugraz.sysds.runtime.functionobjects.LessThanEquals;
-import org.tugraz.sysds.runtime.functionobjects.Minus;
-import org.tugraz.sysds.runtime.functionobjects.MinusMultiply;
-import org.tugraz.sysds.runtime.functionobjects.MinusNz;
-import org.tugraz.sysds.runtime.functionobjects.Modulus;
-import org.tugraz.sysds.runtime.functionobjects.Multiply;
-import org.tugraz.sysds.runtime.functionobjects.NotEquals;
-import org.tugraz.sysds.runtime.functionobjects.Or;
-import org.tugraz.sysds.runtime.functionobjects.Plus;
-import org.tugraz.sysds.runtime.functionobjects.PlusMultiply;
-import org.tugraz.sysds.runtime.functionobjects.Power;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
-import org.tugraz.sysds.runtime.functionobjects.Xor;
-import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.runtime.functionobjects.And;
+import org.apache.sysds.runtime.functionobjects.BitwAnd;
+import org.apache.sysds.runtime.functionobjects.BitwOr;
+import org.apache.sysds.runtime.functionobjects.BitwShiftL;
+import org.apache.sysds.runtime.functionobjects.BitwShiftR;
+import org.apache.sysds.runtime.functionobjects.BitwXor;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.Equals;
+import org.apache.sysds.runtime.functionobjects.GreaterThan;
+import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysds.runtime.functionobjects.IntegerDivide;
+import org.apache.sysds.runtime.functionobjects.LessThan;
+import org.apache.sysds.runtime.functionobjects.LessThanEquals;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.MinusMultiply;
+import org.apache.sysds.runtime.functionobjects.MinusNz;
+import org.apache.sysds.runtime.functionobjects.Modulus;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.NotEquals;
+import org.apache.sysds.runtime.functionobjects.Or;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.PlusMultiply;
+import org.apache.sysds.runtime.functionobjects.Power;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.functionobjects.Xor;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
 public class BinaryOperator  extends Operator implements Serializable
 {

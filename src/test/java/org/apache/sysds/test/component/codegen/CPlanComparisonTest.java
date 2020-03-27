@@ -17,27 +17,27 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.codegen;
+package org.apache.sysds.test.component.codegen;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.codegen.cplan.CNode;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTernary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary.BinType;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
+import org.apache.sysds.hops.codegen.cplan.CNodeData;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
 
 /**
  * A CPlan is the internal representation of code generation plans

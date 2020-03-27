@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform.encode;
+package org.apache.sysds.runtime.transform.encode;
 
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
-import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
-import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
+import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class EncoderOmit extends Encoder 
 {	

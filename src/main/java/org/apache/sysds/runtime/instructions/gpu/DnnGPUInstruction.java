@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,26 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- package org.tugraz.sysds.runtime.instructions.gpu;
+
+ package org.apache.sysds.runtime.instructions.gpu;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.gpu.context.ExecutionConfig;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixCUDA;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixCuDNN;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
-import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.util.DnnUtils;
-import org.tugraz.sysds.utils.GPUStatistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.gpu.context.ExecutionConfig;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCuDNN;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.util.DnnUtils;
+import org.apache.sysds.utils.GPUStatistics;
 
 import jcuda.Pointer;
 

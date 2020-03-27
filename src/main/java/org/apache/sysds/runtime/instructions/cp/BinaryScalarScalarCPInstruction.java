@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.functionobjects.ValueComparisonFunction;
-import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryScalarScalarCPInstruction extends BinaryCPInstruction {
 

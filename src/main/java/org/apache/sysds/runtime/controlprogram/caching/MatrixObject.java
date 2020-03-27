@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,37 +17,37 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.caching;
+package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.federated.FederatedData;
-import org.tugraz.sysds.runtime.controlprogram.federated.FederatedRange;
-import org.tugraz.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.tugraz.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
-import org.tugraz.sysds.runtime.io.FileFormatProperties;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.meta.MetaData;
-import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.IndexRange;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.IndexRange;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;

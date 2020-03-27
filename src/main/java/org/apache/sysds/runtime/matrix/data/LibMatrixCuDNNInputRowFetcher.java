@@ -16,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import static jcuda.runtime.JCuda.cudaMemset;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.instructions.gpu.context.CSRPointer;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.Pointer;
 

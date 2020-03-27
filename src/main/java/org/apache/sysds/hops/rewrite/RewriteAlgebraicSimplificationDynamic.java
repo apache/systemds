@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,44 +17,44 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
-import static org.tugraz.sysds.hops.OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+import static org.apache.sysds.hops.OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import org.tugraz.sysds.hops.AggBinaryOp;
-import org.tugraz.sysds.hops.AggUnaryOp;
-import org.tugraz.sysds.hops.BinaryOp;
-import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.LeftIndexingOp;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.NaryOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
-import org.tugraz.sysds.hops.QuaternaryOp;
-import org.tugraz.sysds.hops.ReorgOp;
-import org.tugraz.sysds.hops.TernaryOp;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.common.Types.OpOp3;
-import org.tugraz.sysds.common.Types.OpOp4;
-import org.tugraz.sysds.common.Types.OpOpDG;
-import org.tugraz.sysds.common.Types.OpOpN;
-import org.tugraz.sysds.common.Types.ParamBuiltinOp;
-import org.tugraz.sysds.common.Types.ReOrgOp;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.lops.MapMultChain.ChainType;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LeftIndexingOp;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.NaryOp;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
+import org.apache.sysds.hops.QuaternaryOp;
+import org.apache.sysds.hops.ReorgOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp3;
+import org.apache.sysds.common.Types.OpOp4;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions

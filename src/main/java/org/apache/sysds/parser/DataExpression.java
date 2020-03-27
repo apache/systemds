@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,28 +17,28 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
-import org.tugraz.sysds.parser.dml.CustomErrorListener;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.JSONHelper;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysds.parser.dml.CustomErrorListener;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.JSONHelper;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

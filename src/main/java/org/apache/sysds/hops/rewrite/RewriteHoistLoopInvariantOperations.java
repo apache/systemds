@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,21 +29,21 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.tugraz.sysds.common.Types.OpOpDG;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.ForStatement;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.VariableSet;
-import org.tugraz.sysds.parser.WhileStatement;
-import org.tugraz.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.VariableSet;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
 
 /**
  * Rule: Simplify program structure by hoisting loop-invariant operations

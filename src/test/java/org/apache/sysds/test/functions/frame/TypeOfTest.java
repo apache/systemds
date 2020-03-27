@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,25 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.test.functions.frame;
+
+package org.apache.sysds.test.functions.frame;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.io.*;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.io.*;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 public class TypeOfTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "TypeOf";

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,16 +17,16 @@
  * under the License.
  */
  
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.tugraz.sysds.api.mlcontext.MLContext;
-import org.tugraz.sysds.api.mlcontext.MLContextUtil;
-import org.tugraz.sysds.test.AutomatedTestBase;
+import org.apache.sysds.api.mlcontext.MLContext;
+import org.apache.sysds.api.mlcontext.MLContextUtil;
+import org.apache.sysds.test.AutomatedTestBase;
 
 /**
  * Abstract class that can be used for MLContext tests.

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.data;
+package org.apache.sysds.runtime.instructions.spark.data;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 
 public abstract class LineageObject 
 {

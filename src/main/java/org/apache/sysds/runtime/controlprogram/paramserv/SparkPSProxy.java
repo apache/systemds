@@ -17,21 +17,21 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv;
+package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import static org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcObject.PULL;
-import static org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcObject.PUSH;
+import static org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcObject.PULL;
+import static org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcObject.PUSH;
 
 import java.io.IOException;
 
 import org.apache.spark.network.client.TransportClient;
 import org.apache.spark.util.LongAccumulator;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall;
+import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 
 public class SparkPSProxy extends ParamServer {
 

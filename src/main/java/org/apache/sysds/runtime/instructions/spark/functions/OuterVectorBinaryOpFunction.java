@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.functions;
+package org.apache.sysds.runtime.instructions.spark.functions;
 
 import java.util.Iterator;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
 import scala.Tuple2;
 

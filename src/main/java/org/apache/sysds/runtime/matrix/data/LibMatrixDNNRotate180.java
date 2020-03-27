@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
 /**
  * This class contains the different implementation of rotate180 operation

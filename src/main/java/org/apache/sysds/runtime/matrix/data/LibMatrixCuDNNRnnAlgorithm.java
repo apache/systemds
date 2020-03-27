@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import static jcuda.jcudnn.JCudnn.cudnnCreateFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
@@ -28,10 +28,10 @@ import static jcuda.jcudnn.JCudnn.cudnnDestroyDropoutDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyRNNDescriptor;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 
 import static jcuda.jcudnn.JCudnn.cudnnCreateRNNDescriptor;
 import static jcuda.jcudnn.cudnnRNNInputMode.CUDNN_LINEAR_INPUT;

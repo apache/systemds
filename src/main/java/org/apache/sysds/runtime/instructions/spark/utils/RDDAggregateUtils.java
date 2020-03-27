@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,28 +17,28 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.utils;
+package org.apache.sysds.runtime.instructions.spark.utils;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
-import org.tugraz.sysds.common.Types.CorrectionLocationType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.data.TensorIndexes;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
-import org.tugraz.sysds.runtime.functionobjects.Plus;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
-import org.tugraz.sysds.runtime.instructions.spark.AggregateUnarySPInstruction.RDDUAggFunction2;
-import org.tugraz.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
-import org.tugraz.sysds.runtime.instructions.spark.data.RowMatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.TensorBlock;
+import org.apache.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction.RDDUAggFunction2;
+import org.apache.sysds.runtime.instructions.spark.data.CorrMatrixBlock;
+import org.apache.sysds.runtime.instructions.spark.data.RowMatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
  * Collection of utility methods for aggregating binary block rdds. As a general

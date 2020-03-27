@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv;
+package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 
 /**
  * Wrapper class containing all needed for launching spark remote worker

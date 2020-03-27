@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.parser.IfStatement;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.parser.IfStatement;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
 
 /**
  * Rule: Simplify program structure by pulling if or else statement body out

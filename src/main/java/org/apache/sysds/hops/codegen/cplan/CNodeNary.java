@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.cplan;
+package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.tugraz.sysds.hops.codegen.template.TemplateUtils;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.util.DnnUtils;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.runtime.util.DnnUtils;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeNary extends CNode
 {

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.conf;
+package org.apache.sysds.conf;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -40,13 +38,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler.CompilerType;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler.PlanSelector;
-import org.tugraz.sysds.lops.Compression;
-import org.tugraz.sysds.parser.ParseException;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
+import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
+import org.apache.sysds.lops.Compression;
+import org.apache.sysds.parser.ParseException;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;

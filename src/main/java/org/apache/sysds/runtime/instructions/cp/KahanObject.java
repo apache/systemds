@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 
 
 public class KahanObject extends Data 

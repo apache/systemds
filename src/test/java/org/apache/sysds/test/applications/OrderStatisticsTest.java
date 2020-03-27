@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.applications;
+package org.apache.sysds.test.applications;
 
 import java.util.Arrays;
 
 import org.junit.Test;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 public class OrderStatisticsTest extends AutomatedTestBase 
 {

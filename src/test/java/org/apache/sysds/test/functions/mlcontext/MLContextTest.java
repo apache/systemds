@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
 import static org.junit.Assert.assertTrue;
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromInputStream;
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromLocalFile;
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromUrl;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromInputStream;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromLocalFile;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromUrl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,22 +57,22 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.mlcontext.MLContextConversionUtil;
-import org.tugraz.sysds.api.mlcontext.MLContextException;
-import org.tugraz.sysds.api.mlcontext.MLContextUtil;
-import org.tugraz.sysds.api.mlcontext.MLResults;
-import org.tugraz.sysds.api.mlcontext.Matrix;
-import org.tugraz.sysds.api.mlcontext.MatrixFormat;
-import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.api.mlcontext.ScriptExecutor;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.mlcontext.MLContextConversionUtil;
+import org.apache.sysds.api.mlcontext.MLContextException;
+import org.apache.sysds.api.mlcontext.MLContextUtil;
+import org.apache.sysds.api.mlcontext.MLResults;
+import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.api.mlcontext.MatrixFormat;
+import org.apache.sysds.api.mlcontext.MatrixMetadata;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.api.mlcontext.ScriptExecutor;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.utils.Statistics;
 
 import scala.Tuple1;
 import scala.Tuple2;
@@ -160,7 +158,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testCreateDMLScriptBasedOnURL() throws MalformedURLException {
 		System.out.println("MLContextTest - create DML script based on URL");
-		String urlString = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/applications/hits/HITS.dml";
+		String urlString = "https://raw.githubusercontent.com/apache/systemml/systemds/master/src/test/scripts/applications/hits/HITS.dml";
 		URL url = new URL(urlString);
 		Script script = dmlFromUrl(url);
 		String expectedContent = "Licensed to the Apache Software Foundation";
@@ -171,7 +169,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testCreateDMLScriptBasedOnURLString() {
 		System.out.println("MLContextTest - create DML script based on URL string");
-		String urlString = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/applications/hits/HITS.dml";
+		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
 		Script script = dmlFromUrl(urlString);
 		String expectedContent = "Licensed to the Apache Software Foundation";
 		String s = script.getScriptString();
@@ -1178,7 +1176,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testCSVMatrixFromURLSumDML() throws MalformedURLException {
 		System.out.println("MLContextTest - CSV matrix from URL sum DML");
-		String csv = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/functions/mlcontext/1234.csv";
+		String csv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/functions/mlcontext/1234.csv";
 		URL url = new URL(csv);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url);
 		setExpectedStdOut("sum: 10.0");
@@ -1188,7 +1186,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testIJVMatrixFromURLSumDML() throws MalformedURLException {
 		System.out.println("MLContextTest - IJV matrix from URL sum DML");
-		String ijv = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/functions/mlcontext/1234.ijv";
+		String ijv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/functions/mlcontext/1234.ijv";
 		URL url = new URL(ijv);
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url, mm);

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,42 +17,42 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.cost;
+package org.apache.sysds.hops.cost;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData.CacheStatus;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.BinaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.DataGenCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.MMTSJCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.StringInitCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.UnaryCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData.CacheStatus;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.StringInitCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.ArrayList;
 import java.util.HashMap;

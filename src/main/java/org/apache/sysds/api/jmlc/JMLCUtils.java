@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.jmlc;
+package org.apache.sysds.api.jmlc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,16 +25,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 
 /**
  * Utility class containing static methods for working with JMLC.

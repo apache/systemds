@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.paramserv;
+package org.apache.sysds.test.functions.paramserv;
 
 import java.util.stream.IntStream;
 
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.DataConverter;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 
 public abstract class BaseDataPartitionerTest {
 

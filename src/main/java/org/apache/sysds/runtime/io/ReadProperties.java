@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.apache.sysds.runtime.io;
 
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
 
 public class ReadProperties 
 {

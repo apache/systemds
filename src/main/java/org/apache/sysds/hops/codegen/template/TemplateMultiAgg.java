@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.template;
+package org.apache.sysds.hops.codegen.template;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,19 +25,19 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.codegen.cplan.CNode;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeMultiAgg;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeData;
+import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public class TemplateMultiAgg extends TemplateCell 
 {	

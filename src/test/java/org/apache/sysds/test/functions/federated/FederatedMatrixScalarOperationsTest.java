@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated;
 
 
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runner.RunWith;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 import java.util.Arrays;
 

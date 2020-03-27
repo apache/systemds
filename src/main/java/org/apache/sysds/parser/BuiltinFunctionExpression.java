@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,19 +17,19 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
-import org.tugraz.sysds.common.Builtins;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.DnnUtils;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.DnnUtils;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.Arrays;

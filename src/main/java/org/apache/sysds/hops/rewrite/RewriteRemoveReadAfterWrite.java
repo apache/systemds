@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.parser.DataExpression;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.parser.DataExpression;
 
 /**
  * Rule: RemoveReadAfterWrite. If there is a persistent read with the same filename

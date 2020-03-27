@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.instructions.spark.data;
+package org.apache.sysds.runtime.instructions.spark.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,11 +26,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.SparseBlock.Type;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock.Type;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ReblockBuffer
 {

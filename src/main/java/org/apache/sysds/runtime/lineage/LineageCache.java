@@ -1,46 +1,49 @@
 /*
- * Copyright 2020 Graz University of Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-package org.tugraz.sysds.runtime.lineage;
+package org.apache.sysds.runtime.lineage;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.cost.CostEstimatorStaticRuntime;
-import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
-import org.tugraz.sysds.runtime.instructions.cp.ComputationCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.MMTSJCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.cost.CostEstimatorStaticRuntime;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.instructions.CPInstructionParser;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryMatrixMatrixCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.io.IOException;
 import java.util.Arrays;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.cost;
+package org.apache.sysds.hops.cost;
 
 import java.util.HashMap;
 
@@ -25,12 +25,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
 public class CostEstimationWrapper 
 {
@@ -51,7 +51,7 @@ public class CostEstimationWrapper
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.tugraz.sysds.hops.cost")
+			Logger.getLogger("org.apache.sysds.hops.cost")
 				.setLevel(Level.DEBUG);
 		}
 		

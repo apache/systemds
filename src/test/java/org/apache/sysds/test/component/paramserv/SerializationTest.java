@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.paramserv;
+package org.apache.sysds.test.component.paramserv;
 
 import java.util.Arrays;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.ProgramConverter;
 
 public class SerializationTest {
 

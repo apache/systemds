@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.OpOpN;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.NaryOp;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.NaryOp;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.Hop.OpOp1;
 
 /**
  * This rewrite is a general-purpose cleanup pass that removes any

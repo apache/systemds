@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -32,27 +30,27 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.Cell;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.StagingFileUtils;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.IJV;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.FastStringTokenizer;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.parfor.util.Cell;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.controlprogram.parfor.util.StagingFileUtils;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.FastStringTokenizer;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;

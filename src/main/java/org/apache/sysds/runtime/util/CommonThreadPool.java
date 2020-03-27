@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.util;
+package org.apache.sysds.runtime.util;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 
 /**
  * This common thread pool provides an abstraction to obtain a shared

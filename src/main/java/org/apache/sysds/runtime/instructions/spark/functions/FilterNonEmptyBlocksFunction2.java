@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.functions;
+package org.apache.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class FilterNonEmptyBlocksFunction2 implements Function<MatrixBlock, Boolean> 
 {

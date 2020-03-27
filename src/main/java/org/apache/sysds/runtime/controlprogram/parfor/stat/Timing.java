@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.stat;
+package org.apache.sysds.runtime.controlprogram.parfor.stat;
 
 /**
  * Helper class for encapsulated time measurements.

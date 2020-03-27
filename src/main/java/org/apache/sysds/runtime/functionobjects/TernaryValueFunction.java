@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.functionobjects;
+package org.apache.sysds.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
 public abstract class TernaryValueFunction extends ValueFunction implements Serializable
 {

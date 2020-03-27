@@ -18,17 +18,17 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.common.Types.CorrectionLocationType;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlusSq;
-import org.tugraz.sysds.runtime.functionobjects.Minus;
-import org.tugraz.sysds.runtime.functionobjects.Or;
-import org.tugraz.sysds.runtime.functionobjects.Plus;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Or;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
 
 public class AggregateOperator  extends Operator implements Serializable

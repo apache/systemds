@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.paramserv;
+package org.apache.sysds.test.functions.paramserv;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 @net.jcip.annotations.NotThreadSafe
 public class ParamservSparkNNTest extends AutomatedTestBase {

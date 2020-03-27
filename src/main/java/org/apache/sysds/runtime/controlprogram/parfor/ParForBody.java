@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 
 /**
  * Wrapper for exchanging parfor body data structures.

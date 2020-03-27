@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv.rpc;
+package org.apache.sysds.runtime.controlprogram.paramserv.rpc;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -28,13 +26,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public abstract class PSRpcObject {
 

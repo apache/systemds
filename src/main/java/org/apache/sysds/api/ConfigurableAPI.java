@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api;
+package org.apache.sysds.api;
 
 /**
  * This interface defines the programmatic access to dml configuration properties

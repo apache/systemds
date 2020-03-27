@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.apache.sysds.runtime.io;
 
 import java.io.Serializable;
 import java.util.StringTokenizer;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class FileFormatPropertiesMM extends FileFormatProperties implements Serializable
 {

@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform.encode;
+package org.apache.sysds.runtime.transform.encode;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * Simple composite encoder that applies a list of encoders 

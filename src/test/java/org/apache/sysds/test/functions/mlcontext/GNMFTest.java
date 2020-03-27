@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,27 +37,27 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.api.mlcontext.MLResults;
-import org.tugraz.sysds.api.mlcontext.Matrix;
-import org.tugraz.sysds.api.mlcontext.MatrixFormat;
-import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.api.mlcontext.ScriptFactory;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.parser.ParseException;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.api.mlcontext.MLResults;
+import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.api.mlcontext.MatrixFormat;
+import org.apache.sysds.api.mlcontext.MatrixMetadata;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.api.mlcontext.ScriptFactory;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.parser.ParseException;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtilsExt;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe

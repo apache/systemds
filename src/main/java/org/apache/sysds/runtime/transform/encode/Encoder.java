@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform.encode;
+package org.apache.sysds.runtime.transform.encode;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -25,9 +25,9 @@ import java.util.Arrays;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.wink.json4j.JSONArray;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Base class for all transform encoders providing both a row and block

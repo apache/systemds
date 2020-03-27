@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.lineage.Lineage;
 
 /**
  * Wrapper for job return of ParFor REMOTE for transferring statistics and result symbol table.

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.codegen;
+package org.apache.sysds.runtime.codegen;
 
 import java.net.URL;
 import java.net.URLClassLoader;

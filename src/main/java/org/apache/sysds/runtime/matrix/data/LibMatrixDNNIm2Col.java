@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.Arrays;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
 /**
  * This class contains the different implementation of im2col operation

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,19 +37,19 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.junit.Test;
-import org.tugraz.sysds.api.mlcontext.FrameFormat;
-import org.tugraz.sysds.api.mlcontext.FrameMetadata;
-import org.tugraz.sysds.api.mlcontext.Matrix;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.mlcontext.FrameFormat;
+import org.apache.sysds.api.mlcontext.FrameMetadata;
+import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 
 public class DataFrameVectorScriptTest extends MLContextTestBase

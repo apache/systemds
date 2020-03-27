@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.jmlc;
+package org.apache.sysds.test.functions.jmlc;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.api.jmlc.Connection;
-import org.tugraz.sysds.api.jmlc.PreparedScript;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.AutomatedTestBase;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.api.jmlc.Connection;
+import org.apache.sysds.api.jmlc.PreparedScript;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.test.AutomatedTestBase;
 
 public class InputToStringTest extends AutomatedTestBase 
 {

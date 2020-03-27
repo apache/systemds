@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,8 +17,7 @@
  * under the License.
  */
 
-
-package org.tugraz.sysds.runtime.controlprogram.paramserv.rpc;
+package org.apache.sysds.runtime.controlprogram.paramserv.rpc;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -31,8 +28,8 @@ import org.apache.spark.network.netty.SparkTransportConf;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.network.util.TransportConf;
 import org.apache.spark.util.LongAccumulator;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.LocalParamServer;
-import org.tugraz.sysds.runtime.controlprogram.paramserv.SparkPSProxy;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSProxy;
 
 public class PSRpcFactory {
 

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,32 +17,32 @@
  * under the License.
  */
  
-package org.tugraz.sysds.test.functions.codegen;
+package org.apache.sysds.test.functions.codegen;
 
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.jmlc.Connection;
-import org.tugraz.sysds.api.jmlc.PreparedScript;
-import org.tugraz.sysds.api.mlcontext.MLContext;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.jmlc.Connection;
+import org.apache.sysds.api.jmlc.PreparedScript;
+import org.apache.sysds.api.mlcontext.MLContext;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.utils.Statistics;
 
 
 public class APICodegenTest extends AutomatedTestBase
 {
-	protected final static String TEST_DIR = "org/tugraz/sysds/api/mlcontext";
+	protected final static String TEST_DIR = "org/apache/sysds/api/mlcontext";
 	protected final static String TEST_NAME = "MLContext";
 
 	private final static int rows = 100;

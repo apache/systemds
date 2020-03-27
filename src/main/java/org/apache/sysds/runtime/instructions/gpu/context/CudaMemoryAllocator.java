@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- package org.tugraz.sysds.runtime.instructions.gpu.context;
+
+ package org.apache.sysds.runtime.instructions.gpu.context;
 
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 
@@ -26,7 +25,7 @@ import jcuda.CudaException;
 import jcuda.Pointer;
 import static jcuda.runtime.cudaError.cudaSuccess;
 
-import org.tugraz.sysds.api.DMLScript;
+import org.apache.sysds.api.DMLScript;
 
 import static jcuda.runtime.JCuda.cudaMalloc;
 import jcuda.runtime.cudaError;

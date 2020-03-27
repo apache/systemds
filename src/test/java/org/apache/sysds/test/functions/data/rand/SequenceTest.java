@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.data.rand;
+package org.apache.sysds.test.functions.data.rand;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 import java.util.Arrays;
 import java.util.Collection;

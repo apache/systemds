@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.util;
+package org.apache.sysds.runtime.util;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -26,10 +26,10 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.SparseBlockCSR;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataInput;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.MatrixBlockDataInput;
 
 public class FastBufferedDataInputStream extends FilterInputStream implements DataInput, MatrixBlockDataInput
 {

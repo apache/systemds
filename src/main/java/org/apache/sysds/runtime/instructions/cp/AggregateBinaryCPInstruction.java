@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.functionobjects.Multiply;
-import org.tugraz.sysds.runtime.functionobjects.Plus;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 

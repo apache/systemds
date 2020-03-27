@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.context;
+package org.apache.sysds.runtime.controlprogram.context;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.LongWritable;
@@ -33,55 +31,55 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.mlcontext.MLContext;
-import org.tugraz.sysds.api.mlcontext.MLContextUtil;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.Checkpoint;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.TensorIndexes;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.spark.data.BroadcastObject;
-import org.tugraz.sysds.runtime.instructions.spark.data.LineageObject;
-import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBlock;
-import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
-import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
-import org.tugraz.sysds.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyTextInputFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
-import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.MLContextProxy;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.mlcontext.MLContext;
+import org.apache.sysds.api.mlcontext.MLContextUtil;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.TensorBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
+import org.apache.sysds.runtime.instructions.spark.data.LineageObject;
+import org.apache.sysds.runtime.instructions.spark.data.PartitionedBlock;
+import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
+import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysds.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyTextInputFunction;
+import org.apache.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
+import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.TensorCharacteristics;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MLContextProxy;
+import org.apache.sysds.utils.Statistics;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -122,7 +120,7 @@ public class SparkExecutionContext extends ExecutionContext
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.context")
+			Logger.getLogger("org.apache.sysds.runtime.controlprogram.context")
 				.setLevel(Level.DEBUG);
 		}
 	}

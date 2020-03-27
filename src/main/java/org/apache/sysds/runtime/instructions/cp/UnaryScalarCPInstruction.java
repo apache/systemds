@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,14 +17,14 @@
  * under the License.
  */
  
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.DMLScriptException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 
 public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 

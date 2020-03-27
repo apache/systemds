@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.cost;
+package org.apache.sysds.hops.cost;
 
-import org.tugraz.sysds.lops.DataGen;
-import org.tugraz.sysds.lops.LeftIndex;
-import org.tugraz.sysds.lops.RightIndex;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
-import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.lops.DataGen;
+import org.apache.sysds.lops.LeftIndex;
+import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.instructions.CPInstructionParser;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CostEstimatorStaticRuntime extends CostEstimator
 {

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.utils;
+package org.apache.sysds.utils;
 
 import java.io.IOException;
 import java.io.Reader;

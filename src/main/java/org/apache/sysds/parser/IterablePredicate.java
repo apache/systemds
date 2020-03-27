@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.HashMap;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 
 
 public class IterablePredicate extends Expression 

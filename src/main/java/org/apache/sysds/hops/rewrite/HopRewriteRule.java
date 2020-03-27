@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.hops.Hop;
+import org.apache.sysds.hops.Hop;
 
 /**
  * Base class for all hop rewrites in order to enable generic

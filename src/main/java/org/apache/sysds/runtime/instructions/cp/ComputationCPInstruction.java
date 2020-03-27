@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.lineage.LineageTraceable;
-import org.tugraz.sysds.runtime.lineage.LineageItem;
-import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.lineage.LineageTraceable;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public abstract class ComputationCPInstruction extends CPInstruction implements LineageTraceable {
 

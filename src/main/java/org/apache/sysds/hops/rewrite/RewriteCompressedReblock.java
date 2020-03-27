@@ -17,37 +17,37 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.AggBinaryOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.lops.Compression.CompressConfig;
-import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ForStatement;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.FunctionStatement;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
-import org.tugraz.sysds.parser.IfStatement;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.WhileStatement;
-import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.lops.Compression.CompressConfig;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * Rule: CompressedReblock: If config compressed.linalg is enabled, we

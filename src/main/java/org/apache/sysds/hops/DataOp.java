@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.FileFormat;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Federated;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.Sql;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.Federated;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.Sql;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.util.HashMap;
 import java.util.Map.Entry;

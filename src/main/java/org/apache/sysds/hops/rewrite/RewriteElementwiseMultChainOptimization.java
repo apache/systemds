@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,10 +29,10 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.hops.BinaryOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
 
 /**
  * Prerequisite: RewriteCommonSubexpressionElimination must run before this rule.

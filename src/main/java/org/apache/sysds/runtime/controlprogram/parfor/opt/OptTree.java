@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 
 /**
  * Represents a complete plan of a top-level parfor. This includes the internal

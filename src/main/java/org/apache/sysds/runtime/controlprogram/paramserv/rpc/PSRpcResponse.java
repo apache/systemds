@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv.rpc;
+package org.apache.sysds.runtime.controlprogram.paramserv.rpc;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheDataOutput;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.util.ByteBufferDataInput;
+import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.util.ByteBufferDataInput;
 
 public class PSRpcResponse extends PSRpcObject {
 	public enum Type  {

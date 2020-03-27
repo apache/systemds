@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.ipa;
+package org.apache.sysds.hops.ipa;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,19 +25,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.hops.AggUnaryOp;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatementBlock;
 
 /**
  * This rewrite identifies and removes unnecessary checkpoints, i.e.,

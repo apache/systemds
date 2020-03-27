@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -39,23 +39,23 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.Cell;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.StagingFileUtils;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.IJV;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.FastStringTokenizer;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.parfor.util.Cell;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.controlprogram.parfor.util.StagingFileUtils;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.util.FastStringTokenizer;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 
 /**
  * Partitions a given matrix into row or column partitions with a two pass-approach.

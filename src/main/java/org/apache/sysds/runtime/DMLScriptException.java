@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime;
+package org.apache.sysds.runtime;
 
 
 /**

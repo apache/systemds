@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.mlcontext;
+package org.apache.sysds.api.mlcontext;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.LongWritable;
@@ -35,32 +33,32 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.instructions.spark.data.DatasetObject;
-import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
-import org.tugraz.sysds.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyTextInputFunction;
-import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.IJV;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.instructions.spark.data.DatasetObject;
+import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
+import org.apache.sysds.runtime.instructions.spark.functions.ConvertStringToLongTextPair;
+import org.apache.sysds.runtime.instructions.spark.functions.CopyTextInputFunction;
+import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.collection.JavaConversions;
 import scala.reflect.ClassTag;
 

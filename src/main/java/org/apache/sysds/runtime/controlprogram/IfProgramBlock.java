@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram;
+package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.DMLScriptException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 
 
 public class IfProgramBlock extends ProgramBlock 

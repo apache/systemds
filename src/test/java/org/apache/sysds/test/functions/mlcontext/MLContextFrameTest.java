@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -37,18 +37,18 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.mlcontext.FrameFormat;
-import org.tugraz.sysds.api.mlcontext.FrameMetadata;
-import org.tugraz.sysds.api.mlcontext.FrameSchema;
-import org.tugraz.sysds.api.mlcontext.MLResults;
-import org.tugraz.sysds.api.mlcontext.MatrixFormat;
-import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.tugraz.sysds.test.functions.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
+import org.apache.sysds.api.mlcontext.FrameFormat;
+import org.apache.sysds.api.mlcontext.FrameMetadata;
+import org.apache.sysds.api.mlcontext.FrameSchema;
+import org.apache.sysds.api.mlcontext.MLResults;
+import org.apache.sysds.api.mlcontext.MatrixFormat;
+import org.apache.sysds.api.mlcontext.MatrixMetadata;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.api.mlcontext.MLContext.ExplainLevel;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysds.test.functions.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
 
 import scala.collection.Iterator;
 

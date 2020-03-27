@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,11 +25,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.VariableSet;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.VariableSet;
 
 /**
  * Rule: Simplify program structure by merging sequences of last-level

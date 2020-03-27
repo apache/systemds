@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import jcuda.Pointer;
 import jcuda.jcudnn.cudnnConvolutionBwdFilterPreference;
@@ -37,9 +37,9 @@ import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnConvolutionMode.CUDNN_CROSS_CORRELATION;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 
 /**
  * This class is a wrapper that contain necessary data structures to invoke 
@@ -104,7 +104,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * Factory method to get the algorithm wrapper for convolution forward
 	 * 
 	 * @param gCtx     a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link org.tugraz.sysds.utils.Statistics}.
+	 * @param instName the invoking instruction's name for record {@link org.apache.sysds.utils.Statistics}.
 	 * @param N        number of input images
 	 * @param C        number of channels
 	 * @param H        height of each image
@@ -144,7 +144,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * Factory method to get the algorithm wrapper for convolution backward filter
 	 * 
 	 * @param gCtx     a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link org.tugraz.sysds.utils.Statistics}.
+	 * @param instName the invoking instruction's name for record {@link org.apache.sysds.utils.Statistics}.
 	 * @param N        number of input images
 	 * @param C        number of channels
 	 * @param H        height of each image
@@ -187,7 +187,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * Factory method to get the algorithm wrapper for convolution backward data
 	 * 
 	 * @param gCtx     a valid {@link GPUContext}
-	 * @param instName the invoking instruction's name for record {@link org.tugraz.sysds.utils.Statistics}.
+	 * @param instName the invoking instruction's name for record {@link org.apache.sysds.utils.Statistics}.
 	 * @param N        number of input images
 	 * @param C        number of channels
 	 * @param H        height of each image

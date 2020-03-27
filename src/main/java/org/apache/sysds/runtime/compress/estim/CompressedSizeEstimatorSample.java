@@ -1,20 +1,23 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-package org.tugraz.sysds.runtime.compress.estim;
+package org.apache.sysds.runtime.compress.estim;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,13 +27,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
-import org.tugraz.sysds.runtime.compress.BitmapEncoder;
-import org.tugraz.sysds.runtime.compress.ReaderColumnSelection;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
-import org.tugraz.sysds.runtime.compress.UncompressedBitmap;
-import org.tugraz.sysds.runtime.compress.utils.DblArray;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.ReaderColumnSelection;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	private final static double SHLOSSER_JACKKNIFE_ALPHA = 0.975;

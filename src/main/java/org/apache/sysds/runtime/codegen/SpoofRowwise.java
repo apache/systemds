@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.codegen;
+package org.apache.sysds.runtime.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,19 +26,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.DenseBlockFactory;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.SparseRow;
-import org.tugraz.sysds.runtime.data.SparseRowVector;
-import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixMult;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.CommonThreadPool;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 public abstract class SpoofRowwise extends SpoofOperator

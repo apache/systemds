@@ -1,20 +1,23 @@
 /*
- * Modification Copyright 2020 Graz University of Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-package org.tugraz.sysds.test.component.compress;
+package org.apache.sysds.test.component.compress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,25 +27,25 @@ import java.io.DataOutputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
-import org.tugraz.sysds.lops.MapMultChain.ChainType;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
-import org.tugraz.sysds.runtime.functionobjects.Multiply;
-import org.tugraz.sysds.runtime.functionobjects.Plus;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.TestUtils;
-import org.tugraz.sysds.test.TestConstants.CompressionType;
-import org.tugraz.sysds.test.TestConstants.MatrixType;
-import org.tugraz.sysds.test.TestConstants.SparsityType;
-import org.tugraz.sysds.test.TestConstants.ValueType;
-import org.tugraz.sysds.test.TestConstants.ValueRange;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
+import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.TestConstants.CompressionType;
+import org.apache.sysds.test.TestConstants.MatrixType;
+import org.apache.sysds.test.TestConstants.SparsityType;
+import org.apache.sysds.test.TestConstants.ValueType;
+import org.apache.sysds.test.TestConstants.ValueRange;
 
 @RunWith(value = Parameterized.class)
 public class CompressedMatrixTest extends CompressedTestBase {

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,31 +29,31 @@ import java.util.stream.Collectors;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.common.Builtins;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.Expression.BinaryOp;
-import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PResultMerge;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.Expression.BinaryOp;
+import org.apache.sysds.parser.PrintStatement.PRINTTYPE;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PResultMerge;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * This ParForStatementBlock is essentially identical to a ForStatementBlock, except an extended validate
@@ -147,7 +147,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.tugraz.sysds.parser.ParForStatementBlock")
+			Logger.getLogger("org.apache.sysds.parser.ParForStatementBlock")
 				.setLevel(Level.TRACE);
 		}
 	}
@@ -1555,9 +1555,9 @@ public class ParForStatementBlock extends ForStatementBlock
 			return rParseBinaryExpression(hop);
 		else if( HopRewriteUtils.isBinary(hop, OpOp2.MIN) && ignoreMinWithConstant ) {
 			//note: builtin function expression is also a data identifier and hence order before
-			if( hop.getInput().get(0) instanceof org.tugraz.sysds.hops.BinaryOp )
+			if( hop.getInput().get(0) instanceof org.apache.sysds.hops.BinaryOp )
 				return rParseBinaryExpression(hop.getInput().get(0));
-			else if( hop.getInput().get(1) instanceof org.tugraz.sysds.hops.BinaryOp )
+			else if( hop.getInput().get(1) instanceof org.apache.sysds.hops.BinaryOp )
 				return rParseBinaryExpression(hop.getInput().get(1));
 		}
 		else if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) )
@@ -1736,19 +1736,19 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	private LinearFunction rParseBinaryExpression(Hop hop) {
-		org.tugraz.sysds.hops.BinaryOp bop = (org.tugraz.sysds.hops.BinaryOp) hop;
+		org.apache.sysds.hops.BinaryOp bop = (org.apache.sysds.hops.BinaryOp) hop;
 		Hop l = bop.getInput().get(0);
 		Hop r = bop.getInput().get(1);
 		if( bop.getOp()==OpOp2.PLUS || bop.getOp()==OpOp2.MINUS ) {
 			boolean plus = bop.getOp() == OpOp2.PLUS;
 			//parse binary expressions
-			if( l instanceof org.tugraz.sysds.hops.BinaryOp) {
+			if( l instanceof org.apache.sysds.hops.BinaryOp) {
 				LinearFunction f = rParseBinaryExpression(l);
 				Long cvalR = parseLongConstant(r);
 				if( f != null && cvalR != null )
 					return f.addConstant(cvalR * (plus?1:-1));
 			}
-			else if (r instanceof org.tugraz.sysds.hops.BinaryOp) {
+			else if (r instanceof org.apache.sysds.hops.BinaryOp) {
 				LinearFunction f = rParseBinaryExpression(r);
 				Long cvalL = parseLongConstant(l);
 				if( f != null && cvalL != null )
@@ -1772,9 +1772,9 @@ public class ParForStatementBlock extends ForStatementBlock
 				return new LinearFunction(0, cvalL, r.getName());
 			else if( cvalR != null && HopRewriteUtils.isData(l, OpOpData.TRANSIENTREAD) )
 				return new LinearFunction(0, cvalR, l.getName());
-			else if( cvalL != null && r instanceof org.tugraz.sysds.hops.BinaryOp )
+			else if( cvalL != null && r instanceof org.apache.sysds.hops.BinaryOp )
 				return rParseBinaryExpression(r).scale(cvalL);
-			else if( cvalR != null && l instanceof org.tugraz.sysds.hops.BinaryOp )
+			else if( cvalR != null && l instanceof org.apache.sysds.hops.BinaryOp )
 				return rParseBinaryExpression(l).scale(cvalR);
 		}
 		return null; //let dependency analysis fail

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,44 +27,44 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.tugraz.sysds.common.Types.CorrectionLocationType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInput;
-import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.DenseBlockFactory;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.SparseBlockCSR;
-import org.tugraz.sysds.runtime.data.SparseBlockFactory;
-import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.functionobjects.CM;
-import org.tugraz.sysds.runtime.functionobjects.IndexFunction;
-import org.tugraz.sysds.runtime.functionobjects.KahanFunction;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlusSq;
-import org.tugraz.sysds.runtime.functionobjects.Mean;
-import org.tugraz.sysds.runtime.functionobjects.Multiply;
-import org.tugraz.sysds.runtime.functionobjects.ReduceAll;
-import org.tugraz.sysds.runtime.functionobjects.ReduceCol;
-import org.tugraz.sysds.runtime.functionobjects.ReduceDiag;
-import org.tugraz.sysds.runtime.functionobjects.ReduceRow;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
-import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.CM_COV_Object;
-import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateTernaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.tugraz.sysds.runtime.util.CommonThreadPool;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
+import org.apache.sysds.runtime.codegen.SpoofOperator.SideInputSparseCell;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockFactory;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.CM;
+import org.apache.sysds.runtime.functionobjects.IndexFunction;
+import org.apache.sysds.runtime.functionobjects.KahanFunction;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysds.runtime.functionobjects.Mean;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceDiag;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 /**

@@ -1,32 +1,35 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-package org.tugraz.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress;
 
 import java.util.Arrays;
 
-import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.tugraz.sysds.runtime.functionobjects.KahanFunction;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
-import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.KahanFunction;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
  * Base class for column groups encoded with value dictionary.

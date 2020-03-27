@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.functionobjects;
+package org.apache.sysds.runtime.functionobjects;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.Data;
 
 
 public abstract class FunctionObject 

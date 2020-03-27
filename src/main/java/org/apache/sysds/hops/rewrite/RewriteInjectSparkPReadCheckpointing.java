@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
 
 /**
  * Rule: BlockSizeAndReblock. For all statement blocks, determine

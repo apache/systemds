@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.conf;
+package org.apache.sysds.conf;
 
 import org.apache.hadoop.mapred.JobConf;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
 
 
 

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.mlcontext.MLResults;
-import org.tugraz.sysds.api.mlcontext.Matrix;
-import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.DataConverter;
+import org.apache.sysds.api.mlcontext.MLResults;
+import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.api.mlcontext.MatrixMetadata;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.api.mlcontext.MLContext.ExplainLevel;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.DataConverter;
 
 public class MLContextOutputBlocksizeTest extends MLContextTestBase
 {

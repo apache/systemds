@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test;
+package org.apache.sysds.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,37 +35,36 @@ import java.util.HashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.wink.json4j.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.tugraz.sysds.runtime.io.FrameReader;
-import org.tugraz.sysds.runtime.io.FrameReaderFactory;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.utils.ParameterBuilder;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.io.FrameReaderFactory;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.ParameterBuilder;
+import org.apache.sysds.utils.Statistics;
 
 /**
  * <p>
@@ -94,57 +90,10 @@ public abstract class AutomatedTestBase {
 
 	public static final int FED_WORKER_WAIT = 500; // in ms
 
-	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing to set the native library paths internally thus breaking the code. 
-	// That is why, these static assignments to java.library.path and hadoop.home.dir are commented out.
-
-//	static {
-//
-//		/* For testing MKL BLAS on Windows run "mklvars.bat intel64" or "compilervars.bat intel64" (this script
-//		 * comes with the mkl software package and sets the env var MKLROOT). Then start SystemDS or
-//		 * your IDE from that environment (e.g. from that command prompt).
-//		 * Alternatively you can set MKLROOT and your PATH variables manually to make it permanent.
-//		 * Same for Linux but with compilervars.sh intel64.
-//		 * For OpenBLAS point your PATH to the shared library.
-//		 */
-//
-//		// the JNI implementation will be in a SO/DLL in that directory
-//		// after a successful mvn package
-//		appendToJavaLibraryPath("target" + File.separator + "classes" + File.separator + "lib");
-//
-//		if(SystemUtils.IS_OS_WINDOWS) {
-//			System.err.println("AutomatedTestBase has detected a Windows OS and is overriding\n"
-//				+ "hadoop.home.dir and java.library.path.\n");
-//			String cwd = System.getProperty("user.dir");
-//			System.setProperty("hadoop.home.dir", cwd + File.separator + "src" + File.separator + "test" +
-//					File.separator + "config" +
-//					File.separator + "hadoop_bin_windows");
-//
-//			appendToJavaLibraryPath(cwd);
-//			appendToJavaLibraryPath(cwd + File.separator + "src" + File.separator + "test" + File.separator + "config" +
-//					File.separator + "hadoop_bin_windows" + File.separator + "bin");
-//			appendToJavaLibraryPath("lib");
-//
-//			if(TEST_GPU) {
-//				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin";
-//				appendToJavaLibraryPath(CUDA_LIBRARY_PATH);
-//			}
-//
-//			// Need to muck around with the classloader to get it to use the new
-//			// value of java.library.path.
-//			try {
-//				final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
-//				sysPathsField.setAccessible(true);
-//
-//				sysPathsField.set(null, null);
-//			}
-//			catch(Exception e) {
-//				// IBM Java throws an exception here, so don't print the stack trace.
-//				// e.printStackTrace();
-//				// System.err.printf("Caught exception while attempting to override library path. Attempting to
-//				// continue.");
-//			}
-//		}
-//	}
+	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing 
+	// to set the native library paths internally thus breaking the code. 
+	// That is why, these static assignments to java.library.path and hadoop.home.dir 
+	// (for native winutils) have been removed.
 
 	/**
 	 * Script source directory for .dml and .r files only (TEST_DATA_DIR for generated test data artifacts).

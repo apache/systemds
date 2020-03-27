@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 

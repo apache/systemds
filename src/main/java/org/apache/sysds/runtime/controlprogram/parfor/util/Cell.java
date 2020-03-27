@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.util;
+package org.apache.sysds.runtime.controlprogram.parfor.util;
 
 /**
  * Helper class for representing text cell and binary cell records in order to

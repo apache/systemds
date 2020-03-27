@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.hadoop.io.Writable;
 

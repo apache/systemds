@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.template;
+package org.apache.sysds.hops.codegen.template;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,14 +34,14 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler;
-import org.tugraz.sysds.hops.codegen.opt.InterestingPoint;
-import org.tugraz.sysds.hops.codegen.opt.PlanSelection;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.CloseType;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.TemplateType;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.opt.InterestingPoint;
+import org.apache.sysds.hops.codegen.opt.PlanSelection;
+import org.apache.sysds.hops.codegen.template.TemplateBase.CloseType;
+import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CPlanMemoTable 
 {

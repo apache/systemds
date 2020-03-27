@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.util.NormalPRNGenerator;
-import org.tugraz.sysds.runtime.util.PRNGenerator;
-import org.tugraz.sysds.runtime.util.PoissonPRNGenerator;
-import org.tugraz.sysds.runtime.util.UniformPRNGenerator;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.util.NormalPRNGenerator;
+import org.apache.sysds.runtime.util.PRNGenerator;
+import org.apache.sysds.runtime.util.PoissonPRNGenerator;
+import org.apache.sysds.runtime.util.UniformPRNGenerator;
 
 public class RandomMatrixGenerator {
 

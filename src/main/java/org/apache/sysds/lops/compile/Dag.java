@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,37 +17,37 @@
  * under the License.
  */
 
-package org.tugraz.sysds.lops.compile;
+package org.apache.sysds.lops.compile;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.FileFormat;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.FunctionCallCP;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.Lop.Type;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.OutputParameters;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.Instruction.IType;
-import org.tugraz.sysds.runtime.instructions.InstructionParser;
-import org.tugraz.sysds.runtime.instructions.SPInstructionParser;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.FunctionCallCP;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.Lop.Type;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.OutputParameters;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.instructions.CPInstructionParser;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.Instruction.IType;
+import org.apache.sysds.runtime.instructions.InstructionParser;
+import org.apache.sysds.runtime.instructions.SPInstructionParser;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.parser.ParForStatementBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 
 
 /**

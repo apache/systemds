@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.append;
+package org.apache.sysds.test.functions.append;
 
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 public class StringAppendTest extends AutomatedTestBase
 {

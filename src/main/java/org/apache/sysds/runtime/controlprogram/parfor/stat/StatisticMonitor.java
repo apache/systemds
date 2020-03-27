@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.stat;
+package org.apache.sysds.runtime.controlprogram.parfor.stat;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 
 /**
  * This singleton statistic monitor is used to consolidate all parfor runtime statistics.

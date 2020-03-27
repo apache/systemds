@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform.encode;
+package org.apache.sysds.runtime.transform.encode;
 
 
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Simple composite encoder that applies a list of encoders 

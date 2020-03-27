@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,36 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package org.tugraz.sysds.runtime.controlprogram;
+package org.apache.sysds.runtime.controlprogram;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.jmlc.JMLCUtils;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.ParseInfo;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.DMLScriptException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.instructions.cp.StringObject;
-import org.tugraz.sysds.runtime.lineage.LineageCache;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.jmlc.JMLCUtils;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.ParseInfo;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.cp.StringObject;
+import org.apache.sysds.runtime.lineage.LineageCache;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
 

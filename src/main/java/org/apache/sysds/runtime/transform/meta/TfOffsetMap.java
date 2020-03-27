@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform.meta;
+package org.apache.sysds.runtime.transform.meta;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.TreeMap;
 

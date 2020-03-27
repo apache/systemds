@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LeftIndexingOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LeftIndexingOp;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
 
 public class CostEstimatorHops extends CostEstimator
 {

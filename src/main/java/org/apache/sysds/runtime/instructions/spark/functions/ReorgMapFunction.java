@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.functions;
+package org.apache.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.PairFunction;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.functionobjects.DiagIndex;
-import org.tugraz.sysds.runtime.functionobjects.IndexFunction;
-import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.functionobjects.DiagIndex;
+import org.apache.sysds.runtime.functionobjects.IndexFunction;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 import scala.Tuple2;
 

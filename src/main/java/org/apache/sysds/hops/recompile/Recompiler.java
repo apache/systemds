@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,81 +17,81 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.recompile;
+package org.apache.sysds.hops.recompile;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONObject;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.jmlc.JMLCUtils;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.FileFormat;
-import org.tugraz.sysds.common.Types.OpOpDG;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.ReOrgOp;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.FunctionOp.FunctionType;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.MemoTable;
-import org.tugraz.sysds.hops.MultiThreadedHop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.Dag;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.ParseInfo;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.ProgramConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.Explain;
-import org.tugraz.sysds.utils.Explain.ExplainType;
-import org.tugraz.sysds.utils.JSONHelper;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.jmlc.JMLCUtils;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.FunctionOp.FunctionType;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.MemoTable;
+import org.apache.sysds.hops.MultiThreadedHop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.ParseInfo;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.utils.JSONHelper;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.opt;
+package org.apache.sysds.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -25,11 +25,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.TemplateType;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class PlanSelection 
 {

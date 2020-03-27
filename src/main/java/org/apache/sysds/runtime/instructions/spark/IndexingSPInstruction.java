@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark;
+package org.apache.sysds.runtime.instructions.spark;
 
-import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
-import org.tugraz.sysds.lops.LeftIndex;
-import org.tugraz.sysds.lops.RightIndex;
-import org.tugraz.sysds.lops.LeftIndex.LixCacheType;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysds.lops.LeftIndex;
+import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.lops.LeftIndex.LixCacheType;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 
 /**
  * This class implements the matrix indexing functionality inside Spark.

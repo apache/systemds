@@ -17,21 +17,21 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.matrix.data.DnnParameters;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixNative;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
-import org.tugraz.sysds.runtime.util.DnnUtils;
-import org.tugraz.sysds.utils.NativeHelper;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.DnnParameters;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysds.runtime.matrix.data.LibMatrixNative;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
+import org.apache.sysds.runtime.util.DnnUtils;
+import org.apache.sysds.utils.NativeHelper;
 
 public class DnnCPInstruction extends UnaryCPInstruction {
 	private static boolean warnedUnderUtilitization = false;

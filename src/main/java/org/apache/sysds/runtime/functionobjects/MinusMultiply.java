@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.functionobjects;
+package org.apache.sysds.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
-import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
 public class MinusMultiply extends TernaryValueFunction implements ValueFunctionWithConstant, Serializable
 {

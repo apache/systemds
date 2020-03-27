@@ -1,6 +1,4 @@
 /*
- * Modifications copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,45 +17,45 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.util;
+package org.apache.sysds.runtime.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.tugraz.sysds.common.Types;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.DenseBlockFactory;
-import org.tugraz.sysds.runtime.data.DataTensorBlock;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.BasicTensorBlock;
-import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.io.FileFormatProperties;
-import org.tugraz.sysds.runtime.io.MatrixReader;
-import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
-import org.tugraz.sysds.runtime.io.MatrixWriter;
-import org.tugraz.sysds.runtime.io.MatrixWriterFactory;
-import org.tugraz.sysds.runtime.io.ReadProperties;
-import org.tugraz.sysds.runtime.io.TensorReader;
-import org.tugraz.sysds.runtime.io.TensorReaderFactory;
-import org.tugraz.sysds.runtime.io.TensorWriter;
-import org.tugraz.sysds.runtime.io.TensorWriterFactory;
-import org.tugraz.sysds.runtime.matrix.data.CTableMap;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.IJV;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFactory;
+import org.apache.sysds.runtime.data.DataTensorBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.BasicTensorBlock;
+import org.apache.sysds.runtime.data.TensorBlock;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.io.MatrixReaderFactory;
+import org.apache.sysds.runtime.io.MatrixWriter;
+import org.apache.sysds.runtime.io.MatrixWriterFactory;
+import org.apache.sysds.runtime.io.ReadProperties;
+import org.apache.sysds.runtime.io.TensorReader;
+import org.apache.sysds.runtime.io.TensorReaderFactory;
+import org.apache.sysds.runtime.io.TensorWriter;
+import org.apache.sysds.runtime.io.TensorWriterFactory;
+import org.apache.sysds.runtime.matrix.data.CTableMap;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.io.IOException;
 import java.text.DecimalFormat;

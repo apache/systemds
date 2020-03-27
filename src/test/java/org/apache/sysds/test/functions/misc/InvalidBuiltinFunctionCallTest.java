@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.misc;
+package org.apache.sysds.test.functions.misc;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 public class InvalidBuiltinFunctionCallTest extends AutomatedTestBase
 {

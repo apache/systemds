@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,30 +17,30 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ForStatement;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.FunctionStatement;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
-import org.tugraz.sysds.parser.IfStatement;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.WhileStatement;
-import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.ParForStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 
 /**
  * This program rewriter applies a variety of rule-based rewrites
@@ -62,7 +60,7 @@ public class ProgramRewriter
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.tugraz.sysds.hops.rewrite")
+			Logger.getLogger("org.apache.sysds.hops.rewrite")
 				  .setLevel(Level.DEBUG);
 		}
 	}

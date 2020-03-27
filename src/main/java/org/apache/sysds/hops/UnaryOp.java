@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,27 +17,27 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Checkpoint;
-import org.tugraz.sysds.lops.CumulativeOffsetBinary;
-import org.tugraz.sysds.lops.CumulativePartialAggregate;
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.PickByCount;
-import org.tugraz.sysds.lops.SortKeys;
-import org.tugraz.sysds.lops.Unary;
-import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.lops.CumulativeOffsetBinary;
+import org.apache.sysds.lops.CumulativePartialAggregate;
+import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.PickByCount;
+import org.apache.sysds.lops.SortKeys;
+import org.apache.sysds.lops.Unary;
+import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
 

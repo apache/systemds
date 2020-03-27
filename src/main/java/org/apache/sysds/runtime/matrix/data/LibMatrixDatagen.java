@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,17 +31,17 @@ import java.util.stream.LongStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
-import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.util.CommonThreadPool;
-import org.tugraz.sysds.runtime.util.NormalPRNGenerator;
-import org.tugraz.sysds.runtime.util.PRNGenerator;
-import org.tugraz.sysds.runtime.util.PoissonPRNGenerator;
-import org.tugraz.sysds.runtime.util.UniformPRNGenerator;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.DataGenOp;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.NormalPRNGenerator;
+import org.apache.sysds.runtime.util.PRNGenerator;
+import org.apache.sysds.runtime.util.PoissonPRNGenerator;
+import org.apache.sysds.runtime.util.UniformPRNGenerator;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class LibMatrixDatagen 
 {

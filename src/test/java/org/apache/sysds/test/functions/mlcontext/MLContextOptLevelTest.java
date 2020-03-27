@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.mlcontext;
+package org.apache.sysds.test.functions.mlcontext;
 
-import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.mlcontext.MLResults;
-import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.api.mlcontext.MLResults;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.api.mlcontext.MLContext.ExplainLevel;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.test.TestUtils;
 
 public class MLContextOptLevelTest extends MLContextTestBase
 {

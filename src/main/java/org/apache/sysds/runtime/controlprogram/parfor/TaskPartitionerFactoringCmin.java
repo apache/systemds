@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
 
 /**
  * Factoring with minimum constraint (e.g., if communication is expensive)

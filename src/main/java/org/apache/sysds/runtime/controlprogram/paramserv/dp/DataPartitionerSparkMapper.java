@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,8 +17,7 @@
  * under the License.
  */
 
-
-package org.tugraz.sysds.runtime.controlprogram.paramserv.dp;
+package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
 import java.io.Serializable;
 import java.util.Iterator;
@@ -28,9 +25,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 

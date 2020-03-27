@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.common.Types.CorrectionLocationType;
-import org.tugraz.sysds.lops.UAggOuterChain;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.functionobjects.ReduceAll;
-import org.tugraz.sysds.runtime.functionobjects.ReduceCol;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixOuterAgg;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.lops.UAggOuterChain;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.LibMatrixOuterAgg;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
 public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 	private final AggregateUnaryOperator _uaggOp;

@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.util.List;
 
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
 
 /**
  * This is the base class for all task partitioner. For this purpose it stores relevant information such as

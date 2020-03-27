@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,41 +17,41 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.common.Types.FileFormat;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.hops.recompile.Recompiler.ResetType;
-import org.tugraz.sysds.lops.Binary;
-import org.tugraz.sysds.lops.BinaryScalar;
-import org.tugraz.sysds.lops.CSVReBlock;
-import org.tugraz.sysds.lops.Checkpoint;
-import org.tugraz.sysds.lops.Compression;
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.ReBlock;
-import org.tugraz.sysds.lops.Unary;
-import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.parser.ParseInfo;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.recompile.Recompiler.ResetType;
+import org.apache.sysds.lops.Binary;
+import org.apache.sysds.lops.BinaryScalar;
+import org.apache.sysds.lops.CSVReBlock;
+import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.lops.Compression;
+import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.ReBlock;
+import org.apache.sysds.lops.Unary;
+import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.parser.ParseInfo;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1122,31 +1120,31 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsBS.put(OpOp2.BITWSHIFTR, BinaryScalar.OperationTypes.BW_SHIFTR);
 	}
 
-	protected static final HashMap<Hop.OpOp2, org.tugraz.sysds.lops.Unary.OperationTypes> HopsOpOp2LopsU;
+	protected static final HashMap<Hop.OpOp2, org.apache.sysds.lops.Unary.OperationTypes> HopsOpOp2LopsU;
 	static {
 		HopsOpOp2LopsU = new HashMap<>();
-		HopsOpOp2LopsU.put(OpOp2.PLUS, org.tugraz.sysds.lops.Unary.OperationTypes.ADD);
-		HopsOpOp2LopsU.put(OpOp2.MINUS, org.tugraz.sysds.lops.Unary.OperationTypes.SUBTRACT);
-		HopsOpOp2LopsU.put(OpOp2.MULT, org.tugraz.sysds.lops.Unary.OperationTypes.MULTIPLY);
-		HopsOpOp2LopsU.put(OpOp2.DIV, org.tugraz.sysds.lops.Unary.OperationTypes.DIVIDE);
-		HopsOpOp2LopsU.put(OpOp2.MODULUS, org.tugraz.sysds.lops.Unary.OperationTypes.MODULUS);
-		HopsOpOp2LopsU.put(OpOp2.INTDIV, org.tugraz.sysds.lops.Unary.OperationTypes.INTDIV);
-		HopsOpOp2LopsU.put(OpOp2.MINUS1_MULT, org.tugraz.sysds.lops.Unary.OperationTypes.MINUS1_MULTIPLY);
-		HopsOpOp2LopsU.put(OpOp2.LESSEQUAL, org.tugraz.sysds.lops.Unary.OperationTypes.LESS_THAN_OR_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.LESS, org.tugraz.sysds.lops.Unary.OperationTypes.LESS_THAN);
-		HopsOpOp2LopsU.put(OpOp2.GREATEREQUAL, org.tugraz.sysds.lops.Unary.OperationTypes.GREATER_THAN_OR_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.GREATER, org.tugraz.sysds.lops.Unary.OperationTypes.GREATER_THAN);
-		HopsOpOp2LopsU.put(OpOp2.EQUAL, org.tugraz.sysds.lops.Unary.OperationTypes.EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.NOTEQUAL, org.tugraz.sysds.lops.Unary.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.AND, org.tugraz.sysds.lops.Unary.OperationTypes.AND);
-		HopsOpOp2LopsU.put(OpOp2.OR, org.tugraz.sysds.lops.Unary.OperationTypes.OR);
-		HopsOpOp2LopsU.put(OpOp2.XOR, org.tugraz.sysds.lops.Unary.OperationTypes.XOR);
-		HopsOpOp2LopsU.put(OpOp2.MAX, org.tugraz.sysds.lops.Unary.OperationTypes.MAX);
-		HopsOpOp2LopsU.put(OpOp2.MIN, org.tugraz.sysds.lops.Unary.OperationTypes.MIN);
-		HopsOpOp2LopsU.put(OpOp2.LOG, org.tugraz.sysds.lops.Unary.OperationTypes.LOG);
-		HopsOpOp2LopsU.put(OpOp2.POW, org.tugraz.sysds.lops.Unary.OperationTypes.POW);
-		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.tugraz.sysds.lops.Unary.OperationTypes.SUBTRACT_NZ);
-		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.tugraz.sysds.lops.Unary.OperationTypes.LOG_NZ);
+		HopsOpOp2LopsU.put(OpOp2.PLUS, org.apache.sysds.lops.Unary.OperationTypes.ADD);
+		HopsOpOp2LopsU.put(OpOp2.MINUS, org.apache.sysds.lops.Unary.OperationTypes.SUBTRACT);
+		HopsOpOp2LopsU.put(OpOp2.MULT, org.apache.sysds.lops.Unary.OperationTypes.MULTIPLY);
+		HopsOpOp2LopsU.put(OpOp2.DIV, org.apache.sysds.lops.Unary.OperationTypes.DIVIDE);
+		HopsOpOp2LopsU.put(OpOp2.MODULUS, org.apache.sysds.lops.Unary.OperationTypes.MODULUS);
+		HopsOpOp2LopsU.put(OpOp2.INTDIV, org.apache.sysds.lops.Unary.OperationTypes.INTDIV);
+		HopsOpOp2LopsU.put(OpOp2.MINUS1_MULT, org.apache.sysds.lops.Unary.OperationTypes.MINUS1_MULTIPLY);
+		HopsOpOp2LopsU.put(OpOp2.LESSEQUAL, org.apache.sysds.lops.Unary.OperationTypes.LESS_THAN_OR_EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.LESS, org.apache.sysds.lops.Unary.OperationTypes.LESS_THAN);
+		HopsOpOp2LopsU.put(OpOp2.GREATEREQUAL, org.apache.sysds.lops.Unary.OperationTypes.GREATER_THAN_OR_EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.GREATER, org.apache.sysds.lops.Unary.OperationTypes.GREATER_THAN);
+		HopsOpOp2LopsU.put(OpOp2.EQUAL, org.apache.sysds.lops.Unary.OperationTypes.EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.NOTEQUAL, org.apache.sysds.lops.Unary.OperationTypes.NOT_EQUALS);
+		HopsOpOp2LopsU.put(OpOp2.AND, org.apache.sysds.lops.Unary.OperationTypes.AND);
+		HopsOpOp2LopsU.put(OpOp2.OR, org.apache.sysds.lops.Unary.OperationTypes.OR);
+		HopsOpOp2LopsU.put(OpOp2.XOR, org.apache.sysds.lops.Unary.OperationTypes.XOR);
+		HopsOpOp2LopsU.put(OpOp2.MAX, org.apache.sysds.lops.Unary.OperationTypes.MAX);
+		HopsOpOp2LopsU.put(OpOp2.MIN, org.apache.sysds.lops.Unary.OperationTypes.MIN);
+		HopsOpOp2LopsU.put(OpOp2.LOG, org.apache.sysds.lops.Unary.OperationTypes.LOG);
+		HopsOpOp2LopsU.put(OpOp2.POW, org.apache.sysds.lops.Unary.OperationTypes.POW);
+		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.apache.sysds.lops.Unary.OperationTypes.SUBTRACT_NZ);
+		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.apache.sysds.lops.Unary.OperationTypes.LOG_NZ);
 		HopsOpOp2LopsU.put(OpOp2.BITWAND, Unary.OperationTypes.BW_AND);
 		HopsOpOp2LopsU.put(OpOp2.BITWOR, Unary.OperationTypes.BW_OR);
 		HopsOpOp2LopsU.put(OpOp2.BITWXOR, Unary.OperationTypes.BW_XOR);
@@ -1154,82 +1152,82 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsU.put(OpOp2.BITWSHIFTR, Unary.OperationTypes.BW_SHIFTR);
 	}
 
-	protected static final HashMap<Hop.OpOp1, org.tugraz.sysds.lops.Unary.OperationTypes> HopsOpOp1LopsU;
+	protected static final HashMap<Hop.OpOp1, org.apache.sysds.lops.Unary.OperationTypes> HopsOpOp1LopsU;
 	static {
 		HopsOpOp1LopsU = new HashMap<>();
-		HopsOpOp1LopsU.put(OpOp1.NOT, org.tugraz.sysds.lops.Unary.OperationTypes.NOT);
-		HopsOpOp1LopsU.put(OpOp1.ABS, org.tugraz.sysds.lops.Unary.OperationTypes.ABS);
-		HopsOpOp1LopsU.put(OpOp1.SIN, org.tugraz.sysds.lops.Unary.OperationTypes.SIN);
-		HopsOpOp1LopsU.put(OpOp1.COS, org.tugraz.sysds.lops.Unary.OperationTypes.COS);
-		HopsOpOp1LopsU.put(OpOp1.TAN, org.tugraz.sysds.lops.Unary.OperationTypes.TAN);
-		HopsOpOp1LopsU.put(OpOp1.ASIN, org.tugraz.sysds.lops.Unary.OperationTypes.ASIN);
-		HopsOpOp1LopsU.put(OpOp1.ACOS, org.tugraz.sysds.lops.Unary.OperationTypes.ACOS);
-		HopsOpOp1LopsU.put(OpOp1.ATAN, org.tugraz.sysds.lops.Unary.OperationTypes.ATAN);
-		HopsOpOp1LopsU.put(OpOp1.SINH, org.tugraz.sysds.lops.Unary.OperationTypes.SINH);
-		HopsOpOp1LopsU.put(OpOp1.COSH, org.tugraz.sysds.lops.Unary.OperationTypes.COSH);
-		HopsOpOp1LopsU.put(OpOp1.TANH, org.tugraz.sysds.lops.Unary.OperationTypes.TANH);
-		HopsOpOp1LopsU.put(OpOp1.SIGN, org.tugraz.sysds.lops.Unary.OperationTypes.SIGN);
-		HopsOpOp1LopsU.put(OpOp1.SQRT, org.tugraz.sysds.lops.Unary.OperationTypes.SQRT);
-		HopsOpOp1LopsU.put(OpOp1.EXP, org.tugraz.sysds.lops.Unary.OperationTypes.EXP);
-		HopsOpOp1LopsU.put(OpOp1.LOG, org.tugraz.sysds.lops.Unary.OperationTypes.LOG);
-		HopsOpOp1LopsU.put(OpOp1.ROUND, org.tugraz.sysds.lops.Unary.OperationTypes.ROUND);
-		HopsOpOp1LopsU.put(OpOp1.CEIL, org.tugraz.sysds.lops.Unary.OperationTypes.CEIL);
-		HopsOpOp1LopsU.put(OpOp1.FLOOR, org.tugraz.sysds.lops.Unary.OperationTypes.FLOOR);
-		HopsOpOp1LopsU.put(OpOp1.CUMSUM, org.tugraz.sysds.lops.Unary.OperationTypes.CUMSUM);
-		HopsOpOp1LopsU.put(OpOp1.CUMPROD, org.tugraz.sysds.lops.Unary.OperationTypes.CUMPROD);
-		HopsOpOp1LopsU.put(OpOp1.CUMMIN, org.tugraz.sysds.lops.Unary.OperationTypes.CUMMIN);
-		HopsOpOp1LopsU.put(OpOp1.CUMMAX, org.tugraz.sysds.lops.Unary.OperationTypes.CUMMAX);
-		HopsOpOp1LopsU.put(OpOp1.CUMSUMPROD, org.tugraz.sysds.lops.Unary.OperationTypes.CUMSUMPROD);
-		HopsOpOp1LopsU.put(OpOp1.INVERSE, org.tugraz.sysds.lops.Unary.OperationTypes.INVERSE);
-		HopsOpOp1LopsU.put(OpOp1.CHOLESKY, org.tugraz.sysds.lops.Unary.OperationTypes.CHOLESKY);
-		HopsOpOp1LopsU.put(OpOp1.ISNA, org.tugraz.sysds.lops.Unary.OperationTypes.ISNA);
-		HopsOpOp1LopsU.put(OpOp1.ISNAN, org.tugraz.sysds.lops.Unary.OperationTypes.ISNAN);
-		HopsOpOp1LopsU.put(OpOp1.ISINF, org.tugraz.sysds.lops.Unary.OperationTypes.ISINF);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.tugraz.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.tugraz.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp1LopsU.put(OpOp1.SPROP, org.tugraz.sysds.lops.Unary.OperationTypes.SPROP);
+		HopsOpOp1LopsU.put(OpOp1.NOT, org.apache.sysds.lops.Unary.OperationTypes.NOT);
+		HopsOpOp1LopsU.put(OpOp1.ABS, org.apache.sysds.lops.Unary.OperationTypes.ABS);
+		HopsOpOp1LopsU.put(OpOp1.SIN, org.apache.sysds.lops.Unary.OperationTypes.SIN);
+		HopsOpOp1LopsU.put(OpOp1.COS, org.apache.sysds.lops.Unary.OperationTypes.COS);
+		HopsOpOp1LopsU.put(OpOp1.TAN, org.apache.sysds.lops.Unary.OperationTypes.TAN);
+		HopsOpOp1LopsU.put(OpOp1.ASIN, org.apache.sysds.lops.Unary.OperationTypes.ASIN);
+		HopsOpOp1LopsU.put(OpOp1.ACOS, org.apache.sysds.lops.Unary.OperationTypes.ACOS);
+		HopsOpOp1LopsU.put(OpOp1.ATAN, org.apache.sysds.lops.Unary.OperationTypes.ATAN);
+		HopsOpOp1LopsU.put(OpOp1.SINH, org.apache.sysds.lops.Unary.OperationTypes.SINH);
+		HopsOpOp1LopsU.put(OpOp1.COSH, org.apache.sysds.lops.Unary.OperationTypes.COSH);
+		HopsOpOp1LopsU.put(OpOp1.TANH, org.apache.sysds.lops.Unary.OperationTypes.TANH);
+		HopsOpOp1LopsU.put(OpOp1.SIGN, org.apache.sysds.lops.Unary.OperationTypes.SIGN);
+		HopsOpOp1LopsU.put(OpOp1.SQRT, org.apache.sysds.lops.Unary.OperationTypes.SQRT);
+		HopsOpOp1LopsU.put(OpOp1.EXP, org.apache.sysds.lops.Unary.OperationTypes.EXP);
+		HopsOpOp1LopsU.put(OpOp1.LOG, org.apache.sysds.lops.Unary.OperationTypes.LOG);
+		HopsOpOp1LopsU.put(OpOp1.ROUND, org.apache.sysds.lops.Unary.OperationTypes.ROUND);
+		HopsOpOp1LopsU.put(OpOp1.CEIL, org.apache.sysds.lops.Unary.OperationTypes.CEIL);
+		HopsOpOp1LopsU.put(OpOp1.FLOOR, org.apache.sysds.lops.Unary.OperationTypes.FLOOR);
+		HopsOpOp1LopsU.put(OpOp1.CUMSUM, org.apache.sysds.lops.Unary.OperationTypes.CUMSUM);
+		HopsOpOp1LopsU.put(OpOp1.CUMPROD, org.apache.sysds.lops.Unary.OperationTypes.CUMPROD);
+		HopsOpOp1LopsU.put(OpOp1.CUMMIN, org.apache.sysds.lops.Unary.OperationTypes.CUMMIN);
+		HopsOpOp1LopsU.put(OpOp1.CUMMAX, org.apache.sysds.lops.Unary.OperationTypes.CUMMAX);
+		HopsOpOp1LopsU.put(OpOp1.CUMSUMPROD, org.apache.sysds.lops.Unary.OperationTypes.CUMSUMPROD);
+		HopsOpOp1LopsU.put(OpOp1.INVERSE, org.apache.sysds.lops.Unary.OperationTypes.INVERSE);
+		HopsOpOp1LopsU.put(OpOp1.CHOLESKY, org.apache.sysds.lops.Unary.OperationTypes.CHOLESKY);
+		HopsOpOp1LopsU.put(OpOp1.ISNA, org.apache.sysds.lops.Unary.OperationTypes.ISNA);
+		HopsOpOp1LopsU.put(OpOp1.ISNAN, org.apache.sysds.lops.Unary.OperationTypes.ISNAN);
+		HopsOpOp1LopsU.put(OpOp1.ISINF, org.apache.sysds.lops.Unary.OperationTypes.ISINF);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.apache.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
+		HopsOpOp1LopsU.put(OpOp1.SPROP, org.apache.sysds.lops.Unary.OperationTypes.SPROP);
 		HopsOpOp1LopsU.put(OpOp1.SIGMOID, Unary.OperationTypes.SIGMOID);
 		HopsOpOp1LopsU.put(OpOp1.TYPEOF, Unary.OperationTypes.TYPEOF);
 		HopsOpOp1LopsU.put(OpOp1.DETECTSCHEMA, Unary.OperationTypes.DETECTSCHEMA);
-		HopsOpOp1LopsU.put(OpOp1.LOG_NZ, org.tugraz.sysds.lops.Unary.OperationTypes.LOG_NZ);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.tugraz.sysds.lops.Unary.OperationTypes.CAST_AS_MATRIX);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.tugraz.sysds.lops.Unary.OperationTypes.CAST_AS_FRAME);
+		HopsOpOp1LopsU.put(OpOp1.LOG_NZ, org.apache.sysds.lops.Unary.OperationTypes.LOG_NZ);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysds.lops.Unary.OperationTypes.CAST_AS_MATRIX);
+		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.apache.sysds.lops.Unary.OperationTypes.CAST_AS_FRAME);
 	}
 
-	public static final HashMap<Hop.OpOp1, org.tugraz.sysds.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
+	public static final HashMap<Hop.OpOp1, org.apache.sysds.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
 	static {
 		HopsOpOp1LopsUS = new HashMap<>();
-		HopsOpOp1LopsUS.put(OpOp1.NOT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.NOT);
-		HopsOpOp1LopsUS.put(OpOp1.ABS, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ABS);
-		HopsOpOp1LopsUS.put(OpOp1.SIN, org.tugraz.sysds.lops.UnaryCP.OperationTypes.SIN);
-		HopsOpOp1LopsUS.put(OpOp1.COS, org.tugraz.sysds.lops.UnaryCP.OperationTypes.COS);
-		HopsOpOp1LopsUS.put(OpOp1.TAN, org.tugraz.sysds.lops.UnaryCP.OperationTypes.TAN);
-		HopsOpOp1LopsUS.put(OpOp1.ASIN, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ASIN);
-		HopsOpOp1LopsUS.put(OpOp1.ACOS, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ACOS);
-		HopsOpOp1LopsUS.put(OpOp1.ATAN, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ATAN);
-		HopsOpOp1LopsUS.put(OpOp1.SINH, org.tugraz.sysds.lops.UnaryCP.OperationTypes.SINH);
-		HopsOpOp1LopsUS.put(OpOp1.COSH, org.tugraz.sysds.lops.UnaryCP.OperationTypes.COSH);
-		HopsOpOp1LopsUS.put(OpOp1.TANH, org.tugraz.sysds.lops.UnaryCP.OperationTypes.TANH);
-		HopsOpOp1LopsUS.put(OpOp1.SQRT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.SQRT);
-		HopsOpOp1LopsUS.put(OpOp1.EXP, org.tugraz.sysds.lops.UnaryCP.OperationTypes.EXP);
-		HopsOpOp1LopsUS.put(OpOp1.LOG, org.tugraz.sysds.lops.UnaryCP.OperationTypes.LOG);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_SCALAR, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CAST_AS_SCALAR);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_MATRIX, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CAST_AS_MATRIX);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_FRAME, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CAST_AS_FRAME);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_DOUBLE, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CAST_AS_DOUBLE);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_INT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CAST_AS_INT);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_BOOLEAN, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CAST_AS_BOOLEAN);
-		HopsOpOp1LopsUS.put(OpOp1.NROW, org.tugraz.sysds.lops.UnaryCP.OperationTypes.NROW);
-		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.tugraz.sysds.lops.UnaryCP.OperationTypes.NCOL);
-		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.tugraz.sysds.lops.UnaryCP.OperationTypes.LENGTH);
-		HopsOpOp1LopsUS.put(OpOp1.EXISTS, org.tugraz.sysds.lops.UnaryCP.OperationTypes.EXISTS);
-		HopsOpOp1LopsUS.put(OpOp1.LINEAGE, org.tugraz.sysds.lops.UnaryCP.OperationTypes.LINEAGE);
-		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.PRINT);
-		HopsOpOp1LopsUS.put(OpOp1.ASSERT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ASSERT);
-		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ROUND);
-		HopsOpOp1LopsUS.put(OpOp1.CEIL, org.tugraz.sysds.lops.UnaryCP.OperationTypes.CEIL);
-		HopsOpOp1LopsUS.put(OpOp1.FLOOR, org.tugraz.sysds.lops.UnaryCP.OperationTypes.FLOOR);
-		HopsOpOp1LopsUS.put(OpOp1.STOP, org.tugraz.sysds.lops.UnaryCP.OperationTypes.STOP);
+		HopsOpOp1LopsUS.put(OpOp1.NOT, org.apache.sysds.lops.UnaryCP.OperationTypes.NOT);
+		HopsOpOp1LopsUS.put(OpOp1.ABS, org.apache.sysds.lops.UnaryCP.OperationTypes.ABS);
+		HopsOpOp1LopsUS.put(OpOp1.SIN, org.apache.sysds.lops.UnaryCP.OperationTypes.SIN);
+		HopsOpOp1LopsUS.put(OpOp1.COS, org.apache.sysds.lops.UnaryCP.OperationTypes.COS);
+		HopsOpOp1LopsUS.put(OpOp1.TAN, org.apache.sysds.lops.UnaryCP.OperationTypes.TAN);
+		HopsOpOp1LopsUS.put(OpOp1.ASIN, org.apache.sysds.lops.UnaryCP.OperationTypes.ASIN);
+		HopsOpOp1LopsUS.put(OpOp1.ACOS, org.apache.sysds.lops.UnaryCP.OperationTypes.ACOS);
+		HopsOpOp1LopsUS.put(OpOp1.ATAN, org.apache.sysds.lops.UnaryCP.OperationTypes.ATAN);
+		HopsOpOp1LopsUS.put(OpOp1.SINH, org.apache.sysds.lops.UnaryCP.OperationTypes.SINH);
+		HopsOpOp1LopsUS.put(OpOp1.COSH, org.apache.sysds.lops.UnaryCP.OperationTypes.COSH);
+		HopsOpOp1LopsUS.put(OpOp1.TANH, org.apache.sysds.lops.UnaryCP.OperationTypes.TANH);
+		HopsOpOp1LopsUS.put(OpOp1.SQRT, org.apache.sysds.lops.UnaryCP.OperationTypes.SQRT);
+		HopsOpOp1LopsUS.put(OpOp1.EXP, org.apache.sysds.lops.UnaryCP.OperationTypes.EXP);
+		HopsOpOp1LopsUS.put(OpOp1.LOG, org.apache.sysds.lops.UnaryCP.OperationTypes.LOG);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_SCALAR, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_SCALAR);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_MATRIX, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_MATRIX);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_FRAME, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_FRAME);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_DOUBLE, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_DOUBLE);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_INT, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_INT);
+		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_BOOLEAN, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_BOOLEAN);
+		HopsOpOp1LopsUS.put(OpOp1.NROW, org.apache.sysds.lops.UnaryCP.OperationTypes.NROW);
+		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.apache.sysds.lops.UnaryCP.OperationTypes.NCOL);
+		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.apache.sysds.lops.UnaryCP.OperationTypes.LENGTH);
+		HopsOpOp1LopsUS.put(OpOp1.EXISTS, org.apache.sysds.lops.UnaryCP.OperationTypes.EXISTS);
+		HopsOpOp1LopsUS.put(OpOp1.LINEAGE, org.apache.sysds.lops.UnaryCP.OperationTypes.LINEAGE);
+		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.apache.sysds.lops.UnaryCP.OperationTypes.PRINT);
+		HopsOpOp1LopsUS.put(OpOp1.ASSERT, org.apache.sysds.lops.UnaryCP.OperationTypes.ASSERT);
+		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.apache.sysds.lops.UnaryCP.OperationTypes.ROUND);
+		HopsOpOp1LopsUS.put(OpOp1.CEIL, org.apache.sysds.lops.UnaryCP.OperationTypes.CEIL);
+		HopsOpOp1LopsUS.put(OpOp1.FLOOR, org.apache.sysds.lops.UnaryCP.OperationTypes.FLOOR);
+		HopsOpOp1LopsUS.put(OpOp1.STOP, org.apache.sysds.lops.UnaryCP.OperationTypes.STOP);
 		HopsOpOp1LopsUS.put(OpOp1.TYPEOF, UnaryCP.OperationTypes.TYPEOF);
 		HopsOpOp1LopsUS.put(OpOp1.DETECTSCHEMA, UnaryCP.OperationTypes.DETECTSCHEMA);
 	}

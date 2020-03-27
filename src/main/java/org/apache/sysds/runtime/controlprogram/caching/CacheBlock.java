@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.caching;
+package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.hadoop.io.Writable;
 

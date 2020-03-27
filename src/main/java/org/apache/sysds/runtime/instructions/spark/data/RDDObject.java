@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark.data;
+package org.apache.sysds.runtime.instructions.spark.data;
 
 import org.apache.spark.api.java.JavaPairRDD;
 

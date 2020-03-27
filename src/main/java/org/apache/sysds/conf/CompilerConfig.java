@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.conf;
+package org.apache.sysds.conf;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.OptimizerUtils;
 
 /**
  * Basic wrapper for all compiler configurations that are configured

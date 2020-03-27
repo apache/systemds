@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 
 public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 {

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions.spark;
+package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -27,56 +25,56 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.tugraz.sysds.common.Types.CorrectionLocationType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
-import org.tugraz.sysds.runtime.functionobjects.ParameterizedBuiltin;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
-import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
-import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
-import org.tugraz.sysds.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupBroadcast;
-import org.tugraz.sysds.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupJoin;
-import org.tugraz.sysds.runtime.instructions.spark.functions.ExtractGroupNWeights;
-import org.tugraz.sysds.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
-import org.tugraz.sysds.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
-import org.tugraz.sysds.runtime.instructions.spark.functions.ReplicateVectorFunction;
-import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
-import org.tugraz.sysds.runtime.matrix.data.WeightedCell;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.transform.TfUtils.TfMethod;
-import org.tugraz.sysds.runtime.transform.decode.Decoder;
-import org.tugraz.sysds.runtime.transform.decode.DecoderFactory;
-import org.tugraz.sysds.runtime.transform.encode.Encoder;
-import org.tugraz.sysds.runtime.transform.encode.EncoderFactory;
-import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
-import org.tugraz.sysds.runtime.transform.meta.TfOffsetMap;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.instructions.spark.data.LazyIterableIterator;
+import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
+import org.apache.sysds.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupBroadcast;
+import org.apache.sysds.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupJoin;
+import org.apache.sysds.runtime.instructions.spark.functions.ExtractGroupNWeights;
+import org.apache.sysds.runtime.instructions.spark.functions.PerformGroupByAggInCombiner;
+import org.apache.sysds.runtime.instructions.spark.functions.PerformGroupByAggInReducer;
+import org.apache.sysds.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
+import org.apache.sysds.runtime.matrix.data.WeightedCell;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
+import org.apache.sysds.runtime.transform.decode.Decoder;
+import org.apache.sysds.runtime.transform.decode.DecoderFactory;
+import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
 
 import java.util.ArrayList;

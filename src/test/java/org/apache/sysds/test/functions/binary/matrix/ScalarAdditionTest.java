@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.binary.matrix;
+package org.apache.sysds.test.functions.binary.matrix;
 
 import org.junit.Test;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 
 
 

@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
-import org.tugraz.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.DataType;
 
 public class DataIdentifier extends Identifier
 {

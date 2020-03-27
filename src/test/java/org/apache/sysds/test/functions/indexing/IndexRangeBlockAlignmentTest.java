@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.indexing;
+package org.apache.sysds.test.functions.indexing;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.test.AutomatedTestBase;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.test.AutomatedTestBase;
 
 
 public class IndexRangeBlockAlignmentTest extends AutomatedTestBase

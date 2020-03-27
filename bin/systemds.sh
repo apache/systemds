@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2020 Graz University of Technology
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -278,7 +276,7 @@ if [ $SYSDS_DISTRIBUTED == 0 ]; then
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
   -Dlog4j.configuration=file:$LOG4JPROP \
-  org.tugraz.sysds.api.DMLScript \
+  org.apache.sysds.api.DMLScript \
   -f $SCRIPT_FILE \
   -exec singlenode \
   $CONFIG_FILE \

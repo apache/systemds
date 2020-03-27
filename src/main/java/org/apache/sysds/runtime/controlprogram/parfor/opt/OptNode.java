@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,10 +26,10 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 
 /**
  * Internal representation of a plan alternative for program blocks and instructions 

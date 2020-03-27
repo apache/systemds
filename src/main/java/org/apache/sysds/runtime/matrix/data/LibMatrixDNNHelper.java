@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 
-import org.tugraz.sysds.utils.NativeHelper;
+import org.apache.sysds.utils.NativeHelper;
 
 
 public class LibMatrixDNNHelper 

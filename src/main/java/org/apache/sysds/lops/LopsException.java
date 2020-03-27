@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.lops;
+package org.apache.sysds.lops;
 
-import org.tugraz.sysds.api.DMLException;
+import org.apache.sysds.api.DMLException;
 
 public class LopsException extends DMLException 
 {

@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.util.DnnUtils;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.util.DnnUtils;
 
 /**
  * This class is container that stores parameters required for executing following operations:

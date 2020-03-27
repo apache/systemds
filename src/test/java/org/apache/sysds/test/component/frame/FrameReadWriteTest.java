@@ -17,27 +17,27 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.frame;
+package org.apache.sysds.test.component.frame;
 
 import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.tugraz.sysds.runtime.io.FrameReader;
-import org.tugraz.sysds.runtime.io.FrameReaderFactory;
-import org.tugraz.sysds.runtime.io.FrameWriter;
-import org.tugraz.sysds.runtime.io.FrameWriterFactory;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.io.FrameReaderFactory;
+import org.apache.sysds.runtime.io.FrameWriter;
+import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 @net.jcip.annotations.NotThreadSafe
 public class FrameReadWriteTest extends AutomatedTestBase

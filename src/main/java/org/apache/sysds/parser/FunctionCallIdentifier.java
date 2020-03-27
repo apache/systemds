@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.tugraz.sysds.common.Builtins;
-import org.tugraz.sysds.common.Types.DataType;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.DataType;
 
 
 public class FunctionCallIdentifier extends DataIdentifier 

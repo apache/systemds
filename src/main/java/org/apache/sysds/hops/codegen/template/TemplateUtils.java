@@ -17,48 +17,48 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.template;
+package org.apache.sysds.hops.codegen.template;
 
 import java.util.*;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
-import org.tugraz.sysds.hops.AggBinaryOp;
-import org.tugraz.sysds.hops.AggUnaryOp;
-import org.tugraz.sysds.hops.BinaryOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
-import org.tugraz.sysds.hops.TernaryOp;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.common.Types.OpOpDnn;
-import org.tugraz.sysds.common.Types.OpOpN;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler;
-import org.tugraz.sysds.hops.codegen.cplan.CNode;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeNary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTernary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeBinary.BinType;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.CloseType;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.TemplateType;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
-import org.tugraz.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
-import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOpDnn;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
+import org.apache.sysds.hops.codegen.cplan.CNodeData;
+import org.apache.sysds.hops.codegen.cplan.CNodeNary;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
+import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysds.hops.codegen.template.TemplateBase.CloseType;
+import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
+import org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
+import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class TemplateUtils 
 {

@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.util;
+package org.apache.sysds.runtime.util;
 
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.SequenceFileRecordReader;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 
 /**
  * Custom record reader for binary block. Currently its only purpose is to allow for

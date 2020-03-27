@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.caching;
+package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
@@ -25,9 +25,9 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.LocalFileUtils;
 
 /**
  * Wrapper for WriteBuffer byte array per matrix/frame in order to

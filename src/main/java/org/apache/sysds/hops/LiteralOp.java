@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 public class LiteralOp extends Hop 

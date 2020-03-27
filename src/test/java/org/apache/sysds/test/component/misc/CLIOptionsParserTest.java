@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.component.misc;
+package org.apache.sysds.test.component.misc;
 
 import java.util.Map;
 
@@ -28,10 +26,10 @@ import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLOptions;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.tugraz.sysds.utils.Explain;
+import org.apache.sysds.api.DMLOptions;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.utils.Explain;
 
 @net.jcip.annotations.NotThreadSafe
 public class CLIOptionsParserTest {

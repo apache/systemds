@@ -16,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 
 /**
  * This class contains the different implementation of rotate180 operation

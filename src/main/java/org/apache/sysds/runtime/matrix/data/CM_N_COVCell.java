@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,17 +26,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.hadoop.io.WritableComparable;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.cp.CM_COV_Object;
-import org.tugraz.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
-import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
-import org.tugraz.sysds.runtime.util.IndexRange;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.util.IndexRange;
 
 @SuppressWarnings("rawtypes")
 public class CM_N_COVCell extends MatrixValue implements WritableComparable

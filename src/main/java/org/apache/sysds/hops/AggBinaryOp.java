@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,35 +17,35 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.common.Types.ReOrgOp;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Binary;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.MMCJ;
-import org.tugraz.sysds.lops.MMRJ;
-import org.tugraz.sysds.lops.MMTSJ;
-import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
-import org.tugraz.sysds.lops.MMZip;
-import org.tugraz.sysds.lops.MapMult;
-import org.tugraz.sysds.lops.MapMultChain;
-import org.tugraz.sysds.lops.MapMultChain.ChainType;
-import org.tugraz.sysds.lops.PMMJ;
-import org.tugraz.sysds.lops.PMapMult;
-import org.tugraz.sysds.lops.Transform;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.lops.Binary;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.MMCJ;
+import org.apache.sysds.lops.MMRJ;
+import org.apache.sysds.lops.MMTSJ;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
+import org.apache.sysds.lops.MMZip;
+import org.apache.sysds.lops.MapMult;
+import org.apache.sysds.lops.MapMultChain;
+import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.lops.PMMJ;
+import org.apache.sysds.lops.PMapMult;
+import org.apache.sysds.lops.Transform;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 /* Aggregate binary (cell operations): Sum (aij + bij)

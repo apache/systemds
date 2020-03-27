@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,75 +17,75 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram;
+package org.apache.sysds.runtime.controlprogram;
 
 import org.apache.log4j.Level;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.VariableSet;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.DataPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.parfor.DataPartitionerLocal;
-import org.tugraz.sysds.runtime.controlprogram.parfor.DataPartitionerRemoteSpark;
-import org.tugraz.sysds.runtime.controlprogram.parfor.LocalParWorker;
-import org.tugraz.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
-import org.tugraz.sysds.runtime.controlprogram.parfor.ParForBody;
-import org.tugraz.sysds.runtime.controlprogram.parfor.RemoteDPParForSpark;
-import org.tugraz.sysds.runtime.controlprogram.parfor.RemoteParForJobReturn;
-import org.tugraz.sysds.runtime.controlprogram.parfor.RemoteParForSpark;
-import org.tugraz.sysds.runtime.controlprogram.parfor.ResultMerge;
-import org.tugraz.sysds.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
-import org.tugraz.sysds.runtime.controlprogram.parfor.ResultMergeLocalFile;
-import org.tugraz.sysds.runtime.controlprogram.parfor.ResultMergeLocalMemory;
-import org.tugraz.sysds.runtime.controlprogram.parfor.ResultMergeRemoteSpark;
-import org.tugraz.sysds.runtime.controlprogram.parfor.Task;
-import org.tugraz.sysds.runtime.controlprogram.parfor.TaskPartitioner;
-import org.tugraz.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoring;
-import org.tugraz.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoringCmax;
-import org.tugraz.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoringCmin;
-import org.tugraz.sysds.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
-import org.tugraz.sysds.runtime.controlprogram.parfor.TaskPartitionerNaive;
-import org.tugraz.sysds.runtime.controlprogram.parfor.TaskPartitionerStatic;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptimizationWrapper;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.ProgramRecompiler;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Stat;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDHandler;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
-import org.tugraz.sysds.runtime.instructions.cp.Data;
-import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
-import org.tugraz.sysds.runtime.instructions.cp.ListObject;
-import org.tugraz.sysds.runtime.instructions.cp.StringObject;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.tugraz.sysds.runtime.lineage.Lineage;
-import org.tugraz.sysds.runtime.lineage.LineageItem;
-import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.util.ProgramConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.ParForStatementBlock;
+import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.VariableSet;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.DataPartitioner;
+import org.apache.sysds.runtime.controlprogram.parfor.DataPartitionerLocal;
+import org.apache.sysds.runtime.controlprogram.parfor.DataPartitionerRemoteSpark;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalParWorker;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.controlprogram.parfor.ParForBody;
+import org.apache.sysds.runtime.controlprogram.parfor.RemoteDPParForSpark;
+import org.apache.sysds.runtime.controlprogram.parfor.RemoteParForJobReturn;
+import org.apache.sysds.runtime.controlprogram.parfor.RemoteParForSpark;
+import org.apache.sysds.runtime.controlprogram.parfor.ResultMerge;
+import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
+import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalFile;
+import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalMemory;
+import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeRemoteSpark;
+import org.apache.sysds.runtime.controlprogram.parfor.Task;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitioner;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoring;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoringCmax;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFactoringCmin;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerNaive;
+import org.apache.sysds.runtime.controlprogram.parfor.TaskPartitionerStatic;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptimizationWrapper;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.ProgramRecompiler;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.StringObject;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.util.ProgramConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Statistics;
 
 import java.io.Serializable;
 import java.util.ArrayList;

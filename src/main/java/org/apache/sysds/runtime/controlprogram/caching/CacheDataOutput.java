@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.caching;
+package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataOutput;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.MatrixBlockDataOutput;
 
 /**
  * Custom DataOutput to serialize directly into the given byte array.

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.ipa;
+package org.apache.sysds.hops.ipa;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,10 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 
 import java.util.Set;
 

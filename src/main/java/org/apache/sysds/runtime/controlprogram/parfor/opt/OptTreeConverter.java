@@ -17,52 +17,52 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
+package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.MultiThreadedHop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.LopProperties;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ForStatement;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.FunctionStatement;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
-import org.tugraz.sysds.parser.IfStatement;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.ParForStatement;
-import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.WhileStatement;
-import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.ExecType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
-import org.tugraz.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.MultiThreadedHop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.ParForStatement;
+import org.apache.sysds.parser.ParForStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ExecType;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
+import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
+import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 
 /**
  * Converter for creating an internal plan representation for a given runtime program

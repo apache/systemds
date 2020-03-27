@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,33 +17,33 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops;
+package org.apache.sysds.hops;
 
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.OpOp4;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.Unary;
-import org.tugraz.sysds.lops.WeightedCrossEntropy;
-import org.tugraz.sysds.lops.WeightedCrossEntropy.WCeMMType;
-import org.tugraz.sysds.lops.WeightedCrossEntropyR;
-import org.tugraz.sysds.lops.WeightedDivMM;
-import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
-import org.tugraz.sysds.lops.WeightedDivMMR;
-import org.tugraz.sysds.lops.WeightedSigmoid;
-import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
-import org.tugraz.sysds.lops.WeightedSigmoidR;
-import org.tugraz.sysds.lops.WeightedSquaredLoss;
-import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
-import org.tugraz.sysds.lops.WeightedSquaredLossR;
-import org.tugraz.sysds.lops.WeightedUnaryMM;
-import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
-import org.tugraz.sysds.lops.WeightedUnaryMMR;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp4;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.Unary;
+import org.apache.sysds.lops.WeightedCrossEntropy;
+import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysds.lops.WeightedCrossEntropyR;
+import org.apache.sysds.lops.WeightedDivMM;
+import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysds.lops.WeightedDivMMR;
+import org.apache.sysds.lops.WeightedSigmoid;
+import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
+import org.apache.sysds.lops.WeightedSigmoidR;
+import org.apache.sysds.lops.WeightedSquaredLoss;
+import org.apache.sysds.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysds.lops.WeightedSquaredLossR;
+import org.apache.sysds.lops.WeightedUnaryMM;
+import org.apache.sysds.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysds.lops.WeightedUnaryMMR;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 /** 
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;

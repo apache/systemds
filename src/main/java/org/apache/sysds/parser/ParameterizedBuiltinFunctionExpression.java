@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,12 +30,12 @@ import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.wink.json4j.JSONObject;
-import org.tugraz.sysds.common.Builtins;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ParamBuiltinOp;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 

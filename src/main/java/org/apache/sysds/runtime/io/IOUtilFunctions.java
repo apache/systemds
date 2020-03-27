@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.apache.sysds.runtime.io;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -53,11 +53,11 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.transform.TfUtils;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class IOUtilFunctions 
 {

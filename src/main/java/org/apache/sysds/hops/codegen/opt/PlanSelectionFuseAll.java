@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.opt;
+package org.apache.sysds.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 
 import java.util.List;
 

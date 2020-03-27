@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform.decode;
+package org.apache.sysds.runtime.transform.decode;
 
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Simple atomic decoder for passing through numeric columns to the output.

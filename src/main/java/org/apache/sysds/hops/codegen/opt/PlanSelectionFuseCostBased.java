@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.opt;
+package org.apache.sysds.hops.codegen.opt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,30 +35,30 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.common.Types.Direction;
-import org.tugraz.sysds.hops.AggBinaryOp;
-import org.tugraz.sysds.hops.AggUnaryOp;
-import org.tugraz.sysds.hops.BinaryOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
-import org.tugraz.sysds.hops.ReorgOp;
-import org.tugraz.sysds.hops.TernaryOp;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
-import org.tugraz.sysds.hops.codegen.template.TemplateOuterProduct;
-import org.tugraz.sysds.hops.codegen.template.TemplateRow;
-import org.tugraz.sysds.hops.codegen.template.TemplateUtils;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.TemplateType;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
+import org.apache.sysds.hops.ReorgOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysds.hops.codegen.template.TemplateOuterProduct;
+import org.apache.sysds.hops.codegen.template.TemplateRow;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Statistics;
 
 /**
  * This cost-based plan selection algorithm chooses fused operators

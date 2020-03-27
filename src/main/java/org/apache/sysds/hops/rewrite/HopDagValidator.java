@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
-import static org.tugraz.sysds.hops.HopsException.check;
+import static org.apache.sysds.hops.HopsException.check;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,15 +28,15 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.utils.Explain;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.utils.Explain;
 
 /**
  * This class allows to check hop dags for validity, e.g., parent-child linking.

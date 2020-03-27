@@ -17,31 +17,31 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.rewrite;
+package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.BinaryOp;
-import org.tugraz.sysds.hops.DataOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.OpOp2;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.compile.Dag;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.OpOpData;
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 
 /**
  * Rule: Constant Folding. For all statement blocks, 

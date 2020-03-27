@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,26 +29,26 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import org.apache.commons.math3.util.FastMath;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.MapMultChain.ChainType;
-import org.tugraz.sysds.lops.WeightedCrossEntropy.WCeMMType;
-import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
-import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
-import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
-import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.DenseBlockFactory;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.SparseBlockCSR;
-import org.tugraz.sysds.runtime.data.SparseBlockMCSR;
-import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
-import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
-import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.util.CommonThreadPool;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.NativeHelper;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
+import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
+import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
+import org.apache.sysds.lops.WeightedSquaredLoss.WeightsType;
+import org.apache.sysds.lops.WeightedUnaryMM.WUMMType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.NativeHelper;
 
 /**
  * MB: Library for matrix multiplications including MM, MV, VV for all

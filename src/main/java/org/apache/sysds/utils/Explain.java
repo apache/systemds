@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.utils;
+package org.apache.sysds.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,44 +27,44 @@ import java.util.Map;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.codegen.cplan.CNode;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeMultiAgg;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
-import org.tugraz.sysds.hops.ipa.FunctionCallGraph;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ForStatement;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.FunctionStatement;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
-import org.tugraz.sysds.parser.IfStatement;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.WhileStatement;
-import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
-import org.tugraz.sysds.runtime.instructions.fed.FEDInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction;
-import org.tugraz.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
-import org.tugraz.sysds.runtime.instructions.spark.CheckpointSPInstruction;
-import org.tugraz.sysds.runtime.instructions.spark.ReblockSPInstruction;
-import org.tugraz.sysds.runtime.instructions.spark.SPInstruction;
-import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.ipa.FunctionCallGraph;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.ParForStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CheckpointSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.lineage.LineageItem;
 
 public class Explain
 {

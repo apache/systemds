@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2018 Graz University of Technology
- * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api.jmlc;
+package org.apache.sysds.api.jmlc;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -34,39 +32,39 @@ import java.util.Map;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONObject;
-import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.conf.CompilerConfig;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.hops.codegen.SpoofCompiler;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
-import org.tugraz.sysds.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.DMLTranslator;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.parser.LanguageException;
-import org.tugraz.sysds.parser.ParseException;
-import org.tugraz.sysds.parser.ParserFactory;
-import org.tugraz.sysds.parser.ParserWrapper;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.io.FrameReader;
-import org.tugraz.sysds.runtime.io.FrameReaderFactory;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.io.MatrixReader;
-import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
-import org.tugraz.sysds.runtime.lineage.Lineage;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.transform.TfUtils;
-import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.hops.rewrite.RewriteRemovePersistentReadWrite;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DMLTranslator;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParseException;
+import org.apache.sysds.parser.ParserFactory;
+import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.io.FrameReaderFactory;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.io.MatrixReaderFactory;
+import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Interaction with SystemDS using the JMLC (Java Machine Learning Connector) API is initiated with

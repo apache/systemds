@@ -17,24 +17,24 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.cplan;
+package org.apache.sysds.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.common.Types.AggOp;
-import org.tugraz.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
-import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeCell extends CNodeTpl 
 {	
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.SpoofCellwise;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;\n"
-			+ "import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
+			+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
+			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"
+			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
+			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;\n"
+			+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
 			+ "import org.apache.commons.math3.util.FastMath;\n"
 			+ "\n"
 			+ "public final class %TMP% extends SpoofCellwise {\n" 

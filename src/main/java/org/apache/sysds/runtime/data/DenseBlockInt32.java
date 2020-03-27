@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2018 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +17,13 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.data;
+package org.apache.sysds.runtime.data;
 
 import java.util.Arrays;
 
-import org.tugraz.sysds.common.Warnings;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Warnings;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class DenseBlockInt32 extends DenseBlockDRB
 {

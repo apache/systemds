@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.transform.decode;
+package org.apache.sysds.runtime.transform.decode;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.transform.TfUtils;
-import org.tugraz.sysds.runtime.transform.encode.EncoderRecode;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Simple atomic decoder for recoded columns. This decoder builds internally

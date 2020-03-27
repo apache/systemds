@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.tugraz.sysds.common.Builtins;
+import org.apache.sysds.common.Builtins;
 
 public class AssignmentStatement extends Statement
 {

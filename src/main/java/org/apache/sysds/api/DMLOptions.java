@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.api;
+package org.apache.sysds.api;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,15 +29,15 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.tugraz.sysds.utils.Explain;
-import org.tugraz.sysds.utils.Explain.ExplainType;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Explain.ExplainType;
 
 /**
  * Set of DMLOptions that can be set through the command line
- * and {@link org.tugraz.sysds.api.mlcontext.MLContext}
+ * and {@link org.apache.sysds.api.mlcontext.MLContext}
  * The values have been initialized with the default values
  * Despite there being a DML and PyDML, this class is named DMLOptions
  * to keep it consistent with {@link DMLOptions} and {@link DMLOptions}

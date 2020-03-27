@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,27 +17,27 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.instructions;
+package org.apache.sysds.runtime.instructions;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.lops.RightIndex;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.AggregateUnaryGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.BuiltinBinaryGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.DnnGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.MMTSJGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.MatrixAppendGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.MatrixIndexingGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.MatrixMatrixAxpyGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.MatrixReshapeGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.RelationalBinaryGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.ReorgGPUInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
+import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.AggregateUnaryGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.BuiltinBinaryGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.DnnGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.MMTSJGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.MatrixAppendGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.MatrixIndexingGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.MatrixMatrixAxpyGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.MatrixReshapeGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.RelationalBinaryGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.ReorgGPUInstruction;
+import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 
 public class GPUInstructionParser  extends InstructionParser 
 {

@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,19 +26,19 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.hops.rewrite.StatementBlockRewriteRule;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.common.Builtins;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.Expression.FormatType;
-import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
-import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.utils.MLContextProxy;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.rewrite.StatementBlockRewriteRule;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.Expression.FormatType;
+import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysds.parser.PrintStatement.PRINTTYPE;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.utils.MLContextProxy;
 
 
 public class StatementBlock extends LiveVariableAnalysis implements ParseInfo

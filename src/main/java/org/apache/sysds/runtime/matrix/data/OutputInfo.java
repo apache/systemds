@@ -18,13 +18,13 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.apache.sysds.runtime.matrix.data;
 
-import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_BINARY;
-import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_CSV;
-import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_LIBSVM;
-import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
-import static org.tugraz.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_TEXT;
+import static org.apache.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_BINARY;
+import static org.apache.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_CSV;
+import static org.apache.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_LIBSVM;
+import static org.apache.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
+import static org.apache.sysds.parser.DataExpression.FORMAT_TYPE_VALUE_TEXT;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -36,10 +36,10 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.TensorBlock;
+import org.apache.sysds.runtime.data.TensorIndexes;
 
 @SuppressWarnings("rawtypes")
 public class OutputInfo implements Serializable 

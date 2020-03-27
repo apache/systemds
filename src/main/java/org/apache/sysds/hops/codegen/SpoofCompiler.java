@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen;
+package org.apache.sysds.hops.codegen;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,73 +32,73 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.AggUnaryOp;
-import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.codegen.cplan.CNode;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeCell;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeMultiAgg;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeOuterProduct;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeRow;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTernary;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
-import org.tugraz.sysds.hops.codegen.opt.PlanSelection;
-import org.tugraz.sysds.hops.codegen.opt.PlanSelectionFuseAll;
-import org.tugraz.sysds.hops.codegen.opt.PlanSelectionFuseCostBased;
-import org.tugraz.sysds.hops.codegen.opt.PlanSelectionFuseCostBasedV2;
-import org.tugraz.sysds.hops.codegen.opt.PlanSelectionFuseNoRedundancy;
-import org.tugraz.sysds.hops.codegen.template.CPlanCSERewriter;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable;
-import org.tugraz.sysds.hops.codegen.template.CPlanOpRewriter;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase;
-import org.tugraz.sysds.hops.codegen.template.TemplateUtils;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
-import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.CloseType;
-import org.tugraz.sysds.hops.codegen.template.TemplateBase.TemplateType;
-import org.tugraz.sysds.hops.recompile.RecompileStatus;
-import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriteStatus;
-import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
-import org.tugraz.sysds.hops.rewrite.RewriteCommonSubexpressionElimination;
-import org.tugraz.sysds.hops.rewrite.RewriteRemoveUnnecessaryCasts;
-import org.tugraz.sysds.lops.MMTSJ;
-import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ForStatement;
-import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.FunctionStatement;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
-import org.tugraz.sysds.parser.IfStatement;
-import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.WhileStatement;
-import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.codegen.CodegenUtils;
-import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
-import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;
-import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.utils.Explain;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeCell;
+import org.apache.sysds.hops.codegen.cplan.CNodeData;
+import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
+import org.apache.sysds.hops.codegen.cplan.CNodeOuterProduct;
+import org.apache.sysds.hops.codegen.cplan.CNodeRow;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary.TernaryType;
+import org.apache.sysds.hops.codegen.opt.PlanSelection;
+import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseAll;
+import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseCostBased;
+import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseCostBasedV2;
+import org.apache.sysds.hops.codegen.opt.PlanSelectionFuseNoRedundancy;
+import org.apache.sysds.hops.codegen.template.CPlanCSERewriter;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
+import org.apache.sysds.hops.codegen.template.CPlanOpRewriter;
+import org.apache.sysds.hops.codegen.template.TemplateBase;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
+import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntrySet;
+import org.apache.sysds.hops.codegen.template.TemplateBase.CloseType;
+import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.hops.recompile.RecompileStatus;
+import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
+import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.hops.rewrite.RewriteCommonSubexpressionElimination;
+import org.apache.sysds.hops.rewrite.RewriteRemoveUnnecessaryCasts;
+import org.apache.sysds.lops.MMTSJ;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
+import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
+import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.utils.Explain;
+import org.apache.sysds.utils.Statistics;
 
 public class SpoofCompiler
 {
@@ -163,7 +161,7 @@ public class SpoofCompiler
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.tugraz.sysds.hops.codegen")
+			Logger.getLogger("org.apache.sysds.hops.codegen")
 				.setLevel(Level.TRACE);
 		}
 	}

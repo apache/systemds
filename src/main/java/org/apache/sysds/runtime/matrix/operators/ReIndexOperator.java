@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.operators;
+package org.apache.sysds.runtime.matrix.operators;
 
 public class ReIndexOperator extends Operator 
 {

@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.parfor;
+package org.apache.sysds.runtime.controlprogram.parfor;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.parfor.Task.TaskType;
-import org.tugraz.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.Task.TaskType;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
 
 /**
  * This factoring task partitioner virtually iterates over the given FOR loop (from, to, incr),

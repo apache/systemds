@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.api;
+package org.apache.sysds.api;
 
 /**
  * <p>Exception occurring in the DML framework.</p>

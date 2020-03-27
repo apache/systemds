@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.jmlc;
+package org.apache.sysds.test.functions.jmlc;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.jmlc.Connection;
-import org.tugraz.sysds.api.jmlc.PreparedScript;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.utils.Statistics;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.jmlc.Connection;
+import org.apache.sysds.api.jmlc.PreparedScript;
+import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.utils.Statistics;
 
 public class JMLCParfor2ForCompileTest extends AutomatedTestBase 
 {

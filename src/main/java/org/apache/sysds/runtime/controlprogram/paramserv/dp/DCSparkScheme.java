@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.controlprogram.paramserv.dp;
+package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
 import java.util.List;
 
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 

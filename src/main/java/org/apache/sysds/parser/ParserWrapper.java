@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
  
-package org.tugraz.sysds.parser;
+package org.apache.sysds.parser;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -35,8 +33,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.tugraz.sysds.parser.dml.CustomErrorListener.ParseIssue;
-import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.parser.dml.CustomErrorListener.ParseIssue;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 
 /**
  * Base class for all dml parsers in order to make the various compilation chains

@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package org.tugraz.sysds.hops.codegen.template;
+package org.apache.sysds.hops.codegen.template;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import org.tugraz.sysds.hops.codegen.cplan.CNode;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeData;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeMultiAgg;
-import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
+import org.apache.sysds.hops.codegen.cplan.CNode;
+import org.apache.sysds.hops.codegen.cplan.CNodeData;
+import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
+import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 
 public class CPlanCSERewriter 
 {

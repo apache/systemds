@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.io;
+package org.apache.sysds.test.functions.io;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.test.AutomatedTestBase;
-import org.tugraz.sysds.test.TestConfiguration;
-import org.tugraz.sysds.test.TestUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
 public class ScalarIOTest extends AutomatedTestBase 
 {

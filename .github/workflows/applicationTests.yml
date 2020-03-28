@@ -39,7 +39,8 @@ jobs:
         os: [ubuntu-latest]
     name:  Ap Test ${{ matrix.tests }} 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
     - name: Run all tests starting with "${{ matrix.tests }}"
       uses: ./.github/action/

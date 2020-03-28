@@ -86,6 +86,10 @@ Usage: $0 [SystemDS.jar] <dml-filename> [arguments] [-help]
                    run script.
     -help        - Print this usage message and exit
 
+Worker Usage: $0 WORKER [SystemDS.jar] <portnumber> [arguments] [-help]
+
+    port         - The port to open for the federated worker.
+
 Set custom launch configuration by setting/editing SYSTEMDS_STANDALONE_OPTS and/or SYSTEMDS_DISTRIBUTED_OPTS
 
 Set the environment variable SYSDS_DISTRIBUTED=1 to run spark-submit instead of local java
@@ -94,7 +98,7 @@ EOF
   exit 1
 }
 
-# print an error if no dml file is supplied
+# print an error if no argument is supplied.
 if [ -z "$1" ] ; then
     echo "Wrong Usage.";
     printUsageExit;
@@ -183,9 +187,26 @@ if  echo "$1" | grep -q "jar"; then
   shift
   SCRIPT_FILE=$1
   shift
+elif echo "$1" | grep -q "WORKER"; then
+  WORKER=1
+  shift
+  if echo "$1" | grep -q "jar"; then
+    SYSTEMDS_JAR_FILE=$1
+    shift
+  fi
+  PORT=$1
+  re='^[0-9]+$'
+  if ! [[ $PORT =~ $re ]] ; then
+    echo "error: Port is not a number"
+    printUsageExit
+  fi
 else
   SCRIPT_FILE=$1
   shift
+fi
+
+if [ -z "$WORKER" ] ; then
+  WORKER=0
 fi
 
 
@@ -268,7 +289,22 @@ print_out "#  CLASSPATH= $CLASSPATH"
 print_out "#  HADOOP_HOME= $HADOOP_HOME"
 
 #build the command to run
-if [ $SYSDS_DISTRIBUTED == 0 ]; then
+if [ $WORKER == 1 ]; then
+  print_out "#"
+  print_out "#  starting Fedederated worker on port $PORT"
+  print_out "###############################################################################"
+
+  print_out "Executing command: $CMD"
+  print_out  ""
+
+  CMD=" \
+  java $SYSTEMDS_STANDALONE_OPTS \
+  -cp $CLASSPATH \
+  -Dlog4j.configuration=file:$LOG4JPROP \
+  org.apache.sysds.api.DMLScript \
+  -w $PORT"
+
+elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   print_out "#"
   print_out "#  Running script $SCRIPT_FILE locally with opts: $*"
   print_out "###############################################################################"

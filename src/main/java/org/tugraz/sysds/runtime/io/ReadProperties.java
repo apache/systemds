@@ -28,6 +28,7 @@ public class ReadProperties
 	public long rlen, clen;
 	public int blen;
 	public long expectedNnz;
+	public boolean privacy;
 	public InputInfo inputInfo;
 	public boolean localFS;
 	

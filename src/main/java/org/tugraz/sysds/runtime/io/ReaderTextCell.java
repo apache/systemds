@@ -60,7 +60,7 @@ public class ReaderTextCell extends MatrixReader
 	
 	@SuppressWarnings("resource")
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz, boolean privacy) 
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
@@ -95,7 +95,7 @@ public class ReaderTextCell extends MatrixReader
 	}
 
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz, boolean privacy) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block

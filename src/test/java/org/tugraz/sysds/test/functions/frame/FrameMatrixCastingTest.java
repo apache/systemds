@@ -214,7 +214,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		else {
 			int blksize = ConfigurationManager.getBlocksize();
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.BinaryBlockInputInfo);
-			ret = reader.readMatrixFromHDFS(fname, rows, cols, blksize, -1);
+			ret = reader.readMatrixFromHDFS(fname, rows, cols, blksize, -1, false);
 		}
 		
 		return DataConverter.convertToDoubleMatrix(ret);

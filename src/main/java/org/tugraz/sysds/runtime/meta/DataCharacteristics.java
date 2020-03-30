@@ -28,6 +28,14 @@ public abstract class DataCharacteristics implements Serializable {
 	private static final long serialVersionUID = 3411056029517599342L;
 
 	protected int _blocksize;
+
+	public DataCharacteristics set(long nr, long nc, int len, boolean privacy) {
+		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int, boolean): should never get called in the base class");
+	}
+
+	public DataCharacteristics set(long nr, long nc, int len, long nnz, boolean privacy) {
+		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int, long, boolean): should never get called in the base class");
+	}
 	
 	public DataCharacteristics set(long nr, long nc, int len) {
 		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int): should never get called in the base class");

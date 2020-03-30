@@ -52,7 +52,7 @@ public class ReaderBinaryBlockParallel extends ReaderBinaryBlock
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz, boolean privacy) 
 		throws IOException, DMLRuntimeException 
 	{
 		//early abort for known empty matrices (e.g., remote parfor result vars)

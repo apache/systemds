@@ -231,7 +231,7 @@ public class DataConverter
 		MatrixBlock ret = null;
 		try {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(prop);
-			ret = reader.readMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.blen, prop.expectedNnz);
+			ret = reader.readMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.blen, prop.expectedNnz, prop.privacy);
 		}
 		catch(DMLRuntimeException rex)
 		{

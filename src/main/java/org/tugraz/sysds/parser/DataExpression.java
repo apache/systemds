@@ -73,6 +73,7 @@ public class DataExpression extends DataIdentifier
 	public static final String READROWPARAM = "rows";
 	public static final String READCOLPARAM = "cols";
 	public static final String READNNZPARAM = "nnz";
+	public static final String READPRIVACY = "privacy";
 	
 	public static final String SQL_CONN = "conn";
 	public static final String SQL_USER = "user";
@@ -130,7 +131,7 @@ public class DataExpression extends DataIdentifier
 
 	public static final String[] READ_VALID_PARAM_NAMES = 
 	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
-		ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM, 
+		ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM, READPRIVACY,
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 	};
@@ -988,16 +989,18 @@ public class DataExpression extends DataIdentifier
 								|| key.equals(DELIM_FILL) || key.equals(DELIM_FILL_VALUE)
 								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
 								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) || key.equals(VALUETYPEPARAM)
-								|| key.equals(SCHEMAPARAM)) )
+								|| key.equals(READPRIVACY)  || key.equals(SCHEMAPARAM)) )
 						{	
-							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
-									   + SCHEMAPARAM + "," 
+							String msg = "Only parameters allowed are: " 
+									   + IO_FILENAME 			+ "," 
+									   + SCHEMAPARAM 			+ "," 
 									   + DELIM_HAS_HEADER_ROW   + "," 
-									   + DELIM_DELIMITER 	+ ","
-									   + DELIM_FILL 		+ ","
-									   + DELIM_FILL_VALUE 	+ ","
-									   + READROWPARAM     + "," 
-									   + READCOLPARAM;
+									   + DELIM_DELIMITER 		+ ","
+									   + DELIM_FILL 			+ ","
+									   + DELIM_FILL_VALUE 		+ ","
+									   + READROWPARAM 			+ "," 
+									   + READCOLPARAM 			+ ","
+									   + READPRIVACY;
 							
 							raiseValidateError("Invalid parameter " + key + " in read statement: " +
 									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1066,11 +1069,12 @@ public class DataExpression extends DataIdentifier
 						if (!  (key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) 
 								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
 								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) 
-								|| key.equals(VALUETYPEPARAM) ))
+								|| key.equals(READPRIVACY)  || key.equals(VALUETYPEPARAM) ))
 						{	
 							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
 									   + READROWPARAM     + "," 
-									   + READCOLPARAM;
+									   + READCOLPARAM     + ","
+									   + READPRIVACY;
 							
 							raiseValidateError("Invalid parameter " + key + " in read statement: " +
 									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);

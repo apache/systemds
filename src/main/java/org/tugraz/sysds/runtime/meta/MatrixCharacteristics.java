@@ -37,6 +37,7 @@ public class MatrixCharacteristics extends DataCharacteristics
 	private long numColumns = -1;
 	private long nonZero = -1;
 	private boolean ubNnz = false;
+	private boolean privacy = false;
 	
 	public MatrixCharacteristics() {}
 	
@@ -54,6 +55,10 @@ public class MatrixCharacteristics extends DataCharacteristics
 
 	public MatrixCharacteristics(long nr, long nc, int blen, long nnz) {
 		set(nr, nc, blen, nnz);
+	}
+
+	public MatrixCharacteristics(long nr, long nc, int blen, long nnz, boolean privacy) {
+		set(nr, nc, blen, nnz, privacy);
 	}
 	
 	public MatrixCharacteristics(DataCharacteristics that) {
@@ -73,6 +78,20 @@ public class MatrixCharacteristics extends DataCharacteristics
 		set(nr, nc, blen);
 		nonZero = nnz;
 		ubNnz = false;
+		return this;
+	}
+
+	@Override
+	public DataCharacteristics set(long nr, long nc, int blen, boolean privacy) {
+		set(nr,nc,blen);
+		this.privacy = privacy;
+		return this;
+	}
+
+	@Override
+	public DataCharacteristics set(long nr, long nc, int blen, long nnz, boolean privacy) {
+		set(nr,nc,blen,nnz);
+		this.privacy = privacy;
 		return this;
 	}
 

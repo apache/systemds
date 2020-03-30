@@ -50,7 +50,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader
 	
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen,
-			int blen, long estnnz) 
+			int blen, long estnnz, boolean privacy) 
 		throws IOException, DMLRuntimeException 
 	{
 		// prepare file access
@@ -90,7 +90,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz, boolean privacy) 
 		throws IOException, DMLRuntimeException 
 	{
 		//not implemented yet, fallback to sequential reader

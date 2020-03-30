@@ -442,21 +442,21 @@ public class HDFSTool
 		return mtd.toString(4); // indent with 4 spaces	
 	}
 
-	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen)
+	public static double[][] readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, boolean privacy)
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
 		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
-		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz);
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz, privacy);
 		return DataConverter.convertToDoubleMatrix(mb);
 	}
 	
-	public static double[] readColumnVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen)
+	public static double[] readColumnVectorFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, boolean privacy)
 		throws IOException, DMLRuntimeException
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(inputinfo);
 		long estnnz = (rlen <= 0 || clen <= 0) ? -1 : rlen * clen;
-		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz);
+		MatrixBlock mb = reader.readMatrixFromHDFS(dir, rlen, clen, blen, estnnz, privacy);
 		return DataConverter.convertToDoubleVector(mb, false);
 	}
 	

@@ -400,10 +400,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			//read input/output and compare
 			double[][] R1 = DataConverter.convertToDoubleMatrix(MatrixReaderFactory
 				.createMatrixReader(InputInfo.CSVInputInfo)
-				.readMatrixFromHDFS(output("tfout1"), -1L, -1L, 1000, -1));
+				.readMatrixFromHDFS(output("tfout1"), -1L, -1L, 1000, -1, false));
 			double[][] R2 = DataConverter.convertToDoubleMatrix(MatrixReaderFactory
 				.createMatrixReader(InputInfo.CSVInputInfo)
-				.readMatrixFromHDFS(output("tfout2"), -1L, -1L, 1000, -1));
+				.readMatrixFromHDFS(output("tfout2"), -1L, -1L, 1000, -1, false));
 			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);
 			
 			if( rt == ExecMode.HYBRID ) {

@@ -240,7 +240,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		throws IOException 
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.stringExternalToInputInfo(ofmt));
-		MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, 1000, -1);
+		MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, 1000, -1,false);
 		
 		return DataConverter.convertToDoubleMatrix(mb); 
 	}

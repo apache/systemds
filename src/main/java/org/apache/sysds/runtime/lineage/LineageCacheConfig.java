@@ -27,13 +27,17 @@ public class LineageCacheConfig {
 	public enum ReuseCacheType {
 		REUSE_FULL,
 		REUSE_PARTIAL,
+		REUSE_MULTILEVEL,
 		REUSE_HYBRID,
 		NONE;
 		public boolean isFullReuse() {
-			return this == REUSE_FULL || this == REUSE_HYBRID;
+			return this == REUSE_FULL || this == REUSE_MULTILEVEL || this == REUSE_HYBRID;
 		}
 		public boolean isPartialReuse() {
 			return this == REUSE_PARTIAL || this == REUSE_HYBRID;
+		}
+		public boolean isMultilevelReuse() {
+			return this == REUSE_MULTILEVEL || this == REUSE_HYBRID;
 		}
 		public static boolean isNone() {
 			return DMLScript.LINEAGE_REUSE == null
@@ -102,7 +106,7 @@ public class LineageCacheConfig {
 	public static boolean isSetSpill() {
 		return _allowSpill;
 	}
-	
+
 	public static ReuseCacheType getCacheType() {
 		return _cacheType;
 	}

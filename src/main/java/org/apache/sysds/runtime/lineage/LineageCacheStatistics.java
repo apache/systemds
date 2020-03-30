@@ -94,7 +94,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static void incrementPRewrites() {
-		// Number of times written in local FS.
+		// Number of partial rewrites.
 		_numRewrites.increment();
 	}
 
@@ -119,7 +119,7 @@ public class LineageCacheStatistics {
 	}
 
 	public static void incrementPRewriteTime(long delta) {
-		// Total time spent executing lineage rewrites.
+		// Total time spent compiling lineage rewrites.
 		_ctimeRewrite.add(delta);
 	}
 

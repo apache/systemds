@@ -38,6 +38,8 @@ public abstract class ScalarObject extends Data
 
 	public abstract String getStringValue();
 	
+	public abstract int getSize(); 
+	
 	public String getLanguageSpecificStringValue() {
 		return getStringValue();
 	}

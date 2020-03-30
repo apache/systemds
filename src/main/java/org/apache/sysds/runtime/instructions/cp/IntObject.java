@@ -58,4 +58,9 @@ public class IntObject extends ScalarObject
 	public Object getValue(){
 		return _value;
 	}
+	
+	@Override
+	public int getSize() {
+		return 8 + Integer.SIZE/Byte.SIZE;
+	}
 }

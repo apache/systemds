@@ -17,20 +17,17 @@ limitations under the License.
 {% end comment %}
 -->
 
-# Build instructions
+# Publishing Instructions
 
-## Basic steps
+## Building SystemDS jar (with dependency jars)
 
 The following steps have to be done for both cases
 
-- Build SystemDS with maven first `mvn package -Pdistribution`, with the working directory being `SYSTEMDS_ROOT` (Root directory of SystemDS)
+- Build SystemDS with maven first `mvn package -P distribution`, with the working directory being `SYSTEMDS_ROOT` (Root directory of SystemDS)
 - `cd` to this folder (basically `SYSTEMDS_ROOT/src/main/python`
 
-### Building package for release
+## Building python package
 
-If we want to build the package for uploading to the repository via `python3 -m twine upload --repository-url [URL] dist/*` (will be automated in the future)
-
-- Install twine with `pip install --upgrade twine`
 - Run `create_python_dist.py`
 
 ```bash
@@ -39,25 +36,15 @@ python3 create_python_dist.py
 
 - now in the `./dist` directory there will exist the source distribution `systemds-VERSION.tar.gz` and the wheel distribution `systemds-VERSION-py3-none-any.whl`, with `VERSION` being the current version number
 
+## Publishing package
+
+If we want to build the package for uploading to the repository via `python3 -m twine upload dist/*` (will be automated in the future)
+
+- Install twine with `pip install --upgrade twine`
+
 - Follow the instructions from the [Guide](https://packaging.python.org/tutorials/packaging-projects/)
     1. Create an API-Token in the account (leave the page open or copy the token, it will only be shown once)
     2. Execute the command `python3 -m twine upload dist/*`
         - Optional: `pip install keyrings.alt` if you get `UserWarning: No recommended backend was available.`
     3. Username is `__token__`
     4. Password is the created API-Token **with** `pypi-` prefix
-
-### Building for development
-
-If we want to build the package just locally for development, the following steps will suffice
-
-- Run `pre_setup.py` (this will copy necessary jars to `systemds/systemds-java/lib` from `systemds-VERSION-SNAPSHOT-bin.zip`)
-
-```bash
-python3 create_python_dist.py
-```
-
-- Finished. Test by running a test case of your choice:
-
-```bash
-python3 tests/test_matrix_binary_op.py
-```

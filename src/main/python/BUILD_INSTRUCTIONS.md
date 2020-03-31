@@ -41,8 +41,8 @@ python3 create_python_dist.py
 
 - Follow the instructions from the [Guide](https://packaging.python.org/tutorials/packaging-projects/)
     1. Create an API-Token in the account (leave the page open or copy the token, it will only be shown once)
-        - Optional: `pip install keyrings.alt` if you get `UserWarning: No recommended backend was available.`
     2. Execute the command `python3 -m twine upload dist/*`
+        - Optional: `pip install keyrings.alt` if you get `UserWarning: No recommended backend was available.`
     3. Username is `__token__`
     4. Password is the created API-Token **with** `pypi-` prefix
 

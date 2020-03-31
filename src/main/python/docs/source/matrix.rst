@@ -73,10 +73,11 @@ Matrices are the most fundamental objects we operate on.
 Although we can generate matrices with the function calls or object construction specified below,
 the recommended way is to use the methods defined on ``SystemDSContext``.
 
-If one generate the matrix in SystemDS directly via a function call,
-it can be used in an function which will generate an ``OperationNode`` e.g. ``federated``, ``full``, ``seq``.
+If we can generate the matrix in SystemDS directly via a function call,
+an python function exists which will generate an ``OperationNode`` e.g. ``federated``, ``full``, ``seq``,
+representing the SystemDS operation.
 
-If we want to work on an numpy array, or want to read a matrix from a file, we need to use the class ``Matrix``.
+If we want to work on an numpy array or want to read a matrix from a file, we need to use the class ``Matrix``.
 
 .. autoclass:: systemds.matrix.Matrix
     :members:

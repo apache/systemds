@@ -36,7 +36,7 @@ ARTIFACT_VERSION = __project_version__
 ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 
 REQUIRED_PACKAGES = [
-    'numpy >= 1.8.2',  # we might want to recheck this version
+    'numpy >= 1.8.2',
     'py4j >= 0.10.0'
 ]
 
@@ -49,7 +49,7 @@ setup(
     version=ARTIFACT_VERSION_SHORT,
     description='SystemDS is a distributed and declarative machine learning platform.',
     long_description=open('README.md').read(),
-    url='https://github.com/tugraz-isds/systemds',
+    url='https://github.com/apache/systemml',
     author='SystemDS',
     author_email='dev@systemml.apache.org',
     packages=find_packages(),

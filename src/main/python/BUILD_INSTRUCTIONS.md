@@ -23,7 +23,7 @@ limitations under the License.
 
 The following steps have to be done for both cases
 
-- Build SystemDS with maven first `mvn package -DskipTests -Pdistribution`, with the working directory being `SYSTEMDS_ROOT` (Root directory of SystemDS)
+- Build SystemDS with maven first `mvn package -Pdistribution`, with the working directory being `SYSTEMDS_ROOT` (Root directory of SystemDS)
 - `cd` to this folder (basically `SYSTEMDS_ROOT/src/main/python`
 
 ### Building package for release
@@ -50,7 +50,7 @@ python3 create_python_dist.py
 
 If we want to build the package just locally for development, the following steps will suffice
 
-- Run `pre_setup.py` (this will copy `lib` and `systemds-VERSION-SNAPSHOT.jar`)
+- Run `pre_setup.py` (this will copy necessary jars to `systemds/systemds-java/lib` from `systemds-VERSION-SNAPSHOT-bin.zip`)
 
 ```bash
 python3 create_python_dist.py

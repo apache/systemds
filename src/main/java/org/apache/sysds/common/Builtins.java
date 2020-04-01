@@ -154,7 +154,7 @@ public enum Builtins {
 	SAMPLE("sample", false),
 	SD("sd", false),
 	SEQ("seq", false),
-	SIGMOD("sigmoid", true),   // 1 / (1 + exp(-X))
+	SIGMOID("sigmoid", true),   // 1 / (1 + exp(-X))
 	SIGN("sign", false),
 	SIN("sin", false),
 	SINH("sinh", false),

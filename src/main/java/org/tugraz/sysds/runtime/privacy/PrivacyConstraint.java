@@ -17,29 +17,19 @@
  * under the License.
  */
 
-package org.tugraz.sysds.runtime.io;
+package org.tugraz.sysds.runtime.privacy;
 
-import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-
-public class ReadProperties 
+public class PrivacyConstraint
 {
-	// Properties common to all file formats 
-	public String path;
-	public long rlen, clen;
-	public int blen;
-	public long expectedNnz;
-	public InputInfo inputInfo;
-	public boolean localFS;
-	
-	// Properties specific to CSV files
-	public FileFormatProperties formatProperties;
-	
-	public ReadProperties() {
-		rlen = -1;
-		clen = -1;
-		blen = -1;
-		expectedNnz = -1;
-		inputInfo = null;
-		localFS = false;
-	}
+    protected boolean _privacy = false;
+
+    public PrivacyConstraint(){}
+
+    public void setPrivacy(boolean privacy){
+        _privacy = privacy;
+    }
+
+    public boolean getPrivacy(){
+        return _privacy;
+    }
 }

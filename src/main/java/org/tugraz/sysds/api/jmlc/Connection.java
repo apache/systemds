@@ -373,13 +373,11 @@ public class Connection implements Closeable
 				jmtd.getInt(DataExpression.ROWBLOCKCOUNTPARAM) : -1;
 			long nnz = jmtd.containsKey(DataExpression.READNNZPARAM)?
 					jmtd.getLong(DataExpression.READNNZPARAM) : -1;
-			boolean privacy = jmtd.containsKey(DataExpression.READPRIVACY) ?
-					jmtd.getBoolean(DataExpression.READPRIVACY) : false;
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
 			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);
 		
 			//read matrix file
-			return readDoubleMatrix(fname, iinfo, rows, cols, blen, nnz, privacy);
+			return readDoubleMatrix(fname, iinfo, rows, cols, blen, nnz);
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);
@@ -396,18 +394,17 @@ public class Connection implements Closeable
 	 * @param cols number of columns in the matrix
 	 * @param blen block length
 	 * @param nnz number of non-zero values, -1 indicates unknown
-	 * @param privacy whether the matrix should be under data exchange constraints
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int blen, long nnz, boolean privacy) 
+	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int blen, long nnz) 
 		throws IOException
 	{
 		setLocalConfigs();
 		
 		try {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
-			MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, blen, nnz, privacy);
+			MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, blen, nnz);
 			return DataConverter.convertToDoubleMatrix(mb);
 		}
 		catch(Exception ex) {

@@ -48,7 +48,7 @@ public class ReaderTextCSV extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz, boolean privacy) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block
@@ -76,7 +76,7 @@ public class ReaderTextCSV extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz, boolean privacy) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//allocate output matrix block

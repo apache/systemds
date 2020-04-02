@@ -17,29 +17,31 @@
 
 package org.tugraz.sysds.test.functions.privacy;
 
+import static org.junit.Assert.assertEquals;
+
+import org.apache.wink.json4j.JSONException;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.parser.DataExpression;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.privacy.PrivacyConstraint;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
+public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 
-public class MatrixMultiplicationPropagationTest extends AutomatedTestBase 
-{
-	
 	private static final String TEST_DIR = "functions/privacy/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixMultiplicationPropagationTest.class.getSimpleName() + "/";
-	
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixMultiplicationPropagationTest.class.getSimpleName()
+			+ "/";
+
 	@Override
 	public void setUp() {
-		addTestConfiguration("MatrixMultiplicationPropagationTest", 
-			new TestConfiguration(TEST_CLASS_DIR, "MatrixMultiplicationPropagationTest", new String[] { "c" }));
-		addTestConfiguration("WrongDimensionsTest", 
-			new TestConfiguration(TEST_CLASS_DIR, "MatrixMultiplicationPropagationTest", new String[] { "c" }));
+		addTestConfiguration("MatrixMultiplicationPropagationTest",
+				new TestConfiguration(TEST_CLASS_DIR, "MatrixMultiplicationPropagationTest", new String[] { "c" }));
 	}
 
 	@Test
-	public void testMatrixMultiplication() {
+	public void testMatrixMultiplicationPropagation() throws JSONException {
 		int m = 20;
 		int n = 20;
 		int k = 20;
@@ -55,21 +57,36 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
 		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
 		double[][] c = TestUtils.performMatrixMultiplication(a, b);
-
-		writeInputMatrix("a", a);
+		
+		PrivacyConstraint privacyConstraint = new PrivacyConstraint();
+		privacyConstraint.setPrivacy(true);
+		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
+		
+		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
 		writeInputMatrix("b", b);
 		writeExpectedMatrix("c", c);
 
 		runTest();
 
-		compareResults(0.00000000001);
+		String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
+		assertEquals(true, actualPrivacyValue);
 	}
-	
+
+
 	@Test
-	public void testSparseMatrixMultiplication() {
-		int m = 40;
-		int n = 10;
-		int k = 30;
+	public void testMatrixMultiplicationPrivacyInputTrue() throws JSONException {
+		testMatrixMultiplicationPrivacyInput(true);
+	}
+
+	@Test
+	public void testMatrixMultiplicationPrivacyInputFalse() throws JSONException {
+		testMatrixMultiplicationPrivacyInput(false);
+	}
+
+	private void testMatrixMultiplicationPrivacyInput(boolean privacy) throws JSONException {
+		int m = 20;
+		int n = 20;
+		int k = 20;
 
 		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationPropagationTest");
 		config.addVariable("m", m);
@@ -79,37 +96,15 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		double[][] a = getRandomMatrix(m, n, -1, 1, 0.1, -1);
-		double[][] b = getRandomMatrix(n, k, -1, 1, 0.1, -1);
-		double[][] c = TestUtils.performMatrixMultiplication(a, b);
+		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
+		
+		PrivacyConstraint privacyConstraint = new PrivacyConstraint();
+		privacyConstraint.setPrivacy(privacy);
+		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
+		
+		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
 
-		writeInputMatrix("a", a);
-		writeInputMatrix("b", b);
-		writeExpectedMatrix("c", c);
-
-		runTest();
-
-		compareResults(0.00000000001);
-	}
-
-	@Test
-	public void testWrongDimensions() {
-		int m = 6;
-		int n1 = 8;
-		int n2 = 10;
-		int k = 12;
-
-		TestConfiguration config = availableTestConfigurations.get("WrongDimensionsTest");
-		config.addVariable("m", m);
-		config.addVariable("n1", n1);
-		config.addVariable("n2", n2);
-		config.addVariable("k", k);
-
-		loadTestConfiguration(config);
-
-		createRandomMatrix("a", m, n1, -1, 1, 0.5, -1);
-		createRandomMatrix("b", n2, k, -1, 1, 0.5, -1);
-
-		runTest(true, DMLException.class);
+		String actualPrivacyValue = readDMLMetaDataValue("a", INPUT_DIR, DataExpression.PRIVACY);
+		assertEquals(String.valueOf(privacy), actualPrivacyValue);
 	}
 }

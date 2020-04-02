@@ -341,7 +341,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				//read matrix data from hdfs
 				MatrixReader matReader = MatrixReaderFactory.createMatrixReader(iinfo);
 				MatrixBlock matrixBlock2 = matReader.readMatrixFromHDFS(output("B"), rows, schema.length, 
-						mcMatrix.getBlocksize(), mcMatrix.getNonZeros(), false);
+						mcMatrix.getBlocksize(), mcMatrix.getNonZeros());
 
 				//verify input and output frame/matrix
 				verifyFrameMatrixData(frame1, matrixBlock2);

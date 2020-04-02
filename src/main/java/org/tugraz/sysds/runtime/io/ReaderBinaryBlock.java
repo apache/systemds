@@ -50,7 +50,7 @@ public class ReaderBinaryBlock extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz, boolean privacy) 
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		//early abort for known empty matrices (e.g., remote parfor result vars)
@@ -80,7 +80,7 @@ public class ReaderBinaryBlock extends MatrixReader
 	}
 	
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz, boolean privacy) 
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
 		throw new DMLRuntimeException("Not implemented yet.");

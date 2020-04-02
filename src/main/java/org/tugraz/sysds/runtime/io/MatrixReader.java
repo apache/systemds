@@ -56,18 +56,12 @@ public abstract class MatrixReader
 	//internal configuration
 	protected static final boolean AGGREGATE_BLOCK_NNZ = true;
 	protected static final boolean RETURN_EMPTY_NNZ0 = true;
-	
-	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int blen, long estnnz, boolean privacy )
-		throws IOException, DMLRuntimeException;
 
-	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int blen, long estnnz, boolean privacy )
+	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int blen, long estnnz )
 			throws IOException, DMLRuntimeException;
 
-	public MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int blen, long estnnz) 
-			throws IOException, DMLRuntimeException 
-			{
-				return readMatrixFromInputStream(is, rlen, clen, blen, estnnz, false);
-			}
+	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int blen, long estnnz) 
+			throws IOException, DMLRuntimeException;
 	
 	/**
 	 * NOTE: mallocDense controls if the output matrix blocks is fully allocated, this can be redundant

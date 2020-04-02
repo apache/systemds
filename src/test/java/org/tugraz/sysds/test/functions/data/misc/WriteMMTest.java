@@ -73,28 +73,16 @@ public class WriteMMTest extends AutomatedTestBase
 	@Test
 	public void testWriteMMCP() 
 	{
-		runWriteMMTest(ExecType.CP, TEST_NAME1, false);
+		runWriteMMTest(ExecType.CP, TEST_NAME1);
 	}
 	
 	@Test
 	public void testWriteMMSP() 
 	{
-		runWriteMMTest(ExecType.SPARK, TEST_NAME1, false);
-	}
-
-	@Test
-	public void testWriteMMCPPrivacy() 
-	{
-		runWriteMMTest(ExecType.CP, TEST_NAME1, true);
+		runWriteMMTest(ExecType.SPARK, TEST_NAME1);
 	}
 	
-	@Test
-	public void testWriteMMSPPrivacy() 
-	{
-		runWriteMMTest(ExecType.SPARK, TEST_NAME1, true);
-	}
-	
-	private void runWriteMMTest( ExecType instType, String TEST_NAME, boolean withPrivacy )
+	private void runWriteMMTest( ExecType instType, String TEST_NAME )
 	{
 		//setup exec type, rows, cols
 		int rows = -1, cols = -1;
@@ -134,10 +122,7 @@ public class WriteMMTest extends AutomatedTestBase
 	
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, System.currentTimeMillis());
-			if ( !withPrivacy ) 
-				writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows,cols, 1000, 1000));
-			else
-				writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows,cols, 1000, 1000, true));
+			writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows,cols, 1000, 1000));
 			writeExpectedMatrixMarket("B", A);
 	
 			runTest(true, false, null, -1);

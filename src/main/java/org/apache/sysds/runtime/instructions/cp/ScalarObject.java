@@ -38,7 +38,7 @@ public abstract class ScalarObject extends Data
 
 	public abstract String getStringValue();
 	
-	public abstract int getSize(); 
+	public abstract int getSize(); //TODO: Use JOL or Instrumentation library.
 	
 	public String getLanguageSpecificStringValue() {
 		return getStringValue();

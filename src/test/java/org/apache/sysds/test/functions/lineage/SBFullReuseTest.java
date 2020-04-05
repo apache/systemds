@@ -97,7 +97,7 @@ public class SBFullReuseTest extends AutomatedTestBase {
 			proArgs.add("-stats");
 			proArgs.add("-explain");
 			proArgs.add("-lineage");
-			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			proArgs.add(ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

@@ -438,7 +438,7 @@ public class LineageCache {
 	
 	private static double getRecomputeEstimate(Instruction inst, ExecutionContext ec) {
 		if (!((ComputationCPInstruction)inst).output.isMatrix()
-			|| !((ComputationCPInstruction)inst).input1.isMatrix())
+			|| (((ComputationCPInstruction)inst).input1 != null && !((ComputationCPInstruction)inst).input1.isMatrix()))
 			return 0; //this method will be deprecated. No need to support scalar
 
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;

@@ -108,7 +108,9 @@ public class BasicProgramBlock extends ProgramBlock
 		
 		//statement-block-level, lineage-based reuse
 		LineageItem[] liInputs = null;
-		if (_sb != null && LineageCacheConfig.getCacheType().isMultilevelReuse()) {
+		if (_sb != null 
+			&& !ReuseCacheType.isNone()
+			&& LineageCacheConfig.getCacheType().isMultilevelReuse()) {
 			String name = "SB" + _sb.getSBID();
 			liInputs = LineageItemUtils.getLineageItemInputstoSB(_sb.getInputstoSB(), ec);
 			if( LineageCache.reuse(_sb.getOutputsofSB(), _sb.getOutputsofSB().size(), liInputs, name, ec) ) {

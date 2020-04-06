@@ -149,7 +149,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "solve"  , CPType.Binary);
 		String2CPInstructionType.put( "max"  , CPType.Binary);
 		String2CPInstructionType.put( "min"  , CPType.Binary);
-		
+		String2CPInstructionType.put( "is_correct"  , CPType.isCorrect);
+
 		String2CPInstructionType.put( "nmax", CPType.BuiltinNary);
 		String2CPInstructionType.put( "nmin", CPType.BuiltinNary);
 		String2CPInstructionType.put( "n+"  , CPType.BuiltinNary);
@@ -335,7 +336,8 @@ public class CPInstructionParser extends InstructionParser
 			
 			case Unary:
 				return UnaryCPInstruction.parseInstruction(str);
-			
+
+			case isCorrect:
 			case Binary:
 				return BinaryCPInstruction.parseInstruction(str);
 			

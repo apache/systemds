@@ -37,6 +37,7 @@ public class Binary extends Lop
 		AND, OR, XOR,
 		MAX, MIN, POW, SOLVE, NOTSUPPORTED,
 		BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR, //Bitwise operations
+		IS_CORRECT, // frame operation for validating the data type
 	}
 
 	private OperationTypes operation;
@@ -167,6 +168,9 @@ public class Binary extends Lop
 			
 		case SOLVE:
 			return "solve";
+
+		case IS_CORRECT:
+			return "is_correct";
 			
 		default:
 			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + op);

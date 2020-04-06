@@ -139,7 +139,9 @@ public class BinaryM extends Lop
 			return "mapmax";
 		case POW:
 			return "map^";
-			
+
+		case IS_CORRECT:
+			return "is_correct";
 		default:
 			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + op);
 		}
@@ -159,7 +161,7 @@ public class BinaryM extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		return InstructionUtils.concatOperands(
+		return	InstructionUtils.concatOperands(
 			getExecType().name(),
 			getOpcode(),
 			getInputs().get(0).prepInputOperand(input1),

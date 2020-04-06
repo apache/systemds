@@ -39,55 +39,10 @@ import org.apache.sysds.lops.WeightedUnaryMM;
 import org.apache.sysds.lops.WeightedUnaryMMR;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
-import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
-import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.AppendMSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.AppendRSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.BinUaggChainSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
-import org.apache.sysds.runtime.instructions.spark.BuiltinNarySPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CheckpointSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CompressionSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CovarianceSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CpmmSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CumulativeAggregateSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.DnnSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.MapmmChainSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.MatrixReshapeSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.PMapmmSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.PmmSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.QuantilePickSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
-import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.ReorgSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.RmmSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
+import org.apache.sysds.runtime.instructions.spark.*;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
-import org.apache.sysds.runtime.instructions.spark.SpoofSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
-import org.apache.sysds.runtime.instructions.spark.Tsmm2SPInstruction;
-import org.apache.sysds.runtime.instructions.spark.TsmmSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.UaggOuterChainSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.UnaryFrameSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.ZipmmSPInstruction;
 
-
-public class SPInstructionParser extends InstructionParser 
+public class SPInstructionParser extends InstructionParser
 {	
 	public static final HashMap<String, SPType> String2SPInstructionType;
 	static {
@@ -133,7 +88,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "pmm"        , SPType.PMM);
 		String2SPInstructionType.put( "zipmm"      , SPType.ZIPMM);
 		String2SPInstructionType.put( "pmapmm"     , SPType.PMAPMM);
-		
+
+
 		String2SPInstructionType.put( "uaggouterchain", SPType.UaggOuterChain);
 		
 		//ternary aggregate operators
@@ -177,7 +133,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map^"    , SPType.Binary);
 		String2SPInstructionType.put( "map+*"   , SPType.Binary);
 		String2SPInstructionType.put( "map-*"   , SPType.Binary);
-		
+		String2SPInstructionType.put( "is_correct"     , SPType.isCorrect);
 		// Relational Instruction Opcodes 
 		String2SPInstructionType.put( "=="   , SPType.Binary);
 		String2SPInstructionType.put( "!="   , SPType.Binary);
@@ -390,7 +346,11 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Binary:
 				return BinarySPInstruction.parseInstruction(str);
-			
+
+			//frame-frame binary operation
+			case isCorrect:
+				return BinaryFrameFrameSPInstruction.parseInstruction(str);
+
 			case Ternary:
 				return TernarySPInstruction.parseInstruction(str);
 			

@@ -75,6 +75,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			vtype = VectorType.valueOf(parts[5]);
 			isBroadcast = true;
 		}
+
 		else {
 			opcode = parseBinaryInstruction(str, in1, in2, out);
 		}
@@ -104,6 +105,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			else
 				throw new DMLRuntimeException("Tensor binary operation not yet implemented for tensor-scalar, or tensor-matrix");
 		}
+
 		return null;
 	}
 

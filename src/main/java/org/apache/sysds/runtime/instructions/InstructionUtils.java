@@ -515,6 +515,7 @@ public class InstructionUtils
 				new BinaryOperator( Builtin.getBuiltinFnObject(opcode))) :
 			(matrixScalar ? parseScalarBinaryOperator(opcode, in1.getDataType().isScalar()) :
 				parseExtendedBinaryOperator(opcode));
+
 	}
 	
 	public static BinaryOperator parseBinaryOperator(String opcode) 
@@ -571,6 +572,8 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		else if ( opcode.equalsIgnoreCase("min") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
+		else if(  opcode.equalsIgnoreCase("is_correct"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("is_correct"));
 		
 		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}

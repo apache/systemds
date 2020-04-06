@@ -39,7 +39,7 @@ public abstract class Expression implements ParseInfo
 	 * Binary operators.
 	 */
 	public enum BinaryOp {
-		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, MATMULT, POW, INVALID
+		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, MATMULT, POW, IS_CORRECT, INVALID
 	}
 
 	/**

@@ -1725,6 +1725,8 @@ public class DMLTranslator
 			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, org.apache.sysds.common.Types.AggOp.SUM, left, right);
 		} else if (source.getOpCode() == Expression.BinaryOp.POW) {
 			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.POW, left, right);
+		} else if (source.getOpCode() == Expression.BinaryOp.IS_CORRECT) {
+			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.IS_CORRECT, left, right);
 		}
 		else {
 			throw new ParseException("Unsupported parsing of binary expression: "+source.getOpCode());
@@ -2431,10 +2433,6 @@ public class DMLTranslator
 		case BITWXOR:
 		case BITWSHIFTL:
 		case BITWSHIFTR:
-			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
-				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
-			break;
-
 		case ABS:
 		case SIN:
 		case COS:
@@ -2461,6 +2459,10 @@ public class DMLTranslator
 		case ISINF:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 				OpOp1.valueOf(source.getOpCode().name()), expr);
+			break;
+		case IS_CORRECT:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
 			break;
 		
 		case LOG:

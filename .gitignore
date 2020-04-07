@@ -37,6 +37,10 @@ buildNumber.properties
 .metadata
 .cache*
 
+# Documentation artifacts
+.jekyll-cache/
+_site/
+
 # Python artifacts
 src/main/python/systemds/systemds-java/
 src/main/python/systemds.egg-info/

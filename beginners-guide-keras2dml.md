@@ -32,7 +32,7 @@ limitations under the License.
 Keras2DML converts a Keras specification to DML through the intermediate Caffe2DML module. 
 It is designed to fit well into the mllearn framework and hence supports NumPy, Pandas as well as PySpark DataFrame.
 
-First, install SystemML and other dependencies for the below demo:
+First, install SystemDS and other dependencies for the below demo:
 
 ```
 pip install systemml keras tensorflow
@@ -48,7 +48,7 @@ Download the MNIST dataset using [mlxtend package](https://pypi.python.org/pypi/
 ```python
 # pyspark --driver-memory 20g
 
-# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemDS runtime
 import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -95,7 +95,7 @@ scale = 0.00390625
 X_train = X_train*scale
 X_test = X_test*scale
 
-# Train Lenet using SystemML
+# Train Lenet using SystemDS
 from systemml.mllearn import Keras2DML
 sysml_model = Keras2DML(spark, keras_model, weights='weights_dir')
 # sysml_model.setConfigProperty("sysml.native.blas", "auto")
@@ -108,7 +108,7 @@ sysml_model.score(X_test, y_test)
 
 ```python
 # pyspark --driver-memory 20g
-# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemDS runtime
 import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''

@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Debugger Guide
-description: SystemML Debugger Guide
+title: SystemDS Debugger Guide
+description: SystemDS Debugger Guide
 ---
 <!--
 {% comment %}
@@ -24,14 +24,14 @@ limitations under the License.
 
 ## Overview
 
-SystemML supports DML script-level debugging through a command line interface.  The SystemML debugger provides functionality typically found in a debugging environment like setting breakpoints, controlling program execution, and inspecting variables.  To run a script in debug mode, specify the '-debug' option as shown in below example.
+SystemDS supports DML script-level debugging through a command line interface.  The SystemDS debugger provides functionality typically found in a debugging environment like setting breakpoints, controlling program execution, and inspecting variables.  To run a script in debug mode, specify the '-debug' option as shown in below example.
 
-    hadoop jar SystemML.jar -f test.dml -debug
+    hadoop jar SystemDS.jar -f test.dml -debug
 
 
 ## Debugger Commands
 
-After starting a SystemML debug session, a list of available commands is automatically displayed.  Debugger commands can be entered at the SystemML debugger prompt (SystemMLdb).
+After starting a SystemDS debug session, a list of available commands is automatically displayed.  Debugger commands can be entered at the SystemDS debugger prompt (SystemDSdb).
 The following sections describe each command along with example usage.
 
   * [Help](#help)
@@ -56,9 +56,9 @@ The following sections describe each command along with example usage.
 
 Type h for help to display a summary of available debugger commands.
 
-    (SystemMLdb) h
+    (SystemDSdb) h
 
-    SystemMLdb commands:
+    SystemDSdb commands:
     h,help                                                 list debugger functions
     r,run                                                  start your DML script
     q,quit                                                 exit debug mode
@@ -79,7 +79,7 @@ Type h for help to display a summary of available debugger commands.
     si,stepi                                               next runtime instruction rather than DML source lines (for advanced
                                                            users)
 
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 
@@ -91,7 +91,7 @@ To exit a debug session, simply type q.
 
 This returns control to the terminal or console shell which was used to launch the session.
 
-    (SystemMLdb) q
+    (SystemDSdb) q
     $
 
 
@@ -117,7 +117,7 @@ After initially launching a debug session, the script is loaded and ready to be 
 
 Without specifying any options, the list shows up to the next 10 lines of the script.  For example:
 
-    (SystemMLdb) l
+    (SystemDSdb) l
     line    1: A = rand (rows=10, cols=5);
     line    2: B = rand (rows=5, cols=4);
     line    3: D = sum(A);
@@ -136,10 +136,10 @@ Each line of the script can be stepped through using the s command.
 
 So continuing with the example from previous section, typing s executes the current line 1:
 
-    (SystemMLdb) s
+    (SystemDSdb) s
     Step reached at .defaultNS::main: (line 2).
     2    B = rand (rows=5, cols=4);
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 As can be seen from the output, the debugger executed line 1 and advanced to the next line in script.  The current line is automatically displayed.
 
@@ -155,9 +155,9 @@ To execute a group of instructions up to a specific line, breakpoints can be use
 
 Continuing the example from step command, the current line was 2.  The below command sets a breakpoint at script source line number 4.
 
-    (SystemMLdb) b 4    
+    (SystemDSdb) b 4    
     Breakpoint added at .defaultNS::main, line 4.
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 
@@ -170,15 +170,15 @@ Use the d command to remove a breakpoint.
 
 Below is sample output when removing a breakpoint.
 
-    (SystemMLdb) d 4
+    (SystemDSdb) d 4
     Breakpoint updated at .defaultNS::main, line 4.
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 If no breakpoint was set at the specified line number, then an appropriate message is displayed.
 
-    (SystemMLdb) d 4
+    (SystemDSdb) d 4
     Sorry, a breakpoint cannot be deleted at line 4. Please try a different line number.
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 
@@ -191,10 +191,10 @@ To see a list of breakpoints, use the i command with the break option.
 
 Below is sample output after setting breakpoints at lines 2 and 4 of test.dml script.
 
-    (SystemMLdb) i break
+    (SystemDSdb) i break
     Breakpoint  1, at line    2 (enabled)
     Breakpoint  2, at line    4 (enabled)
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 The info command also has a frame option which is discussed in the section related to inspecting script variables.
 
@@ -211,48 +211,48 @@ The continue command resumes script execution from the current line up to the ne
 
 Since the previous section set a breakpoint at line number 4, typing c to continue executes from the current line (2) up to but not including line 4 (i.e., the line with the breakpoint).
 
-    (SystemMLdb) c
+    (SystemDSdb) c
     Resuming DML script execution ...
     Breakpoint reached at .defaultNS::main instID 1: (line 4).
     4    print("Sum(A)=" + D);
-    (SystemMLdb) 
+    (SystemDSdb) 
 
-Note that continue is not a valid command if the SystemML runtime has not been started.
+Note that continue is not a valid command if the SystemDS runtime has not been started.
 
-    (SystemMLdb) c
+    (SystemDSdb) c
     Runtime has not been started. Try "r" to start DML runtime execution.
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 
 
 ### Run
 
-There are two ways of starting the SystemML runtime for a debug session - the step command or the run command.  A common scenario is to set breakpoint(s) in the beginning of a debug session, then use r to start the runtime and run until the breakpoint is reached or script completion.
+There are two ways of starting the SystemDS runtime for a debug session - the step command or the run command.  A common scenario is to set breakpoint(s) in the beginning of a debug session, then use r to start the runtime and run until the breakpoint is reached or script completion.
 
     r,run                                                  start your DML script
 
 Using the same script from the previous example, the r command can be used in the beginning of the session to run the script up to a breakpoint or program completion if no breakpoint were set or reached.
 
-    (SystemMLdb) l
+    (SystemDSdb) l
     line    1: A = rand (rows=10, cols=5);
     line    2: B = rand (rows=5, cols=4);
     line    3: D = sum(A);
     line    4: print("Sum(A)=" + D);
     line    5: C = A %*% B;
     line    6: write(C, "output.csv", format="csv");
-    (SystemMLdb) b 4
+    (SystemDSdb) b 4
     Breakpoint added at .defaultNS::main, line 4.
-    (SystemMLdb) r
+    (SystemDSdb) r
     Breakpoint reached at .defaultNS::main instID 1: (line 4).
     4    print("Sum(A)=" + D);
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 Note the run command is not valid if the runtime has already been started.  In that case, use continue or step to execute line(s) of the script.
 
-    (SystemMLdb) r
+    (SystemDSdb) r
     Runtime has already started. Try "s" to go to next line, or "c" to continue running your DML script.
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 ## Debugger Commands for inspecting or modifying script variables
@@ -278,13 +278,13 @@ To display the type of a variable, use the whatis command.
 
 Given sample test.dml script with current line 4, then the metadata of variables A, B, D can be shown.
 
-    (SystemMLdb) whatis A
+    (SystemDSdb) whatis A
     Metadata of A: matrix[rows = 10, cols = 5, rpb = 1000, cpb = 1000]
-    (SystemMLdb) whatis B
+    (SystemDSdb) whatis B
     Metadata of B: matrix[rows = 5, cols = 4, rpb = 1000, cpb = 1000]
-    (SystemMLdb) whatis D
+    (SystemDSdb) whatis D
     Metadata of D: DataType.SCALAR
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 
@@ -298,7 +298,7 @@ To view the contents of a variable, use the p command.
 
 Below is sample print output for the same variables used in previous section.
 
-    (SystemMLdb) p A
+    (SystemDSdb) p A
     0.6911	0.0533	0.7659	0.9130	0.1196	
     0.8153	0.6145	0.5440	0.2916	0.7330	
     0.0520	0.9484	0.2044	0.5571	0.6952	
@@ -309,29 +309,29 @@ Below is sample print output for the same variables used in previous section.
     0.6778	0.8078	0.5075	0.0085	0.5159	
     0.8835	0.5621	0.7637	0.4362	0.4392	
     0.6108	0.5600	0.6140	0.0163	0.8640	
-    (SystemMLdb) p B
+    (SystemDSdb) p B
     0.4141	0.9905	0.1642	0.7545	
     0.5733	0.1489	0.1204	0.5375	
     0.5202	0.9833	0.3421	0.7099	
     0.5846	0.7585	0.9751	0.1174	
     0.8431	0.5806	0.4122	0.3694	
-    (SystemMLdb) p D
+    (SystemDSdb) p D
     D = 25.28558886582987
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 To display a specific element of a matrix, use [row,column] notation.
 
-    (SystemMLdb) p A[1,1]
+    (SystemDSdb) p A[1,1]
     0.6911
-    (SystemMLdb) p A[10,5]
+    (SystemDSdb) p A[10,5]
     0.8640
-    (SystemMLdb)  
+    (SystemDSdb)  
 
 Specific rows or columns of a matrix can also be displayed.  The below examples show the first row and the fifth column of matrix A.
 
-    (SystemMLdb) p A[1,]
+    (SystemDSdb) p A[1,]
     0.6911	0.0533	0.7659	0.9130	0.1196	
-    (SystemMLdb) p A[,5]
+    (SystemDSdb) p A[,5]
     0.1196	
     0.7330	
     0.6952	
@@ -342,7 +342,7 @@ Specific rows or columns of a matrix can also be displayed.  The below examples 
     0.5159	
     0.4392	
     0.8640	
-    (SystemMLdb)
+    (SystemDSdb)
 
 
 
@@ -356,15 +356,15 @@ The set command is used for modifying variable contents.
 
 The following example modifies the first cell in matrix A.
 
-    (SystemMLdb) set A[1,1] 0.3299
+    (SystemDSdb) set A[1,1] 0.3299
     A[1,1] = 0.3299
-    (SystemMLdb)  
+    (SystemDSdb)  
 
 This example updates scalar D.  Note an equals sign is not needed when setting a variable.
 
-    (SystemMLdb) set D 25.0
+    (SystemDSdb) set D 25.0
     D = 25.0
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 
@@ -377,7 +377,7 @@ In addition to being used for displaying breakpoints, the i command is used for 
 
 So if our test.xml script was executed up to line 4, then the following frame information is shown.
 
-    (SystemMLdb) i frame
+    (SystemDSdb) i frame
     Current frame id: 0
       Current program counter at .defaultNS::main instID -1: (line 4)
       Local variables:
@@ -385,7 +385,7 @@ So if our test.xml script was executed up to line 4, then the following frame in
 	    A                                        Matrix: scratch_space//_p48857_9.30.252.162//_t0/temp1_1, [10 x 5, nnz=50, blocks (1000 x 1000)], binaryblock, dirty
 	    B                                        Matrix: scratch_space//_p48857_9.30.252.162//_t0/temp2_2, [5 x 4, nnz=20, blocks (1000 x 1000)], binaryblock, dirty
 	    D                                        25.28558886582987                       
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 Note only variables that are in scope are included (e.g., the variable C is not part of the frame since not yet in scope).
 
@@ -413,7 +413,7 @@ The li command can be used to display lower-level instructions along with the so
 
 For example:
 
-    (SystemMLdb) li
+    (SystemDSdb) li
     line    1: A = rand (rows=10, cols=5);
 		 id   -1: CP createvar _mVar1 scratch_space//_p1939_9.30.252.162//_t0/temp1 true binaryblock 10 5 1000 1000 50
 		 id   -1: CP rand 10 5 1000 1000 0.0 1.0 1.0 -1 uniform 1.0 4 _mVar1.MATRIX.DOUBLE
@@ -444,7 +444,7 @@ For example:
     line    6: write(C, "output.csv", format="csv");
 		 id   -1: CP write C.MATRIX.DOUBLE output.csv.SCALAR.STRING.true csv.SCALAR.STRING.true false , false
 		 id   -1: CP rmvar C
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 
 
@@ -459,35 +459,35 @@ The si command can be used to step through the lower level instructions of an in
 The first DML source line in test.dml consists of four instructions.
 
 
-    (SystemMLdb) li next 0
+    (SystemDSdb) li next 0
     line    1: A = rand (rows=10, cols=5);
 		 id   -1: CP createvar _mVar1 scratch_space//_p34473_9.30.252.162//_t0/temp1 true binaryblock 10 5 1000 1000 50
 		 id   -1: CP rand 10 5 1000 1000 0.0 1.0 1.0 -1 uniform 1.0 4 _mVar1.MATRIX.DOUBLE
 		 id   -1: CP cpvar _mVar1 A
 		 id   -1: CP rmvar _mVar1
-    (SystemMLdb) 
+    (SystemDSdb) 
 
 Type si to step through each individual instruction.
 
-    (SystemMLdb) si
+    (SystemDSdb) si
     Step instruction reached at .defaultNS::main instID -1: (line 1).
     1    A = rand (rows=10, cols=5);
-    (SystemMLdb) si
+    (SystemDSdb) si
     Step instruction reached at .defaultNS::main instID -1: (line 1).
     1    A = rand (rows=10, cols=5);
-    (SystemMLdb) si
+    (SystemDSdb) si
     Step instruction reached at .defaultNS::main instID -1: (line 1).
     1    A = rand (rows=10, cols=5);
-    (SystemMLdb) si
+    (SystemDSdb) si
     Step instruction reached at .defaultNS::main instID -1: (line 1).
     1    A = rand (rows=10, cols=5);
-    (SystemMLdb)
+    (SystemDSdb)
 
 Typing si again starts executing instructions of the next DML source line.
 
-    (SystemMLdb) si
+    (SystemDSdb) si
     Step instruction reached at .defaultNS::main instID -1: (line 2).
     2    B = rand (rows=5, cols=4);
-    (SystemMLdb)
+    (SystemDSdb)
 
 * * *

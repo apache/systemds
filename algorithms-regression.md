@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Regression
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Regression
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}
@@ -92,7 +92,7 @@ y_test = lr.fit(df_train)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f LinearRegDS.dml
+    hadoop jar SystemDS.jar -f LinearRegDS.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     B=<file>
@@ -105,9 +105,9 @@ y_test = lr.fit(df_train)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f LinearRegDS.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -134,7 +134,7 @@ y_test = lr.fit(df_train)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f LinearRegCG.dml
+    hadoop jar SystemDS.jar -f LinearRegCG.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     B=<file>
@@ -150,9 +150,9 @@ y_test = lr.fit(df_train)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f LinearRegCG.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -210,7 +210,7 @@ gradient iterations, or `0` if no maximum limit provided
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
 more details on the Python API. 
@@ -244,7 +244,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f LinearRegDS.dml
+    hadoop jar SystemDS.jar -f LinearRegDS.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     B=/user/ml/B.mtx
@@ -257,9 +257,9 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f LinearRegDS.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -298,7 +298,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f LinearRegCG.dml
+    hadoop jar SystemDS.jar -f LinearRegCG.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     B=/user/ml/B.mtx
@@ -314,9 +314,9 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f LinearRegCG.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -541,7 +541,7 @@ lowest AIC is computed.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f StepLinearRegDS.dml
+    hadoop jar SystemDS.jar -f StepLinearRegDS.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     B=<file>
@@ -555,9 +555,9 @@ lowest AIC is computed.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f StepLinearRegDS.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -605,14 +605,14 @@ checked and the algorithm stops.
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Examples
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f StepLinearRegDS.dml
+    hadoop jar SystemDS.jar -f StepLinearRegDS.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     B=/user/ml/B.mtx
@@ -626,9 +626,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f StepLinearRegDS.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -735,7 +735,7 @@ distributions and link functions, see below for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM.dml
+    hadoop jar SystemDS.jar -f GLM.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     B=<file>
@@ -758,9 +758,9 @@ distributions and link functions, see below for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -795,7 +795,7 @@ B\[$m\,{+}\,1$, 1\] if available
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 **O**: (default: `" "`) Location to write certain summary statistics described 
 in [**Table 9**](algorithms-regression.html#table9), 
@@ -875,7 +875,7 @@ if no maximum limit provided
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM.dml
+    hadoop jar SystemDS.jar -f GLM.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     B=/user/ml/B.mtx
@@ -896,9 +896,9 @@ if no maximum limit provided
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1213,7 +1213,7 @@ distribution family is supported (see below for details).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f StepGLM.dml
+    hadoop jar SystemDS.jar -f StepGLM.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     B=<file>
@@ -1233,9 +1233,9 @@ distribution family is supported (see below for details).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f StepGLM.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1312,14 +1312,14 @@ checked and the algorithm stops.
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Examples
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f StepGLM.dml
+    hadoop jar SystemDS.jar -f StepGLM.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     B=/user/ml/B.mtx
@@ -1338,9 +1338,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f StepGLM.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1467,7 +1467,7 @@ this step outside the scope of `GLM-predict.dml` for now.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
                                     B=<file>
@@ -1484,9 +1484,9 @@ this step outside the scope of `GLM-predict.dml` for now.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1592,7 +1592,7 @@ $\eta = \log\mu$. Common power links:
 
 **fmt**: (default: `"text"`) Matrix M file output format, such as
 `text`, `mm`, or `csv`; see read/write
-functions in SystemML Language Reference for details.
+functions in SystemDS Language Reference for details.
 
 
 ### Examples
@@ -1606,7 +1606,7 @@ unknown (which sets it to `1.0`).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs dfam=1
                                     vpow=0.0
                                     link=1
@@ -1623,9 +1623,9 @@ unknown (which sets it to `1.0`).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=0.0
@@ -1645,7 +1645,7 @@ unknown (which sets it to `1.0`).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs dfam=1
                                     vpow=0.0
                                     link=1
@@ -1659,9 +1659,9 @@ unknown (which sets it to `1.0`).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=0.0
@@ -1678,7 +1678,7 @@ unknown (which sets it to `1.0`).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs dfam=2
                                     link=2
                                     disp=3.0004464
@@ -1693,9 +1693,9 @@ unknown (which sets it to `1.0`).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=2
                                          link=2
@@ -1713,7 +1713,7 @@ unknown (which sets it to `1.0`).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs dfam=2
                                     link=3
                                     disp=3.0004464
@@ -1728,9 +1728,9 @@ unknown (which sets it to `1.0`).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=2
                                          link=3
@@ -1748,7 +1748,7 @@ unknown (which sets it to `1.0`).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs dfam=3 
                                     X=/user/ml/X.mtx
                                     B=/user/ml/B.mtx
@@ -1761,9 +1761,9 @@ unknown (which sets it to `1.0`).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=3
                                          X=/user/ml/X.mtx
@@ -1779,7 +1779,7 @@ unknown (which sets it to `1.0`).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs dfam=1
                                     vpow=1.0
                                     link=1
@@ -1796,9 +1796,9 @@ unknown (which sets it to `1.0`).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=1.0
@@ -1818,7 +1818,7 @@ unknown (which sets it to `1.0`).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f GLM-predict.dml
+    hadoop jar SystemDS.jar -f GLM-predict.dml
                             -nvargs dfam=1
                                     vpow=2.0
                                     link=1
@@ -1835,9 +1835,9 @@ unknown (which sets it to `1.0`).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f GLM-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs dfam=1
                                          vpow=2.0

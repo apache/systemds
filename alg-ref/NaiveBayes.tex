@@ -125,7 +125,7 @@ output format specified.
 \noindent{\bf Examples}
 
 \begin{verbatim}
-hadoop jar SystemML.jar -f naive-bayes.dml -nvargs 
+hadoop jar SystemDS.jar -f naive-bayes.dml -nvargs 
                            X=/user/biadmin/X.mtx 
                            Y=/user/biadmin/y.mtx 
                            laplace=1 fmt=csv
@@ -135,7 +135,7 @@ hadoop jar SystemML.jar -f naive-bayes.dml -nvargs
 \end{verbatim}
 
 \begin{verbatim}
-hadoop jar SystemML.jar -f naive-bayes-predict.dml -nvargs 
+hadoop jar SystemDS.jar -f naive-bayes-predict.dml -nvargs 
                            X=/user/biadmin/X.mtx 
                            Y=/user/biadmin/y.mtx 
                            prior=/user/biadmin/prior.csv

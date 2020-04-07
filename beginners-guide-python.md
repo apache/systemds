@@ -29,20 +29,20 @@ limitations under the License.
 
 ## Introduction
 
-SystemML enables flexible, scalable machine learning. This flexibility is achieved through the specification of a high-level declarative machine learning language that comes in two flavors, 
+SystemDS enables flexible, scalable machine learning. This flexibility is achieved through the specification of a high-level declarative machine learning language that comes in two flavors, 
 one with an R-like syntax (DML) and one with a Python-like syntax (PyDML).
 
 Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or in Standalone mode. 
-No script modifications are required to change between modes. SystemML automatically performs advanced optimizations 
+No script modifications are required to change between modes. SystemDS automatically performs advanced optimizations 
 based on data and cluster characteristics, so much of the need to manually tweak algorithms is largely reduced or eliminated.
 To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/systemml/beginners-guide-to-dml-and-pydml.html).
 
-For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
+For convenience of Python users, SystemDS exposes several language-level APIs that allow Python users to use SystemDS
 and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections with example usecases.
 
 ## Download & Setup
 
-Before you get started on SystemML, make sure that your environment is set up and ready to go.
+Before you get started on SystemDS, make sure that your environment is set up and ready to go.
 
 ### Install Java (need Java 8) and Apache Spark
 
@@ -67,9 +67,9 @@ brew install apache-spark
 </div>
 </div>
 
-### Install SystemML
+### Install SystemDS
 
-To install released SystemML, please use following commands:
+To install released SystemDS, please use following commands:
 
 <div class="codetabs">
 <div data-lang="Python 2" markdown="1">
@@ -106,8 +106,8 @@ pip3 install target/systemml-1.0.0-SNAPSHOT-python.tar.gz
 </div>
 </div>
 
-### Uninstall SystemML
-To uninstall SystemML, please use following command:
+### Uninstall SystemDS
+To uninstall SystemDS, please use following command:
 
 <div class="codetabs">
 <div data-lang="Python 2" markdown="1">
@@ -141,7 +141,7 @@ PYSPARK_PYTHON=python3 pyspark
 
 ## Matrix operations
 
-To get started with SystemML, let's try few elementary matrix multiplication operations:
+To get started with SystemDS, let's try few elementary matrix multiplication operations:
 
 ```python
 import systemml as sml
@@ -200,14 +200,14 @@ will use `mllearn` API described in the next section.
 
 ---
 
-## Invoke SystemML's algorithms
+## Invoke SystemDS's algorithms
 
-SystemML also exposes a subpackage [mllearn](https://apache.github.io/systemml/python-reference#mllearn-api). This subpackage allows Python users to invoke SystemML algorithms
+SystemDS also exposes a subpackage [mllearn](https://apache.github.io/systemml/python-reference#mllearn-api). This subpackage allows Python users to invoke SystemDS algorithms
 using Scikit-learn or MLPipeline API.  
 
 ### Scikit-learn interface
 
-In the below example, we invoke SystemML's [Linear Regression](https://apache.github.io/systemml/algorithms-regression.html#linear-regression)
+In the below example, we invoke SystemDS's [Linear Regression](https://apache.github.io/systemml/algorithms-regression.html#linear-regression)
 algorithm.
  
 ```python
@@ -240,7 +240,7 @@ Residual sum of squares: 6991.17
 
 As expected, by adding intercept and regularizer the residual error drops significantly.
 
-Here is another example that where we invoke SystemML's [Logistic Regression](https://apache.github.io/systemml/algorithms-classification.html#multinomial-logistic-regression)
+Here is another example that where we invoke SystemDS's [Logistic Regression](https://apache.github.io/systemml/algorithms-classification.html#multinomial-logistic-regression)
 algorithm on digits datasets.
 
 ```python
@@ -308,7 +308,7 @@ LogisticRegression score: 0.922222
 
 ### MLPipeline interface
 
-In the below example, we demonstrate how the same `LogisticRegression` class can allow SystemML to fit seamlessly into 
+In the below example, we demonstrate how the same `LogisticRegression` class can allow SystemDS to fit seamlessly into 
 large data pipelines.
 
 ```python

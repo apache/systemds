@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Deep Learning with SystemML
-description: Deep Learning with SystemML
+title: Deep Learning with SystemDS
+description: Deep Learning with SystemDS
 ---
 <!--
 {% comment %}
@@ -29,10 +29,10 @@ limitations under the License.
 
 # Introduction
 
-There are three different ways to implement a Deep Learning model in SystemML:
+There are three different ways to implement a Deep Learning model in SystemDS:
 1. Using the [DML-bodied NN library](https://github.com/apache/systemml/tree/master/scripts/nn): This library allows the user to exploit full flexibility of [DML language](http://apache.github.io/systemml/dml-language-reference) to implement your neural network.
-2. Using the experimental [Caffe2DML API](http://apache.github.io/systemml/beginners-guide-caffe2dml.html): This API allows a model expressed in Caffe's proto format to be imported into SystemML. This API **doesnot** require Caffe to be installed on your SystemML.
-3. Using the experimental [Keras2DML API](http://apache.github.io/systemml/beginners-guide-keras2dml.html): This API allows a model expressed in Keras's API to be imported into SystemML. However, this API requires Keras to be installed on your driver.
+2. Using the experimental [Caffe2DML API](http://apache.github.io/systemml/beginners-guide-caffe2dml.html): This API allows a model expressed in Caffe's proto format to be imported into SystemDS. This API **doesnot** require Caffe to be installed on your SystemDS.
+3. Using the experimental [Keras2DML API](http://apache.github.io/systemml/beginners-guide-keras2dml.html): This API allows a model expressed in Keras's API to be imported into SystemDS. However, this API requires Keras to be installed on your driver.
 
 |                                                                                                      | NN library                                                                                                 | Caffe2DML                                                                                                     | Keras2DML                                                                       |
 |------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
@@ -43,7 +43,7 @@ There are three different ways to implement a Deep Learning model in SystemML:
 | Can be invoked using spark-shell                                                                     | Yes. Please see [Scala MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide)  | Limited support                                                                                               | No                                                                              |
 | Can be invoked via command-line or JMLC API                                                          | Yes                                                                                                        | No                                                                                                            | No                                                                              |
 | GPU and [native BLAS](http://apache.github.io/systemml/native-backend.html) support                  | Yes                                                                                                        | Yes                                                                                                           | Yes                                                                             |
-| Part of SystemML's [mllearn](http://apache.github.io/systemml/python-reference.html#mllearn-api) API | No                                                                                                         | Yes                                                                                                           | Yes                                                                             |
+| Part of SystemDS's [mllearn](http://apache.github.io/systemml/python-reference.html#mllearn-api) API | No                                                                                                         | Yes                                                                                                           | Yes                                                                             |
 
 ## mllearn API
 
@@ -84,7 +84,7 @@ model.transform(df_test)
 </div>
 </div>
 
-Please note that when training using mllearn API (i.e. `model.fit(X_df)`), SystemML 
+Please note that when training using mllearn API (i.e. `model.fit(X_df)`), SystemDS 
 expects that labels have been converted to 1-based value.
 This avoids unnecessary decoding overhead for large dataset if the label columns has already been decoded.
 For scikit-learn API, there is no such requirement.
@@ -184,7 +184,7 @@ lenet.score(X_test, y_test)
 
 <div data-lang="Keras2DML" markdown="1">
 {% highlight python %}
-# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemDS runtime
 import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -245,7 +245,7 @@ Will be added soon ...
 
 <div data-lang="Keras2DML" markdown="1">
 {% highlight python %}
-# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemDS runtime
 import os
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''

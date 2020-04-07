@@ -1,8 +1,8 @@
 ---
 layout: global
-displayTitle: SystemML Developer Tools
-title: SystemML Developer Tools
-description: SystemML Developer Tools
+displayTitle: SystemDS Developer Tools
+title: SystemDS Developer Tools
+description: SystemDS Developer Tools
 ---
 <!--
 {% comment %}
@@ -23,7 +23,7 @@ limitations under the License.
 {% endcomment %}
 -->
 
-Useful Tools for Developing SystemML:
+Useful Tools for Developing SystemDS:
 
 * This will become a table of contents (this text will be scraped).
 {:toc}
@@ -32,7 +32,7 @@ Useful Tools for Developing SystemML:
 
 IntelliJ can be used since it provides great support for mixed Java and Scala projects as described [here](https://cwiki.apache.org/confluence/display/SPARK/Useful+Developer+Tools#UsefulDeveloperTools-IntelliJ).
 
-### Import SystemML project to IntelliJ
+### Import SystemDS project to IntelliJ
 
  1. Download IntelliJ and install the Scala plug-in for IntelliJ.
  2. Go to "File -> Import Project", locate the systemml source directory, and select "Maven Project".
@@ -40,9 +40,9 @@ IntelliJ can be used since it provides great support for mixed Java and Scala pr
 
 ## Eclipse
 
-Eclipse [Luna SR2](https://eclipse.org/downloads/packages/release/luna/sr2) can be used for an integrated development environment with SystemML code.  Maven integration is required which is included in the [Eclipse IDE for Java Developers](https://eclipse.org/downloads/packages/eclipse-ide-java-developers/lunasr2) package.
+Eclipse [Luna SR2](https://eclipse.org/downloads/packages/release/luna/sr2) can be used for an integrated development environment with SystemDS code.  Maven integration is required which is included in the [Eclipse IDE for Java Developers](https://eclipse.org/downloads/packages/eclipse-ide-java-developers/lunasr2) package.
 
-To get started in Eclipse, import SystemML's pom.xml file as an existing Maven project.  After import is completed, the resulting Eclipse installation should include two maven connectors.
+To get started in Eclipse, import SystemDS's pom.xml file as an existing Maven project.  After import is completed, the resulting Eclipse installation should include two maven connectors.
 
 ![About Eclipse](img/developer-tools/about-eclipse.png "About Eclipse")
 
@@ -70,7 +70,7 @@ Note the corresponding Eclipse project needs to include the Scala nature.  Typic
 
 ### Eclipse Java Only (How to skip Scala)
 
-Since the core SystemML code is written in Java, developers may prefer not to use Eclipse in a mixed Java/Scala environment.  To configure Eclipse to skip the Scala code of SystemML and avoid installing any Scala-related components, Maven lifecycle mappings can be created.  The simplest way to create these mappings is to use Eclipse's quick fix option to resolve the following pom.xml errors which occur if Maven Integration for Scala is not present.
+Since the core SystemDS code is written in Java, developers may prefer not to use Eclipse in a mixed Java/Scala environment.  To configure Eclipse to skip the Scala code of SystemDS and avoid installing any Scala-related components, Maven lifecycle mappings can be created.  The simplest way to create these mappings is to use Eclipse's quick fix option to resolve the following pom.xml errors which occur if Maven Integration for Scala is not present.
 
 ![Scala pom errors](img/developer-tools/pom-scala-errors.png "Scala pom errors")
 
@@ -80,11 +80,11 @@ The lifecycle mappings are stored in a workspace metadata file as specified in E
 
 ## Troubleshooting
 
-Please see below tips for resolving some compilation issues that might occur after importing the SystemML project.
+Please see below tips for resolving some compilation issues that might occur after importing the SystemDS project.
 
 ### Invalid cross-compiled libraries error
 
-Since Scala IDE bundles the latest versions (2.10.5 and 2.11.6 at this point), you need to add one in Eclipse Preferences -> Scala -> Installations by pointing to the <code>lib</code> directory of your Scala 2.10.4 distribution. Once this is done, select SystemML project, right-click, choose Scala -> Set Scala Installation and point to the 2.10.4 installation. This should clear all errors about invalid cross-compiled libraries. A clean build should succeed now.
+Since Scala IDE bundles the latest versions (2.10.5 and 2.11.6 at this point), you need to add one in Eclipse Preferences -> Scala -> Installations by pointing to the <code>lib</code> directory of your Scala 2.10.4 distribution. Once this is done, select SystemDS project, right-click, choose Scala -> Set Scala Installation and point to the 2.10.4 installation. This should clear all errors about invalid cross-compiled libraries. A clean build should succeed now.
 
 ### Incompatible Scala version error
 

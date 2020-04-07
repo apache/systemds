@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Using SystemML with GPU
-description: Using SystemML with GPU
+title: Using SystemDS with GPU
+description: Using SystemDS with GPU
 ---
 <!--
 {% comment %}
@@ -29,7 +29,7 @@ limitations under the License.
 
 # User Guide
 
-To use SystemML on GPUs, please ensure that [CUDA 9](https://developer.nvidia.com/cuda-90-download-archive) and
+To use SystemDS on GPUs, please ensure that [CUDA 9](https://developer.nvidia.com/cuda-90-download-archive) and
 [CuDNN 7](https://developer.nvidia.com/cudnn) is installed on your system.
 
 ```
@@ -43,9 +43,9 @@ $ cat /usr/local/cuda/include/cudnn.h | grep "CUDNN_MAJOR\|CUDNN_MINOR"
 
 Depending on the API, the GPU backend can be enabled in different way:
 
-1. When invoking SystemML from command-line, the GPU backend can be enabled by providing the command-line `-gpu` flag.
-2. When invoking SystemML using the (Python or Scala) MLContext and MLLearn (includes Caffe2DML and Keras2DML) APIs, please use the `setGPU(enable)` method.
-3. When invoking SystemML using the JMLC API, please set the `useGpu` parameter in `org.apache.sysml.api.jmlc.Connection` class's `prepareScript` method.
+1. When invoking SystemDS from command-line, the GPU backend can be enabled by providing the command-line `-gpu` flag.
+2. When invoking SystemDS using the (Python or Scala) MLContext and DSLearn (includes Caffe2DML and Keras2DML) APIs, please use the `setGPU(enable)` method.
+3. When invoking SystemDS using the JMLC API, please set the `useGpu` parameter in `org.apache.sysml.api.jmlc.Connection` class's `prepareScript` method.
 
 Python users do not need to explicitly provide the jar during their invocation. 
 For all other APIs, please remember to include the `systemml-*-extra.jar` in the classpath as described below.
@@ -55,18 +55,18 @@ For all other APIs, please remember to include the `systemml-*-extra.jar` in the
 To enable the GPU backend via command-line, please provide `systemml-1.*-extra.jar` in the classpath and `-gpu` flag.
 
 ```
-spark-submit --jars systemml-*-extra.jar SystemML.jar -f myDML.dml -gpu
+spark-submit --jars systemml-*-extra.jar SystemDS.jar -f myDML.dml -gpu
 ``` 
 
 To skip memory-checking and force all GPU-enabled operations on the GPU, please provide `force` option to the `-gpu` flag.
 
 ```
-spark-submit --jars systemml-*-extra.jar SystemML.jar -f myDML.dml -gpu force
+spark-submit --jars systemml-*-extra.jar SystemDS.jar -f myDML.dml -gpu force
 ``` 
 
 ## Python users
 
-Please install SystemML using pip:
+Please install SystemDS using pip:
 - For released version: `pip install systemml`
 - For bleeding edge version: 
 ```
@@ -77,7 +77,7 @@ pip install target/systemml-*-SNAPSHOT-python.tar.gz
 ```
 
 Then you can use the `setGPU(True)` method of [MLContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) and 
-[MLLearn](http://apache.github.io/systemml/beginners-guide-python.html#invoke-systemmls-algorithms) APIs to enable the GPU usage.
+[DSLearn](http://apache.github.io/systemml/beginners-guide-python.html#invoke-systemmls-algorithms) APIs to enable the GPU usage.
 
 ```python
 from systemml.mllearn import Caffe2DML
@@ -98,16 +98,16 @@ To enable the GPU backend via command-line, please provide `systemml-*-extra.jar
 the `setGPU(True)` method of [MLContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) API to enable the GPU usage.
 
 ```
-spark-shell --jars systemml-*-extra.jar,SystemML.jar
+spark-shell --jars systemml-*-extra.jar,SystemDS.jar
 ``` 
 
 # Advanced Configuration
 
 ## Using single precision
 
-By default, SystemML uses double precision to store its matrices in the GPU memory.
+By default, SystemDS uses double precision to store its matrices in the GPU memory.
 To use single precision, the user needs to set the configuration property 'sysml.floating.point.precision'
-to 'single'. However, with exception of BLAS operations, SystemML always performs all CPU operations
+to 'single'. However, with exception of BLAS operations, SystemDS always performs all CPU operations
 in double precision.
 
 ## Training very deep network
@@ -117,12 +117,12 @@ To train very deep network with double precision, no additional configurations a
 But to train very deep network with single precision, the user can speed up the eviction by 
 using shadow buffer. The fraction of the driver memory to be allocated to the shadow buffer can  
 be set by using the configuration property 'sysml.gpu.eviction.shadow.bufferSize'.
-In the current version, the shadow buffer is currently not guarded by SystemML
+In the current version, the shadow buffer is currently not guarded by SystemDS
 and can potentially lead to OOM if the network is deep as well as wide.
 
 ### Unified memory allocator
 
-By default, SystemML uses CUDA's memory allocator and performs on-demand eviction
+By default, SystemDS uses CUDA's memory allocator and performs on-demand eviction
 using the eviction policy set by the configuration property 'sysml.gpu.eviction.policy'.
 To use CUDA's unified memory allocator that performs page-level eviction instead,
 please set the configuration property 'sysml.gpu.memory.allocator' to 'unified_memory'.
@@ -155,9 +155,9 @@ $ cat /usr/local/cuda/include/cudnn.h | grep "CUDNN_MAJOR\|CUDNN_MINOR"
 ```
 
 
-### How do I verify the CUDA and CuDNN version that SystemML depends on?
+### How do I verify the CUDA and CuDNN version that SystemDS depends on?
 
-- Check the `jcuda.version` property in SystemML's `pom.xml` file.
+- Check the `jcuda.version` property in SystemDS's `pom.xml` file.
 - Then find the CUDA dependency in [JCuda's documentation](http://www.jcuda.org/downloads/downloads.html).
 - For you reference, here are the corresponding CUDA and CuDNN versions for given JCuda version:
 
@@ -185,7 +185,7 @@ $ ./bin/x86_64/linux/release/deviceQuery
 $ ./bin/x86_64/linux/release/bandwidthTest 
 $ ./bin/x86_64/linux/release/matrixMulCUBLAS 
 ```
-- Test CUDA and CuDNN with SystemML
+- Test CUDA and CuDNN with SystemDS
 ```
 $ git clone https://github.com/apache/systemml.git
 $ cd systemml

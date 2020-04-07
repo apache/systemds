@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Factorization Machines
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Factorization Machines
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}
@@ -180,16 +180,16 @@ predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ./scripts/nn/examples/fm-regression-dummy-data.dml
+    hadoop jar SystemDS.jar -f ./scripts/nn/examples/fm-regression-dummy-data.dml
 
 </div>
 <div data-lang="Spark" markdown="1">
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ./scripts/nn/examples/fm-regression-dummy-data.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
 </div>
 </div>
@@ -205,16 +205,16 @@ predict = function(matrix[double] X, matrix[double] w0, matrix[double] W, matrix
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ./scripts/nn/examples/fm-binclass-dummy-data.dml
+    hadoop jar SystemDS.jar -f ./scripts/nn/examples/fm-binclass-dummy-data.dml
 
 </div>
 <div data-lang="Spark" markdown="1">
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ./scripts/nn/examples/fm-binclass-dummy-data.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
 </div>
 </div>

@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Invoking SystemML in Hadoop Batch Mode
-description: Invoking SystemML in Hadoop Batch Mode
+title: Invoking SystemDS in Hadoop Batch Mode
+description: Invoking SystemDS in Hadoop Batch Mode
 ---
 <!--
 {% comment %}
@@ -30,14 +30,14 @@ limitations under the License.
 
 # Overview
 
-Given that a primary purpose of SystemML is to perform machine learning on large distributed data sets,
-two of the most important ways to invoke SystemML are Hadoop Batch and Spark Batch modes.
-Here, we will look at SystemML's Hadoop Batch mode in more depth.
+Given that a primary purpose of SystemDS is to perform machine learning on large distributed data sets,
+two of the most important ways to invoke SystemDS are Hadoop Batch and Spark Batch modes.
+Here, we will look at SystemDS's Hadoop Batch mode in more depth.
 
-We will look at running SystemML with Standalone Hadoop, Pseudo-Distributed Hadoop, and Distributed Hadoop.
-We will first run SystemML on a single machine with Hadoop running in Standalone mode. Next, we'll run SystemML on HDFS
+We will look at running SystemDS with Standalone Hadoop, Pseudo-Distributed Hadoop, and Distributed Hadoop.
+We will first run SystemDS on a single machine with Hadoop running in Standalone mode. Next, we'll run SystemDS on HDFS
 in Hadoop's Pseudo-Distributed mode on a single machine, followed by Pseudo-Distributed mode with YARN.
-After that, we'll set up a 4-node Hadoop cluster and run SystemML on Distributed Hadoop with YARN.
+After that, we'll set up a 4-node Hadoop cluster and run SystemDS on Distributed Hadoop with YARN.
 
 Note that this tutorial does not address security. For security considerations with regards to Hadoop, please
 refer to the Hadoop documentation.
@@ -47,41 +47,41 @@ refer to the Hadoop documentation.
 
 # Hadoop Batch Mode Invocation Syntax
 
-SystemML can be invoked in Hadoop Batch mode using the following syntax:
+SystemDS can be invoked in Hadoop Batch mode using the following syntax:
 
-    hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
+    hadoop jar SystemDS.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
 
-The `SystemML.jar` file is specified to Hadoop using the `jar` option.
-The DML script to invoke is specified after the `-f` argument. Configuration settings can be passed to SystemML
+The `SystemDS.jar` file is specified to Hadoop using the `jar` option.
+The DML script to invoke is specified after the `-f` argument. Configuration settings can be passed to SystemDS
 using the optional `-config ` argument. DML scripts can optionally take named arguments (`-nvargs`) or positional
 arguments (`-args`). Named arguments are preferred over positional arguments. Positional arguments are considered
-to be deprecated. All the primary algorithm scripts included with SystemML use named arguments.
+to be deprecated. All the primary algorithm scripts included with SystemDS use named arguments.
 
 
 **Example #1: DML Invocation with Named Arguments**
 
-    hadoop jar systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -nvargs X=X.mtx k=5
+    hadoop jar systemml/SystemDS.jar -f systemml/algorithms/Kmeans.dml -nvargs X=X.mtx k=5
 
 
 **Example #2: DML Invocation with Positional Arguments**
 
-	hadoop jar systemml/SystemML.jar -f example/test/LinearRegression.dml -args "v" "y" 0.00000001 "w"
+	hadoop jar systemml/SystemDS.jar -f example/test/LinearRegression.dml -args "v" "y" 0.00000001 "w"
 
-In a clustered environment, it is *highly* recommended that SystemML configuration settings are specified
-in a `SystemML-config.xml` file. By default, SystemML will look for this file in the current working
-directory (`./SystemML-config.xml`). This location can be overridden by the `-config ` argument.
+In a clustered environment, it is *highly* recommended that SystemDS configuration settings are specified
+in a `SystemDS-config.xml` file. By default, SystemDS will look for this file in the current working
+directory (`./SystemDS-config.xml`). This location can be overridden by the `-config ` argument.
 
 **Example #3: DML Invocation with Configuration File Explicitly Specified and Named Arguments**
 
-	hadoop jar systemml/SystemML.jar -f systemml/algorithms/Kmeans.dml -config /conf/SystemML-config.xml -nvargs X=X.mtx k=5
+	hadoop jar systemml/SystemDS.jar -f systemml/algorithms/Kmeans.dml -config /conf/SystemDS-config.xml -nvargs X=X.mtx k=5
 
-For recommended SystemML configuration settings in a clustered environment, please see
+For recommended SystemDS configuration settings in a clustered environment, please see
 [Recommended Hadoop Cluster Configuration Settings](hadoop-batch-mode.html#recommended-hadoop-cluster-configuration-settings).
 
 
 * * *
 
-# SystemML with Standalone Hadoop
+# SystemDS with Standalone Hadoop
 
 In Standalone mode, Hadoop runs on a single machine as a single Java process.
 
@@ -132,13 +132,13 @@ To verify that Java and Hadoop were on the path, I used the `java -version` and 
 	From source with checksum f9ebb94bf5bf9bec892825ede28baca
 	This command was run using /home/hadoop/hadoop-2.6.2/share/hadoop/common/hadoop-common-2.6.2.jar
 
-Next, I downloaded a SystemML release from the [downloads](http://systemml.apache.org/download.html) page.
+Next, I downloaded a SystemDS release from the [downloads](http://systemml.apache.org/download.html) page.
 Following this, I unpacked it.
 
 	[hadoop@host1 ~]$ tar -xvzf systemml-{{site.SYSTEMML_VERSION}}.tar.gz
 
 
-**Alternatively**, we could have built the SystemML distributed release using [Apache Maven](http://maven.apache.org) and unpacked it.
+**Alternatively**, we could have built the SystemDS distributed release using [Apache Maven](http://maven.apache.org) and unpacked it.
 
 	[hadoop@host1 ~]$ git clone https://github.com/apache/systemml.git
 	[hadoop@host1 ~]$ cd systemml
@@ -146,31 +146,31 @@ Following this, I unpacked it.
 	[hadoop@host1 systemml]$ tar -xvzf target/systemml-{{site.SYSTEMML_VERSION}}.tar.gz -C ..
 	[hadoop@host1 ~]$ cd ..
 
-I downloaded the `genLinearRegressionData.dml` script that is used in the SystemML README example.
+I downloaded the `genLinearRegressionData.dml` script that is used in the SystemDS README example.
 
 	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/systemml/master/scripts/datagen/genLinearRegressionData.dml
 
 Next, I invoked the `genLinearRegressionData.dml` DML script in Hadoop Batch mode.
-Hadoop was executed with the `SystemML.jar` file specified by the hadoop `jar` option.
+Hadoop was executed with the `SystemDS.jar` file specified by the hadoop `jar` option.
 The `genLinearRegressionData.dml` was specified using the `-f` option. Named input
 arguments to the DML script were specified following the `-nvargs` option.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 	15/11/11 15:56:21 INFO api.DMLScript: BEGIN DML run 11/11/2015 15:56:21
 	15/11/11 15:56:21 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
-	15/11/11 15:56:21 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
+	15/11/11 15:56:21 WARN conf.DMLConfig: No default SystemDS config file (./SystemDS-config.xml) found
 	15/11/11 15:56:21 WARN conf.DMLConfig: Using default settings in DMLConfig
 	15/11/11 15:56:22 INFO jvm.JvmMetrics: Initializing JVM Metrics with processName=JobTracker, sessionId=
 	15/11/11 15:56:22 WARN hops.OptimizerUtils: Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8 (java.version=1.7.0_79).
-	15/11/11 15:56:22 INFO api.DMLScript: SystemML Statistics:
+	15/11/11 15:56:22 INFO api.DMLScript: SystemDS Statistics:
 	Total execution time:		0.288 sec.
 	Number of executed MR Jobs:	0.
 
 	15/11/11 15:56:22 INFO api.DMLScript: END DML run 11/11/2015 15:56:22
 
-In the console output, we see a warning that no default SystemML config file was found in the current working directory.
-In a distributed environment on a large data set, it is highly advisable to specify configuration settings in a SystemML config file for
-optimal performance. The location of the SystemML config file can be explicitly specified using the `-config ` argument.
+In the console output, we see a warning that no default SystemDS config file was found in the current working directory.
+In a distributed environment on a large data set, it is highly advisable to specify configuration settings in a SystemDS config file for
+optimal performance. The location of the SystemDS config file can be explicitly specified using the `-config ` argument.
 
 The OptimizerUtils warning occurs because parallel multi-threaded text reads in Java versions less than 1.8 result
 in thread contention issues, so only a single thread reads matrix data in text formats.
@@ -200,9 +200,9 @@ To clean things up, I'll delete the files that were generated.
 
 * * *
 
-# SystemML with Pseudo-Distributed Hadoop
+# SystemDS with Pseudo-Distributed Hadoop
 
-Next, we'll look at running SystemML with Hadoop in Pseudo-Distributed mode. In Pseudo-Distributed mode, each Hadoop daemon
+Next, we'll look at running SystemDS with Hadoop in Pseudo-Distributed mode. In Pseudo-Distributed mode, each Hadoop daemon
 (such as NameNode and DataNode) runs in a separate Java process on a single machine.
 
 In the previous section about Hadoop Standalone mode, we set up the `JAVA_HOME` and `HADOOP_HOME` environment variables
@@ -330,14 +330,14 @@ If we look at our HDFS file system, we see that it currently doesn't contain any
 
 Let's go ahead and execute the `genLinearRegressionData.dml` script in Hadoop Pseudo-Distributed mode.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 	15/11/11 18:16:33 INFO api.DMLScript: BEGIN DML run 11/11/2015 18:16:33
 	15/11/11 18:16:33 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
-	15/11/11 18:16:33 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
+	15/11/11 18:16:33 WARN conf.DMLConfig: No default SystemDS config file (./SystemDS-config.xml) found
 	15/11/11 18:16:33 WARN conf.DMLConfig: Using default settings in DMLConfig
 	15/11/11 18:16:33 INFO jvm.JvmMetrics: Initializing JVM Metrics with processName=JobTracker, sessionId=
 	15/11/11 18:16:33 WARN hops.OptimizerUtils: Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8 (java.version=1.7.0_79).
-	15/11/11 18:16:35 INFO api.DMLScript: SystemML Statistics:
+	15/11/11 18:16:35 INFO api.DMLScript: SystemDS Statistics:
 	Total execution time:		1.484 sec.
 	Number of executed MR Jobs:	0.
 
@@ -384,7 +384,7 @@ I'll stop HDFS using the `stop-dfs.sh` script and then verify that the Java proc
 
 * * *
 
-# SystemML with Pseudo-Distributed Hadoop and YARN
+# SystemDS with Pseudo-Distributed Hadoop and YARN
 
 To add YARN to Pseudo-Distributed Hadoop on the single machine, we need to take our setup from the
 previous example and update two configuration
@@ -453,20 +453,20 @@ We can now view YARN information via the web interface on port 8088 (http://host
 I'll execute the `genLinearRegressionData.dml` example that we've previously considered.
 
 	[hadoop@host1 hadoop]$ cd ~
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 	15/11/12 11:57:04 INFO api.DMLScript: BEGIN DML run 11/12/2015 11:57:04
 	15/11/12 11:57:04 INFO api.DMLScript: HADOOP_HOME: /home/hadoop/hadoop-2.6.2
-	15/11/12 11:57:04 WARN conf.DMLConfig: No default SystemML config file (./SystemML-config.xml) found
+	15/11/12 11:57:04 WARN conf.DMLConfig: No default SystemDS config file (./SystemDS-config.xml) found
 	15/11/12 11:57:04 WARN conf.DMLConfig: Using default settings in DMLConfig
 	15/11/12 11:57:05 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
 	15/11/12 11:57:06 WARN hops.OptimizerUtils: Auto-disable multi-threaded text read for 'text' and 'csv' due to thread contention on JRE < 1.8 (java.version=1.7.0_79).
-	15/11/12 11:57:07 INFO api.DMLScript: SystemML Statistics:
+	15/11/12 11:57:07 INFO api.DMLScript: SystemDS Statistics:
 	Total execution time:		1.265 sec.
 	Number of executed MR Jobs:	0.
 
 	15/11/12 11:57:07 INFO api.DMLScript: END DML run 11/12/2015 11:57:07
 
-If we examine the HDFS file system, we see the files generated by the execution of the DML script by SystemML on Hadoop.
+If we examine the HDFS file system, we see the files generated by the execution of the DML script by SystemDS on Hadoop.
 
 	[hadoop@host1 ~]$ hdfs dfs -ls
 	Found 5 items
@@ -510,9 +510,9 @@ the next example.
 
 * * *
 
-# SystemML with Distributed Hadoop and YARN
+# SystemDS with Distributed Hadoop and YARN
 
-In our previous example, we ran SystemML on Hadoop in Pseudo-Distributed mode with YARN on a single machine.
+In our previous example, we ran SystemDS on Hadoop in Pseudo-Distributed mode with YARN on a single machine.
 This example will look at Distributed Hadoop with YARN on a 4-node cluster. Each server is running
 Red Hat Enterprise Linux Server, release 6.6.
 
@@ -737,19 +737,19 @@ If we look at the Hadoop (on port 50070) and YARN (on port 8088) web interfaces,
 
 * * *
 
-## SystemML with Distributed Hadoop and YARN: Linear Regression Example
+## SystemDS with Distributed Hadoop and YARN: Linear Regression Example
 
-Let's go ahead and run the SystemML example from the GitHub README.
+Let's go ahead and run the SystemDS example from the GitHub README.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv perc=0.5
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/sample.dml -nvargs X=linRegData.csv sv=perc.csv O=linRegDataParts ofmt=csv
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/1 y=51 OX=linRegData.train.data.csv OY=linRegData.train.labels.csv ofmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/1 y=51 OX=linRegData.train.data.csv OY=linRegData.train.labels.csv ofmt=csv
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/2 y=51 OX=linRegData.test.data.csv OY=linRegData.test.labels.csv ofmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/utils/splitXY.dml -nvargs X=linRegDataParts/2 y=51 OX=linRegData.test.data.csv OY=linRegData.test.labels.csv ofmt=csv
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
 	...
 	BEGIN LINEAR REGRESSION SCRIPT
 	Reading X and Y...
@@ -768,11 +768,11 @@ Let's go ahead and run the SystemML example from the GitHub README.
 	ADJUSTED_R2_VS_0,1.0
 	Writing the output matrix...
 	END LINEAR REGRESSION SCRIPT
-	15/11/17 15:50:34 INFO api.DMLScript: SystemML Statistics:
+	15/11/17 15:50:34 INFO api.DMLScript: SystemDS Statistics:
 	Total execution time:		0.480 sec.
 	...
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/GLM-predict.dml -nvargs X=linRegData.test.data.csv Y=linRegData.test.labels.csv B=betas.csv fmt=csv
 	...
 	LOGLHOOD_Z,,FALSE,NaN
 	LOGLHOOD_Z_PVAL,,FALSE,NaN
@@ -799,12 +799,12 @@ Let's go ahead and run the SystemML example from the GitHub README.
 	ADJUSTED_R2,1,,1.0
 	R2_NOBIAS,1,,1.0
 	ADJUSTED_R2_NOBIAS,1,,1.0
-	15/11/17 15:51:17 INFO api.DMLScript: SystemML Statistics:
+	15/11/17 15:51:17 INFO api.DMLScript: SystemDS Statistics:
 	Total execution time:		0.269 sec.
 	...
 
 
-If we look at HDFS, we can see the files that were generated by the SystemML DML script executions.
+If we look at HDFS, we can see the files that were generated by the SystemDS DML script executions.
 
 	[hadoop@host1 ~]$ hdfs dfs -ls
 	Found 16 items
@@ -836,16 +836,16 @@ Before the next example, I'll delete the files created in HDFS by this example.
 
 * * *
 
-## SystemML with Distributed Hadoop and YARN: K-Means Clustering Example
+## SystemDS with Distributed Hadoop and YARN: K-Means Clustering Example
 
-Our previous example showed SystemML running in Hadoop Batch mode on a 4-node cluster with YARN.
+Our previous example showed SystemDS running in Hadoop Batch mode on a 4-node cluster with YARN.
 However, the size of the data used was trivial. In this example, we'll generate a slightly larger set
 of data and then analyze that data with the `Kmeans.dml` and `Kmeans-predict.dml` scripts.
-Information about the SystemML K-means clustering algorithm can be found in the
-[K-Means Clustering](algorithms-clustering.html#k-means-clustering) section of the [SystemML
+Information about the SystemDS K-means clustering algorithm can be found in the
+[K-Means Clustering](algorithms-clustering.html#k-means-clustering) section of the [SystemDS
 Algorithms Reference](algorithms-reference.html).
 
-I'm going to modify my `SystemML-config.xml` file.
+I'm going to modify my `SystemDS-config.xml` file.
 I updated the `numreducers` property to be 6, which is twice my number of data nodes.
 The `numreducers` property specifies the number of reduce tasks per MR job.
 
@@ -856,10 +856,10 @@ To begin, I'll download the `genRandData4Kmeans.dml` script that I'll use to gen
 	[hadoop@host1 ~]$ wget https://raw.githubusercontent.com/apache/systemml/master/scripts/datagen/genRandData4Kmeans.dml
 
 A description of the named arguments that can be passed in to this script can be found in the comment section at the top of the
-`genRandData4Kmeans.dml` file. For data, I'll generate a matrix `X.mtx` consisting of 1 million rows and 100 features. I'll explicitly reference my `SystemML-config.xml` file, since I'm
-executing SystemML in Hadoop from my home directory rather than from the SystemML project root directory.
+`genRandData4Kmeans.dml` file. For data, I'll generate a matrix `X.mtx` consisting of 1 million rows and 100 features. I'll explicitly reference my `SystemDS-config.xml` file, since I'm
+executing SystemDS in Hadoop from my home directory rather than from the SystemDS project root directory.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f genRandData4Kmeans.dml -config systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs nr=1000000 nf=100 nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f genRandData4Kmeans.dml -config systemml-{{site.SYSTEMML_VERSION}}/SystemDS-config.xml -nvargs nr=1000000 nf=100 nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
 
 After the data generation has finished, I'll check HDFS for the amount of space used. The 1M-row matrix `X.mtx`
 requires about 2.8GB of space.
@@ -895,7 +895,7 @@ Here we can see the `X.mtx` data files.
 
 Next, I'll run the `Kmeans.dml` algorithm on the 1M-row matrix `X.mtx`.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans.dml -config /systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx k=5 C=Centroids.mtx
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans.dml -config /systemml-{{site.SYSTEMML_VERSION}}/SystemDS-config.xml -nvargs X=X.mtx k=5 C=Centroids.mtx
 
 We can see the `Centroids.mtx` data file has been written to HDFS.
 
@@ -916,7 +916,7 @@ We can see the `Centroids.mtx` data file has been written to HDFS.
 Now that we have trained our model, next we will test our model. We can do this with
 the `Kmeans-predict.dml` script.
 
-	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemML.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans-predict.dml -config systemml-{{site.SYSTEMML_VERSION}}/SystemML-config.xml -nvargs X=X.mtx C=Centroids.mtx prY=PredY.mtx O=stats.txt
+	[hadoop@host1 ~]$ hadoop jar systemml-{{site.SYSTEMML_VERSION}}/SystemDS.jar -f systemml-{{site.SYSTEMML_VERSION}}/algorithms/Kmeans-predict.dml -config systemml-{{site.SYSTEMML_VERSION}}/SystemDS-config.xml -nvargs X=X.mtx C=Centroids.mtx prY=PredY.mtx O=stats.txt
 
 In the file system, we can see that the `PredY.mtx` matrix was created.
 The `stats.txt` file lists statistics about the results.
@@ -950,7 +950,7 @@ see in the resulting metadata file.
 	    ,"cols": 1
 	    ,"nnz": 1000000
 	    ,"format": "text"
-	    ,"description": { "author": "SystemML" }
+	    ,"description": { "author": "SystemDS" }
 	}
 
 The statistics generated from testing the method are displayed below.
@@ -970,7 +970,7 @@ The statistics generated from testing the method are displayed below.
 
 # Recommended Hadoop Cluster Configuration Settings
 
-Below are some recommended Hadoop configuration file settings that may be of assistance when running SystemML on Hadoop
+Below are some recommended Hadoop configuration file settings that may be of assistance when running SystemDS on Hadoop
 in a clustered environment.
 
 <table>

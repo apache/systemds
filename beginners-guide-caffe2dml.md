@@ -183,7 +183,7 @@ new_lenet.score(X_test, y_test)
 
 # Loading a pretrained caffemodel
 
-We provide a converter utility to convert `.caffemodel` trained using Caffe to SystemML format.
+We provide a converter utility to convert `.caffemodel` trained using Caffe to SystemDS format.
 
 ```python
 # First download deploy file and caffemodel

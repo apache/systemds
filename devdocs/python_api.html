@@ -58,7 +58,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.estimators.LinearRegression">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">LinearRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LinearRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.LinearRegression" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLRegressor</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSRegressor</span></code></p>
 <p>Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
@@ -87,7 +87,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.estimators.LogisticRegression">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">LogisticRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>penalty='l2'</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>max_inner_iter=0</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LogisticRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.LogisticRegression" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSClassifier</span></code></p>
 <p>Performs both binomial and multinomial logistic regression.</p>
 <p>Scikit-learn way</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
@@ -145,7 +145,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.estimators.SVM">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">SVM</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>is_multi_class=False</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#SVM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.SVM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSClassifier</span></code></p>
 <p>Performs both binary-class and multiclass SVM (Support Vector Machines).</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">SVM</span>
@@ -168,7 +168,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.estimators.NaiveBayes">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.estimators.</code><code class="descname">NaiveBayes</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>laplace=1.0</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#NaiveBayes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.estimators.NaiveBayes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSClassifier</span></code></p>
 <p>Performs Naive Bayes.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">fetch_20newsgroups</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">TfidfVectorizer</span>
@@ -195,7 +195,7 @@
 <div class="section" id="module-systemml.mllearn">
 <span id="module-contents"></span><h5>Module contents<a class="headerlink" href="#module-systemml.mllearn" title="Permalink to this headline">¶</a></h5>
 <div class="section" id="systemml-algorithms">
-<h6>SystemML Algorithms<a class="headerlink" href="#systemml-algorithms" title="Permalink to this headline">¶</a></h6>
+<h6>SystemDS Algorithms<a class="headerlink" href="#systemml-algorithms" title="Permalink to this headline">¶</a></h6>
 <table border="1" class="docutils">
 <colgroup>
 <col width="26%" />
@@ -235,7 +235,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.LinearRegression">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">LinearRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LinearRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.LinearRegression" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLRegressor</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSRegressor</span></code></p>
 <p>Performs linear regression to model the relationship between one numerical response variable and one or more explanatory (feature) variables.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
@@ -264,7 +264,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.LogisticRegression">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">LogisticRegression</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>penalty='l2'</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>max_inner_iter=0</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>solver='newton-cg'</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#LogisticRegression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.LogisticRegression" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSClassifier</span></code></p>
 <p>Performs both binomial and multinomial logistic regression.</p>
 <p>Scikit-learn way</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
@@ -322,7 +322,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.SVM">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">SVM</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>fit_intercept=True</em>, <em>max_iter=100</em>, <em>tol=1e-06</em>, <em>C=1.0</em>, <em>is_multi_class=False</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#SVM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.SVM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSClassifier</span></code></p>
 <p>Performs both binary-class and multiclass SVM (Support Vector Machines).</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">neighbors</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">systemml.mllearn</span> <span class="k">import</span> <span class="n">SVM</span>
@@ -345,7 +345,7 @@
 <dl class="class">
 <dt id="systemml.mllearn.NaiveBayes">
 <em class="property">class </em><code class="descclassname">systemml.mllearn.</code><code class="descname">NaiveBayes</code><span class="sig-paren">(</span><em>sqlCtx</em>, <em>laplace=1.0</em>, <em>transferUsingDF=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mllearn/estimators.html#NaiveBayes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mllearn.NaiveBayes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemMLClassifier</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">systemml.mllearn.estimators.BaseSystemDSClassifier</span></code></p>
 <p>Performs Naive Bayes.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="k">import</span> <span class="n">fetch_20newsgroups</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="k">import</span> <span class="n">TfidfVectorizer</span>
@@ -596,12 +596,12 @@ and Pandas DataFrame).</p>
 <li>Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve</li>
 </ol>
 <p>Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemDS</span> <span class="k">as</span> <span class="nn">sml</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Welcome to Apache SystemML!</p>
+<p>Welcome to Apache SystemDS!</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
@@ -837,7 +837,7 @@ outputDF: back the data of matrix as PySpark DataFrame</p>
 <dd><p>Computes the least squares solution for system of linear equations A %*% x = b</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemDS</span> <span class="k">as</span> <span class="nn">sml</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
@@ -969,7 +969,7 @@ outputDF: back the data of matrix as PySpark DataFrame</p>
 <dt id="systemml.mlcontext.MLContext">
 <em class="property">class </em><code class="descclassname">systemml.mlcontext.</code><code class="descname">MLContext</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.mlcontext.MLContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Wrapper around the new SystemML MLContext.</p>
+<p>Wrapper around the new SystemDS MLContext.</p>
 <dl class="docutils">
 <dt>sc: SparkContext</dt>
 <dd>SparkContext</dd>
@@ -1132,7 +1132,7 @@ are double, string, dataframe, rdd, and list of such object.</dd>
 <dt id="systemml.MLContext">
 <em class="property">class </em><code class="descclassname">systemml.</code><code class="descname">MLContext</code><span class="sig-paren">(</span><em>sc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/systemml/mlcontext.html#MLContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#systemml.MLContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Wrapper around the new SystemML MLContext.</p>
+<p>Wrapper around the new SystemDS MLContext.</p>
 <dl class="docutils">
 <dt>sc: SparkContext</dt>
 <dd>SparkContext</dd>
@@ -1271,12 +1271,12 @@ and Pandas DataFrame).</p>
 <li>Global statistical built-In functions: exp, log, abs, sqrt, round, floor, ceil, sin, cos, tan, asin, acos, atan, sign, solve</li>
 </ol>
 <p>Note: an evaluated matrix contains a data field computed by eval method as DataFrame or NumPy array.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemDS</span> <span class="k">as</span> <span class="nn">sml</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sml</span><span class="o">.</span><span class="n">setSparkContext</span><span class="p">(</span><span class="n">sc</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Welcome to Apache SystemML!</p>
+<p>Welcome to Apache SystemDS!</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">m1</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">sml</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">m2</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m1</span><span class="p">)</span>
@@ -1512,7 +1512,7 @@ outputDF: back the data of matrix as PySpark DataFrame</p>
 <dd><p>Computes the least squares solution for system of linear equations A %*% x = b</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">datasets</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemML</span> <span class="k">as</span> <span class="nn">sml</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">SystemDS</span> <span class="k">as</span> <span class="nn">sml</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="k">import</span> <span class="n">SQLContext</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">load_diabetes</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">diabetes_X</span> <span class="o">=</span> <span class="n">diabetes</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>

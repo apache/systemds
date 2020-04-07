@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Bibliography
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Bibliography
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}

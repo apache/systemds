@@ -28,7 +28,7 @@ Currently, an active instance of the `GPUContext` class is made available global
 of the allocated blocks on the GPU. A count is kept per block for the number of instructions that need it.
 When the count is 0, the block may be evicted on a call to `GPUObject.evict()`.
 
-A `GPUObject` (like RDDObject and BroadcastObject) is stored in CacheableData object. It gets call-backs from SystemML's bufferpool on following methods
+A `GPUObject` (like RDDObject and BroadcastObject) is stored in CacheableData object. It gets call-backs from SystemDS's bufferpool on following methods
 1. void acquireDeviceRead()
 2. void acquireDeviceModifyDense()
 3. void acquireDeviceModifySparse
@@ -37,7 +37,7 @@ A `GPUObject` (like RDDObject and BroadcastObject) is stored in CacheableData ob
 6. void releaseInput()
 7. void releaseOutput()
 
-Sparse matrices on GPU are represented in `CSR` format. In the SystemML runtime, they are represented in `MCSR` or modified `CSR` format.
+Sparse matrices on GPU are represented in `CSR` format. In the SystemDS runtime, they are represented in `MCSR` or modified `CSR` format.
 A conversion cost is incurred when sparse matrices are sent back and forth between host and device memory.
 
 Concrete classes `JCudaContext` and `JCudaObject` (which extend `GPUContext` & `GPUObject` respectively) contain references to `org.jcuda.*`.
@@ -51,7 +51,7 @@ Some functions in `LibMatrixCUDA` need finer control over GPU memory management 
 1. Follow the instructions from `https://developer.nvidia.com/cuda-downloads` and install CUDA 8.0.
 2. Follow the instructions from `https://developer.nvidia.com/cudnn` and install CuDNN v5.1.
 
-To use SystemML's GPU backend when using the jar or uber-jar
+To use SystemDS's GPU backend when using the jar or uber-jar
 1. Add JCuda's jar into the classpath.
 2. Use `-gpu` flag.
 

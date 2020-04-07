@@ -35,7 +35,7 @@ We follow the Keras specification very closely during DML generation and compare
 
 - Following layers are not supported but will be supported in near future: `Reshape, Permute, RepeatVector, ActivityRegularization, Masking, SpatialDropout1D, SpatialDropout2D, SeparableConv1D, SeparableConv2D, DepthwiseConv2D, Cropping1D, Cropping2D, GRU and Embedding`.
 - Following layers are not supported by their 2D variants exists (consider using them instead): `UpSampling1D, ZeroPadding1D, MaxPooling1D, AveragePooling1D and Conv1D`.
-- Specialized `CuDNNGRU and CuDNNLSTM` layers are not required in SystemML. Instead use `LSTM` layer. 
+- Specialized `CuDNNGRU and CuDNNLSTM` layers are not required in SystemDS. Instead use `LSTM` layer. 
 - We do not have immediate plans to support the following layers: `Lambda, SpatialDropout3D, Conv3D, Conv3DTranspose, Cropping3D, UpSampling3D, ZeroPadding3D, MaxPooling3D, AveragePooling3D and ConvLSTM2D*`.
 
 # Frequently asked questions
@@ -127,9 +127,9 @@ algorithm using the parameters `train_algo` and `test_algo` (valid values are: `
 
 Here are high-level guidelines to train very deep models on GPU with Keras2DML (and Caffe2DML):
 
-1. If there exists at least one layer/operator that does not fit on the device, please allow SystemML's optimizer to perform operator placement based on the memory estimates `sysml_model.setGPU(True)`.
+1. If there exists at least one layer/operator that does not fit on the device, please allow SystemDS's optimizer to perform operator placement based on the memory estimates `sysml_model.setGPU(True)`.
 2. If each individual layer/operator fits on the device but not the entire network with a batch size of 1, then 
-- Rely on SystemML's GPU Memory Manager to perform automatic eviction (recommended): `sysml_model.setGPU(True) # Optional: .setForceGPU(True)`
+- Rely on SystemDS's GPU Memory Manager to perform automatic eviction (recommended): `sysml_model.setGPU(True) # Optional: .setForceGPU(True)`
 - Or enable Nvidia's Unified Memory:  `sysml_model.setConfigProperty('sysml.gpu.memory.allocator', 'unified_memory')`
 3. If the entire neural network does not fit in the GPU memory with the user-specified `batch_size`, but fits in the GPU memory with `local_batch_size` such that `1 << local_batch_size < batch_size`, then
 - Use either of the above two options.

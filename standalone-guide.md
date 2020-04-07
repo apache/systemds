@@ -1,8 +1,8 @@
 ---
 layout: global
-title: SystemML Standalone Guide
-description: SystemML Standalone Guide
-displayTitle: SystemML Standalone Guide
+title: SystemDS Standalone Guide
+description: SystemDS Standalone Guide
+displayTitle: SystemDS Standalone Guide
 ---
 <!--
 {% comment %}
@@ -28,13 +28,13 @@ limitations under the License.
 
 <br/>
 
-This tutorial provides a quick introduction to using SystemML by
-running existing SystemML algorithms in standalone mode.
+This tutorial provides a quick introduction to using SystemDS by
+running existing SystemDS algorithms in standalone mode.
 
 
-# What is SystemML
+# What is SystemDS
 
-SystemML enables large-scale machine learning (ML) via a high-level declarative
+SystemDS enables large-scale machine learning (ML) via a high-level declarative
 language with R-like syntax called [DML](dml-language-reference.html) and
 Python-like syntax called PyDML. DML and PyDML allow data scientists to
 express their ML algorithms with full flexibility but without the need to fine-tune
@@ -44,25 +44,25 @@ and cluster characteristics using rule-based and cost-based optimization techniq
 The compiler automatically generates hybrid runtime execution plans ranging
 from in-memory, single node execution to distributed computation for Hadoop
 or Spark Batch execution.
-SystemML features a suite of algorithms for Descriptive Statistics, Classification,
+SystemDS features a suite of algorithms for Descriptive Statistics, Classification,
 Clustering, Regression, Matrix Factorization, and Survival Analysis. Detailed descriptions of these
 algorithms can be found in the [Algorithms Reference](algorithms-reference.html).
 
-# Download SystemML
+# Download SystemDS
 
-Apache SystemML releases are available from the [Downloads](http://systemml.apache.org/download.html) page.
+Apache SystemDS releases are available from the [Downloads](http://systemml.apache.org/download.html) page.
 
-SystemML can also be downloaded from GitHub and built with Maven.
-The SystemML project is available on GitHub at [https://github.com/apache/systemml](https://github.com/apache/systemml).
-Instructions to build SystemML can be found in the <a href="engine-dev-guide.html">Engine Developer Guide</a>.
+SystemDS can also be downloaded from GitHub and built with Maven.
+The SystemDS project is available on GitHub at [https://github.com/apache/systemml](https://github.com/apache/systemml).
+Instructions to build SystemDS can be found in the <a href="engine-dev-guide.html">Engine Developer Guide</a>.
 
 # Standalone vs Distributed Execution Mode
 
-SystemML's standalone mode is designed to allow data scientists to rapidly prototype algorithms
+SystemDS's standalone mode is designed to allow data scientists to rapidly prototype algorithms
 on a single machine. In standalone mode, all operations occur on a single node in a non-Hadoop
 environment. Standalone mode is not appropriate for large datasets.
 
-For large-scale production environments, SystemML algorithm execution can be
+For large-scale production environments, SystemDS algorithm execution can be
 distributed across multi-node clusters using [Apache Hadoop](https://hadoop.apache.org/)
 or [Apache Spark](http://spark.apache.org/).
 We will make use of standalone mode throughout this tutorial.
@@ -113,7 +113,7 @@ the data along with its metadata file `types.csv.mtd`.
 
 To run the `Univar-Stats.dml` algorithm, issue the following command (we set the optional argument `CONSOLE_OUTPUT` to `TRUE` to print the statistics to the console):
 
-    $ ./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+    $ ./runStandaloneSystemDS.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
 
     [...]
     -------------------------------------------------
@@ -277,7 +277,7 @@ We will create the file `perc.csv` and `perc.csv.mtd` to define the sampling vec
 
 Let's run the sampling algorithm to create the two data samples:
 
-    $ ./runStandaloneSystemML.sh scripts/utils/sample.dml -nvargs X=data/haberman.data sv=data/perc.csv O=data/haberman.part ofmt="csv"
+    $ ./runStandaloneSystemDS.sh scripts/utils/sample.dml -nvargs X=data/haberman.data sv=data/perc.csv O=data/haberman.part ofmt="csv"
 
 
 ## Splitting Labels from Features
@@ -296,9 +296,9 @@ Parameters:
 We specify `y=4` as the 4th column contains the labels to be predicted and run
 the `splitXY.dml` algorithm on our training and test data sets.
 
-    $ ./runStandaloneSystemML.sh scripts/utils/splitXY.dml -nvargs X=data/haberman.part/1 y=4 OX=data/haberman.train.data.csv OY=data/haberman.train.labels.csv ofmt="csv"
+    $ ./runStandaloneSystemDS.sh scripts/utils/splitXY.dml -nvargs X=data/haberman.part/1 y=4 OX=data/haberman.train.data.csv OY=data/haberman.train.labels.csv ofmt="csv"
 
-    $ ./runStandaloneSystemML.sh scripts/utils/splitXY.dml -nvargs X=data/haberman.part/2 y=4 OX=data/haberman.test.data.csv  OY=data/haberman.test.labels.csv  ofmt="csv"
+    $ ./runStandaloneSystemDS.sh scripts/utils/splitXY.dml -nvargs X=data/haberman.part/2 y=4 OX=data/haberman.test.data.csv  OY=data/haberman.test.labels.csv  ofmt="csv"
 
 ## Training and Testing the Model
 
@@ -315,11 +315,11 @@ Now we need to train our model using the `l2-svm.dml` algorithm.
 
 The `l2-svm.dml` algorithm is used on our training data sample to train the model.
 
-    $ ./runStandaloneSystemML.sh scripts/algorithms/l2-svm.dml -nvargs X=data/haberman.train.data.csv Y=data/haberman.train.labels.csv model=data/l2-svm-model.csv fmt="csv" Log=data/l2-svm-log.csv
+    $ ./runStandaloneSystemDS.sh scripts/algorithms/l2-svm.dml -nvargs X=data/haberman.train.data.csv Y=data/haberman.train.labels.csv model=data/l2-svm-model.csv fmt="csv" Log=data/l2-svm-log.csv
 
 The `l2-svm-predict.dml` algorithm is used on our test data sample to predict the labels based on the trained model.
 
-    $ ./runStandaloneSystemML.sh scripts/algorithms/l2-svm-predict.dml -nvargs X=data/haberman.test.data.csv Y=data/haberman.test.labels.csv model=data/l2-svm-model.csv fmt="csv" confusion=data/l2-svm-confusion.csv
+    $ ./runStandaloneSystemDS.sh scripts/algorithms/l2-svm-predict.dml -nvargs X=data/haberman.test.data.csv Y=data/haberman.test.labels.csv model=data/l2-svm-model.csv fmt="csv" confusion=data/l2-svm-confusion.csv
 
 The console output should show the accuracy of the trained model in percent, i.e.:
 
@@ -337,7 +337,7 @@ The console output should show the accuracy of the trained model in percent, i.e
     15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.parallel.ops with value true
     15/09/01 01:32:51 INFO conf.DMLConfig: Updating sysml.parallel.io with value true
     Accuracy (%): 74.14965986394557
-    15/09/01 01:32:52 INFO api.DMLScript: SystemML Statistics:
+    15/09/01 01:32:52 INFO api.DMLScript: SystemDS Statistics:
     Total execution time:		0.130 sec.
     Number of executed MR Jobs:	0.
 
@@ -372,18 +372,18 @@ Refer to the [Algorithms Reference](algorithms-reference.html) for more details.
 For this example, we'll use a standalone wrapper executable, `bin/systemml`, that is available to
 be run directly within the project's source directory when built locally.
 
-After you build SystemML from source (`mvn clean package`), the standalone mode can be executed
+After you build SystemDS from source (`mvn clean package`), the standalone mode can be executed
 either on Linux or OS X using the `./bin/systemml` script, or on Windows using the
 `.\bin\systemml.bat` batch file.
 
 If you run from the script from the project root folder `./` or from the `./bin` folder, then the
-output files from running SystemML will be created inside the `./temp` folder to keep them separate
-from the SystemML source files managed by Git. The output files for this example will be created
+output files from running SystemDS will be created inside the `./temp` folder to keep them separate
+from the SystemDS source files managed by Git. The output files for this example will be created
 under the `./temp` folder.
 
-The runtime behavior and logging behavior of SystemML can be customized by editing the files
-`./conf/SystemML-config.xml` and `./conf/log4j.properties`. Both files will be created from their
-corresponding `*.template` files during the first execution of the SystemML executable script.
+The runtime behavior and logging behavior of SystemDS can be customized by editing the files
+`./conf/SystemDS-config.xml` and `./conf/log4j.properties`. Both files will be created from their
+corresponding `*.template` files during the first execution of the SystemDS executable script.
 
 When invoking the `./bin/systemml` or `.\bin\systemml.bat` with any of the prepackaged DML scripts
 you can omit the relative path to the DML script file. The following two commands are equivalent:
@@ -397,11 +397,11 @@ of the DML scripts.
 
 ## Linear Regression Example
 
-As an example of the capabilities and power of SystemML and DML, let's consider the Linear Regression algorithm.
+As an example of the capabilities and power of SystemDS and DML, let's consider the Linear Regression algorithm.
 We require sets of data to train and test our model. To obtain this data, we can either use real data or
 generate data for our algorithm. The
 [UCI Machine Learning Repository Datasets](https://archive.ics.uci.edu/ml/datasets.html) is one location for real data.
-Use of real data typically involves some degree of data wrangling. In the following example, we will use SystemML to
+Use of real data typically involves some degree of data wrangling. In the following example, we will use SystemDS to
 generate random data to train and test our model.
 
 This example consists of the following parts:
@@ -413,7 +413,7 @@ This example consists of the following parts:
   * [Train Model on First Sample](#train-model-on-first-sample)
   * [Test Model on Second Sample](#test-model-on-second-sample)
 
-SystemML is distributed in several packages, including a standalone package. We'll operate in Standalone mode in this
+SystemDS is distributed in several packages, including a standalone package. We'll operate in Standalone mode in this
 example.
 
 <a name="run-dml-script-to-generate-random-data" />
@@ -434,7 +434,7 @@ This generates the following files inside the `./temp` folder:
     linRegData.csv.mtd  # Metadata file
     perc.csv            # Used to generate two subsets of the data (for training and testing)
     perc.csv.mtd        # Metadata file
-    scratch_space       # SystemML scratch_space directory
+    scratch_space       # SystemDS scratch_space directory
 
 <a name="divide-generated-data-into-two-sample-groups" />
 
@@ -506,7 +506,7 @@ This splits column 51 off the data, resulting in the following files:
 ### Train Model on First Sample
 
 Now, we can train our model based on the first sample. To do this, we utilize the `LinearRegDS.dml` (Linear Regression
-Direct Solve) script. Note that SystemML also includes a `LinearRegCG.dml` (Linear Regression Conjugate Gradient)
+Direct Solve) script. Note that SystemDS also includes a `LinearRegCG.dml` (Linear Regression Conjugate Gradient)
 algorithm for situations where the number of features is large.
 
     ./bin/systemml ./scripts/algorithms/LinearRegDS.dml -nvargs X=linRegData.train.data.csv Y=linRegData.train.labels.csv B=betas.csv fmt=csv
@@ -601,9 +601,9 @@ For convenience, we can encapsulate our DML invocations in a single script:
 # Troubleshooting
 
 If you encounter a `"java.lang.OutOfMemoryError"` you can edit the invocation
-script (`runStandaloneSystemML.sh` or `runStandaloneSystemML.bat`) to increase
+script (`runStandaloneSystemDS.sh` or `runStandaloneSystemDS.bat`) to increase
 the memory available to the JVM, i.e:
 
     java -Xmx16g -Xms4g -Xmn1g -cp ${CLASSPATH} org.apache.sysml.api.DMLScript \
-         -f ${SCRIPT_FILE} -exec singlenode -config SystemML-config.xml \
+         -f ${SCRIPT_FILE} -exec singlenode -config SystemDS-config.xml \
          $@

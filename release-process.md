@@ -1,8 +1,8 @@
 ---
 layout: global
-title: SystemML Release Process
-description: Description of the SystemML release process and validation.
-displayTitle: SystemML Release Process
+title: SystemDS Release Process
+description: Description of the SystemDS release process and validation.
+displayTitle: SystemDS Release Process
 ---
 <!--
 {% comment %}
@@ -93,7 +93,7 @@ gpg --list-keys
 gpg --list-secret-keys
 ```
 
-**Clone SystemML Repository**
+**Clone SystemDS Repository**
 
 Since the artifacts will be deployed publicly, you should ensure that the project is completely clean.
 The deploy command should not be run on a copy of the project that you develop on. It should be a completely
@@ -139,7 +139,7 @@ Verify that the snapshot is now available at
 
 # Release Candidate Build and Deployment
 
-For detailed information, please see [SystemML Release Creation Process](release-creation-process.html).
+For detailed information, please see [SystemDS Release Creation Process](release-creation-process.html).
 
 # Release Candidate Checklist
 
@@ -158,7 +158,7 @@ checksums (such as .asc and .md5).
 The release candidate should build on Windows, OS X, and Linux. To do this cleanly,
 the following procedure can be performed.
 
-Clone the Apache SystemML GitHub repository
+Clone the Apache SystemDS GitHub repository
 to an empty location. Next, check out the release tag. Following
 this, build the distributions using Maven. This should be performed
 with an empty local Maven repository.
@@ -199,7 +199,7 @@ this OS X example.
 	tar -xvzf systemml-1.0.0-bin.tgz
 	cd systemml-1.0.0-bin
 	echo "print('hello world');" > hello.dml
-	./runStandaloneSystemML.sh hello.dml
+	./runStandaloneSystemDS.sh hello.dml
 	cd ..
 
 	# verify standalone zip works
@@ -207,7 +207,7 @@ this OS X example.
 	unzip systemml-1.0.0-bin.zip
 	cd systemml-1.0.0-bin
 	echo "print('hello world');" > hello.dml
-	./runStandaloneSystemML.sh hello.dml
+	./runStandaloneSystemDS.sh hello.dml
 	cd ..
 
 	# verify src works
@@ -216,7 +216,7 @@ this OS X example.
 	mvn clean package -P distribution
 	cd target/
 	java -cp "./lib/*:systemml-1.0.0.jar" org.apache.sysml.api.DMLScript -s "print('hello world');"
-	java -cp "./lib/*:SystemML.jar" org.apache.sysml.api.DMLScript -s "print('hello world');"
+	java -cp "./lib/*:SystemDS.jar" org.apache.sysml.api.DMLScript -s "print('hello world');"
 	cd ../..
 
 	# verify spark batch mode
@@ -261,19 +261,19 @@ Install Keras and Tensorflow:
 	python3 -m pip install --user keras=='2.1.5'
 	python3 -m pip install --user tensorflow=='1.11.0'
 
-Compile SystemML distribution:
+Compile SystemDS distribution:
 
 	mvn package -P distribution
 	cd src/main/python/tests/
 
 For Spark 2.*, the Python tests at (`src/main/python/tests`) can be executed in the following manner:
 
-	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_matrix_agg_fn.py
-	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_matrix_binary_op.py
-	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mlcontext.py
-	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mllearn_df.py
-	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mllearn_numpy.py
-	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_nn_numpy.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemDS.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_matrix_agg_fn.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemDS.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_matrix_binary_op.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemDS.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mlcontext.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemDS.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mllearn_df.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemDS.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mllearn_numpy.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemDS.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_nn_numpy.py
 
 
 ## Check LICENSE and NOTICE Files
@@ -309,7 +309,7 @@ the tests should pass.
 
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
-The standalone tgz and zip artifacts contain `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat`
+The standalone tgz and zip artifacts contain `runStandaloneSystemDS.sh` and `runStandaloneSystemDS.bat`
 files. Verify that one or more algorithms can be run on a single node using these
 standalone distributions.
 
@@ -322,7 +322,7 @@ demonstrating the execution of an algorithm (on OS X).
 	echo '{"rows": 306, "cols": 4, "format": "csv"}' > data/haberman.data.mtd
 	echo '1,1,1,2' > data/types.csv
 	echo '{"rows": 1, "cols": 4, "format": "csv"}' > data/types.csv.mtd
-	./runStandaloneSystemML.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+	./runStandaloneSystemDS.sh scripts/algorithms/Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
 	cd ..
 
 
@@ -330,7 +330,7 @@ demonstrating the execution of an algorithm (on OS X).
 
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
-Verify that SystemML runs algorithms on Spark locally.
+Verify that SystemDS runs algorithms on Spark locally.
 
 Here is an example of running the `Univar-Stats.dml` algorithm on random generated data.
 
@@ -347,7 +347,7 @@ Here is an example of running the `Univar-Stats.dml` algorithm on random generat
 
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
-Verify that SystemML runs algorithms on Hadoop locally.
+Verify that SystemDS runs algorithms on Hadoop locally.
 
 Based on the "Single-Node Spark" setup above, the `Univar-Stats.dml` algorithm could be run as follows:
 
@@ -359,7 +359,7 @@ Based on the "Single-Node Spark" setup above, the `Univar-Stats.dml` algorithm c
 
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
-Verify that SystemML can be executed from Jupyter and Zeppelin notebooks.
+Verify that SystemDS can be executed from Jupyter and Zeppelin notebooks.
 For examples, see the [Spark MLContext Programming Guide](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html).
 
 
@@ -370,7 +370,7 @@ For examples, see the [Spark MLContext Programming Guide](http://apache.github.i
 Verify that the performance suite executes on Spark and Hadoop. Testing should
 include 80MB, 800MB, 8GB, and 80GB data sizes.
 
-For more information, please see [SystemML Performance Testing](python-performance-test.html).
+For more information, please see [SystemDS Performance Testing](python-performance-test.html).
 
 
 # Run NN Unit Tests for GPU
@@ -398,7 +398,7 @@ file and remove all the `@Ignore` annotations from all the tests. Then run the N
 
 # Voting
 
-Following a successful release candidate vote by SystemML PMC members on the SystemML mailing list, the release candidate
+Following a successful release candidate vote by SystemDS PMC members on the SystemDS mailing list, the release candidate
 has been approved.
 
 

@@ -4,7 +4,7 @@
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
     <head>
-        <title>{{ page.title }} - SystemML {{site.SYSTEMML_VERSION}}</title>
+        <title>{{ page.title }} - SystemDS {{site.SYSTEMML_VERSION}}</title>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         {% if page.description %}
@@ -28,10 +28,10 @@
             <div class="container">
                 <div class="navbar-header">
                     <div class="navbar-brand brand projectlogo">
-                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemML" title="Apache SystemML"/></a>
+                        <a href="http://systemml.apache.org/"><img class="logo" src="img/systemml-logo.png" alt="Apache SystemDS" title="Apache SystemDS"/></a>
                     </div>
                     <div class="navbar-brand brand projecttitle">
-                        <a href="http://systemml.apache.org/">Apache SystemML<sup id="trademark">™</sup></a><br/>
+                        <a href="http://systemml.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br/>
                         <span class="version">{{site.SYSTEMML_VERSION}}</span>
                     </div>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
@@ -48,8 +48,8 @@
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<b class="caret"></b></a>
                             <ul class="dropdown-menu" role="menu">
-                                <li><b>Running SystemML:</b></li>
-                                <li><a href="https://github.com/apache/systemml">SystemML GitHub README</a></li>
+                                <li><b>Running SystemDS:</b></li>
+                                <li><a href="https://github.com/apache/systemml">SystemDS GitHub README</a></li>
                                 <li><a href="spark-mlcontext-programming-guide.html">Spark MLContext</a></li>
                                 <li><a href="spark-batch-mode.html">Spark Batch Mode</a>
                                 <li><a href="hadoop-batch-mode.html">Hadoop Batch Mode</a>
@@ -67,10 +67,10 @@
                                 <li class="divider"></li>
                                 <li><b>Tools:</b></li>
                                 <li><a href="debugger-guide.html">Debugger Guide</a></li>
-                                <li><a href="developer-tools-systemml.html">IDE Guide</a></li>
+                                <li><a href="developer-tools-systemds.html">IDE Guide</a></li>
                                 <li class="divider"></li>
                                 <li><b>Other:</b></li>
-                                <li><a href="contributing-to-systemml.html">Contributing to SystemML</a></li>
+                                <li><a href="contributing-to-systemds.html">Contributing to SystemDS</a></li>
                                 <li><a href="engine-dev-guide.html">Engine Developer Guide</a></li>
                                 <li><a href="troubleshooting-guide.html">Troubleshooting Guide</a></li>
                                 <li><a href="release-process.html">Release Process</a></li>
@@ -89,7 +89,7 @@
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
                             <ul class="dropdown-menu" role="menu">
                                 <li><b>JIRA:</b></li>
-                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemML JIRA</a></li>
+                                <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemDS JIRA</a></li>
                                 {% if site.FEEDBACK_LINKS == true %}
                                 <li><a href="#" id="feedback-link-improvement" title="Click to file a JIRA improvement about this page.">Improve this Page</a></li>
                                 <li><a href="#" id="feedback-link-bug" title="Click to file a JIRA bug about this page.">Fix this Page</a></li>
@@ -127,7 +127,7 @@
             <!-- Use GET method so that if a user is not already logged on to JIRA, after the user logs in, the
                  user will be redirected to the form that pre-populates the fields based on the URL parameters -->
             <form name="feedback" action="https://issues.apache.org/jira/secure/CreateIssueDetails!init.jspa" method="GET" id="feedback">
-                <input name="pid" type="hidden" value="12319522" /> <!-- SystemML Project ID -->
+                <input name="pid" type="hidden" value="12319522" /> <!-- SystemDS Project ID -->
                 <input name="priority" type="hidden" value="4" /> <!-- Minor -->
                 <input name="components" type="hidden" value="12328679" /> <!-- Documentation -->
                 <input id="feedback-issuetype" name="issuetype" type="hidden" value="" />

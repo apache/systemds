@@ -1,8 +1,8 @@
 ---
 layout: global
-displayTitle: Contributing to SystemML
-title: Contributing to SystemML
-description: Contributing to SystemML
+displayTitle: Contributing to SystemDS
+title: Contributing to SystemDS
+description: Contributing to SystemDS
 ---
 <!--
 {% comment %}
@@ -23,7 +23,7 @@ limitations under the License.
 {% endcomment %}
 -->
 
-There are many ways to become involved with SystemML:
+There are many ways to become involved with SystemDS:
 
 * This will become a table of contents (this text will be scraped).
 {:toc}
@@ -33,7 +33,7 @@ There are many ways to become involved with SystemML:
 
 ### Development Mailing List
 
-Perhaps the easiest way to obtain help and contribute to SystemML is to join the SystemML Development
+Perhaps the easiest way to obtain help and contribute to SystemDS is to join the SystemDS Development
 mailing list (dev@systemml.apache.org). You can subscribe to this list by sending an email to
 [dev-subscribe@systemml.apache.org](mailto:dev-subscribe@systemml.apache.org).
 You can unsubscribe from this list by sending an email to [dev-unsubscribe@systemml.apache.org](mailto:dev-unsubscribe@systemml.apache.org). The dev mailing list archive can be found
@@ -60,24 +60,24 @@ To unsubscribe from the issues list, send an email to
 
 ## Issue Tracker
 
-Have you found a bug in SystemML? Have you thought of a way to improve SystemML? Are
-you interested in working on SystemML itself? If so, the SystemML
+Have you found a bug in SystemDS? Have you thought of a way to improve SystemDS? Are
+you interested in working on SystemDS itself? If so, the SystemDS
 [JIRA Issue Tracker](https://issues.apache.org/jira/browse/SYSTEMML) is the place to go.
 
 
-## SystemML on GitHub
+## SystemDS on GitHub
 
-Have you found an issue on the SystemML [JIRA Issue Tracker](https://issues.apache.org/jira/browse/SYSTEMML)
+Have you found an issue on the SystemDS [JIRA Issue Tracker](https://issues.apache.org/jira/browse/SYSTEMML)
 that you are interested in working on?
 If so, add a comment to the issue asking to be assigned the issue. If you don't hear back in a timely
 fashion, please contact us on the dev mailing list and we will be happy to help you.
 
 Once you have an issue to work on, how do you go about doing your work? The first thing you need is a GitHub
-account. Once you have a GitHub account, go to the Apache SystemML GitHub site at
+account. Once you have a GitHub account, go to the Apache SystemDS GitHub site at
 [https://github.com/apache/systemml](https://github.com/apache/systemml) and
-click the Fork button to fork a personal remote copy of the SystemML repository to your GitHub account.
+click the Fork button to fork a personal remote copy of the SystemDS repository to your GitHub account.
 
-The next step is to clone your SystemML fork to your local machine.
+The next step is to clone your SystemDS fork to your local machine.
 
 	$ git clone https://github.com/YOUR_GITHUB_NAME/systemml.git
 
@@ -88,13 +88,13 @@ to set the `push.default` property to `simple`. You only need to execute these c
 	$ git config --global user.email "yourname@yourhost.com"
 	$ git config --global push.default simple
 
-Next, reference the main SystemML repository as a remote repository. By convention, you can
+Next, reference the main SystemDS repository as a remote repository. By convention, you can
 call this `upstream`. You only need to add the remote `upstream` repository once.
 
 	$ git remote add upstream https://github.com/apache/systemml.git
 
-After this, you should have an `origin` repository, which references your personal forked SystemML
-repository on GitHub, and the `upstream` repository, which references the main SystemML repository
+After this, you should have an `origin` repository, which references your personal forked SystemDS
+repository on GitHub, and the `upstream` repository, which references the main SystemDS repository
 on GitHub.
 
 	$ git remote -v
@@ -147,13 +147,13 @@ When ready, push your changes on this branch to your remote GitHub fork:
 
 At this stage, you can go to your GitHub web page and file a Pull Request for the work
 that you did on this branch. A Pull Request is a request for project committers (who have
-write access to Apache SystemML) to review your code and integrate your code into the project.
+write access to Apache SystemDS) to review your code and integrate your code into the project.
 Typically, you will see a green button to allow you to file a Pull Request.
 
-Once your Pull Request is opened at [SystemML Pull Requests](https://github.com/apache/systemml/pulls),
+Once your Pull Request is opened at [SystemDS Pull Requests](https://github.com/apache/systemml/pulls),
 typically Jenkins will automatically build the project to see
 if all tests pass when run for your particular branch. These automatic builds
-can be seen [here](https://sparktc.ibmcloud.com/jenkins/job/SystemML-PullRequestBuilder/).
+can be seen [here](https://sparktc.ibmcloud.com/jenkins/job/SystemDS-PullRequestBuilder/).
 
 A conversation typically will proceed with regards to your Pull Request. Project committers and
 potentially others will give you useful feedback and potentially request that some changes be made
@@ -163,7 +163,7 @@ the changes to your remote branch. These updates will automatically appear in th
 
 When your changes are accepted (a committer will write "Looks good to me", "LGTM", or something
 similar), a committer will attempt to incorporate your changes into the
-SystemML project. Typically this is done by squashing all of your commits into a single commit
+SystemDS project. Typically this is done by squashing all of your commits into a single commit
 and then rebasing your changes into the master branch. Rebasing gives a linear commit history
 to the project.
 
@@ -177,7 +177,7 @@ the Pull Request, and the issue can be resolved and closed.
 
 ## Documentation
 
-Documentation is one useful way to become involved with SystemML. SystemML online documentation
+Documentation is one useful way to become involved with SystemDS. SystemDS online documentation
 is generated from markdown using Jekyll. For more information, please see GitHub's
 [Using Jekyll as a static site generator with GitHub Pages](https://help.github.com/articles/using-jekyll-as-a-static-site-generator-with-github-pages/).
 
@@ -209,7 +209,7 @@ branch and perform the `subtree` command again.
 
 ### Java Code Format
 
-Java in SystemML should be formatted using a standard format. The "SystemML Format" at
+Java in SystemDS should be formatted using a standard format. The "SystemDS Format" at
 [`dev/code-style/systemml-style-eclipse.xml`](https://github.com/apache/systemml/blob/master/dev/code-style/systemml-style-eclipse.xml)
 can be imported into Eclipse and
 [`dev/code-style/systemml-style-intellij.xml`](https://github.com/apache/systemml/blob/master/dev/code-style/systemml-style-intellij.xml)
@@ -221,5 +221,5 @@ for this option.
 
 ### DML Code Format
 
-DML in SystemML should be formatted according to a standard format. Indentation in DML
+DML in SystemDS should be formatted according to a standard format. Indentation in DML
 files should be two spaces.

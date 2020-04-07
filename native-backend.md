@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Using SystemML with Native BLAS support
-description: Using SystemML with Native BLAS support
+title: Using SystemDS with Native BLAS support
+description: Using SystemDS with Native BLAS support
 ---
 <!--
 {% comment %}
@@ -29,24 +29,24 @@ limitations under the License.
 
 # User Guide
 
-By default, SystemML implements all its matrix operations in Java.
+By default, SystemDS implements all its matrix operations in Java.
 This simplifies deployment especially in a distributed environment.
 
 In some cases (such as deep learning), the user might want to use native BLAS
-rather than SystemML's internal Java library for performing single-node
+rather than SystemDS's internal Java library for performing single-node
 operations such matrix multiplication, convolution, etc.
 
-To allow SystemML to use native BLAS rather than internal Java library,
+To allow SystemDS to use native BLAS rather than internal Java library,
 please set the configuration property `sysml.native.blas` to `auto`.
 Other possible options are: `mkl`, `openblas` and `none`.
 The first two options will only attempt to use the respective BLAS libraries.
 
-By default, SystemML will first attempt to use Intel MKL (if installed)
+By default, SystemDS will first attempt to use Intel MKL (if installed)
 and then OpenBLAS (if installed).
-If both Intel MKL and OpenBLAS are not available, SystemML
+If both Intel MKL and OpenBLAS are not available, SystemDS
 falls back to its internal Java library.
 
-The current version of SystemML only supports BLAS on **Linux** machines.
+The current version of SystemDS only supports BLAS on **Linux** machines.
 
 ## Step 1: Install BLAS
 
@@ -63,7 +63,7 @@ with license key. Since we use MKL DNN primitives, we depend on Intel MKL versio
 ### Option 2: Install OpenBLAS  
 
 The default OpenBLAS (via yum/apt-get) uses its internal threading rather than OpenMP, 
-which can lead to performance degradation when using SystemML. So, instead we recommend that you
+which can lead to performance degradation when using SystemDS. So, instead we recommend that you
 compile OpenBLAS from the source instead of installing it with `yum` or `apt-get`.
 
 The steps to install OpenBLAS v0.2.20:
@@ -100,7 +100,7 @@ sudo ln -s /lib64/libgomp.so.1 /lib64/libgomp.so
 
 2. Alternatively, you can add the location of the native libraries (i.e. BLAS and other dependencies) 
 to the environment variable `LD_LIBRARY_PATH` (on Linux). 
-If you want to use SystemML with Spark, please add the following line to `spark-env.sh` 
+If you want to use SystemDS with Spark, please add the following line to `spark-env.sh` 
 (or to the bash profile).
 
 	export LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies
@@ -115,8 +115,8 @@ mlCtx.setConfigProperty("sysml.native.blas.directory", "/path/to/blas-n-other-de
 
 ## Step 3: Set configuration property to enable native BLAS
 
-The configuration property `sysml.native.blas` can be either set in the file `SystemML-config.xml`
-or using `setConfigProperty` method of `MLContext` or `mllearn` classes. For example:
+The configuration property `sysml.native.blas` can be either set in the file `SystemDS-config.xml`
+or using `setConfigProperty` method of `DSContext` or `mllearn` classes. For example:
 
 ```python 
 mlCtx.setConfigProperty("sysml.native.blas", "openblas")
@@ -146,7 +146,7 @@ Make sure that this path is accessible to Java as per instructions provided in t
 By default, OpenBLAS libraries will be installed in the location `/opt/OpenBLAS/lib/`.
 Make sure that this path is accessible to Java as per instructions provided in the above section.
 
-- Using OpenBLAS without OpenMP can lead to performance degradation when using SystemML.
+- Using OpenBLAS without OpenMP can lead to performance degradation when using SystemDS.
  
 You can check if the OpenBLAS on you system is compiled with OpenMP or not using following commands:
 If you don't see any output after the second command, then OpenBLAS installed on your system is using its internal threading.
@@ -162,7 +162,7 @@ In this case, we highly recommend that you reinstall OpenBLAS using the above co
 We noticed that double-precision MKL DNN primitives for convolution instruction
 is considerably slower than than  the corresponding single-precision MKL DNN primitives
 as of MKL 2017 Update 1. We anticipate that this performance bug will be fixed in the future MKL versions.
-Until then or until SystemML supports single-precision matrices, we recommend that you use OpenBLAS when using script with `conv2d`.
+Until then or until SystemDS supports single-precision matrices, we recommend that you use OpenBLAS when using script with `conv2d`.
 
 Here are the end-to-end runtime performance in seconds of 10 `conv2d` operations 
 on randomly generated 64 images of size 256 X 256 with sparsity 0.9
@@ -245,12 +245,12 @@ The current set of dependencies other than MKL and OpenBLAS, are as follows:
 If CMake cannot detect your OpenBLAS installation, set the `OpenBLAS_HOME` environment variable to the OpenBLAS Home.
 
 
-## Debugging SystemML's native code
+## Debugging SystemDS's native code
 
-To debug issues in SystemML's native code, please use the following flags:
+To debug issues in SystemDS's native code, please use the following flags:
 
 ```
-$SPARK_HOME/bin/spark-submit --conf 'spark.driver.extraJavaOptions=-XX:OnError="gdb - %p"' SystemML.jar -f test_conv2d.dml -stats 10 -explain -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W K=$K R=$R S=$S
+$SPARK_HOME/bin/spark-submit --conf 'spark.driver.extraJavaOptions=-XX:OnError="gdb - %p"' SystemDS.jar -f test_conv2d.dml -stats 10 -explain -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W K=$K R=$R S=$S
 ```
 
 When it fails, it will start a native debugger.

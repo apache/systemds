@@ -1,11 +1,11 @@
 Usage
 -----
-The machine learning algorithms described in SystemML_Algorithms_Reference.pdf can be invoked
+The machine learning algorithms described in SystemDS_Algorithms_Reference.pdf can be invoked
 from the hadoop command line using the described, algorithm-specific parameters. 
 
 Generic command line arguments arguments are provided by the help command below.
 
-   hadoop jar SystemML.jar -? or -help 
+   hadoop jar SystemDS.jar -? or -help 
 
 
 Recommended configurations
@@ -53,26 +53,26 @@ behavior, we recommend to disable THP with
 4) JVM Reuse:
 Performance benefits from JVM reuse because data sets that fit into the mapper memory budget are 
 reused across tasks per slot. However, Hadoop 1.0.3 JVM Reuse is incompatible with security (when 
-using the LinuxTaskController). The workaround is to use the DefaultTaskController. SystemML provides 
-a configuration property in SystemML-config.xml to enable JVM reuse on a per job level without
+using the LinuxTaskController). The workaround is to use the DefaultTaskController. SystemDS provides 
+a configuration property in SystemDS-config.xml to enable JVM reuse on a per job level without
 changing the global cluster configuration.
    
    <jvmreuse>false</jvmreuse> 
    
 5) Number of Reducers:
-The number of reducers can have significant impact on performance. SystemML provides a configuration
+The number of reducers can have significant impact on performance. SystemDS provides a configuration
 property to set the default number of reducers per job without changing the global cluster configuration.
 In general, we recommend a setting of twice the number of nodes. Smaller numbers create less intermediate
 files, larger numbers increase the degree of parallelism for compute and parallel write. In
-SystemML-config.xml, set:
+SystemDS-config.xml, set:
    
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
    <numreducers>12</numreducers> 
 
-6) SystemML temporary directories:
-SystemML uses temporary directories in two different locations: (1) on local file system for temping from 
+6) SystemDS temporary directories:
+SystemDS uses temporary directories in two different locations: (1) on local file system for temping from 
 the client process, and (2) on HDFS for intermediate results between different MR jobs and between MR jobs 
-and in-memory operations. Locations of these directories can be configured in SystemML-config.xml with the
+and in-memory operations. Locations of these directories can be configured in SystemDS-config.xml with the
 following properties:
 
    <!-- local fs tmp working directory-->

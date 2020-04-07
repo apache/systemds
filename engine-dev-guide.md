@@ -1,8 +1,8 @@
 ---
 layout: global
-displayTitle: SystemML Engine Developer Guide
-title: SystemML Engine Developer Guide
-description: SystemML Engine Developer Guide
+displayTitle: SystemDS Engine Developer Guide
+title: SystemDS Engine Developer Guide
+description: SystemDS Engine Developer Guide
 ---
 <!--
 {% comment %}
@@ -25,24 +25,24 @@ limitations under the License.
 * This will become a table of contents (this text will be scraped).
 {:toc}
 
-## Building SystemML
+## Building SystemDS
 
-SystemML is built using [Apache Maven](http://maven.apache.org/).
-SystemML will build on Linux, MacOS, or Windows, and requires Maven 3 and Java 7 (or higher).
-To build SystemML, run:
+SystemDS is built using [Apache Maven](http://maven.apache.org/).
+SystemDS will build on Linux, MacOS, or Windows, and requires Maven 3 and Java 7 (or higher).
+To build SystemDS, run:
 
     mvn clean package
 
-To build the SystemML distributions, run:
+To build the SystemDS distributions, run:
 
     mvn clean package -P distribution
 
 
 * * *
 
-## Testing SystemML
+## Testing SystemDS
 
-SystemML features a comprehensive set of integration tests. To perform these tests, run:
+SystemDS features a comprehensive set of integration tests. To perform these tests, run:
 
     mvn verify
 
@@ -57,9 +57,9 @@ If required, please install the following packages in R:
 
 ## Development Environment
 
-SystemML itself is written in Java and is managed using Maven. As a result, SystemML can readily be
+SystemDS itself is written in Java and is managed using Maven. As a result, SystemDS can readily be
 imported into a standard development environment such as Eclipse and IntelliJ IDEA.
-The `DMLScript` class serves as the main entrypoint to SystemML. Executing
+The `DMLScript` class serves as the main entrypoint to SystemDS. Executing
 `DMLScript` with no arguments displays usage information. A script file can be specified using the `-f` argument.
 
 In Eclipse, a Debug Configuration can be created with `DMLScript` as the Main class and any arguments specified as
@@ -69,7 +69,7 @@ Suppose that we have a `hello.dml` script containing the following:
 
 	print('hello ' + $1)
 
-This SystemML script can be debugged in Eclipse using a Debug Configuration such as the following:
+This SystemDS script can be debugged in Eclipse using a Debug Configuration such as the following:
 
 <div class="codetabs2">
 
@@ -86,25 +86,25 @@ This SystemML script can be debugged in Eclipse using a Debug Configuration such
 
 * * *
 
-## Python MLContext API
+## Python DSContext API
 
-When working with the Python MLContext API (see `src/main/python/systemml/mlcontext.py`) during development,
-it can be useful to install the Python MLContext API in editable mode (`-e`). This allows Python updates
-to take effect without requiring the SystemML python artifact to be built and installed.
+When working with the Python DSContext API (see `src/main/python/systemml/mlcontext.py`) during development,
+it can be useful to install the Python DSContext API in editable mode (`-e`). This allows Python updates
+to take effect without requiring the SystemDS python artifact to be built and installed.
 
 {% highlight bash %}
 mvn clean
 pip3 install -e src/main/python
 mvn clean package
-PYSPARK_PYTHON=python3 pyspark --driver-class-path target/SystemML.jar
+PYSPARK_PYTHON=python3 pyspark --driver-class-path target/SystemDS.jar
 {% endhighlight %}
 
 <div class="codetabs">
 
 <div data-lang="Python 3" markdown="1">
 {% highlight python %}
-from systemml import MLContext, dml
-ml = MLContext(sc)
+from systemml import DSContext, dml
+ml = DSContext(sc)
 script = dml("print('hello world')")
 ml.execute(script)
 {% endhighlight %}
@@ -129,10 +129,10 @@ Welcome to
 
 Using Python version 3.5.2 (default, Jul 28 2016 21:28:07)
 SparkSession available as 'spark'.
->>> from systemml import MLContext, dml
->>> ml = MLContext(sc)
+>>> from systemml import DSContext, dml
+>>> ml = DSContext(sc)
 
-Welcome to Apache SystemML!
+Welcome to Apache SystemDS!
 
 >>> script = dml("print('hello world')")
 >>> ml.execute(script)
@@ -148,7 +148,7 @@ MLResults
 
 ## Matrix Multiplication Operators
 
-In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemML as well as their internally used matrix multiplication block operations.
+In the following, we give an overview of backend-specific physical matrix multiplication operators in SystemDS as well as their internally used matrix multiplication block operations.
 
 ### Basic Matrix Multiplication Operators
 

@@ -1,8 +1,8 @@
 ---
 layout: global
-title: SystemML Algorithms Reference
-description: SystemML Algorithms Reference
-displayTitle: SystemML Algorithms Reference
+title: SystemDS Algorithms Reference
+description: SystemDS Algorithms Reference
+displayTitle: SystemDS Algorithms Reference
 ---
 <!--
 {% comment %}

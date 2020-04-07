@@ -30,13 +30,13 @@ limitations under the License.
 
 # Overview
 
-SystemML enables *flexible*, scalable machine learning. This flexibility is achieved
+SystemDS enables *flexible*, scalable machine learning. This flexibility is achieved
 through the specification of a high-level declarative machine learning language
 that comes in two flavors, one with an R-like syntax (DML) and one with
 a Python-like syntax (PyDML).
 
 Algorithm scripts written in DML and PyDML can be run on Spark, on Hadoop, or
-in Standalone mode. SystemML also features an MLContext API that allows SystemML
+in Standalone mode. SystemDS also features an DSContext API that allows SystemDS
 to be accessed via Scala or Python from a Spark Shell, a Jupyter Notebook, or a Zeppelin Notebook.
 
 This Beginner's Guide serves as a starting point for writing DML and PyDML
@@ -50,18 +50,18 @@ DML and PyDML scripts can be invoked in a variety of ways. Suppose that we have 
 
 	print('hello ' + $1)
 
-One way to begin working with SystemML is to [download a binary distribution of SystemML](http://systemml.apache.org/download.html)
-and use the `runStandaloneSystemML.sh` and `runStandaloneSystemML.bat` scripts to run SystemML in standalone
+One way to begin working with SystemDS is to [download a binary distribution of SystemDS](http://systemml.apache.org/download.html)
+and use the `runStandaloneSystemDS.sh` and `runStandaloneSystemDS.bat` scripts to run SystemDS in standalone
 mode. The name of the DML or PyDML script is passed as the first argument to these scripts,
 along with a variety of arguments. Note that PyDML invocation can be forced with the addition of a `-python` flag.
 
-	./runStandaloneSystemML.sh hello.dml -args world
-	./runStandaloneSystemML.sh hello.pydml -args world
+	./runStandaloneSystemDS.sh hello.dml -args world
+	./runStandaloneSystemDS.sh hello.pydml -args world
 
 
 # Data Types
 
-SystemML has four value data types. In DML, these are: **double**, **integer**,
+SystemDS has four value data types. In DML, these are: **double**, **integer**,
 **string**, and **boolean**. In PyDML, these are: **float**, **int**,
 **str**, and **bool**. In normal usage, the data type of a variable is implicit
 based on its value. Mathematical operations typically operate on
@@ -239,7 +239,7 @@ the [Other Built-In Functions](dml-language-reference.html#other-built-in-functi
 
 ## Saving a Matrix
 
-A matrix can be saved using the **`write()`** function in DML and the **`save()`** function in PyDML. SystemML supports four
+A matrix can be saved using the **`write()`** function in DML and the **`save()`** function in PyDML. SystemDS supports four
 different formats: **`text`** (`i,j,v`), **`mm`** (`Matrix Market`), **`csv`** (`delimiter-separated values`), and **`binary`**.
 
 <div class="codetabs2">
@@ -290,7 +290,7 @@ is 0-based.*
 	    "cols": 3,
 	    "nnz": 6,
 	    "format": "text",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
@@ -323,7 +323,7 @@ is 0-based.*
 	    "format": "csv",
 	    "header": false,
 	    "sep": ",",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
@@ -342,7 +342,7 @@ is 0-based.*
 	    "cols_in_block": 1000,
 	    "nnz": 6,
 	    "format": "binary",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
@@ -352,7 +352,7 @@ is 0-based.*
 
 ## Loading a Matrix
 
-A matrix can be loaded using the **`read()`** function in DML and the **`load()`** function in PyDML. As with saving, SystemML supports four
+A matrix can be loaded using the **`read()`** function in DML and the **`load()`** function in PyDML. As with saving, SystemDS supports four
 formats: **`text`** (`i,j,v`), **`mm`** (`Matrix Market`), **`csv`** (`delimiter-separated values`), and **`binary`**. To read a file, a corresponding
 metadata file is required, except for the Matrix Market format. A metadata file is not required if a `format` parameter is specified to the **`read()`**
 or **`load()`** functions.
@@ -639,7 +639,7 @@ parfor(i in 0:nrow(A)-1):
 
 # User-Defined Functions
 
-Functions encapsulate useful functionality in SystemML. In addition to built-in functions, users can define their own functions.
+Functions encapsulate useful functionality in SystemDS. In addition to built-in functions, users can define their own functions.
 Functions take 0 or more parameters and return 0 or more values.
 
 <div class="codetabs2">

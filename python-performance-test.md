@@ -1,8 +1,8 @@
 ---
 layout: global
-title: SystemML Performance Testing
-description: Description of SystemML performance testing.
-displayTitle: SystemML Performance Testing
+title: SystemDS Performance Testing
+description: Description of SystemDS performance testing.
+displayTitle: SystemDS Performance Testing
 ---
 <!--
 {% comment %}
@@ -118,7 +118,7 @@ Default setting for our performance test below:
 
 ## Examples
 
-Some examples of SystemML performance test with arguments shown below:
+Some examples of SystemDS performance test with arguments shown below:
 
 `./scripts/perftest/python/run_perftest.py --family binomial clustering multinomial regression1 regression2 stats1 stats2
 `

@@ -29,21 +29,21 @@ limitations under the License.
 
 ## Introduction
 
-SystemML enables flexible, scalable machine learning. This flexibility is achieved through the specification of a high-level declarative machine learning language that comes in two flavors, 
+SystemDS enables flexible, scalable machine learning. This flexibility is achieved through the specification of a high-level declarative machine learning language that comes in two flavors, 
 one with an R-like syntax (DML) and one with a Python-like syntax (PyDML).
 
 Algorithm scripts written in DML and PyDML can be run on Hadoop, on Spark, or in Standalone mode. 
-No script modifications are required to change between modes. SystemML automatically performs advanced optimizations 
+No script modifications are required to change between modes. SystemDS automatically performs advanced optimizations 
 based on data and cluster characteristics, so much of the need to manually tweak algorithms is largely reduced or eliminated.
 To understand more about DML and PyDML, we recommend that you read [Beginner's Guide to DML and PyDML](https://apache.github.io/systemml/beginners-guide-to-dml-and-pydml.html).
 
-For convenience of Python users, SystemML exposes several language-level APIs that allow Python users to use SystemML
+For convenience of Python users, SystemDS exposes several language-level APIs that allow Python users to use SystemDS
 and its algorithms without the need to know DML or PyDML. We explain these APIs in the below sections.
 
 ## matrix class
 
 The matrix class is an **experimental** feature that is often referred to as Python DSL.
-It allows the user to perform linear algebra operations in SystemML using a NumPy-like interface.
+It allows the user to perform linear algebra operations in SystemDS using a NumPy-like interface.
 It implements basic matrix operators, matrix functions as well as converters to common Python
 types (for example: Numpy arrays, PySpark DataFrame and Pandas
 DataFrame).
@@ -87,7 +87,7 @@ To disable lazy evaluation, please us `set_lazy` method:
 >>> import numpy as np
 >>> m1 = sml.matrix(np.ones((3,3)) + 2)
 
-Welcome to Apache SystemML!
+Welcome to Apache SystemDS!
 
 >>> m2 = sml.matrix(np.ones((3,3)) + 3)
 >>> np.add(m1, m2) + m1
@@ -113,7 +113,7 @@ Please see below [troubleshooting steps](http://apache.github.io/systemml/python
 ### Dealing with the loops
 
 It is important to note that this API doesnot pushdown loop, which means the
-SystemML engine essentially gets an unrolled DML script.
+SystemDS engine essentially gets an unrolled DML script.
 This can lead to two issues:
 
 1. Since matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS),
@@ -129,7 +129,7 @@ The unrolling of the for loop can be demonstrated by the below example:
 >>> import numpy as np
 >>> m1 = sml.matrix(np.ones((3,3)) + 2)
 
-Welcome to Apache SystemML!
+Welcome to Apache SystemDS!
 
 >>> m2 = sml.matrix(np.ones((3,3)) + 3)
 >>> m3 = m1
@@ -159,7 +159,7 @@ We can reduce the impact of this unrolling by eagerly evaluating the variables i
 >>> import numpy as np
 >>> m1 = sml.matrix(np.ones((3,3)) + 2)
 
-Welcome to Apache SystemML!
+Welcome to Apache SystemDS!
 
 >>> m2 = sml.matrix(np.ones((3,3)) + 3)
 >>> m3 = m1
@@ -243,7 +243,7 @@ Residual sum of squares: 25282.12
 
 For all the above functions, we always return a two dimensional matrix, especially for aggregation functions with axis. 
 For example: Assuming m1 is a matrix of (3, n), NumPy returns a 1d vector of dimension (3,) for operation m1.sum(axis=1)
-whereas SystemML returns a 2d matrix of dimension (3, 1).
+whereas SystemDS returns a 2d matrix of dimension (3, 1).
 
 Note: an evaluated matrix contains a data field computed by eval
 method as DataFrame or NumPy array.
@@ -333,15 +333,15 @@ save(mVar3, " ")
   - [mVar2] (data).    
 ```
 
-## MLContext API
+## DSContext API
 
-The Spark MLContext API offers a programmatic interface for interacting with SystemML from Spark using languages such as Scala, Java, and Python. 
-As a result, it offers a convenient way to interact with SystemML from the Spark Shell and from Notebooks such as Jupyter and Zeppelin.
+The Spark DSContext API offers a programmatic interface for interacting with SystemDS from Spark using languages such as Scala, Java, and Python. 
+As a result, it offers a convenient way to interact with SystemDS from the Spark Shell and from Notebooks such as Jupyter and Zeppelin.
 
 ### Usage
 
 The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
-using Python [MLContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
+using Python [DSContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
 
 ```python
 from sklearn import datasets, neighbors
@@ -357,7 +357,7 @@ n_samples = len(X_digits)
 # Split the data into training/testing sets and convert to PySpark DataFrame
 X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
 y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
-ml = sml.MLContext(sc)
+ml = sml.DSContext(sc)
 # Get the path of MultiLogReg.dml
 scriptPath = os.path.join(imp.find_module("systemml")[1], 'systemml-java', 'scripts', 'algorithms', 'MultiLogReg.dml')
 script = sml.dml(scriptPath).input(X=X_df, Y_vec=y_df).output("B_out")
@@ -407,7 +407,7 @@ model.transform(df_test)
 </div>
 </div>
 
-Please note that when training using mllearn API (i.e. `model.fit(X_df)`), SystemML 
+Please note that when training using mllearn API (i.e. `model.fit(X_df)`), SystemDS 
 expects that labels have been converted to 1-based value.
 This avoids unnecessary decoding overhead for large dataset if the label columns has already been decoded.
 For scikit-learn API, there is no such requirement.
@@ -429,7 +429,7 @@ These parameters are also specified in the usage section of the [Algorithms Refe
 | is_multi_class | Specifies whether to use binary-class or multi-class classifier (default: False) | - | - | X | - |
 | laplace | Laplace smoothing specified by the user to avoid creation of 0 probabilities (default: 1.0) | - | - | - | X |
 
-In the below example, we invoke SystemML's [Logistic Regression](https://apache.github.io/systemml/algorithms-classification.html#multinomial-logistic-regression)
+In the below example, we invoke SystemDS's [Logistic Regression](https://apache.github.io/systemml/algorithms-classification.html#multinomial-logistic-regression)
 algorithm on digits datasets.
 
 ```python
@@ -497,7 +497,7 @@ LogisticRegression score: 0.922222
 
 #### MLPipeline interface
 
-In the below example, we demonstrate how the same `LogisticRegression` class can allow SystemML to fit seamlessly into 
+In the below example, we demonstrate how the same `LogisticRegression` class can allow SystemDS to fit seamlessly into 
 large data pipelines.
 
 ```python
@@ -549,10 +549,10 @@ Output:
 
 ## Troubleshooting Python APIs
 
-#### Unable to load SystemML.jar into current pyspark session.
+#### Unable to load SystemDS.jar into current pyspark session.
 
-While using SystemML's Python package through pyspark or notebook (SparkContext is not previously created in the session), the
-below method is not required. However, if the user wishes to use SystemML through spark-submit and has not previously invoked 
+While using SystemDS's Python package through pyspark or notebook (SparkContext is not previously created in the session), the
+below method is not required. However, if the user wishes to use SystemDS through spark-submit and has not previously invoked 
 
  `systemml.defmatrix.setSparkContext`(*sc*)
 :   Before using the matrix, the user needs to invoke this function if SparkContext is not previously created in the session.
@@ -573,16 +573,16 @@ m4 = 1.0 - m2
 m4.sum(axis=1).toNumPy()
 ```
 
-If SystemML was not installed via pip, you may have to download SystemML.jar and provide it to pyspark via `--driver-class-path` and `--jars`. 
+If SystemDS was not installed via pip, you may have to download SystemDS.jar and provide it to pyspark via `--driver-class-path` and `--jars`. 
 
 #### matrix API is running slow when set_lazy(False) or when eval() is called often.
 
 This is a known issue. The matrix API is slow in this scenario due to slow Py4J conversion from Java MatrixObject or Java RDD to Python NumPy or DataFrame.
-To resolve this for now, we recommend writing the matrix to FileSystemML and using `load` function.
+To resolve this for now, we recommend writing the matrix to FileSystemDS and using `load` function.
 
 #### maximum recursion depth exceeded
 
-SystemML matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS).
+SystemDS matrix is backed by lazy evaluation and uses a recursive Depth First Search (DFS).
 Python can throw `RuntimeError: maximum recursion depth exceeded` when the recursion of DFS exceeds beyond the limit 
 set by Python. There are two ways to address it:
 

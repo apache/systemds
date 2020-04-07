@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Matrix Factorization
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Matrix Factorization
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}
@@ -45,7 +45,7 @@ top-$K$ (for a given value of $K$) principal components.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f PCA.dml
+    hadoop jar SystemDS.jar -f PCA.dml
                             -nvargs INPUT=<file>
                                     K=<int>
                                     CENTER=[int]
@@ -59,9 +59,9 @@ top-$K$ (for a given value of $K$) principal components.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f PCA.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs INPUT=<file>
                                          K=<int>
@@ -96,7 +96,7 @@ top-$K$ (for a given value of $K$) principal components.
 
 **OFMT**: (default: `"csv"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 **MODEL**: Either the location (on HDFS) where the computed model is
     stored; or the location of an existing model.
@@ -109,7 +109,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f PCA.dml 
+    hadoop jar SystemDS.jar -f PCA.dml 
                             -nvargs INPUT=/user/ml/input.mtx
                                     K=10
                                     CENTER=1
@@ -122,9 +122,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f PCA.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs INPUT=/user/ml/input.mtx
                                          K=10
@@ -138,7 +138,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f PCA.dml
+    hadoop jar SystemDS.jar -f PCA.dml
                             -nvargs INPUT=/user/ml/test_input.mtx
                                     K=10
                                     CENTER=1
@@ -152,9 +152,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f PCA.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs INPUT=/user/ml/test_input.mtx
                                          K=10
@@ -244,7 +244,7 @@ problems.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ALS.dml
+    hadoop jar SystemDS.jar -f ALS.dml
                             -nvargs V=<file>
                                     L=<file>
                                     R=<file>
@@ -260,9 +260,9 @@ problems.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ALS.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs V=<file>
                                          L=<file>
@@ -281,7 +281,7 @@ problems.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ALS_predict.dml
+    hadoop jar SystemDS.jar -f ALS_predict.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     L=<file>
@@ -294,9 +294,9 @@ problems.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ALS_predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -312,7 +312,7 @@ problems.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ALS_topk_predict.dml
+    hadoop jar SystemDS.jar -f ALS_topk_predict.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     L=<file>
@@ -325,9 +325,9 @@ problems.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ALS_topk_predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -370,7 +370,7 @@ iterations falls below threshold `thr`; if
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Arguments - ALS Prediction/Top-K Prediction
@@ -409,7 +409,7 @@ format:
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Examples
@@ -418,7 +418,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ALS.dml
+    hadoop jar SystemDS.jar -f ALS.dml
                             -nvargs V=/user/ml/V
                                     L=/user/ml/L
                                     R=/user/ml/R
@@ -434,9 +434,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ALS.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs V=/user/ml/V
                                          L=/user/ml/L
@@ -457,7 +457,7 @@ To compute predicted ratings for a given list of users and items:
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ALS_predict.dml
+    hadoop jar SystemDS.jar -f ALS_predict.dml
                             -nvargs X=/user/ml/X
                                     Y=/user/ml/Y
                                     L=/user/ml/L
@@ -470,9 +470,9 @@ To compute predicted ratings for a given list of users and items:
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ALS_predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X
                                          Y=/user/ml/Y
@@ -491,7 +491,7 @@ predicted ratings for a given list of users:
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f ALS_topk_predict.dml
+    hadoop jar SystemDS.jar -f ALS_topk_predict.dml
                             -nvargs X=/user/ml/X
                                     Y=/user/ml/Y
                                     L=/user/ml/L
@@ -504,9 +504,9 @@ predicted ratings for a given list of users:
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f ALS_topk_predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X
                                          Y=/user/ml/Y

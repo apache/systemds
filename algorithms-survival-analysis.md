@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Survival Analysis
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Survival Analysis
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}
@@ -42,7 +42,7 @@ censored and uncensored survival times.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f KM.dml
+    hadoop jar SystemDS.jar -f KM.dml
                             -nvargs X=<file>
                                     TE=<file>
                                     GI=<file>
@@ -60,9 +60,9 @@ censored and uncensored survival times.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f KM.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          TE=<file>
@@ -132,14 +132,14 @@ groups: `none`, `log-rank` or `wilcoxon` test
 
 **fmt**: (default:`"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Examples
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f KM.dml
+    hadoop jar SystemDS.jar -f KM.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
                                     GI=/user/ml/GI
@@ -155,9 +155,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f KM.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -174,7 +174,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f KM.dml
+    hadoop jar SystemDS.jar -f KM.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
                                     GI=/user/ml/GI
@@ -192,9 +192,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f KM.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -442,7 +442,7 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Cox.dml
+    hadoop jar SystemDS.jar -f Cox.dml
                             -nvargs X=<file>
                                     TE=<file>
                                     F=<file>
@@ -464,9 +464,9 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Cox.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          TE=<file>
@@ -492,7 +492,7 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Cox-predict.dml
+    hadoop jar SystemDS.jar -f Cox-predict.dml
                             -nvargs X=<file>
                                     RT=<file>
                                     M=<file>
@@ -506,9 +506,9 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Cox-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          RT=<file>
@@ -591,7 +591,7 @@ if no maximum limit provided
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Examples
@@ -600,7 +600,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Cox.dml
+    hadoop jar SystemDS.jar -f Cox.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
                                     F=/user/ml/F
@@ -615,9 +615,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Cox.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -633,7 +633,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Cox.dml
+    hadoop jar SystemDS.jar -f Cox.dml
                             -nvargs X=/user/ml/X.mtx
                                     TE=/user/ml/TE
                                     F=/user/ml/F
@@ -654,9 +654,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Cox.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
@@ -680,7 +680,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Cox-predict.dml
+    hadoop jar SystemDS.jar -f Cox-predict.dml
                             -nvargs X=/user/ml/X-sorted.mtx
                                     RT=/user/ml/recoded-timestamps.csv
                                     M=/user/ml/model.csv
@@ -694,9 +694,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Cox-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X-sorted.mtx
                                          RT=/user/ml/recoded-timestamps.csv

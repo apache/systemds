@@ -25,36 +25,36 @@ limitations under the License.
 
 # Overview
 
-The `Java Machine Learning Connector (JMLC)` API is a programmatic interface for interacting with SystemML
-in an embedded fashion. To use JMLC, the small footprint "in-memory" SystemML jar file needs to be included on the
-classpath of the Java application, since JMLC invokes SystemML in an existing Java Virtual Machine. Because
-of this, JMLC allows access to SystemML's optimizations and fast linear algebra, but the bulk performance
-gain from running SystemML on a large Spark or Hadoop cluster is not available. However, this embeddable nature
-allows SystemML to be part of a production pipeline for tasks such as scoring.
+The `Java Machine Learning Connector (JMLC)` API is a programmatic interface for interacting with SystemDS
+in an embedded fashion. To use JMLC, the small footprint "in-memory" SystemDS jar file needs to be included on the
+classpath of the Java application, since JMLC invokes SystemDS in an existing Java Virtual Machine. Because
+of this, JMLC allows access to SystemDS's optimizations and fast linear algebra, but the bulk performance
+gain from running SystemDS on a large Spark or Hadoop cluster is not available. However, this embeddable nature
+allows SystemDS to be part of a production pipeline for tasks such as scoring.
 
 The primary purpose of JMLC is as a scoring API, where your scoring function is expressed using
-SystemML's DML (Declarative Machine Learning) language. Scoring occurs on a single machine in a single
+SystemDS's DML (Declarative Machine Learning) language. Scoring occurs on a single machine in a single
 JVM on a relatively small amount of input data which produces a relatively small amount of output data.
 For consistency, it is important to be able to express a scoring function in the same DML language used for
 training a model, since different implementations of linear algebra (for instance MATLAB and R) can deliver
 slightly different results.
 
-In addition to scoring, embedded SystemML can be used for tasks such as unsupervised learning (for
+In addition to scoring, embedded SystemDS can be used for tasks such as unsupervised learning (for
 example, clustering) in the context of a larger application running on a single machine.
 
 Performance penalties include startup costs, so JMLC has facilities to perform some startup tasks once,
 such as script precompilation. Due to startup costs, it tends to be best practice to do batch scoring, such
 as scoring 1000 records at a time. For large amounts of data, it is recommended to run DML in one
-of SystemML's distributed modes, such as Spark batch mode or Hadoop batch mode, to take advantage of SystemML's
+of SystemDS's distributed modes, such as Spark batch mode or Hadoop batch mode, to take advantage of SystemDS's
 distributed computing capabilities. JMLC offers embeddability at the cost of performance, so its use is
 dependent on the nature of the business use case being addressed.
 
 ## Statistics
 
-JMLC can be configured to gather runtime statistics, as in the MLContext API, by calling Connection's `setStatistics()`
+JMLC can be configured to gather runtime statistics, as in the DSContext API, by calling Connection's `setStatistics()`
 method with a value of `true`. JMLC can also be configured to gather statistics on the memory used by matrices and
 frames in the DML script. To enable collection of memory statistics, call PreparedScript's `gatherMemStats()` method
-with a value of `true`. When finegrained statistics are enabled in `SystemML.conf`, JMLC will also report the variables
+with a value of `true`. When finegrained statistics are enabled in `SystemDS.conf`, JMLC will also report the variables
 in the DML script which used the most memory. An example showing how to enable statistics in JMLC is presented in the
 section below.
 
@@ -62,12 +62,12 @@ section below.
 
 # Examples
 
-JMLC is patterned loosely after JDBC. To interact with SystemML via JMLC, we can begin by creating a `Connection`
+JMLC is patterned loosely after JDBC. To interact with SystemDS via JMLC, we can begin by creating a `Connection`
 object. We can then prepare (precompile) a DML script by calling the `Connection`'s `prepareScript` method,
 which returns a `PreparedScript` object. We can then call the `executeScript` method on the `PreparedScript`
 object to invoke this script.
 
-Here, we see a "hello world" example, which invokes SystemML via JMLC and prints "hello world" to the console.
+Here, we see a "hello world" example, which invokes SystemDS via JMLC and prints "hello world" to the console.
 
 {% highlight java %}
 Connection conn = new Connection();
@@ -98,12 +98,12 @@ write(predicted_y, "./tmp", format="text");
 {% endhighlight %}
 
 
-In the Java below, we initialize SystemML by obtaining a `Connection` object. Next, we read in the above DML script
+In the Java below, we initialize SystemDS by obtaining a `Connection` object. Next, we read in the above DML script
 (`"scoring-example.dml"`) as a `String`. We precompile this script by calling the `prepareScript` method on the
 `Connection` object with the names of the inputs (`"W"` and `"X"`) and outputs (`"predicted_y"`) to register.
 
 Following this, we set matrix `"W"` and we set a matrix of input data `"X"`. We execute the script and read
-the resulting `"predicted_y"` matrix. We repeat this process. When done, we close the SystemML `Connection`.
+the resulting `"predicted_y"` matrix. We repeat this process. When done, we close the SystemDS `Connection`.
 
 
 #### Java
@@ -120,14 +120,14 @@ the resulting `"predicted_y"` matrix. We repeat this process. When done, we clos
  
     public static void main(String[] args) throws Exception {
  
-        // obtain connection to SystemML
+        // obtain connection to SystemDS
         Connection conn = new Connection();
  
         // read in and precompile DML script, registering inputs and outputs
         String dml = conn.readScript("scoring-example.dml");
         PreparedScript script = conn.prepareScript(dml, new String[] { "W", "X" }, new String[] { "predicted_y" }, false);
 
-        // obtain the runtime plan generated by SystemML
+        // obtain the runtime plan generated by SystemDS
         String plan = script.explain();
         System.out.println(plan);
 
@@ -206,5 +206,5 @@ the resulting `"predicted_y"` matrix. We repeat this process. When done, we clos
 
 ---
 
-For additional information regarding programmatic access to SystemML, please see the
-[Spark MLContext Programming Guide](spark-mlcontext-programming-guide.html).
+For additional information regarding programmatic access to SystemDS, please see the
+[Spark DSContext Programming Guide](spark-mlcontext-programming-guide.html).

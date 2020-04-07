@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Spark MLContext Programming Guide
-description: Spark MLContext Programming Guide
+title: Spark DSContext Programming Guide
+description: Spark DSContext Programming Guide
 ---
 <!--
 {% comment %}
@@ -30,38 +30,38 @@ limitations under the License.
 
 # Overview
 
-The Spark `MLContext` API offers a programmatic interface for interacting with SystemML from Spark using languages
-such as Scala, Java, and Python. As a result, it offers a convenient way to interact with SystemML from the Spark
+The Spark `DSContext` API offers a programmatic interface for interacting with SystemDS from Spark using languages
+such as Scala, Java, and Python. As a result, it offers a convenient way to interact with SystemDS from the Spark
 Shell and from Notebooks such as Jupyter and Zeppelin.
 
 # Spark Shell Example
 
-## Start Spark Shell with SystemML
+## Start Spark Shell with SystemDS
 
-To use SystemML with Spark Shell, the SystemML jar can be referenced using Spark Shell's `--jars` option.
+To use SystemDS with Spark Shell, the SystemDS jar can be referenced using Spark Shell's `--jars` option.
 
 <div class="codetabs">
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight bash %}
-spark-shell --executor-memory 4G --driver-memory 4G --jars SystemML.jar
+spark-shell --executor-memory 4G --driver-memory 4G --jars SystemDS.jar
 {% endhighlight %}
 </div>
 
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight bash %}
-pyspark --executor-memory 4G --driver-memory 4G --jars SystemML.jar --driver-class-path SystemML.jar
+pyspark --executor-memory 4G --driver-memory 4G --jars SystemDS.jar --driver-class-path SystemDS.jar
 {% endhighlight %}
 </div>
 
 </div>
 
-## Create MLContext
+## Create DSContext
 
 All primary classes that a user interacts with are located in the `org.apache.sysml.api.mlcontext` package.
 For convenience, we can additionally add a static import of `ScriptFactory` to shorten the syntax for creating `Script` objects.
-An `MLContext` object can be created by passing its constructor a reference to the `SparkSession` (`spark`) or `SparkContext` (`sc`).
-If successful, you should see a "`Welcome to Apache SystemML!`" message.
+An `DSContext` object can be created by passing its constructor a reference to the `SparkSession` (`spark`) or `SparkContext` (`sc`).
+If successful, you should see a "`Welcome to Apache SystemDS!`" message.
 
 <div class="codetabs">
 
@@ -69,7 +69,7 @@ If successful, you should see a "`Welcome to Apache SystemML!`" message.
 {% highlight scala %}
 import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
-val ml = new MLContext(spark)
+val ml = new DSContext(spark)
 {% endhighlight %}
 </div>
 
@@ -81,11 +81,11 @@ import org.apache.sysml.api.mlcontext._
 scala> import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 
-scala> val ml = new MLContext(spark)
+scala> val ml = new DSContext(spark)
 
-Welcome to Apache SystemML!
+Welcome to Apache SystemDS!
 
-ml: org.apache.sysml.api.mlcontext.MLContext = org.apache.sysml.api.mlcontext.MLContext@12139db0
+ml: org.apache.sysml.api.mlcontext.DSContext = org.apache.sysml.api.mlcontext.DSContext@12139db0
 
 {% endhighlight %}
 </div>
@@ -93,17 +93,17 @@ ml: org.apache.sysml.api.mlcontext.MLContext = org.apache.sysml.api.mlcontext.ML
 
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from systemml import MLContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
-ml = MLContext(spark)
+from systemml import DSContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
+ml = DSContext(spark)
 {% endhighlight %}
 </div>
 
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
->>> from systemml import MLContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
->>> ml = MLContext(spark)
+>>> from systemml import DSContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
+>>> ml = DSContext(spark)
 
-Welcome to Apache SystemML!
+Welcome to Apache SystemDS!
 Version 1.0.0-SNAPSHOT
 {% endhighlight %}
 </div>
@@ -117,7 +117,7 @@ The ScriptFactory class allows DML and PYDML scripts to be created from Strings,
 Here, we'll use the `dml` method to create a DML "hello world" script based on a String. Notice that the script
 reports that it has no inputs or outputs.
 
-We execute the script using MLContext's `execute` method, which displays "`hello world`" to the console.
+We execute the script using DSContext's `execute` method, which displays "`hello world`" to the console.
 The `execute` method returns an MLResults object, which contains no results since the script has
 no outputs.
 
@@ -160,7 +160,7 @@ ml.execute(helloScript)
 >>> helloScript = dml("print('hello world')")
 >>> ml.execute(helloScript)
 hello world
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.001 sec.
 Number of executed Spark inst:  0.
 
@@ -174,9 +174,9 @@ MLResults
 
 ## LeNet on MNIST Example
 
-SystemML features the DML-based [`nn` library for deep learning](https://github.com/apache/systemml/tree/master/scripts/nn).
+SystemDS features the DML-based [`nn` library for deep learning](https://github.com/apache/systemml/tree/master/scripts/nn).
 
-At project build time, SystemML automatically generates wrapper classes for DML scripts
+At project build time, SystemDS automatically generates wrapper classes for DML scripts
 to enable convenient access to scripts and execution of functions.
 In the example below, we obtain a reference (`clf`) to the LeNet on MNIST example.
 We generate dummy data, train a convolutional net using the LeNet architecture,
@@ -208,7 +208,7 @@ Outputs:
 None
 
 scala> val dummy = clf.generate_dummy_data
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:		0.144 sec.
 Number of executed Spark inst:	0.
 
@@ -220,7 +220,7 @@ Hin (long): 28
 Win (long): 28
 
 scala> val dummyVal = clf.generate_dummy_data
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:		0.147 sec.
 Number of executed Spark inst:	0.
 
@@ -255,7 +255,7 @@ Starting optimization
 17/06/05 15:52:19 WARN TaskSetManager: Stage 27 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
 17/06/05 15:52:19 WARN TaskSetManager: Stage 29 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
 17/06/05 15:52:20 WARN TaskSetManager: Stage 31 contains a task of very large size (508 KB). The maximum recommended task size is 100 KB.
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:		11.261 sec.
 Number of executed Spark inst:	32.
 
@@ -266,14 +266,14 @@ W2 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2196_15
 b2 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2200_1603, [64 x 1, nnz=64, blocks (1000 x 1000)], binaryblock, dirty
 W3 (Matrix): MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2186_1589, [3136 x 512, nnz=1605632, blocks (1000 x 1000)], binaryblock, ...
 scala> val probs = clf.predict(dummy.X, dummy.C, dummy.Hin, dummy.Win, params.W1, params.b1, params.W2, params.b2, params.W3, params.b3, params.W4, params.b4)
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:		2.148 sec.
 Number of executed Spark inst:	48.
 
 probs: org.apache.sysml.api.mlcontext.Matrix = MatrixObject: scratch_space//_p64701_192.168.1.103//_t0/temp2505_1865, [1024 x 10, nnz=10240, blocks (1000 x 1000)], binaryblock, dirty
 
 scala> val perf = clf.eval(probs, dummy.Y)
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:		0.007 sec.
 Number of executed Spark inst:	48.
 
@@ -449,7 +449,7 @@ min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 ... """
 >>> minMaxMeanScript = dml(minMaxMean).input("Xin", df).output("minOut", "maxOut", "meanOut")
 >>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.570 sec.
 Number of executed Spark inst:  0.
 {% endhighlight %}
@@ -613,7 +613,7 @@ message = sumResults.get("message")
 s1 = sumResults.get("s1")
 s2 = sumResults.get("s2")
 message = sumResults.get("message")
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.933 sec.
 Number of executed Spark inst:  4.
 
@@ -728,7 +728,7 @@ s1, s2, message = sumResults.get("s1", "s2", "message")
 {% highlight python %}
 >>> sumScript = dmlFromFile("sums.dml").input(m1=rdd1).input(m2= rdd2).output("s1").output("s2").output("message")
 >>> sumResults = ml.execute(sumScript)
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           1.057 sec.
 Number of executed Spark inst:  4.
 
@@ -747,7 +747,7 @@ u's2 is greater'
 
 ## Matrix Output
 
-Let's look at an example of reading a matrix out of SystemML. We'll create a DML script
+Let's look at an example of reading a matrix out of SystemDS. We'll create a DML script
 in which we create a 2x2 matrix `m`. We'll set the variable `n` to be the sum of the cells in the matrix.
 
 We create a script object using String `s`, and we set `m` and `n` as the outputs. We execute the script, and in
@@ -855,7 +855,7 @@ x.toNumPy()
 ... """
 >>> scr = dml(s).output("m", "n");
 >>> res = ml.execute(scr)
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.000 sec.
 Number of executed Spark inst:  0.
 
@@ -884,7 +884,7 @@ array([[ 11.,  22.],
 ## Univariate Statistics on Haberman Data
 
 Our next example will involve Haberman's Survival Data Set in CSV format from the Center for Machine Learning
-and Intelligent Systems. We will run the SystemML Univariate Statistics ("Univar-Stats.dml") script on this
+and Intelligent Systems. We will run the SystemDS Univariate Statistics ("Univar-Stats.dml") script on this
 data.
 
 We'll pull the data from a URL and convert it to an RDD, `habermanRDD`. Next, we'll create metadata, `habermanMetadata`,
@@ -1098,7 +1098,7 @@ Feature [4]: Categorical (Nominal)
  (15) Num of categories   | 2
  (16) Mode                | 1
  (17) Num of modes        | 1
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.733 sec.
 Number of executed Spark inst:  4.
 
@@ -1291,7 +1291,7 @@ Feature [4]: Categorical (Nominal)
  (15) Num of categories   | 2
  (16) Mode                | 1
  (17) Num of modes        | 1
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:		0.211 sec.
 Number of executed Spark inst:	8.
 
@@ -1310,7 +1310,7 @@ If we examine the
 [`Univar-Stats.dml`](https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml)
 file, we see in the comments that it can take 4 input
 parameters, `$X`, `$TYPES`, `$CONSOLE_OUTPUT`, and `$STATS`. Input parameters are typically useful when
-executing SystemML in Standalone mode, Spark batch mode, or Hadoop batch mode. For example, `$X` specifies
+executing SystemDS in Standalone mode, Spark batch mode, or Hadoop batch mode. For example, `$X` specifies
 the location in the file system where the input data matrix is located, `$TYPES` specifies the location in the file system
 where the input types matrix is located, `$CONSOLE_OUTPUT` specifies whether or not labeled statistics should be
 output to the console, and `$STATS` specifies the location in the file system where the output matrix should be written.
@@ -1338,7 +1338,7 @@ write(baseStats, $STATS);
 ...
 {% endhighlight %}
 
-Because MLContext is a programmatic interface, it offers more flexibility. You can still use input parameters
+Because DSContext is a programmatic interface, it offers more flexibility. You can still use input parameters
 and files in the file system, such as this example that specifies file paths to the input matrices and the output matrix:
 
 {% highlight scala %}
@@ -1346,7 +1346,7 @@ val script = dmlFromFile("scripts/algorithms/Univar-Stats.dml").in("$X", "data/h
 ml.execute(script)
 {% endhighlight %}
 
-Using the MLContext API, rather than relying solely on input parameters, we can bind to the variables associated
+Using the DSContext API, rather than relying solely on input parameters, we can bind to the variables associated
 with the `read` and `write` statements. In the fragment of `Univar-Stats.dml` above, notice that the matrix at
 path `$X` is read to variable `A`, `$TYPES` is read to variable
 `K`, and `baseStats` is written to path `$STATS`. Therefore, we can bind the Haberman input data matrix to the `A` variable,
@@ -1404,7 +1404,7 @@ baseStats.toNumPy().flatten()[0:9]
 {% highlight python %}
 >>> uni = dmlFromUrl(scriptUrl).input(A=habermanRDD, K=typesRDD).output("baseStats")
 >>> baseStats = ml.execute(uni).get("baseStats")
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.690 sec.
 Number of executed Spark inst:  4.
 
@@ -1420,7 +1420,7 @@ array([ 30.,  58.,   0.,   0.,  83.,  69.,  52.,   0.,  53.])
 
 The `info` method on a Script object can provide useful information about a DML or PyDML script, such as
 the inputs, output, symbol table, script string, and the script execution string that is passed to the internals of
-SystemML.
+SystemDS.
 
 <div class="codetabs">
 
@@ -1540,7 +1540,7 @@ print(minMaxMeanScript.info())
 min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 print(minMaxMeanScript.info())>>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.521 sec.
 Number of executed Spark inst:  0.
 
@@ -1596,7 +1596,7 @@ write(meanOut, '');
 </div>
 
 
-## Clearing Scripts and MLContext
+## Clearing Scripts and DSContext
 
 Dealing with large matrices can require a significant amount of memory. To deal help deal with this, you
 can call a Script object's `clearAll` method to clear the inputs, outputs, symbol table, and script string.
@@ -1663,8 +1663,8 @@ None
 </div>
 </div>
 
-The MLContext object holds references to the scripts that have been executed. Calling `clear` on
-the MLContext clears all scripts that it has references to and then removes the references to these
+The DSContext object holds references to the scripts that have been executed. Calling `clear` on
+the DSContext clears all scripts that it has references to and then removes the references to these
 scripts.
 
 {% highlight scala %}
@@ -1674,7 +1674,7 @@ ml.clear
 
 ## Statistics
 
-Statistics about script executions can be output to the console by calling MLContext's `setStatistics`
+Statistics about script executions can be output to the console by calling DSContext's `setStatistics`
 method with a value of `true`.
 
 <div class="codetabs">
@@ -1723,7 +1723,7 @@ Outputs:
 
 
 scala> val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
-SystemML Statistics:
+SystemDS Statistics:
 Total elapsed time:		0.000 sec.
 Total compilation time:		0.000 sec.
 Total execution time:		0.000 sec.
@@ -1770,7 +1770,7 @@ min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setStatistics(True)
-MLContext
+DSContext
 >>> minMaxMean = """
 ... minOut = min(Xin)
 ... maxOut = max(Xin)
@@ -1778,7 +1778,7 @@ MLContext
 ... """
 >>> minMaxMeanScript = dml(minMaxMean).input(Xin=df).output("minOut", "maxOut", "meanOut")
 >>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
-SystemML Statistics:
+SystemDS Statistics:
 Total elapsed time:             0.608 sec.
 Total compilation time:         0.000 sec.
 Total execution time:           0.608 sec.
@@ -1811,7 +1811,7 @@ Heavy hitter instructions:
 
 ## GPU
 
-If the driver node has a GPU, SystemML may be able to utilize it, subject to memory constraints and what instructions are used in the dml script
+If the driver node has a GPU, SystemDS may be able to utilize it, subject to memory constraints and what instructions are used in the dml script
 
 <div class="codetabs">
 
@@ -1860,7 +1860,7 @@ scala> ml.execute(matMultScript)
 247.368 239.882 234.353 237.087 252.337 248.801 246.627 249.077 244.305 245.621
 252.827 257.352 239.546 246.529 258.916 255.612 260.480 254.805 252.695 257.531
 
-SystemML Statistics:
+SystemDS Statistics:
 Total elapsed time:		0.000 sec.
 Total compilation time:		0.000 sec.
 Total execution time:		0.000 sec.
@@ -1913,9 +1913,9 @@ ml.execute(matMultScript)
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setGPU(True)
-MLContext
+DSContext
 >>> ml.setStatistics(True)
-MLContext
+DSContext
 >>> matMultScript = dml("""
 ... A = rand(rows=10, cols=1000)
 ... B = rand(rows=1000, cols=10)
@@ -1934,7 +1934,7 @@ MLContext
 252.990 244.238 248.096 241.145 242.065 253.795 245.352 246.056 251.132 253.063
 253.216 249.008 247.910 246.579 242.657 251.078 245.954 244.681 241.878 248.555
 
-SystemML Statistics:
+SystemDS Statistics:
 Total elapsed time:             0.042 sec.
 Total compilation time:         0.000 sec.
 Total execution time:           0.042 sec.
@@ -1978,8 +1978,8 @@ Note that GPU instructions show up prepended with a "gpu" in the statistics.
 
 ## Explain
 
-A DML or PyDML script is converted into a SystemML program during script execution. Information
-about this program can be displayed by calling MLContext's `setExplain` method with a value
+A DML or PyDML script is converted into a SystemDS program during script execution. Information
+about this program can be displayed by calling DSContext's `setExplain` method with a value
 of `true`.
 
 <div class="codetabs">
@@ -2067,7 +2067,7 @@ min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setExplain(True)
-MLContext
+DSContext
 >>> minMaxMean = """
 ... minOut = min(Xin)
 ... maxOut = max(Xin)
@@ -2090,7 +2090,7 @@ PROGRAM ( size CP/SP = 7/0 )
 ------CP assignvar _Var3.SCALAR.DOUBLE.false meanOut.SCALAR.DOUBLE
 ------CP rmvar _Var1 _Var2 _Var3
 
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.952 sec.
 Number of executed Spark inst:  0.
 
@@ -2107,14 +2107,14 @@ Different explain levels can be set. The explain levels are NONE, HOPS, RUNTIME,
 
 <div data-lang="Scala" markdown="1">
 {% highlight scala %}
-ml.setExplainLevel(MLContext.ExplainLevel.RUNTIME)
+ml.setExplainLevel(DSContext.ExplainLevel.RUNTIME)
 val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
 {% endhighlight %}
 </div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala> ml.setExplainLevel(MLContext.ExplainLevel.RUNTIME)
+scala> ml.setExplainLevel(DSContext.ExplainLevel.RUNTIME)
 
 scala> val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
 
@@ -2148,7 +2148,7 @@ min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setExplainLevel("runtime")
-MLContext
+DSContext
 >>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 # EXPLAIN (RUNTIME):
 # Memory Budget local/remote = 687MB/?MB/?MB/?MB
@@ -2164,7 +2164,7 @@ PROGRAM ( size CP/SP = 7/0 )
 ------CP assignvar _Var6.SCALAR.DOUBLE.false meanOut.SCALAR.DOUBLE
 ------CP rmvar _Var4 _Var5 _Var6
 
-SystemML Statistics:
+SystemDS Statistics:
 Total execution time:           0.022 sec.
 Number of executed Spark inst:  0.
 
@@ -2252,7 +2252,7 @@ val s4 = ScriptFactory.dmlFromFile("uni.dml")
 
 **Script from InputStream:**
 
-The SystemML jar file contains all the primary algorithm scripts. We can read one of these scripts as an InputStream
+The SystemDS jar file contains all the primary algorithm scripts. We can read one of these scripts as an InputStream
 and use this to create a Script object.
 
 {% highlight scala %}
@@ -2263,7 +2263,7 @@ val s5 = ScriptFactory.dmlFromInputStream(inputStream)
 
 **Script from Resource:**
 
-As mentioned, the SystemML jar file contains all the primary algorithm script files. For convenience, we can
+As mentioned, the SystemDS jar file contains all the primary algorithm script files. For convenience, we can
 read these script files or other script files on the classpath using ScriptFactory's `dmlFromResource` and `pydmlFromResource`
 methods.
 
@@ -2276,7 +2276,7 @@ val s6 = ScriptFactory.dmlFromResource("/scripts/algorithms/Univar-Stats.dml");
 
 A Script is executed by a ScriptExecutor. If no ScriptExecutor is specified, a default ScriptExecutor will
 be created to execute a Script. Script execution consists of several steps, as detailed in
-[SystemML's Optimizer: Plan Generation for Large-Scale Machine Learning Programs](http://sites.computer.org/debull/A14sept/p52.pdf).
+[SystemDS's Optimizer: Plan Generation for Large-Scale Machine Learning Programs](http://sites.computer.org/debull/A14sept/p52.pdf).
 Additional information can be found in the Javadocs for ScriptExecutor.
 
 Advanced users may find it useful to be able to specify their own execution or to override ScriptExecutor methods by
@@ -2330,15 +2330,15 @@ None
 
 ## MatrixMetadata
 
-When supplying matrix data to Apache SystemML using the MLContext API, matrix metadata can be
+When supplying matrix data to Apache SystemDS using the DSContext API, matrix metadata can be
 supplied using a `MatrixMetadata` object. Supplying characteristics about a matrix can significantly
 improve performance. For some types of input matrices, supplying metadata is mandatory.
 Metadata at a minimum typically consists of the number of rows and columns in
 a matrix. The number of non-zeros can also be supplied.
 
 Additionally, the number of rows and columns per block can be supplied, although in typical usage
-it's probably fine to use the default values used by SystemML (1,000 rows and 1,000 columns per block).
-SystemML handles a matrix internally by splitting the matrix into chunks, or *blocks*.
+it's probably fine to use the default values used by SystemDS (1,000 rows and 1,000 columns per block).
+SystemDS handles a matrix internally by splitting the matrix into chunks, or *blocks*.
 The number of rows and columns per block refers to the size of these matrix blocks.
 
 
@@ -2476,14 +2476,14 @@ res22: org.apache.sysml.api.mlcontext.MLResults =
 
 ## Matrix Data Conversions and Performance
 
-Internally, Apache SystemML uses a binary-block matrix representation, where a matrix is
+Internally, Apache SystemDS uses a binary-block matrix representation, where a matrix is
 represented as a grouping of blocks. Each block is equal in size to the other blocks in the matrix and
 consists of a number of rows and columns. The default block size is 1,000 rows by 1,000
 columns.
 
-Conversion of a large set of data to a SystemML matrix representation can potentially be time-consuming.
+Conversion of a large set of data to a SystemDS matrix representation can potentially be time-consuming.
 Therefore, if you use a set of data multiple times, one way to potentially improve performance is
-to convert it to a SystemML matrix representation and then use this representation rather than performing
+to convert it to a SystemDS matrix representation and then use this representation rather than performing
 the data conversion each time.
 
 If you have an input DataFrame, it can be converted to a Matrix, and this Matrix
@@ -2531,7 +2531,7 @@ val minMaxMeanScript = dml(minMaxMean).in("Xin", matrix).out("minOut", "maxOut",
 {% endhighlight %}
 
 When a matrix is returned as an output, it is returned as a Matrix object, which is a wrapper around
-a SystemML MatrixObject. As a result, an output Matrix is already in a SystemML representation,
+a SystemDS MatrixObject. As a result, an output Matrix is already in a SystemDS representation,
 meaning that it can be passed as an input with no data conversion penalty.
 
 As an example, here we read in matrix `x` as an RDD in CSV format. We create a Script that adds one to all
@@ -2598,8 +2598,8 @@ scala> for (i <- 1 to 5) {
 
 ## Project Information
 
-SystemML project information such as version and build time can be obtained through the
-MLContext API. The project version can be obtained by `ml.version`. The build time can
+SystemDS project information such as version and build time can be obtained through the
+DSContext API. The project version can be obtained by `ml.version`. The build time can
 be obtained by `ml.buildTime`. The contents of the project manifest can be displayed
 using `ml.info`. Individual properties can be obtained using the `ml.info.property`
 method, as shown below.
@@ -2677,13 +2677,13 @@ Version: 1.0.0-SNAPSHOT
 
 # Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization
 
-Similar to the Scala API, SystemML also provides a Python MLContext API.  Before usage, you'll need
+Similar to the Scala API, SystemDS also provides a Python DSContext API.  Before usage, you'll need
 **[to install it first](beginners-guide-python#download--setup)**.
 
-Here, we'll explore the use of SystemML via PySpark in a [Jupyter notebook](http://jupyter.org/).
+Here, we'll explore the use of SystemDS via PySpark in a [Jupyter notebook](http://jupyter.org/).
 This Jupyter notebook example can be nicely viewed in a rendered state
-[on GitHub](https://github.com/apache/systemml/blob/master/samples/jupyter-notebooks/SystemML-PySpark-Recommendation-Demo.ipynb),
-and can be [downloaded here](https://raw.githubusercontent.com/apache/systemml/master/samples/jupyter-notebooks/SystemML-PySpark-Recommendation-Demo.ipynb) to a directory of your choice.
+[on GitHub](https://github.com/apache/systemml/blob/master/samples/jupyter-notebooks/SystemDS-PySpark-Recommendation-Demo.ipynb),
+and can be [downloaded here](https://raw.githubusercontent.com/apache/systemml/master/samples/jupyter-notebooks/SystemDS-PySpark-Recommendation-Demo.ipynb) to a directory of your choice.
 
 From the directory with the downloaded notebook, start Jupyter with PySpark:
 
@@ -2704,7 +2704,7 @@ This will open Jupyter in a browser:
 
 ![Jupyter Notebook](img/spark-mlcontext-programming-guide/jupyter1.png "Jupyter Notebook")
 
-We can then open up the `SystemML-PySpark-Recommendation-Demo` notebook.
+We can then open up the `SystemDS-PySpark-Recommendation-Demo` notebook.
 
 ## Set up the notebook and download the data
 
@@ -2715,7 +2715,7 @@ We can then open up the `SystemML-PySpark-Recommendation-Demo` notebook.
 
 import numpy as np
 import matplotlib.pyplot as plt
-from systemml import MLContext, dml  # pip install systeml
+from systemml import DSContext, dml  # pip install systeml
 plt.rcParams['figure.figsize'] = (10, 6)
 {% endhighlight %}
 
@@ -2747,17 +2747,17 @@ numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
 print("Total number of products: {}".format(numProducts))
 {% endhighlight %}
 
-## Create a SystemML MLContext object
+## Create a SystemDS DSContext object
 
 {% highlight python %}
-# Create SystemML MLContext
-ml = MLContext(sc)
+# Create SystemDS DSContext
+ml = DSContext(sc)
 {% endhighlight %}
 
 ## Define a kernel for Poisson nonnegative matrix factorization (PNMF) in DML
 
 {% highlight python %}
-# Define PNMF kernel in SystemML's DSL using the R-like syntax for PNMF
+# Define PNMF kernel in SystemDS's DSL using the R-like syntax for PNMF
 pnmf = """
 # data & args
 X = X+1 # change product IDs to be 1-based, rather than 0-based
@@ -2791,7 +2791,7 @@ while(i <= max_iter) {
 ## Execute the algorithm
 
 {% highlight python %}
-# Run the PNMF script on SystemML with Spark
+# Run the PNMF script on SystemDS with Spark
 script = dml(pnmf).input(X=X_train, max_iter=100, rank=10).output("W", "H", "losses")
 W, H, losses = ml.execute(script).get("W", "H", "losses")
 {% endhighlight %}
@@ -2814,5 +2814,5 @@ plt.title('PNMF Training Loss')
 
 # Recommended Spark Configuration Settings
 
-For best performance, we recommend setting the following configuration value when running SystemML with Spark:
+For best performance, we recommend setting the following configuration value when running SystemDS with Spark:
 `--conf spark.driver.maxResultSize=0`.

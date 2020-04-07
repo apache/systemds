@@ -19,7 +19,7 @@ limitations under the License.
 
 # Initial prototype for Deep Learning
 
-## Representing tensor and images in SystemML
+## Representing tensor and images in SystemDS
 
 In this prototype, we represent a tensor as a matrix stored in a row-major format,
 where first dimension of tensor and matrix are exactly the same. For example, a tensor (with all zeros)
@@ -41,7 +41,7 @@ Following operators work out-of-the box when both tensors X and Y have same shap
 * Element-wise addition: `X + Y`
 * Element-wise subtraction: `X - Y`
 
-SystemML does not support implicit broadcast for above tensor operations, however one can write a DML-bodied function to do so.
+SystemDS does not support implicit broadcast for above tensor operations, however one can write a DML-bodied function to do so.
 For example: to perform the above operations with broadcasting on second dimensions, one can use the below `rep(Z, n)` function:
 ``` python
 rep = function(matrix[double] Z, int C) return (matrix[double] ret) {
@@ -52,9 +52,9 @@ rep = function(matrix[double] Z, int C) return (matrix[double] ret) {
 }
 ```
 Using the above `rep(Z, n)` function, we can realize the element-wise arithmetic operation with broadcasting. Here are some examples:
-* X of shape [N, C, H, W] and Y of shape [1, C, H, W]: `X + Y` (Note: SystemML does implicit broadcasting in this case because of the way 
+* X of shape [N, C, H, W] and Y of shape [1, C, H, W]: `X + Y` (Note: SystemDS does implicit broadcasting in this case because of the way 
 it represents the tensor)
-* X of shape [1, C, H, W] and Y of shape [N, C, H, W]: `X + Y` (Note: SystemML does implicit broadcasting in this case because of the way 
+* X of shape [1, C, H, W] and Y of shape [N, C, H, W]: `X + Y` (Note: SystemDS does implicit broadcasting in this case because of the way 
 it represents the tensor)
 * X of shape [N, C, H, W] and Y of shape [N, 1, H, W]: `X + rep(Y, C)`
 * X of shape [N, C, H, W] and Y of shape [1, 1, H, W]: `X + rep(Y, C)`
@@ -63,7 +63,7 @@ it represents the tensor)
 
 TODO: Map the NumPy tensor calls to DML expressions.
 
-## Representing images in SystemML
+## Representing images in SystemDS
 
 The images are assumed to be stored NCHW format, where N = batch size, C = #channels, H = height of image and W = width of image. 
 Hence, the images are internally represented as a matrix with dimension (N, C * H * W).

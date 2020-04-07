@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Descriptive Statistics
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Descriptive Statistics
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}
@@ -119,7 +119,7 @@ to compute the mean of a categorical attribute like ‘Hair Color’.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Univar-Stats.dml
+    hadoop jar SystemDS.jar -f Univar-Stats.dml
                             -nvargs X=<file>
                                     TYPES=<file>
                                     STATS=<file>
@@ -128,9 +128,9 @@ to compute the mean of a categorical attribute like ‘Hair Color’.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Univar-Stats.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          TYPES=<file>
@@ -158,7 +158,7 @@ be stored. The format of the output matrix is defined by
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Univar-Stats.dml
+    hadoop jar SystemDS.jar -f Univar-Stats.dml
                             -nvargs X=/user/ml/X.mtx
                                     TYPES=/user/ml/types.mtx
                                     STATS=/user/ml/stats.mtx
@@ -167,9 +167,9 @@ be stored. The format of the output matrix is defined by
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Univar-Stats.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          TYPES=/user/ml/types.mtx
@@ -576,7 +576,7 @@ attributes like ‘Hair Color’.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f bivar-stats.dml
+    hadoop jar SystemDS.jar -f bivar-stats.dml
                             -nvargs X=<file>
                                     index1=<file>
                                     index2=<file>
@@ -588,9 +588,9 @@ attributes like ‘Hair Color’.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f bivar-stats.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          index1=<file>
@@ -645,7 +645,7 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f bivar-stats.dml
+    hadoop jar SystemDS.jar -f bivar-stats.dml
                             -nvargs X=/user/ml/X.mtx
                                     index1=/user/ml/S1.mtx
                                     index2=/user/ml/S2.mtx
@@ -657,9 +657,9 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f bivar-stats.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          index1=/user/ml/S1.mtx
@@ -1136,7 +1136,7 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f stratstats.dml
+    hadoop jar SystemDS.jar -f stratstats.dml
                             -nvargs X=<file>
                                     Xcid=[file]
                                     Y=[file]
@@ -1150,9 +1150,9 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f stratstats.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Xcid=[file]
@@ -1196,7 +1196,7 @@ $X$ in place of $S$"
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 * * *
@@ -1344,7 +1344,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f stratstats.dml
+    hadoop jar SystemDS.jar -f stratstats.dml
                             -nvargs X=/user/ml/X.mtx
                                     Xcid=/user/ml/Xcid.mtx
                                     Y=/user/ml/Y.mtx
@@ -1358,9 +1358,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f stratstats.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Xcid=/user/ml/Xcid.mtx
@@ -1375,7 +1375,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f stratstats.dml
+    hadoop jar SystemDS.jar -f stratstats.dml
                             -nvargs X=/user/ml/Data.mtx
                                     Xcid=/user/ml/Xcid.mtx
                                     Ycid=/user/ml/Ycid.mtx
@@ -1386,9 +1386,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f stratstats.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/Data.mtx
                                          Xcid=/user/ml/Xcid.mtx

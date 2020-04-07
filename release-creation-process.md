@@ -1,8 +1,8 @@
 ---
 layout: global
-title: SystemML Release Creation Process
-description: Description of the SystemML release build process.
-displayTitle: SystemML Release Creation Process
+title: SystemDS Release Creation Process
+description: Description of the SystemDS release build process.
+displayTitle: SystemDS Release Creation Process
 ---
 <!--
 {% comment %}
@@ -92,7 +92,7 @@ Step 3: Close the release candidate build on Nexus site.
 
 Visit [NexusRepository](https://repository.apache.org/#stagingRepositories) site.
 
-	Find out SystemML under (Staging Repositories) link. It should be in Open State (status). Close it (button on top left to middle) with proper comment. Once it completes copying, URL will be updated with maven location to be sent in mail.
+	Find out SystemDS under (Staging Repositories) link. It should be in Open State (status). Close it (button on top left to middle) with proper comment. Once it completes copying, URL will be updated with maven location to be sent in mail.
 
 Step 4: Send mail for voting (dev PMC dev@systemml.apache.org).
 
@@ -120,8 +120,8 @@ Step 7: If release has been approved, then make it available for general use for
 	RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/systemml/"
 	RELEASE_STAGING_LOCATION2="https://dist.apache.org/repos/dist/release/systemml/"
 
-	e.g. for SystemML 0.15 rc2 build
-	svn move -m "Move SystemML 0.15 from dev to release" $RELEASE_STAGING_LOCATION/0.15.0-rc2  $RELEASE_STAGING_LOCATION2/0.15.0
+	e.g. for SystemDS 0.15 rc2 build
+	svn move -m "Move SystemDS 0.15 from dev to release" $RELEASE_STAGING_LOCATION/0.15.0-rc2  $RELEASE_STAGING_LOCATION2/0.15.0
 
 
 	7.b. Move Nexus data from dev to release.
@@ -141,4 +141,4 @@ Step 7: If release has been approved, then make it available for general use for
 	7.e. Send ANNOUNCE NOTE.
 	To:  dev@systemml.apache.org  announce@apache.org
 	Subject e.g.
-	[ANNOUNCE] Apache SystemML 0.15.0 released.
+	[ANNOUNCE] Apache SystemDS 0.15.0 released.

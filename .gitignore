@@ -9,7 +9,7 @@ Gemfile.lock
 .settings/
 .vscode/
 
-## Inproper copy when switching branch
+## Improper copy when switching branch
 
 target/
 src/ 

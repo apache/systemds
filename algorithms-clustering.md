@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Clustering
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Clustering
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}
@@ -115,7 +115,7 @@ apart is a "false negative" etc.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Kmeans.dml
+    hadoop jar SystemDS.jar -f Kmeans.dml
                             -nvargs X=<file>
                                     C=[file]
                                     k=<int>
@@ -132,9 +132,9 @@ apart is a "false negative" etc.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Kmeans.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          C=[file]
@@ -154,7 +154,7 @@ apart is a "false negative" etc.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Kmeans-predict.dml
+    hadoop jar SystemDS.jar -f Kmeans-predict.dml
                             -nvargs X=[file]
                                     C=[file]
                                     spY=[file]
@@ -166,9 +166,9 @@ apart is a "false negative" etc.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Kmeans-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=[file]
                                          C=[file]
@@ -207,7 +207,7 @@ centroids)
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 **verb**: (default: `FALSE`) Do not print per-iteration statistics for
 each run
@@ -235,7 +235,7 @@ categories
 
 **fmt**: (default: `"text"`) Matrix file output format for `prY`, such as
 `text`, `mm`, or `csv`; see read/write
-functions in SystemML Language Reference for details.
+functions in SystemDS Language Reference for details.
 
 **0**: (default: `" "`) Location to write the output statistics defined in
 [**Table 6**](algorithms-clustering.html#table6), by default print them to the
@@ -248,7 +248,7 @@ standard output
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Kmeans.dml
+    hadoop jar SystemDS.jar -f Kmeans.dml
                             -nvargs X=/user/ml/X.mtx
                                     k=5
                                     C=/user/ml/centroids.mtx
@@ -258,9 +258,9 @@ standard output
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Kmeans.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          k=5
@@ -271,7 +271,7 @@ standard output
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Kmeans.dml
+    hadoop jar SystemDS.jar -f Kmeans.dml
                             -nvargs X=/user/ml/X.mtx
                                     k=5
                                     runs=100
@@ -287,9 +287,9 @@ standard output
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Kmeans.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          k=5
@@ -310,7 +310,7 @@ To predict Y given X and C:
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Kmeans-predict.dml
+    hadoop jar SystemDS.jar -f Kmeans-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     C=/user/ml/C.mtx
                                     prY=/user/ml/PredY.mtx
@@ -320,9 +320,9 @@ To predict Y given X and C:
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Kmeans-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          C=/user/ml/C.mtx
@@ -336,7 +336,7 @@ given X and C:
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Kmeans-predict.dml
+    hadoop jar SystemDS.jar -f Kmeans-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     C=/user/ml/C.mtx
                                     spY=/user/ml/Y.mtx
@@ -346,9 +346,9 @@ given X and C:
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Kmeans-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          C=/user/ml/C.mtx
@@ -362,7 +362,7 @@ labels prY:
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f Kmeans-predict.dml
+    hadoop jar SystemDS.jar -f Kmeans-predict.dml
                             -nvargs spY=/user/ml/Y.mtx
                                     prY=/user/ml/PredY.mtx
                                     O=/user/ml/stats.csv
@@ -371,9 +371,9 @@ labels prY:
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f Kmeans-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs spY=/user/ml/Y.mtx
                                          prY=/user/ml/PredY.mtx

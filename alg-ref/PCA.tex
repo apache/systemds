@@ -119,7 +119,7 @@ When MODEL is provided, INPUT data is rotated according to the coordinate system
 \noindent{\bf Examples}
 
 \begin{verbatim}
-hadoop jar SystemML.jar -f PCA.dml -nvargs 
+hadoop jar SystemDS.jar -f PCA.dml -nvargs 
             INPUT=/user/biuser/input.mtx  K=10
             CENTER=1  SCALE=1
             OFMT=csv PROJDATA=1
@@ -128,7 +128,7 @@ hadoop jar SystemML.jar -f PCA.dml -nvargs
 \end{verbatim}
 
 \begin{verbatim}
-hadoop jar SystemML.jar -f PCA.dml -nvargs 
+hadoop jar SystemDS.jar -f PCA.dml -nvargs 
             INPUT=/user/biuser/test_input.mtx  K=10
             CENTER=1  SCALE=1
             OFMT=csv PROJDATA=1

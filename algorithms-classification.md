@@ -1,7 +1,7 @@
 ---
 layout: global
-title: SystemML Algorithms Reference - Classification
-displayTitle: <a href="algorithms-reference.html">SystemML Algorithms Reference</a>
+title: SystemDS Algorithms Reference - Classification
+displayTitle: <a href="algorithms-reference.html">SystemDS Algorithms Reference</a>
 ---
 <!--
 {% comment %}
@@ -147,7 +147,7 @@ val prediction = model.transform(X_test_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f MultiLogReg.dml
+    hadoop jar SystemDS.jar -f MultiLogReg.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     B=<file>
@@ -163,9 +163,9 @@ val prediction = model.transform(X_test_df)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f MultiLogReg.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -227,7 +227,7 @@ if no maximum limit provided
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 Please see [mllearn documentation](https://apache.github.io/systemml/python-reference#mllearn-api) for
 more details on the Python API. 
@@ -318,7 +318,7 @@ prediction.show()
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f MultiLogReg.dml
+    hadoop jar SystemDS.jar -f MultiLogReg.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     B=/user/ml/B.mtx
@@ -334,9 +334,9 @@ prediction.show()
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f MultiLogReg.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -515,7 +515,7 @@ val model = svm.fit(X_train_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f l2-svm.dml
+    hadoop jar SystemDS.jar -f l2-svm.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     icpt=[int]
@@ -530,9 +530,9 @@ val model = svm.fit(X_train_df)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f l2-svm.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -563,7 +563,7 @@ val prediction = model.transform(X_test_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f l2-svm-predict.dml
+    hadoop jar SystemDS.jar -f l2-svm-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
                                     icpt=[int]
@@ -577,9 +577,9 @@ val prediction = model.transform(X_test_df)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f l2-svm-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -626,7 +626,7 @@ while training.
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 **scores**: Location (on HDFS) to store scores for a held-out test set.
 Note that this is an optional argument.
@@ -646,7 +646,7 @@ more details on the Python API.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f l2-svm.dml
+    hadoop jar SystemDS.jar -f l2-svm.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
                                     icpt=0
@@ -661,9 +661,9 @@ more details on the Python API.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f l2-svm.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -681,7 +681,7 @@ more details on the Python API.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f l2-svm-predict.dml
+    hadoop jar SystemDS.jar -f l2-svm-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
                                     icpt=0
@@ -695,9 +695,9 @@ more details on the Python API.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f l2-svm-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -785,7 +785,7 @@ val model = svm.fit(X_train_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f m-svm.dml
+    hadoop jar SystemDS.jar -f m-svm.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     icpt=[int]
@@ -800,9 +800,9 @@ val model = svm.fit(X_train_df)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f m-svm.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -833,7 +833,7 @@ val prediction = model.transform(X_test_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f m-svm-predict.dml
+    hadoop jar SystemDS.jar -f m-svm-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
                                     icpt=[int]
@@ -847,9 +847,9 @@ val prediction = model.transform(X_test_df)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f m-svm-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -897,7 +897,7 @@ val prediction = model.transform(X_test_df)
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 **scores**: Location (on HDFS) to store scores for a held-out test set.
     Note that this is an optional argument.
@@ -997,7 +997,7 @@ prediction.show()
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f m-svm.dml
+    hadoop jar SystemDS.jar -f m-svm.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
                                     icpt=0
@@ -1012,9 +1012,9 @@ prediction.show()
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f m-svm.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1032,7 +1032,7 @@ prediction.show()
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f m-svm-predict.dml
+    hadoop jar SystemDS.jar -f m-svm-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
                                     icpt=0
@@ -1046,9 +1046,9 @@ prediction.show()
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f m-svm-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1138,7 +1138,7 @@ val model = nb.fit(X_train_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f naive-bayes.dml
+    hadoop jar SystemDS.jar -f naive-bayes.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     laplace=[double]
@@ -1151,9 +1151,9 @@ val model = nb.fit(X_train_df)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f naive-bayes.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1182,7 +1182,7 @@ val prediction = model.transform(X_test_df)
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f naive-bayes-predict.dml
+    hadoop jar SystemDS.jar -f naive-bayes-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
                                     prior=<file>
@@ -1196,9 +1196,9 @@ val prediction = model.transform(X_test_df)
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f naive-bayes-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1233,7 +1233,7 @@ val prediction = model.transform(X_test_df)
 
 **fmt** (default: `"text"`): Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 **probabilities**: Location (on HDFS) to store class membership
     probabilities for a held-out test set.
@@ -1274,7 +1274,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
 {% endhighlight %}
 </div>
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f naive-bayes.dml
+    hadoop jar SystemDS.jar -f naive-bayes.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
                                     laplace=1
@@ -1287,9 +1287,9 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f naive-bayes.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1305,7 +1305,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f naive-bayes-predict.dml
+    hadoop jar SystemDS.jar -f naive-bayes-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/y.mtx
                                     prior=/user/ml/prior.csv
@@ -1319,9 +1319,9 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f naive-bayes-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
@@ -1399,7 +1399,7 @@ implementation is well-suited to handle large-scale data and builds a
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f decision-tree.dml
+    hadoop jar SystemDS.jar -f decision-tree.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     R=[file]
@@ -1418,9 +1418,9 @@ implementation is well-suited to handle large-scale data and builds a
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f decision-tree.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1442,7 +1442,7 @@ implementation is well-suited to handle large-scale data and builds a
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f decision-tree-predict.dml
+    hadoop jar SystemDS.jar -f decision-tree-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
                                     R=[file]
@@ -1456,9 +1456,9 @@ implementation is well-suited to handle large-scale data and builds a
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f decision-tree-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1531,7 +1531,7 @@ Note that this argument is optional.
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Examples
@@ -1540,7 +1540,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f decision-tree.dml
+    hadoop jar SystemDS.jar -f decision-tree.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     R=/user/ml/R.csv
@@ -1556,9 +1556,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f decision-tree.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1577,7 +1577,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f decision-tree-predict.dml
+    hadoop jar SystemDS.jar -f decision-tree-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     R=/user/ml/R.csv
@@ -1591,9 +1591,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f decision-tree-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -1804,7 +1804,7 @@ for classification in parallel.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f random-forest.dml
+    hadoop jar SystemDS.jar -f random-forest.dml
                             -nvargs X=<file>
                                     Y=<file>
                                     R=[file]
@@ -1826,9 +1826,9 @@ for classification in parallel.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f random-forest.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=<file>
@@ -1853,7 +1853,7 @@ for classification in parallel.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f random-forest-predict.dml
+    hadoop jar SystemDS.jar -f random-forest-predict.dml
                             -nvargs X=<file>
                                     Y=[file]
                                     R=[file]
@@ -1869,9 +1869,9 @@ for classification in parallel.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f random-forest-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=<file>
                                          Y=[file]
@@ -1966,7 +1966,7 @@ Note that this argument is optional.
 
 **fmt**: (default: `"text"`) Matrix file output format, such as `text`,
 `mm`, or `csv`; see read/write functions in
-SystemML Language Reference for details.
+SystemDS Language Reference for details.
 
 
 ### Examples
@@ -1975,7 +1975,7 @@ SystemML Language Reference for details.
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f random-forest.dml
+    hadoop jar SystemDS.jar -f random-forest.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     R=/user/ml/R.csv
@@ -1992,9 +1992,9 @@ SystemML Language Reference for details.
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f random-forest.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
@@ -2016,7 +2016,7 @@ To compute predictions:
 
 <div class="codetabs">
 <div data-lang="Hadoop" markdown="1">
-    hadoop jar SystemML.jar -f random-forest-predict.dml
+    hadoop jar SystemDS.jar -f random-forest-predict.dml
                             -nvargs X=/user/ml/X.mtx
                                     Y=/user/ml/Y.mtx
                                     R=/user/ml/R.csv
@@ -2030,9 +2030,9 @@ To compute predictions:
     $SPARK_HOME/bin/spark-submit --master yarn
                                  --deploy-mode cluster
                                  --conf spark.driver.maxResultSize=0
-                                 SystemML.jar
+                                 SystemDS.jar
                                  -f random-forest-predict.dml
-                                 -config SystemML-config.xml
+                                 -config SystemDS-config.xml
                                  -exec hybrid_spark
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx

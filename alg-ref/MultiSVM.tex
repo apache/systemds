@@ -139,7 +139,7 @@ of scores, accuracy and confusion matrix in the output format specified.
 %%
 \noindent{\bf Examples}
 \begin{verbatim}
-hadoop jar SystemML.jar -f m-svm.dml -nvargs X=/user/biadmin/X.mtx 
+hadoop jar SystemDS.jar -f m-svm.dml -nvargs X=/user/biadmin/X.mtx 
                                              Y=/user/biadmin/y.mtx 
                                              icpt=0 tol=0.001
                                              reg=1.0 maxiter=100 fmt=csv 
@@ -148,7 +148,7 @@ hadoop jar SystemML.jar -f m-svm.dml -nvargs X=/user/biadmin/X.mtx
 \end{verbatim}
 
 \begin{verbatim}
-hadoop jar SystemML.jar -f m-svm-predict.dml -nvargs X=/user/biadmin/X.mtx 
+hadoop jar SystemDS.jar -f m-svm-predict.dml -nvargs X=/user/biadmin/X.mtx 
                                                      Y=/user/biadmin/y.mtx 
                                                      icpt=0 fmt=csv
                                                      model=/user/biadmin/weights.csv

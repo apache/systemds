@@ -30,9 +30,9 @@ limitations under the License.
 
 ## ClassNotFoundException for commons-math3
 
-The Apache Commons Math library is utilized by SystemML. The commons-math3
+The Apache Commons Math library is utilized by SystemDS. The commons-math3
 dependency is included with Spark and with newer versions of Hadoop. Running
-SystemML on an older Hadoop cluster can potentially generate an error such
+SystemDS on an older Hadoop cluster can potentially generate an error such
 as the following due to the missing commons-math3 dependency:
 
 	java.lang.ClassNotFoundException: org.apache.commons.math3.linear.RealMatrix
@@ -47,7 +47,7 @@ from `provided` to `compile`.
 		<scope>compile</scope>
 	</dependency>
 
-SystemML can then be rebuilt with the `commons-math3` dependency using
+SystemDS can then be rebuilt with the `commons-math3` dependency using
 Maven (`mvn clean package -P distribution`).
 
 ## OutOfMemoryError in Hadoop Reduce Phase 
@@ -83,22 +83,22 @@ These configurations can be modified **globally** by inserting/modifying the fol
      <value>0.0</value>
     </property>
 
-They can also be configured on a **per SystemML-task basis** by inserting the following in `SystemML-config.xml`.
+They can also be configured on a **per SystemDS-task basis** by inserting the following in `SystemDS-config.xml`.
 
     <mapred.job.shuffle.merge.percent>0.2</mapred.job.shuffle.merge.percent>
     <mapred.job.shuffle.input.buffer.percent>0.2</mapred.job.shuffle.input.buffer.percent>
     <mapred.job.reduce.input.buffer.percent>0</mapred.job.reduce.input.buffer.percent>
 
-Note: The default `SystemML-config.xml` is located in `<path to SystemML root>/conf/`. It is passed to SystemML using the `-config` argument:
+Note: The default `SystemDS-config.xml` is located in `<path to SystemDS root>/conf/`. It is passed to SystemDS using the `-config` argument:
 
-    hadoop jar SystemML.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
+    hadoop jar SystemDS.jar [-? | -help | -f <filename>] (-config <config_filename>) ([-args | -nvargs] <args-list>)
     
-See [Invoking SystemML in Hadoop Batch Mode](hadoop-batch-mode.html) for details of the syntax. 
+See [Invoking SystemDS in Hadoop Batch Mode](hadoop-batch-mode.html) for details of the syntax. 
 
 ## Total size of serialized results is bigger than spark.driver.maxResultSize
 
 Spark aborts a job if the estimated result size of collect is greater than maxResultSize to avoid out-of-memory errors in driver.
-However, SystemML's optimizer has estimates the memory required for each operator and provides guards against these out-of-memory errors in driver.
+However, SystemDS's optimizer has estimates the memory required for each operator and provides guards against these out-of-memory errors in driver.
 So, we recommend setting the configuration `--conf spark.driver.maxResultSize=0`.
 
 ## File does not exist on HDFS/LFS error from remote parfor
@@ -129,7 +129,7 @@ To avoid false-positive errors due to network failures in case of compute-bound 
 ## Advanced developer statistics
 
 Few of our operators (for example: convolution-related operator) and GPU backend allows an expert user to get advanced statistics
-by setting the configuration `systemml.stats.extraGPU` and `systemml.stats.extraDNN` in the file SystemML-config.xml. 
+by setting the configuration `systemml.stats.extraGPU` and `systemml.stats.extraDNN` in the file SystemDS-config.xml. 
 
 ## Out-Of-Memory on executors
 

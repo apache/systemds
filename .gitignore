@@ -1,0 +1,15 @@
+.classpath
+.jekyll-cache/
+.project
+_site/
+Gemfile.lock
+
+## VS Code
+
+.settings/
+.vscode/
+
+## Inproper copy when switching branch
+
+target/
+src/ 

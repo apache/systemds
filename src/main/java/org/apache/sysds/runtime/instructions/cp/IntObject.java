@@ -61,6 +61,6 @@ public class IntObject extends ScalarObject
 	
 	@Override
 	public int getSize() {
-		return 8 + Integer.SIZE/Byte.SIZE;
+		return 16 + Integer.SIZE/Byte.SIZE;
 	}
 }

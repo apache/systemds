@@ -65,6 +65,6 @@ public class DoubleObject extends ScalarObject
 	
 	@Override
 	public int getSize() {
-		return 8 + Double.SIZE/Byte.SIZE;
+		return 16 + Double.SIZE/Byte.SIZE;
 	}
 }

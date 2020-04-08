@@ -62,7 +62,7 @@ public class StringObject extends ScalarObject
 	
 	@Override
 	public int getSize() {
-		return 36 + _value.length() * 2; //FIXME
+		return 16 + _value.length() * 1;
 	}
 
 	public static void checkMaxStringLength( long len ) {

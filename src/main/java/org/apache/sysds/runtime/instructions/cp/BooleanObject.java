@@ -65,6 +65,6 @@ public class BooleanObject extends ScalarObject
 
 	@Override
 	public int getSize() {
-		return 8 + 8;
+		return 16 + 8;
 	}
 }

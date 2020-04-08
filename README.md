@@ -25,7 +25,7 @@ The primary SystemDS documentation is written in markdown (*.md) and can be conv
 ## Ubuntu Install
 
 1. Install Ruby development environment [Jekyll on Ubuntu](https://jekyllrb.com/docs/installation/ubuntu/).
-2. Install Jekyll inside the Ruby environnement.
+2. Install Jekyll inside the Ruby environment.
 
    - `gem install jekyll jekyll-redirect-from bundler pygments.rb`
    - To do this you might need to change permissions on folders `/var/lib/gems` and `/var/lib/gems/2.5.0`.

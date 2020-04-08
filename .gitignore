@@ -1,3 +1,5 @@
+## Jekyll build files
+
 .classpath
 .jekyll-cache/
 .project
@@ -9,7 +11,16 @@ Gemfile.lock
 .settings/
 .vscode/
 
-## Inproper copy when switching branch
+## IntelliJ
+
+.idea/
+
+## Improper copy when switching branch
+
+src/
+
+## Maven build files
 
 target/
-src/ 
+temp/
+dependency-reduced-pom.xml

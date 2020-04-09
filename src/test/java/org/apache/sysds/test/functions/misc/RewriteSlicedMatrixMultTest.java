@@ -91,11 +91,11 @@ public class RewriteSlicedMatrixMultTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-stats","-args", 
+			programArgs = new String[]{ "-args", 
 				input("A"), input("B"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 

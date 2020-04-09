@@ -180,7 +180,7 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","recompile_runtime","-args", String.valueOf(dim),
+			programArgs = new String[]{"-args", String.valueOf(dim),
 				String.valueOf(emptyRet).toUpperCase(), output("R")};
 			
 			fullRScriptName = HOME + TEST_NAME +".R";

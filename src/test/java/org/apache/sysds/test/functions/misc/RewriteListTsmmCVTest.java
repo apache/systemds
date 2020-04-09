@@ -90,7 +90,7 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			
 			//lineage tracing with and without reuse
 			ReuseCacheType reuse = lineage ? ReuseCacheType.REUSE_FULL : ReuseCacheType.NONE;
-			programArgs = new String[]{"-explain","recompile_runtime", "-lineage", reuse.name().toLowerCase(),
+			programArgs = new String[]{"-lineage", reuse.name().toLowerCase(),
 				"-stats","-args", String.valueOf(rows), String.valueOf(cols), output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";

@@ -114,7 +114,7 @@ public class SizePropagationTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-explain", "hops", "-stats","-args", String.valueOf(N), output("R") };
+			programArgs = new String[]{ "hops", "-stats","-args", String.valueOf(N), output("R") };
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			rtplatform = ExecMode.HYBRID;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;

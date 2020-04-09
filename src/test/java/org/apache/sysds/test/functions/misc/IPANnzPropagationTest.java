@@ -65,7 +65,7 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
+			programArgs = new String[]{"-stats"};
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			rtplatform = ExecMode.HYBRID;
 			

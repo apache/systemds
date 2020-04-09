@@ -87,7 +87,7 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-explain", "-stats", "-args", output("R") };
+		programArgs = new String[]{"-stats", "-args", output("R") };
 		
 		fullRScriptName = HOME + testName + ".R";
 		rCmd = getRCmd(expectedDir());

@@ -171,7 +171,7 @@ public class ListAndStructTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-stats","-explain","-args", output("R") };
+			programArgs = new String[]{ "-args", output("R") };
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(expectedDir());
 			

@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 
 public class LineageTokenizer {
 	
-	private List<TokenInfo> _tokenInfos;
+	private final List<TokenInfo> _tokenInfos;
 	
 	public LineageTokenizer() {
 		_tokenInfos = new ArrayList<>();

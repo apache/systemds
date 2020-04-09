@@ -39,6 +39,7 @@ public class FullReuseTest extends AutomatedTestBase {
 	protected static final String TEST_NAME1 = "FullReuse1";
 	protected static final String TEST_NAME2 = "FullReuse2";
 	protected static final String TEST_NAME3 = "FullReuse3";
+	protected static final String TEST_NAME4 = "FullReuse4";
 	protected String TEST_CLASS_DIR = TEST_DIR + FullReuseTest.class.getSimpleName() + "/";
 	
 	@Override
@@ -47,6 +48,7 @@ public class FullReuseTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
 	}
 	
 	@Test
@@ -62,6 +64,11 @@ public class FullReuseTest extends AutomatedTestBase {
 	@Test
 	public void testLineageTrace3() {
 		testLineageTrace(TEST_NAME3);
+	}
+
+	@Test
+	public void testLineageTrace4() {    //caching scalar
+		testLineageTrace(TEST_NAME4);
 	}
 	
 	public void testLineageTrace(String testname) {

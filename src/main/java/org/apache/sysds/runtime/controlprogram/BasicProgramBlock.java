@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.lineage.LineageCache;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -107,7 +108,9 @@ public class BasicProgramBlock extends ProgramBlock
 		
 		//statement-block-level, lineage-based reuse
 		LineageItem[] liInputs = null;
-		if (_sb != null && !ReuseCacheType.isNone()) {
+		if (_sb != null 
+			&& !ReuseCacheType.isNone()
+			&& LineageCacheConfig.getCacheType().isMultilevelReuse()) {
 			String name = "SB" + _sb.getSBID();
 			liInputs = LineageItemUtils.getLineageItemInputstoSB(_sb.getInputstoSB(), ec);
 			if( LineageCache.reuse(_sb.getOutputsofSB(), _sb.getOutputsofSB().size(), liInputs, name, ec) ) {

@@ -59,6 +59,11 @@ public class StringObject extends ScalarObject
 	public Object getValue(){
 		return _value;
 	}
+	
+	@Override
+	public int getSize() {
+		return 16 + _value.length() * 1;
+	}
 
 	public static void checkMaxStringLength( long len ) {
 		if( len > MAX_STRING_SIZE ) {

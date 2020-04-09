@@ -31,7 +31,7 @@ from systemds.script_building.script import DMLScript
 from systemds.script_building.dag import OutputType, DAGNode
 
 if TYPE_CHECKING:
-    # so we don't get cyclic dependencies during runtime
+    # to avoid cyclic dependencies during runtime
     from systemds.context import SystemDSContext
 
 __all__ = ["OperationNode"]

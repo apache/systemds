@@ -28,7 +28,7 @@ from systemds.script_building.dag import DAGNode
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
-    # so we don't get cyclic dependencies during runtime
+    # to avoid cyclic dependencies during runtime
     from systemds.context import SystemDSContext
 
 

@@ -33,7 +33,7 @@ from systemds.matrix.operation_node import OperationNode
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
-    # so we don't get cyclic dependencies during runtime
+    # to avoid cyclic dependencies during runtime
     from systemds.context import SystemDSContext
 
 # TODO maybe instead of having a new class we could have a function `matrix` instead, adding behaviour to

@@ -1,18 +1,23 @@
-# ------------------------------------------------------------------------------
-#  Copyright 2020 Graz University of Technology
+#-------------------------------------------------------------
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-# ------------------------------------------------------------------------------
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
 
 __all__ = ["SystemDSContext"]
 
@@ -35,8 +40,8 @@ ACTIVE_PROCESS_CONNECTIONS: int = 0
 
 
 class SystemDSContext(object):
-    """A context with a connection to the java instance with which we execute SystemDS operations.
-    If necessary this class might also start a java process which we use for the SystemDS operations,
+    """A context with a connection to the java instance with which SystemDS operations are executed.
+    If necessary this class might also start a java process which is used for the SystemDS operations,
     before connecting."""
     _java_gateway: Optional[JavaGateway]
 
@@ -44,8 +49,8 @@ class SystemDSContext(object):
         global PROCESS_LOCK
         global PROCESS
         global ACTIVE_PROCESS_CONNECTIONS
-        # make sure that only we would start a process if necessary and no other thread
-        # is killing the process we would connect to
+        # make sure that a process is only started if necessary and no other thread
+        # is killing the process while the connection is established
         PROCESS_LOCK.acquire()
         try:
             # attempt connection to manually started java instance
@@ -59,7 +64,7 @@ class SystemDSContext(object):
             lib_cp = os.path.join(systemds_java_path, 'lib', '*')
             systemds_cp = os.path.join(systemds_java_path, '*')
             classpath = cp_separator.join([lib_cp, systemds_cp])
-            process = subprocess.Popen(['java', '-cp', classpath, 'org.tugraz.sysds.pythonapi.PythonDMLScript'],
+            process = subprocess.Popen(['java', '-cp', classpath, 'org.apache.sysds.pythonapi.PythonDMLScript'],
                                        stdout=subprocess.PIPE, stdin=subprocess.PIPE)
             process.stdout.readline()  # wait for 'Gateway Server Started\n' written by server
             assert process.poll() is None, "Could not start JMLC server"
@@ -77,9 +82,8 @@ class SystemDSContext(object):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # TODO are there errors we can fix here?
         self.close()
-        # We can not fix any errors that come up -> return None
+        # no errors to handle to allow continuation
         return None
 
     def close(self):
@@ -90,7 +94,7 @@ class SystemDSContext(object):
         global ACTIVE_PROCESS_CONNECTIONS
         self._java_gateway.shutdown()
         PROCESS_LOCK.acquire()
-        # check if no other thread is connected to the process, if we had to start one
+        # check if no other thread is connected to the process, if it was started as a subprocess
         if PROCESS is not None and ACTIVE_PROCESS_CONNECTIONS == 1:
             # stop the process by sending a new line (it will shutdown on its own)
             PROCESS.communicate(input=b'\n')

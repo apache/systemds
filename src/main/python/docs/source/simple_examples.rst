@@ -76,7 +76,7 @@ Remember to first start up a new terminal:
   with SystemDSContext() as sds:
       # element-wise matrix multiplication, note that nothing is executed yet!
       m_res = sds.matrix(m1) * sds.matrix(m2)
-      # lets do the actual computation in SystemDS! We get an numpy array as a result
+      # lets do the actual computation in SystemDS! The result is an numpy array
       m_res_np = m_res.compute()
       print(m_res_np)
 
@@ -84,7 +84,7 @@ More complex operations
 -----------------------
 
 SystemDS provides algorithm level functions as built-in functions to simplify development.
-, e example of this is l2SVM, a high level functions for Data-Scientists. Let's take a look at l2svm:
+One example of this is l2SVM, a high level functions for Data-Scientists. Let's take a look at l2svm:
 
 .. code-block:: python
 

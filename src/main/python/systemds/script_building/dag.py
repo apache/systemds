@@ -26,7 +26,7 @@ from abc import ABC
 from py4j.java_gateway import JavaObject, JVMView
 
 if TYPE_CHECKING:
-    # so we don't get cyclic dependencies during runtime
+    # to avoid cyclic dependencies during runtime
     from systemds.context import SystemDSContext
 
 

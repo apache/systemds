@@ -26,16 +26,32 @@ Matrix API
 SystemDSContext
 ---------------
 
-Since we always need a java instance running which will can execute operations in SystemDS, we
-need to start this connection at some point. We do this with ``SystemDSContext``. A ``SystemDSContext``
-object has to be created and once we are finished ``.close()`` has to be called on it, or
-we can use it by doing ``with SystemDSContext() as context:``, which will automatically close
-the context if an error occurs or we are finished with our operations. Creating an context is
-an expensive procedure, because we might have to start a subprocess running java, therefore
-try to do this only once for your program, or always leave at least one context open.
+All operations using SystemDS need a java instance running.
+The connection is ensured by an ``SystemDSContext`` object.
+An ``SystemDSContext`` object can be created using:
 
-Our SystemDS operations always start with an call on a ``SystemDSContext``, most likely to generate
-a matrix on which we can operate.
+.. code_block:: python
+  sysds = SystemDSContext()
+
+When the calculations are finished the context has to be closed again:
+
+.. code_block:: python
+  sysds.close()
+
+Since it is annoying that it is always necessary to close the context, ``SystemDSContext``
+implements the python context management protocol, which supports the following syntax:
+
+.. code_block:: python
+  with SystemDSContext() as sds:
+    # do something with sds which is an SystemDSContext
+    pass
+
+This will automatically close the ``SystemDSContext`` once the with-block is left.
+
+.. note::
+
+  Creating a context is an expensive procedure, because a sub-process starting a JVM might have to start, therefore
+  try to do this only once for your program, or always leave at least one context open.
 
 .. autoclass:: systemds.context.SystemDSContext
   :members:
@@ -68,16 +84,10 @@ Matrix
 A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
 An Matrix can be recognized it by checking the ``output_type`` of the object.
 
-Matrices are the most fundamental objects we operate on.
+Matrices are the most fundamental objects SystemDS operates on.
 
-Although we can generate matrices with the function calls or object construction specified below,
+Although it is possible to generate matrices with the function calls or object construction specified below,
 the recommended way is to use the methods defined on ``SystemDSContext``.
-
-If we can generate the matrix in SystemDS directly via a function call,
-an python function exists which will generate an ``OperationNode`` e.g. ``federated``, ``full``, ``seq``,
-representing the SystemDS operation.
-
-If we want to work on an numpy array or want to read a matrix from a file, we need to use the class ``Matrix``.
 
 .. autoclass:: systemds.matrix.Matrix
     :members:

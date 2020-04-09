@@ -94,6 +94,10 @@ public class LocalVariableMap implements Cloneable
 		localMap.putAll(vals);
 	}
 
+	public void putAll(LocalVariableMap vars) {
+		putAll(vars.localMap);
+	}
+
 	public Data remove( String name ) {
 		return localMap.remove( name );
 	}

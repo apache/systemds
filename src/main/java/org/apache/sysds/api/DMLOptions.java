@@ -120,6 +120,8 @@ public class DMLOptions {
 							dmlOptions.linReuseType = ReuseCacheType.REUSE_FULL;
 						else if (lineageType.equalsIgnoreCase("reuse_partial"))
 							dmlOptions.linReuseType = ReuseCacheType.REUSE_PARTIAL;
+						else if (lineageType.equalsIgnoreCase("reuse_multilevel"))
+							dmlOptions.linReuseType = ReuseCacheType.REUSE_MULTILEVEL;
 						else if (lineageType.equalsIgnoreCase("reuse_hybrid"))
 							dmlOptions.linReuseType = ReuseCacheType.REUSE_HYBRID;
 						else if (lineageType.equalsIgnoreCase("none"))

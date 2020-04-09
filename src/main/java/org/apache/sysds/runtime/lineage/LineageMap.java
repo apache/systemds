@@ -36,14 +36,16 @@ import java.util.Map;
 
 public class LineageMap {
 	
-	private Map<String, LineageItem> _traces = new HashMap<>();
-	private Map<String, LineageItem> _literals = new HashMap<>();
+	private final Map<String, LineageItem> _traces;
+	private final Map<String, LineageItem> _literals;
 	
 	public LineageMap() {
-	
+		_traces = new HashMap<>();
+		_literals = new HashMap<>();
 	}
 	
 	public LineageMap(LineageMap that) {
+		this();
 		_traces.putAll(that._traces);
 		_literals.putAll(that._literals);
 	}

@@ -111,7 +111,7 @@ public class FunctionFullReuseTest extends AutomatedTestBase {
 			proArgs.clear();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			proArgs.add(ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

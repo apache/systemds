@@ -31,9 +31,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LineageParser {
-	
-	public static LineageTokenizer lineageTraceTokenizer = new LineageTokenizer();
+public class LineageParser
+{
+	public final static LineageTokenizer lineageTraceTokenizer = new LineageTokenizer();
 	
 	static {
 		lineageTraceTokenizer.add("\\(");

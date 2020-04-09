@@ -38,6 +38,9 @@ public abstract class ScalarObject extends Data
 
 	public abstract String getStringValue();
 	
+	//TODO: Get the actual sizes by using profilers (JOL/Instrumentation) and hardcode in here.
+	public abstract int getSize();
+	
 	public String getLanguageSpecificStringValue() {
 		return getStringValue();
 	}

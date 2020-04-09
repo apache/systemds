@@ -72,7 +72,7 @@ public class PreparedScript implements ConfigurableAPI
 	//input/output specification
 	private final HashSet<String> _inVarnames;
 	private final HashSet<String> _outVarnames;
-	private final HashMap<String,Data> _inVarReuse;
+	private final LocalVariableMap _inVarReuse;
 	
 	//internal state (reused)
 	private final Program _prog;
@@ -91,7 +91,7 @@ public class PreparedScript implements ConfigurableAPI
 		_vars.setRegisteredOutputs(that._outVarnames);
 		_inVarnames = that._inVarnames;
 		_outVarnames = that._outVarnames;
-		_inVarReuse = new HashMap<>(that._inVarReuse);
+		_inVarReuse = new LocalVariableMap(that._inVarReuse);
 		_dmlconf = that._dmlconf;
 		_cconf = that._cconf;
 	}
@@ -115,7 +115,7 @@ public class PreparedScript implements ConfigurableAPI
 		Collections.addAll(_inVarnames, inputs);
 		_outVarnames = new HashSet<>();
 		Collections.addAll(_outVarnames, outputs);
-		_inVarReuse = new HashMap<>();
+		_inVarReuse = new LocalVariableMap();
 		
 		//attach registered outputs (for dynamic recompile)
 		_vars.setRegisteredOutputs(_outVarnames);
@@ -415,7 +415,16 @@ public class PreparedScript implements ConfigurableAPI
 	public void clearParameters() {
 		_vars.removeAll();
 	}
-	
+
+	/**
+	 * Remove all references to pinned variables from this script.
+	 * Note: this *does not* remove the underlying data. It merely
+	 * removes a reference to it from this prepared script. This is
+	 * useful if you want to maintain an independent cache of weights
+	 * and allow the JVM to garbage collect under memory pressure.
+	 */
+	public void clearPinnedData() { _inVarReuse.removeAll(); }
+
 	/**
 	 * Executes the prepared script over the bound inputs, creating the
 	 * result variables according to bound and registered outputs.

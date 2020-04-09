@@ -118,13 +118,13 @@ train = function(matrix[double] X, matrix[double] Y,
                                                 stride, stride, pad, pad)
       outr1 = relu::forward(outc1)
       [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, F1, Houtc1, Woutc1, Hf=2, Wf=2,
-                                                    strideh=2, stridew=2, pad=0, pad=0)
+                                                    strideh=2, stridew=2, padh=0, padw=0)
       ## layer 2: conv2 -> relu2 -> pool2
       [outc2, Houtc2, Woutc2] = conv2d::forward(outp1, W2, b2, F1, Houtp1, Woutp1, Hf, Wf,
                                                 stride, stride, pad, pad)
       outr2 = relu::forward(outc2)
       [outp2, Houtp2, Woutp2] = max_pool2d::forward(outr2, F2, Houtc2, Woutc2, Hf=2, Wf=2,
-                                                    strideh=2, stridew=2, pad=0, pad=0)
+                                                    strideh=2, stridew=2, padh=0, padw=0)
       ## layer 3:  affine3 -> relu3 -> dropout
       outa3 = affine::forward(outp2, W3, b3)
       outr3 = relu::forward(outa3)
@@ -166,13 +166,13 @@ train = function(matrix[double] X, matrix[double] Y,
       [doutp2, dW3, db3] = affine::backward(douta3, outp2, W3, b3)
       ## layer 2: conv2 -> relu2 -> pool2
       doutr2 = max_pool2d::backward(doutp2, Houtp2, Woutp2, outr2, F2, Houtc2, Woutc2, Hf=2, Wf=2,
-                                    strideh=2, stridew=2, pad=0, pad=0)
+                                    strideh=2, stridew=2, padh=0, padw=0)
       doutc2 = relu::backward(doutr2, outc2)
       [doutp1, dW2, db2] = conv2d::backward(doutc2, Houtc2, Woutc2, outp1, W2, b2, F1,
                                             Houtp1, Woutp1, Hf, Wf, stride, stride, pad, pad)
       ## layer 1: conv1 -> relu1 -> pool1
       doutr1 = max_pool2d::backward(doutp1, Houtp1, Woutp1, outr1, F1, Houtc1, Woutc1, Hf=2, Wf=2,
-                                    strideh=2, stridew=2, pad=0, pad=0)
+                                    strideh=2, stridew=2, padh=0, padw=0)
       doutc1 = relu::backward(doutr1, outc1)
       [dX_batch, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, X_batch, W1, b1, C, Hin, Win,
                                               Hf, Wf, stride, stride, pad, pad)
@@ -264,13 +264,13 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
                                               pad, pad)
     outr1 = relu::forward(outc1)
     [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, F1, Houtc1, Woutc1, Hf=2, Wf=2,
-                                                  strideh=2, stridew=2, pad=0, pad=0)
+                                                  strideh=2, stridew=2, padh=0, padw=0)
     ## layer 2: conv2 -> relu2 -> pool2
     [outc2, Houtc2, Woutc2] = conv2d::forward(outp1, W2, b2, F1, Houtp1, Woutp1, Hf, Wf,
                                               stride, stride, pad, pad)
     outr2 = relu::forward(outc2)
     [outp2, Houtp2, Woutp2] = max_pool2d::forward(outr2, F2, Houtc2, Woutc2, Hf=2, Wf=2,
-                                                  strideh=2, stridew=2, pad=0, pad=0)
+                                                  strideh=2, stridew=2, padh=0, padw=0)
     ## layer 3:  affine3 -> relu3
     outa3 = affine::forward(outp2, W3, b3)
     outr3 = relu::forward(outa3)

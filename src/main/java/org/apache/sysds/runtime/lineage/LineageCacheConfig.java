@@ -30,7 +30,7 @@ import java.util.ArrayList;
 public class LineageCacheConfig {
 	
 	private static final String[] REUSE_OPCODES = new String[] {
-		"tmm", "ba+*", "*", "/", "+", "nrow", "ncol",
+		"tsmm", "ba+*", "*", "/", "+", "nrow", "ncol",
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof"
 	};
 	

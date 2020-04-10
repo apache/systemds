@@ -2433,6 +2433,9 @@ public class DMLTranslator
 		case BITWXOR:
 		case BITWSHIFTL:
 		case BITWSHIFTR:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
+			break;
 		case ABS:
 		case SIN:
 		case COS:

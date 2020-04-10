@@ -360,7 +360,7 @@ Based on the "Single-Node Spark" setup above, the `Univar-Stats.dml` algorithm c
 <a href="#release-candidate-checklist">Up to Checklist</a>
 
 Verify that SystemDS can be executed from Jupyter and Zeppelin notebooks.
-For examples, see the [Spark DSContext Programming Guide](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html).
+For examples, see the [Spark MLContext Programming Guide](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html).
 
 
 ## Performance Suite

@@ -359,10 +359,10 @@ Output:
 
 ---
 
-## Invoking DML/PyDML scripts using DSContext
+## Invoking DML/PyDML scripts using MLContext
 
 The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
-using Python [DSContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
+using Python [MLContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
 
 ```python
 from sklearn import datasets
@@ -376,7 +376,7 @@ n_samples = len(X_digits)
 # Split the data into training/testing sets and convert to PySpark DataFrame
 X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:int(.9 * n_samples)]))
 y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:int(.9 * n_samples)]))
-ml = sml.DSContext(sc)
+ml = sml.MLContext(sc)
 # Run the MultiLogReg.dml script at the given URL
 scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/MultiLogReg.dml"
 script = sml.dml(scriptUrl).input(X=X_df, Y_vec=y_df).output("B_out")

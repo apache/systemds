@@ -36,7 +36,7 @@ that comes in two flavors, one with an R-like syntax (DML) and one with
 a Python-like syntax (PyDML).
 
 Algorithm scripts written in DML and PyDML can be run on Spark, on Hadoop, or
-in Standalone mode. SystemDS also features an DSContext API that allows SystemDS
+in Standalone mode. SystemDS also features an MLContext API that allows SystemDS
 to be accessed via Scala or Python from a Spark Shell, a Jupyter Notebook, or a Zeppelin Notebook.
 
 This Beginner's Guide serves as a starting point for writing DML and PyDML

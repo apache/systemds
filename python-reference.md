@@ -333,15 +333,15 @@ save(mVar3, " ")
   - [mVar2] (data).    
 ```
 
-## DSContext API
+## MLContext API
 
-The Spark DSContext API offers a programmatic interface for interacting with SystemDS from Spark using languages such as Scala, Java, and Python. 
+The Spark MLContext API offers a programmatic interface for interacting with SystemDS from Spark using languages such as Scala, Java, and Python. 
 As a result, it offers a convenient way to interact with SystemDS from the Spark Shell and from Notebooks such as Jupyter and Zeppelin.
 
 ### Usage
 
 The below example demonstrates how to invoke the algorithm [scripts/algorithms/MultiLogReg.dml](https://github.com/apache/systemml/blob/master/scripts/algorithms/MultiLogReg.dml)
-using Python [DSContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
+using Python [MLContext API](https://apache.github.io/systemml/spark-mlcontext-programming-guide).
 
 ```python
 from sklearn import datasets, neighbors
@@ -357,7 +357,7 @@ n_samples = len(X_digits)
 # Split the data into training/testing sets and convert to PySpark DataFrame
 X_df = sqlCtx.createDataFrame(pd.DataFrame(X_digits[:.9 * n_samples]))
 y_df = sqlCtx.createDataFrame(pd.DataFrame(y_digits[:.9 * n_samples]))
-ml = sml.DSContext(sc)
+ml = sml.MLContext(sc)
 # Get the path of MultiLogReg.dml
 scriptPath = os.path.join(imp.find_module("systemml")[1], 'systemml-java', 'scripts', 'algorithms', 'MultiLogReg.dml')
 script = sml.dml(scriptPath).input(X=X_df, Y_vec=y_df).output("B_out")

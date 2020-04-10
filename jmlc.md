@@ -51,7 +51,7 @@ dependent on the nature of the business use case being addressed.
 
 ## Statistics
 
-JMLC can be configured to gather runtime statistics, as in the DSContext API, by calling Connection's `setStatistics()`
+JMLC can be configured to gather runtime statistics, as in the MLContext API, by calling Connection's `setStatistics()`
 method with a value of `true`. JMLC can also be configured to gather statistics on the memory used by matrices and
 frames in the DML script. To enable collection of memory statistics, call PreparedScript's `gatherMemStats()` method
 with a value of `true`. When finegrained statistics are enabled in `SystemDS.conf`, JMLC will also report the variables
@@ -207,4 +207,4 @@ the resulting `"predicted_y"` matrix. We repeat this process. When done, we clos
 ---
 
 For additional information regarding programmatic access to SystemDS, please see the
-[Spark DSContext Programming Guide](spark-mlcontext-programming-guide.html).
+[Spark MLContext Programming Guide](spark-mlcontext-programming-guide.html).

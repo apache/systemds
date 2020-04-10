@@ -86,10 +86,10 @@ This SystemDS script can be debugged in Eclipse using a Debug Configuration such
 
 * * *
 
-## Python DSContext API
+## Python MLContext API
 
-When working with the Python DSContext API (see `src/main/python/systemml/mlcontext.py`) during development,
-it can be useful to install the Python DSContext API in editable mode (`-e`). This allows Python updates
+When working with the Python MLContext API (see `src/main/python/systemml/mlcontext.py`) during development,
+it can be useful to install the Python MLContext API in editable mode (`-e`). This allows Python updates
 to take effect without requiring the SystemDS python artifact to be built and installed.
 
 {% highlight bash %}
@@ -103,8 +103,8 @@ PYSPARK_PYTHON=python3 pyspark --driver-class-path target/SystemDS.jar
 
 <div data-lang="Python 3" markdown="1">
 {% highlight python %}
-from systemml import DSContext, dml
-ml = DSContext(sc)
+from systemml import MLContext, dml
+ml = MLContext(sc)
 script = dml("print('hello world')")
 ml.execute(script)
 {% endhighlight %}
@@ -129,8 +129,8 @@ Welcome to
 
 Using Python version 3.5.2 (default, Jul 28 2016 21:28:07)
 SparkSession available as 'spark'.
->>> from systemml import DSContext, dml
->>> ml = DSContext(sc)
+>>> from systemml import MLContext, dml
+>>> ml = MLContext(sc)
 
 Welcome to Apache SystemDS!
 

@@ -44,7 +44,7 @@ $ cat /usr/local/cuda/include/cudnn.h | grep "CUDNN_MAJOR\|CUDNN_MINOR"
 Depending on the API, the GPU backend can be enabled in different way:
 
 1. When invoking SystemDS from command-line, the GPU backend can be enabled by providing the command-line `-gpu` flag.
-2. When invoking SystemDS using the (Python or Scala) DSContext and DSLearn (includes Caffe2DML and Keras2DML) APIs, please use the `setGPU(enable)` method.
+2. When invoking SystemDS using the (Python or Scala) MLContext and DSLearn (includes Caffe2DML and Keras2DML) APIs, please use the `setGPU(enable)` method.
 3. When invoking SystemDS using the JMLC API, please set the `useGpu` parameter in `org.apache.sysml.api.jmlc.Connection` class's `prepareScript` method.
 
 Python users do not need to explicitly provide the jar during their invocation. 
@@ -76,7 +76,7 @@ mvn package -P distribution
 pip install target/systemml-*-SNAPSHOT-python.tar.gz
 ```
 
-Then you can use the `setGPU(True)` method of [DSContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) and 
+Then you can use the `setGPU(True)` method of [MLContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) and 
 [DSLearn](http://apache.github.io/systemml/beginners-guide-python.html#invoke-systemmls-algorithms) APIs to enable the GPU usage.
 
 ```python
@@ -95,7 +95,7 @@ lenet.setGPU(True).setForceGPU(True)
 ## Scala users
 
 To enable the GPU backend via command-line, please provide `systemml-*-extra.jar` in the classpath and use 
-the `setGPU(True)` method of [DSContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) API to enable the GPU usage.
+the `setGPU(True)` method of [MLContext](http://apache.github.io/systemml/spark-mlcontext-programming-guide.html) API to enable the GPU usage.
 
 ```
 spark-shell --jars systemml-*-extra.jar,SystemDS.jar

@@ -27,7 +27,7 @@ SystemDS is a flexible, scalable machine learning system.
 SystemDS's distinguishing characteristics are:
 
   1. **Algorithm customizability via R-like and Python-like languages**.
-  2. **Multiple execution modes**, including Spark DSContext, Spark Batch, Hadoop Batch, Standalone, and JMLC.
+  2. **Multiple execution modes**, including Spark MLContext, Spark Batch, Hadoop Batch, Standalone, and JMLC.
   3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
 The [SystemDS GitHub README](https://github.com/apache/systemml) describes
@@ -44,9 +44,9 @@ This version of SystemDS supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop
 * If you want to invoke one of our [pre-implemented algorithms](algorithms-reference):
   * In Python, consider using 
     * the convenient [mllearn API](http://apache.github.io/systemml/python-reference.html#mllearn-api). The usage is described in our [beginner's guide](http://apache.github.io/systemml/beginners-guide-python.html#invoke-systemmls-algorithms)  
-    * Or [Spark DSContext](spark-mlcontext-programming-guide) API
+    * Or [Spark MLContext](spark-mlcontext-programming-guide) API
   * In Java/Scala, consider using 
-    * [Spark DSContext](spark-mlcontext-programming-guide) API for large datasets
+    * [Spark MLContext](spark-mlcontext-programming-guide) API for large datasets
     * Or [JMLC](jmlc) API for in-memory scoring
   * Via Command-line, follow the usage section in the [Algorithms Reference](algorithms-reference) 
 * If you want to implement a deep neural network, consider
@@ -66,7 +66,7 @@ This version of SystemDS supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop
 ## Running SystemDS
 
 * [Beginner's Guide For Python Users](beginners-guide-python) - Beginner's Guide for Python users.
-* [Spark DSContext](spark-mlcontext-programming-guide) - Spark DSContext is a programmatic API
+* [Spark MLContext](spark-mlcontext-programming-guide) - Spark MLContext is a programmatic API
 for running SystemDS from Spark via Scala, Python, or Java.
   * [Spark Shell Example (Scala)](spark-mlcontext-programming-guide#spark-shell-example)
   * [Jupyter Notebook Example (PySpark)](spark-mlcontext-programming-guide#jupyter-pyspark-notebook-example---poisson-nonnegative-matrix-factorization)

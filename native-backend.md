@@ -116,7 +116,7 @@ mlCtx.setConfigProperty("sysml.native.blas.directory", "/path/to/blas-n-other-de
 ## Step 3: Set configuration property to enable native BLAS
 
 The configuration property `sysml.native.blas` can be either set in the file `SystemDS-config.xml`
-or using `setConfigProperty` method of `DSContext` or `mllearn` classes. For example:
+or using `setConfigProperty` method of `MLContext` or `mllearn` classes. For example:
 
 ```python 
 mlCtx.setConfigProperty("sysml.native.blas", "openblas")

@@ -1,7 +1,7 @@
 ---
 layout: global
-title: Spark DSContext Programming Guide
-description: Spark DSContext Programming Guide
+title: Spark MLContext Programming Guide
+description: Spark MLContext Programming Guide
 ---
 <!--
 {% comment %}
@@ -30,7 +30,7 @@ limitations under the License.
 
 # Overview
 
-The Spark `DSContext` API offers a programmatic interface for interacting with SystemDS from Spark using languages
+The Spark `MLContext` API offers a programmatic interface for interacting with SystemDS from Spark using languages
 such as Scala, Java, and Python. As a result, it offers a convenient way to interact with SystemDS from the Spark
 Shell and from Notebooks such as Jupyter and Zeppelin.
 
@@ -56,11 +56,11 @@ pyspark --executor-memory 4G --driver-memory 4G --jars SystemDS.jar --driver-cla
 
 </div>
 
-## Create DSContext
+## Create MLContext
 
 All primary classes that a user interacts with are located in the `org.apache.sysml.api.mlcontext` package.
 For convenience, we can additionally add a static import of `ScriptFactory` to shorten the syntax for creating `Script` objects.
-An `DSContext` object can be created by passing its constructor a reference to the `SparkSession` (`spark`) or `SparkContext` (`sc`).
+An `MLContext` object can be created by passing its constructor a reference to the `SparkSession` (`spark`) or `SparkContext` (`sc`).
 If successful, you should see a "`Welcome to Apache SystemDS!`" message.
 
 <div class="codetabs">
@@ -69,7 +69,7 @@ If successful, you should see a "`Welcome to Apache SystemDS!`" message.
 {% highlight scala %}
 import org.apache.sysml.api.mlcontext._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
-val ml = new DSContext(spark)
+val ml = new MLContext(spark)
 {% endhighlight %}
 </div>
 
@@ -81,11 +81,11 @@ import org.apache.sysml.api.mlcontext._
 scala> import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.sysml.api.mlcontext.ScriptFactory._
 
-scala> val ml = new DSContext(spark)
+scala> val ml = new MLContext(spark)
 
 Welcome to Apache SystemDS!
 
-ml: org.apache.sysml.api.mlcontext.DSContext = org.apache.sysml.api.mlcontext.DSContext@12139db0
+ml: org.apache.sysml.api.mlcontext.MLContext = org.apache.sysml.api.mlcontext.MLContext@12139db0
 
 {% endhighlight %}
 </div>
@@ -93,15 +93,15 @@ ml: org.apache.sysml.api.mlcontext.DSContext = org.apache.sysml.api.mlcontext.DS
 
 <div data-lang="Python" markdown="1">
 {% highlight python %}
-from systemml import DSContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
-ml = DSContext(spark)
+from systemml import MLContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
+ml = MLContext(spark)
 {% endhighlight %}
 </div>
 
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
->>> from systemml import DSContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
->>> ml = DSContext(spark)
+>>> from systemml import MLContext, dml, dmlFromResource, dmlFromFile, dmlFromUrl
+>>> ml = MLContext(spark)
 
 Welcome to Apache SystemDS!
 Version 1.0.0-SNAPSHOT
@@ -117,7 +117,7 @@ The ScriptFactory class allows DML and PYDML scripts to be created from Strings,
 Here, we'll use the `dml` method to create a DML "hello world" script based on a String. Notice that the script
 reports that it has no inputs or outputs.
 
-We execute the script using DSContext's `execute` method, which displays "`hello world`" to the console.
+We execute the script using MLContext's `execute` method, which displays "`hello world`" to the console.
 The `execute` method returns an MLResults object, which contains no results since the script has
 no outputs.
 
@@ -1338,7 +1338,7 @@ write(baseStats, $STATS);
 ...
 {% endhighlight %}
 
-Because DSContext is a programmatic interface, it offers more flexibility. You can still use input parameters
+Because MLContext is a programmatic interface, it offers more flexibility. You can still use input parameters
 and files in the file system, such as this example that specifies file paths to the input matrices and the output matrix:
 
 {% highlight scala %}
@@ -1346,7 +1346,7 @@ val script = dmlFromFile("scripts/algorithms/Univar-Stats.dml").in("$X", "data/h
 ml.execute(script)
 {% endhighlight %}
 
-Using the DSContext API, rather than relying solely on input parameters, we can bind to the variables associated
+Using the MLContext API, rather than relying solely on input parameters, we can bind to the variables associated
 with the `read` and `write` statements. In the fragment of `Univar-Stats.dml` above, notice that the matrix at
 path `$X` is read to variable `A`, `$TYPES` is read to variable
 `K`, and `baseStats` is written to path `$STATS`. Therefore, we can bind the Haberman input data matrix to the `A` variable,
@@ -1596,7 +1596,7 @@ write(meanOut, '');
 </div>
 
 
-## Clearing Scripts and DSContext
+## Clearing Scripts and MLContext
 
 Dealing with large matrices can require a significant amount of memory. To deal help deal with this, you
 can call a Script object's `clearAll` method to clear the inputs, outputs, symbol table, and script string.
@@ -1663,8 +1663,8 @@ None
 </div>
 </div>
 
-The DSContext object holds references to the scripts that have been executed. Calling `clear` on
-the DSContext clears all scripts that it has references to and then removes the references to these
+The MLContext object holds references to the scripts that have been executed. Calling `clear` on
+the MLContext clears all scripts that it has references to and then removes the references to these
 scripts.
 
 {% highlight scala %}
@@ -1674,7 +1674,7 @@ ml.clear
 
 ## Statistics
 
-Statistics about script executions can be output to the console by calling DSContext's `setStatistics`
+Statistics about script executions can be output to the console by calling MLContext's `setStatistics`
 method with a value of `true`.
 
 <div class="codetabs">
@@ -1770,7 +1770,7 @@ min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setStatistics(True)
-DSContext
+MLContext
 >>> minMaxMean = """
 ... minOut = min(Xin)
 ... maxOut = max(Xin)
@@ -1913,9 +1913,9 @@ ml.execute(matMultScript)
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setGPU(True)
-DSContext
+MLContext
 >>> ml.setStatistics(True)
-DSContext
+MLContext
 >>> matMultScript = dml("""
 ... A = rand(rows=10, cols=1000)
 ... B = rand(rows=1000, cols=10)
@@ -1979,7 +1979,7 @@ Note that GPU instructions show up prepended with a "gpu" in the statistics.
 ## Explain
 
 A DML or PyDML script is converted into a SystemDS program during script execution. Information
-about this program can be displayed by calling DSContext's `setExplain` method with a value
+about this program can be displayed by calling MLContext's `setExplain` method with a value
 of `true`.
 
 <div class="codetabs">
@@ -2067,7 +2067,7 @@ min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setExplain(True)
-DSContext
+MLContext
 >>> minMaxMean = """
 ... minOut = min(Xin)
 ... maxOut = max(Xin)
@@ -2107,14 +2107,14 @@ Different explain levels can be set. The explain levels are NONE, HOPS, RUNTIME,
 
 <div data-lang="Scala" markdown="1">
 {% highlight scala %}
-ml.setExplainLevel(DSContext.ExplainLevel.RUNTIME)
+ml.setExplainLevel(MLContext.ExplainLevel.RUNTIME)
 val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
 {% endhighlight %}
 </div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala> ml.setExplainLevel(DSContext.ExplainLevel.RUNTIME)
+scala> ml.setExplainLevel(MLContext.ExplainLevel.RUNTIME)
 
 scala> val (min, max, mean) = ml.execute(minMaxMeanScript).getTuple[Double, Double, Double]("minOut", "maxOut", "meanOut")
 
@@ -2148,7 +2148,7 @@ min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 <div data-lang="PySpark Shell" markdown="1">
 {% highlight python %}
 >>> ml.setExplainLevel("runtime")
-DSContext
+MLContext
 >>> min, max, mean = ml.execute(minMaxMeanScript).get("minOut", "maxOut", "meanOut")
 # EXPLAIN (RUNTIME):
 # Memory Budget local/remote = 687MB/?MB/?MB/?MB
@@ -2330,7 +2330,7 @@ None
 
 ## MatrixMetadata
 
-When supplying matrix data to Apache SystemDS using the DSContext API, matrix metadata can be
+When supplying matrix data to Apache SystemDS using the MLContext API, matrix metadata can be
 supplied using a `MatrixMetadata` object. Supplying characteristics about a matrix can significantly
 improve performance. For some types of input matrices, supplying metadata is mandatory.
 Metadata at a minimum typically consists of the number of rows and columns in
@@ -2599,7 +2599,7 @@ scala> for (i <- 1 to 5) {
 ## Project Information
 
 SystemDS project information such as version and build time can be obtained through the
-DSContext API. The project version can be obtained by `ml.version`. The build time can
+MLContext API. The project version can be obtained by `ml.version`. The build time can
 be obtained by `ml.buildTime`. The contents of the project manifest can be displayed
 using `ml.info`. Individual properties can be obtained using the `ml.info.property`
 method, as shown below.
@@ -2677,7 +2677,7 @@ Version: 1.0.0-SNAPSHOT
 
 # Jupyter (PySpark) Notebook Example - Poisson Nonnegative Matrix Factorization
 
-Similar to the Scala API, SystemDS also provides a Python DSContext API.  Before usage, you'll need
+Similar to the Scala API, SystemDS also provides a Python MLContext API.  Before usage, you'll need
 **[to install it first](beginners-guide-python#download--setup)**.
 
 Here, we'll explore the use of SystemDS via PySpark in a [Jupyter notebook](http://jupyter.org/).
@@ -2715,7 +2715,7 @@ We can then open up the `SystemDS-PySpark-Recommendation-Demo` notebook.
 
 import numpy as np
 import matplotlib.pyplot as plt
-from systemml import DSContext, dml  # pip install systeml
+from systemml import MLContext, dml  # pip install systeml
 plt.rcParams['figure.figsize'] = (10, 6)
 {% endhighlight %}
 
@@ -2747,11 +2747,11 @@ numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
 print("Total number of products: {}".format(numProducts))
 {% endhighlight %}
 
-## Create a SystemDS DSContext object
+## Create a SystemDS MLContext object
 
 {% highlight python %}
-# Create SystemDS DSContext
-ml = DSContext(sc)
+# Create SystemDS MLContext
+ml = MLContext(sc)
 {% endhighlight %}
 
 ## Define a kernel for Poisson nonnegative matrix factorization (PNMF) in DML

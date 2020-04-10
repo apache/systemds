@@ -35,7 +35,7 @@ sets, one of the most important ways to invoke SystemDS is Spark Batch. Here, we
 mode in more depth.
 
 **NOTE:** For a programmatic API to run and interact with SystemDS via Scala or Python, please see the
-[Spark DSContext Programming Guide](spark-mlcontext-programming-guide).
+[Spark MLContext Programming Guide](spark-mlcontext-programming-guide).
 
 ---
 

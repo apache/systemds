@@ -39,8 +39,8 @@ There are three different ways to implement a Deep Learning model in SystemDS:
 | External dependency                                                                                  | None                                                                                                       | None                                                                                                          | Keras                                                                           |
 | Ability to add custom layers                                                                         | Yes                                                                                                        | No                                                                                                            | No                                                                              |
 | The user needs to know                                                                               | [DML](http://apache.github.io/systemml/dml-language-reference)                                             | [Caffe's proto API](http://apache.github.io/systemml/reference-guide-caffe2dml#layers-supported-in-caffe2dml) | [Keras' API](https://keras.io/models/about-keras-models/)                       |
-| Can be invoked using pyspark                                                                         | Yes. Please see [Python DSContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide) | Yes.                                                                                                          | Yes.                                                                            |
-| Can be invoked using spark-shell                                                                     | Yes. Please see [Scala DSContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide)  | Limited support                                                                                               | No                                                                              |
+| Can be invoked using pyspark                                                                         | Yes. Please see [Python MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide) | Yes.                                                                                                          | Yes.                                                                            |
+| Can be invoked using spark-shell                                                                     | Yes. Please see [Scala MLContext API](http://apache.github.io/systemml/spark-mlcontext-programming-guide)  | Limited support                                                                                               | No                                                                              |
 | Can be invoked via command-line or JMLC API                                                          | Yes                                                                                                        | No                                                                                                            | No                                                                              |
 | GPU and [native BLAS](http://apache.github.io/systemml/native-backend.html) support                  | Yes                                                                                                        | Yes                                                                                                           | Yes                                                                             |
 | Part of SystemDS's [mllearn](http://apache.github.io/systemml/python-reference.html#mllearn-api) API | No                                                                                                         | Yes                                                                                                           | Yes                                                                             |
@@ -112,9 +112,9 @@ y_test = y[int(.9 * n_samples):]
 
 <div data-lang="NN library" markdown="1">
 {% highlight python %}
-from systemml import DSContext, dml
+from systemml import MLContext, dml
 
-ml = DSContext(sc)
+ml = MLContext(sc)
 ml.setStatistics(True)
 # ml.setConfigProperty("sysml.native.blas", "auto")
 # ml.setGPU(True).setForceGPU(True)

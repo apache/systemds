@@ -49,9 +49,9 @@ def make_first_level(features, predictions, loss, top_k, alpha, k, w, loss_type)
         first_level.append(new_node)
         new_node.print_debug(top_k, 0)
         # constraints for 1st level nodes to be problematic candidates
-        if new_node.check_constraint(top_k, len(predictions), alpha):
+        #if new_node.check_constraint(top_k, len(predictions), alpha):
             # this method updates top k slices if needed
-            top_k.add_new_top_slice(new_node)
+            #top_k.add_new_top_slice(new_node)
     return first_level
 
 
@@ -106,9 +106,17 @@ def nodes_enum(nodes, level, predictions, loss, top_k, alpha, k, w, loss_type, c
     return cur_enum_nodes
 
 
+def init_top_k(first_level, top_k, alpha, predictions):
+    # driver updates topK
+    for sliced in first_level:
+        if sliced[1].check_constraint(top_k, len(predictions), alpha):
+            # this method updates top k slices if needed
+            top_k.add_new_top_slice(sliced[1])
+
+
 def update_top_k(new_slices, top_k, alpha, predictions):
     # driver updates topK
-    for sliced in new_slices:
+    for sliced in new_slices.values():
         if sliced.check_constraint(top_k, len(predictions), alpha):
             # this method updates top k slices if needed
             top_k.add_new_top_slice(sliced)

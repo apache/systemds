@@ -5,6 +5,7 @@ from pyspark.ml.regression import LinearRegression
 from pyspark.sql import SQLContext
 import pyspark.sql.functions as sf
 from pyspark.sql.functions import udf
+from sklearn.model_selection import train_test_split
 
 from slicing.sparked import sparked_utils, sparked_slicer, sparked_union_slicer
 
@@ -45,10 +46,10 @@ stages += [assembler_final]
 pipeline = Pipeline(stages=stages)
 pipeline_model = pipeline.fit(dataset_df)
 dataset_transformed = pipeline_model.transform(dataset_df)
-df_transform_fin = dataset_transformed.select('features', label, 'model_type')
-splits = df_transform_fin.randomSplit([0.7, 0.3], seed=1234)
-train_df = splits[0]
-test_df = splits[1]
+df_transform_fin = dataset_transformed.select('features', label, 'model_type').toPandas()
+train, test = train_test_split(df_transform_fin, test_size=0.3, random_state=0)
+train_df = sqlContext.createDataFrame(train)
+test_df = sqlContext.createDataFrame(test)
 decode_dict = {}
 counter = 0
 cat = 0

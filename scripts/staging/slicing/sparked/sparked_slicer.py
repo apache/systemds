@@ -4,7 +4,6 @@ from slicing.base.SparkedNode import SparkedNode
 from slicing.base.slicer import union, opt_fun
 from slicing.base.top_k import Topk
 from slicing.sparked import sparked_utils
-from slicing.sparked.sparked_union_slicer import update_nodes
 from slicing.sparked.sparked_utils import update_top_k
 
 
@@ -46,23 +45,19 @@ def join_enum_fun(node_a, list_b, predictions, f_l2, debug, alpha, w, loss_type,
     return nodes
 
 
-def flatten(l):
-    flat_list = set()
-    for sublist in l:
-        for item in sublist:
-            flat_list.add(item)
-    return flat_list
-
-
 def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, loss_type, enumerator):
     top_k = Topk(k)
     cur_lvl = 0
     levels = []
+    first_level = {}
     all_features = list(all_features)
     first_tasks = sc.parallelize(all_features)
     SparkContext.broadcast(sc, top_k)
-    first_level = first_tasks.mapPartitions(lambda features: sparked_utils.make_first_level(features, predictions, loss, top_k,
-                                                                                 alpha, k, w, loss_type)).collect()
+    init_slices = first_tasks.mapPartitions(
+        lambda features: sparked_utils.make_first_level(features, predictions, loss, top_k,
+                                                        alpha, k, w, loss_type)).map(
+        lambda node: (node.key, node)).collect()
+    first_level.update(init_slices)
     update_top_k(first_level, top_k, alpha, predictions)
     SparkContext.broadcast(sc, top_k)
     SparkContext.broadcast(sc, first_level)
@@ -72,23 +67,21 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
     SparkContext.broadcast(sc, top_k)
     # checking the first partition of level. if not empty then processing otherwise no elements were added to this level
     while len(levels[cur_lvl - 1]) > 0:
-        cur_lvl_res = {}
-        nodes_list = []
-        partitions = sc.parallelize(levels[cur_lvl - 1])
-        mapped = partitions.mapPartitions(lambda nodes: sparked_utils.nodes_enum(nodes, levels[cur_lvl - 1], predictions, loss,
-                                                            top_k, alpha, k, w, loss_type, cur_lvl, debug, enumerator))\
-            .reduce(lambda a, b: a + b)
-        result = update_nodes(mapped, nodes_list, cur_lvl_res, w)
-        cur_lvl_res = result[0]
-        nodes_list = result[1]
-        update_top_k(list(nodes_list), top_k, alpha, predictions)
-        SparkContext.broadcast(sc, mapped)
-        levels.append(mapped)
+        nodes_list = {}
+        partitions = sc.parallelize(levels[cur_lvl - 1].values())
+        mapped = partitions.mapPartitions(
+            lambda nodes: sparked_utils.nodes_enum(nodes, levels[cur_lvl - 1].values(), predictions, loss,
+                                                   top_k, alpha, k, w, loss_type, cur_lvl, debug, enumerator))
+        flattened = mapped.flatMap(lambda node: node)
+        nodes_list.update(flattened.map(lambda node: (node.key, node)).reduceByKey(lambda x, y: x).collect())
+        SparkContext.broadcast(sc, nodes_list)
+        levels.append(nodes_list)
+        update_top_k(nodes_list, top_k, alpha, predictions)
         SparkContext.broadcast(sc, top_k)
         cur_lvl = cur_lvl + 1
         top_k.print_topk()
         print("Level " + str(cur_lvl) + " had " + str(len(levels) * (len(levels) - 1)) +
-              " candidates but after pruning only " + str(len(mapped)) + " go to the next level")
+              " candidates but after pruning only " + str(len(nodes_list)) + " go to the next level")
     print("Program stopped at level " + str(cur_lvl))
     print()
     print("Selected slices are: ")

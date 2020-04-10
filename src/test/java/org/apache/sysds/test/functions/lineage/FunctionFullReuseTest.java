@@ -35,50 +35,55 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class FunctionFullReuseTest extends AutomatedTestBase {
-	
+public class FunctionFullReuseTest extends AutomatedTestBase
+{
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "FunctionFullReuse1";
-	protected static final String TEST_NAME2 = "FunctionFullReuse2";
-	protected static final String TEST_NAME3 = "FunctionFullReuse3";
-	protected static final String TEST_NAME4 = "FunctionFullReuse4";
-	protected static final String TEST_NAME5 = "FunctionFullReuse5";
+	protected static final String TEST_NAME = "FunctionFullReuse";
+	protected static final int TEST_VARIANTS = 7;
+	
 	protected String TEST_CLASS_DIR = TEST_DIR + FunctionFullReuseTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5));
+		for( int i=1; i<=TEST_VARIANTS; i++ )
+			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
 	
 	@Test
 	public void testCacheHit() {
-		testLineageTrace(TEST_NAME1);
+		testLineageTrace(TEST_NAME+"1");
 	}
 	
 	@Test
 	public void testCacheMiss() {
-		testLineageTrace(TEST_NAME2);
+		testLineageTrace(TEST_NAME+"2");
 	}
 
 	@Test
 	public void testMultipleReturns() {
-		testLineageTrace(TEST_NAME3);
+		testLineageTrace(TEST_NAME+"3");
 	}
 
 	@Test
 	public void testNestedFunc() {
-		testLineageTrace(TEST_NAME4);
+		testLineageTrace(TEST_NAME+"4");
 	}
 
 	@Test
 	public void testStepLM() {
-		testLineageTrace(TEST_NAME5);
-	} 
+		testLineageTrace(TEST_NAME+"5");
+	}
+	
+	@Test
+	public void testParforIssue1() {
+		testLineageTrace(TEST_NAME+"6");
+	}
+	
+	@Test
+	public void testParforIssue2() {
+		testLineageTrace(TEST_NAME+"7");
+	}
 	
 	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -132,4 +137,3 @@ public class FunctionFullReuseTest extends AutomatedTestBase {
 		}
 	}
 }
-

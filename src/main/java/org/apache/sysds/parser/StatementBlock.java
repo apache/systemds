@@ -43,12 +43,12 @@ import org.apache.sysds.utils.MLContextProxy;
 
 public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 {
-
 	protected static final Log LOG = LogFactory.getLog(StatementBlock.class.getName());
 	protected static IDSequence _seq = new IDSequence();
 	private static IDSequence _seqSBID = new IDSequence();
 	protected final long _ID;
-
+	protected final String _name;
+	
 	protected DMLProgram _dmlProg;
 	protected ArrayList<Statement> _statements;
 	ArrayList<Hop> _hops = null;
@@ -62,6 +62,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	public StatementBlock() {
 		_ID = getNextSBID();
+		_name = "SB"+_ID;
 		_dmlProg = null;
 		_statements = new ArrayList<>();
 		_read = new VariableSet();
@@ -95,6 +96,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	
 	public long getSBID() {
 		return _ID;
+	}
+	
+	public String getName() {
+		return _name;
 	}
 
 	public void addStatement(Statement s) {
@@ -399,12 +404,25 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return inputs;
 	}
 
-	public ArrayList<String> getOutputsofSB() {
-		ArrayList<String> outputs = _liveOut != null && _updated != null ? new ArrayList<>() : null;
+	public ArrayList<String> getOutputNamesofSB() {
+		ArrayList<String> outputs = _liveOut != null 
+			&& _updated != null ? new ArrayList<>() : null;
 		if (_liveOut != null && _updated != null) {
 			for (String varName : _updated.getVariables().keySet()) {
 				if (_liveOut.containsVariable(varName))
 					outputs.add(varName);
+			}
+		}
+		return outputs;
+	}
+	
+	public ArrayList<DataIdentifier> getOutputsofSB() {
+		ArrayList<DataIdentifier> outputs = _liveOut != null 
+			&& _updated != null ? new ArrayList<>() : null;
+		if (_liveOut != null && _updated != null) {
+			for (String varName : _updated.getVariables().keySet()) {
+				if (_liveOut.containsVariable(varName))
+					outputs.add(_liveOut.getVariable(varName));
 			}
 		}
 		return outputs;
@@ -683,29 +701,20 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					AssignmentStatement as = (AssignmentStatement) current;
 					if ((as.getTargetList().size() == 1) && (as.getTargetList().get(0) != null)) {
 						raiseValidateError("Function '" + fcall.getName()
-								+ "' does not return a value but is assigned to " + as.getTargetList().get(0),
-								true);
+							+ "' does not return a value but is assigned to " + as.getTargetList().get(0), true);
 					}
 				}
-			} else if (current instanceof MultiAssignmentStatement) {
+			}
+			else if (current instanceof MultiAssignmentStatement) {
 				if (fstmt.getOutputParams().size() == 0) {
 					MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
 					raiseValidateError("Function '" + fcall.getName()
-							+ "' does not return a value but is assigned to " + mas.getTargetList(), true);
+						+ "' does not return a value but is assigned to " + mas.getTargetList(), true);
 				}
 			}
 			
 			// handle returns by appending name mappings, but with special handling of 
 			// statements that contain function calls or multi-return builtin expressions (but disabled)
-//			Statement lastAdd = newStatements.get(newStatements.size()-1);
-//			if( isOutputBindingViaFunctionCall(lastAdd, prefix, fstmt) && lastAdd instanceof AssignmentStatement )
-//				((AssignmentStatement)lastAdd).setTarget(((AssignmentStatement)current).getTarget());
-//			else if ( isOutputBindingViaFunctionCall(lastAdd, prefix, fstmt) && lastAdd instanceof MultiAssignmentStatement )
-//				if( current instanceof MultiAssignmentStatement )
-//					((MultiAssignmentStatement)lastAdd).setTargetList(((MultiAssignmentStatement)current).getTargetList());
-//				else //correct for multi-assignment to assignment transform
-//					newStatements.set(newStatements.size()-1, createNewPartialMultiAssignment(lastAdd, current, prefix, fstmt));
-//			else
 			appendOutputAssignments(current, prefix, fstmt, newStatements);
 		}
 		return newStatements;

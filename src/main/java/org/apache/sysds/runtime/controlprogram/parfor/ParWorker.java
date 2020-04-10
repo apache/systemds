@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
@@ -32,8 +33,10 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Stat;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.StatisticMonitor;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.lineage.Lineage;
 
 /**
  * Super class for master/worker pattern implementations. Central place to
@@ -113,22 +116,20 @@ public abstract class ParWorker
 	protected void executeTask( Task task ) {
 		LOG.trace("EXECUTE PARFOR_WORKER ID="+_workerID+" for task "+task.toCompactString());
 		
-		switch( task.getType() )
-		{
+		switch( task.getType() ) {
 			case SET:
 				executeSetTask( task );
 				break;
 			case RANGE:
 				executeRangeTask( task );
-				break;		
+				break;
 		}
 	}	
 
 	private void executeSetTask( Task task ) {
 		//monitoring start
 		Timing time1 = null, time2 = null;
-		if( _monitor )
-		{
+		if( _monitor ) {
 			time1 = new Timing(true); 
 			time2 = new Timing(true); 
 		}
@@ -143,6 +144,10 @@ public abstract class ParWorker
 			
 			//set index values
 			_ec.setVariable(lVarName, indexVal);
+			if (DMLScript.LINEAGE) {
+				Lineage li = _ec.getLineage();
+				li.set(lVarName, li.getOrCreate(new CPOperand(indexVal)));
+			}
 			
 			// for each program block
 			for (ProgramBlock pb : _childBlocks)
@@ -157,8 +162,7 @@ public abstract class ParWorker
 		_numTasks++;
 		
 		//monitoring end
-		if( _monitor )
-		{
+		if( _monitor ) {
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASKSIZE, task.size());
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
 		}
@@ -167,10 +171,9 @@ public abstract class ParWorker
 	private void executeRangeTask( Task task ) {
 		//monitoring start
 		Timing time1 = null, time2 = null;
-		if( _monitor )
-		{
-			time1 = new Timing(true); 
-			time2 = new Timing(true); 
+		if( _monitor ) {
+			time1 = new Timing(true);
+			time2 = new Timing(true);
 		}
 		
 		//core execution
@@ -183,28 +186,29 @@ public abstract class ParWorker
 		for( long i=lFrom; i<=lTo; i+=lIncr )
 		{
 			//set index values
-			_ec.setVariable(lVarName, new IntObject(i));
+			IntObject indexVal = new IntObject(i);
+			_ec.setVariable(lVarName, indexVal);
+			if (DMLScript.LINEAGE) {
+				Lineage li = _ec.getLineage();
+				li.set(lVarName, li.getOrCreate(new CPOperand(indexVal)));
+			}
 			
 			// for each program block
 			for (ProgramBlock pb : _childBlocks)
 				pb.execute(_ec);
-					
+			
 			_numIters++;
 			
 			if( _monitor )
-				StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_ITER_T, time1.stop());	
+				StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_ITER_T, time1.stop());
 		}
 
 		_numTasks++;
 		
 		//monitoring end
-		if( _monitor )
-		{
+		if( _monitor ) {
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASKSIZE, task.size());
 			StatisticMonitor.putPWStat(_workerID, Stat.PARWRK_TASK_T, time2.stop());
 		}
 	}
-		
 }
-
-	

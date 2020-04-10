@@ -83,6 +83,7 @@ public enum Builtins {
 	DETECTSCHEMA("detectSchema", false),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
+	DROP_INVALID("dropInvalid", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
 	EXISTS("exists", false),
 	EXP("exp", false),

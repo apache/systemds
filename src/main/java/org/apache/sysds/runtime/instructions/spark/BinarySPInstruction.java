@@ -75,6 +75,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			vtype = VectorType.valueOf(parts[5]);
 			isBroadcast = true;
 		}
+
 		else {
 			opcode = parseBinaryInstruction(str, in1, in2, out);
 		}
@@ -104,6 +105,10 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			else
 				throw new DMLRuntimeException("Tensor binary operation not yet implemented for tensor-scalar, or tensor-matrix");
 		}
+		else if( dt1 == DataType.FRAME || dt2 == DataType.FRAME ) {
+			return BinaryFrameFrameSPInstruction.parseInstruction(str);
+		}
+
 		return null;
 	}
 
@@ -204,14 +209,14 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 				in2 = in2.flatMapToPair(new ReplicateTensorFunction(i, numReps));
 		}
 		int numPrefPart = SparkUtils.isHashPartitioned(in1) ? in1.getNumPartitions() :
-				SparkUtils.isHashPartitioned(in2) ? in2.getNumPartitions() :
-						Math.min(in1.getNumPartitions() + in2.getNumPartitions(),
-								2 * SparkUtils.getNumPreferredPartitions(dcOut));
+			SparkUtils.isHashPartitioned(in2) ? in2.getNumPartitions() :
+			Math.min(in1.getNumPartitions() + in2.getNumPartitions(),
+				2 * SparkUtils.getNumPreferredPartitions(dcOut));
 
 		//execute binary operation
 		JavaPairRDD<TensorIndexes, TensorBlock> out = in1
-				.join(in2, numPrefPart)
-				.mapValues(new TensorTensorBinaryOpFunction(bop));
+			.join(in2, numPrefPart)
+			.mapValues(new TensorTensorBinaryOpFunction(bop));
 
 		//set output RDD
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -227,7 +232,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		checkMatrixMatrixBinaryCharacteristics(sec);
 
 		//get input RDDs
-		String rddVar = input1.getName(); 
+		String rddVar = input1.getName();
 		String bcastVar = input2.getName();
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( rddVar );
 		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
@@ -248,7 +253,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			//why we cannot use mapValues is the need for broadcast key lookups.
 			//alternative: out = in1.mapToPair(new MatrixVectorBinaryOpFunction(bop, in2, vtype));
 			out = in1.mapPartitionsToPair(
-					new MatrixVectorBinaryOpPartitionFunction(bop, in2, vtype), true);
+				new MatrixVectorBinaryOpPartitionFunction(bop, in2, vtype), true);
 		}
 		
 		//set output RDD
@@ -282,7 +287,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		JavaPairRDD<TensorIndexes, TensorBlock> out;
 		// TODO less dims broadcast variable
 		out = in1.mapPartitionsToPair(
-				new TensorTensorBinaryOpPartitionFunction(bop, in2, replicateDim), true);
+			new TensorTensorBinaryOpPartitionFunction(bop, in2, replicateDim), true);
 
 		//set output RDD
 		updateBinaryTensorOutputDataCharacteristics(sec);
@@ -307,7 +312,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		
 		//execute scalar matrix arithmetic instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
-			
+		
 		//put output RDD handle into symbol table
 		updateUnaryOutputDataCharacteristics(sec, rddVar, output.getName());
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -356,15 +361,12 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		}
 	}
 
-	protected long getNumReplicas(DataCharacteristics mc1, DataCharacteristics mc2, boolean left)
-	{
-		if( left ) 
-		{
+	protected long getNumReplicas(DataCharacteristics mc1, DataCharacteristics mc2, boolean left) {
+		if( left ) {
 			if(mc1.getCols()==1 ) //outer
 				return mc2.getNumColBlocks();
 		}
-		else
-		{
+		else {
 			if(mc2.getRows()==1 && mc1.getRows()>1) //outer, row vector
 				return mc1.getNumRowBlocks();
 			else if( mc2.getCols()==1 && mc1.getCols()>1 ) //col vector
@@ -388,7 +390,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		//check for unknown input dimensions
 		if( !(mc1.dimsKnown() && mc2.dimsKnown()) ){
 			throw new DMLRuntimeException("Unknown dimensions matrix-matrix binary operations: "
-					+ "[" + mc1.getRows() + "x" + mc1.getCols()  + " vs " + mc2.getRows() + "x" + mc2.getCols() + "]");
+				+ "[" + mc1.getRows() + "x" + mc1.getCols()  + " vs " + mc2.getRows() + "x" + mc2.getCols() + "]");
 		}
 		
 		//check for dimension mismatch
@@ -398,13 +400,13 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			&& !(mc1.getCols()==1 && mc2.getRows()==1) )     //outer colvector-rowvector 
 		{
 			throw new DMLRuntimeException("Dimensions mismatch matrix-matrix binary operations: "
-					+ "[" + mc1.getRows() + "x" + mc1.getCols()  + " vs " + mc2.getRows() + "x" + mc2.getCols() + "]");
-		}	
+				+ "[" + mc1.getRows() + "x" + mc1.getCols()  + " vs " + mc2.getRows() + "x" + mc2.getCols() + "]");
+		}
 		
 		if(mc1.getBlocksize() != mc2.getBlocksize()) {
 			throw new DMLRuntimeException("Blocksize mismatch matrix-matrix binary operations: "
-					+ "[" + mc1.getBlocksize() + "x" + mc1.getBlocksize()  + " vs " + mc2.getBlocksize() + "x" + mc2.getBlocksize() + "]");
-		}	
+				+ "[" + mc1.getBlocksize() + "x" + mc1.getBlocksize()  + " vs " + mc2.getBlocksize() + "x" + mc2.getBlocksize() + "]");
+		}
 	}
 
 	protected void checkTensorTensorBinaryCharacteristics(SparkExecutionContext sec)

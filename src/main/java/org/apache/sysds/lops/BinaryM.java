@@ -109,7 +109,7 @@ public class BinaryM extends Lop
 		case INTDIV:
 			return "map%/%";
 		case MINUS1_MULTIPLY:
-			return "map1-*";	
+			return "map1-*";
 		
 		/* Relational */
 		case LESS_THAN:
@@ -139,7 +139,7 @@ public class BinaryM extends Lop
 			return "mapmax";
 		case POW:
 			return "map^";
-			
+		
 		default:
 			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + op);
 		}

@@ -1057,6 +1057,7 @@ public abstract class Hop implements ParseInfo
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
 		MINUS1_MULT, //1-X*Y
 		BITWAND, BITWOR, BITWXOR, BITWSHIFTL, BITWSHIFTR, //bitwise operations
+		DROP_INVALID, // frame operation for removing cells invalid wrt given data type
 	}
 
 	public static final HashMap<Hop.OpOp2, Binary.OperationTypes> HopsOpOp2LopsB;
@@ -1088,6 +1089,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2LopsB.put(OpOp2.BITWXOR, Binary.OperationTypes.BW_XOR);
 		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTL, Binary.OperationTypes.BW_SHIFTL);
 		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTR, Binary.OperationTypes.BW_SHIFTR);
+		HopsOpOp2LopsB.put(OpOp2.DROP_INVALID, Binary.OperationTypes.DROP_INVALID);
 	}
 
 	protected static final HashMap<Hop.OpOp2, BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
@@ -1320,7 +1322,8 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.BITWXOR, "bitwXor");
 		HopsOpOp2String.put(OpOp2.BITWSHIFTL, "bitwShiftL");
 		HopsOpOp2String.put(OpOp2.BITWSHIFTR, "bitwShiftR");
-		
+		HopsOpOp2String.put(OpOp2.DROP_INVALID, "dropInvalid");
+
 		HopsStringOpOp2 = new HashMap<>();
 		for( Entry<OpOp2,String> e : HopsOpOp2String.entrySet() )
 			HopsStringOpOp2.put(e.getValue(), e.getKey());

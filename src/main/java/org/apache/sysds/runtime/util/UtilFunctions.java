@@ -464,6 +464,7 @@ public class UtilFunctions
 			case INT32:   return Integer.parseInt(in);
 			case INT64:   return Long.parseLong(in);
 			case FP64:    return Double.parseDouble(in);
+			case FP32:    return Float.parseFloat(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
 	}
@@ -516,7 +517,8 @@ public class UtilFunctions
 	}
 
 	public static Object objectToObject(ValueType vt, Object in) {
-		if( in instanceof Double && vt == ValueType.FP64 
+		if( in instanceof Double && vt == ValueType.FP64
+			|| in instanceof Float && vt == ValueType.FP32
 			|| in instanceof Long && vt == ValueType.INT64
 			|| in instanceof Integer && vt == ValueType.INT32
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN

@@ -44,7 +44,7 @@ def numpy_to_matrix_block(jvm: JVMView, np_arr: np.array):
 
 
 def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
-    numRows = mb.getNumRows()
-    numCols = mb.getNumColumns()
+    num_ros = mb.getNumRows()
+    num_cols = mb.getNumColumns()
     buf = jvm.org.apache.sysds.runtime.compress.utils.Py4jConverterUtils.convertMBtoPy4JDenseArr(mb)
-    return np.frombuffer(buf, count=numRows * numCols, dtype=np.float64).reshape((numRows, numCols))
+    return np.frombuffer(buf, count=num_ros * num_cols, dtype=np.float64).reshape((num_ros, num_cols))

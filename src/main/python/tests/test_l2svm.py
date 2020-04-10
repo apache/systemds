@@ -30,8 +30,11 @@ import numpy as np
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
+
+from systemds.context import SystemDSContext
 from systemds.matrix import Matrix
-from systemds.utils import helpers
+
+sds = SystemDSContext()
 
 class TestL2svm(unittest.TestCase):
 
@@ -69,9 +72,9 @@ def generate_matrices_for_l2svm(dims: int, seed: int = 1234) -> Tuple[Matrix, Ma
     for i in range(dims):
         if np.random.random() > 0.5:
             m2[i][0] = 1
-    return Matrix(m1), Matrix(m2)
+    return sds.matrix(m1), sds.matrix(m2)
 
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    helpers.shutdown()
+    sds.close()

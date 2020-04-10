@@ -19,14 +19,17 @@
 #
 #-------------------------------------------------------------
 
-from typing import Any, Dict, Optional, Collection, KeysView, Union, Tuple
+from typing import Any, Collection, KeysView, Tuple, Union, Optional, Dict, TYPE_CHECKING
 
 from py4j.java_collections import JavaArray
-from py4j.java_gateway import JavaObject
+from py4j.java_gateway import JavaObject, JavaGateway
 
-from systemds.utils.helpers import get_gateway
-from systemds.script_building.dag import DAGNode, VALID_INPUT_TYPES
-from typing import Union, Optional, Dict
+from systemds.script_building.dag import DAGNode
+from systemds.utils.consts import VALID_INPUT_TYPES
+
+if TYPE_CHECKING:
+    # to avoid cyclic dependencies during runtime
+    from systemds.context import SystemDSContext
 
 
 class DMLScript:
@@ -39,13 +42,15 @@ class DMLScript:
 
     TODO rerun with different inputs without recompilation
     """
+    sds_context: 'SystemDSContext'
     dml_script: str
     inputs: Dict[str, DAGNode]
     prepared_script: Optional[Any]
     out_var_name: str
     _variable_counter: int
 
-    def __init__(self) -> None:
+    def __init__(self, context: 'SystemDSContext') -> None:
+        self.sds_context = context
         self.dml_script = ''
         self.inputs = {}
         self.prepared_script = None
@@ -75,14 +80,14 @@ class DMLScript:
         """
         # we could use the gateway directly, non defined functions will be automatically
         # sent to the entry_point, but this is safer
-        gateway = get_gateway()
+        gateway = self.sds_context.java_gateway
         entry_point = gateway.entry_point
         if self.prepared_script is None:
             input_names = self.inputs.keys()
             connection = entry_point.getConnection()
             self.prepared_script = connection.prepareScript(self.dml_script,
-                                                            _list_to_java_array(input_names),
-                                                            _list_to_java_array([self.out_var_name]))
+                                                            _list_to_java_array(gateway, input_names),
+                                                            _list_to_java_array(gateway, [self.out_var_name]))
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(gateway.jvm, name, self.prepared_script)
 
@@ -95,24 +100,23 @@ class DMLScript:
 
         return ret
 
-    def getlineage(self) -> str:
-        gateway = get_gateway()
+    def get_lineage(self) -> str:
+        gateway = self.sds_context.java_gateway
         entry_point = gateway.entry_point
         if self.prepared_script is None:
             input_names = self.inputs.keys()
             connection = entry_point.getConnection()
             self.prepared_script = connection.prepareScript(self.dml_script,
-                                                            _list_to_java_array(input_names),
-                                                            _list_to_java_array([self.out_var_name]))
+                                                            _list_to_java_array(gateway, input_names),
+                                                            _list_to_java_array(gateway, [self.out_var_name]))
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(gateway.jvm, name, self.prepared_script)
 
             connection.setLineage(True)
 
-        ret = self.prepared_script.executeScript()
+        self.prepared_script.executeScript()
         lineage = self.prepared_script.getLineageTrace(self.out_var_name)
         return lineage
-        
 
     def build_code(self, dag_root: DAGNode) -> None:
         """Builds code from our DAG
@@ -156,13 +160,12 @@ class DMLScript:
 
 
 # Helper Functions
-def _list_to_java_array(py_list: Union[Collection[str], KeysView[str]]) -> JavaArray:
+def _list_to_java_array(gateway: JavaGateway, py_list: Union[Collection[str], KeysView[str]]) -> JavaArray:
     """Convert python collection to java array.
 
     :param py_list: python collection
     :return: java array
     """
-    gateway = get_gateway()
     array = gateway.new_array(gateway.jvm.java.lang.String, len(py_list))
     for (i, e) in enumerate(py_list):
         array[i] = e

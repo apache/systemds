@@ -29,8 +29,7 @@ import numpy as np
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 
-from systemds.matrix import Matrix
-from systemds.utils import helpers
+from systemds.context import SystemDSContext
 
 dim = 5
 m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)
@@ -39,6 +38,7 @@ m2 = np.array(np.random.randint(5, size=dim * dim) + 1, dtype=np.double)
 m2.shape = (dim, dim)
 s = 3.02
 
+sds = SystemDSContext()
 
 class TestBinaryOp(unittest.TestCase):
 
@@ -53,51 +53,51 @@ class TestBinaryOp(unittest.TestCase):
                                 category=ResourceWarning)
 
     def test_plus(self):
-        self.assertTrue(np.allclose((Matrix(m1) + Matrix(m2)).compute(), m1 + m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) + sds.matrix(m2)).compute(), m1 + m2))
 
     def test_minus(self):
-        self.assertTrue(np.allclose((Matrix(m1) - Matrix(m2)).compute(), m1 - m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) - sds.matrix(m2)).compute(), m1 - m2))
 
     def test_mul(self):
-        self.assertTrue(np.allclose((Matrix(m1) * Matrix(m2)).compute(), m1 * m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) * sds.matrix(m2)).compute(), m1 * m2))
 
     def test_div(self):
-        self.assertTrue(np.allclose((Matrix(m1) / Matrix(m2)).compute(), m1 / m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) / sds.matrix(m2)).compute(), m1 / m2))
 
     # TODO arithmetic with numpy rhs
 
     # TODO arithmetic with numpy lhs
 
     def test_plus3(self):
-        self.assertTrue(np.allclose((Matrix(m1) + s).compute(), m1 + s))
+        self.assertTrue(np.allclose((sds.matrix(m1) + s).compute(), m1 + s))
 
     def test_minus3(self):
-        self.assertTrue(np.allclose((Matrix(m1) - s).compute(), m1 - s))
+        self.assertTrue(np.allclose((sds.matrix(m1) - s).compute(), m1 - s))
 
     def test_mul3(self):
-        self.assertTrue(np.allclose((Matrix(m1) * s).compute(), m1 * s))
+        self.assertTrue(np.allclose((sds.matrix(m1) * s).compute(), m1 * s))
 
     def test_div3(self):
-        self.assertTrue(np.allclose((Matrix(m1) / s).compute(), m1 / s))
+        self.assertTrue(np.allclose((sds.matrix(m1) / s).compute(), m1 / s))
 
     # TODO arithmetic with scala lhs
 
     def test_lt(self):
-        self.assertTrue(np.allclose((Matrix(m1) < Matrix(m2)).compute(), m1 < m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) < sds.matrix(m2)).compute(), m1 < m2))
 
     def test_gt(self):
-        self.assertTrue(np.allclose((Matrix(m1) > Matrix(m2)).compute(), m1 > m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) > sds.matrix(m2)).compute(), m1 > m2))
 
     def test_le(self):
-        self.assertTrue(np.allclose((Matrix(m1) <= Matrix(m2)).compute(), m1 <= m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) <= sds.matrix(m2)).compute(), m1 <= m2))
 
     def test_ge(self):
-        self.assertTrue(np.allclose((Matrix(m1) >= Matrix(m2)).compute(), m1 >= m2))
+        self.assertTrue(np.allclose((sds.matrix(m1) >= sds.matrix(m2)).compute(), m1 >= m2))
 
     def test_abs(self):
-        self.assertTrue(np.allclose(Matrix(m1).abs().compute(), np.abs(m1)))
+        self.assertTrue(np.allclose(sds.matrix(m1).abs().compute(), np.abs(m1)))
 
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    helpers.shutdown()
+    sds.close()

@@ -17,6 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+from typing import Union
 
-__all__ = ['context', 'matrix']
+MODULE_NAME = 'systemds'
+VALID_INPUT_TYPES = Union['DAGNode', str, int, float, bool]
+BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=']
+# TODO add numpy array and implement for numpy array
+VALID_ARITHMETIC_TYPES = Union['DAGNode', int, float]
+

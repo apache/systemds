@@ -30,7 +30,10 @@ import numpy as np
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 from systemds.matrix import Matrix
-from systemds.utils import helpers
+from systemds.context import SystemDSContext
+
+sds = SystemDSContext()
+
 
 class TestAPI(unittest.TestCase):
 
@@ -46,8 +49,8 @@ class TestAPI(unittest.TestCase):
 
     def test_getl2svm_lineage(self):
         features, labels = generate_matrices_for_l2svm(10, seed=1304)
-        #get the lineage trace
-        lt = features.l2svm(labels).getLineageTrace()
+        # get the lineage trace
+        lt = features.l2svm(labels).get_lineage_trace()
         with open(os.path.join("tests", "lt_l2svm.txt"), "r") as file:
             data = file.read()
         file.close()
@@ -55,8 +58,8 @@ class TestAPI(unittest.TestCase):
 
     def test_getl2svm_lineage2(self):
         features, labels = generate_matrices_for_l2svm(10, seed=1304)
-        #get the lineage trace
-        model, lt = features.l2svm(labels).compute(lineage = True)
+        # get the lineage trace
+        model, lt = features.l2svm(labels).compute(lineage=True)
         with open(os.path.join("tests", "lt_l2svm.txt"), "r") as file:
             data = file.read()
         file.close()
@@ -71,14 +74,15 @@ def generate_matrices_for_l2svm(dims: int, seed: int = 1234) -> Tuple[Matrix, Ma
     for i in range(dims):
         if np.random.random() > 0.5:
             m2[i][0] = 1
-    return Matrix(m1), Matrix(m2)
+    return sds.matrix(m1), sds.matrix(m2)
+
 
 def reVars(s: str) -> str:
     s = re.sub(r'\b_mVar\d*\b', '', s)
     s = re.sub(r'\b_Var\d*\b', '', s)
     return s
-    
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    helpers.shutdown()
+    sds.close()

@@ -86,8 +86,7 @@ import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ZipmmSPInstruction;
 
-
-public class SPInstructionParser extends InstructionParser 
+public class SPInstructionParser extends InstructionParser
 {	
 	public static final HashMap<String, SPType> String2SPInstructionType;
 	static {
@@ -133,7 +132,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "pmm"        , SPType.PMM);
 		String2SPInstructionType.put( "zipmm"      , SPType.ZIPMM);
 		String2SPInstructionType.put( "pmapmm"     , SPType.PMAPMM);
-		
+
+
 		String2SPInstructionType.put( "uaggouterchain", SPType.UaggOuterChain);
 		
 		//ternary aggregate operators
@@ -177,7 +177,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map^"    , SPType.Binary);
 		String2SPInstructionType.put( "map+*"   , SPType.Binary);
 		String2SPInstructionType.put( "map-*"   , SPType.Binary);
-		
+		String2SPInstructionType.put( "dropInvalid", SPType.Binary);
 		// Relational Instruction Opcodes 
 		String2SPInstructionType.put( "=="   , SPType.Binary);
 		String2SPInstructionType.put( "!="   , SPType.Binary);
@@ -390,7 +390,7 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Binary:
 				return BinarySPInstruction.parseInstruction(str);
-			
+
 			case Ternary:
 				return TernarySPInstruction.parseInstruction(str);
 			

@@ -37,6 +37,7 @@ public class Binary extends Lop
 		AND, OR, XOR,
 		MAX, MIN, POW, SOLVE, NOTSUPPORTED,
 		BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR, //Bitwise operations
+		DROP_INVALID,
 	}
 
 	private OperationTypes operation;
@@ -115,9 +116,9 @@ public class Binary extends Lop
 		case DIVIDE:
 			return "/";
 		case MODULUS:
-			return "%%";	
+			return "%%";
 		case INTDIV:
-			return "%/%";		
+			return "%/%";
 		case MATMULT:
 			return "ba+*";
 		case MINUS1_MULTIPLY:
@@ -167,6 +168,9 @@ public class Binary extends Lop
 			
 		case SOLVE:
 			return "solve";
+
+		case DROP_INVALID:
+			return "dropInvalid";
 			
 		default:
 			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + op);
@@ -200,7 +204,6 @@ public class Binary extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( isRightTransposed );
 		}
-		
 		return sb.toString();
 	}
 }

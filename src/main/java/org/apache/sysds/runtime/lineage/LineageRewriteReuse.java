@@ -99,7 +99,7 @@ public class LineageRewriteReuse
 		ec.setVariable(((ComputationCPInstruction)curr).output.getName(), lrwec.getVariable(LR_VAR));
 
 		//put the result into the cache
-		LineageCache.put(curr, ec);
+		LineageCache.putMatrix(curr, ec);
 		DMLScript.EXPLAIN = et; //TODO can't change this here
 		
 		//cleanup execution context
@@ -529,7 +529,7 @@ public class LineageRewriteReuse
 
 	private static boolean isTsmmCbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec)) {
+		if (!LineageCacheConfig.isReusable(curr, ec)) {
 			return false;
 		}
 
@@ -543,10 +543,10 @@ public class LineageRewriteReuse
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input1});
 				if (LineageCache.probe(tmp)) 
-					inCache.put("lastMatrix", LineageCache.get(tmp).getMBValue());
+					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
 				if (LineageCache.probe(source.getInputs()[1])) 
-					inCache.put("deltaX", LineageCache.get(source.getInputs()[1]).getMBValue());
+					inCache.put("deltaX", LineageCache.getMatrix(source.getInputs()[1]));
 			}
 		// return true only if the last tsmm is found
 		return inCache.containsKey("lastMatrix") ? true : false;
@@ -554,7 +554,7 @@ public class LineageRewriteReuse
 
 	private static boolean isTsmmRbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec))
+		if (!LineageCacheConfig.isReusable(curr, ec))
 			return false;
 
 		// If the input to tsmm came from rbind, look for both the inputs in cache.
@@ -566,10 +566,10 @@ public class LineageRewriteReuse
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input1});
 				if (LineageCache.probe(tmp)) 
-					inCache.put("lastMatrix", LineageCache.get(tmp).getMBValue());
+					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
 				if (LineageCache.probe(source.getInputs()[1])) 
-					inCache.put("deltaX", LineageCache.get(source.getInputs()[1]).getMBValue());
+					inCache.put("deltaX", LineageCache.getMatrix(source.getInputs()[1]));
 			}
 		// return true only if the last tsmm is found
 		return inCache.containsKey("lastMatrix") ? true : false;
@@ -577,7 +577,7 @@ public class LineageRewriteReuse
 	
 	private static boolean isTsmm2Cbind (Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec))
+		if (!LineageCacheConfig.isReusable(curr, ec))
 			return false;
 
 		//TODO: support nary cbind
@@ -593,10 +593,10 @@ public class LineageRewriteReuse
 					LineageItem tmp = new LineageItem("comb", "cbind", new LineageItem[] {L2appin1, source.getInputs()[1]});
 					LineageItem toProbe = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {tmp});
 					if (LineageCache.probe(toProbe)) 
-						inCache.put("lastMatrix", LineageCache.get(toProbe).getMBValue());
+						inCache.put("lastMatrix", LineageCache.getMatrix(toProbe));
 					// look for the appended column in cache
 					if (LineageCache.probe(input.getInputs()[1])) 
-						inCache.put("deltaX", LineageCache.get(input.getInputs()[1]).getMBValue());
+						inCache.put("deltaX", LineageCache.getMatrix(input.getInputs()[1]));
 				}
 			}
 		// return true only if the last tsmm is found
@@ -605,7 +605,7 @@ public class LineageRewriteReuse
 
 	private static boolean isMatMulRbindLeft(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec))
+		if (!LineageCacheConfig.isReusable(curr, ec))
 			return false;
 
 		// If the left input to ba+* came from rbind, look for both the inputs in cache.
@@ -618,10 +618,10 @@ public class LineageRewriteReuse
 				// create ba+* lineage on top of the input of last append
 				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {leftSource, right});
 				if (LineageCache.probe(tmp))
-					inCache.put("lastMatrix", LineageCache.get(tmp).getMBValue());
+					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
 				if (LineageCache.probe(left.getInputs()[1])) 
-					inCache.put("deltaX", LineageCache.get(left.getInputs()[1]).getMBValue());
+					inCache.put("deltaX", LineageCache.getMatrix(left.getInputs()[1]));
 			}
 		}
 		// return true only if the last tsmm is found
@@ -630,7 +630,7 @@ public class LineageRewriteReuse
 
 	private static boolean isMatMulCbindRight(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec))
+		if (!LineageCacheConfig.isReusable(curr, ec))
 			return false;
 
 		// If the right input to ba+* came from cbind, look for both the inputs in cache.
@@ -643,10 +643,10 @@ public class LineageRewriteReuse
 				// create ba+* lineage on top of the input of last append
 				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {left, rightSource});
 				if (LineageCache.probe(tmp))
-					inCache.put("lastMatrix", LineageCache.get(tmp).getMBValue());
+					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
 				if (LineageCache.probe(right.getInputs()[1])) 
-					inCache.put("deltaY", LineageCache.get(right.getInputs()[1]).getMBValue());
+					inCache.put("deltaY", LineageCache.getMatrix(right.getInputs()[1]));
 			}
 		}
 		return inCache.containsKey("lastMatrix") ? true : false;
@@ -654,7 +654,7 @@ public class LineageRewriteReuse
 
 	private static boolean isElementMulRbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec))
+		if (!LineageCacheConfig.isReusable(curr, ec))
 			return false;
 
 		// If the inputs to * came from rbind, look for both the inputs in cache.
@@ -668,12 +668,12 @@ public class LineageRewriteReuse
 				// create * lineage on top of the input of last append
 				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
 				if (LineageCache.probe(tmp))
-					inCache.put("lastMatrix", LineageCache.get(tmp).getMBValue());
+					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended rows in cache
 				if (LineageCache.probe(left.getInputs()[1]))
-					inCache.put("deltaX", LineageCache.get(left.getInputs()[1]).getMBValue());
+					inCache.put("deltaX", LineageCache.getMatrix(left.getInputs()[1]));
 				if (LineageCache.probe(right.getInputs()[1]))
-					inCache.put("deltaY", LineageCache.get(right.getInputs()[1]).getMBValue());
+					inCache.put("deltaY", LineageCache.getMatrix(right.getInputs()[1]));
 			}
 		}
 		return inCache.containsKey("lastMatrix") ? true : false;
@@ -681,7 +681,7 @@ public class LineageRewriteReuse
 
 	private static boolean isElementMulCbind(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec))
+		if (!LineageCacheConfig.isReusable(curr, ec))
 			return false;
 
 		// If the inputs to * came from cbind, look for both the inputs in cache.
@@ -695,12 +695,12 @@ public class LineageRewriteReuse
 				// create * lineage on top of the input of last append
 				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
 				if (LineageCache.probe(tmp))
-					inCache.put("lastMatrix", LineageCache.get(tmp).getMBValue());
+					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended columns in cache
 				if (LineageCache.probe(left.getInputs()[1]))
-					inCache.put("deltaX", LineageCache.get(left.getInputs()[1]).getMBValue());
+					inCache.put("deltaX", LineageCache.getMatrix(left.getInputs()[1]));
 				if (LineageCache.probe(right.getInputs()[1]))
-					inCache.put("deltaY", LineageCache.get(right.getInputs()[1]).getMBValue());
+					inCache.put("deltaY", LineageCache.getMatrix(right.getInputs()[1]));
 			}
 		}
 		return inCache.containsKey("lastMatrix") ? true : false;
@@ -708,7 +708,7 @@ public class LineageRewriteReuse
 
 	private static boolean isAggCbind (Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
 	{
-		if (!LineageCache.isReusable(curr, ec)) {
+		if (!LineageCacheConfig.isReusable(curr, ec)) {
 			return false;
 		}
 
@@ -726,10 +726,10 @@ public class LineageRewriteReuse
 				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), 
 						new LineageItem[] {input1, groups, weights, fn, ngroups});
 				if (LineageCache.probe(tmp)) 
-					inCache.put("lastMatrix", LineageCache.get(tmp).getMBValue());
+					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
 				if (LineageCache.probe(target.getInputs()[1])) 
-					inCache.put("deltaX", LineageCache.get(target.getInputs()[1]).getMBValue());
+					inCache.put("deltaX", LineageCache.getMatrix(target.getInputs()[1]));
 			}
 		}
 		// return true only if the last tsmm is found

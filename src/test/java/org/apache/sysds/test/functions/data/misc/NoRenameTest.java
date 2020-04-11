@@ -87,17 +87,17 @@ public class NoRenameTest extends AutomatedTestBase
 	public void testTextmmSparseSinglenode() {
 		runRenameTest("mm", true, ExecMode.SINGLE_NODE);
 	}
-//	
-//	@Test
-//	public void testTextlibsvmDenseSinglenode() {
-//		runRenameTest("libsvm", false, ExecMode.SINGLE_NODE);
-//	}
-//	
-//	@Test
-//	public void testTextlibsvmSparseSinglenode() {
-//		runRenameTest("libsvm", true, ExecMode.SINGLE_NODE);
-//	}
-//	
+	
+	@Test
+	public void testTextlibsvmDenseSinglenode() {
+		runRenameTest("libsvm", false, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testTextlibsvmSparseSinglenode() {
+		runRenameTest("libsvm", true, ExecMode.SINGLE_NODE);
+	}
+	
 	@Test
 	public void testBinaryDenseSinglenode() {
 		runRenameTest("binary", false, ExecMode.SINGLE_NODE);
@@ -137,16 +137,16 @@ public class NoRenameTest extends AutomatedTestBase
 	public void testTextmmSparseHybrid() {
 		runRenameTest("mm", true, ExecMode.HYBRID);
 	}
-//	
-//	@Test
-//	public void testTextlibsvmDenseHybrid() {
-//		runRenameTest("libsvm", false, ExecMode.HYBRID);
-//	}
-//	
-//	@Test
-//	public void testTextlibsvmSparseHybrid() {
-//		runRenameTest("libsvm", true, ExecMode.HYBRID);
-//	}
+	
+	@Test
+	public void testTextlibsvmDenseHybrid() {
+		runRenameTest("libsvm", false, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTextlibsvmSparseHybrid() {
+		runRenameTest("libsvm", true, ExecMode.HYBRID);
+	}
 	
 	@Test
 	public void testBinaryDenseHybrid() {
@@ -187,7 +187,7 @@ public class NoRenameTest extends AutomatedTestBase
 	public void testTextmmSparseSpark() {
 		runRenameTest("mm", true, ExecMode.SPARK);
 	}
-//	
+	
 //	@Test
 //	public void testTextlibsvmDenseSpark() {
 //		runRenameTest("libsvm", false, ExecMode.SPARK);
@@ -197,7 +197,7 @@ public class NoRenameTest extends AutomatedTestBase
 //	public void testTextlibsvmSparseSpark() {
 //		runRenameTest("libsvm", true, ExecMode.SPARK);
 //	}
-	
+//	
 	@Test
 	public void testBinaryDenseSpark() {
 		runRenameTest("binary", false, ExecMode.SPARK);

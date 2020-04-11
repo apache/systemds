@@ -38,7 +38,6 @@ public class WriterTextLIBSVM extends MatrixWriter
 	
 	}
 
-	@SuppressWarnings("resource")
 	@Override
 	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
@@ -99,7 +98,6 @@ public class WriterTextLIBSVM extends MatrixWriter
 					double label = (sblock!=null) ? 
 						sblock.get(i, clen-1) : 0;
 					sb.append(label);
-					sb.append(IOUtilFunctions.LIBSVM_DELIM);
 					
 					if( sblock!=null && i<sblock.numRows() && !sblock.isEmpty(i) ) {
 						int pos = sblock.pos(i);
@@ -108,9 +106,10 @@ public class WriterTextLIBSVM extends MatrixWriter
 						double[] avals = sblock.values(i);
 						// append sparse row
 						for( int k=pos; k<pos+alen; k++ ) {
-							if( aix[k] != clen-1 )
-								appendIndexValLibsvm(sb, aix[k]+1, avals[k]);
-							sb.append(IOUtilFunctions.LIBSVM_DELIM);
+							if( aix[k]!=clen-1 ) {
+								sb.append(IOUtilFunctions.LIBSVM_DELIM);
+								appendIndexValLibsvm(sb, aix[k], avals[k]);
+							}
 						}
 					}
 					// write the string row
@@ -125,14 +124,13 @@ public class WriterTextLIBSVM extends MatrixWriter
 					// append the class label as the 1st column
 					double label = src.getValueDenseUnsafe(i, clen-1);
 					sb.append(label);
-					sb.append(IOUtilFunctions.LIBSVM_DELIM);
 					
 					// append dense row
 					for( int j=0; j<clen-1; j++ ) {
 						double val = src.getValueDenseUnsafe(i, j);
 						if( val != 0 ) {
-							appendIndexValLibsvm(sb, j, val);
 							sb.append(IOUtilFunctions.LIBSVM_DELIM);
+							appendIndexValLibsvm(sb, j, val);
 						}
 					}
 					// write the string row

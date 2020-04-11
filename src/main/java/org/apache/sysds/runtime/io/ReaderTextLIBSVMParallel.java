@@ -297,7 +297,7 @@ public class ReaderTextLIBSVMParallel extends MatrixReader
 				long rlen, long clen, int splitCount) 
 		{
 			_split = split;
-			_splitoffsets = offsets; // new SplitOffsetInfos(offsets);
+			_splitoffsets = offsets;
 			_informat = informat;
 			_job = job;
 			_dest = dest;

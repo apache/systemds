@@ -20,5 +20,5 @@
 #-------------------------------------------------------------
 
 A = read($1, format=$2, rows=$3, cols=$4);
-print(nrow(A))
+print(nrow(A));
 write(A, $5, format=$2);

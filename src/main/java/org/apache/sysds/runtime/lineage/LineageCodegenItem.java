@@ -25,6 +25,10 @@ import java.util.Map;
 public class LineageCodegenItem {
 	private static Map<String, LineageItem> _codegentraces = new HashMap<>();
 
+	public static void reset() {
+		_codegentraces.clear();
+	}
+	
 	public static LineageItem setCodegenLTrace(String classname, LineageItem li) {
 		return _codegentraces.put(classname, li);
 	}

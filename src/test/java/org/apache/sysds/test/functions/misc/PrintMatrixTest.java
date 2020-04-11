@@ -43,10 +43,6 @@ public class PrintMatrixTest extends AutomatedTestBase
 		runTest( TEST_NAME1, false ); 
 	}
 	
-	/**
-	 * 
-	 * @param testName
-	 */
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
 		TestConfiguration config = getTestConfiguration(TEST_NAME1);
@@ -54,9 +50,9 @@ public class PrintMatrixTest extends AutomatedTestBase
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-		programArgs = new String[]{"-explain"};
+		programArgs = new String[]{""};
 		
 		//run tests
-        runTest(true, exceptionExpected, DMLException.class, -1);
+		runTest(true, exceptionExpected, DMLException.class, -1);
 	}
 }

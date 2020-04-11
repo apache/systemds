@@ -105,14 +105,14 @@ public class ConditionalValidateTest extends AutomatedTestBase
 		String TEST_NAME = testName;
 
 		try
-		{		
+		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 
-		    String HOME = SCRIPT_DIR + TEST_DIR;
-		    String input = input("Y");
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			String input = input("Y");
 			
-		    fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", input };
 			
 			//write input
@@ -124,16 +124,15 @@ public class ConditionalValidateTest extends AutomatedTestBase
 			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.FP64, mc, OutputInfo.TextCellOutputInfo);
 			
 			//run tests
-	        runTest(true, exceptionExpected, DMLException.class, -1);
-	        
-	        //cleanup
-	        HDFSTool.deleteFileIfExistOnHDFS(input);
-	        HDFSTool.deleteFileIfExistOnHDFS(input+"b");
-	        HDFSTool.deleteFileIfExistOnHDFS(input+".mtd");
-	        HDFSTool.deleteFileIfExistOnHDFS(input+"b.mtd");	        
+			runTest(true, exceptionExpected, DMLException.class, -1);
+
+			//cleanup
+			HDFSTool.deleteFileIfExistOnHDFS(input);
+			HDFSTool.deleteFileIfExistOnHDFS(input+"b");
+			HDFSTool.deleteFileIfExistOnHDFS(input+".mtd");
+			HDFSTool.deleteFileIfExistOnHDFS(input+"b.mtd");
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}

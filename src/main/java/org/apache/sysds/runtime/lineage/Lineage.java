@@ -123,6 +123,7 @@ public class Lineage {
 	public static void resetInternalState() {
 		LineageItem.resetIDSequence();
 		LineageCache.resetCache();
+		LineageCacheStatistics.reset();
 	}
 	
 	public static void setLinReusePartial() {

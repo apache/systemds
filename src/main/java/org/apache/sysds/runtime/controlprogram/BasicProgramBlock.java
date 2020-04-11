@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -28,7 +29,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.lineage.LineageCache;
-import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -107,10 +108,10 @@ public class BasicProgramBlock extends ProgramBlock
 		
 		//statement-block-level, lineage-based reuse
 		LineageItem[] liInputs = null;
-		if (_sb != null && !ReuseCacheType.isNone()) {
-			String name = "SB" + _sb.getSBID();
+		if (_sb != null && LineageCacheConfig.isMultiLevelReuse()) {
 			liInputs = LineageItemUtils.getLineageItemInputstoSB(_sb.getInputstoSB(), ec);
-			if( LineageCache.reuse(_sb.getOutputsofSB(), _sb.getOutputsofSB().size(), liInputs, name, ec) ) {
+			List<String> outNames = _sb.getOutputNamesofSB();
+			if( LineageCache.reuse(outNames, _sb.getOutputsofSB(), outNames.size(), liInputs, _sb.getName(), ec) ) {
 				if( DMLScript.STATISTICS )
 					LineageCacheStatistics.incrementSBHits();
 				return;
@@ -121,9 +122,7 @@ public class BasicProgramBlock extends ProgramBlock
 		executeInstructions(tmp, ec);
 		
 		//statement-block-level, lineage-based caching
-		if (_sb != null && liInputs != null) {
-			String name = "SB" + _sb.getSBID();
-			LineageCache.putValue(_sb.getOutputsofSB(), _sb.getOutputsofSB().size(), liInputs, name, ec);
-		}
+		if (_sb != null && liInputs != null)
+			LineageCache.putValue(_sb.getOutputsofSB(), liInputs, _sb.getName(), ec);
 	}
 }

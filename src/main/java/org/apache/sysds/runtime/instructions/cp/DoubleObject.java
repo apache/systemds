@@ -62,4 +62,9 @@ public class DoubleObject extends ScalarObject
 	public String getDebugName() {
 		return null;
 	}
+	
+	@Override
+	public int getSize() {
+		return 16 + Double.SIZE/Byte.SIZE;
+	}
 }

@@ -57,7 +57,7 @@ public class FunctionNotFoundTest extends AutomatedTestBase
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-explain", "-stats"};
+		programArgs = new String[]{};
 
 		//run script and compare output
 		runTest(true, error, DMLException.class, -1); 

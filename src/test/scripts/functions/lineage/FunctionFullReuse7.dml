@@ -19,4 +19,19 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['context', 'matrix']
+foo = function(Matrix[Double] X) return (Matrix[Double] R) {
+  y = X + X - 2 * sqrt(X) + X * X;
+  while(FALSE){}
+  R = rowSums(y)*colSums(y);
+}
+
+X = rand(rows=100, cols=10, seed=7);
+while(FALSE){}
+X = X + 1;
+
+R = matrix(0, 1, ncol(X));
+parfor(i in 1:10) {
+  R[,i] = sum(foo(X[,i]));
+}
+
+write(R, $1, format="text");

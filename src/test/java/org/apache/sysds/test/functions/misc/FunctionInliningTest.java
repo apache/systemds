@@ -94,7 +94,7 @@ public class FunctionInliningTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-explain","-args",String.valueOf(rows),
+			programArgs = new String[] {"-args",String.valueOf(rows),
 				String.valueOf(cols), String.valueOf(val), output("Rout") };
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;

@@ -19,4 +19,6 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['context', 'matrix']
+from .systemds_context import *
+
+__all__ = systemds_context.__all__

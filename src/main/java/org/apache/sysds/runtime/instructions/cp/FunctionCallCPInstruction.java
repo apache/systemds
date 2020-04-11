@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCache;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -115,7 +116,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 		
 		// check if function outputs can be reused from cache
-		LineageItem[] liInputs = DMLScript.LINEAGE ?
+		LineageItem[] liInputs = DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ?
 			LineageItemUtils.getLineage(ec, _boundInputs) : null;
 		if( reuseFunctionOutputs(liInputs, fpb, ec) )
 			return; //only if all the outputs are found in cache
@@ -224,7 +225,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 
 		//update lineage cache with the functions outputs
-		LineageCache.putValue(_boundOutputNames, numOutputs, liInputs, _functionName, ec);
+		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() )
+			LineageCache.putValue(fpb.getOutputParams(), liInputs, _functionName, ec);
 	}
 
 	@Override
@@ -261,7 +263,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	
 	private boolean reuseFunctionOutputs(LineageItem[] liInputs, FunctionProgramBlock fpb, ExecutionContext ec) {
 		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
-		boolean reuse = LineageCache.reuse(_boundOutputNames, numOutputs, liInputs, _functionName, ec);
+		boolean reuse = LineageCache.reuse(_boundOutputNames, fpb.getOutputParams(), numOutputs, liInputs, _functionName, ec);
 
 		if (reuse && DMLScript.STATISTICS) {
 			//decrement the call count for this function

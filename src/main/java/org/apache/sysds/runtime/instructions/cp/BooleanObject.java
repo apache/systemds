@@ -62,4 +62,9 @@ public class BooleanObject extends ScalarObject
 	public Object getValue(){
 		return _value;
 	}
+
+	@Override
+	public int getSize() {
+		return 16 + 8;
+	}
 }

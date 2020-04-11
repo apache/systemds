@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.io.Writable;
+import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -1827,6 +1828,41 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		FrameBlock fb = new FrameBlock(UtilFunctions.nCopies(cols, ValueType.STRING));
 		fb.appendRow(schemaInfo);
 		return fb;
+	}
+
+	public FrameBlock dropInvalid(FrameBlock schema) {
+		//sanity checks
+		if(this.getNumColumns() != schema.getNumColumns())
+			throw new DMLException("mismatch in number of columns in frame and its schema ");
+
+		String[] schemaString = schema.getStringRowIterator().next(); // extract the schema in String array
+		for (int i = 0; i < this.getNumColumns(); i++) {
+			Array obj = this.getColumn(i);
+			for (int j = 0; j < this.getNumRows(); j++)
+			{
+				if(obj.get(j) == null)
+					continue;
+				String dataValue = obj.get(j).toString().trim().replace("\"", "").toLowerCase() ;
+
+				ValueType dataType = isType(dataValue);
+				 if (dataType== ValueType.FP64 && schemaString[i].trim().equals("FP32")) {
+					 double maxValue = Double.parseDouble(dataValue);
+					 if ((maxValue < (-Float.MAX_VALUE)) || (maxValue > Float.MAX_VALUE))
+						 this.set(j,i,null);
+				}
+				else if (dataType== ValueType.INT64 && schemaString[i].trim().equals("INT32")) {
+					 long maxValue = Long.parseLong(dataValue);
+					 if ((maxValue < Integer.MIN_VALUE) || (maxValue > Integer.MAX_VALUE))
+						 this.set(j,i,null);
+				}
+				else if(dataType == ValueType.BOOLEAN && schemaString[i].trim().equals("INT32")
+						 && ((Integer.parseInt(dataValue) == 1 || Integer.parseInt(dataValue) == 0)))
+					continue;
+				else if (!dataType.toString().equals(schemaString[i].trim()))
+					this.set(j,i,null);
+			}
+		}
+		return this;
 	}
 
 	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {

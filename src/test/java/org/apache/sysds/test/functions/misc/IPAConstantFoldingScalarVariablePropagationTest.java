@@ -101,7 +101,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			loadTestConfiguration(config);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
+			programArgs = new String[]{"-stats"};
 			OptimizerUtils.IPA_NUM_REPETITIONS = IPA_SECOND_CHANCE ? 2 : 1;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			rtplatform = ExecMode.HYBRID;

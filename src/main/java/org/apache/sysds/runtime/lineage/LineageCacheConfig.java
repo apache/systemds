@@ -19,21 +19,35 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+
 import java.util.ArrayList;
 
 public class LineageCacheConfig {
 	
+	private static final String[] REUSE_OPCODES = new String[] {
+		"tsmm", "ba+*", "*", "/", "+", "nrow", "ncol",
+		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof"
+	};
+	
 	public enum ReuseCacheType {
 		REUSE_FULL,
 		REUSE_PARTIAL,
+		REUSE_MULTILEVEL,
 		REUSE_HYBRID,
 		NONE;
 		public boolean isFullReuse() {
-			return this == REUSE_FULL || this == REUSE_HYBRID;
+			return this == REUSE_FULL || this == REUSE_MULTILEVEL || this == REUSE_HYBRID;
 		}
 		public boolean isPartialReuse() {
 			return this == REUSE_PARTIAL || this == REUSE_HYBRID;
+		}
+		public boolean isMultilevelReuse() {
+			return this == REUSE_MULTILEVEL || this == REUSE_HYBRID;
 		}
 		public static boolean isNone() {
 			return DMLScript.LINEAGE_REUSE == null
@@ -63,6 +77,21 @@ public class LineageCacheConfig {
 	static {
 		//setup static configuration parameters
 		setSpill(false); //disable spilling of cache entries to disk
+	}
+	
+	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
+		return inst instanceof ComputationCPInstruction
+			&& (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
+				|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
+	}
+	
+	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
+		ComputationCPInstruction cpinst = (ComputationCPInstruction) inst;
+		if( !cpinst.input1.isMatrix() || !cpinst.input2.isMatrix() )
+			return false;
+		long c1 = ec.getMatrixObject(cpinst.input1).getNumColumns();
+		long c2 = ec.getMatrixObject(cpinst.input2).getNumColumns();
+		return(c1 == 1 || c2 == 1);
 	}
 	
 	public static void setConfigTsmmCbind(ReuseCacheType ct) {
@@ -102,9 +131,14 @@ public class LineageCacheConfig {
 	public static boolean isSetSpill() {
 		return _allowSpill;
 	}
-	
+
 	public static ReuseCacheType getCacheType() {
 		return _cacheType;
+	}
+	
+	public static boolean isMultiLevelReuse() {
+		return !ReuseCacheType.isNone()
+			&& _cacheType.isMultilevelReuse();
 	}
 
 	public static CachedItemHead getCachedItemHead() {

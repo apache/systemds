@@ -19,4 +19,16 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['context', 'matrix']
+# Increase k for better performance gains
+
+X = rand(rows=1024, cols=1024, seed=42);
+k = 10
+
+for(i in 1:k){
+  t = sum(X) + nrow(X);  #cache scalar result
+  while(FALSE){}
+  tmp = X + t;
+}
+
+write(tmp, $1, format="text");
+

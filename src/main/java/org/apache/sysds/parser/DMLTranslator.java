@@ -2434,7 +2434,6 @@ public class DMLTranslator
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
 			break;
-
 		case ABS:
 		case SIN:
 		case COS:
@@ -2462,6 +2461,10 @@ public class DMLTranslator
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 				OpOp1.valueOf(source.getOpCode().name()), expr);
 			break;
+		case DROP_INVALID:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
+			break;
 		
 		case LOG:
 				if (expr2 == null) {
@@ -2472,11 +2475,11 @@ public class DMLTranslator
 						break;
 					default:
 						throw new ParseException(source.printErrorLocation() +
-								"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
-										+ source.getOpCode());
+							"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
+							+ source.getOpCode());
 					}
-					currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), mathOp2,
-							expr);
+					currBuiltinOp = new UnaryOp(target.getName(),
+						target.getDataType(), target.getValueType(), mathOp2, expr);
 				} else {
 					Hop.OpOp2 mathOp3;
 					switch (source.getOpCode()) {
@@ -2485,8 +2488,8 @@ public class DMLTranslator
 						break;
 					default:
 						throw new ParseException(source.printErrorLocation() +
-								"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
-										+ source.getOpCode());
+							"processBuiltinFunctionExpression():: Could not find Operation type for builtin function: "
+								+ source.getOpCode());
 					}
 					currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), mathOp3,
 							expr, expr2);
@@ -2527,12 +2530,12 @@ public class DMLTranslator
 			currBuiltinOp = new DataGenOp(OpOpDG.TIME, target);
 			break;
 			
-		case SAMPLE: 
+		case SAMPLE:
 		{
 			Expression[] in = source.getAllExpr();
 			
 			// arguments: range/size/replace/seed; defaults: replace=FALSE
-				
+			
 			HashMap<String,Hop> tmpparams = new HashMap<>();
 			tmpparams.put(DataExpression.RAND_MAX, expr); //range
 			tmpparams.put(DataExpression.RAND_ROWS, expr2);

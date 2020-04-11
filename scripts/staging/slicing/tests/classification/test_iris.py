@@ -20,6 +20,7 @@ if __name__ == "__main__":
             b_update = False
         debug = args[5]
         loss_type = int(args[6])
+        enumerator = args[7]
     else:
         k = 10
         w = 0.5
@@ -27,8 +28,8 @@ if __name__ == "__main__":
         b_update = True
         debug = True
         loss_type = 1
-    enumerator = "join"
-    dataset = pd.read_csv('/home/lana/diploma/project/slicing/datasets/iris.csv')
+        enumerator = "join"
+    dataset = pd.read_csv('/slicing/datasets/iris.csv')
     attributes_amount = len(dataset.values[0])
     x = dataset.iloc[:, 0:attributes_amount - 1].values
     enc = OneHotEncoder(handle_unknown='ignore')
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     all_indexes = []
     all_features = enc.get_feature_names()
     x_size = len(complete_x)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=0)
     for item in x_test:
         complete_x.append((counter, item))
         complete_y.append((counter, y_test[counter]))

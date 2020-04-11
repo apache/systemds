@@ -37,6 +37,7 @@ if __name__ == "__main__":
             b_update = False
         debug = args[5]
         loss_type = int(args[6])
+        enumerator = args[7]
     else:
         k = 10
         w = 0.5
@@ -44,8 +45,8 @@ if __name__ == "__main__":
         b_update = True
         debug = True
         loss_type = 0
-    enumerator = "union"
-    file_name = '/home/lana/diploma/project/slicing/datasets/salaries.csv'
+        enumerator = "union"
+    file_name = '/slicing/datasets/salaries.csv'
     dataset = pd.read_csv(file_name)
     attributes_amount = len(dataset.values[0])
     # for now working with regression datasets, assuming that target attribute is the last one
@@ -98,4 +99,3 @@ if __name__ == "__main__":
     elif enumerator == "union":
         union_slicer.process(all_features, complete_x, f_l2, x_size, y_test, errors, debug=debug, alpha=alpha, k=k, w=w,
                              loss_type=loss_type, b_update=b_update)
-

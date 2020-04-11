@@ -20,8 +20,7 @@ model_type = "classification"
 label = 'Income'
 sparkContext = SparkContext(conf=conf)
 sqlContext = SQLContext(sparkContext)
-dataset_df = sqlContext.read.csv('/home/lana/diploma/project/slicing/datasets/adult.csv', header='true',
-                                 inferSchema='true')
+dataset_df = sqlContext.read.csv('/slicing/datasets/adult.csv', header='true', inferSchema='true')
 # initializing stages of main transformation pipeline
 stages = []
 dataset_df = dataset_df.withColumn('age_bin', ten_binner(dataset_df['Age']))

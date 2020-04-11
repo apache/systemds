@@ -21,6 +21,7 @@ if __name__ == "__main__":
             b_update = False
         debug = args[5]
         loss_type = int(args[6])
+        enumerator = args[7]
     else:
         k = 10
         w = 0.5
@@ -28,12 +29,10 @@ if __name__ == "__main__":
         b_update = True
         debug = True
         loss_type = 1
-    enumerator = "union"
-    dataset = pd.read_csv('/home/lana/diploma/project/slicing/datasets/adult.csv')
+        enumerator = "union"
+    dataset = pd.read_csv('/slicing/datasets/adult.csv')
     attributes_amount = len(dataset.values[0])
     x = dataset.iloc[:, 0:attributes_amount - 1].values
-    # enc = OneHotEncoder(handle_unknown='ignore')
-    # x = enc.fit_transform(x).toarray()
     y = dataset.iloc[:, attributes_amount - 1]
     le = preprocessing.LabelEncoder()
     le.fit(y)

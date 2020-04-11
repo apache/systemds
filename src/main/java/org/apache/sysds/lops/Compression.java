@@ -38,7 +38,7 @@ public class Compression extends Lop
 	
 	public Compression(Lop input, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.Checkpoint, dt, vt);
-		this.addInput(input);
+		addInput(input);
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
 	}

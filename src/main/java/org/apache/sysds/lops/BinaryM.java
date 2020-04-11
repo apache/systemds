@@ -19,10 +19,10 @@
 
 package org.apache.sysds.lops;
 
-import org.apache.sysds.lops.Binary.OperationTypes;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 
 
@@ -38,7 +38,7 @@ public class BinaryM extends Lop
 		ROW_VECTOR,
 	}
 	
-	private OperationTypes _operation;
+	private OpOp2 _operation;
 	private VectorType _vectorType = null; 
 	
 	/**
@@ -52,14 +52,14 @@ public class BinaryM extends Lop
 	 * @param et exec type
 	 * @param colVector true if colVector
 	 */
-	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean colVector ) {
+	public BinaryM(Lop input1, Lop input2, OpOp2 op, DataType dt, ValueType vt, ExecType et, boolean colVector ) {
 		super(Lop.Type.Binary, dt, vt);
 		
 		_operation = op;
 		_vectorType = colVector ? VectorType.COL_VECTOR : VectorType.ROW_VECTOR;
 		
-		this.addInput(input1);
-		this.addInput(input2);
+		addInput(input1);
+		addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
@@ -71,78 +71,21 @@ public class BinaryM extends Lop
 		}
 	}
 	
-
 	@Override
-	public String toString() 
-	{
+	public String toString() {
 		return " Operation: " + _operation;
 	}
 
-	/**
-	 * method to get operation type
-	 * @return operation type
-	 */
-	 
-	public OperationTypes getOperationType()
-	{
+	public OpOp2 getOperationType() {
 		return _operation;
 	}
 
-	private String getOpcode()
-	{
-		return getOpcode( _operation );
+	private String getOpcode() {
+		return getOpcode(_operation);
 	}
 	
-	public static String getOpcode( OperationTypes op ) {
-		switch(op) {
-		/* Arithmetic */
-		case ADD:
-			return "map+";
-		case SUBTRACT:
-			return "map-";
-		case MULTIPLY:
-			return "map*";
-		case DIVIDE:
-			return "map/";
-		case MODULUS:
-			return "map%%";	
-		case INTDIV:
-			return "map%/%";
-		case MINUS1_MULTIPLY:
-			return "map1-*";
-		
-		/* Relational */
-		case LESS_THAN:
-			return "map<";
-		case LESS_THAN_OR_EQUALS:
-			return "map<=";
-		case GREATER_THAN:
-			return "map>";
-		case GREATER_THAN_OR_EQUALS:
-			return "map>=";
-		case EQUALS:
-			return "map==";
-		case NOT_EQUALS:
-			return "map!=";
-		
-			/* Boolean */
-		case AND:
-			return "map&&";
-		case OR:
-			return "map||";
-		
-		
-		/* Builtin Functions */
-		case MIN:
-			return "mapmin";
-		case MAX:
-			return "mapmax";
-		case POW:
-			return "map^";
-		
-		default:
-			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + op);
-		}
+	public static String getOpcode(OpOp2 op) {
+		return "map"+op.toString();
 	}
 
 	public static boolean isOpcode(String opcode) {

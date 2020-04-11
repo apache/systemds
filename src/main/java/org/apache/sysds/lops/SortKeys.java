@@ -60,7 +60,7 @@ public class SortKeys extends Lop
 	}
 	
 	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
-		this.addInput(input1);
+		addInput(input1);
 		input1.addOutput(this);
 		
 		operation = op;
@@ -68,7 +68,7 @@ public class SortKeys extends Lop
 		// SortKeys can accept a optional second input only when executing in CP
 		// Example: sorting with weights inside CP
 		if ( input2 != null ) {
-			this.addInput(input2);
+			addInput(input2);
 			input2.addOutput(this);
 		}
 		lps.setProperties( inputs, et);

@@ -72,12 +72,12 @@ public class LeftIndex extends Lop
 		 * i,j -> rowL, rowU
 		 * k,l -> colL, colU
 		 */
-		this.addInput(lhsMatrix);
-		this.addInput(rhsMatrix);
-		this.addInput(rowL);
-		this.addInput(rowU);
-		this.addInput(colL);
-		this.addInput(colU);
+		addInput(lhsMatrix);
+		addInput(rhsMatrix);
+		addInput(rowL);
+		addInput(rowU);
+		addInput(colL);
+		addInput(colU);
 		
 		lhsMatrix.addOutput(this);		
 		rhsMatrix.addOutput(this);

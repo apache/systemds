@@ -20,12 +20,13 @@
 package org.apache.sysds.hops;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp4;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.LopsException;
-import org.apache.sysds.lops.Unary;
 import org.apache.sysds.lops.WeightedCrossEntropy;
 import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysds.lops.WeightedCrossEntropyR;
@@ -535,9 +536,8 @@ public class QuaternaryOp extends MultiThreadedHop
 	}
 
 	private void constructCPLopsWeightedUMM(WUMMType wtype) {
-		Unary.OperationTypes uop = _uop!=null ? 
-			HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
-			Unary.OperationTypes.POW2 : Unary.OperationTypes.MULTIPLY2;	
+		OpOp1 uop = _uop!=null ? _uop : _sop==OpOp2.POW ? 
+			OpOp1.POW2 : OpOp1.MULT2;
 		
 		WeightedUnaryMM wumm = new WeightedUnaryMM(
 			getInput().get(0).constructLops(),
@@ -560,9 +560,8 @@ public class QuaternaryOp extends MultiThreadedHop
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
 		//by applying the hop rewrite for Weighted UnaryMM only if this constraint holds. 
 
-		Unary.OperationTypes uop = _uop!=null ? 
-				HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
-				Unary.OperationTypes.POW2 : Unary.OperationTypes.MULTIPLY2;	
+		OpOp1 uop = _uop!=null ? _uop : _sop==OpOp2.POW ? 
+			OpOp1.POW2 : OpOp1.MULT2;
 		
 		//Notes: Any broadcast needs to fit twice in local memory because we partition the input in cp,
 		//and needs to fit once in executor broadcast memory. The 2GB broadcast constraint is no longer

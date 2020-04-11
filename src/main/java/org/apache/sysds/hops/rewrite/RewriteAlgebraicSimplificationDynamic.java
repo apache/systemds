@@ -43,14 +43,14 @@ import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOp4;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
-import org.apache.sysds.hops.Hop.OpOp1;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.common.Types.DataType;
@@ -1679,7 +1679,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( !appliedPattern
 				&& HopRewriteUtils.isBinary(right, LOOKUP_VALID_WDIVMM_BINARY[1]) //DIV
 				&& HopRewriteUtils.isEqualSize(right.getInput().get(0), right.getInput().get(1)) //prevent mv
-				&& HopRewriteUtils.isBinary(right.getInput().get(1), Hop.OpOp2.PLUS)
+				&& HopRewriteUtils.isBinary(right.getInput().get(1), OpOp2.PLUS)
 				&& right.getInput().get(1).getInput().get(1).getDataType() == DataType.SCALAR
 				&& HopRewriteUtils.isOuterProductLikeMM(right.getInput().get(1).getInput().get(0))
 				&& HopRewriteUtils.isSingleBlock(right.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT
@@ -1743,7 +1743,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			if( !appliedPattern
 				&& HopRewriteUtils.isBinary(left, LOOKUP_VALID_WDIVMM_BINARY[1]) //DIV
 				&& HopRewriteUtils.isEqualSize(left.getInput().get(0), left.getInput().get(1)) //prevent mv
-				&& HopRewriteUtils.isBinary(left.getInput().get(1), Hop.OpOp2.PLUS)
+				&& HopRewriteUtils.isBinary(left.getInput().get(1), OpOp2.PLUS)
 				&& left.getInput().get(1).getInput().get(1).getDataType() == DataType.SCALAR
 				&& HopRewriteUtils.isOuterProductLikeMM(left.getInput().get(1).getInput().get(0))
 				&& HopRewriteUtils.isSingleBlock(left.getInput().get(1).getInput().get(0).getInput().get(0),true) ) //BLOCKSIZE CONSTRAINT

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.hops.Hop.OpOp1;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 
 /**

@@ -186,6 +186,158 @@ public class Types
 		}
 	}
 	
+	// Operations that require 1 operand
+	public enum OpOp1 {
+		ABS, ACOS, ASIN, ASSERT, ATAN, CAST_AS_SCALAR, CAST_AS_MATRIX,
+		CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
+		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
+		CUMSUMPROD, DETECTSCHEMA, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
+		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
+		MEDIAN, PRINT, ROUND, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP, SVD,
+		TAN, TANH, TYPEOF,
+		//fused ML-specific operators for performance 
+		SPROP, //sample proportion: P * (1 - P)
+		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
+		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
+		
+		//low-level operators //TODO used?
+		MULT2, MINUS1_MULT, MINUS_RIGHT, 
+		POW2, SUBTRACT_NZ;
+		
+		@Override
+		public String toString() {
+			switch(this) {
+				case CAST_AS_SCALAR:  return "castdts";
+				case CAST_AS_MATRIX:  return "castdtm";
+				case CAST_AS_FRAME:   return "castdtf";
+				case CAST_AS_DOUBLE:  return "castvtd";
+				case CAST_AS_INT:     return "castvti";
+				case CAST_AS_BOOLEAN: return "castvtb";
+				case CUMMAX:          return "ucummax";
+				case CUMMIN:          return "ucummin";
+				case CUMPROD:         return "ucum*";
+				case CUMSUM:          return "ucumk+";
+				case CUMSUMPROD:      return "ucumk+*";
+				case DETECTSCHEMA:    return "detectSchema";
+				case MULT2:           return "*2";
+				case NOT:             return "!";
+				case POW2:            return "^2";
+				case TYPEOF:          return "typeOf";
+				default:              return name().toLowerCase();
+			}
+		}
+
+		//need to be kept consistent with toString
+		public static OpOp1 valueOfByOpcode(String opcode) {
+			switch(opcode) {
+				case "castdts": return CAST_AS_SCALAR;
+				case "castdtm": return CAST_AS_MATRIX;
+				case "castdtf": return CAST_AS_FRAME;
+				case "castvtd": return CAST_AS_DOUBLE;
+				case "castvti": return CAST_AS_INT;
+				case "castvtb": return CAST_AS_BOOLEAN;
+				case "ucummax": return CUMMAX;
+				case "ucummin": return CUMMIN;
+				case "ucum*":   return CUMPROD;
+				case "ucumk+":  return CUMSUM;
+				case "ucumk+*": return CUMSUMPROD;
+				case "*2":      return MULT2;
+				case "!":       return OpOp1.NOT;
+				case "^2":      return POW2;
+				default:        return valueOf(opcode.toUpperCase());
+			}
+		}
+	}
+
+	// Operations that require 2 operands
+	public enum OpOp2 {
+		AND(true), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
+		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
+		DROP_INVALID(false), EQUAL(true), GREATER(true), GREATEREQUAL(true),
+		INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true), LESSEQUAL(true),
+		LOG(true), MAX(true), MEDIAN(false), MIN(true), MINUS(true), MODULUS(true),
+		MOMENT(false), MULT(true), NOTEQUAL(true), OR(true), PLUS(true), POW(true),
+		PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false), XOR(true),
+		//fused ML-specific operators for performance
+		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
+		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
+		MINUS1_MULT(false); //1-X*Y
+		
+		private final boolean _validOuter;
+		
+		private OpOp2(boolean outer) {
+			_validOuter = outer;
+		}
+		
+		public boolean isValidOuter() {
+			return _validOuter;
+		}
+		
+		@Override
+		public String toString() {
+			switch(this) {
+				case PLUS:         return "+";
+				case MINUS:        return "-";
+				case MINUS_NZ:     return "-nz";
+				case MINUS1_MULT:  return "1-*";
+				case MULT:         return "*";
+				case DIV:          return "/";
+				case MODULUS:      return "%%";
+				case INTDIV:       return "%/%";
+				case LESSEQUAL:    return "<=";
+				case LESS:         return "<";
+				case GREATEREQUAL: return ">=";
+				case GREATER:      return ">";
+				case EQUAL:        return "==";
+				case NOTEQUAL:     return "!=";
+				case OR:           return "||";
+				case AND:          return "&&";
+				case POW:          return "^";
+				case IQM:          return "IQM";
+				case MOMENT:       return "cm";
+				case BITWAND:      return "bitwAnd";
+				case BITWOR:       return "bitwOr";
+				case BITWXOR:      return "bitwXor";
+				case BITWSHIFTL:   return "bitwShiftL";
+				case BITWSHIFTR:   return "bitwShiftR";
+				case DROP_INVALID: return "dropInvalid";
+				default:           return name().toLowerCase();
+			}
+		}
+		
+		//need to be kept consistent with toString
+		public static OpOp2 valueOfByOpcode(String opcode) {
+			switch(opcode) {
+				case "+":           return PLUS;
+				case "-":           return MINUS;
+				case "-nz":         return MINUS_NZ;
+				case "1-*":         return MINUS1_MULT;
+				case "*":           return MULT;
+				case "/":           return DIV;
+				case "%%":          return MODULUS;
+				case "%/%":         return INTDIV;
+				case "<=":          return LESSEQUAL;
+				case "<":           return LESS;
+				case ">=":          return GREATEREQUAL;
+				case ">":           return GREATER;
+				case "==":          return EQUAL;
+				case "!=":          return NOTEQUAL;
+				case "||":          return OR;
+				case "&&":          return AND;
+				case "^":           return POW;
+				case "IQM":         return IQM;
+				case "cm":          return MOMENT;
+				case "bitwAnd":     return BITWAND;
+				case "bitwOr":      return BITWOR;
+				case "bitwXor":     return BITWXOR;
+				case "bitwShiftL":  return BITWSHIFTL;
+				case "bitwShiftR":  return BITWSHIFTR;
+				case "dropInvalid": return DROP_INVALID;
+				default:            return valueOf(opcode.toUpperCase());
+			}
+		}
+	}
+	
 	// Operations that require 3 operands
 	public enum OpOp3 {
 		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE;

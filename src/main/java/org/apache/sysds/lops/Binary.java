@@ -20,7 +20,9 @@
 package org.apache.sysds.lops;
 
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 
 
@@ -31,18 +33,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class Binary extends Lop 
 {
-	public enum OperationTypes {
-		ADD, SUBTRACT, MULTIPLY, DIVIDE, MINUS1_MULTIPLY, MODULUS, INTDIV, MATMULT, 
-		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
-		AND, OR, XOR,
-		MAX, MIN, POW, SOLVE, NOTSUPPORTED,
-		BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR, //Bitwise operations
-		DROP_INVALID,
-	}
-
-	private OperationTypes operation;
-	private int numThreads = -1;
-	boolean isLeftTransposed; boolean isRightTransposed; // Used for GPU matmult operation
+	private OpOp2 operation;
 	
 	/**
 	 * Constructor to perform a binary operation.
@@ -54,29 +45,15 @@ public class Binary extends Lop
 	 * @param vt value type
 	 * @param et exec type
 	 */
-	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		this(input1, input2, op, dt, vt, et, 1);
-	}
-	
-	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) {
-		super(Lop.Type.Binary, dt, vt);
-		init(input1, input2, op, dt, vt, et);	
-		numThreads = k;
-	}
-	
-	public Binary(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, 
-			boolean isLeftTransposed, boolean isRightTransposed) {
+	public Binary(Lop input1, Lop input2, OpOp2 op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.Binary, dt, vt);
 		init(input1, input2, op, dt, vt, et);
-		this.isLeftTransposed = isLeftTransposed;
-		this.isRightTransposed = isRightTransposed;
 	}
 	
-	private void init(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
+	private void init(Lop input1, Lop input2, OpOp2 op, DataType dt, ValueType vt, ExecType et)  {
 		operation = op;
-		this.addInput(input1);
-		this.addInput(input2);
+		addInput(input1);
+		addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		lps.setProperties( inputs, et);
@@ -84,126 +61,23 @@ public class Binary extends Lop
 
 	@Override
 	public String toString() {
-	
 		return " Operation: " + operation;
-
 	}
-
-	/**
-	 * method to get operation type
-	 * @return operation type
-	 */
-	 
-	public OperationTypes getOperationType()
-	{
+	
+	public OpOp2 getOperationType() {
 		return operation;
 	}
 
-	private String getOpcode()
-	{
-		return getOpcode( operation );
+	private String getOpcode() {
+		return operation.toString();
 	}
-	
-	public static String getOpcode( OperationTypes op ) {
-		switch(op) {
-		/* Arithmetic */
-		case ADD:
-			return "+";
-		case SUBTRACT:
-			return "-";
-		case MULTIPLY:
-			return "*";
-		case DIVIDE:
-			return "/";
-		case MODULUS:
-			return "%%";
-		case INTDIV:
-			return "%/%";
-		case MATMULT:
-			return "ba+*";
-		case MINUS1_MULTIPLY:
-			return "1-*";
-		
-		/* Relational */
-		case LESS_THAN:
-			return "<";
-		case LESS_THAN_OR_EQUALS:
-			return "<=";
-		case GREATER_THAN:
-			return ">";
-		case GREATER_THAN_OR_EQUALS:
-			return ">=";
-		case EQUALS:
-			return "==";
-		case NOT_EQUALS:
-			return "!=";
-		
-		/* Boolean */
-		case AND:
-			return "&&";
-		case OR:
-			return "||";
 
-		/* Binary Builtin Function */
-		case XOR:
-			return "xor";
-		case BW_AND:
-			return "bitwAnd";
-		case BW_OR:
-			return "bitwOr";
-		case BW_XOR:
-			return "bitwXor";
-		case BW_SHIFTL:
-			return "bitwShiftL";
-		case BW_SHIFTR:
-			return "bitwShiftR";
-
-		/* Builtin Functions */
-		case MIN:
-			return "min";
-		case MAX:
-			return "max";
-		case POW:
-			return "^";
-			
-		case SOLVE:
-			return "solve";
-
-		case DROP_INVALID:
-			return "dropInvalid";
-			
-		default:
-			throw new UnsupportedOperationException("Instruction is not defined for Binary operation: " + op);
-		}
-	}
-	
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append ( getInputs().get(0).prepInputOperand(input1));
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append ( getInputs().get(1).prepInputOperand(input2));
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( this.prepOutputOperand(output));
-		
-		//append degree of parallelism for matrix multiplications
-		if( operation == OperationTypes.MATMULT && getExecType()==ExecType.CP ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( numThreads );
-		}
-		else if( operation == OperationTypes.MATMULT && getExecType()==ExecType.GPU ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( isLeftTransposed );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( isRightTransposed );
-		}
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().toString(), getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			prepOutputOperand(output));
 	}
 }

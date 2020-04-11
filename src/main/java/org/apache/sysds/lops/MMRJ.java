@@ -44,8 +44,8 @@ public class MMRJ extends Lop
 	{
 		//handle inputs and outputs
 		super(Lop.Type.MMRJ, dt, vt);
-		this.addInput(input1);
-		this.addInput(input2);
+		addInput(input1);
+		addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		

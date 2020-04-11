@@ -70,7 +70,7 @@ public class Ctable extends Lop
 		operation = op;
 		
 		for(int i=0; i < inputLops.length; i++) {
-			this.addInput(inputLops[i]);
+			addInput(inputLops[i]);
 			inputLops[i].addOutput(this);
 		}
 		

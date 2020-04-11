@@ -99,7 +99,7 @@ public class Data extends Lop
 		// input Lops as the first element of WRITE input. The parameters of
 		// WRITE operation are then put as the following input elements.
 		if(input != null && op.isWrite()) {
-			this.addInput(input);
+			addInput(input);
 			input.addOutput(this);
 		}
 		
@@ -107,7 +107,7 @@ public class Data extends Lop
 		
 		if ( _inputParams != null ) {
 			for (Lop lop : inputParametersLops.values()) {
-				this.addInput(lop);
+				addInput(lop);
 				lop.addOutput(this);
 			}
 			if (   inputParametersLops.get(DataExpression.IO_FILENAME)!= null 

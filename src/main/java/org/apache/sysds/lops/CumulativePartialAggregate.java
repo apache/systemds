@@ -44,7 +44,7 @@ public class CumulativePartialAggregate extends Lop
 	}
 	
 	private void init(Lop input, DataType dt, ValueType vt, ExecType et) {
-		this.addInput(input);
+		addInput(input);
 		input.addOutput(this);
 		lps.setProperties( inputs, et);
 	}

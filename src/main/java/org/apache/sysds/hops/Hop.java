@@ -25,13 +25,13 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
-import org.apache.sysds.lops.Binary;
-import org.apache.sysds.lops.BinaryScalar;
 import org.apache.sysds.lops.CSVReBlock;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.Compression;
@@ -40,7 +40,6 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.ReBlock;
-import org.apache.sysds.lops.Unary;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.parser.ParseInfo;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
@@ -57,8 +56,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map.Entry;
-
 
 public abstract class Hop implements ParseInfo
 {
@@ -408,27 +405,21 @@ public abstract class Hop implements ParseInfo
 		}
 	}
 
-	public static Lop createOffsetLop( Hop hop, boolean repCols ) 
-	{
+	public static Lop createOffsetLop( Hop hop, boolean repCols ) {
 		Lop offset = null;
-		
-		if( ConfigurationManager.isDynamicRecompilation() && hop.dimsKnown() )
-		{
+		if( ConfigurationManager.isDynamicRecompilation() && hop.dimsKnown() ) {
 			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
 			// a literal in order to increase the piggybacking potential. This is safe because append 
 			// is always marked for recompilation and hence, we have propagated the exact dimensions.
 			offset = Data.createLiteralLop(ValueType.INT64, String.valueOf(repCols ? hop.getDim2() : hop.getDim1()));
 		}
-		else
-		{
+		else {
 			offset = new UnaryCP(hop.constructLops(), 
-				repCols ? UnaryCP.OperationTypes.NCOL : UnaryCP.OperationTypes.NROW, 
-				DataType.SCALAR, ValueType.INT64);
+				repCols ? OpOp1.NCOL : OpOp1.NROW, DataType.SCALAR, ValueType.INT64);
 		}
 		
 		offset.getOutputParameters().setDimensions(0, 0, 0, -1);
 		offset.setAllPositions(hop.getFilename(), hop.getBeginLine(), hop.getBeginColumn(), hop.getEndLine(), hop.getEndColumn());
-		
 		return offset;
 	}
 	
@@ -1030,343 +1021,6 @@ public abstract class Hop implements ParseInfo
 		_valueType = vt;
 	}
 
-	@SuppressWarnings("hiding")
-	public enum OpOp1 {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
-		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
-		PRINT, ASSERT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
-		SVD, EXISTS, LINEAGE, TYPEOF, DETECTSCHEMA,
-		//cumulative sums, products, extreme values
-		CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD,
-		//checks for special values
-		ISNA, ISNAN, ISINF,
-		//fused ML-specific operators for performance 
-		SPROP, //sample proportion: P * (1 - P)
-		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
-		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
-	}
-
-	// Operations that require two operands
-	@SuppressWarnings("hiding")
-	public enum OpOp2 {
-		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
-		MIN, MAX, AND, OR, XOR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM,
-		MOMENT, COV, CBIND, RBIND, SOLVE, MEDIAN, INVALID,
-		//fused ML-specific operators for performance
-		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
-		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
-		MINUS1_MULT, //1-X*Y
-		BITWAND, BITWOR, BITWXOR, BITWSHIFTL, BITWSHIFTR, //bitwise operations
-		DROP_INVALID, // frame operation for removing cells invalid wrt given data type
-	}
-
-	public static final HashMap<Hop.OpOp2, Binary.OperationTypes> HopsOpOp2LopsB;
-	static {
-		HopsOpOp2LopsB = new HashMap<>();
-		HopsOpOp2LopsB.put(OpOp2.PLUS, Binary.OperationTypes.ADD);
-		HopsOpOp2LopsB.put(OpOp2.MINUS, Binary.OperationTypes.SUBTRACT);
-		HopsOpOp2LopsB.put(OpOp2.MULT, Binary.OperationTypes.MULTIPLY);
-		HopsOpOp2LopsB.put(OpOp2.DIV, Binary.OperationTypes.DIVIDE);
-		HopsOpOp2LopsB.put(OpOp2.MODULUS, Binary.OperationTypes.MODULUS);
-		HopsOpOp2LopsB.put(OpOp2.INTDIV, Binary.OperationTypes.INTDIV);
-		HopsOpOp2LopsB.put(OpOp2.MINUS1_MULT, Binary.OperationTypes.MINUS1_MULTIPLY);
-		HopsOpOp2LopsB.put(OpOp2.LESS, Binary.OperationTypes.LESS_THAN);
-		HopsOpOp2LopsB.put(OpOp2.LESSEQUAL, Binary.OperationTypes.LESS_THAN_OR_EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.GREATER, Binary.OperationTypes.GREATER_THAN);
-		HopsOpOp2LopsB.put(OpOp2.GREATEREQUAL, Binary.OperationTypes.GREATER_THAN_OR_EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.EQUAL, Binary.OperationTypes.EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.NOTEQUAL, Binary.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsB.put(OpOp2.MIN, Binary.OperationTypes.MIN);
-		HopsOpOp2LopsB.put(OpOp2.MAX, Binary.OperationTypes.MAX);
-		HopsOpOp2LopsB.put(OpOp2.AND, Binary.OperationTypes.AND);
-		HopsOpOp2LopsB.put(OpOp2.XOR, Binary.OperationTypes.XOR);
-		HopsOpOp2LopsB.put(OpOp2.OR, Binary.OperationTypes.OR);
-		HopsOpOp2LopsB.put(OpOp2.SOLVE, Binary.OperationTypes.SOLVE);
-		HopsOpOp2LopsB.put(OpOp2.POW, Binary.OperationTypes.POW);
-		HopsOpOp2LopsB.put(OpOp2.LOG, Binary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp2LopsB.put(OpOp2.BITWAND, Binary.OperationTypes.BW_AND);
-		HopsOpOp2LopsB.put(OpOp2.BITWOR, Binary.OperationTypes.BW_OR);
-		HopsOpOp2LopsB.put(OpOp2.BITWXOR, Binary.OperationTypes.BW_XOR);
-		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTL, Binary.OperationTypes.BW_SHIFTL);
-		HopsOpOp2LopsB.put(OpOp2.BITWSHIFTR, Binary.OperationTypes.BW_SHIFTR);
-		HopsOpOp2LopsB.put(OpOp2.DROP_INVALID, Binary.OperationTypes.DROP_INVALID);
-	}
-
-	protected static final HashMap<Hop.OpOp2, BinaryScalar.OperationTypes> HopsOpOp2LopsBS;
-	static {
-		HopsOpOp2LopsBS = new HashMap<>();
-		HopsOpOp2LopsBS.put(OpOp2.PLUS, BinaryScalar.OperationTypes.ADD);
-		HopsOpOp2LopsBS.put(OpOp2.MINUS, BinaryScalar.OperationTypes.SUBTRACT);
-		HopsOpOp2LopsBS.put(OpOp2.MULT, BinaryScalar.OperationTypes.MULTIPLY);
-		HopsOpOp2LopsBS.put(OpOp2.DIV, BinaryScalar.OperationTypes.DIVIDE);
-		HopsOpOp2LopsBS.put(OpOp2.MODULUS, BinaryScalar.OperationTypes.MODULUS);
-		HopsOpOp2LopsBS.put(OpOp2.INTDIV, BinaryScalar.OperationTypes.INTDIV);
-		HopsOpOp2LopsBS.put(OpOp2.LESS, BinaryScalar.OperationTypes.LESS_THAN);
-		HopsOpOp2LopsBS.put(OpOp2.LESSEQUAL, BinaryScalar.OperationTypes.LESS_THAN_OR_EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.GREATER, BinaryScalar.OperationTypes.GREATER_THAN);
-		HopsOpOp2LopsBS.put(OpOp2.GREATEREQUAL, BinaryScalar.OperationTypes.GREATER_THAN_OR_EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.EQUAL, BinaryScalar.OperationTypes.EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.NOTEQUAL, BinaryScalar.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsBS.put(OpOp2.MIN, BinaryScalar.OperationTypes.MIN);
-		HopsOpOp2LopsBS.put(OpOp2.MAX, BinaryScalar.OperationTypes.MAX);
-		HopsOpOp2LopsBS.put(OpOp2.AND, BinaryScalar.OperationTypes.AND);
-		HopsOpOp2LopsBS.put(OpOp2.OR, BinaryScalar.OperationTypes.OR);
-		HopsOpOp2LopsBS.put(OpOp2.XOR, BinaryScalar.OperationTypes.XOR);
-		HopsOpOp2LopsBS.put(OpOp2.LOG, BinaryScalar.OperationTypes.LOG);
-		HopsOpOp2LopsBS.put(OpOp2.POW, BinaryScalar.OperationTypes.POW);
-		HopsOpOp2LopsBS.put(OpOp2.PRINT, BinaryScalar.OperationTypes.PRINT);
-		HopsOpOp2LopsBS.put(OpOp2.BITWAND, BinaryScalar.OperationTypes.BW_AND);
-		HopsOpOp2LopsBS.put(OpOp2.BITWOR, BinaryScalar.OperationTypes.BW_OR);
-		HopsOpOp2LopsBS.put(OpOp2.BITWXOR, BinaryScalar.OperationTypes.BW_XOR);
-		HopsOpOp2LopsBS.put(OpOp2.BITWSHIFTL, BinaryScalar.OperationTypes.BW_SHIFTL);
-		HopsOpOp2LopsBS.put(OpOp2.BITWSHIFTR, BinaryScalar.OperationTypes.BW_SHIFTR);
-	}
-
-	protected static final HashMap<Hop.OpOp2, org.apache.sysds.lops.Unary.OperationTypes> HopsOpOp2LopsU;
-	static {
-		HopsOpOp2LopsU = new HashMap<>();
-		HopsOpOp2LopsU.put(OpOp2.PLUS, org.apache.sysds.lops.Unary.OperationTypes.ADD);
-		HopsOpOp2LopsU.put(OpOp2.MINUS, org.apache.sysds.lops.Unary.OperationTypes.SUBTRACT);
-		HopsOpOp2LopsU.put(OpOp2.MULT, org.apache.sysds.lops.Unary.OperationTypes.MULTIPLY);
-		HopsOpOp2LopsU.put(OpOp2.DIV, org.apache.sysds.lops.Unary.OperationTypes.DIVIDE);
-		HopsOpOp2LopsU.put(OpOp2.MODULUS, org.apache.sysds.lops.Unary.OperationTypes.MODULUS);
-		HopsOpOp2LopsU.put(OpOp2.INTDIV, org.apache.sysds.lops.Unary.OperationTypes.INTDIV);
-		HopsOpOp2LopsU.put(OpOp2.MINUS1_MULT, org.apache.sysds.lops.Unary.OperationTypes.MINUS1_MULTIPLY);
-		HopsOpOp2LopsU.put(OpOp2.LESSEQUAL, org.apache.sysds.lops.Unary.OperationTypes.LESS_THAN_OR_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.LESS, org.apache.sysds.lops.Unary.OperationTypes.LESS_THAN);
-		HopsOpOp2LopsU.put(OpOp2.GREATEREQUAL, org.apache.sysds.lops.Unary.OperationTypes.GREATER_THAN_OR_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.GREATER, org.apache.sysds.lops.Unary.OperationTypes.GREATER_THAN);
-		HopsOpOp2LopsU.put(OpOp2.EQUAL, org.apache.sysds.lops.Unary.OperationTypes.EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.NOTEQUAL, org.apache.sysds.lops.Unary.OperationTypes.NOT_EQUALS);
-		HopsOpOp2LopsU.put(OpOp2.AND, org.apache.sysds.lops.Unary.OperationTypes.AND);
-		HopsOpOp2LopsU.put(OpOp2.OR, org.apache.sysds.lops.Unary.OperationTypes.OR);
-		HopsOpOp2LopsU.put(OpOp2.XOR, org.apache.sysds.lops.Unary.OperationTypes.XOR);
-		HopsOpOp2LopsU.put(OpOp2.MAX, org.apache.sysds.lops.Unary.OperationTypes.MAX);
-		HopsOpOp2LopsU.put(OpOp2.MIN, org.apache.sysds.lops.Unary.OperationTypes.MIN);
-		HopsOpOp2LopsU.put(OpOp2.LOG, org.apache.sysds.lops.Unary.OperationTypes.LOG);
-		HopsOpOp2LopsU.put(OpOp2.POW, org.apache.sysds.lops.Unary.OperationTypes.POW);
-		HopsOpOp2LopsU.put(OpOp2.MINUS_NZ, org.apache.sysds.lops.Unary.OperationTypes.SUBTRACT_NZ);
-		HopsOpOp2LopsU.put(OpOp2.LOG_NZ, org.apache.sysds.lops.Unary.OperationTypes.LOG_NZ);
-		HopsOpOp2LopsU.put(OpOp2.BITWAND, Unary.OperationTypes.BW_AND);
-		HopsOpOp2LopsU.put(OpOp2.BITWOR, Unary.OperationTypes.BW_OR);
-		HopsOpOp2LopsU.put(OpOp2.BITWXOR, Unary.OperationTypes.BW_XOR);
-		HopsOpOp2LopsU.put(OpOp2.BITWSHIFTL, Unary.OperationTypes.BW_SHIFTL);
-		HopsOpOp2LopsU.put(OpOp2.BITWSHIFTR, Unary.OperationTypes.BW_SHIFTR);
-	}
-
-	protected static final HashMap<Hop.OpOp1, org.apache.sysds.lops.Unary.OperationTypes> HopsOpOp1LopsU;
-	static {
-		HopsOpOp1LopsU = new HashMap<>();
-		HopsOpOp1LopsU.put(OpOp1.NOT, org.apache.sysds.lops.Unary.OperationTypes.NOT);
-		HopsOpOp1LopsU.put(OpOp1.ABS, org.apache.sysds.lops.Unary.OperationTypes.ABS);
-		HopsOpOp1LopsU.put(OpOp1.SIN, org.apache.sysds.lops.Unary.OperationTypes.SIN);
-		HopsOpOp1LopsU.put(OpOp1.COS, org.apache.sysds.lops.Unary.OperationTypes.COS);
-		HopsOpOp1LopsU.put(OpOp1.TAN, org.apache.sysds.lops.Unary.OperationTypes.TAN);
-		HopsOpOp1LopsU.put(OpOp1.ASIN, org.apache.sysds.lops.Unary.OperationTypes.ASIN);
-		HopsOpOp1LopsU.put(OpOp1.ACOS, org.apache.sysds.lops.Unary.OperationTypes.ACOS);
-		HopsOpOp1LopsU.put(OpOp1.ATAN, org.apache.sysds.lops.Unary.OperationTypes.ATAN);
-		HopsOpOp1LopsU.put(OpOp1.SINH, org.apache.sysds.lops.Unary.OperationTypes.SINH);
-		HopsOpOp1LopsU.put(OpOp1.COSH, org.apache.sysds.lops.Unary.OperationTypes.COSH);
-		HopsOpOp1LopsU.put(OpOp1.TANH, org.apache.sysds.lops.Unary.OperationTypes.TANH);
-		HopsOpOp1LopsU.put(OpOp1.SIGN, org.apache.sysds.lops.Unary.OperationTypes.SIGN);
-		HopsOpOp1LopsU.put(OpOp1.SQRT, org.apache.sysds.lops.Unary.OperationTypes.SQRT);
-		HopsOpOp1LopsU.put(OpOp1.EXP, org.apache.sysds.lops.Unary.OperationTypes.EXP);
-		HopsOpOp1LopsU.put(OpOp1.LOG, org.apache.sysds.lops.Unary.OperationTypes.LOG);
-		HopsOpOp1LopsU.put(OpOp1.ROUND, org.apache.sysds.lops.Unary.OperationTypes.ROUND);
-		HopsOpOp1LopsU.put(OpOp1.CEIL, org.apache.sysds.lops.Unary.OperationTypes.CEIL);
-		HopsOpOp1LopsU.put(OpOp1.FLOOR, org.apache.sysds.lops.Unary.OperationTypes.FLOOR);
-		HopsOpOp1LopsU.put(OpOp1.CUMSUM, org.apache.sysds.lops.Unary.OperationTypes.CUMSUM);
-		HopsOpOp1LopsU.put(OpOp1.CUMPROD, org.apache.sysds.lops.Unary.OperationTypes.CUMPROD);
-		HopsOpOp1LopsU.put(OpOp1.CUMMIN, org.apache.sysds.lops.Unary.OperationTypes.CUMMIN);
-		HopsOpOp1LopsU.put(OpOp1.CUMMAX, org.apache.sysds.lops.Unary.OperationTypes.CUMMAX);
-		HopsOpOp1LopsU.put(OpOp1.CUMSUMPROD, org.apache.sysds.lops.Unary.OperationTypes.CUMSUMPROD);
-		HopsOpOp1LopsU.put(OpOp1.INVERSE, org.apache.sysds.lops.Unary.OperationTypes.INVERSE);
-		HopsOpOp1LopsU.put(OpOp1.CHOLESKY, org.apache.sysds.lops.Unary.OperationTypes.CHOLESKY);
-		HopsOpOp1LopsU.put(OpOp1.ISNA, org.apache.sysds.lops.Unary.OperationTypes.ISNA);
-		HopsOpOp1LopsU.put(OpOp1.ISNAN, org.apache.sysds.lops.Unary.OperationTypes.ISNAN);
-		HopsOpOp1LopsU.put(OpOp1.ISINF, org.apache.sysds.lops.Unary.OperationTypes.ISINF);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.apache.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysds.lops.Unary.OperationTypes.NOTSUPPORTED);
-		HopsOpOp1LopsU.put(OpOp1.SPROP, org.apache.sysds.lops.Unary.OperationTypes.SPROP);
-		HopsOpOp1LopsU.put(OpOp1.SIGMOID, Unary.OperationTypes.SIGMOID);
-		HopsOpOp1LopsU.put(OpOp1.TYPEOF, Unary.OperationTypes.TYPEOF);
-		HopsOpOp1LopsU.put(OpOp1.DETECTSCHEMA, Unary.OperationTypes.DETECTSCHEMA);
-		HopsOpOp1LopsU.put(OpOp1.LOG_NZ, org.apache.sysds.lops.Unary.OperationTypes.LOG_NZ);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_MATRIX, org.apache.sysds.lops.Unary.OperationTypes.CAST_AS_MATRIX);
-		HopsOpOp1LopsU.put(OpOp1.CAST_AS_FRAME, org.apache.sysds.lops.Unary.OperationTypes.CAST_AS_FRAME);
-	}
-
-	public static final HashMap<Hop.OpOp1, org.apache.sysds.lops.UnaryCP.OperationTypes> HopsOpOp1LopsUS;
-	static {
-		HopsOpOp1LopsUS = new HashMap<>();
-		HopsOpOp1LopsUS.put(OpOp1.NOT, org.apache.sysds.lops.UnaryCP.OperationTypes.NOT);
-		HopsOpOp1LopsUS.put(OpOp1.ABS, org.apache.sysds.lops.UnaryCP.OperationTypes.ABS);
-		HopsOpOp1LopsUS.put(OpOp1.SIN, org.apache.sysds.lops.UnaryCP.OperationTypes.SIN);
-		HopsOpOp1LopsUS.put(OpOp1.COS, org.apache.sysds.lops.UnaryCP.OperationTypes.COS);
-		HopsOpOp1LopsUS.put(OpOp1.TAN, org.apache.sysds.lops.UnaryCP.OperationTypes.TAN);
-		HopsOpOp1LopsUS.put(OpOp1.ASIN, org.apache.sysds.lops.UnaryCP.OperationTypes.ASIN);
-		HopsOpOp1LopsUS.put(OpOp1.ACOS, org.apache.sysds.lops.UnaryCP.OperationTypes.ACOS);
-		HopsOpOp1LopsUS.put(OpOp1.ATAN, org.apache.sysds.lops.UnaryCP.OperationTypes.ATAN);
-		HopsOpOp1LopsUS.put(OpOp1.SINH, org.apache.sysds.lops.UnaryCP.OperationTypes.SINH);
-		HopsOpOp1LopsUS.put(OpOp1.COSH, org.apache.sysds.lops.UnaryCP.OperationTypes.COSH);
-		HopsOpOp1LopsUS.put(OpOp1.TANH, org.apache.sysds.lops.UnaryCP.OperationTypes.TANH);
-		HopsOpOp1LopsUS.put(OpOp1.SQRT, org.apache.sysds.lops.UnaryCP.OperationTypes.SQRT);
-		HopsOpOp1LopsUS.put(OpOp1.EXP, org.apache.sysds.lops.UnaryCP.OperationTypes.EXP);
-		HopsOpOp1LopsUS.put(OpOp1.LOG, org.apache.sysds.lops.UnaryCP.OperationTypes.LOG);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_SCALAR, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_SCALAR);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_MATRIX, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_MATRIX);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_FRAME, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_FRAME);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_DOUBLE, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_DOUBLE);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_INT, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_INT);
-		HopsOpOp1LopsUS.put(OpOp1.CAST_AS_BOOLEAN, org.apache.sysds.lops.UnaryCP.OperationTypes.CAST_AS_BOOLEAN);
-		HopsOpOp1LopsUS.put(OpOp1.NROW, org.apache.sysds.lops.UnaryCP.OperationTypes.NROW);
-		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.apache.sysds.lops.UnaryCP.OperationTypes.NCOL);
-		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.apache.sysds.lops.UnaryCP.OperationTypes.LENGTH);
-		HopsOpOp1LopsUS.put(OpOp1.EXISTS, org.apache.sysds.lops.UnaryCP.OperationTypes.EXISTS);
-		HopsOpOp1LopsUS.put(OpOp1.LINEAGE, org.apache.sysds.lops.UnaryCP.OperationTypes.LINEAGE);
-		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.apache.sysds.lops.UnaryCP.OperationTypes.PRINT);
-		HopsOpOp1LopsUS.put(OpOp1.ASSERT, org.apache.sysds.lops.UnaryCP.OperationTypes.ASSERT);
-		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.apache.sysds.lops.UnaryCP.OperationTypes.ROUND);
-		HopsOpOp1LopsUS.put(OpOp1.CEIL, org.apache.sysds.lops.UnaryCP.OperationTypes.CEIL);
-		HopsOpOp1LopsUS.put(OpOp1.FLOOR, org.apache.sysds.lops.UnaryCP.OperationTypes.FLOOR);
-		HopsOpOp1LopsUS.put(OpOp1.STOP, org.apache.sysds.lops.UnaryCP.OperationTypes.STOP);
-		HopsOpOp1LopsUS.put(OpOp1.TYPEOF, UnaryCP.OperationTypes.TYPEOF);
-		HopsOpOp1LopsUS.put(OpOp1.DETECTSCHEMA, UnaryCP.OperationTypes.DETECTSCHEMA);
-	}
-
-	protected static final HashMap<OpOp1, String> HopsOpOp12String;
-	protected static final HashMap<String, OpOp1> HopsStringOpOp1;
-	
-	static {
-		HopsOpOp12String = new HashMap<>();
-		HopsOpOp12String.put(OpOp1.ABS, "abs");
-		HopsOpOp12String.put(OpOp1.CAST_AS_SCALAR, "castAsScalar");
-		HopsOpOp12String.put(OpOp1.COS, "cos");
-		HopsOpOp12String.put(OpOp1.EIGEN, "eigen");
-		HopsOpOp12String.put(OpOp1.SVD, "svd");
-		HopsOpOp12String.put(OpOp1.EXP, "exp");
-		HopsOpOp12String.put(OpOp1.IQM, "iqm");
-		HopsOpOp12String.put(OpOp1.MEDIAN, "median");
-		HopsOpOp12String.put(OpOp1.LENGTH, "length");
-		HopsOpOp12String.put(OpOp1.LOG, "log");
-		HopsOpOp12String.put(OpOp1.NCOL, "ncol");
-		HopsOpOp12String.put(OpOp1.NOT, "!");
-		HopsOpOp12String.put(OpOp1.NROW, "nrow");
-		HopsOpOp12String.put(OpOp1.PRINT, "print");
-		HopsOpOp12String.put(OpOp1.ASSERT, "assert");
-		HopsOpOp12String.put(OpOp1.ROUND, "round");
-		HopsOpOp12String.put(OpOp1.SIN, "sin");
-		HopsOpOp12String.put(OpOp1.SQRT, "sqrt");
-		HopsOpOp12String.put(OpOp1.TAN, "tan");
-		HopsOpOp12String.put(OpOp1.ASIN, "asin");
-		HopsOpOp12String.put(OpOp1.ACOS, "acos");
-		HopsOpOp12String.put(OpOp1.ATAN, "atan");
-		HopsOpOp12String.put(OpOp1.SINH, "sinh");
-		HopsOpOp12String.put(OpOp1.COSH, "cosh");
-		HopsOpOp12String.put(OpOp1.TANH, "tanh");
-		HopsOpOp12String.put(OpOp1.STOP, "stop");
-		HopsOpOp12String.put(OpOp1.INVERSE, "inv");
-		HopsOpOp12String.put(OpOp1.SPROP, "sprop");
-		HopsOpOp12String.put(OpOp1.SIGMOID, "sigmoid");
-		HopsOpOp12String.put(OpOp1.TYPEOF, "typeOf");
-		HopsOpOp12String.put(OpOp1.DETECTSCHEMA, "detectSchema");
-
-		HopsStringOpOp1 = new HashMap<>();
-		for( Entry<OpOp1,String> e : HopsOpOp12String.entrySet() )
-			HopsStringOpOp1.put(e.getValue(), e.getKey());
-	}
-
-	public static OpOp1 getUnaryOpCode(String op) {
-		return HopsStringOpOp1.get(op);
-	}
-
-	protected static final HashMap<OpOp2, String> HopsOpOp2String;
-	protected static final HashMap<String,OpOp2> HopsStringOpOp2;
-	static {
-		HopsOpOp2String = new HashMap<>();
-		HopsOpOp2String.put(OpOp2.PLUS, "+");
-		HopsOpOp2String.put(OpOp2.MINUS, "-");
-		HopsOpOp2String.put(OpOp2.MINUS_NZ, "-nz");
-		HopsOpOp2String.put(OpOp2.MINUS1_MULT, "-1*");
-		HopsOpOp2String.put(OpOp2.MULT, "*");
-		HopsOpOp2String.put(OpOp2.DIV, "/");
-		HopsOpOp2String.put(OpOp2.MODULUS, "%%");
-		HopsOpOp2String.put(OpOp2.INTDIV, "%/%");
-		HopsOpOp2String.put(OpOp2.MIN, "min");
-		HopsOpOp2String.put(OpOp2.MAX, "max");
-		HopsOpOp2String.put(OpOp2.LESSEQUAL, "<=");
-		HopsOpOp2String.put(OpOp2.LESS, "<");
-		HopsOpOp2String.put(OpOp2.GREATEREQUAL, ">=");
-		HopsOpOp2String.put(OpOp2.GREATER, ">");
-		HopsOpOp2String.put(OpOp2.EQUAL, "==");
-		HopsOpOp2String.put(OpOp2.NOTEQUAL, "!=");
-		HopsOpOp2String.put(OpOp2.OR, "|");
-		HopsOpOp2String.put(OpOp2.AND, "&");
-		HopsOpOp2String.put(OpOp2.LOG, "log");
-		HopsOpOp2String.put(OpOp2.LOG_NZ, "log_nz");
-		HopsOpOp2String.put(OpOp2.POW, "^");
-		HopsOpOp2String.put(OpOp2.CONCAT, "concat");
-		HopsOpOp2String.put(OpOp2.INVALID, "?");
-		HopsOpOp2String.put(OpOp2.QUANTILE, "quantile");
-		HopsOpOp2String.put(OpOp2.INTERQUANTILE, "interquantile");
-		HopsOpOp2String.put(OpOp2.IQM, "IQM");
-		HopsOpOp2String.put(OpOp2.MEDIAN, "median");
-		HopsOpOp2String.put(OpOp2.MOMENT, "cm");
-		HopsOpOp2String.put(OpOp2.COV, "cov");
-		HopsOpOp2String.put(OpOp2.CBIND, "cbind");
-		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
-		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
-		HopsOpOp2String.put(OpOp2.XOR, "xor");
-		HopsOpOp2String.put(OpOp2.BITWAND, "bitwAnd");
-		HopsOpOp2String.put(OpOp2.BITWOR,  "bitwOr");
-		HopsOpOp2String.put(OpOp2.BITWXOR, "bitwXor");
-		HopsOpOp2String.put(OpOp2.BITWSHIFTL, "bitwShiftL");
-		HopsOpOp2String.put(OpOp2.BITWSHIFTR, "bitwShiftR");
-		HopsOpOp2String.put(OpOp2.DROP_INVALID, "dropInvalid");
-
-		HopsStringOpOp2 = new HashMap<>();
-		for( Entry<OpOp2,String> e : HopsOpOp2String.entrySet() )
-			HopsStringOpOp2.put(e.getValue(), e.getKey());
-	}
-	
-	public static String getBinaryOpCode(OpOp2 op) {
-		return HopsOpOp2String.get(op);
-	}
-	
-	public static OpOp2 getBinaryOpCode(String op) {
-		return HopsStringOpOp2.get(op);
-	}
-
-	public static OpOp2 getOpOp2ForOuterVectorOperation(String op) 
-	{
-		if( "+".equals(op) ) return OpOp2.PLUS;
-		else if( "-".equals(op) ) return OpOp2.MINUS;
-		else if( "*".equals(op) ) return OpOp2.MULT;
-		else if( "/".equals(op) ) return OpOp2.DIV;
-		else if( "%%".equals(op) ) return OpOp2.MODULUS;
-		else if( "%/%".equals(op) ) return OpOp2.INTDIV;
-		else if( "min".equals(op) ) return OpOp2.MIN;
-		else if( "max".equals(op) ) return OpOp2.MAX;
-		else if( "<=".equals(op) ) return OpOp2.LESSEQUAL;
-		else if( "<".equals(op) ) return OpOp2.LESS;
-		else if( ">=".equals(op) ) return OpOp2.GREATEREQUAL;
-		else if( ">".equals(op) ) return OpOp2.GREATER;
-		else if( "==".equals(op) ) return OpOp2.EQUAL;
-		else if( "!=".equals(op) ) return OpOp2.NOTEQUAL;
-		else if( "|".equals(op) ) return OpOp2.OR;
-		else if( "xor".equals(op) ) return OpOp2.XOR;
-		else if( "&".equals(op) ) return OpOp2.AND;
-		else if( "log".equals(op) ) return OpOp2.LOG;
-		else if( "^".equals(op) ) return OpOp2.POW;
-		else if("bitwAnd".equals(op) ) return OpOp2.BITWAND;
-		else if("bitwOr".equals(op) ) return OpOp2.BITWOR;
-		else if("bitwXor".equals(op) ) return OpOp2.BITWXOR;
-		else if("bitwShiftL".equals(op) ) return OpOp2.BITWSHIFTL;
-		else if("bitwShiftR".equals(op) ) return OpOp2.BITWSHIFTR;
-		
-		return null;
-	}
-
 	/////////////////////////////////////
 	// methods for dynamic re-compilation
 	/////////////////////////////////////
@@ -1545,12 +1199,12 @@ public abstract class Hop implements ParseInfo
 		
 		if( input instanceof UnaryOp )
 		{
-			if( ((UnaryOp)input).getOp() == Hop.OpOp1.NROW ) {
+			if( ((UnaryOp)input).getOp() == OpOp1.NROW ) {
 				DataCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
 				if( mc.rowsKnown() )
 					ret = mc.getRows();
 			}
-			else if ( ((UnaryOp)input).getOp() == Hop.OpOp1.NCOL ) {
+			else if ( ((UnaryOp)input).getOp() == OpOp1.NCOL ) {
 				DataCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
 				if( mc.colsKnown() )
 					ret = mc.getCols();
@@ -1588,12 +1242,12 @@ public abstract class Hop implements ParseInfo
 		{
 			UnaryOp uroot = (UnaryOp) root;
 			long dim = -1;
-			if(uroot.getOp() == Hop.OpOp1.NROW)
+			if(uroot.getOp() == OpOp1.NROW)
 			{
 				DataCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
 				dim = mc.getRows();
 			}
-			else if( uroot.getOp() == Hop.OpOp1.NCOL )
+			else if( uroot.getOp() == OpOp1.NCOL )
 			{
 				DataCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
 				dim = mc.getCols();

@@ -26,12 +26,12 @@ import java.util.LinkedList;
 
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
@@ -189,14 +189,14 @@ public class TemplateOuterProduct extends TemplateBase {
 		if(hop instanceof UnaryOp)
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
-			String primitiveOpName = ((UnaryOp)hop).getOp().toString();
+			String primitiveOpName = ((UnaryOp)hop).getOp().name();
 			out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
 		}
 		else if(hop instanceof BinaryOp)
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
-			String primitiveOpName = ((BinaryOp)hop).getOp().toString();
+			String primitiveOpName = ((BinaryOp)hop).getOp().name();
 			
 			if( HopRewriteUtils.isBinarySparseSafe(hop) ) {
 				if( TemplateUtils.isMatrix(hop.getInput().get(0)) && cdata1 instanceof CNodeData )

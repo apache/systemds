@@ -24,6 +24,8 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.OpOpData;
@@ -42,8 +44,6 @@ import org.apache.sysds.hops.DnnOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.hops.Hop.OpOp1;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.IndexingOp;
 import org.apache.sysds.hops.LeftIndexingOp;
@@ -84,11 +84,10 @@ import java.util.List;
 public class HopRewriteUtils 
 {
 
-	public static boolean isValueTypeCast( OpOp1 op )
-	{
-		return (   op == OpOp1.CAST_AS_BOOLEAN 
-				|| op == OpOp1.CAST_AS_INT 
-				|| op == OpOp1.CAST_AS_DOUBLE );
+	public static boolean isValueTypeCast( OpOp1 op ) {
+		return op == OpOp1.CAST_AS_BOOLEAN
+			|| op == OpOp1.CAST_AS_INT
+			|| op == OpOp1.CAST_AS_DOUBLE;
 	}
 	
 	//////////////////////////////////
@@ -595,7 +594,7 @@ public class HopRewriteUtils
 	}
 	
 	public static UnaryOp createUnary(Hop input, String type) {
-		return createUnary(input, Hop.getUnaryOpCode(type));
+		return createUnary(input, OpOp1.valueOfByOpcode(type));
 	}
 	
 	public static UnaryOp createUnary(Hop input, OpOp1 type) 
@@ -622,7 +621,7 @@ public class HopRewriteUtils
 	}
 	
 	public static BinaryOp createBinary(Hop input1, Hop input2, String op) {
-		return createBinary(input1, input2, Hop.getBinaryOpCode(op), false);
+		return createBinary(input1, input2, OpOp2.valueOfByOpcode(op), false);
 	}
 	
 	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op) {
@@ -630,9 +629,9 @@ public class HopRewriteUtils
 	}
 	
 	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op, boolean outer) {
-		Hop mainInput = input1.getDataType().isMatrix() ? input1 : 
+		Hop mainInput = input1.getDataType().isMatrix() ? input1 :
 			input2.getDataType().isMatrix() ? input2 : input1;
-		BinaryOp bop = new BinaryOp(mainInput.getName(), mainInput.getDataType(), 
+		BinaryOp bop = new BinaryOp(mainInput.getName(), mainInput.getDataType(),
 			mainInput.getValueType(), op, input1, input2);
 		//cleanup value type for relational operations
 		if( bop.isPPredOperation() && bop.getDataType().isScalar() )
@@ -911,8 +910,7 @@ public class HopRewriteUtils
 	}
 	
 	public static boolean isValidOuterBinaryOp( OpOp2 op ) {
-		String opcode = Hop.getBinaryOpCode(op);
-		return (Hop.getOpOp2ForOuterVectorOperation(opcode) == op);
+		return op.isValidOuter();
 	}
 	
 	public static boolean isSparse(Hop hop) {

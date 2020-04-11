@@ -38,7 +38,7 @@ public class MatrixReaderFactory
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
 				reader = new ReaderTextCellParallel( iinfo );
 			else
-				reader = new ReaderTextCell( iinfo );	
+				reader = new ReaderTextCell( iinfo );
 		}
 		else if( iinfo == InputInfo.CSVInputInfo )
 		{

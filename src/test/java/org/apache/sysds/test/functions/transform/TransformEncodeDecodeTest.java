@@ -100,7 +100,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			//get input/output info
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(fmt);
+			InputInfo iinfo = InputInfo.fromExternalString(fmt);
 			OutputInfo oinfo = InputInfo.getMatchingOutputInfo(iinfo);
 			
 			//generate and write input data

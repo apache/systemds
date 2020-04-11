@@ -372,7 +372,7 @@ public class Connection implements Closeable
 			long nnz = jmtd.containsKey(DataExpression.READNNZPARAM)?
 					jmtd.getLong(DataExpression.READNNZPARAM) : -1;
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);
+			InputInfo iinfo = InputInfo.fromExternalString(format);
 		
 			//read matrix file
 			return readDoubleMatrix(fname, iinfo, rows, cols, blen, nnz);
@@ -614,7 +614,7 @@ public class Connection implements Closeable
 			long rows = jmtd.getLong(DataExpression.READROWPARAM);
 			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);
+			InputInfo iinfo = InputInfo.fromExternalString(format);
 		
 			//read frame file
 			return readStringFrame(fname, iinfo, rows, cols);

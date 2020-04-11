@@ -123,17 +123,17 @@ public class InputInfo implements Serializable
 		return null;
 	}
 
-	public static InputInfo stringExternalToInputInfo(String str) {
+	public static InputInfo fromExternalString(String str) {
 		if( DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(str) )
 			return InputInfo.TextCellInputInfo;
 		else if( DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(str) )
 			return InputInfo.MatrixMarketInputInfo;
 		else if( DataExpression.FORMAT_TYPE_VALUE_CSV.equals(str) )
-			return InputInfo.CSVInputInfo; 
+			return InputInfo.CSVInputInfo;
 		else if( DataExpression.FORMAT_TYPE_VALUE_LIBSVM.equals(str) )
-			return InputInfo.LIBSVMInputInfo; 
+			return InputInfo.LIBSVMInputInfo;
 		else if( DataExpression.FORMAT_TYPE_VALUE_BINARY.equals(str) ) // TODO BinaryTensorBlockInputInfo
-			return InputInfo.BinaryBlockInputInfo; 		
+			return InputInfo.BinaryBlockInputInfo;
 		return null;
 	}
 	

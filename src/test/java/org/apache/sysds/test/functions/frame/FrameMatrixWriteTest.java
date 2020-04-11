@@ -172,7 +172,7 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 		throws IOException 
 	{
 		//read input data
-		FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.stringExternalToInputInfo(ofmt));
+		FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.fromExternalString(ofmt));
 		FrameBlock fb = reader.readFrameFromHDFS(fname, rows, cols);
 		MatrixBlock ret = DataConverter.convertToMatrixBlock(fb);
 		

@@ -945,25 +945,22 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			try {
 				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
 				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
-				if(oi == OutputInfo.CSVOutputInfo) {
+				if( oi == OutputInfo.CSVOutputInfo 
+					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
+				{
 					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)_formatProperties);
 					writer.addHeaderToCSV(mo.getFileName(), fname, dc.getRows(), dc.getCols());
 				}
-				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
+				else {
 					mo.exportData(fname, outFmt, _formatProperties);
 				}
-				else {
-					throw new DMLRuntimeException("Unexpected data format (" + OutputInfo.outputInfoToString(oi) + "): can not export into CSV format.");
-				}
-				
-				// Write Metadata file
 				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, OutputInfo.CSVOutputInfo, _formatProperties);
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				throw new DMLRuntimeException(e);
 			}
 		}
 	}
-	
 	
 	/**
 	 * Helper function to write MM files to HDFS.
@@ -980,24 +977,25 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			mo.exportData(fname, outFmt);
 		}
 		else {
-			OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
-			DataCharacteristics dc = mo.getDataCharacteristics();
-			if(oi == OutputInfo.TextCellOutputInfo) {
-				try {
+			try {
+				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				DataCharacteristics dc = mo.getDataCharacteristics();
+				if( oi == OutputInfo.TextCellOutputInfo 
+					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
+				{
 					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(),
 						fname, dc.getRows(), dc.getCols(), dc.getNonZeros());
-				} catch (IOException e) {
-					throw new DMLRuntimeException(e);
+				}
+				else {
+					mo.exportData(fname, outFmt);
 				}
 			}
-			else if ( oi == OutputInfo.BinaryBlockOutputInfo) {
-				mo.exportData(fname, outFmt);
-			}
-			else {
-				throw new DMLRuntimeException("Unexpected data format (" + OutputInfo.outputInfoToString(oi) + "): can not export into MatrixMarket format.");
+			catch (IOException e) {
+				throw new DMLRuntimeException(e);
 			}
 		}
 	}
+	
 	/**
 	 * Helper function to write scalars to HDFS based on its value type.
 	 *

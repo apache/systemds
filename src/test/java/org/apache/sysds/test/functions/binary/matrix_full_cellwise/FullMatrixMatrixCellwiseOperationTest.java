@@ -44,8 +44,8 @@ public class FullMatrixMatrixCellwiseOperationTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullMatrixMatrixCellwiseOperationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 1100;
-	private final static int cols = 900;
+	private final static int rows = 1010;
+	private final static int cols = 300;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 	

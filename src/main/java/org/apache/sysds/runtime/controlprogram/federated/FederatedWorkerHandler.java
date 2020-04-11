@@ -137,7 +137,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
 					String format = mtd.getString(DataExpression.FORMAT_TYPE);
-					oi = OutputInfo.outputInfoFromStringExternal(format);
+					oi = OutputInfo.fromExternalString(format);
 					ii = OutputInfo.getMatchingInputInfo(oi);
 				}
 			}

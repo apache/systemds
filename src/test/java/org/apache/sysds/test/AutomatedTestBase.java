@@ -288,15 +288,15 @@ public abstract class AutomatedTestBase {
 	}
 
 	protected ExecMode setExecMode(ExecType instType) {
-		ExecMode platformOld = rtplatform;
 		switch(instType) {
-			case SPARK:
-				rtplatform = ExecMode.SPARK;
-				break;
-			default:
-				rtplatform = ExecMode.HYBRID;
-				break;
+			case SPARK: return setExecMode(ExecMode.SPARK);
+			default:    return setExecMode(ExecMode.HYBRID);
 		}
+	}
+	
+	protected ExecMode setExecMode(ExecMode execMode) {
+		ExecMode platformOld = rtplatform;
+		rtplatform = execMode;
 		if(rtplatform != ExecMode.SINGLE_NODE)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		return platformOld;

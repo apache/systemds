@@ -153,7 +153,7 @@ public class OutputInfo implements Serializable
 			return "specialized";
 	}
 	
-	public static OutputInfo outputInfoFromStringExternal(String format) {
+	public static OutputInfo fromExternalString(String format) {
 		if (format.equalsIgnoreCase(FORMAT_TYPE_VALUE_TEXT))
 			return OutputInfo.TextCellOutputInfo;
 		else if (format.equalsIgnoreCase(FORMAT_TYPE_VALUE_BINARY))

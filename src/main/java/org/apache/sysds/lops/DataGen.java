@@ -69,7 +69,7 @@ public class DataGen extends Lop
 		_op = op;
 		
 		for (Lop lop : inputParametersLops.values()) {
-			this.addInput(lop);
+			addInput(lop);
 			lop.addOutput(this);
 		}
 		
@@ -227,60 +227,34 @@ public class DataGen extends Lop
 					+ "Parameter " + DataExpression.RAND_MIN
 					+ " must be a literal for a Rand operation.");
 
-		//generate instruction
-		StringBuilder sb = new StringBuilder( );
-		ExecType et = getExecType();
-		
-		sb.append( et );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append(SINIT_OPCODE);
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(rowsString);
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(colsString);
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(blen);
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(minString);
-		sb.append(OPERAND_DELIMITOR);
-		sb.append(prepOutputOperand(output));
-
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().toString(), SINIT_OPCODE,
+			rowsString, colsString, blen, minString,
+			prepOutputOperand(output));
 	}
 	
 	private String getSampleInstructionCPSpark(String output) {
 		if ( _op != OpOpDG.SAMPLE )
 			throw new LopsException("Invalid instruction generation for data generation method " + _op);
 		
-		//prepare instruction parameters
-		Lop lsize = _inputParams.get(DataExpression.RAND_ROWS.toString());
-		Lop lrange = _inputParams.get(DataExpression.RAND_MAX.toString());
-		Lop lreplace = _inputParams.get(DataExpression.RAND_PDF.toString());
-		Lop lseed = _inputParams.get(DataExpression.RAND_SEED.toString());
-		
+		ExecType et = getExecType();
 		return InstructionUtils.concatOperands(
-			getExecType().name(),
-			"sample",
-			lrange.prepScalarLabel(),
-			lsize.prepScalarInputOperand(getExecType()),
-			lreplace.prepScalarLabel(),
-			lseed.prepScalarLabel(),
+			getExecType().name(), "sample",
+			_inputParams.get(DataExpression.RAND_MAX.toString()).prepScalarLabel(),
+			_inputParams.get(DataExpression.RAND_ROWS.toString()).prepScalarInputOperand(et),
+			_inputParams.get(DataExpression.RAND_PDF.toString()).prepScalarLabel(),
+			_inputParams.get(DataExpression.RAND_SEED.toString()).prepScalarLabel(),
 			String.valueOf(getOutputParameters().getBlocksize()),
 			prepOutputOperand(output));
 	}
 	
-	private String getTimeInstructionCP(String output)
-	{
+	private String getTimeInstructionCP(String output) {
 		if (_op != OpOpDG.TIME )
 			throw new LopsException("Invalid instruction generation for data generation method " + _op);
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "time" );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
 		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().toString(), "time",
+			prepOutputOperand(output));
 	}
 	
 	/**
@@ -293,43 +267,16 @@ public class DataGen extends Lop
 		if ( _op != OpOpDG.SEQ )
 			throw new LopsException("Invalid instruction generation for data generation method " + _op);
 		
-		StringBuilder sb = new StringBuilder( );
 		ExecType et = getExecType();
-		sb.append( et );
-		sb.append( Lop.OPERAND_DELIMITOR );
-
-		Lop iLop = null;
-
-		iLop = _inputParams.get(Statement.SEQ_FROM.toString());
-		String fromString = iLop.prepScalarInputOperand(et);
-		
-		iLop = _inputParams.get(Statement.SEQ_TO.toString());
-		String toString = iLop.prepScalarInputOperand(et);
-		
-		iLop = _inputParams.get(Statement.SEQ_INCR.toString());
-		String incrString = iLop.prepScalarInputOperand(et);
-		
-		String rowsString = String.valueOf(this.getOutputParameters().getNumRows());
-		String colsString = String.valueOf(this.getOutputParameters().getNumCols());
-		String blen = String.valueOf(this.getOutputParameters().getBlocksize());
-		
-		sb.append( DataGen.SEQ_OPCODE );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( rowsString );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( colsString );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( blen );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( fromString );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( toString );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( incrString );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append(prepOutputOperand(output));
-
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			et.toString(), DataGen.SEQ_OPCODE,
+			String.valueOf(getOutputParameters().getNumRows()),
+			String.valueOf(getOutputParameters().getNumCols()),
+			String.valueOf(getOutputParameters().getBlocksize()),
+			_inputParams.get(Statement.SEQ_FROM.toString()).prepScalarInputOperand(et),
+			_inputParams.get(Statement.SEQ_TO.toString()).prepScalarInputOperand(et),
+			_inputParams.get(Statement.SEQ_INCR.toString()).prepScalarInputOperand(et),
+			prepOutputOperand(output));
 	}
 
 	@Override

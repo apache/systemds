@@ -27,7 +27,6 @@ import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
@@ -38,6 +37,7 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.OpOpData;
 

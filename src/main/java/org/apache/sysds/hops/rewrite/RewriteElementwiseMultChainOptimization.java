@@ -30,6 +30,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
@@ -73,7 +74,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	}
 
 	private static boolean isBinaryMult(final Hop hop) {
-		return hop instanceof BinaryOp && ((BinaryOp)hop).getOp() == Hop.OpOp2.MULT;
+		return hop instanceof BinaryOp && ((BinaryOp)hop).getOp() == OpOp2.MULT;
 	}
 
 	private static Hop rule_RewriteEMult(final Hop root) {
@@ -156,7 +157,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 			if( colVectorsScalars == null )
 				colVectorsScalars = next;
 			else {
-				colVectorsScalars = HopRewriteUtils.createBinary(next, colVectorsScalars, Hop.OpOp2.MULT);
+				colVectorsScalars = HopRewriteUtils.createBinary(next, colVectorsScalars, OpOp2.MULT);
 				colVectorsScalars.setVisited();
 			}
 			next = iterator.hasNext() ? iterator.next() : null;
@@ -170,7 +171,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 			if( rowVectors == null )
 				rowVectors = next;
 			else {
-				rowVectors = HopRewriteUtils.createBinary(rowVectors, next, Hop.OpOp2.MULT);
+				rowVectors = HopRewriteUtils.createBinary(rowVectors, next, OpOp2.MULT);
 				rowVectors.setVisited();
 			}
 			next = iterator.hasNext() ? iterator.next() : null;
@@ -184,7 +185,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 			if( matrices == null )
 				matrices = next;
 			else {
-				matrices = HopRewriteUtils.createBinary(matrices, next, Hop.OpOp2.MULT);
+				matrices = HopRewriteUtils.createBinary(matrices, next, OpOp2.MULT);
 				matrices.setVisited();
 			}
 			next = iterator.hasNext() ? iterator.next() : null;
@@ -197,7 +198,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 			if( other == null )
 				other = next;
 			else {
-				other = HopRewriteUtils.createBinary(other, next, Hop.OpOp2.MULT);
+				other = HopRewriteUtils.createBinary(other, next, OpOp2.MULT);
 				other.setVisited();
 			}
 			next = iterator.hasNext() ? iterator.next() : null;
@@ -211,21 +212,21 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		else if( other != null && matrices == null )
 			top = other;
 		else if( other != null ) { //matrices != null
-			top = HopRewriteUtils.createBinary(other, matrices, Hop.OpOp2.MULT);
+			top = HopRewriteUtils.createBinary(other, matrices, OpOp2.MULT);
 			top.setVisited();
 		}
 
 		if( top == null && rowVectors != null )
 			top = rowVectors;
 		else if( rowVectors != null ) { //top != null
-			top = HopRewriteUtils.createBinary(top, rowVectors, Hop.OpOp2.MULT);
+			top = HopRewriteUtils.createBinary(top, rowVectors, OpOp2.MULT);
 			top.setVisited();
 		}
 
 		if( top == null && colVectorsScalars != null )
 			top = colVectorsScalars;
 		else if( colVectorsScalars != null ) { //top != null
-			top = HopRewriteUtils.createBinary(top, colVectorsScalars, Hop.OpOp2.MULT);
+			top = HopRewriteUtils.createBinary(top, colVectorsScalars, OpOp2.MULT);
 			top.setVisited();
 		}
 
@@ -237,7 +238,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		hop.setVisited(); // we will visit the leaves' children next
 		if (cnt == 1)
 			return hop;
-		final Hop pow = HopRewriteUtils.createBinary(hop, new LiteralOp(cnt), Hop.OpOp2.POW);
+		final Hop pow = HopRewriteUtils.createBinary(hop, new LiteralOp(cnt), OpOp2.POW);
 		pow.setVisited();
 		return pow;
 	}

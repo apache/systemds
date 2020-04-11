@@ -50,7 +50,6 @@ import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.hops.codegen.SpoofFusedOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
-import org.apache.sysds.lops.Binary;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.PartialAggregate;
 import org.apache.sysds.lops.UnaryCP;
@@ -424,13 +423,13 @@ public class LineageItemUtils {
 		if (root instanceof ReorgOp)
 			li = new LineageItem(name, "r'", LIinputs);
 		else if (root instanceof UnaryOp) {
-			String opcode = UnaryCP.getOpCode(Hop.HopsOpOp1LopsUS.get(((UnaryOp) root).getOp()));
+			String opcode = ((UnaryOp) root).getOp().toString();
 			li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof AggBinaryOp)
 			li = new LineageItem(name, "ba+*", LIinputs);
 		else if (root instanceof BinaryOp)
-			li = new LineageItem(name, Binary.getOpcode(Hop.HopsOpOp2LopsB.get(((BinaryOp)root).getOp())), LIinputs);
+			li = new LineageItem(name, ((BinaryOp)root).getOp().toString(), LIinputs);
 		else if (root instanceof TernaryOp) {
 			String opcode = ((TernaryOp) root).getOp().toString();
 			li = new LineageItem(name, opcode, LIinputs);

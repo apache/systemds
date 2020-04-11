@@ -81,7 +81,7 @@ public class Transform extends Lop
 	private void init (Lop[] input, ReOrgOp op, DataType dt, ValueType vt, ExecType et) {
 		_operation = op;
 		for(Lop in : input) {
-			this.addInput(in);
+			addInput(in);
 			in.addOutput(this);
 		}
 		lps.setProperties(inputs, et);

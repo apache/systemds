@@ -23,10 +23,11 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
-import org.apache.sysds.lops.Binary;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.PartialAggregate;
@@ -133,11 +134,11 @@ public class AggUnaryOp extends MultiThreadedHop
 					BinaryOp binput = (BinaryOp)getInput().get(0);
 					agg1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
 							binput.getInput().get(1).constructLops(), _op, _direction, 
-							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.CP);
+							binput.getOp(), DataType.MATRIX, getValueType(), ExecType.CP);
 					PartialAggregate.setDimensionsBasedOnDirection(agg1, getDim1(), getDim2(), input.getBlocksize(), _direction);
 				
 					if (getDataType() == DataType.SCALAR) {
-						UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
+						UnaryCP unary1 = new UnaryCP(agg1, OpOp1.CAST_AS_SCALAR,
 							getDataType(), getValueType());
 						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
@@ -174,15 +175,14 @@ public class AggUnaryOp extends MultiThreadedHop
 					BinaryOp binput = (BinaryOp)getInput().get(0);
 					Lop transform1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
 							binput.getInput().get(1).constructLops(), _op, _direction, 
-							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.SPARK);
+							binput.getOp(), DataType.MATRIX, getValueType(), ExecType.SPARK);
 					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getBlocksize(), _direction);
 					setLineNumbers(transform1);
 					setLops(transform1);
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(transform1,
-							HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-							getDataType(), getValueType());
+							OpOp1.CAST_AS_SCALAR, getDataType(), getValueType());
 						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						setLops(unary1);
@@ -202,7 +202,7 @@ public class AggUnaryOp extends MultiThreadedHop
 				
 					if (getDataType() == DataType.SCALAR) {
 						UnaryCP unary1 = new UnaryCP(aggregate, 
-							HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
+							OpOp1.CAST_AS_SCALAR, getDataType(), getValueType());
 						unary1.getOutputParameters().setDimensions(0, 0, 0, -1);
 						setLineNumbers(unary1);
 						setLops(unary1);
@@ -605,7 +605,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		et_input = et_input == ExecType.GPU ? ExecType.CP :  et_input;
 		
 		return new TernaryAggregate(in1, in2, in3, AggOp.SUM, 
-				Binary.OperationTypes.MULTIPLY, _direction, getDataType(), ValueType.FP64, et_input, k);
+			OpOp2.MULT, _direction, getDataType(), ValueType.FP64, et_input, k);
 	}
 	
 	@Override

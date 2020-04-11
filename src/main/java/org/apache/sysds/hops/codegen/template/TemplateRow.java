@@ -37,8 +37,6 @@ import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.hops.Hop.OpOp1;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
@@ -57,6 +55,8 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.OpOpDnn;
@@ -68,14 +68,14 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 public class TemplateRow extends TemplateBase 
 {
 	private static final AggOp[] SUPPORTED_ROW_AGG = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX, AggOp.MEAN};
-	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{
-			OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN,
-			OpOp1.SIN, OpOp1.COS, OpOp1.TAN, OpOp1.ASIN, OpOp1.ACOS, OpOp1.ATAN, OpOp1.SINH, OpOp1.COSH, OpOp1.TANH,
-			OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX, OpOp1.SPROP, OpOp1.SIGMOID};
-	private static final Hop.OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{
-			OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, OpOp2.PLUS, OpOp2.POW, OpOp2.MIN, OpOp2.MAX, OpOp2.XOR,
-			OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL,
-			OpOp2.BITWAND,
+	private static final OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{
+		OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN,
+		OpOp1.SIN, OpOp1.COS, OpOp1.TAN, OpOp1.ASIN, OpOp1.ACOS, OpOp1.ATAN, OpOp1.SINH, OpOp1.COSH, OpOp1.TANH,
+		OpOp1.CUMSUM, OpOp1.CUMMIN, OpOp1.CUMMAX, OpOp1.SPROP, OpOp1.SIGMOID};
+	private static final OpOp2[] SUPPORTED_VECT_BINARY = new OpOp2[]{
+		OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS, OpOp2.PLUS, OpOp2.POW, OpOp2.MIN, OpOp2.MAX, OpOp2.XOR,
+		OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS, OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL,
+		OpOp2.BITWAND,
 	};
 	
 	public TemplateRow() {
@@ -400,7 +400,7 @@ public class TemplateRow extends TemplateBase
 			else //general scalar case
 			{
 				cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
-				String primitiveOpName = ((UnaryOp)hop).getOp().toString();
+				String primitiveOpName = ((UnaryOp)hop).getOp().name();
 				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
 			}
 		}
@@ -450,7 +450,7 @@ public class TemplateRow extends TemplateBase
 			}
 			else //one input is a vector/scalar other is a scalar
 			{
-				String primitiveOpName = ((BinaryOp)hop).getOp().toString();
+				String primitiveOpName = ((BinaryOp)hop).getOp().name();
 				if( TemplateUtils.isColVector(cdata1) )
 					cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
 				if( TemplateUtils.isColVector(cdata2) //vector or vector can be inferred from lhs

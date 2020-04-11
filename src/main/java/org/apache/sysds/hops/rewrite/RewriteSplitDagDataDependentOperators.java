@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.OpOpN;
@@ -40,7 +41,6 @@ import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.TernaryOp;
-import org.apache.sysds.hops.Hop.OpOp1;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.StatementBlock;

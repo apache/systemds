@@ -25,11 +25,11 @@ import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.Hop.OpOp1;
 import org.apache.sysds.hops.LeftIndexingOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.parser.ForStatement;

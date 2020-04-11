@@ -26,8 +26,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;

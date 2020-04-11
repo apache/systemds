@@ -21,22 +21,22 @@ package org.apache.sysds.lops;
 
  
 import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.lops.Unary.OperationTypes;
 import org.apache.sysds.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 
-public class WeightedUnaryMMR extends Lop 
+public class WeightedUnaryMMR extends Lop
 {
 	public static final String OPCODE = "redwumm";
 	
 	private WUMMType _wummType = null;
-	private OperationTypes _uop = null;
+	private OpOp1 _uop = null;
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
 	
-	public WeightedUnaryMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OperationTypes op, boolean cacheU, boolean cacheV, ExecType et) {
+	public WeightedUnaryMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OpOp1 op, boolean cacheU, boolean cacheV, ExecType et) {
 		super(Lop.Type.WeightedUMM, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
@@ -62,8 +62,7 @@ public class WeightedUnaryMMR extends Lop
 	public String getInstructions(String input1, String input2, String input3, String output) {
 		return InstructionUtils.concatOperands(
 			getExecType().name(),
-			OPCODE,
-			Unary.getOpcode(_uop),
+			OPCODE, _uop.toString(),
 			getInputs().get(0).prepInputOperand(input1),
 			getInputs().get(1).prepInputOperand(input2),
 			getInputs().get(2).prepInputOperand(input3),

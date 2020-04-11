@@ -23,6 +23,8 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpDnn;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -62,7 +64,7 @@ public class BinaryOp extends MultiThreadedHop
 	//we use the full remote memory budget (but reduced by sort buffer), 
 	public static final double APPEND_MEM_MULTIPLIER = 1.0;
 
-	private Hop.OpOp2 op;
+	private OpOp2 op;
 	private boolean outer = false;
 	
 	public static AppendMethod FORCED_APPEND_METHOD = null;
@@ -89,7 +91,7 @@ public class BinaryOp extends MultiThreadedHop
 		//default constructor for clone
 	}
 	
-	public BinaryOp(String l, DataType dt, ValueType vt, Hop.OpOp2 o,
+	public BinaryOp(String l, DataType dt, ValueType vt, OpOp2 o,
 			Hop inp1, Hop inp2) {
 		super(l, dt, vt);
 		op = o;
@@ -307,22 +309,22 @@ public class BinaryOp extends MultiThreadedHop
 		// For INTERQUANTILE: 2nd argument is always a scalar
 
 		PickByCount.OperationTypes pick_op = null;
-		if(op == Hop.OpOp2.QUANTILE)
+		if(op == OpOp2.QUANTILE)
 			pick_op = PickByCount.OperationTypes.VALUEPICK;
 		else
 			pick_op = PickByCount.OperationTypes.RANGEPICK;
 
 		SortKeys sort = SortKeys.constructSortByValueLop(
-							getInput().get(0).constructLops(), 
-							SortKeys.OperationTypes.WithoutWeights, 
-							DataType.MATRIX, ValueType.FP64, et );
+			getInput().get(0).constructLops(), 
+			SortKeys.OperationTypes.WithoutWeights, 
+			DataType.MATRIX, ValueType.FP64, et );
 		sort.getOutputParameters().setDimensions(
-				getInput().get(0).getDim1(),
-				getInput().get(0).getDim2(),
-				getInput().get(0).getBlocksize(),
-				getInput().get(0).getNnz());
+			getInput().get(0).getDim1(),
+			getInput().get(0).getDim2(),
+			getInput().get(0).getBlocksize(),
+			getInput().get(0).getNnz());
 		PickByCount pick = new PickByCount( sort, getInput().get(1).constructLops(),
-				getDataType(), getValueType(), pick_op, et, true);
+			getDataType(), getValueType(), pick_op, et, true);
 
 		setOutputDimensions(pick);
 		setLineNumbers(pick);
@@ -356,13 +358,11 @@ public class BinaryOp extends MultiThreadedHop
 			long clen = cbind ? ((getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
 				getInput().get(0).getDim2()+getInput().get(1).getDim2() : -1) : getInput().get(0).getDim2();
 		
-			if(et == ExecType.SPARK) 
-			{
+			if(et == ExecType.SPARK) {
 				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);
 				append.getOutputParameters().setDimensions(rlen, clen, getBlocksize(), getNnz());
 			}
-			else //CP
-			{
+			else { //CP
 				Lop offset = createOffsetLop( getInput().get(0), cbind ); //offset 1st input
 				append = new Append(getInput().get(0).constructLops(), getInput().get(1).constructLops(), offset, getDataType(), getValueType(), cbind, et);
 				append.getOutputParameters().setDimensions(rlen, clen, getBlocksize(), getNnz());
@@ -395,9 +395,8 @@ public class BinaryOp extends MultiThreadedHop
 		
 		if (dt1 == dt2 && dt1 == DataType.SCALAR) {
 			// Both operands scalar
-			BinaryScalar binScalar1 = new BinaryScalar(getInput().get(0)
-				.constructLops(),getInput().get(1).constructLops(),
-				HopsOpOp2LopsBS.get(op), getDataType(), getValueType());
+			BinaryScalar binScalar1 = new BinaryScalar(getInput().get(0).constructLops(),
+				getInput().get(1).constructLops(), op, getDataType(), getValueType());
 			binScalar1.getOutputParameters().setDimensions(0, 0, 0, -1);
 			setLineNumbers(binScalar1);
 			setLops(binScalar1);
@@ -410,34 +409,34 @@ public class BinaryOp extends MultiThreadedHop
 			ExecType et = optFindExecType();
 			
 			//select specific operator implementations
-			Unary.OperationTypes ot = null;
 			Hop right = getInput().get(1);
-			if( op==OpOp2.POW && right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==2.0  )
-				ot = Unary.OperationTypes.POW2;
-			else if( op==OpOp2.MULT && right instanceof LiteralOp && ((LiteralOp)right).getDoubleValue()==2.0  )
-				ot = Unary.OperationTypes.MULTIPLY2;
-			else //general case
-				ot = HopsOpOp2LopsU.get(op);
-
-			Unary unary1 = new Unary(getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
-		
-			setOutputDimensions(unary1);
-			setLineNumbers(unary1);
-			setLops(unary1);
+			OpOp1 ot = (op==OpOp2.POW && HopRewriteUtils.isLiteralOfValue(right, 2d)) ? OpOp1.POW2 : 
+				(op==OpOp2.MULT && HopRewriteUtils.isLiteralOfValue(right, 2d)) ? OpOp1.MULT2 : null;
+			Lop tmp = null;
+			if( ot != null ) {
+				tmp = new Unary(getInput().get(0).constructLops(),
+					getInput().get(1).constructLops(), ot, getDataType(), getValueType(), et);
+			}
+			else { //general case
+				tmp = new Binary(getInput().get(0).constructLops(),
+					getInput().get(1).constructLops(), op, getDataType(), getValueType(), et);
+			}
+			setOutputDimensions(tmp);
+			setLineNumbers(tmp);
+			setLops(tmp);
 		} 
 		else 
 		{
 			// Both operands are Matrixes or Tensors
 			ExecType et = optFindExecType();
-			boolean isGPUSoftmax = et == ExecType.GPU && op == Hop.OpOp2.DIV && 
+			boolean isGPUSoftmax = et == ExecType.GPU && op == OpOp2.DIV && 
 					getInput().get(0) instanceof UnaryOp && getInput().get(1) instanceof AggUnaryOp && 
 					((UnaryOp)getInput().get(0)).getOp() == OpOp1.EXP && ((AggUnaryOp)getInput().get(1)).getOp() == AggOp.SUM &&
 					((AggUnaryOp)getInput().get(1)).getDirection() == Direction.Row &&
 					getInput().get(0) == getInput().get(1).getInput().get(0);
 			if(isGPUSoftmax) {
-				UnaryCP softmax = new UnaryCP(getInput().get(0).getInput().get(0).constructLops(), UnaryCP.OperationTypes.SOFTMAX, 
-						getDataType(), getValueType(), et);
+				UnaryCP softmax = new UnaryCP(getInput().get(0).getInput().get(0).constructLops(),
+					OpOp1.SOFTMAX, getDataType(), getValueType(), et);
 				setOutputDimensions(softmax);
 				setLineNumbers(softmax);
 				setLops(softmax);
@@ -459,7 +458,8 @@ public class BinaryOp extends MultiThreadedHop
 						getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				}
 				else
-					binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
+					binary = new Binary(getInput().get(0).constructLops(),
+						getInput().get(1).constructLops(), op,
 						getDataType(), getValueType(), et);
 				
 				setOutputDimensions(binary);
@@ -477,7 +477,7 @@ public class BinaryOp extends MultiThreadedHop
 				Lop  binary = null;
 				if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN ) {
 					AggUnaryOp uRight = (AggUnaryOp)right;
-					binary = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
+					binary = new BinaryUAggChain(left.constructLops(), op,
 						uRight.getOp(), uRight.getDirection(), getDataType(), getValueType(), et);
 				}
 				else if (mbin == MMBinaryMethod.MR_BINARY_M) {
@@ -485,11 +485,11 @@ public class BinaryOp extends MultiThreadedHop
 						(right.getDim2() == 1 && left.getDim1() == right.getDim1());
 
 					binary = new BinaryM(left.constructLops(), right.constructLops(),
-						HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et, isColVector);
+						op, getDataType(), getValueType(), et, isColVector);
 				}
 				else {
 					binary = new Binary(left.constructLops(), right.constructLops(), 
-						HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
+						op, getDataType(), getValueType(), et);
 				}
 				
 				setOutputDimensions(binary);
@@ -501,7 +501,7 @@ public class BinaryOp extends MultiThreadedHop
 
 	@Override
 	public String getOpString() {
-		return "b(" + HopsOpOp2String.get(op) + ")";
+		return "b(" + op.toString() + ")";
 	}
 
 	@Override

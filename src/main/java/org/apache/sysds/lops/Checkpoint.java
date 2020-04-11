@@ -58,7 +58,7 @@ public class Checkpoint extends Lop
 	 */
 	public Checkpoint(Lop input, DataType dt, ValueType vt, String level)  {
 		super(Lop.Type.Checkpoint, dt, vt);
-		this.addInput(input);
+		addInput(input);
 		input.addOutput(this);
 		
 		_storageLevel = StorageLevel.fromString(level);

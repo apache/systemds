@@ -24,10 +24,10 @@ import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
-import org.apache.sysds.lops.Binary;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.MMCJ;
@@ -38,6 +38,7 @@ import org.apache.sysds.lops.MMZip;
 import org.apache.sysds.lops.MapMult;
 import org.apache.sysds.lops.MapMultChain;
 import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.lops.MatMultCP;
 import org.apache.sysds.lops.PMMJ;
 import org.apache.sysds.lops.PMapMult;
 import org.apache.sysds.lops.Transform;
@@ -256,9 +257,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	@Override
 	public String getOpString() {
 		//ba - binary aggregate, for consistency with runtime 
-		String s = "ba(" + outerOp.toString() + 
-				HopsOpOp2String.get(innerOp)+")";
-		return s;
+		return "ba(" + outerOp.toString() + innerOp.toString()+")";
 	}
 	
 	@Override
@@ -613,8 +612,7 @@ public class AggBinaryOp extends MultiThreadedHop
 				h1.getInput().get(0).constructLops();
 			Lop right = !rightTrans ? h2.constructLops() :
 				h2.getInput().get(0).constructLops();
-			matmultCP = new Binary(left, right, Binary.OperationTypes.MATMULT,
-				getDataType(), getValueType(), et, leftTrans, rightTrans);
+			matmultCP = new MatMultCP(left, right, getDataType(), getValueType(), et, leftTrans, rightTrans);
 			setOutputDimensions(matmultCP);
 		}
 		else {
@@ -623,8 +621,8 @@ public class AggBinaryOp extends MultiThreadedHop
 			}
 			else { 
 				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-				matmultCP = new Binary(getInput().get(0).constructLops(),getInput().get(1).constructLops(),
-					Binary.OperationTypes.MATMULT, getDataType(), getValueType(), et, k);
+				matmultCP = new MatMultCP(getInput().get(0).constructLops(),
+					getInput().get(1).constructLops(), getDataType(), getValueType(), et, k);
 			}
 			setOutputDimensions(matmultCP);
 		}
@@ -648,7 +646,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		setLineNumbers(tY);
 		
 		//matrix mult
-		Lop mult = new Binary(tY, X.constructLops(), Binary.OperationTypes.MATMULT, getDataType(), getValueType(), ExecType.CP, k);	
+		Lop mult = new MatMultCP(tY, X.constructLops(), getDataType(), getValueType(), ExecType.CP, k);
 		mult.getOutputParameters().setDimensions(Y.getDim2(), X.getDim2(), getBlocksize(), getNnz());
 		setLineNumbers(mult);
 		

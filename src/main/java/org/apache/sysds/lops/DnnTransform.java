@@ -53,7 +53,7 @@ public class DnnTransform extends Lop
 		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
-		this.addInput(input2);
+		addInput(input2);
 		input2.addOutput(this);
 		setLevel();
 	}
@@ -62,16 +62,16 @@ public class DnnTransform extends Lop
 		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
-		this.addInput(input2);
+		addInput(input2);
 		input2.addOutput(this);
-		this.addInput(input3);
+		addInput(input3);
 		input3.addOutput(this);
 		setLevel();
 	}
 
 	private void init (Lop input, OpOpDnn op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
-		this.addInput(input);
+		addInput(input);
 		input.addOutput(this);
 		lps.setProperties( inputs, et);
 	}

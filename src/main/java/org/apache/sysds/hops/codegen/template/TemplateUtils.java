@@ -19,7 +19,12 @@
 
 package org.apache.sysds.hops.codegen.template;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -35,9 +40,10 @@ import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpDnn;
 import org.apache.sysds.common.Types.OpOpN;
-import org.apache.sysds.hops.Hop.OpOp1;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
@@ -326,16 +332,16 @@ public class TemplateUtils
 
 	public static LinkedList<Long> findRemovableConditionalPatternInOuterProduct(Hop hop) {
 		LinkedList<Long> removableHopIDs = new LinkedList<>();
-		if(((BinaryOp) hop).getOp() == Hop.OpOp2.MULT) {
+		if(((BinaryOp) hop).getOp() == OpOp2.MULT) {
 			if (hop.getInput().get(0) instanceof BinaryOp &&
-					((BinaryOp) hop.getInput().get(0)).getOp() == Hop.OpOp2.NOTEQUAL) {
+					((BinaryOp) hop.getInput().get(0)).getOp() == OpOp2.NOTEQUAL) {
 				removableHopIDs.add(hop.getHopID());
 				removableHopIDs.add(hop.getInput().get(0).getHopID());
 				removableHopIDs.add(hop.getInput().get(0).getInput().get(0).getHopID());
 				removableHopIDs.add(hop.getInput().get(0).getInput().get(1).getHopID());
 			}
 			else if (hop.getInput().get(1) instanceof BinaryOp &&
-					((BinaryOp) hop.getInput().get(1)).getOp() == Hop.OpOp2.NOTEQUAL) {
+					((BinaryOp) hop.getInput().get(1)).getOp() == OpOp2.NOTEQUAL) {
 				removableHopIDs.add(hop.getHopID());
 				removableHopIDs.add(hop.getInput().get(1).getHopID());
 				removableHopIDs.add(hop.getInput().get(1).getInput().get(0).getHopID());

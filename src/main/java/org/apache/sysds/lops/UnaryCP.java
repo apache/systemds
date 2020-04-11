@@ -23,17 +23,11 @@ package org.apache.sysds.lops;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 
 public class UnaryCP extends Lop 
 {
-	@SuppressWarnings("hiding")
-	public enum OperationTypes {
-		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, SINH, COSH, TANH,
-		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, ASSERT, NROW, NCOL, LENGTH, EXISTS, LINEAGE, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX, TYPEOF, DETECTSCHEMA
-	}
-	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
 	public static final String CAST_AS_MATRIX_OPCODE = "castdtm";
 	public static final String CAST_AS_FRAME_OPCODE = "castdtf";
@@ -41,9 +35,7 @@ public class UnaryCP extends Lop
 	public static final String CAST_AS_INT_OPCODE    = "castvti";
 	public static final String CAST_AS_BOOLEAN_OPCODE = "castvtb";
 
-	
-	
-	OperationTypes operation;
+	private OpOp1 operation;
 
 	/**
 	 * Constructor to perform a scalar operation
@@ -54,133 +46,31 @@ public class UnaryCP extends Lop
 	 * @param vt value type
 	 * @param et exec type
 	 */
-	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.UnaryCP, dt, vt);
 		operation = op;
-		this.addInput(input);
+		addInput(input);
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
 	}
 	
-	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt) {
+	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt) {
 		this(input, op, dt, vt, ExecType.CP);
 	}
 
 	@Override
 	public String toString() {
-
 		return "Operation: " + operation;
-
 	}
 	
 	private String getOpCode() {
-		return getOpCode(operation);
+		return operation.toString();
 	}
 
-	public static String getOpCode(OperationTypes op) {
-		switch (op) {
-		case NOT:
-			return "!";
-
-		case ABS:
-			return "abs";
-
-		case SIN:
-			return "sin";
-
-		case COS:
-			return "cos";
-
-		case TAN:
-			return "tan";
-
-		case ASIN:
-			return "asin";
-
-		case ACOS:
-			return "acos";
-
-		case ATAN:
-			return "atan";
-
-		case SINH:
-			return "sinh";
-
-		case COSH:
-			return "cosh";
-
-		case TANH:
-			return "tanh";
-			
-		case SQRT:
-			return "sqrt";
-
-		case LOG:
-			return "log";
-
-		case ROUND:
-			return "round";
-
-		case EXP:
-			return "exp";
-
-		case PRINT:
-			return "print";
-		
-		case ASSERT:
-			return "assert";
-
-		case CAST_AS_MATRIX:
-			return CAST_AS_MATRIX_OPCODE;
-
-		case CAST_AS_FRAME:
-			return CAST_AS_FRAME_OPCODE;
-			
-		case STOP:
-			return "stop";
-			
-		case CEIL:
-			return "ceil";
-			
-		case FLOOR:
-			return "floor";
-		
-		case CUMSUM:
-			return "ucumk+";
-			
-		// CAST_AS_SCALAR, NROW, NCOL, LENGTH builtins take matrix as the input
-		// and produces a scalar
-		case CAST_AS_SCALAR:
-			return CAST_AS_SCALAR_OPCODE; 
-
-		case CAST_AS_DOUBLE:
-			return CAST_AS_DOUBLE_OPCODE; 
-
-		case CAST_AS_INT:
-			return CAST_AS_INT_OPCODE; 
-
-		case CAST_AS_BOOLEAN:
-			return CAST_AS_BOOLEAN_OPCODE; 
-
-		case NROW:   return "nrow";
-		case NCOL:   return "ncol";
-		case LENGTH: return "length";
-		case EXISTS: return "exists";
-		case LINEAGE: return "lineage";
-		
-		case SOFTMAX:
-			return "softmax";
-			
-		default:
-			throw new LopsException("Unknown operation: " + op);
-		}
-	}
-	
 	@Override
 	public String getInstructions(String input, String output) {
 		return InstructionUtils.concatOperands(
-			getExecType().name(),
-			getOpCode(),
+			getExecType().name(), getOpCode(),
 			getInputs().get(0).prepScalarInputOperand(getExecType()),
 			prepOutputOperand(output));
 	}

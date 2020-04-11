@@ -22,8 +22,7 @@ package org.apache.sysds.test.component.codegen;
 import java.lang.reflect.Method;
 
 import org.junit.Test;
-import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
@@ -839,7 +838,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 						inA.getSparseBlock().indexes(i), inA.getSparseBlock().pos(i), i*n, inA.getSparseBlock().size(i), n);
 				
 				//execute comparison operation
-				String opcode = Hop.getBinaryOpCode(OpOp2.valueOf(bintype.name().split("_")[1]));
+				String opcode = OpOp2.valueOf(bintype.name().split("_")[1]).toString();
 				MatrixBlock in1 = inA.slice(i, i, 0, n-1, new MatrixBlock());
 				MatrixBlock in2 = inB.slice(i, i, 0, n-1, new MatrixBlock());
 				double[] ret2 = null;

@@ -24,16 +24,16 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 
 
 public class BinaryUAggChain extends Lop 
 {
-	
 	public static final String OPCODE = "binuaggchain";
 
 	//outer operation
-	private Binary.OperationTypes _binOp = null;
+	private OpOp2 _binOp = null;
 	//inner operation
 	private AggOp _uaggOp = null;
 	private Direction _uaggDir = null;
@@ -51,7 +51,7 @@ public class BinaryUAggChain extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 */
-	public BinaryUAggChain(Lop input1, Binary.OperationTypes bop, AggOp uaop, Direction uadir, DataType dt, ValueType vt, ExecType et) {
+	public BinaryUAggChain(Lop input1, OpOp2 bop, AggOp uaop, Direction uadir, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.BinUaggChain, dt, vt);
 		addInput(input1); //X
 		input1.addOutput(this); 
@@ -71,9 +71,8 @@ public class BinaryUAggChain extends Lop
 	@Override
 	public String getInstructions(String input1, String output) {
 		return InstructionUtils.concatOperands(
-			getExecType().name(),
-			OPCODE,
-			Binary.getOpcode(_binOp), //outer opcode
+			getExecType().name(), OPCODE,
+			_binOp.toString(), //outer opcode
 			PartialAggregate.getOpcode(_uaggOp, _uaggDir), //inner opcode
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output));

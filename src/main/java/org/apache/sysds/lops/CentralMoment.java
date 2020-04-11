@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 
@@ -29,7 +30,6 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class CentralMoment extends Lop 
 {
-	
 	/**
 	 * Constructor to perform central moment.
 	 * input1 <- data (weighted or unweighted)
@@ -41,14 +41,14 @@ public class CentralMoment extends Lop
 	 * @param et execution type
 	 */
 	private void init(Lop input1, Lop input2, Lop input3, ExecType et) {
-		this.addInput(input1);
-		this.addInput(input2);
+		addInput(input1);
+		addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
 		// when executing in CP, this lop takes an optional 3rd input (Weights)
 		if ( input3 != null ) {
-			this.addInput(input3);
+			addInput(input3);
 			input3.addOutput(this);
 		}
 		lps.setProperties(inputs, et);
@@ -77,31 +77,21 @@ public class CentralMoment extends Lop
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		
-		sb.append( "cm" );
-		sb.append( OPERAND_DELIMITOR );
-		
-		// Input data
-		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		sb.append( OPERAND_DELIMITOR );
-		
-		// Weights
-		if( input3 != null ) {
-			sb.append( getInputs().get(1).prepInputOperand(input2) );
-			sb.append( OPERAND_DELIMITOR );
+		if( input3 == null ) {
+			return InstructionUtils.concatOperands(
+				getExecType().toString(), "cm",
+				getInputs().get(0).prepInputOperand(input1),
+				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
+				prepOutputOperand(output));
 		}
-		
-		// Order
-		sb.append( getInputs().get((input3!=null)?2:1)
-				.prepScalarInputOperand(getExecType()) );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( prepOutputOperand(output));
-		
-		return sb.toString();
+		else {
+			return InstructionUtils.concatOperands(
+				getExecType().toString(), "cm",
+				getInputs().get(0).prepInputOperand(input1),
+				getInputs().get(1).prepInputOperand(input2),
+				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
+				prepOutputOperand(output));
+		}
 	}
 	
 	/**

@@ -52,7 +52,7 @@ public class ParameterizedBuiltin extends Lop
 		_operation = op;
 		
 		for (Lop lop : paramLops.values()) {
-			this.addInput(lop);
+			addInput(lop);
 			lop.addOutput(this);
 		}
 		

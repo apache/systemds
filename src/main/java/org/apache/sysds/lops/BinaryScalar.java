@@ -23,6 +23,7 @@ package org.apache.sysds.lops;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 
 /**
@@ -31,16 +32,7 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class BinaryScalar extends Lop 
 {
-	@SuppressWarnings("hiding")
-	public enum OperationTypes {
-		ADD, SUBTRACT, MULTIPLY, DIVIDE, MODULUS, INTDIV,
-		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
-		AND, OR, XOR,
-		LOG,POW,MAX,MIN,PRINT,IQSIZE,
-		BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR, //Bitwise operations
-	}
-	
-	private final OperationTypes operation;
+	private final OpOp2 operation;
 	
 	/**
 	 * Constructor to perform a scalar operation
@@ -51,11 +43,11 @@ public class BinaryScalar extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 */
-	public BinaryScalar(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt) {
+	public BinaryScalar(Lop input1, Lop input2, OpOp2 op, DataType dt, ValueType vt) {
 		super(Lop.Type.BinaryCP, dt, vt);
 		operation = op;
-		this.addInput(input1);
-		this.addInput(input2);
+		addInput(input1);
+		addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		lps.setProperties(inputs, ExecType.CP);
@@ -66,7 +58,7 @@ public class BinaryScalar extends Lop
 		return "Operation: " + operation;
 	}
 	
-	public OperationTypes getOperationType() {
+	public OpOp2 getOperationType() {
 		return operation;
 	}
 	
@@ -74,89 +66,11 @@ public class BinaryScalar extends Lop
 	public Lop.SimpleInstType getSimpleInstructionType() {
 		return SimpleInstType.Scalar;
 	}
-	
-	public static String getOpcode( OperationTypes op )
-	{
-		if( op == null )
-			throw new UnsupportedOperationException("Unable to get opcode for 'null'.");
-		
-		switch ( op ) 
-		{
-			/* Arithmetic */
-			case ADD:
-				return "+";
-			case SUBTRACT:
-				return "-";
-			case MULTIPLY:
-				return "*";
-			case DIVIDE:
-				return "/";
-			case MODULUS:
-				return "%%";	
-			case INTDIV:
-				return "%/%";	
-			case POW:	
-				return "^";
-				
-			/* Relational */
-			case LESS_THAN:
-				return "<";
-			case LESS_THAN_OR_EQUALS:
-				return "<=";
-			case GREATER_THAN:
-				return ">";
-			case GREATER_THAN_OR_EQUALS:
-				return ">=";
-			case EQUALS:
-				return "==";
-			case NOT_EQUALS:
-				return "!=";
-			
-			/* Boolean */
-			case AND:
-				return "&&";
-			case OR:
-				return "||";
 
-			/* Boolean built in binary function */
-			case XOR:
-				return "xor";
-			case BW_AND:
-				return "bitwAnd";
-			case BW_OR:
-				return "bitwOr";
-			case BW_XOR:
-				return "bitwXor";
-			case BW_SHIFTL:
-				return "bitwShiftL";
-			case BW_SHIFTR:
-				return "bitwShiftR";
-
-			/* Builtin Functions */
-			case LOG:
-				return "log";
-			case MIN:
-				return "min"; 
-			case MAX:
-				return "max"; 
-			
-			case PRINT:
-				return "print";
-				
-			case IQSIZE:
-				return "iqsize"; 
-				
-			default:
-				throw new UnsupportedOperationException("Instruction "
-					+ "is not defined for BinaryScalar operator: " + op);
-		}
-	}
-	
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
 		return InstructionUtils.concatOperands(
-			getExecType().name(),
-			getOpcode(operation),
+			getExecType().name(), operation.toString(),
 			getInputs().get(0).prepScalarInputOperand(getExecType()),
 			getInputs().get(1).prepScalarInputOperand(getExecType()),
 			prepOutputOperand(output));

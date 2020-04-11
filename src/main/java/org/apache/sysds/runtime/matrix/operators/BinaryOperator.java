@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.matrix.operators;
 
 import java.io.Serializable;
 
-import org.apache.sysds.hops.Hop.OpOp2;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.BitwAnd;
 import org.apache.sysds.runtime.functionobjects.BitwOr;
@@ -74,43 +74,41 @@ public class BinaryOperator  extends Operator implements Serializable
 	 * 
 	 * @return binary operator type for a function object
 	 */
-	public OpOp2 getBinaryOperatorOpOp2()
-	{
-		if( fn instanceof Plus )				return OpOp2.PLUS;
-		else if( fn instanceof Minus )			return OpOp2.MINUS;
-		else if( fn instanceof Multiply )		return OpOp2.MULT;
-		else if( fn instanceof Divide )			return OpOp2.DIV;
-		else if( fn instanceof Modulus )		return OpOp2.MODULUS;
-		else if( fn instanceof IntegerDivide )	return OpOp2.INTDIV;
-		else if( fn instanceof LessThan )		return OpOp2.LESS;
-		else if( fn instanceof LessThanEquals )	return OpOp2.LESSEQUAL;
-		else if( fn instanceof GreaterThan )	return OpOp2.GREATER;
-		else if( fn instanceof GreaterThanEquals )	return OpOp2.GREATEREQUAL;
-		else if( fn instanceof Equals )			return OpOp2.EQUAL;
-		else if( fn instanceof NotEquals )		return OpOp2.NOTEQUAL;
-		else if( fn instanceof And )			return OpOp2.AND;
-		else if( fn instanceof Or )				return OpOp2.OR;
-		else if( fn instanceof Xor )			return OpOp2.XOR;
-		else if( fn instanceof BitwAnd )		return OpOp2.BITWAND;
-		else if( fn instanceof BitwOr )			return OpOp2.BITWOR;
-		else if( fn instanceof BitwXor )		return OpOp2.BITWXOR;
-		else if( fn instanceof BitwShiftL )		return OpOp2.BITWSHIFTL;
-		else if( fn instanceof BitwShiftR )		return OpOp2.BITWSHIFTR;
-		else if( fn instanceof Power )			return OpOp2.POW;
-		else if( fn instanceof MinusNz )		return OpOp2.MINUS_NZ;
+	public OpOp2 getBinaryOperatorOpOp2() {
+		if( fn instanceof Plus )                   return OpOp2.PLUS;
+		else if( fn instanceof Minus )             return OpOp2.MINUS;
+		else if( fn instanceof Multiply )          return OpOp2.MULT;
+		else if( fn instanceof Divide )            return OpOp2.DIV;
+		else if( fn instanceof Modulus )           return OpOp2.MODULUS;
+		else if( fn instanceof IntegerDivide )     return OpOp2.INTDIV;
+		else if( fn instanceof LessThan )          return OpOp2.LESS;
+		else if( fn instanceof LessThanEquals )    return OpOp2.LESSEQUAL;
+		else if( fn instanceof GreaterThan )       return OpOp2.GREATER;
+		else if( fn instanceof GreaterThanEquals ) return OpOp2.GREATEREQUAL;
+		else if( fn instanceof Equals )            return OpOp2.EQUAL;
+		else if( fn instanceof NotEquals )         return OpOp2.NOTEQUAL;
+		else if( fn instanceof And )               return OpOp2.AND;
+		else if( fn instanceof Or )                return OpOp2.OR;
+		else if( fn instanceof Xor )               return OpOp2.XOR;
+		else if( fn instanceof BitwAnd )           return OpOp2.BITWAND;
+		else if( fn instanceof BitwOr )            return OpOp2.BITWOR;
+		else if( fn instanceof BitwXor )           return OpOp2.BITWXOR;
+		else if( fn instanceof BitwShiftL )        return OpOp2.BITWSHIFTL;
+		else if( fn instanceof BitwShiftR )        return OpOp2.BITWSHIFTR;
+		else if( fn instanceof Power )             return OpOp2.POW;
+		else if( fn instanceof MinusNz )           return OpOp2.MINUS_NZ;
 		else if( fn instanceof Builtin ) {
 			BuiltinCode bfc = ((Builtin) fn).getBuiltinCode();
-			if( bfc == BuiltinCode.MIN ) 		return OpOp2.MIN;
-			else if( bfc == BuiltinCode.MAX ) 	return OpOp2.MAX;
-			else if( bfc == BuiltinCode.LOG ) 	return OpOp2.LOG;
-			else if( bfc == BuiltinCode.LOG_NZ ) return OpOp2.LOG_NZ;
+			if( bfc == BuiltinCode.MIN )           return OpOp2.MIN;
+			else if( bfc == BuiltinCode.MAX )      return OpOp2.MAX;
+			else if( bfc == BuiltinCode.LOG )      return OpOp2.LOG;
+			else if( bfc == BuiltinCode.LOG_NZ )   return OpOp2.LOG_NZ;
 		}
 		
 		//non-supported ops (not required for sparsity estimates):
 		//PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM, 
 		//CENTRALMOMENT, COVARIANCE, APPEND, SOLVE, MEDIAN,
-			
-		return OpOp2.INVALID;
+		return null;
 	}
 	
 	@Override

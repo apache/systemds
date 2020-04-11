@@ -21,9 +21,9 @@ package org.apache.sysds.lops;
 
  
 import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.lops.Unary.OperationTypes;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 
 public class WeightedUnaryMM extends Lop 
@@ -37,10 +37,10 @@ public class WeightedUnaryMM extends Lop
 	}
 	
 	private WUMMType _wummType = null;
-	private OperationTypes _uop = null;
+	private OpOp1 _uop = null;
 	private int _numThreads = 1;
 	
-	public WeightedUnaryMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OperationTypes op, ExecType et) {
+	public WeightedUnaryMM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OpOp1 op, ExecType et) {
 		super(Lop.Type.WeightedUMM, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
@@ -73,7 +73,7 @@ public class WeightedUnaryMM extends Lop
 			sb.append(OPCODE);
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(Unary.getOpcode(_uop));
+		sb.append(_uop.toString());
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( getInputs().get(0).prepInputOperand(input1));

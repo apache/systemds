@@ -39,6 +39,7 @@ public abstract class Lop
 	public enum Type {
 		Data, DataGen,                                      //CP/MR read/write/datagen 
 		ReBlock, CSVReBlock,                                //MR reblock operations
+		MatMultCP,
 		MMCJ, MMRJ, MMTSJ, PMMJ, MapMult, MapMultChain,     //MR matrix multiplications
 		UnaryCP, UNARY, BinaryCP, Binary, Ternary, Nary,    //CP/MR unary/binary/ternary
 		RightIndex, LeftIndex, ZeroOut,                     //CP/MR indexing 

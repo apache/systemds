@@ -6,7 +6,7 @@ GENERAL NOTES:
 
 SYSTEMDS-10 Compiler Rework / Misc
  * 11 Support DML-bodied builtin functions                            OK
- * 12 Remove unnecessary HOP/LOP indirections
+ * 12 Remove unnecessary HOP/LOP indirections                         OK
  * 13 Refactoring test cases into component/integration               OK
  * 14 Complete removal of external functions from all scripts
  * 15 Travis integration w/ subset of tests                           OK

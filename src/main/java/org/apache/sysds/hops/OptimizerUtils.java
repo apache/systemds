@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
@@ -31,7 +33,6 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.Lop;
@@ -1114,7 +1115,7 @@ public class OptimizerUtils
 	}
 	
 	public static long getOuterNonZeros(long n1, long n2, long nnz1, long nnz2, OpOp2 op) {
-		if( nnz1 < 0 || nnz2 < 0 )
+		if( nnz1 < 0 || nnz2 < 0 || op == null )
 			return n1 * n2;
 		switch(op) {
 			case PLUS:
@@ -1299,9 +1300,9 @@ public class OptimizerUtils
 		UnaryOp uroot = (UnaryOp) root;
 		Hop input = uroot.getInput().get(0);
 		
-		if(uroot.getOp() == Hop.OpOp1.NROW)
+		if(uroot.getOp() == OpOp1.NROW)
 			ret = input.rowsKnown() ? input.getDim1() : Double.MAX_VALUE;
-		else if( uroot.getOp() == Hop.OpOp1.NCOL )
+		else if( uroot.getOp() == OpOp1.NCOL )
 			ret = input.colsKnown() ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{
@@ -1337,9 +1338,9 @@ public class OptimizerUtils
 		UnaryOp uroot = (UnaryOp) root;
 		Hop input = uroot.getInput().get(0);
 		
-		if(uroot.getOp() == Hop.OpOp1.NROW)
+		if(uroot.getOp() == OpOp1.NROW)
 			ret = input.rowsKnown() ? input.getDim1() : Double.MAX_VALUE;
-		else if( uroot.getOp() == Hop.OpOp1.NCOL )
+		else if( uroot.getOp() == OpOp1.NCOL )
 			ret = input.colsKnown() ? input.getDim2() : Double.MAX_VALUE;
 		else
 		{

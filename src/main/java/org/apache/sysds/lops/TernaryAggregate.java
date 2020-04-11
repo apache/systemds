@@ -24,6 +24,7 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 
 public class TernaryAggregate extends Lop 
@@ -39,11 +40,11 @@ public class TernaryAggregate extends Lop
 	//optional attribute for cp
 	private int _numThreads = -1;
 
-	public TernaryAggregate(Lop input1, Lop input2, Lop input3, AggOp aggOp, Binary.OperationTypes binOp, Direction direction, DataType dt, ValueType vt, ExecType et, int k ) 
+	public TernaryAggregate(Lop input1, Lop input2, Lop input3, AggOp aggOp, OpOp2 binOp, Direction direction, DataType dt, ValueType vt, ExecType et, int k ) 
 	{
 		super(Lop.Type.TernaryAggregate, dt, vt);
 		
-		//_aggOp = aggOp;	
+		//_aggOp = aggOp;
 		//_binOp = binOp;
 		
 		addInput(input1);

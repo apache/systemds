@@ -21,6 +21,8 @@ package org.apache.sysds.hops;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
@@ -463,10 +465,10 @@ public class IndexingOp extends Hop
 			return false;
 		}
 		
-		return (  getInput().get(0) == that.getInput().get(0)
-				&& getInput().get(1) == that.getInput().get(1)
-				&& getInput().get(2) == that.getInput().get(2)
-				&& getInput().get(3) == that.getInput().get(3)
-				&& getInput().get(4) == that.getInput().get(4));
+		return getInput().get(0) == that.getInput().get(0)
+			&& getInput().get(1) == that.getInput().get(1)
+			&& getInput().get(2) == that.getInput().get(2)
+			&& getInput().get(3) == that.getInput().get(3)
+			&& getInput().get(4) == that.getInput().get(4);
 	}
 }

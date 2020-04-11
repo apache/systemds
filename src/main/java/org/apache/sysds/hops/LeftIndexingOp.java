@@ -20,6 +20,7 @@
 package org.apache.sysds.hops;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.LeftIndex;
@@ -27,7 +28,6 @@ import org.apache.sysds.lops.LeftIndex.LixCacheType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.UnaryCP;
-import org.apache.sysds.lops.UnaryCP.OperationTypes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -116,24 +116,24 @@ public class LeftIndexingOp  extends Hop
 				Hop right = getInput().get(1);
 				
 				LeftIndexingMethod method = getOptMethodLeftIndexingMethod( 
-						left.getDim1(), left.getDim2(), left.getBlocksize(), left.getNnz(),
-						right.getDim1(), right.getDim2(), right.getNnz(), right.getDataType() );
+					left.getDim1(), left.getDim2(), left.getBlocksize(), left.getNnz(),
+					right.getDim1(), right.getDim2(), right.getNnz(), right.getDataType() );
 
 				//insert cast to matrix if necessary (for reuse broadcast runtime)
 				Lop rightInput = right.constructLops();
 				if (isRightHandSideScalar()) {
 					rightInput = new UnaryCP(rightInput,
-						(left.getDataType()==DataType.MATRIX?OperationTypes.CAST_AS_MATRIX:OperationTypes.CAST_AS_FRAME), 
+						(left.getDataType()==DataType.MATRIX?OpOp1.CAST_AS_MATRIX:OpOp1.CAST_AS_FRAME), 
 						left.getDataType(), right.getValueType());
 					long bsize = ConfigurationManager.getBlocksize();
 					rightInput.getOutputParameters().setDimensions( 1, 1, bsize, -1);
 				} 
 
 				LeftIndex leftIndexLop = new LeftIndex(
-						left.constructLops(), rightInput, 
-						getInput().get(2).constructLops(), getInput().get(3).constructLops(), 
-						getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
-						getDataType(), getValueType(), et, getSpLixCacheType(method));
+					left.constructLops(), rightInput, 
+					getInput().get(2).constructLops(), getInput().get(3).constructLops(), 
+					getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
+					getDataType(), getValueType(), et, getSpLixCacheType(method));
 				
 				setOutputDimensions(leftIndexLop);
 				setLineNumbers(leftIndexLop);
@@ -142,9 +142,9 @@ public class LeftIndexingOp  extends Hop
 			else 
 			{
 				LeftIndex left = new LeftIndex(
-						getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
-						getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
-						getDataType(), getValueType(), et);
+					getInput().get(0).constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(), 
+					getInput().get(3).constructLops(), getInput().get(4).constructLops(), getInput().get(5).constructLops(), 
+					getDataType(), getValueType(), et);
 				
 				setOutputDimensions(left);
 				setLineNumbers(left);
@@ -186,8 +186,7 @@ public class LeftIndexingOp  extends Hop
 	}
 
 	@Override
-	public boolean allowsAllExecTypes()
-	{
+	public boolean allowsAllExecTypes() {
 		return false;
 	}
 
@@ -426,20 +425,19 @@ public class LeftIndexingOp  extends Hop
 	}
 	
 	@Override
-	public boolean compare( Hop that )
-	{
+	public boolean compare( Hop that ) {
 		if(    !(that instanceof LeftIndexingOp) 
 			|| getInput().size() != that.getInput().size() )
 		{
 			return false;
 		}
 		
-		return (  getInput().get(0) == that.getInput().get(0)
-				&& getInput().get(1) == that.getInput().get(1)
-				&& getInput().get(2) == that.getInput().get(2)
-				&& getInput().get(3) == that.getInput().get(3)
-				&& getInput().get(4) == that.getInput().get(4)
-				&& getInput().get(5) == that.getInput().get(5));
+		return getInput().get(0) == that.getInput().get(0)
+			&& getInput().get(1) == that.getInput().get(1)
+			&& getInput().get(2) == that.getInput().get(2)
+			&& getInput().get(3) == that.getInput().get(3)
+			&& getInput().get(4) == that.getInput().get(4)
+			&& getInput().get(5) == that.getInput().get(5);
 	}
 
 }

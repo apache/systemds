@@ -22,6 +22,7 @@ package org.apache.sysds.hops;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Checkpoint;
@@ -134,25 +135,20 @@ public class UnaryOp extends MultiThreadedHop
 				|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR)
 				|| (_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType()==DataType.SCALAR))
 			{
-				if (_op == Hop.OpOp1.IQM)  //special handling IQM
+				if (_op == OpOp1.IQM)  //special handling IQM
 				{
 					Lop iqmLop = constructLopsIQM();
 					setLops(iqmLop);
 				} 
-				else if(_op == Hop.OpOp1.MEDIAN) {
+				else if(_op == OpOp1.MEDIAN) {
 					Lop medianLop = constructLopsMedian();
 					setLops(medianLop);
 				}
 				else //general case SCALAR/CAST (always in CP)
 				{
-					UnaryCP.OperationTypes optype = HopsOpOp1LopsUS.get(_op);
-					if( optype == null )
-						throw new HopsException("Unknown UnaryCP lop type for UnaryOp operation type '"+_op+"'");
-					
-					UnaryCP unary1 = new UnaryCP(input.constructLops(), optype, getDataType(), getValueType());
+					UnaryCP unary1 = new UnaryCP(input.constructLops(), _op, getDataType(), getValueType());
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
-
 					setLops(unary1);
 				}
 			} 
@@ -172,7 +168,7 @@ public class UnaryOp extends MultiThreadedHop
 					int k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
 						OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
 					Unary unary1 = new Unary(input.constructLops(),
-						HopsOpOp1LopsU.get(_op), getDataType(), getValueType(), et, k, false);
+						_op, getDataType(), getValueType(), et, k, false);
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 					setLops(unary1);
@@ -296,7 +292,7 @@ public class UnaryOp extends MultiThreadedHop
 		//in-memory cum sum (of partial aggregates)
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
 			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
-			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.FP64, ExecType.CP, k, true);
+			Unary unary1 = new Unary( TEMP, _op, DataType.MATRIX, ValueType.FP64, ExecType.CP, k, true);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, blen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;

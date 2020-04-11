@@ -21,6 +21,7 @@ package org.apache.sysds.hops;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ParamBuiltinOp;

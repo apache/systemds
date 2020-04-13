@@ -131,6 +131,10 @@ public class DMLProgram
 		return ret;
 	}
 
+	public boolean containsFunctionStatementBlock(String name) {
+		return _functionBlocks.containsKey(name);
+	}
+	
 	public void addFunctionStatementBlock(String fname, FunctionStatementBlock fsb) {
 		_functionBlocks.put(fname, fsb);
 	}

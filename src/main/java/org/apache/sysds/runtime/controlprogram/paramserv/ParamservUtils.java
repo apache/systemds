@@ -252,7 +252,7 @@ public class ParamservUtils {
 	}
 	
 	private static Program copyProgramFunctions(Program prog) {
-		Program newProg = new Program();
+		Program newProg = new Program(prog.getDMLProg());
 		prog.getFunctionProgramBlocks()
 			.forEach((func, pb) -> putFunction(newProg, copyFunction(func, pb)));
 		return newProg;

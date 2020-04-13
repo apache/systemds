@@ -55,9 +55,9 @@ public class IfStatementBlock extends StatementBlock
 		HashMap<String,ConstIdentifier> constVarsIfCopy = new HashMap<>(constVars);
 		HashMap<String,ConstIdentifier> constVarsElseCopy = new HashMap<> (constVars);
 		
-		VariableSet idsIfCopy 	= new VariableSet(ids);
+		VariableSet idsIfCopy   = new VariableSet(ids);
 		VariableSet idsElseCopy = new VariableSet(ids);
-		VariableSet	idsOrigCopy = new VariableSet(ids);
+		VariableSet idsOrigCopy = new VariableSet(ids);
 
 		// handle if stmt body
 		_dmlProg = dmlProg;

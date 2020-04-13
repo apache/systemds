@@ -21,7 +21,10 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
@@ -69,11 +72,11 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//2. copy the created output matrix
 		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
 
-		//3. lazy loading of dml-bodied builtin functions
+		//3. lazy loading of dml-bodied builtin functions (incl. rename 
+		// of function name to dml-bodied builtin scheme (data-type-specific) 
 		if( !ec.getProgram().containsFunctionProgramBlock(null, funcName) ) {
-			FunctionProgramBlock fpb = compileFunctionProgramBlock(
-				funcName, boundInputs[0].getDataType(), ec.getProgram());
-			ec.getProgram().addFunctionProgramBlock(null, funcName, fpb);
+			compileFunctionProgramBlock(funcName, boundInputs[0].getDataType(), ec.getProgram());
+			funcName = Builtins.getInternalFName(funcName, boundInputs[0].getDataType());
 		}
 		
 		//4. call the function
@@ -101,32 +104,51 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		ec.setVariable(output.getName(), outputMO);
 	}
 	
-	private static FunctionProgramBlock compileFunctionProgramBlock(String name, DataType dt, Program prog) {
+	private static void compileFunctionProgramBlock(String name, DataType dt, Program prog) {
 		//load builtin file and parse function statement block
-		FunctionStatementBlock fsb = DmlSyntacticValidator
-			.loadAndParseBuiltinFunction(name, DMLProgram.DEFAULT_NAMESPACE, dt);
+		Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
+			.loadAndParseBuiltinFunction(name, DMLProgram.DEFAULT_NAMESPACE);
+		if( fsbs.isEmpty() )
+			throw new DMLRuntimeException("Failed to compile function '"+name+"'.");
 		
-		// validate function (could be avoided for performance because known builtin functions)
-		DMLProgram dmlp = fsb.getDMLProg();
+		// prepare common data structures, including a consolidated dml program
+		// to facilitate function validation which tries to inline lazily loaded
+		// and existing functions.
+		DMLProgram dmlp = (prog.getDMLProg() != null) ? prog.getDMLProg() :
+			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
+		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
+			if( !dmlp.containsFunctionStatementBlock(fsb.getKey()) )
+				dmlp.addFunctionStatementBlock(fsb.getKey(), fsb.getValue());
+			fsb.getValue().setDMLProg(dmlp);
+		}
 		DMLTranslator dmlt = new DMLTranslator(dmlp);
-		dmlt.liveVariableAnalysisFunction(dmlp, fsb);
-		dmlt.validateFunction(dmlp, fsb);
+		ProgramRewriter rewriter = new ProgramRewriter(true, false);
+		ProgramRewriter rewriter2 = new ProgramRewriter(false, true);
+		
+		// validate functions, in two passes for cross references
+		for( FunctionStatementBlock fsb : fsbs.values() ) {
+			dmlt.liveVariableAnalysisFunction(dmlp, fsb);
+			dmlt.validateFunction(dmlp, fsb);
+		}
 		
 		// compile hop dags, rewrite hop dags and compile lop dags
-		dmlt.constructHops(fsb);
-		ProgramRewriter rewriter = new ProgramRewriter(true, false);
-		rewriter.rewriteHopDAGsFunction(fsb, false); //rewrite and merge
-		DMLTranslator.resetHopsDAGVisitStatus(fsb);
-		rewriter.rewriteHopDAGsFunction(fsb, true); //rewrite and split
-		DMLTranslator.resetHopsDAGVisitStatus(fsb);
-		ProgramRewriter rewriter2 = new ProgramRewriter(false, true);
-		rewriter2.rewriteHopDAGsFunction(fsb, true);
-		DMLTranslator.resetHopsDAGVisitStatus(fsb);
-		DMLTranslator.refreshMemEstimates(fsb);
-		dmlt.constructLops(fsb);
+		for( FunctionStatementBlock fsb : fsbs.values() ) {
+			dmlt.constructHops(fsb);
+			rewriter.rewriteHopDAGsFunction(fsb, false); //rewrite and merge
+			DMLTranslator.resetHopsDAGVisitStatus(fsb);
+			rewriter.rewriteHopDAGsFunction(fsb, true); //rewrite and split
+			DMLTranslator.resetHopsDAGVisitStatus(fsb);
+			rewriter2.rewriteHopDAGsFunction(fsb, true);
+			DMLTranslator.resetHopsDAGVisitStatus(fsb);
+			DMLTranslator.refreshMemEstimates(fsb);
+			dmlt.constructLops(fsb);
+		}
 		
 		// compile runtime program
-		return (FunctionProgramBlock) dmlt.createRuntimeProgramBlock(
-			prog, fsb, ConfigurationManager.getDMLConfig());
+		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
+			FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
+				.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
+			prog.addFunctionProgramBlock(null, fsb.getKey(), fpb);
+		}
 	}
 }

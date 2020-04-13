@@ -184,7 +184,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	
 	private BasicProgramBlock getProgramBlock() {
 		if( _tmpPB == null )
-			_tmpPB = new BasicProgramBlock( new Program() );
+			_tmpPB = new BasicProgramBlock(new Program());
 		return _tmpPB;
 	}
 	

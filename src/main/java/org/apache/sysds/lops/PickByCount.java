@@ -53,11 +53,11 @@ public class PickByCount extends Lop
 
 	
 	private void init(Lop input1, Lop input2, OperationTypes op, ExecType et) {
-		this.addInput(input1);
+		addInput(input1);
 		input1.addOutput(this);
 		
 		if ( input2 != null ) {
-			this.addInput(input2);
+			addInput(input2);
 			input2.addOutput(this);
 		}
 		

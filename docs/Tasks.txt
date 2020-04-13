@@ -6,10 +6,10 @@ GENERAL NOTES:
 
 SYSTEMDS-10 Compiler Rework / Misc
  * 11 Support DML-bodied builtin functions                            OK
- * 12 Remove unnecessary HOP/LOP indirections
+ * 12 Remove unnecessary HOP/LOP indirections                         OK
  * 13 Refactoring test cases into component/integration               OK
  * 14 Complete removal of external functions from all scripts
- * 15 Travis integration w/ subset of tests                           OK
+ * 15 Travis integration w/ subset of tests                           OK (removed for Github Actions)
  * 16 Remove instruction patching
  * 17 Refactoring of program block hierarchy                          OK
  * 18 Improve API for new dml-bodied builtin functions                OK
@@ -47,8 +47,8 @@ SYSTEMDS-40 Preprocessing builtins
 
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)
- * 52 Support for libsvm files (local/distributed) 
- * 53 New sql data source (local, distributed)
+ * 52 Support for libsvm files (local/distributed)
+ * 53 New sql data source (local, distributed)                        
  * 54 Support for is.na, is.nan, is.infinite                          OK
 
 SYSTEMDS-60 Update SystemML improvements
@@ -205,6 +205,7 @@ SYSTEMDS-250 Extended Slice Finding
 SYSTEMDS-260 Misc Tools
  * 261 Stable marriage algorithm                                      OK
  * 262 Data augmentation tool for data cleaning                       OK
+ * 263 ONNX graph importer/exporter
 
 SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK

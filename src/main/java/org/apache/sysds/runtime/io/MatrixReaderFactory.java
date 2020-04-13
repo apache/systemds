@@ -28,36 +28,34 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class MatrixReaderFactory 
 {
-
-	public static MatrixReader createMatrixReader( InputInfo iinfo ) 
+	public static MatrixReader createMatrixReader(InputInfo iinfo)
 	{
 		MatrixReader reader = null;
+		boolean par = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS);
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
 		
-		if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo )
-		{
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderTextCellParallel( iinfo );
-			else
-				reader = new ReaderTextCell( iinfo );	
+		if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
+			reader = (par & mcsr) ? 
+				new ReaderTextCellParallel(iinfo) : new ReaderTextCell(iinfo);
 		}
-		else if( iinfo == InputInfo.CSVInputInfo )
-		{
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderTextCSVParallel(new FileFormatPropertiesCSV());
-			else
-				reader = new ReaderTextCSV(new FileFormatPropertiesCSV());
+		else if( iinfo == InputInfo.CSVInputInfo ) {
+			reader = (par & mcsr) ? 
+				new ReaderTextCSVParallel(new FileFormatPropertiesCSV()) :
+				new ReaderTextCSV(new FileFormatPropertiesCSV());
+		}
+		else if( iinfo == InputInfo.LIBSVMInputInfo) {
+			reader = (par & mcsr) ? 
+				new ReaderTextLIBSVMParallel() : new ReaderTextLIBSVM();
 		}
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderBinaryBlockParallel( false );
-			else
-				reader = new ReaderBinaryBlock( false );
+			reader = (par & mcsr) ? 
+				new ReaderBinaryBlockParallel(false) : new ReaderBinaryBlock(false);
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create matrix reader for unknown input info: "
-		                                   + InputInfo.inputInfoToString(iinfo));
+				+ InputInfo.inputInfoToString(iinfo));
 		}
 		
 		return reader;
@@ -71,36 +69,33 @@ public class MatrixReaderFactory
 		
 		MatrixReader reader = null;
 		InputInfo iinfo = props.inputInfo;
-
+		boolean par = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS);
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+		
 		if( iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderTextCellParallel( iinfo );
-			else
-				reader = new ReaderTextCell( iinfo );
+			reader = (par & mcsr) ? 
+				new ReaderTextCellParallel(iinfo) : new ReaderTextCell(iinfo);
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderTextCSVParallel( props.formatProperties!=null ? (FileFormatPropertiesCSV)props.formatProperties : new FileFormatPropertiesCSV());
-			else
-				reader = new ReaderTextCSV( props.formatProperties!=null ? (FileFormatPropertiesCSV)props.formatProperties : new FileFormatPropertiesCSV());
+			reader = (par & mcsr) ?
+				new ReaderTextCSVParallel( props.formatProperties!=null ?
+					(FileFormatPropertiesCSV)props.formatProperties : new FileFormatPropertiesCSV()) :
+				new ReaderTextCSV( props.formatProperties!=null ? 
+					(FileFormatPropertiesCSV)props.formatProperties : new FileFormatPropertiesCSV());
 		}
 		else if( iinfo == InputInfo.LIBSVMInputInfo) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderTextLIBSVMParallel();
-			else
-				reader = new ReaderTextLIBSVM();
+			reader = (par & mcsr) ? 
+				new ReaderTextLIBSVMParallel() : new ReaderTextLIBSVM();
 		}
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderBinaryBlockParallel( props.localFS );
-			else
-				reader = new ReaderBinaryBlock( props.localFS );
+			reader = (par & mcsr) ? 
+				new ReaderBinaryBlockParallel(props.localFS) : new ReaderBinaryBlock(props.localFS);
 		}
 		else {
 			throw new DMLRuntimeException("Failed to create matrix reader for unknown input info: "
-		                                   + InputInfo.inputInfoToString(iinfo));
+				+ InputInfo.inputInfoToString(iinfo));
 		}
 		
 		return reader;

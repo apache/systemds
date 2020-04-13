@@ -107,7 +107,14 @@ import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTy
 
 public class InstructionUtils 
 {
-
+	//thread-local string builders for instruction concatenation (avoid allocation)
+	private static ThreadLocal<StringBuilder> _strBuilders = new ThreadLocal<StringBuilder>() {
+		@Override
+		protected StringBuilder initialValue() { 
+			return new StringBuilder(64);
+		}
+	};
+	
 	public static int checkNumFields( String str, int expected ) {
 		//note: split required for empty tokens
 		int numParts = str.split(Instruction.OPERAND_DELIM).length;
@@ -992,7 +999,8 @@ public class InstructionUtils
 	}
 	
 	public static String concatOperands(String... inputs) {
-		StringBuilder sb = new StringBuilder(64);
+		StringBuilder sb = _strBuilders.get();
+		sb.setLength(0); //reuse allocated space
 		for( int i=0; i<inputs.length-1; i++ ) {
 			sb.append(inputs[i]);
 			sb.append(Lop.OPERAND_DELIMITOR);

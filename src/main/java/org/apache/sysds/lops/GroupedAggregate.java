@@ -72,9 +72,9 @@ public class GroupedAggregate extends Lop
 	private void init(HashMap<String, Lop> inputParameterLops, 
 		DataType dt, ValueType vt, ExecType et) {
 		// First, add inputs corresponding to "target" and "groups"
-		this.addInput(inputParameterLops.get(Statement.GAGG_TARGET));
+		addInput(inputParameterLops.get(Statement.GAGG_TARGET));
 		inputParameterLops.get(Statement.GAGG_TARGET).addOutput(this);
-		this.addInput(inputParameterLops.get(Statement.GAGG_GROUPS));
+		addInput(inputParameterLops.get(Statement.GAGG_GROUPS));
 		inputParameterLops.get(Statement.GAGG_GROUPS).addOutput(this);
 		
 		// process remaining parameters
@@ -82,7 +82,7 @@ public class GroupedAggregate extends Lop
 			String k = e.getKey();
 			Lop lop = e.getValue();
 			if ( !k.equalsIgnoreCase(Statement.GAGG_TARGET) && !k.equalsIgnoreCase(Statement.GAGG_GROUPS) ) {
-				this.addInput(lop);
+				addInput(lop);
 				lop.addOutput(this);
 			}
 		}

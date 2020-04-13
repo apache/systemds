@@ -115,8 +115,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 		}
 		if (hasNamed && hasUnnamed){
 			raiseValidateError(" In DML, functions can only have named parameters " +
-					"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
-					_name + " has both parameter types.", conditional);
+				"(e.g., name1=value1, name2=value2) or unnamed parameters (e.g, value1, value2). " + 
+				_name + " has both parameter types.", conditional);
 		}
 		
 		// Step 4: validate expressions for each passed parameter
@@ -176,8 +176,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 		if (_namespace != null && _namespace.length() > 0 && !_namespace.equals(DMLProgram.DEFAULT_NAMESPACE))
 			sb.append(_namespace + "::");
 		sb.append(_name);
-		sb.append(" ( ");		
-				
+		sb.append(" ( ");
+		
 		for (int i = 0; i < _paramExprs.size(); i++){
 			sb.append(_paramExprs.get(i).toString());
 			if (i<_paramExprs.size() - 1) 

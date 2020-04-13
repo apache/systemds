@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 
 
@@ -39,10 +40,10 @@ public class UAggOuterChain extends Lop
 	public static final String OPCODE = "uaggouterchain";
 
 	//outer operation
-	private AggOp _uaggOp      = null;
+	private AggOp _uaggOp = null;
 	private Direction _uaggDir = null;
 	//inner operation
-	private Binary.OperationTypes _binOp = null;
+	private OpOp2 _binOp = null;
 	
 	/**
 	 * Constructor to setup a unaryagg outer chain
@@ -56,12 +57,12 @@ public class UAggOuterChain extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 */
-	public UAggOuterChain(Lop input1, Lop input2, AggOp uaop, Direction uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) {
+	public UAggOuterChain(Lop input1, Lop input2, AggOp uaop, Direction uadir, OpOp2 bop, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.UaggOuterChain, dt, vt);
 		addInput(input1);
 		addInput(input2);
-		input1.addOutput(this); 
-		input2.addOutput(this); 
+		input1.addOutput(this);
+		input2.addOutput(this);
 		
 		//setup operator types
 		_uaggOp = uaop;
@@ -78,10 +79,9 @@ public class UAggOuterChain extends Lop
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
 		return InstructionUtils.concatOperands(
-			getExecType().name(),
-			OPCODE,
+			getExecType().name(), OPCODE,
 			PartialAggregate.getOpcode(_uaggOp, _uaggDir), //outer
-			Binary.getOpcode(_binOp), //inner
+			_binOp.toString(), //inner
 			getInputs().get(0).prepInputOperand(input1),
 			getInputs().get(0).prepInputOperand(input2),
 			prepOutputOperand(output));

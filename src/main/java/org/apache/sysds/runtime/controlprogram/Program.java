@@ -33,7 +33,8 @@ public class Program
 {
 	public static final String KEY_DELIM = "::";
 	
-	public ArrayList<ProgramBlock> _programBlocks;
+	private DMLProgram _prog;
+	private ArrayList<ProgramBlock> _programBlocks;
 
 	private HashMap<String, HashMap<String,FunctionProgramBlock>> _namespaceFunctions;
 	
@@ -42,7 +43,20 @@ public class Program
 		_namespaceFunctions.put(DMLProgram.DEFAULT_NAMESPACE, new HashMap<>());
 		_programBlocks = new ArrayList<>();
 	}
+	
+	public Program(DMLProgram prog) {
+		this();
+		setDMLProg(prog);
+	}
 
+	public void setDMLProg(DMLProgram prog) {
+		_prog = prog;
+	}
+	
+	public DMLProgram getDMLProg() {
+		return _prog;
+	}
+	
 	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb) {
 		if( fpb == null )
 			throw new DMLRuntimeException("Invalid null function program block.");
@@ -124,7 +138,7 @@ public class Program
 	public Program clone(boolean deep) {
 		if( deep )
 			throw new NotImplementedException();
-		Program ret = new Program();
+		Program ret = new Program(_prog);
 		//shallow copy of all program blocks
 		ret._programBlocks.addAll(_programBlocks);
 		//shallow copy of all functions, except external 

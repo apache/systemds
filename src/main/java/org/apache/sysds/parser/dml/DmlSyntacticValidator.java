@@ -610,18 +610,20 @@ public class DmlSyntacticValidator implements DmlListener {
 		}
 	}
 	
-	public static FunctionStatementBlock loadAndParseBuiltinFunction(String name, String namespace, DataType dt) {
+	public static Map<String,FunctionStatementBlock> loadAndParseBuiltinFunction(String name, String namespace) {
 		if( !Builtins.contains(name, true, false) ) {
 			throw new DMLRuntimeException("Function "
 				+ DMLProgram.constructFunctionKey(namespace, name)+" is not a builtin function.");
 		}
 		//load and add builtin DML-bodied functions (via tmp validator instance)
+		//including nested builtin function calls unless already loaded
 		DmlSyntacticValidator tmp = new DmlSyntacticValidator(
 			new CustomErrorListener(), new HashMap<>(), namespace, new HashSet<>());
 		String filePath = Builtins.getFilePath(name);
 		DMLProgram prog = tmp.parseAndAddImportedFunctions(namespace, filePath, null);
-		String name2 = Builtins.getInternalFName(name, dt);
-		return prog.getNamedFunctionStatementBlocks().get(name2);
+		
+		//construct output map of all functions
+		return prog.getNamedFunctionStatementBlocks();
 	}
 
 

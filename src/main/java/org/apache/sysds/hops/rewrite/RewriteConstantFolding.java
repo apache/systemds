@@ -28,12 +28,12 @@ import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.hops.Hop.OpOp1;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
@@ -184,7 +184,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	
 	private BasicProgramBlock getProgramBlock() {
 		if( _tmpPB == null )
-			_tmpPB = new BasicProgramBlock( new Program() );
+			_tmpPB = new BasicProgramBlock(new Program());
 		return _tmpPB;
 	}
 	

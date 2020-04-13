@@ -232,16 +232,15 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		
 		//write input data
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(
-				InputInfo.getMatchingOutputInfo(InputInfo.stringExternalToInputInfo(ofmt)));
+			InputInfo.getMatchingOutputInfo(InputInfo.fromExternalString(ofmt)));
 		writer.writeFrameToHDFS(fb, fname, rows, cols);
 	}
 	
 	private static double[][] readMatrixOutput(String fname, String ofmt, int rows, int cols) 
 		throws IOException 
 	{
-		MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.stringExternalToInputInfo(ofmt));
+		MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.fromExternalString(ofmt));
 		MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, 1000, -1);
-		
 		return DataConverter.convertToDoubleMatrix(mb); 
 	}
 }

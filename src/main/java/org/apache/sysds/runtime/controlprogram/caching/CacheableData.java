@@ -734,7 +734,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			//get object from cache
 			if( _data == null )
 				getCache();
-			acquire( false, _data==null ); //incl. read matrix if evicted	
+			acquire( false, _data==null ); //incl. read matrix if evicted
 			
 			// b) write the matrix 
 			try {

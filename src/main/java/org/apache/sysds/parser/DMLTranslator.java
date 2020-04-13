@@ -40,8 +40,6 @@ import org.apache.sysds.hops.DnnOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.FunctionOp.FunctionType;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.Hop.OpOp1;
-import org.apache.sysds.hops.Hop.OpOp2;
 import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.IndexingOp;
 import org.apache.sysds.hops.LeftIndexingOp;
@@ -68,6 +66,8 @@ import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.OpOpData;
@@ -412,7 +412,7 @@ public class DMLTranslator
 		throws LanguageException, DMLRuntimeException, LopsException, HopsException 
 	{	
 		// constructor resets the set of registered functions
-		Program rtprog = new Program();
+		Program rtprog = new Program(prog);
 		
 		// for all namespaces, translate function statement blocks into function program blocks
 		for (String namespace : prog.getNamespaces().keySet()){
@@ -1027,21 +1027,23 @@ public class DMLTranslator
 
 				try {
 					if (ptype == PRINTTYPE.PRINT) {
-						Hop.OpOp1 op = Hop.OpOp1.PRINT;
+						OpOp1 op = OpOp1.PRINT;
 						Expression source = ps.getExpressions().get(0);
 						Hop ae = processExpression(source, target, ids);
 						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
 						printHop.setParseInfo(current);
 						output.add(printHop);
-					} else if (ptype == PRINTTYPE.ASSERT) {
-						Hop.OpOp1 op = Hop.OpOp1.ASSERT;
+					}
+					else if (ptype == PRINTTYPE.ASSERT) {
+						OpOp1 op = OpOp1.ASSERT;
 						Expression source = ps.getExpressions().get(0);
 						Hop ae = processExpression(source, target, ids);
 						Hop printHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
 						printHop.setParseInfo(current);
 						output.add(printHop);
-					} else if (ptype == PRINTTYPE.STOP) {
-						Hop.OpOp1 op = Hop.OpOp1.STOP;
+					}
+					else if (ptype == PRINTTYPE.STOP) {
+						OpOp1 op = OpOp1.STOP;
 						Expression source = ps.getExpressions().get(0);
 						Hop ae = processExpression(source, target, ids);
 						Hop stopHop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), op, ae);
@@ -1583,7 +1585,7 @@ public class DMLTranslator
 			if ( target.getDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(target.getOrigDim1());
 			else {
-				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NROW, hops.get(target.getName()));
+				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(target.getName()));
 				rowUpperHops.setParseInfo(target);
 			}
 		}
@@ -1599,7 +1601,7 @@ public class DMLTranslator
 			if ( target.getDim2() != -1 ) 
 				colUpperHops = new LiteralOp(target.getOrigDim2());
 			else
-				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NCOL, hops.get(target.getName()));
+				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(target.getName()));
 		}
 		
 		// process the source expression to get source Hops
@@ -1644,7 +1646,7 @@ public class DMLTranslator
 			if ( source.getOrigDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(source.getOrigDim1());
 			else {
-				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NROW, hops.get(source.getName()));
+				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hops.get(source.getName()));
 				rowUpperHops.setParseInfo(source);
 			}
 		}
@@ -1660,7 +1662,7 @@ public class DMLTranslator
 			if ( source.getOrigDim2() != -1 ) 
 				colUpperHops = new LiteralOp(source.getOrigDim2());
 			else
-				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NCOL, hops.get(source.getName()));
+				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hops.get(source.getName()));
 		}
 		
 		if (target == null) {
@@ -1804,7 +1806,7 @@ public class DMLTranslator
 			target.setValueType(ValueType.BOOLEAN);
 		
 		if (source.getRight() == null) {
-			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp1.NOT, left);
+			Hop currUop = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp1.NOT, left);
 			currUop.setParseInfo(source);
 			return currUop;
 		} 
@@ -2203,7 +2205,7 @@ public class DMLTranslator
 			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX,
 					target.getValueType(), AggOp.VAR, Direction.Col, expr);
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX,
-					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
+					target.getValueType(), OpOp1.SQRT, currBuiltinOp);
 			break;
 
 		case ROWSUM:
@@ -2231,32 +2233,32 @@ public class DMLTranslator
 			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX,
 					target.getValueType(), AggOp.VAR, Direction.Row, expr);
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX,
-					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
+					target.getValueType(), OpOp1.SQRT, currBuiltinOp);
 			break;
 
 		case NROW:
 			// If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
 			// Else create a UnaryOp so that a control program instruction is generated
 			currBuiltinOp = (expr.getDim1()==-1) ? new UnaryOp(target.getName(), target.getDataType(),
-				target.getValueType(), Hop.OpOp1.NROW, expr) : new LiteralOp(expr.getDim1());
+				target.getValueType(), OpOp1.NROW, expr) : new LiteralOp(expr.getDim1());
 			break;
 		case NCOL:
 			// If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
 			// Else create a UnaryOp so that a control program instruction is generated
 			currBuiltinOp = (expr.getDim2()==-1) ? new UnaryOp(target.getName(), target.getDataType(),
-				target.getValueType(), Hop.OpOp1.NCOL, expr) : new LiteralOp(expr.getDim2());
+				target.getValueType(), OpOp1.NCOL, expr) : new LiteralOp(expr.getDim2());
 			break;
 		case LENGTH:
 			// If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
 			// Else create a UnaryOp so that a control program instruction is generated
 			currBuiltinOp = (expr.getDim1()==-1 || expr.getDim2()==-1) ? new UnaryOp(target.getName(), target.getDataType(),
-				target.getValueType(), Hop.OpOp1.LENGTH, expr) : new LiteralOp(expr.getDim1()*expr.getDim2());
+				target.getValueType(), OpOp1.LENGTH, expr) : new LiteralOp(expr.getDim1()*expr.getDim2());
 			break;
 
 		case LINEAGE:
 			//construct hop and enable lineage tracing if necessary
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
-				target.getValueType(), Hop.OpOp1.LINEAGE, expr);
+				target.getValueType(), OpOp1.LINEAGE, expr);
 			DMLScript.LINEAGE = true;
 			break;
 			
@@ -2267,7 +2269,7 @@ public class DMLTranslator
 			
 		case EXISTS:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR,
-				target.getValueType(), Hop.OpOp1.EXISTS, expr);
+				target.getValueType(), OpOp1.EXISTS, expr);
 			break;
 		
 		case SUM:
@@ -2298,7 +2300,7 @@ public class DMLTranslator
 				target.getValueType(), AggOp.VAR, Direction.RowCol, expr);
 			HopRewriteUtils.setOutputParametersForScalar(currBuiltinOp);
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR,
-				target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
+				target.getValueType(), OpOp1.SQRT, currBuiltinOp);
 			break;
 
 		case MIN:
@@ -2404,24 +2406,24 @@ public class DMLTranslator
 
 		//data type casts
 		case CAST_AS_SCALAR:
-			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), Hop.OpOp1.CAST_AS_SCALAR, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), OpOp1.CAST_AS_SCALAR, expr);
 			break;
 		case CAST_AS_MATRIX:
-			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), Hop.OpOp1.CAST_AS_MATRIX, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), OpOp1.CAST_AS_MATRIX, expr);
 			break;
 		case CAST_AS_FRAME:
-			currBuiltinOp = new UnaryOp(target.getName(), DataType.FRAME, target.getValueType(), Hop.OpOp1.CAST_AS_FRAME, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.FRAME, target.getValueType(), OpOp1.CAST_AS_FRAME, expr);
 			break;
 
 		//value type casts
 		case CAST_AS_DOUBLE:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, Hop.OpOp1.CAST_AS_DOUBLE, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.CAST_AS_DOUBLE, expr);
 			break;
 		case CAST_AS_INT:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT64, Hop.OpOp1.CAST_AS_INT, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT64, OpOp1.CAST_AS_INT, expr);
 			break;
 		case CAST_AS_BOOLEAN:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
 
 		// Boolean binary
@@ -2468,10 +2470,10 @@ public class DMLTranslator
 		
 		case LOG:
 				if (expr2 == null) {
-					Hop.OpOp1 mathOp2;
+					OpOp1 mathOp2;
 					switch (source.getOpCode()) {
 					case LOG:
-						mathOp2 = Hop.OpOp1.LOG;
+						mathOp2 = OpOp1.LOG;
 						break;
 					default:
 						throw new ParseException(source.printErrorLocation() +
@@ -2481,10 +2483,10 @@ public class DMLTranslator
 					currBuiltinOp = new UnaryOp(target.getName(),
 						target.getDataType(), target.getValueType(), mathOp2, expr);
 				} else {
-					Hop.OpOp2 mathOp3;
+					OpOp2 mathOp3;
 					switch (source.getOpCode()) {
 					case LOG:
-						mathOp3 = Hop.OpOp2.LOG;
+						mathOp3 = OpOp2.LOG;
 						break;
 					default:
 						throw new ParseException(source.printErrorLocation() +
@@ -2575,7 +2577,7 @@ public class DMLTranslator
 		}
 		
 		case SOLVE:
-			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), Hop.OpOp2.SOLVE, expr, expr2);
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.SOLVE, expr, expr2);
 			break;
 			
 		case INVERSE:
@@ -2589,7 +2591,7 @@ public class DMLTranslator
 		case OUTER:
 			if( !(expr3 instanceof LiteralOp) )
 				throw new HopsException("Operator for outer builtin function must be a constant: "+expr3);
-			OpOp2 op = Hop.getOpOp2ForOuterVectorOperation(((LiteralOp)expr3).getStringValue());
+			OpOp2 op = OpOp2.valueOfByOpcode(((LiteralOp)expr3).getStringValue());
 			if( op == null )
 				throw new HopsException("Unsupported outer vector binary operation: "+((LiteralOp)expr3).getStringValue());
 			

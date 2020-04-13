@@ -220,7 +220,7 @@ public class DataExpression extends DataIdentifier
 					return null;
 				}	
 				dataExpr.addVarParam(currName, currExpr);
-			}				
+			}
 		}
 		else if (functionName.equalsIgnoreCase("rand")){
 			
@@ -1178,7 +1178,7 @@ public class DataExpression extends DataIdentifier
 				getOutput().setNnz(-1L);
 			}
 			
-			else{		
+			else{
 				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			

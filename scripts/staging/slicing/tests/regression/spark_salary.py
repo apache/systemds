@@ -9,7 +9,7 @@ import pyspark.sql.functions as sf
 from pyspark.sql.functions import udf
 from sklearn.model_selection import train_test_split
 
-from slicing.sparked import sparked_utils, sparked_slicer, sparked_union_slicer
+from slicing.spark_modules import spark_utils, spark_slicer, spark_union_slicer
 
 
 binner = udf(lambda arg: int(arg / 5))
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         b_update = True
         debug = True
         loss_type = 0
-        enumerator = "union"
+        enumerator = "join"
 
     conf = SparkConf().setAppName("salary_test").setMaster('local[2]')
     num_partitions = 2
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     label = 'salary'
     sparkContext = SparkContext(conf=conf)
     sqlContext = SQLContext(sparkContext)
-    dataset_df = sqlContext.read.csv('/slicing/datasets/salaries.csv', header='true', inferSchema='true')
+    dataset_df = sqlContext.read.csv('salaries.csv', header='true', inferSchema='true')
     # initializing stages of main transformation pipeline
     stages = []
     # list of categorical features for further hot-encoding
@@ -88,18 +88,15 @@ if __name__ == "__main__":
     eval = lr_model.evaluate(test_df)
     f_l2 = eval.meanSquaredError
     pred = eval.predictions
-    pred_df_fin = pred.withColumn('error', sparked_utils.calc_loss(pred[label], pred['prediction'], pred['model_type']))
+    pred_df_fin = pred.withColumn('error', spark_utils.calc_loss(pred[label], pred['prediction'], pred['model_type']))
     predictions = pred_df_fin.select('features', 'error').repartition(num_partitions)
     converter = IndexToString(inputCol='features', outputCol='cats')
     all_features = range(predictions.toPandas().values[0][0].size)
     predictions = predictions.collect()
     k = 10
-    SparkContext.broadcast(sparkContext, f_l2)
-    SparkContext.broadcast(sparkContext, predictions)
-    SparkContext.broadcast(sparkContext, all_features)
     if enumerator == "join":
-        sparked_slicer.parallel_process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha, k=k, w=w,
-                                        loss_type=loss_type, enumerator=enumerator)
+        spark_slicer.parallel_process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha, k=k, w=w,
+                                      loss_type=loss_type, enumerator=enumerator)
     elif enumerator == "union":
-        sparked_union_slicer.process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha, k=k, w=w,
-                                     loss_type=loss_type, enumerator=enumerator)
+        spark_union_slicer.process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha, k=k, w=w,
+                                   loss_type=loss_type, enumerator=enumerator)

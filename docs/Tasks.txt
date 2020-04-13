@@ -91,7 +91,7 @@ SYSTEMDS-110 New Builtin Functions
  * 115 Builtin function for model debugging (slice finder)            OK
  * 116 Builtin function for kmeans                                    OK
  * 117 Builtin function for lm cross validation                       OK
- * 118 Builtin function for hyperparameter grid search with CVlm
+ * 118 Builtin function for hyperparameter grid search                
  * 119 Builtin functions for l2svm and msvm                           OK
 
 SYSTEMDS-120 Performance Features

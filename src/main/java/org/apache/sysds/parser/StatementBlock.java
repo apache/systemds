@@ -230,7 +230,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return true;
 	}
 
-    public boolean isRewritableFunctionCall(Statement stmt, DMLProgram dmlProg) {
+	public boolean isRewritableFunctionCall(Statement stmt, DMLProgram dmlProg) {
 
 		// for regular stmt, check if this is a function call stmt block
 		if (stmt instanceof AssignmentStatement || stmt instanceof MultiAssignmentStatement){

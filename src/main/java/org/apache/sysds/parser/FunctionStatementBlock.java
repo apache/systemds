@@ -51,13 +51,13 @@ public class FunctionStatementBlock extends StatementBlock
 			
 		// validate all function input parameters
 		ArrayList<DataIdentifier> inputValues = fstmt.getInputParams();
-        for( DataIdentifier inputValue : inputValues ) {
-            //check all input matrices have value type double
-            if( inputValue.getDataType()==DataType.MATRIX && inputValue.getValueType()!=ValueType.FP64 ) {
-                raiseValidateError("for function " + fstmt.getName() + ", input variable " + inputValue.getName() 
-                                 + " has an unsupported value type of " + inputValue.getValueType() + ".", false);
-            }
-        }
+		for( DataIdentifier inputValue : inputValues ) {
+			//check all input matrices have value type double
+			if( inputValue.getDataType()==DataType.MATRIX && inputValue.getValueType()!=ValueType.FP64 ) {
+				raiseValidateError("for function " + fstmt.getName() + ", input variable " + inputValue.getName() 
+					+ " has an unsupported value type of " + inputValue.getValueType() + ".", false);
+			}
+		}
 		
 		// handle DML-bodied functions
 		// perform validate for function body

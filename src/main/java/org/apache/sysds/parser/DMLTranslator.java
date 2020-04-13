@@ -412,7 +412,7 @@ public class DMLTranslator
 		throws LanguageException, DMLRuntimeException, LopsException, HopsException 
 	{	
 		// constructor resets the set of registered functions
-		Program rtprog = new Program();
+		Program rtprog = new Program(prog);
 		
 		// for all namespaces, translate function statement blocks into function program blocks
 		for (String namespace : prog.getNamespaces().keySet()){

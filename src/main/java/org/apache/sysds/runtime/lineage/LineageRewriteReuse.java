@@ -789,7 +789,7 @@ public class LineageRewriteReuse
 
 	private static BasicProgramBlock getProgramBlock() {
 		if( _lrPB == null )
-			_lrPB = new BasicProgramBlock( new Program() );
+			_lrPB = new BasicProgramBlock(new Program());
 		return _lrPB;
 	}
 }

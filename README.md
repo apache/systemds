@@ -27,9 +27,7 @@ limitations under the License.
 
 ## Status
 
-[![Build Status](https://travis-ci.org/apache/systemml.svg?branch=master)](https://travis-ci.org/apache/systemml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-gre.svg)](https://opensource.org/licenses/Apache-2.0)
-
 ![Build](https://github.com/apache/systemml/workflows/Build/badge.svg)
 ![Documentation](https://github.com/apache/systemml/workflows/Documentation/badge.svg)
 ![Component Test](https://github.com/apache/systemml/workflows/Component%20Test/badge.svg)

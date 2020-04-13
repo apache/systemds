@@ -9,7 +9,7 @@ SYSTEMDS-10 Compiler Rework / Misc
  * 12 Remove unnecessary HOP/LOP indirections                         OK
  * 13 Refactoring test cases into component/integration               OK
  * 14 Complete removal of external functions from all scripts
- * 15 Travis integration w/ subset of tests                           OK
+ * 15 Travis integration w/ subset of tests                           Removed for Github Actions
  * 16 Remove instruction patching
  * 17 Refactoring of program block hierarchy                          OK
  * 18 Improve API for new dml-bodied builtin functions                OK

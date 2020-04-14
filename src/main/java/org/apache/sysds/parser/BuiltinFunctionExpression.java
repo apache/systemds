@@ -786,7 +786,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				//list append
 				if(getFirstExpr().getOutput().getDataType().isList() )
 					for(int i=1; i<getAllExpr().length; i++)
-						checkDataTypeParam(getExpr(i), DataType.SCALAR, DataType.MATRIX, DataType.FRAME);
+						checkDataTypeParam(getExpr(i), DataType.SCALAR, DataType.MATRIX, DataType.FRAME, DataType.LIST);
 				//matrix append (rbind/cbind)
 				else
 					for(int i=0; i<getAllExpr().length; i++)

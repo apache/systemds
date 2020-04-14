@@ -86,7 +86,8 @@ public class FunctionStatementBlock extends StatementBlock
 				raiseValidateError("for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType(), conditional);
 			}
 			
-			if (curr.getValueType() != ValueType.UNKNOWN && !curr.getValueType().equals(returnValue.getValueType())){
+			if (curr.getValueType() != ValueType.UNKNOWN && returnValue.getValueType() != ValueType.UNKNOWN
+				&& !curr.getValueType().equals(returnValue.getValueType())){
 				
 				// attempt to convert value type: handle conversion from scalar DOUBLE or INT
 				if (curr.getDataType() == DataType.SCALAR && returnValue.getDataType() == DataType.SCALAR){ 
@@ -121,9 +122,8 @@ public class FunctionStatementBlock extends StatementBlock
 								+ " does not match value type in function signature of " 
 								+ returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() 
 								+ " as " + returnValue.getValueType());
-						
-					} 
-				}	
+					}
+				}
 				else {
 					throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
 				}

@@ -223,7 +223,7 @@ public class ExecutionContext {
 		if( dat == null )
 			throw new DMLRuntimeException(getNonExistingVarError(varname));
 		if( !(dat instanceof MatrixObject) )
-			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix.");
+			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix: "+dat.getClass().getName());
 		
 		return (MatrixObject) dat;
 	}

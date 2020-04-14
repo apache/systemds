@@ -45,17 +45,14 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	
 	@Test
 	public void testGridSearchCP() {
-		//TODO additional list features needed
-		//runGridSearch(ExecType.CP);
+		runGridSearch(ExecType.CP);
 	}
 	
 	@Test
 	public void testGridSearchSpark() {
-		//TODO additional list features needed
-		//runGridSearch(ExecType.SPARK);
+		runGridSearch(ExecType.SPARK);
 	}
 	
-	@SuppressWarnings("unused")
 	private void runGridSearch(ExecType et)
 	{
 		ExecMode modeOld = setExecMode(et);
@@ -64,7 +61,7 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 	
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", input("X"), input("y"), output("R")};
+			programArgs = new String[] {"-explain","-args", input("X"), input("y"), output("R")};
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
 			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("X", X, true);

@@ -44,7 +44,7 @@ public class CPOperand
 		split(str);
 	}
 	
-	public CPOperand(String name, ValueType vt, DataType dt ) {
+	public CPOperand(String name, ValueType vt, DataType dt) {
 		this(name, vt, dt, false);
 	}
 
@@ -68,6 +68,13 @@ public class CPOperand
 		_dataType = variable._dataType;
 		_isLiteral = variable._isLiteral;
 		_literal = variable._literal;
+	}
+	
+	public CPOperand(String name, Data dat) {
+		_name = name;
+		_valueType = dat.getValueType();
+		_dataType = dat.getDataType();
+		_isLiteral = false;
 	}
 
 	public String getName() {

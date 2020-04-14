@@ -104,7 +104,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		if( LOG.isTraceEnabled() ){
-			LOG.trace("Executing instruction : " + this.toString());
+			LOG.trace("Executing instruction : " + toString());
 		}
 		// get the function program block (stored in the Program object)
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);

@@ -46,8 +46,16 @@ public final class ListAppendRemoveCPInstruction extends AppendCPInstruction {
 		if( getOpcode().equals("append") ) {
 			//copy on write and append unnamed argument
 			Data dat2 = ec.getVariable(input2);
-			LineageItem li = DMLScript.LINEAGE ? ec.getLineage().get(input2):null;
-			ListObject tmp = lo.copy().add(dat2, li);
+			LineageItem li = DMLScript.LINEAGE ? ec.getLineage().get(input2) : null;
+			ListObject tmp = null;
+			if( dat2 instanceof ListObject && ((ListObject)dat2).getLength() == 1 ) {
+				//add unfolded elements for lists of size 1 (e.g., named)
+				ListObject lo2 = (ListObject) dat2;
+				tmp = lo.copy().add(lo2.getName(0), lo2.getData(0), li);
+			}
+			else {
+				tmp = lo.copy().add(dat2, li);
+			}
 			//set output variable
 			ec.setVariable(output.getName(), tmp);
 		}

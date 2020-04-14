@@ -35,8 +35,8 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
     vect = as.matrix(paramValues[j,1]);
     paramVals[j,1:nrow(vect)] = t(vect);
   }
-	cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
-	numConfigs = prod(paramLens);
+  cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
+  numConfigs = prod(paramLens);
   
   # Step 1) materialize hyper-parameter combinations 
   # (simplify debugging and compared to compute negligible)
@@ -53,28 +53,22 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
   # TODO integrate cross validation
   Rbeta = matrix(0, nrow(HP), ncol(X));
   Rloss = matrix(0, nrow(HP), 1);
-  arguments = list(X=X, y=y);
+  # TODO pass arguments for function call from outside
+  arguments = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
 
   parfor( i in 1:nrow(HP) ) {
-    # a) prepare training arguments
+    # a) replace training arguments
     largs = arguments;
-    for( j in 1:numParams ) {
-      key = as.scalar(params[j]);
-      value = as.scalar(HP[i,j]);
-      largs = append(largs, list(key=value));
-    }
-
-    # b) core training/scoring
-    lbeta = eval(train, largs);
-    lloss = eval(predict, list(X, y, lbeta));
-
-    # c) write models and loss back to output
-    Rbeta[i,] = lbeta;
-    Rloss[i,] = lloss;
+    for( j in 1:numParams )
+      largs[as.scalar(params[j])] = as.scalar(HP[i,j]);
+    # b) core training/scoring and write-back
+    # TODO investigate rmvar handling with explicit binding (lbeta)
+    Rbeta[i,] = t(eval(train, largs));
+    Rloss[i,] = eval(predict, list(X, y, t(Rbeta[i,])));
   }
 
   # Step 3) select best parameter combination
   ix = as.scalar(rowIndexMin(t(Rloss)));
-  B = Rbeta[ix,];          # optimal model
+  B = t(Rbeta[ix,]);       # optimal model
   opt = as.frame(HP[ix,]); # optimal hyper-parameters
 }

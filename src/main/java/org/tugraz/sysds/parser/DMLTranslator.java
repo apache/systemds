@@ -2744,6 +2744,7 @@ public class DMLTranslator
 		if( id.getNnz()>= 0 )
 			h.setNnz(id.getNnz());
 		h.setBlocksize(id.getBlocksize());
+		h.setPrivacy(id.getPrivacy());
 	}
 
 	private boolean prepareReadAfterWrite( DMLProgram prog, HashMap<String, DataIdentifier> pWrites ) {

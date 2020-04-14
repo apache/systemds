@@ -47,6 +47,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Map.Entry;
 
 
@@ -122,15 +124,16 @@ public class DataExpression extends DataIdentifier
 	public static final String[] FEDERATED_VALID_PARAM_NAMES = {FED_ADDRESSES, FED_RANGES};
 
 	// Valid parameter names in a metadata file
-	public static final String[] READ_VALID_MTD_PARAM_NAMES =
-		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
+	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =
+	new HashSet<String>(Arrays.asList(
+		new String[] {IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
 			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
 			AUTHORPARAM, CREATEDPARAM, 
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to privacy
 			PRIVACY
-		};
+		}));
 
 	public static final String[] READ_VALID_PARAM_NAMES = 
 	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
@@ -1103,7 +1106,15 @@ public class DataExpression extends DataIdentifier
 		        {
 			        nnz = Long.valueOf(ennz.toString());
 			        getOutput().setNnz(nnz);
-		        }
+				}
+				
+				// set privacy
+				Expression eprivacy = this.getVarParam("privacy");
+				boolean privacy = false;
+				if ( eprivacy != null ) {
+					privacy = Boolean.valueOf(eprivacy.toString());
+					getOutput().setPrivacy(privacy);
+				}
 		        
 		        // Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
@@ -2068,11 +2079,12 @@ public class DataExpression extends DataIdentifier
     		Object key = e.getKey();
     		Object val = e.getValue();
 			
-    		boolean isValidName = false;
-    		for (String paramName : READ_VALID_MTD_PARAM_NAMES){
-				if (paramName.equals(key))
-					isValidName = true;
-			}
+    		//boolean isValidName = false;
+    		//for (String paramName : READ_VALID_MTD_PARAM_NAMES){
+			//	if (paramName.equals(key))
+			//		isValidName = true;
+			//}
+			boolean isValidName = READ_VALID_MTD_PARAM_NAMES.contains(key);
     		
 			if (!isValidName){ //wrong parameters always rejected
 				raiseValidateError("MTD file " + mtdFileName + " contains invalid parameter name: " + key, false);
@@ -2098,6 +2110,7 @@ public class DataExpression extends DataIdentifier
 						if ( key.toString().equalsIgnoreCase(DELIM_HAS_HEADER_ROW) 
 								|| key.toString().equalsIgnoreCase(DELIM_FILL)
 								|| key.toString().equalsIgnoreCase(DELIM_SPARSE)
+								|| key.toString().equalsIgnoreCase(PRIVACY)
 								) {
 							// parse these parameters as boolean values
 							BooleanIdentifier boolId = null; 

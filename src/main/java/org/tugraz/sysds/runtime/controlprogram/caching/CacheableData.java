@@ -943,7 +943,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			
 			//write the actual meta data file
 			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
-				getSchema(), dataType, dc, oinfo, formatProperties);
+				getSchema(), dataType, dc, oinfo, formatProperties, _privacyConstraint);
 		}
 	}
 

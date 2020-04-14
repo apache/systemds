@@ -34,6 +34,7 @@ public abstract class Identifier extends Expression
 	protected int _blocksize;
 	protected long _nnz;
 	protected FormatType _formatType;
+	protected boolean _privacy;
 
 	public Identifier() {
 		_dim1 = -1;
@@ -62,6 +63,7 @@ public abstract class Identifier extends Expression
 		_blocksize = i.getBlocksize();
 		_nnz = i.getNnz();
 		_formatType = i.getFormatType();
+		_privacy = i.getPrivacy();
 	}
 	
 	public void setDimensionValueProperties(Identifier i) {
@@ -99,6 +101,10 @@ public abstract class Identifier extends Expression
 	public void setNnz(long nnzs){
 		_nnz = nnzs;
 	}
+
+	public void setPrivacy(boolean privacy){
+		_privacy = privacy;
+	}
 	
 	public long getDim1(){
 		return _dim1;
@@ -130,6 +136,10 @@ public abstract class Identifier extends Expression
 	
 	public long getNnz(){
 		return _nnz;
+	}
+
+	public boolean getPrivacy(){
+		return _privacy;
 	}
 	
 	@Override

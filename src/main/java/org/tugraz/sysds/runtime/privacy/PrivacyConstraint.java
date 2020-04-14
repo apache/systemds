@@ -25,6 +25,10 @@ public class PrivacyConstraint
 
     public PrivacyConstraint(){}
 
+    public PrivacyConstraint(boolean privacy) {
+        _privacy = privacy;
+    }
+
     public void setPrivacy(boolean privacy){
         _privacy = privacy;
     }

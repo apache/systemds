@@ -58,8 +58,7 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
 		double[][] c = TestUtils.performMatrixMultiplication(a, b);
 		
-		PrivacyConstraint privacyConstraint = new PrivacyConstraint();
-		privacyConstraint.setPrivacy(true);
+		PrivacyConstraint privacyConstraint = new PrivacyConstraint(true);
 		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
 		
 		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
@@ -69,7 +68,7 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		runTest();
 
 		String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-		assertEquals(true, actualPrivacyValue);
+		assertEquals(String.valueOf(true), actualPrivacyValue);
 	}
 
 

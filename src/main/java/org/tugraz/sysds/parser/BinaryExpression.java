@@ -145,6 +145,10 @@ public class BinaryExpression extends Expression
 					.getRight().getOutput().getDim2());
 		}
 
+		// Set privacy of output
+		// TODO: Call into privacy package
+		output.setPrivacy( this.getLeft().getOutput().getPrivacy() || this.getRight().getOutput().getPrivacy() );
+
 		this.setOutput(output);
 	}
 

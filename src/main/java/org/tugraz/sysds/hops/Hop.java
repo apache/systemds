@@ -53,6 +53,7 @@ import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.privacy.PrivacyConstraint;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
@@ -77,6 +78,7 @@ public abstract class Hop implements ParseInfo
 	protected ValueType _valueType;
 	protected boolean _visited = false;
 	protected DataCharacteristics _dc = new MatrixCharacteristics();
+	protected PrivacyConstraint _privacyConstraint = new PrivacyConstraint();
 	protected UpdateType _updateType = UpdateType.COPY;
 
 	protected ArrayList<Hop> _parent = new ArrayList<>();
@@ -773,6 +775,14 @@ public abstract class Hop implements ParseInfo
 	
 	public long getNnz(){
 		return _dc.getNonZeros();
+	}
+
+	public void setPrivacy(boolean privacy){
+		_privacyConstraint.setPrivacy(privacy);
+	}
+
+	public boolean getPrivacy(){
+		return _privacyConstraint.getPrivacy();
 	}
 
 	public void setUpdateType(UpdateType update){

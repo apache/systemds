@@ -60,6 +60,7 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
+import org.tugraz.sysds.runtime.privacy.PrivacyConstraint;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
@@ -529,6 +530,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
 				obj.setMetaData((MetaData)metadata.clone());
+				// TODO: This makes no sense... setting its own value with its own value.
+				obj.setPrivacyConstraints(obj.getPrivacyConstraint());
 				obj.setFileFormatProperties(_formatProperties);
 				obj.setMarkForLinCache(true);
 				obj.enableCleanup(!getInput1().getName()

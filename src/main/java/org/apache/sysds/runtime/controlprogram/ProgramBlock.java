@@ -82,13 +82,26 @@ public abstract class ProgramBlock implements ParseInfo
 		return _sb;
 	}
 
-	public void setStatementBlock( StatementBlock sb ){
+	public void setStatementBlock(StatementBlock sb){
 		_sb = sb;
 	}
 
-	public void setThreadID( long id ){
+	public void setThreadID(long id){
 		_tid = id;
 	}
+	
+	public boolean hasThreadID() {
+		return _tid != 0;
+	}
+	
+	public static boolean isThreadID (long tid) {
+		return tid != 0;
+	}
+	
+	public long getThreadID() {
+		return _tid;
+	}
+	
 	
 	/**
 	 * Get the list of child program blocks if nested;

@@ -143,17 +143,18 @@ public class LineageCache
 			LineageItem li = new LineageItem(outNames.get(i), opcode, liInputs);
 			Entry e = null;
 			synchronized( _cache ) {
-				if (LineageCache.probe(li)) 
+				if (LineageCache.probe(li)) {
 					e = LineageCache.getIntern(li);
-				else
+				}
+				else {
 					//create a placeholder if no reuse to avoid redundancy
 					//(e.g., concurrent threads that try to start the computation)
 					putIntern(li, outParams.get(i).getDataType(), null, null, 0);
-					//FIXME: parfor - every thread gets different function names
+				}
 			}
 			//TODO: handling of recursive calls
 			
-			if (e != null && !e.isNullVal()) {
+			if ( e != null ) {
 				String boundVarName = outNames.get(i);
 				Data boundValue = null;
 				//convert to matrix object
@@ -164,8 +165,9 @@ public class LineageCache
 					((MatrixObject)boundValue).acquireModify(e.getMBValue());
 					((MatrixObject)boundValue).release();
 				}
-				else
+				else {
 					boundValue = e.getSOValue();
+				}
 
 				funcOutputs.put(boundVarName, boundValue);
 				LineageItem orig = e._origItem;
@@ -250,7 +252,7 @@ public class LineageCache
 	
 	public static void putValue(List<DataIdentifier> outputs, LineageItem[] liInputs, String name, ExecutionContext ec)
 	{
-		if( !LineageCacheConfig.isMultiLevelReuse())
+		if( !LineageCacheConfig.isMultiLevelReuse() )
 			return;
 
 		HashMap<LineageItem, LineageItem> FuncLIMap = new HashMap<>();
@@ -264,6 +266,8 @@ public class LineageCache
 				boundLI.resetVisitStatus();
 			if (boundLI == null 
 				|| !LineageCache.probe(li)
+				//TODO remove this brittle constraint (if the placeholder is removed
+				//it might crash threads that are already waiting for its results)
 				|| LineageItemUtils.containsRandDataGen(new HashSet<>(Arrays.asList(liInputs)), boundLI)) {
 				AllOutputsCacheable = false;
 			}

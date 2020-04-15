@@ -122,6 +122,14 @@ public class LineageCacheStatistics {
 		// Total time spent compiling lineage rewrites.
 		_ctimeRewrite.add(delta);
 	}
+	
+	public static long getMultiLevelFnHits() {
+		return _numHitsFunc.longValue();
+	}
+	
+	public static long getMultiLevelSBHits() {
+		return _numHitsSB.longValue();
+	}
 
 	public static void incrementPRwExecTime(long delta) {
 		// Total time spent executing lineage rewrites.
@@ -138,7 +146,7 @@ public class LineageCacheStatistics {
 		return sb.toString();
 	}
 
-	public static String displayMultiLvlHits() {
+	public static String displayMultiLevelHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsInst.longValue());
 		sb.append("/");

@@ -19,13 +19,16 @@
 
 package org.apache.sysds.test.functions.lineage;
 
+import org.junit.Assert;
 import org.junit.Test;
+
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -128,6 +131,10 @@ public class FunctionFullReuseTest extends AutomatedTestBase
 			Lineage.setLinReuseNone();
 			
 			TestUtils.compareMatrices(X_orig, X_reused, 1e-6, "Origin", "Reused");
+			if( testname.endsWith("6") ) { // parfor fn reuse
+				Assert.assertEquals(9L, LineageCacheStatistics.getMultiLevelFnHits() 
+					+ LineageCacheStatistics.getMultiLevelSBHits());
+			}
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;

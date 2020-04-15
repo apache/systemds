@@ -225,8 +225,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 
 		//update lineage cache with the functions outputs
-		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() )
-			LineageCache.putValue(fpb.getOutputParams(), liInputs, _functionName, ec);
+		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ) {
+			LineageCache.putValue(fpb.getOutputParams(), 
+				liInputs, getCacheFunctionName(_functionName, fpb), ec);
+		}
 	}
 
 	@Override
@@ -249,7 +251,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		//split current instruction
 		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		if( parts[3].equals(pattern) )
-			parts[3] = replace;	
+			parts[3] = replace;
 		
 		//construct and set modified instruction
 		StringBuilder sb = new StringBuilder();
@@ -262,14 +264,25 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 	
 	private boolean reuseFunctionOutputs(LineageItem[] liInputs, FunctionProgramBlock fpb, ExecutionContext ec) {
+		//prepare lineage cache probing
+		String funcName = getCacheFunctionName(_functionName, fpb);
 		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
-		boolean reuse = LineageCache.reuse(_boundOutputNames, fpb.getOutputParams(), numOutputs, liInputs, _functionName, ec);
+		
+		//reuse of function outputs
+		boolean reuse = LineageCache.reuse(
+			_boundOutputNames, fpb.getOutputParams(), numOutputs, liInputs, funcName, ec);
 
+		//statistics maintenance
 		if (reuse && DMLScript.STATISTICS) {
 			//decrement the call count for this function
-			Statistics.maintainCPFuncCallStats(this.getExtendedOpcode());
+			Statistics.maintainCPFuncCallStats(getExtendedOpcode());
 			LineageCacheStatistics.incrementFuncHits();
 		}
 		return reuse;
+	}
+	
+	private static String getCacheFunctionName(String fname, FunctionProgramBlock fpb) {
+		return !fpb.hasThreadID() ? fname :
+			fname.substring(0, fname.lastIndexOf(Lop.CP_CHILD_THREAD+fpb.getThreadID()));
 	}
 }

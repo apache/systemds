@@ -36,7 +36,7 @@ import java.util.*;
 @net.jcip.annotations.NotThreadSafe
 public class BuiltinGLMTest extends AutomatedTestBase {
 
-	protected final static String TEST_NAME = "GLM";
+	protected final static String TEST_NAME = "glmTest";
 	protected final static String TEST_DIR = "functions/builtin/";
 	protected String TEST_CLASS_DIR = TEST_DIR + BuiltinGLMTest.class.getSimpleName() + "/";
 	double eps = 1e-4;
@@ -247,7 +247,6 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 			proArgs.add("B=" + output("betas_SYSTEMDS"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
-			//	fullDMLScriptName = "scripts/algorithms/GLM.dml";
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(),
 					String.valueOf(distFamilyType),

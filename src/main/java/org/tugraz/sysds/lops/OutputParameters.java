@@ -25,6 +25,7 @@ import org.tugraz.sysds.common.Types.FileFormat;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.privacy.PrivacyConstraint;
 
 /**
  * class to maintain output parameters for a lop.
@@ -42,6 +43,7 @@ public class OutputParameters
 	private String _file_name = null;
 	private String _file_label = null;
 	private boolean _linCacheCandidate = true;
+	//private PrivacyConstraint _privacyConstraint = null;
 
 	FileFormat matrix_format = FileFormat.BINARY;
 	
@@ -97,7 +99,15 @@ public class OutputParameters
 		_num_cols = input._num_cols;
 		_blocksize = input._blocksize;
 	}
-	
+
+/* 	public void setPrivacy(PrivacyConstraint privacyConstraint) {
+		_privacyConstraint = privacyConstraint;
+	}
+
+	public PrivacyConstraint getPrivacy(){
+		return _privacyConstraint;
+	}
+	 */
 	public FileFormat getFormat() {
 		return matrix_format;
 	}
@@ -170,6 +180,7 @@ public class OutputParameters
 		sb.append("format=" + getFormat() + Lop.VALUETYPE_PREFIX);
 		sb.append("label=" + getLabel() + Lop.VALUETYPE_PREFIX);
 		sb.append("filename=" + getFile_name());
+		//sb.append("privacy=" + getPrivacy().toString());
 		return sb.toString();
 	}
 }

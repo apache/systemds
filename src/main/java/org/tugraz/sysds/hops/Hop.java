@@ -325,6 +325,7 @@ public abstract class Hop implements ParseInfo
 			}
 		
 			setOutputDimensions( reblock );
+			reblock.setPrivacyConstraint(getPrivacy());
 			setLineNumbers( reblock );
 			setLops( reblock );
 		}
@@ -777,12 +778,12 @@ public abstract class Hop implements ParseInfo
 		return _dc.getNonZeros();
 	}
 
-	public void setPrivacy(boolean privacy){
-		_privacyConstraint.setPrivacy(privacy);
+	public void setPrivacy(PrivacyConstraint privacy){
+		_privacyConstraint = privacy;
 	}
 
-	public boolean getPrivacy(){
-		return _privacyConstraint.getPrivacy();
+	public PrivacyConstraint getPrivacy(){
+		return _privacyConstraint;
 	}
 
 	public void setUpdateType(UpdateType update){

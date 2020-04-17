@@ -24,6 +24,7 @@ import java.util.HashMap;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.tugraz.sysds.runtime.privacy.PrivacyConstraint;
 
 public abstract class Identifier extends Expression
 {
@@ -34,7 +35,7 @@ public abstract class Identifier extends Expression
 	protected int _blocksize;
 	protected long _nnz;
 	protected FormatType _formatType;
-	protected boolean _privacy;
+	protected PrivacyConstraint _privacy;
 
 	public Identifier() {
 		_dim1 = -1;
@@ -103,7 +104,11 @@ public abstract class Identifier extends Expression
 	}
 
 	public void setPrivacy(boolean privacy){
-		_privacy = privacy;
+		_privacy = new PrivacyConstraint(privacy);
+	}
+
+	public void setPrivacy(PrivacyConstraint privacyConstraint){
+		_privacy = privacyConstraint;
 	}
 	
 	public long getDim1(){
@@ -138,7 +143,7 @@ public abstract class Identifier extends Expression
 		return _nnz;
 	}
 
-	public boolean getPrivacy(){
+	public PrivacyConstraint getPrivacy(){
 		return _privacy;
 	}
 	

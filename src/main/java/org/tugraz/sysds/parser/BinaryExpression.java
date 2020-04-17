@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.privacy.PrivacyPropagator;
 
 
 public class BinaryExpression extends Expression 
@@ -146,8 +147,7 @@ public class BinaryExpression extends Expression
 		}
 
 		// Set privacy of output
-		// TODO: Call into privacy package
-		output.setPrivacy( this.getLeft().getOutput().getPrivacy() || this.getRight().getOutput().getPrivacy() );
+		output.setPrivacy( PrivacyPropagator.MergeBinary(this.getLeft().getOutput().getPrivacy(), this.getRight().getOutput().getPrivacy()));
 
 		this.setOutput(output);
 	}

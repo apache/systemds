@@ -67,8 +67,21 @@ public class LineageCacheConfig {
 		ALL
 	}
 	
+	 public enum LineageCacheStatus {
+		EMPTY,		//Placeholder with no data. Cannot be evicted.
+		CACHED,		//General cached data. Can be evicted.
+		EVICTED,	//Data is in disk. Empty value. Cannot be evicted.
+		RELOADED,	//Reloaded from disk. Can be evicted.
+		PINNED;		//Pinned to memory. Cannot be evicted.
+		public boolean canEvict() {
+			return this == CACHED || this == RELOADED;
+		}
+	 }
+	
 	public ArrayList<String> _MMult = new ArrayList<>();
 	public static boolean _allowSpill = true;
+	// Minimum trustworthy spilling estimate
+	public static final double MINSPILLTIMEESTIMATE = 100;
 
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
@@ -76,7 +89,7 @@ public class LineageCacheConfig {
 	private static boolean _compilerAssistedRW = true;
 	static {
 		//setup static configuration parameters
-		setSpill(false); //disable spilling of cache entries to disk
+		setSpill(true); //enable/disable disk spilling.
 	}
 	
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {

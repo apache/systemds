@@ -159,6 +159,10 @@ class OperationNode(DAGNode):
     def __ne__(self, other):
         return OperationNode(self.sds_context, '!=', [self, other])
 
+
+    def __matmul__(self, other: VALID_ARITHMETIC_TYPES):
+        return OperationNode(self.sds_context, '%*%', [self, other])
+
     def l2svm(self, labels: DAGNode, **kwargs) -> 'OperationNode':
         """Perform l2svm on matrix with labels given.
 
@@ -229,3 +233,10 @@ class OperationNode(DAGNode):
             unnamed_inputs.append(weights)
         unnamed_inputs.append(moment)
         return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
+
+    def lm(self, y: DAGNode, **kwargs) -> 'OperationNode':
+        self._check_matrix_op()
+        params_dict = {'X': self, 'y': y}
+        params_dict.update(kwargs)
+
+        return OperationNode(self.sds_context, 'lm', named_input_nodes=params_dict)

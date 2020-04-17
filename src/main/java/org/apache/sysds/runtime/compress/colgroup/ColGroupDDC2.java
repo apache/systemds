@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.sysds.runtime.compress.utils.ConverterUtils;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -43,11 +43,11 @@ public class ColGroupDDC2 extends ColGroupDDC {
 
 	private char[] _data;
 
-	public ColGroupDDC2() {
+	protected ColGroupDDC2() {
 		super();
 	}
 
-	public ColGroupDDC2(int[] colIndices, int numRows, UncompressedBitmap ubm) {
+	protected ColGroupDDC2(int[] colIndices, int numRows, UncompressedBitmap ubm) {
 		super(colIndices, numRows, ubm);
 		_data = new char[numRows];
 
@@ -73,14 +73,27 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		}
 	}
 
-	public ColGroupDDC2(int[] colIndices, int numRows, double[] values, char[] data) {
+	// Internal Constructor, to be used when copying a DDC Colgroup, and for scalar operations
+	protected ColGroupDDC2(int[] colIndices, int numRows, double[] values, char[] data) {
 		super(colIndices, numRows, values);
 		_data = data;
 	}
 
 	@Override
-	public CompressionType getCompType() {
-		return CompressionType.DDC2;
+	protected ColGroupType getColGroupType(){
+		return ColGroupType.DDC1;
+	}
+
+	/**
+	 * Getter method to get the data, contained in The DDC ColGroup.
+	 * 
+	 * Not safe if modifications is made to the byte list.
+	 * 
+	 * @return The contained data
+	 */
+
+	public char[] getData() {
+		return _data;
 	}
 
 	@Override
@@ -161,13 +174,8 @@ public class ColGroupDDC2 extends ColGroupDDC {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = super.estimateInMemorySize();
-
-		// adding data size
-		if(_data != null)
-			size += 2 * _data.length;
-
-		return size;
+		// LOG.debug(this.toString());
+		return ColGroupSizes.estimateInMemorySizeDDC2(getNumCols(), getNumValues(), _data.length);
 	}
 
 	@Override
@@ -205,7 +213,7 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
+	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
 
@@ -222,7 +230,7 @@ public class ColGroupDDC2 extends ColGroupDDC {
 
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
-		double[] b = ConverterUtils.getDenseVector(vector);
+		double[] b = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -243,7 +251,7 @@ public class ColGroupDDC2 extends ColGroupDDC {
 
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
-		double[] a = ConverterUtils.getDenseVector(vector);
+		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int ncol = getNumCols();
@@ -356,4 +364,13 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		// as zero are represented, it is sufficient to simply apply the scalar op
 		return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op), _data);
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(" DataLength: " + this._data.length);
+		return sb.toString();
+	}
+
 }

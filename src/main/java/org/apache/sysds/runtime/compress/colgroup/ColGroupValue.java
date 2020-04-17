@@ -17,14 +17,22 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -38,13 +46,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public abstract class ColGroupValue extends ColGroup {
 	private static final long serialVersionUID = 3786247536054353658L;
 
-	public static boolean LOW_LEVEL_OPT = true;
-
-	// sorting of values by physical length helps by 10-20%, especially for serial, while
-	// slight performance decrease for parallel incl multi-threaded, hence not applied for
-	// distributed operations (also because compression time + garbage collection increases)
-	public static final boolean SORT_VALUES_BY_LENGTH = true;
-
 	// thread-local pairs of reusable temporary vectors for positions and values
 	private static ThreadLocal<Pair<int[], double[]>> memPool = new ThreadLocal<Pair<int[], double[]>>() {
 		@Override
@@ -57,7 +58,7 @@ public abstract class ColGroupValue extends ColGroup {
 	protected double[] _values; // linearized <numcol vals> <numcol vals>
 
 	public ColGroupValue() {
-		super((int[]) null, -1);
+		super();
 	}
 
 	/**
@@ -71,7 +72,7 @@ public abstract class ColGroupValue extends ColGroup {
 		super(colIndices, numRows);
 
 		// sort values by frequency, if requested
-		if(LOW_LEVEL_OPT && SORT_VALUES_BY_LENGTH && numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
+		if(CompressionSettings.SORT_VALUES_BY_LENGTH && numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
 			ubm.sortValuesByFrequency();
 		}
 
@@ -93,13 +94,7 @@ public abstract class ColGroupValue extends ColGroup {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = super.estimateInMemorySize();
-
-		// adding the size of values
-		size += 8; // array reference
-		size += getValuesSize(); // values
-
-		return size;
+		return ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getValuesSize());
 	}
 
 	public long getValuesSize() {
@@ -350,7 +345,44 @@ public abstract class ColGroupValue extends ColGroup {
 	 * @param rl     row lower index, inclusive
 	 * @param ru     row upper index, exclusive
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru);
+	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
+		// sum and sumsq (reduceall/reducerow over tuples and counts)
+		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq) {
+			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus) ? KahanPlus
+				.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
+
+			if(op.indexFn instanceof ReduceAll)
+				computeSum(result, kplus);
+			else if(op.indexFn instanceof ReduceCol)
+				computeRowSums(result, kplus, rl, ru);
+			else if(op.indexFn instanceof ReduceRow)
+				computeColSums(result, kplus);
+		}
+		// min and max (reduceall/reducerow over tuples only)
+		else if(op.aggOp.increOp.fn instanceof Builtin &&
+			(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX ||
+				((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN)) {
+			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
+
+			if(op.indexFn instanceof ReduceAll)
+				computeMxx(result, builtin, _zeros);
+			else if(op.indexFn instanceof ReduceCol)
+				computeRowMxx(result, builtin, rl, ru);
+			else if(op.indexFn instanceof ReduceRow)
+				computeColMxx(result, builtin, _zeros);
+		}
+		else {
+			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
+		}
+	}
+
+	protected abstract void computeSum(MatrixBlock result, KahanFunction kplus );
+
+	protected abstract void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru);
+
+	protected abstract void computeColSums(MatrixBlock result, KahanFunction kplus);
+
+	protected abstract void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru);
 
 	// dynamic memory management
 
@@ -391,5 +423,16 @@ public abstract class ColGroupValue extends ColGroup {
 		if(reset)
 			Arrays.fill(tmp, 0, len, 0);
 		return tmp;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(String.format("\n%15s%5d ", "Columns:", this._colIndexes.length));
+		sb.append(Arrays.toString(this._colIndexes));
+		sb.append(String.format("\n%15s%5d ", "Values:", this._values.length));
+		sb.append(Arrays.toString(this._values));
+		return sb.toString();
 	}
 }

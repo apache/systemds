@@ -17,25 +17,25 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
-import org.apache.sysds.runtime.compress.ColGroup.ColGroupRowIterator;
+import org.apache.sysds.runtime.compress.colgroup.ColGroup.ColGroupRowIterator;
 
 abstract class RowIterator<T> implements Iterator<T> {
 	// iterator configuration
 	protected final int _rl;
 	protected final int _ru;
 
-	private final ArrayList<ColGroup> _colGroups;
+	private final List<ColGroup> _colGroups;
 
 	// iterator state
 	protected ColGroupRowIterator[] _iters = null;
 	protected int _rpos;
 
-	public RowIterator(int rl, int ru, ArrayList<ColGroup> colGroups) {
+	public RowIterator(int rl, int ru, List<ColGroup> colGroups) {
 		_rl = rl;
 		_ru = ru;
 		_colGroups = colGroups;

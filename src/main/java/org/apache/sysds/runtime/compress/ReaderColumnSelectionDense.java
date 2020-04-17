@@ -22,18 +22,16 @@ package org.apache.sysds.runtime.compress;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class ReaderColumnSelectionDense extends ReaderColumnSelection 
-{
+public class ReaderColumnSelectionDense extends ReaderColumnSelection {
 	protected MatrixBlock _data;
-	
+
 	// reusable return
 	private DblArray nonZeroReturn;
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices, boolean skipZeros) {
-		super(colIndices, CompressedMatrixBlock.TRANSPOSE_INPUT ? 
-				data.getNumColumns() : data.getNumRows(), skipZeros);
+	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices, boolean skipZeros, CompressionSettings compSettings) {
+		super(colIndices, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), skipZeros, compSettings);
 		_data = data;
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
@@ -41,23 +39,23 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection
 
 	@Override
 	public DblArray nextRow() {
-		if( _skipZeros) {
-			while ((nonZeroReturn = getNextRow()) != null
-				&& DblArray.isZero(nonZeroReturn)){} 
+		if(_skipZeros) {
+			while((nonZeroReturn = getNextRow()) != null && DblArray.isZero(nonZeroReturn)) {
+			}
 			return nonZeroReturn;
-		} else {
+		}
+		else {
 			return getNextRow();
 		}
 	}
 
 	private DblArray getNextRow() {
-		if(_lastRow == _numRows-1)
+		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
-		for (int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = CompressedMatrixBlock.TRANSPOSE_INPUT ? 
-					_data.quickGetValue( _colIndexes[i], _lastRow ) : 
-					_data.quickGetValue( _lastRow, _colIndexes[i] );
+		for(int i = 0; i < _colIndexes.length; i++) {
+			reusableArr[i] = _compSettings.transposeInput ? _data.quickGetValue(_colIndexes[i],
+				_lastRow) : _data.quickGetValue(_lastRow, _colIndexes[i]);
 		}
 		return reusableReturn;
 	}

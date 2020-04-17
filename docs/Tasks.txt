@@ -210,6 +210,19 @@ SYSTEMDS-260 Misc Tools
 SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK
  * 272 Simplify and speedup compression tests                         OK
+ * 273 Refactor compressed Matrix Block to simplify responsibilities  OK
+ * 273a Redesign allocation of ColGroups in ColGroupFactory
+ * 274 Make the DDC Compression dictionary share correctly
+ * 275 Include compressionSettings in DMLConfiguration
+ * 276 Allow Uncompressed Columns to be in sparse formats
+ * 277 Sampling based estimators fix
+ * 278 Compression-CoCode algorithm optimization
+ * 278a Return ColGroups estimated compression ratio to Factory
+ * 279 Add missing standard lossless compression techniques
+ * 279a ColGroup FOR (Frame of reference) encoding
+ * 279b ColGroup DEL (Delta) encoding
+ * MINOR Reduce memory usage for compression statistics.
+ * MINOR Make ContainsAZero() method in UncompressedBitMap
 
 SYSTEMDS-280 New Rewrites
  * 281 New rewrites sum(rmEmpty), sum(table)                          OK
@@ -253,6 +266,13 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
 
 SYSTEMDS-350 Data Cleaning Framework
  * 351 New builtin function for error correction by schema            OK
+
+SYSTEMDS-360 Lossy Compression Blocks
+ * 361 ColGroup Quantization
+ * 362 ColGroup Base Data change (from Double to ??)
+
+SYSTEMDS-370 Memory Footprint
+ * 371 Matrix Block Memory footprint update
 
 Others:
  * Break append instruction to cbind and rbind 

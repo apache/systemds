@@ -17,15 +17,17 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -34,49 +36,68 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 /**
  * Class that stores information about a column group within a compressed matrix block. There are subclasses specific to
  * each compression type.
- * 
  */
 public abstract class ColGroup implements Serializable {
+	protected static final Log LOG = LogFactory.getLog(ColGroup.class.getName());
 	private static final long serialVersionUID = 2439785418908671481L;
 
+	/**
+	 * Public Group types supported
+	 * 
+	 * Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC.
+	 */
 	public enum CompressionType {
 		UNCOMPRESSED, // uncompressed sparse/dense
-		RLE_BITMAP, // RLE bitmap
-		OLE_BITMAP, // OLE bitmap
-		DDC1, // DDC 1 byte
-		DDC2; // DDC 2 byte
+		RLE, // RLE bitmap
+		OLE, // OLE bitmap
+		DDC, // Dictionary encoding
+		// QUANTIZE, // Quantize the double values to int 8.
 	}
 
 	/**
-	 * Offsets of the columns that make up the column group. Zero-based, and relative to the matrix block.
+	 * Concrete ColGroupType
+	 * 
+	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
+	protected enum ColGroupType {
+		UNCOMPRESSED, // uncompressed sparse/dense
+		RLE, // RLE bitmap
+		OLE, // OLE bitmap
+		DDC1, DDC2,
+	}
+
+	/** The ColGroup Indexes 0 offset, contained in the ColGroup */
 	protected int[] _colIndexes;
+
+	/** ColGroup Implementation Contains zero values */
+	protected boolean _zeros;
 
 	/** Number of rows in the matrix, for use by child classes. */
 	protected int _numRows;
+
+	/** Empty constructor, used for serializing into an empty new object of ColGroup. */
+	protected ColGroup() {
+		this._colIndexes = null;
+		this._numRows = -1;
+	}
 
 	/**
 	 * Main constructor.
 	 * 
 	 * @param colIndices offsets of the columns in the matrix block that make up the group
-	 * @param numRows    total number of rows in the parent block
+	 * @param numRows    total number of rows in the block
 	 */
 	protected ColGroup(int[] colIndices, int numRows) {
+		if(colIndices == null) {
+			throw new DMLRuntimeException("null input to ColGroup is invalid");
+		}
+		if(colIndices.length == 0) {
+			throw new DMLRuntimeException("0 is an invalid number of columns in a ColGroup");
+		}
+		if(numRows < 1) {
+			throw new DMLRuntimeException(numRows + " is an invalid number of rows in a ColGroup");
+		}
 		_colIndexes = colIndices;
-		_numRows = numRows;
-	}
-
-	/**
-	 * Convenience constructor for converting indices to a more compact format.
-	 * 
-	 * @param colIndicesList list of column indices
-	 * @param numRows        total number of rows in the parent block
-	 */
-	protected ColGroup(List<Integer> colIndicesList, int numRows) {
-		_colIndexes = new int[colIndicesList.size()];
-		int i = 0;
-		for(Integer index : colIndicesList)
-			_colIndexes[i++] = index;
 		_numRows = numRows;
 	}
 
@@ -99,6 +120,11 @@ public abstract class ColGroup implements Serializable {
 		return _colIndexes[colNum];
 	}
 
+	/**
+	 * Get number of rows contained in the ColGroup.
+	 * 
+	 * @return An integer that is the number of rows.
+	 */
 	public int getNumRows() {
 		return _numRows;
 	}
@@ -119,6 +145,14 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract CompressionType getCompType();
 
+	/**
+	 * Internally get the specific type of ColGroup, this could be extracted from the object but that does not allow for
+	 * nice switches in the code.
+	 * 
+	 * @return ColGroupType of the object.
+	 */
+	protected abstract ColGroupType getColGroupType();
+
 	public void shiftColIndices(int offset) {
 		for(int i = 0; i < _colIndexes.length; i++)
 			_colIndexes[i] += offset;
@@ -130,11 +164,7 @@ public abstract class ColGroup implements Serializable {
 	 * @return an upper bound on the number of bytes used to store this ColGroup in memory.
 	 */
 	public long estimateInMemorySize() {
-		// object (12B padded to factors of 8), int numRows (4B),
-		// array reference colIndices (8B)
-		// + array object overhead if exists (32B) + 4B per element
-		long size = 24;
-		return (_colIndexes == null) ? size : size + 32 + 4 * _colIndexes.length;
+		return ColGroupSizes.estimateInMemorySizeGroup(_colIndexes.length);
 	}
 
 	/**
@@ -218,6 +248,13 @@ public abstract class ColGroup implements Serializable {
 	public abstract double get(int r, int c);
 
 	/**
+	 * Get the number of values. contained inside the ColGroup.
+	 * 
+	 * @return value at the row/column position
+	 */
+	public abstract long getValuesSize();
+
+	/**
 	 * Multiply the slice of the matrix that this column group represents by a vector on the right.
 	 * 
 	 * @param vector vector to multiply by (tall vector)
@@ -245,6 +282,13 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract ColGroup scalarOperation(ScalarOperator op);
 
+	/**
+	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
+	 * matrix.
+	 * 
+	 * @param op     The operator used
+	 * @param result the output matrix block.
+	 */
 	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result);
 
 	/**
@@ -275,7 +319,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param rl   row lower bound, inclusive
 	 * @param ru   row upper bound, exclusive
 	 */
-	protected abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
+	public abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
 
 	/**
 	 * Base class for column group row iterators. We do not implement the default Iterator interface in order to avoid

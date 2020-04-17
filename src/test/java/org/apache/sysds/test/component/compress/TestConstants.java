@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test;
+package org.apache.sysds.test.component.compress;
 
 /**
  * Class Containing Testing Constants, for easy enumeration of typical Parameters classes
@@ -25,40 +25,41 @@ package org.apache.sysds.test;
 public class TestConstants {
 
 	private static final int rows[] = {4, 2008, 1283, 5, 1, 251, 5000, 100000, 3123};
-	private static final int cols[] = {20, 20, 13, 998, 321, 1, 30, 21, 1};
-	private static final double[] sparsityValues = {0.9, 0.1, 0.0};
+	private static final int cols[] = {20, 20, 13, 998, 321, 1, 8, 10, 1};
+	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0};
 
 	private static final int[] mins = {-10, -2147};
 	private static final int[] maxs = {10, 2147};
 
 	public enum SparsityType {
-		DENSE, SPARSE, EMPTY,
+		DENSE, SPARSE, ULTRA_SPARSE, EMPTY,
 	}
 
 	public enum ValueType {
 		RAND, // UC
 		CONST, // RLE
-		RAND_ROUND_OLE, // OLE
-		RAND_ROUND_DDC, // RLE
+		RAND_ROUND, // Values rounded to nearest whole numbers.
+		OLE_COMPRESSIBLE, // Ideal inputs for OLE Compression.
+		RLE_COMPRESSIBLE, // Ideal inputs for RLE Compression.
 	}
 
-	public enum MatrixType {
+	public enum MatrixTypology {
 		SMALL, // A Small Matrix
 		LARGE, // A "Large" Matrix
 		FEW_ROW, // A Matrix with a large number of rows and less columns
 		FEW_COL, // A Matrix with a large number of columns
 		SINGLE_ROW, // Single Row with some columns
 		SINGLE_COL, // Single Column with some rows
-		L_ROWS, XL_ROWS, SINGLE_COL_L, // Single Column large.
+		L_ROWS, // Many Rows
+		XL_ROWS, // A LOT of rows. 
+		SINGLE_COL_L, // Single Column large.
 	}
 
 	public enum ValueRange {
-		SMALL, LARGE
+		SMALL, 
+		LARGE
 	}
 
-	public enum CompressionType {
-		LOSSLESS, LOSSY
-	}
 
 	public static double getSparsityValue(SparsityType sparsityType) {
 		switch(sparsityType) {
@@ -66,10 +67,12 @@ public class TestConstants {
 				return sparsityValues[0];
 			case SPARSE:
 				return sparsityValues[1];
-			case EMPTY:
+			case ULTRA_SPARSE:
 				return sparsityValues[2];
+			case EMPTY:
+				return sparsityValues[3];
 			default:
-				return 0.0; // Never Happens
+				throw new RuntimeException("Invalid Sparsity type"); 
 		}
 	}
 
@@ -80,7 +83,7 @@ public class TestConstants {
 			case LARGE:
 				return mins[1];
 			default:
-				return 0; // Never Happens
+			throw new RuntimeException("Invalid range value enum type"); 
 		}
 	}
 
@@ -91,12 +94,12 @@ public class TestConstants {
 			case LARGE:
 				return maxs[1];
 			default:
-				return 0; // Never Happens
+				throw new RuntimeException("Invalid range value enum type"); 
 		}
 	}
 
-	public static int getNumberOfRows(MatrixType matrixType) {
-		switch(matrixType) {
+	public static int getNumberOfRows(MatrixTypology matrixTypology) {
+		switch(matrixTypology) {
 			case SMALL:
 				return rows[0];
 			case LARGE:
@@ -116,12 +119,12 @@ public class TestConstants {
 			case SINGLE_COL_L:
 				return rows[8];
 			default:
-				return 0; // Never Happens
+				throw new RuntimeException("Invalid matrix enum type"); 
 		}
 	}
 
-	public static int getNumberOfColumns(MatrixType matrixType) {
-		switch(matrixType) {
+	public static int getNumberOfColumns(MatrixTypology matrixTypology) {
+		switch(matrixTypology) {
 			case SMALL:
 				return cols[0];
 			case LARGE:
@@ -141,7 +144,7 @@ public class TestConstants {
 			case SINGLE_COL_L:
 				return cols[8];
 			default:
-				return 0; // Never Happens
+				throw new RuntimeException("Invalid matrix enum type"); 
 		}
 	}
 }

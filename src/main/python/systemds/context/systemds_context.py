@@ -164,4 +164,14 @@ class SystemDSContext(object):
         :param lambd: lamda value for "poison" distribution
         :return:
         """
+        available_pdfs = ["uniform", "normal", "poisson"]
+        if rows < 0:
+            raise ValueError("In rand statement, can only assign rows a long (integer) value >= 0 "
+                            "-- attempted to assign value: {r}".format(r=rows))
+        if cols < 0:
+            raise ValueError("In rand statement, can only assign cols a long (integer) value >= 0 "
+                            "-- attempted to assign value: {c}".format(c=cols))
+        if pdf not in available_pdfs:
+            raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(g=pdf, e=available_pdfs))
+
         return rand(self, rows, cols, min, max, pdf, sparsity, seed, lambd)

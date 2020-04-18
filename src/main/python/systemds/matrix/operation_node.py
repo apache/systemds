@@ -159,7 +159,6 @@ class OperationNode(DAGNode):
     def __ne__(self, other):
         return OperationNode(self.sds_context, '!=', [self, other])
 
-
     def __matmul__(self, other: VALID_ARITHMETIC_TYPES):
         return OperationNode(self.sds_context, '%*%', [self, other])
 

@@ -25,8 +25,6 @@ import sys
 import warnings
 import unittest
 import numpy as np
-import scipy.stats as st
-import matplotlib.pyplot as plt
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
@@ -85,63 +83,6 @@ class TestMatrixAggFn(unittest.TestCase):
 
     def test_var3(self):
         self.assertTrue(np.allclose(sds.matrix(m1).var(axis=1).compute(), m1.var(axis=1, ddof=1).reshape(dim, 1)))
-
-    def test_rand_basic(self):
-        seed = 15
-        shape = (20, 20)
-        min_max = (0, 1)
-        sparsity = 0.2
-
-        m = sds.rand(rows=shape[0], cols=shape[1], pdf="uniform", min=min_max[0], max=min_max[1],
-                     seed=seed, sparsity=sparsity).compute()
-
-        self.assertTrue(m.shape == shape)
-        self.assertTrue((m.min() >= min_max[0]) and (m.max() <= min_max[1]))
-
-        # sparsity
-        m_flat = m.flatten('F')
-        count, bins, patches = plt.hist(m_flat)
-
-        non_zero_value_percent = sum(count[1:]) * 100 / count[0]
-        e = 0.05
-        self.assertTrue((non_zero_value_percent >= (sparsity - e) * 100)
-                        and (non_zero_value_percent <= (sparsity + e) * 100))
-        self.assertTrue(sum(count) == (shape[0] * shape[1]))
-
-    def test_rand_distribution(self):
-        seed = 15
-        shape = (20, 20)
-        min_max = (0, 1)
-
-        m = sds.rand(rows=shape[0], cols=shape[1], pdf="uniform", min=min_max[0], max=min_max[1],
-                     seed=seed).compute()
-
-        m_flat = m.flatten('F')
-
-        dist = best_distribution(m_flat)
-        self.assertTrue(dist == 'uniform')
-
-        m1 = sds.rand(rows=shape[0], cols=shape[1], pdf="normal", min=min_max[0], max=min_max[1],
-                     seed=seed).compute()
-
-        m1_flat = m1.flatten('F')
-
-        dist = best_distribution(m1_flat)
-        self.assertTrue(dist == 'norm')
-
-
-def best_distribution(data):
-    distributions = ['norm', 'uniform']
-    result = dict()
-
-    for dist in distributions:
-        param = getattr(st, dist).fit(data)
-
-        D, p_value = st.kstest(data, dist, args=param)
-        result[dist] = p_value
-
-    best_dist = max(result, key=result.get)
-    return best_dist
 
 
 if __name__ == "__main__":

@@ -23,7 +23,6 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.hops.cost.CostEstimatorStaticRuntime;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
@@ -415,7 +414,7 @@ public class LineageCache
 			if (!e.isMatrixValue()) {
 				// Skip scalar entries with higher computation time, as
 				// those could be function/statementblock outputs.
-				if (exectime < LineageCacheConfig.MINSPILLTIMEESTIMATE)
+				if (exectime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE)
 					removeEntry(e);
 				e = e._prev;
 				continue;
@@ -425,7 +424,7 @@ public class LineageCache
 			double spilltime = getDiskSpillEstimate(e) * 1000; // in milliseconds
 
 			if (DEBUG) {
-				if (exectime > LineageCacheConfig.MINSPILLTIMEESTIMATE) {
+				if (exectime > LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
 					System.out.print("LI " + e._key.getOpcode());
 					System.out.print(" exec time " + ((double) e._computeTime) / 1000000);
 					System.out.print(" estimate time " + getDiskSpillEstimate(e) * 1000);
@@ -435,10 +434,10 @@ public class LineageCache
 			}
 
 			if (LineageCacheConfig.isSetSpill()) {
-				if (spilltime < LineageCacheConfig.MINSPILLTIMEESTIMATE) {
+				if (spilltime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
 					// Can't trust the estimate if less than 100ms.
 					// Spill if it takes longer to recompute.
-					if (exectime >= LineageCacheConfig.MINSPILLTIMEESTIMATE)
+					if (exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE)
 						spillToLocalFS(e);
 				}
 				else {
@@ -464,18 +463,19 @@ public class LineageCache
 	//---------------- COSTING RELATED METHODS -----------------
 
 	private static double getDiskSpillEstimate(Entry e) {
+		if (!e.isMatrixValue() || e.isNullVal())
+			return 0;
 		// This includes sum of writing to and reading from disk
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		MatrixBlock mb = e.getMBValue();
-		long r = mb.getNumRows();
-		long c = mb.getNumColumns();
-		long nnz = mb.getNonZeros();
-		double s = OptimizerUtils.getSparsity(r, c, nnz);
-		double loadtime = CostEstimatorStaticRuntime.getFSReadTime(r, c, s);
-		double writetime = CostEstimatorStaticRuntime.getFSWriteTime(r, c, s);
+		double size = getDiskSizeEstimate(e);
+		double loadtime = isSparse(e) ? size/LineageCacheConfig.FSREAD_SPARSE : size/LineageCacheConfig.FSREAD_DENSE;
+		double writetime = isSparse(e) ? size/LineageCacheConfig.FSWRITE_SPARSE : size/LineageCacheConfig.FSWRITE_DENSE;
+
+		//double loadtime = CostEstimatorStaticRuntime.getFSReadTime(r, c, s);
+		//double writetime = CostEstimatorStaticRuntime.getFSWriteTime(r, c, s);
 		if (DMLScript.STATISTICS) 
 			LineageCacheStatistics.incrementCostingTime(System.nanoTime() - t0);
-		return loadtime+writetime;
+		return loadtime + writetime;
 	}
 
 	private static double getDiskSizeEstimate(Entry e) {
@@ -488,6 +488,44 @@ public class LineageCache
 		double s = OptimizerUtils.getSparsity(r, c, nnz);
 		double disksize = ((double)MatrixBlock.estimateSizeOnDisk(r, c, (long)(s*r*c))) / (1024*1024);
 		return disksize;
+	}
+	
+	private static void adjustReadWriteSpeed(Entry e, double IOtime, boolean read) {
+		double size = getDiskSizeEstimate(e);
+		if (!e.isMatrixValue() || size < LineageCacheConfig.MIN_SPILL_DATA)
+			// Scalar or too small
+			return; 
+		
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		double newIOSpeed = size / IOtime; // MB per second 
+		// Adjust the read/write speed taking into account the last read/write.
+		// These constants will eventually converge to the real speed.
+		if (read) {
+			if (isSparse(e))
+				LineageCacheConfig.FSREAD_SPARSE = (LineageCacheConfig.FSREAD_SPARSE + newIOSpeed) / 2;
+			else
+				LineageCacheConfig.FSREAD_DENSE= (LineageCacheConfig.FSREAD_DENSE+ newIOSpeed) / 2;
+		}
+		else {
+			if (isSparse(e))
+				LineageCacheConfig.FSWRITE_SPARSE = (LineageCacheConfig.FSWRITE_SPARSE + newIOSpeed) / 2;
+			else
+				LineageCacheConfig.FSWRITE_DENSE= (LineageCacheConfig.FSWRITE_DENSE+ newIOSpeed) / 2;
+		}
+		if (DMLScript.STATISTICS) 
+			LineageCacheStatistics.incrementCostingTime(System.nanoTime() - t0);
+	}
+	
+	private static boolean isSparse(Entry e) {
+		if (!e.isMatrixValue() || e.isNullVal())
+			return false;
+		MatrixBlock mb = e.getMBValue();
+		long r = mb.getNumRows();
+		long c = mb.getNumColumns();
+		long nnz = mb.getNonZeros();
+		double s = OptimizerUtils.getSparsity(r, c, nnz);
+		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(r, c, (long)(s*r*c));
+		return sparse;
 	}
 	
 	@Deprecated
@@ -644,7 +682,7 @@ public class LineageCache
 		if (entry.isNullVal())
 			throw new DMLRuntimeException ("Cannot spill null value to disk. Key: "+entry._key);
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = System.nanoTime();
 		if (_outdir == null) {
 			_outdir = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_LINEAGE);
 			LocalFileUtils.createLocalFileIfNotExist(_outdir);
@@ -655,8 +693,11 @@ public class LineageCache
 		} catch (IOException e) {
 			throw new DMLRuntimeException ("Write to " + outfile + " failed.", e);
 		}
+		long t1 = System.nanoTime();
+		// Adjust disk writing speed
+		adjustReadWriteSpeed(entry, ((double)(t1-t0))/1000000000, false);
+		
 		if (DMLScript.STATISTICS) {
-			long t1 = System.nanoTime();
 			LineageCacheStatistics.incrementFSWriteTime(t1-t0);
 			LineageCacheStatistics.incrementFSWrites();
 		}
@@ -665,7 +706,7 @@ public class LineageCache
 	}
 	
 	private static Entry readFromLocalFS(LineageItem key) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = System.nanoTime();
 		MatrixBlock mb = null;
 		// Read from local FS
 		try {
@@ -675,11 +716,13 @@ public class LineageCache
 		}
 		// Restore to cache
 		LocalFileUtils.deleteFileIfExists(_spillList.get(key)._outfile, true);
+		long t1 = System.nanoTime();
 		putIntern(key, DataType.MATRIX, mb, null, _spillList.get(key)._computeTime);
+		// Adjust disk reading speed
+		adjustReadWriteSpeed(_cache.get(key), ((double)(t1-t0))/1000000000, true);
 		//TODO: set cache status as RELOADED for this entry
 		_spillList.remove(key);
 		if (DMLScript.STATISTICS) {
-			long t1 = System.nanoTime();
 			LineageCacheStatistics.incrementFSReadTime(t1-t0);
 			LineageCacheStatistics.incrementFSHits();
 		}

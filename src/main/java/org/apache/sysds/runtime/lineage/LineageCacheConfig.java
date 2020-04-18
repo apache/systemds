@@ -80,8 +80,16 @@ public class LineageCacheConfig {
 	
 	public ArrayList<String> _MMult = new ArrayList<>();
 	public static boolean _allowSpill = true;
-	// Minimum trustworthy spilling estimate
-	public static final double MINSPILLTIMEESTIMATE = 100;
+	// Minimum reliable spilling estimate in milliseconds.
+	public static final double MIN_SPILL_TIME_ESTIMATE = 100;
+	// Minimum reliable data size for spilling estimate in MB.
+	public static final double MIN_SPILL_DATA = 20;
+
+	// Default I/O in MB per second for binary blocks
+	public static double FSREAD_DENSE = 200;
+	public static double FSREAD_SPARSE = 100;
+	public static double FSWRITE_DENSE = 150;
+	public static double FSWRITE_SPARSE = 75;
 
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;

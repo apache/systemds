@@ -31,9 +31,9 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.apache.log4j.Logger;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.instructions.cp.Data;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class FederatedWorker {
 	private int _port;
 	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
 	private IDSequence _seq = new IDSequence();
-	private Map<Long, CacheableData<?>> _vars = new HashMap<>();
+	private Map<Long, Data> _vars = new HashMap<>();
 
 	public FederatedWorker(int port) {
 		_port = (port == -1) ?

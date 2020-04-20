@@ -22,11 +22,15 @@ package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FrameReader;
@@ -43,13 +47,20 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
+
+import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
 	private ValueType[] _schema = null;
-
+	
+	private Map<FederatedRange, FederatedData> _fedMapping = null; // mapping for federated FrameObject
+	
 	protected FrameObject() {
 		super(DataType.FRAME, ValueType.STRING);
 	}
@@ -97,7 +108,23 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return (_schema!=null && _schema.length>cu) ? Arrays.copyOfRange(_schema, cl, cu+1) :
 			UtilFunctions.nCopies(cu-cl+1, ValueType.STRING);
 	}
-
+	
+	/**
+	 * Check if Frame is federated.
+	 * @return true if federated else false
+	 */
+	public boolean isFederated() {
+		return _fedMapping != null;
+	}
+	
+	/**
+	 * Sets the mapping of indices ranges to federated frame objects.
+	 * @param fedMapping mapping
+	 */
+	public void setFedMapping(Map<FederatedRange, FederatedData> fedMapping) {
+		_fedMapping = fedMapping;
+	}
+	
 	/**
 	 * Creates a new collection which contains the schema of the current
 	 * frame object concatenated with the schema of the passed frame object.
@@ -155,6 +182,35 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return dc.getCols();
 	}
 	
+	private FrameBlock readFederated() {
+		FrameBlock result = new FrameBlock(_schema);
+		// provide long support?
+		result.ensureAllocatedColumns((int) _metaData.getDataCharacteristics().getRows());
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = requestFederatedData(_fedMapping);
+		try {
+			for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+				FederatedRange range = readResponse.getLeft();
+				FederatedResponse response = readResponse.getRight().get();
+				// add result
+				if(!response.isSuccessful())
+					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
+				FrameBlock multRes = (FrameBlock) response.getData()[0];
+				for (int r = 0; r < multRes.getNumRows(); r++) {
+					for (int c = 0; c < multRes.getNumColumns(); c++) {
+						int destRow = range.getBeginDimsInt()[0] + r;
+						int destCol = range.getBeginDimsInt()[1] + c;
+						result.set(destRow, destCol, multRes.get(r, c));
+					}
+				}
+			}
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Federated Frame read failed.", e);
+		}
+		
+		return result;
+	}
+	
 	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
 		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
@@ -162,8 +218,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 
 	@Override
 	protected FrameBlock readBlobFromHDFS(String fname, long[] dims)
-		throws IOException 
+		throws IOException
 	{
+		if (isFederated())
+			return readFederated();
 		long clen = dims[1];
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();

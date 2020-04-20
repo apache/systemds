@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
@@ -34,7 +33,6 @@ import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -51,11 +49,11 @@ import org.apache.sysds.runtime.util.IndexRange;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
 
 /**
  * Represents a matrix in control program. This class contains method to read
@@ -163,20 +161,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long[] dims = getDataCharacteristics().getDims();
 		// TODO sparse optimization
 		MatrixBlock result = new MatrixBlock((int) dims[0], (int) dims[1], false);
-		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
-		for (Map.Entry<FederatedRange, FederatedData> entry : _fedMapping.entrySet()) {
-			FederatedRange range = entry.getKey();
-			FederatedData fd = entry.getValue();
-			
-			if( fd.isInitialized() ) {
-				FederatedRequest request = new FederatedRequest(FederatedRequest.FedMethod.TRANSFER);
-				Future<FederatedResponse> readResponse = fd.executeFederatedOperation(request, true);
-				readResponses.add(new ImmutablePair<>(range, readResponse));
-			}
-			else {
-				throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");
-			}
-		}
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = requestFederatedData(_fedMapping);
 		try {
 			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
 				FederatedRange range = readResponse.getLeft();
@@ -186,7 +171,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				int[] endDimsInt = range.getEndDimsInt();
 				if( !response.isSuccessful() )
 					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
-				MatrixBlock multRes = (MatrixBlock) response.getData();
+				MatrixBlock multRes = (MatrixBlock) response.getData()[0];
 				result.copy(beginDimsInt[0], endDimsInt[0] - 1,
 					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
 				result.setNonZeros(result.getNonZeros() + multRes.getNonZeros());

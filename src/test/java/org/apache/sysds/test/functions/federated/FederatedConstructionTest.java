@@ -19,16 +19,16 @@
 
 package org.apache.sysds.test.functions.federated;
 
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -80,10 +80,11 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	}
 
 	public void federatedMatrixConstruction(Types.ExecMode execMode) {
+		getAndLoadTestConfiguration(TEST_NAME);
 		// write input matrix
 		double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
-		federatedConstruction(execMode, MATRIX_TEST_FILE_NAME, "A");
+		federatedConstruction(execMode, MATRIX_TEST_FILE_NAME, "A", null);
 	}
 	
 	@Test
@@ -91,12 +92,15 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		federatedFrameConstruction(Types.ExecMode.SINGLE_NODE);
 	}
 	
+	/* like other federated functionality, SPARK execution mode is not yet working (waiting for better integration
+	of federated instruction building, like propagating information that object is federated)
 	@Test
 	public void federatedFrameConstructionSP() throws IOException {
 		federatedFrameConstruction(Types.ExecMode.SPARK);
-	}
+	}*/
 	
 	public void federatedFrameConstruction(Types.ExecMode execMode) throws IOException {
+		getAndLoadTestConfiguration(TEST_NAME);
 		// write input matrix
 		double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
 		
@@ -105,18 +109,18 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		schemaList.addAll(Collections.nCopies(cols/4, Types.ValueType.INT64));
 		schemaList.addAll(Collections.nCopies(cols/4, Types.ValueType.BOOLEAN));
 		
-		Types.ValueType[] schema = (Types.ValueType[]) schemaList.toArray();
+		Types.ValueType[] schema = new Types.ValueType[cols];
+		schemaList.toArray(schema);
 		writeInputFrameWithMTD("A", A, false, schema, OutputInfo.BinaryBlockOutputInfo);
-		federatedConstruction(execMode, FRAME_TEST_FILE_NAME, "A");
+		federatedConstruction(execMode, FRAME_TEST_FILE_NAME, "A", schema);
 	}
 
-	public void federatedConstruction(Types.ExecMode execMode, String testFile, String inputIdentifier) {
+	public void federatedConstruction(Types.ExecMode execMode, String testFile, String inputIdentifier, Types.ValueType[] schema) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t = null;
+		Thread t;
 
-		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		int port = getRandomAvailablePort();
@@ -143,7 +147,10 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 
 		runTest(true, false, null, -1);
 		// compare via files
-		compareResults(1e-12);
+		if (schema != null)
+			compareResults(schema);
+		else
+			compareResults(1e-12);
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;

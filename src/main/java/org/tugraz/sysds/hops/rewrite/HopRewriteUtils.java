@@ -570,7 +570,7 @@ public class HopRewriteUtils
 			in.getValueType(), in, type, null);
 		dop.setVisited();
 		dop.setOutputParams(in.getDim1(), in.getDim2(), in.getNnz(),
-			in.getUpdateType(), in.getBlocksize(), in.getPrivacy());
+			in.getUpdateType(), in.getBlocksize());
 		copyLineNumbers(in, dop);
 		return dop;
 	}

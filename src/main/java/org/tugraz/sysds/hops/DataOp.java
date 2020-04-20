@@ -230,13 +230,12 @@ public class DataOp extends Hop
 		_op = type;
 	}
 	
-	public void setOutputParams(long dim1, long dim2, long nnz, UpdateType update, int blen, PrivacyConstraint privacy) {
+	public void setOutputParams(long dim1, long dim2, long nnz, UpdateType update, int blen) {
 		setDim1(dim1);
 		setDim2(dim2);
 		setNnz(nnz);
 		setUpdateType(update);
 		setBlocksize(blen);
-		setPrivacy(privacy);
 	}
 
 	public void setFileName(String fn) {

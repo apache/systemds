@@ -113,15 +113,42 @@ public class DataExpression extends DataIdentifier
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
-	public static final String[] RAND_VALID_PARAM_NAMES = 
-		{RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA};
+	public static final Set<String> RAND_VALID_PARAM_NAMES = 
+		new HashSet<String>
+		(
+			Arrays.asList
+			(
+				RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA
+			)
+		);
 	
-	public static final String[] RESHAPE_VALID_PARAM_NAMES =
-		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
+	public static final Set<String> RESHAPE_VALID_PARAM_NAMES =
+		new HashSet<String>
+		(
+			Arrays.asList
+			(
+				RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS
+			)
+		);
+		
 	
-	public static final String[] SQL_VALID_PARAM_NAMES = {SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY};
+	public static final Set<String> SQL_VALID_PARAM_NAMES = 
+		new HashSet<String>
+		(
+			Arrays.asList
+			(
+				SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY
+			)
+		);
 	
-	public static final String[] FEDERATED_VALID_PARAM_NAMES = {FED_ADDRESSES, FED_RANGES};
+	public static final Set<String> FEDERATED_VALID_PARAM_NAMES = 
+		new HashSet<String>
+		(
+			Arrays.asList
+			(
+				FED_ADDRESSES, FED_RANGES
+			)
+		);
 
 	// Valid parameter names in a metadata file
 	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =
@@ -129,16 +156,13 @@ public class DataExpression extends DataIdentifier
 		(
 			Arrays.asList
 			(
-				new String[] 
-				{
-					IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
-					ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
-					AUTHORPARAM, CREATEDPARAM, 
-					// Parameters related to delimited/csv files.
-					DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
-					// Parameters related to privacy
-					PRIVACY
-				}
+				IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
+				ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
+				AUTHORPARAM, CREATEDPARAM, 
+				// Parameters related to delimited/csv files.
+				DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
+				// Parameters related to privacy
+				PRIVACY
 			)
 		);
 
@@ -146,14 +170,11 @@ public class DataExpression extends DataIdentifier
 		new HashSet<String>
 		(
 			Arrays.asList
-			(
-				new String[] 
-				{	
-					IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
-					ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
-					// Parameters related to delimited/csv files.
-					DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
-				}
+			(	
+				IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
+				ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
+				// Parameters related to delimited/csv files.
+				DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 			)
 		);
 	
@@ -487,15 +508,7 @@ public class DataExpression extends DataIdentifier
 			return;
 		}
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			for (String name : RAND_VALID_PARAM_NAMES){
-				if (name.equals(paramName)) {
-					found = true;
-					break;
-				}			
-			}
-		}
+		boolean found = RAND_VALID_PARAM_NAMES.contains(paramName);
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
@@ -521,10 +534,7 @@ public class DataExpression extends DataIdentifier
 	public void addMatrixExprParam(String paramName, Expression paramValue) 
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.stream(RESHAPE_VALID_PARAM_NAMES).anyMatch((name) -> name.equals(paramName));
-		}
+		boolean found = RESHAPE_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName +
@@ -550,10 +560,7 @@ public class DataExpression extends DataIdentifier
 	public void addTensorExprParam(String paramName, Expression paramValue)
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.asList(RESHAPE_VALID_PARAM_NAMES).contains(paramName);
-		}
+		boolean found = RESHAPE_VALID_PARAM_NAMES.contains(paramName);
 
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for tensor statement are "
@@ -579,10 +586,7 @@ public class DataExpression extends DataIdentifier
 	public void addSqlExprParam(String paramName, Expression paramValue)
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.asList(SQL_VALID_PARAM_NAMES).contains(paramName);
-		}
+		boolean found = SQL_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for sql statement are "
@@ -599,8 +603,7 @@ public class DataExpression extends DataIdentifier
 	
 	public void addFederatedExprParam(String paramName, Expression paramValue) {
 		// check name is valid
-		boolean found = (paramName != null ) &&
-			Arrays.asList(FEDERATED_VALID_PARAM_NAMES).contains(paramName);
+		boolean found = FEDERATED_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found)
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for federated statement are "
@@ -1949,13 +1952,10 @@ public class DataExpression extends DataIdentifier
 		}
 	}
 
-	private void validateParams(boolean conditional, String[] validParamNames, String legalMessage) {
+	private void validateParams(boolean conditional, Set<String> validParamNames, String legalMessage) {
 		for( String key : _varParams.keySet() )
 		{
-			boolean found = false;
-			for (String name : validParamNames) {
-				found |= name.equals(key);
-			}
+			boolean found = validParamNames.contains(key);
 			if( !found ) {
 				raiseValidateError("unexpected parameter \"" + key + "\". "
 						+ legalMessage, conditional);

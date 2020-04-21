@@ -97,7 +97,7 @@ public class OutputParameters
 		_num_cols = input._num_cols;
 		_blocksize = input._blocksize;
 	}
-
+	
 	public FileFormat getFormat() {
 		return matrix_format;
 	}

@@ -422,7 +422,7 @@ public class Data extends Lop
 			sb.append( oparams.getNnz() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getUpdateType().toString().toLowerCase() );
-
+			
 			// Format-specific properties
 			if ( oparams.getFormat() == FileFormat.CSV ) {
 				sb.append( OPERAND_DELIMITOR );

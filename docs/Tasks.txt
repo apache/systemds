@@ -165,6 +165,7 @@ SYSTEMDS-200 Various Fixes
  * 204 Fix rewrite simplify sequences of binary comparisons           OK
  * 205 Fix scoping of builtin dml-bodied functions (vs user-defined)
  * 206 Fix codegen outer template compilation (tsmm)                  OK
+ * 207 Fix builtin function call hoisting from expressions            OK
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK

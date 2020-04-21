@@ -35,6 +35,7 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	private final static String TEST_NAME4 = "FunInExpression4";
 	private final static String TEST_NAME5 = "FunInExpression5";
 	private final static String TEST_NAME6 = "FunInExpression6";
+	private final static String TEST_NAME7 = "FunInExpression7"; //dml-bodied builtin
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionInExpressionTest.class.getSimpleName() + "/";
@@ -48,6 +49,7 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "R" }) );
 	}
 
 	@Test
@@ -78,6 +80,11 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	@Test
 	public void testFunInExpression6() {
 		runFunInExpressionTest( TEST_NAME6 );
+	}
+	
+	@Test
+	public void testFunInExpression7() {
+		runFunInExpressionTest( TEST_NAME7 );
 	}
 	
 	private void runFunInExpressionTest( String testName )

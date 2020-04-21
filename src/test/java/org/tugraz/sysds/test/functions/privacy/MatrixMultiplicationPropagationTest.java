@@ -73,7 +73,6 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		loadTestConfiguration(config);
 		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
 		programArgs = new String[]{
-			"-explain",
 			"-nvargs", 
 			"a=" + input("a"),
 			"b=" + input("b"),
@@ -123,7 +122,6 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		loadTestConfiguration(config);
 		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
 		programArgs = new String[]{
-			"-explain",
 			"-nvargs", 
 			"a=" + input("a"),
 			"b=" + input("b"),

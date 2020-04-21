@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -136,15 +135,6 @@ public abstract class Instruction
 	}
 
 	public void setPrivacyConstraint(Lop lop){
-		//privacyConstraint = lop.getInputs().get(0)
-		//privacyConstraint = new PrivacyConstraint();
-		/*if ( lop instanceof Data){
-			Data dlop = (Data) lop;
-			Data privacyData = (Data) dlop.getInputParams().get("privacy");
-			if ( privacyData != null ){
-				privacyConstraint = new PrivacyConstraint(privacyData.getBooleanValue());
-			}
-		}*/
 		privacyConstraint = lop.getPrivacyConstraint();
 	}
 

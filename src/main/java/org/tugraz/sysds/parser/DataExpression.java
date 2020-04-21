@@ -2079,11 +2079,6 @@ public class DataExpression extends DataIdentifier
     		Object key = e.getKey();
     		Object val = e.getValue();
 			
-    		//boolean isValidName = false;
-    		//for (String paramName : READ_VALID_MTD_PARAM_NAMES){
-			//	if (paramName.equals(key))
-			//		isValidName = true;
-			//}
 			boolean isValidName = READ_VALID_MTD_PARAM_NAMES.contains(key);
     		
 			if (!isValidName){ //wrong parameters always rejected

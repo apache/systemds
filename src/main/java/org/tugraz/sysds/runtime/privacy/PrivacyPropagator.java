@@ -1,5 +1,9 @@
 package org.tugraz.sysds.runtime.privacy;
 
+/**
+ * Class with static methods merging privacy constraints of operands 
+ * in expressions to generate the privacy constraints of the output. 
+ */
 public class PrivacyPropagator {
 
     public static PrivacyConstraint MergeBinary(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2) {

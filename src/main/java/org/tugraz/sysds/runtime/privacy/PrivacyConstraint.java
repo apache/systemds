@@ -19,6 +19,9 @@
 
 package org.tugraz.sysds.runtime.privacy;
 
+/**
+ * PrivacyConstraint holds all privacy constraints for data in the system at compile time and runtime. 
+ */
 public class PrivacyConstraint
 {
     protected boolean _privacy = false;

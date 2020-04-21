@@ -36,7 +36,6 @@ import org.tugraz.sysds.lops.Sql;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.privacy.PrivacyConstraint;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
 
 import java.util.HashMap;
@@ -285,8 +284,6 @@ public class DataOp extends Hop
 				l = new Data(_op, null, inputLops, getName(), null, 
 						getDataType(), getValueType(), getInputFormatType());
 				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
-				//TODO: Add privacy to other cases
-				//l.getOutputParameters().setPrivacy(_privacyConstraint);
 				break;
 				
 			case PERSISTENTWRITE:

@@ -165,6 +165,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	protected MetaData _metaData = null;
 
+	/**
+	 * Object holding all privacy constraints associated with the cacheable data. 
+	 */
 	protected PrivacyConstraint _privacyConstraint = null;
 	
 	/** The name of HDFS file in which the data is backed up. */

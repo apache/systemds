@@ -534,7 +534,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				obj.setMarkForLinCache(true);
 				obj.enableCleanup(!getInput1().getName()
 					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
-				//obj.setPrivacyConstraints(ec.getCacheableData(getInput1().getName() ).getPrivacyConstraint() );
 				ec.setVariable(getInput1().getName(), obj);
 
 				obj.setUpdateType(_updateType);

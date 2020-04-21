@@ -32,36 +32,56 @@ import org.tugraz.sysds.test.TestUtils;
 public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/privacy/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixMultiplicationPropagationTest.class.getSimpleName()
-			+ "/";
-	private int m = 20;
-	private int n = 20;
-	private int k = 20;
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixMultiplicationPropagationTest.class.getSimpleName() + "/";
+	private final int m = 20;
+	private final int n = 20;
+	private final int k = 20;
 
 	@Override
 	public void setUp() {
-		TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, "MatrixMultiplicationPropagationTest", new String[] { "c" });
-		config.addVariable("m", m);
-		config.addVariable("n1", n);
-		config.addVariable("n2", n);
-		config.addVariable("k", k);
+		TestConfiguration config = new TestConfiguration(
+			TEST_CLASS_DIR, 
+			"MatrixMultiplicationPropagationTest", 
+			new String[] { "c" }
+		);
 		addTestConfiguration("MatrixMultiplicationPropagationTest",config);
 	}
 
 	@Test
 	public void testMatrixMultiplicationPropagation() throws JSONException {
-		matrixMultiplicationPropagation(true);
+		matrixMultiplicationPropagation(true, true);
 	}
 
 	@Test
 	public void testMatrixMultiplicationPropagationFalse() throws JSONException {
-		matrixMultiplicationPropagation(false);
+		matrixMultiplicationPropagation(false, true);
 	}
 
-	private void matrixMultiplicationPropagation(boolean privacy) throws JSONException {
+	@Test
+	public void testMatrixMultiplicationPropagationSecondOperand() throws JSONException {
+		matrixMultiplicationPropagation(true, false);
+	}
+
+	@Test
+	public void testMatrixMultiplicationPropagationSecondOperandFalse() throws JSONException {
+		matrixMultiplicationPropagation(false, false);
+	}
+
+	private void matrixMultiplicationPropagation(boolean privacy, boolean privateFirstOperand) throws JSONException {
 
 		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationPropagationTest");
 		loadTestConfiguration(config);
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
+		programArgs = new String[]{
+			"-explain",
+			"-nvargs", 
+			"a=" + input("a"),
+			"b=" + input("b"),
+			"c=" + output("c"),
+			"m=" + m,
+			"n=" + n,
+			"k=" + k
+		};
 
 		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
 		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
@@ -69,45 +89,25 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		
 		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacy);
 		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
+
+		if ( privateFirstOperand )
+		{
+			writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
+			writeInputMatrix("b", b);
+		} else 
+		{
+			writeInputMatrix("a", a);
+			writeInputMatrixWithMTD("b", b, false, dataCharacteristics, privacyConstraint);
+		}
 		
-		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
-		writeInputMatrix("b", b);
 		writeExpectedMatrix("c", c);
 
-		runTest();
+		runTest(true,false,null,-1);
 
-		String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-		assertEquals(String.valueOf(privacy), actualPrivacyValue);
-	}
+		// Check that the output data is correct
+		compareResults(1e-9);
 
-	@Test
-	public void testMatrixMultiplicationPropagationSecondOperand() throws JSONException {
-		matrixMultiplicationPropagationSecondOperand(true);
-	}
-
-	@Test
-	public void testMatrixMultiplicationPropagationSecondOperandFalse() throws JSONException {
-		matrixMultiplicationPropagationSecondOperand(false);
-	}
-
-	private void matrixMultiplicationPropagationSecondOperand(boolean privacy) throws JSONException {
-
-		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationPropagationTest");
-		loadTestConfiguration(config);
-
-		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
-		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
-		double[][] c = TestUtils.performMatrixMultiplication(a, b);
-		
-		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacy);
-		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(n,k,k,k);
-		
-		writeInputMatrix("a", a);
-		writeInputMatrixWithMTD("b", b, false, dataCharacteristics, privacyConstraint);
-		writeExpectedMatrix("c", c);
-
-		runTest();
-
+		// Check that the output metadata is correct
 		String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
 		assertEquals(String.valueOf(privacy), actualPrivacyValue);
 	}
@@ -121,6 +121,17 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 
 		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationPropagationTest");
 		loadTestConfiguration(config);
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + config.getTestScript() + ".dml";
+		programArgs = new String[]{
+			"-explain",
+			"-nvargs", 
+			"a=" + input("a"),
+			"b=" + input("b"),
+			"c=" + output("c"),
+			"m=" + m,
+			"n=" + n,
+			"k=" + k
+		};
 
 		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
 		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
@@ -131,8 +142,13 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		writeInputMatrix("b", b);
 		writeExpectedMatrix("c", c);
 
-		runTest();
+		runTest(true,false,null,-1);
 
+		// Check that the output data is correct
+		compareResults(1e-9);
+
+		// Check that a JSONException is thrown 
+		// because no privacy metadata should be written to c
 		boolean JSONExceptionThrown = false;
 		try{
 			readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);

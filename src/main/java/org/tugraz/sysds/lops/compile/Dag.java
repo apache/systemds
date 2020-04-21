@@ -600,6 +600,7 @@ public class Dag<N extends Lop>
 					}
 					if (node._beginLine != 0)
 					{
+						//TODO: Set Privacy in string as well
 						currInstr.setLocation(node);
 						currInstr.setPrivacyConstraint(node);
 					}

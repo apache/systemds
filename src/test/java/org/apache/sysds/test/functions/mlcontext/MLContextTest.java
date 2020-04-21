@@ -1063,22 +1063,6 @@ public class MLContextTest extends MLContextTestBase {
 		ml.execute(script);
 	}
 
-	@Test(expected = MLContextException.class)
-	public void testJavaRDDBadMetadataPYDML() {
-		System.out.println("MLContextTest - JavaRDD<String> bad metadata PYML");
-
-		List<String> list = new ArrayList<>();
-		list.add("1,2,3");
-		list.add("4,5,6");
-		list.add("7,8,9");
-		JavaRDD<String> javaRDD = sc.parallelize(list);
-
-		MatrixMetadata mm = new MatrixMetadata(1, 1, 9);
-
-		Script script = dml("print('sum: ' + sum(M))").in("M", javaRDD, mm);
-		ml.execute(script);
-	}
-
 	@Test
 	public void testRDDGoodMetadataDML() {
 		System.out.println("MLContextTest - RDD<String> good metadata DML");
@@ -1274,28 +1258,6 @@ public class MLContextTest extends MLContextTestBase {
 	}
 
 	@Test
-	public void testDataFrameSumPYDMLVectorWithIDColumnNoFormatSpecified() {
-		System.out.println("MLContextTest - DataFrame sum PYDML, vector with ID column, no format specified");
-
-		List<Tuple2<Double, Vector>> list = new ArrayList<>();
-		list.add(new Tuple2<>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
-		list.add(new Tuple2<>(2.0, Vectors.dense(4.0, 5.0, 6.0)));
-		list.add(new Tuple2<>(3.0, Vectors.dense(7.0, 8.0, 9.0)));
-		JavaRDD<Tuple2<Double, Vector>> javaRddTuple = sc.parallelize(list);
-
-		JavaRDD<Row> javaRddRow = javaRddTuple.map(new DoubleVectorRow());
-		List<StructField> fields = new ArrayList<>();
-		fields.add(DataTypes.createStructField(RDDConverterUtils.DF_ID_COLUMN, DataTypes.DoubleType, true));
-		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
-		StructType schema = DataTypes.createStructType(fields);
-		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
-
-		Script script = dml("print('sum: ' + sum(M))").in("M", dataFrame);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
-	}
-
-	@Test
 	public void testDataFrameSumDMLVectorWithNoIDColumnNoFormatSpecified() {
 		System.out.println("MLContextTest - DataFrame sum DML, vector with no ID column, no format specified");
 
@@ -1312,27 +1274,6 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
-	}
-
-	@Test
-	public void testDataFrameSumPYDMLVectorWithNoIDColumnNoFormatSpecified() {
-		System.out.println("MLContextTest - DataFrame sum PYDML, vector with no ID column, no format specified");
-
-		List<Vector> list = new ArrayList<>();
-		list.add(Vectors.dense(1.0, 2.0, 3.0));
-		list.add(Vectors.dense(4.0, 5.0, 6.0));
-		list.add(Vectors.dense(7.0, 8.0, 9.0));
-		JavaRDD<Vector> javaRddVector = sc.parallelize(list);
-
-		JavaRDD<Row> javaRddRow = javaRddVector.map(new VectorRow());
-		List<StructField> fields = new ArrayList<>();
-		fields.add(DataTypes.createStructField("C1", new VectorUDT(), true));
-		StructType schema = DataTypes.createStructType(fields);
-		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
-
-		Script script = dml("print('sum: ' + sum(M))").in("M", dataFrame);
 		setExpectedStdOut("sum: 45.0");
 		ml.execute(script);
 	}

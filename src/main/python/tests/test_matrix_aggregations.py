@@ -1,4 +1,6 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
+#
+# Modifications Copyright 2020 Graz University of Technology
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +19,8 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
+
 
 # Make the `systemds` package importable
 import os
@@ -28,15 +31,15 @@ import numpy as np
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
-from systemds.context import SystemDSContext
+
+from systemds.matrix import Matrix, full, seq
+from systemds.utils import helpers
 
 dim = 5
 m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)
 m1.shape = (dim, dim)
 m2 = np.array(np.random.randint(5, size=dim * dim) + 1, dtype=np.double)
 m2.shape = (dim, dim)
-
-sds = SystemDSContext()
 
 
 class TestMatrixAggFn(unittest.TestCase):
@@ -52,39 +55,39 @@ class TestMatrixAggFn(unittest.TestCase):
                                 category=ResourceWarning)
 
     def test_sum1(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).sum().compute(), m1.sum()))
+        self.assertTrue(np.allclose(Matrix(m1).sum().compute(), m1.sum()))
 
     def test_sum2(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).sum(axis=0).compute(), m1.sum(axis=0)))
+        self.assertTrue(np.allclose(Matrix(m1).sum(axis=0).compute(), m1.sum(axis=0)))
 
     def test_sum3(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).sum(axis=1).compute(), m1.sum(axis=1).reshape(dim, 1)))
+        self.assertTrue(np.allclose(Matrix(m1).sum(axis=1).compute(), m1.sum(axis=1).reshape(dim, 1)))
 
     def test_mean1(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).mean().compute(), m1.mean()))
+        self.assertTrue(np.allclose(Matrix(m1).mean().compute(), m1.mean()))
 
     def test_mean2(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).mean(axis=0).compute(), m1.mean(axis=0)))
+        self.assertTrue(np.allclose(Matrix(m1).mean(axis=0).compute(), m1.mean(axis=0)))
 
     def test_mean3(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).mean(axis=1).compute(), m1.mean(axis=1).reshape(dim, 1)))
+        self.assertTrue(np.allclose(Matrix(m1).mean(axis=1).compute(), m1.mean(axis=1).reshape(dim, 1)))
 
     def test_full(self):
-        self.assertTrue(np.allclose(sds.full((2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
+        self.assertTrue(np.allclose(full((2, 3), 10.1).compute(), np.full((2, 3), 10.1)))
 
     def test_seq(self):
-        self.assertTrue(np.allclose(sds.seq(3).compute(), np.arange(4).reshape(4, 1)))
+        self.assertTrue(np.allclose(seq(3).compute(), np.arange(4).reshape(4, 1)))
 
     def test_var1(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).var().compute(), m1.var(ddof=1)))
+        self.assertTrue(np.allclose(Matrix(m1).var().compute(), m1.var(ddof=1)))
 
     def test_var2(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).var(axis=0).compute(), m1.var(axis=0, ddof=1)))
+        self.assertTrue(np.allclose(Matrix(m1).var(axis=0).compute(), m1.var(axis=0, ddof=1)))
 
     def test_var3(self):
-        self.assertTrue(np.allclose(sds.matrix(m1).var(axis=1).compute(), m1.var(axis=1, ddof=1).reshape(dim, 1)))
+        self.assertTrue(np.allclose(Matrix(m1).var(axis=1).compute(), m1.var(axis=1, ddof=1).reshape(dim, 1)))
 
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    sds.close()
+    helpers.shutdown()

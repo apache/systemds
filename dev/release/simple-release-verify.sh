@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #-------------------------------------------------------------
 #
+# Modifications Copyright 2020 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -175,7 +177,7 @@ cd $EXEC_DIR/src/test/java
 if [[ "$COMPILE_CODE" == "true" ]]; then
     echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Compiling release verify utility..."
 
-    javac -Xlint:unchecked -classpath ../../../target/release/systemds/target/lib/commons-compress-1.4.1.jar:../../../target/release/systemds/target/lib/commons-io-2.4.jar:. org/apache/sysds/validation/*.java
+    javac -Xlint:unchecked -classpath ../../../target/release/systemds/target/lib/commons-compress-1.4.1.jar:../../../target/release/systemds/target/lib/commons-io-2.4.jar:. org/tugraz/sysds/validation/*.java
 
     cd "$ORIG_DIR" # Return to directory from it was called.
     exit 0
@@ -219,7 +221,7 @@ if [[ "$BIN_VERIFY" == "true" ]]; then
     cd systemds-$TAG-src
     mvn clean package -P distribution -DskipTests
     cd target
-    java -cp "./lib/*:SystemDS.jar" org.apache.sysds.api.DMLScript -s "print('hello world');"
+    java -cp "./lib/*:SystemDS.jar" org.tugraz.sysds.api.DMLScript -s "print('hello world');"
     cd ../..
     echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of source archive completed successfully."
 
@@ -230,7 +232,7 @@ fi
 if [[ "$LIC_NOTICE_VERIFY" == "true" ]]; then
     echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying license and notices from zip/tgz/tar.gz files..."
 
-    java -classpath ../../../target/release/systemds/target/lib/commons-compress-1.4.1.jar:../../../target/release/systemds/target/lib/commons-io-2.4.jar:. org/apache/sysds/validation/ValidateLicAndNotice $DIST_DIR
+    java -classpath ../../../target/release/systemds/target/lib/commons-compress-1.4.1.jar:../../../target/release/systemds/target/lib/commons-io-2.4.jar:. org/tugraz/sysds/validation/ValidateLicAndNotice $DIST_DIR
     RET_CODE=$?
     if [[ $RET_CODE == 0 ]]; then
        echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verification of license and notices completed successfully."

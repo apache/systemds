@@ -1,5 +1,7 @@
 #-------------------------------------------------------------
 #
+# Modifications Copyright 2020 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -30,26 +32,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+        java: [ 1.8 ]
     name: Component Tests ${{ matrix.os }}
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: Setup Java 1.8
+    - name: Setup Java
       uses: actions/setup-java@v1
       with:
-        java-version: 1.8
-
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+        java-version: ${{ matrix.java }}
 
     - name: Maven clean compile & test-compile
       run: mvn clean compile test-compile
 
     - name: Component Tests
-      run: mvn surefire:test -DskipTests=false -Dtest=org.apache.sysds.test.component.*.**
+      run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.component.*.**

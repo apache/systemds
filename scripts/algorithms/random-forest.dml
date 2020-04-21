@@ -1,5 +1,7 @@
 #-------------------------------------------------------------
 #
+# Modifications Copyright 2019 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -70,7 +72,7 @@
 
 # External function for binning
 binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
-	implemented in (classname="org.apache.sysds.udf.lib.BinningWrapper",exectype="mem")
+	implemented in (classname="org.tugraz.sysds.udf.lib.BinningWrapper",exectype="mem")
 
 	
 # Default values of some parameters	

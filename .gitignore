@@ -37,10 +37,6 @@ buildNumber.properties
 .metadata
 .cache*
 
-# Documentation artifacts
-.jekyll-cache/
-_site/
-
 # Python artifacts
 src/main/python/systemds/systemds-java/
 src/main/python/systemds.egg-info/
@@ -74,10 +70,10 @@ src/test/scripts/functions/mlcontextin/
 # Use the command above on these files:
 # src/main/java/Dml.tokens
 # src/main/java/DmlLexer.tokens
-# src/main/java/org/apache/sysds/parser/dml/DmlBaseListener.java
-# src/main/java/org/apache/sysds/parser/dml/DmlLexer.java
-# src/main/java/org/apache/sysds/parser/dml/DmlListener.java
-# src/main/java/org/apache/sysds/parser/dml/DmlParser.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlBaseListener.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlLexer.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlListener.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlParser.java
 
 src/test/scripts/**/in
 src/test/scripts/**/out

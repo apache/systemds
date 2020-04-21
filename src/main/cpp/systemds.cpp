@@ -69,12 +69,12 @@
 // -------------------------------------------------------------------
 
 int maxThreads = -1;
-JNIEXPORT void JNICALL Java_org_apache_sysds_utils_NativeHelper_setMaxNumThreads
+JNIEXPORT void JNICALL Java_org_tugraz_sysds_utils_NativeHelper_setMaxNumThreads
   (JNIEnv *, jclass, jint jmaxThreads) {
   maxThreads = (int) jmaxThreads;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_dmmdd(
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_dmmdd(
     JNIEnv* env, jclass cls, jdoubleArray m1, jdoubleArray m2, jdoubleArray ret,
     jint m1rlen, jint m1clen, jint m2clen, jint numThreads)
 {
@@ -92,7 +92,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_dmmdd(
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_smmdd(
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_smmdd(
     JNIEnv* env, jclass cls, jobject m1, jobject m2, jobject ret,
     jint m1rlen, jint m1clen, jint m2clen, jint numThreads)
 {
@@ -107,7 +107,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_smmdd(
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_tsmm
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_tsmm
   (JNIEnv * env, jclass cls, jdoubleArray m1, jdoubleArray ret, jint m1rlen, jint m1clen, jboolean leftTrans, jint numThreads) {
   double* m1Ptr = GET_DOUBLE_ARRAY(env, m1, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
@@ -121,7 +121,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_tsmm
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dSparse
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dSparse
   (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -140,7 +140,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dSparse
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardFilterSparseDense
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dBackwardFilterSparseDense
   (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jdoubleArray dout,  
   	jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -159,7 +159,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwa
   return (jboolean) true;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dDense(
     JNIEnv* env, jclass, jdoubleArray input, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads)
@@ -180,7 +180,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dDense(
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_dconv2dBiasAddDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_dconv2dBiasAddDense(
     JNIEnv* env, jclass, jdoubleArray input, jdoubleArray bias, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads)
@@ -203,7 +203,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_dconv2dBiasAddDe
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_sconv2dBiasAddDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_sconv2dBiasAddDense(
     JNIEnv* env, jclass, jobject input, jobject bias, jobject filter,
     jobject ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) 
@@ -222,7 +222,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_sconv2dBiasAddDe
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardDataDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dBackwardDataDense(
 	JNIEnv* env, jclass, jdoubleArray filter, jdoubleArray dout,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -242,7 +242,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardDa
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysds_utils_NativeHelper_conv2dBackwardFilterDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dBackwardFilterDense(
 	JNIEnv* env, jclass, jdoubleArray input, jdoubleArray dout,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {

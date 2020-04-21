@@ -1,5 +1,7 @@
 #-------------------------------------------------------------
 #
+# Copyright 2020 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -42,7 +44,7 @@ RUN apk update && \
     apk add git && \ 
     apk add bash
 
-RUN git clone https://github.com/apache/systemml.git
+RUN git clone https://github.com/tugraz-isds/systemds.git
 
 WORKDIR /usr/src/systemds/
 

@@ -6,10 +6,10 @@ GENERAL NOTES:
 
 SYSTEMDS-10 Compiler Rework / Misc
  * 11 Support DML-bodied builtin functions                            OK
- * 12 Remove unnecessary HOP/LOP indirections                         OK
+ * 12 Remove unnecessary HOP/LOP indirections
  * 13 Refactoring test cases into component/integration               OK
  * 14 Complete removal of external functions from all scripts
- * 15 Travis integration w/ subset of tests                           OK (removed for Github Actions)
+ * 15 Travis integration w/ subset of tests                           OK
  * 16 Remove instruction patching
  * 17 Refactoring of program block hierarchy                          OK
  * 18 Improve API for new dml-bodied builtin functions                OK
@@ -47,8 +47,8 @@ SYSTEMDS-40 Preprocessing builtins
 
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)
- * 52 Support for libsvm files (local/distributed)
- * 53 New sql data source (local, distributed)                        
+ * 52 Support for libsvm files (local/distributed) 
+ * 53 New sql data source (local, distributed)
  * 54 Support for is.na, is.nan, is.infinite                          OK
 
 SYSTEMDS-60 Update SystemML improvements
@@ -91,7 +91,7 @@ SYSTEMDS-110 New Builtin Functions
  * 115 Builtin function for model debugging (slice finder)            OK
  * 116 Builtin function for kmeans                                    OK
  * 117 Builtin function for lm cross validation                       OK
- * 118 Builtin function for hyperparameter grid search                
+ * 118 Builtin function for hyperparameter grid search with CVlm
  * 119 Builtin functions for l2svm and msvm                           OK
 
 SYSTEMDS-120 Performance Features
@@ -205,7 +205,6 @@ SYSTEMDS-250 Extended Slice Finding
 SYSTEMDS-260 Misc Tools
  * 261 Stable marriage algorithm                                      OK
  * 262 Data augmentation tool for data cleaning                       OK
- * 263 ONNX graph importer/exporter
 
 SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK
@@ -232,27 +231,6 @@ SYSTEMDS-310 Python Bindings
  * 311 Initial Python Binding for federated execution                 OK
  * 312 Python 3.6 compatibility                                       OK
  * 313 Python Documentation upload via Github Actions                 OK
- * 314 Python SystemDS context manager                                OK
-
-SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
- * 321 Merge histories of SystemDS and SystemML                       OK
- * 322 Change global package names                                    OK
- * 323 Fix licenses and notice file                                   OK 
- 
-SYSTEMDS-330 Lineage Tracing, Reuse and Integration
- * 331 Cache and reuse scalar outputs (instruction and multi-level)   OK
- * 332 Parfor integration with multi-level reuse                      OK
- * 333 Use exact execution time for cost based eviction
- 
-SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
- * 341 Finalize unmarking of loop dependent operations
- * 342 Mark functions as last-use to enable early eviction
- * 343 Identify equal last level HOPs to ensure SB-level reuse
- * 344 Unmark functions/SBs containing non-determinism for caching
- * 345 Compiler assisted cache configuration
-
-SYSTEMDS-350 Data Cleaning Framework
- * 351 New builtin function for error correction by schema            OK
 
 Others:
  * Break append instruction to cbind and rbind 

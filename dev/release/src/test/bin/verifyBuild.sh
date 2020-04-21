@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #-------------------------------------------------------------
 #
+# Modifications Copyright 2019 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -100,7 +102,7 @@ echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Cloning branch and building distribution 
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Cloning branch and building distribution package." >> $OUT_FILE
 echo "=========================================================================================================" >> $OUT_FILE
 runCommand "cd $WORKING_DIR"
-runCommand "git clone https://github.com/apache/systemml.git"
+runCommand "git clone https://github.com/tugraz-isds/systemds.git"
 runCommand "cd systemds"
 runCommand "git checkout tags/$TAG_NAME -b $TAG_NAME"
 runCommand "mvn -Dmaven.repo.local=$HOME/.m2/temp-repo clean package -P distribution"
@@ -152,8 +154,8 @@ runCommand "tar -xvzf systemds-$VER_NAME-src.tgz"
 runCommand "cd systemds-$VER_NAME-src"
 runCommand "mvn clean package -P distribution"
 runCommand "cd target"
-runCommand "java -cp \"./lib/*:systemds-$VER_NAME.jar\" org.apache.sysds.api.DMLScript -s \"print('hello world');\""
-runCommand "java -cp \"./lib/*:SystemDS.jar\" org.apache.sysds.api.DMLScript -s \"print('hello world');\""
+runCommand "java -cp \"./lib/*:systemds-$VER_NAME.jar\" org.tugraz.sysds.api.DMLScript -s \"print('hello world');\""
+runCommand "java -cp \"./lib/*:SystemDS.jar\" org.tugraz.sysds.api.DMLScript -s \"print('hello world');\""
 runCommand "cd ../.."
 
 ## Verify Spark batch mode

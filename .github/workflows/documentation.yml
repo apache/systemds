@@ -1,5 +1,7 @@
 #-------------------------------------------------------------
 #
+# Modifications Copyright 2020 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -31,22 +33,13 @@ jobs:
     runs-on: ubuntu-latest
     name: Documentation Java
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-    - name: Setup Java 1.8
+    - name: Setup Java
       uses: actions/setup-java@v1
       with:
-        java-version: 1.8
+        java-version:  1.8
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-  
     - name: Make Documentation SystemDS Java
       run: mvn -P distribution package
 
@@ -60,23 +53,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Documentation Python
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
     - name: Setup Python
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
         architecture: 'x64'
-
-    - name: Cache Pip Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-docs-${{ hashFiles('src/main/python/docs/requires-docs.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-docs-
-
+        
     - name: Install Dependencies
       run: |
         cd src/main/python/docs

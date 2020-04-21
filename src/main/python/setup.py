@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-#-------------------------------------------------------------
+# -------------------------------------------------------------
+#
+# Modifications Copyright 2020 Graz University of Technology
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,7 +20,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 from __future__ import print_function
 import sys
@@ -62,9 +64,9 @@ setup(
      - that either provide homogeneous tensors or 2D Datasets - and in order to serve the entire
      data science lifecycle, the underlying data model are DataTensors, i.e.,
      tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.''',
-    url='https://github.com/apache/systemml',
+    url='https://github.com/tugraz-isds/systemds',
     author='SystemDS',
-    author_email='dev@systemml.apache.org',
+    author_email='damslab@mlist.tugraz.at',
     packages=find_packages(),
     install_requires=REQUIRED_PACKAGES,
     include_package_data=True,

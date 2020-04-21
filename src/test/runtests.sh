@@ -1,23 +1,23 @@
 #/bin/bash
 #-------------------------------------------------------------
+#  Modifications Copyright 2020 Graz University of Technology
 #
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
 # under the License.
-#
 #-------------------------------------------------------------
 
 <<COMMENT
@@ -48,32 +48,32 @@ if [[ $build == *"SUCCESS"* ]]; then
 	# TODO: make all tests not use the same scratchspace file.
 
 	# Applications TOTAL ~6min
-	mvn surefire:test -Dtest=org.apache.sysds.test.applications.** | grep $grep_args | tee -a $resfile
+	mvn surefire:test -Dtest=org.tugraz.sysds.test.applications.** | grep $grep_args | tee -a $resfile
 
 	# Component TOTAL ~13 sec
-	mvn surefire:test -Dtest=org.apache.sysds.test.component.** 2>&1 | grep $grep_args | tee -a $resfile
+	mvn surefire:test -Dtest=org.tugraz.sysds.test.component.** 2>&1 | grep $grep_args | tee -a $resfile
 
 	# Functions Total: ~ 1hour 10min
 	
 	# ~ 13 min
-	mvn surefire:test -Dtest=org.apache.sysds.test.functions.a*.**,org.apache.sysds.test.functions.b*.**, 2>&1 | grep $grep_args | tee -a $resfile
+	mvn surefire:test -Dtest=org.tugraz.sysds.test.functions.a*.**,org.tugraz.sysds.test.functions.b*.**, 2>&1 | grep $grep_args | tee -a $resfile
 	
 	# ~ 9 min
-	mvn surefire:test -Dtest=org.apache.sysds.test.functions.c*.** 2>&1 | grep $grep_args | tee -a $resfile
+	mvn surefire:test -Dtest=org.tugraz.sysds.test.functions.c*.** 2>&1 | grep $grep_args | tee -a $resfile
 	
 	# ~ ?? Does not end
 	# TODO: Look into Data tests.
-	# mvn surefire:test -Dtest=org.apache.sysds.test.functions.d*.** 2>&1 | grep $grep_args | tee -a $resfile
+	# mvn surefire:test -Dtest=org.tugraz.sysds.test.functions.d*.** 2>&1 | grep $grep_args | tee -a $resfile
 	
 	# ~ 10 min
-	mvn surefire:test -Dtest=org.apache.sysds.test.functions.f*.**,org.apache.sysds.test.functions.i*.**,org.apache.sysds.test.functions.j*.**,org.apache.sysds.test.functions.l*.**,org.apache.sysds.test.functions.m*.** 2>&1 | grep $grep_args | tee -a $resfile
+	mvn surefire:test -Dtest=org.tugraz.sysds.test.functions.f*.**,org.tugraz.sysds.test.functions.i*.**,org.tugraz.sysds.test.functions.j*.**,org.tugraz.sysds.test.functions.l*.**,org.tugraz.sysds.test.functions.m*.** 2>&1 | grep $grep_args | tee -a $resfile
 	
 	# ~ 19 min
-	mvn surefire:test -Dtest=org.apache.sysds.test.functions.n*.**,org.apache.sysds.test.functions.par*.**,org.apache.sysds.test.functions.q*.**,org.apache.sysds.test.functions.r*.**,org.apache.sysds.test.functions.t*.**,org.apache.sysds.test.functions.u*.**,org.apache.sysds.test.functions.v*.** 2>&1 | grep $grep_args | tee -a $resfile
+	mvn surefire:test -Dtest=org.tugraz.sysds.test.functions.n*.**,org.tugraz.sysds.test.functions.par*.**,org.tugraz.sysds.test.functions.q*.**,org.tugraz.sysds.test.functions.r*.**,org.tugraz.sysds.test.functions.t*.**,org.tugraz.sysds.test.functions.u*.**,org.tugraz.sysds.test.functions.v*.** 2>&1 | grep $grep_args | tee -a $resfile
 
 	# ~ 4 min
 	# Large resoruce requirements:
-	mvn surefire:test -Dtest=org.apache.sysds.test.functions.parameterserv* | grep $grep_args | tee -a $resfile
+	mvn surefire:test -Dtest=org.tugraz.sysds.test.functions.parameterserv* | grep $grep_args | tee -a $resfile
 
 
 else

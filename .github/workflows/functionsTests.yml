@@ -1,7 +1,5 @@
 #-------------------------------------------------------------
 #
-# Modifications Copyright 2020 Graz University of Technology
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -49,7 +47,8 @@ jobs:
           builtin,
           caching,
           codegen,
-          codegenalg,
+          codegenalg.partone,
+          codegenalg.parttwo,
           data.misc,
           data.rand,
           data.tensor,
@@ -78,11 +77,12 @@ jobs:
         os: [ubuntu-latest]
     name:  Func Test ${{ matrix.tests }} 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
     - name: Run all tests starting with "${{ matrix.tests }}"
       uses: ./.github/action/
       id: test
       with:
-        test-to-run: org.tugraz.sysds.test.functions.${{ matrix.tests }}.**
+        test-to-run: org.apache.sysds.test.functions.${{ matrix.tests }}.**
 

@@ -1,7 +1,5 @@
 <!--
 {% comment %}
-Modifications Copyright 2020 Graz University of Technology
-
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
 this work for additional information regarding copyright ownership.
@@ -25,7 +23,7 @@ limitations under the License.
 
  SystemDS is a versatile system for the end-to-end data science lifecycle from data integration, cleaning, and feature engineering, over efficient, local and distributed ML model training, to deployment and serving. To this end, we aim to provide a stack of declarative languages with R-like syntax for (1) the different tasks of the data-science lifecycle, and (2) users with different expertise. These high-level scripts are compiled into hybrid execution plans of local, in-memory CPU and GPU operations, as well as distributed operations on Apache Spark. In contrast to existing systems - that either provide homogeneous tensors or 2D Datasets - and in order to serve the entire data science lifecycle, the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.
 
-**Documentation:** [SystemDS Documentation](https://github.com/tugraz-isds/systemds/tree/master/docs)
+**Documentation:** [SystemDS Documentation](https://github.com/apache/systemml/tree/master/docs)
 
 ## Getting started
 
@@ -108,4 +106,4 @@ Total execution time:           0,122 sec.
 
 ## Further reading 
 
-More documentation is available in the [docs directory of our github repository](https://github.com/tugraz-isds/systemds/tree/master/docs) 
+More documentation is available in the [docs directory of our github repository](https://github.com/apache/systemml/tree/master/docs) 

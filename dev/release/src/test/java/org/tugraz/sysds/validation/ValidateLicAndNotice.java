@@ -1,6 +1,4 @@
 /*
- * Modifications Copyright 2020 Graz University of Technology
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.validation;
+package org.apache.sysds.validation;
 
 import java.io.BufferedReader;
 import java.io.BufferedOutputStream;
@@ -659,8 +657,8 @@ public class ValidateLicAndNotice
 		boolean noticeLineIn[] = new boolean[4];
 
 // ToDo: fix notice lines
-		noticeLines[0] = "SystemDS";
-		noticeLines[1] = "Copyright [2018-" + currentTime.getYear() + "] Graz University of Technology";
+		noticeLines[0] = "Apache SystemDS";
+		noticeLines[1] = "Copyright [2015-" + currentTime.getYear() + "]";
 
 		BufferedReader reader = new BufferedReader(new FileReader(noticeFile));
 		String line = null;

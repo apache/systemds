@@ -1,38 +1,50 @@
-# ------------------------------------------------------------------------------
-#  Copyright 2020 Graz University of Technology
+#-------------------------------------------------------------
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-# ------------------------------------------------------------------------------
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
 
 __all__ = ['Matrix', 'federated', 'full', 'seq']
 
 import os
-from typing import Union, Optional, Iterable, Dict, Tuple, Sequence
+from typing import Union, Optional, Iterable, Dict, Tuple, Sequence, TYPE_CHECKING
 
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
 
 from systemds.utils.converters import numpy_to_matrix_block
-from systemds.script_building.dag import VALID_INPUT_TYPES
 from systemds.matrix.operation_node import OperationNode
 
+from systemds.utils.consts import VALID_INPUT_TYPES
+
+if TYPE_CHECKING:
+    # to avoid cyclic dependencies during runtime
+    from systemds.context import SystemDSContext
 
 # TODO maybe instead of having a new class we could have a function `matrix` instead, adding behaviour to
 #  `OperationNode` would be necessary
-class Matrix(OperationNode):
-    np_array: Optional[np.array]
 
-    def __init__(self, mat: Union[np.array, os.PathLike], *args: Sequence[VALID_INPUT_TYPES],
+
+class Matrix(OperationNode):
+    _np_array: Optional[np.array]
+
+    def __init__(self, sds_context: 'SystemDSContext', mat: Union[np.array, os.PathLike],
+                 *args: Sequence[VALID_INPUT_TYPES],
                  **kwargs: Dict[str, VALID_INPUT_TYPES]) -> None:
         """Generate DAGNode representing matrix with data either given by a numpy array, which will be sent to SystemDS
         on need, or a path pointing to a matrix.
@@ -44,19 +56,19 @@ class Matrix(OperationNode):
         if isinstance(mat, str):
             unnamed_params = [f'\'{mat}\'']
             named_params = {}
-            self.np_array = None
+            self._np_array = None
         else:
             unnamed_params = ['\'./tmp/{file_name}\'']  # TODO better alternative than format string?
             named_params = {'rows': -1, 'cols': -1}
-            self.np_array = mat
+            self._np_array = mat
         unnamed_params.extend(args)
         named_params.update(kwargs)
-        super().__init__('read', unnamed_params, named_params, is_python_local_data=self._is_numpy())
+        super().__init__(sds_context, 'read', unnamed_params, named_params, is_python_local_data=self._is_numpy())
 
     def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
         assert self.is_python_local_data, 'Can only pass data to prepared script if it is python local!'
         if self._is_numpy():
-            prepared_script.setMatrix(var_name, numpy_to_matrix_block(jvm, self.np_array), True)  # True for reuse
+            prepared_script.setMatrix(var_name, numpy_to_matrix_block(jvm, self._np_array), True)  # True for reuse
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
@@ -69,18 +81,20 @@ class Matrix(OperationNode):
         if self._is_numpy():
             if verbose:
                 print('[Numpy Array - No Compilation necessary]')
-            return self.np_array
+            return self._np_array
         else:
             return super().compute(verbose, lineage)
 
     def _is_numpy(self) -> bool:
-        return self.np_array is not None
+        return self._np_array is not None
 
 
-def federated(addresses: Iterable[str], ranges: Iterable[Tuple[Iterable[int], Iterable[int]]], *args,
+def federated(sds_context: 'SystemDSContext', addresses: Iterable[str],
+              ranges: Iterable[Tuple[Iterable[int], Iterable[int]]], *args,
               **kwargs) -> OperationNode:
     """Create federated matrix object.
 
+    :param sds_context: the SystemDS context
     :param addresses: addresses of the federated workers
     :param ranges: for each federated worker a pair of begin and end index of their held matrix
     :param args: unnamed params
@@ -94,26 +108,29 @@ def federated(addresses: Iterable[str], ranges: Iterable[Tuple[Iterable[int], It
     ranges_str += ')'
     named_params = {'addresses': addresses_str, 'ranges': ranges_str}
     named_params.update(kwargs)
-    return OperationNode('federated', args, named_params)
+    return OperationNode(sds_context, 'federated', args, named_params)
 
 
-def full(shape: Tuple[int, int], value: Union[float, int]) -> OperationNode:
+def full(sds_context: 'SystemDSContext', shape: Tuple[int, int], value: Union[float, int]) -> OperationNode:
     """Generates a matrix completely filled with a value
 
+    :param sds_context: SystemDS context
     :param shape: shape (rows and cols) of the matrix TODO tensor
     :param value: the value to fill all cells with
     :return: the OperationNode representing this operation
     """
     unnamed_input_nodes = [value]
     named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
-    return OperationNode('matrix', unnamed_input_nodes, named_input_nodes)
+    return OperationNode(sds_context, 'matrix', unnamed_input_nodes, named_input_nodes)
 
 
-def seq(start: Union[float, int], stop: Union[float, int] = None, step: Union[float, int] = 1) -> OperationNode:
+def seq(sds_context: 'SystemDSContext', start: Union[float, int], stop: Union[float, int] = None,
+        step: Union[float, int] = 1) -> OperationNode:
     """Create a single column vector with values from `start` to `stop` and an increment of `step`.
     If no stop is defined and only one parameter is given, then start will be 0 and the parameter will be interpreted as
     stop.
 
+    :param sds_context: SystemDS context
     :param start: the starting value
     :param stop: the maximum value
     :param step: the step size
@@ -123,4 +140,4 @@ def seq(start: Union[float, int], stop: Union[float, int] = None, step: Union[fl
         stop = start
         start = 0
     unnamed_input_nodes = [start, stop, step]
-    return OperationNode('seq', unnamed_input_nodes)
+    return OperationNode(sds_context, 'seq', unnamed_input_nodes)

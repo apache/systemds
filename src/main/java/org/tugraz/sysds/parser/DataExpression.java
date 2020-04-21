@@ -125,22 +125,37 @@ public class DataExpression extends DataIdentifier
 
 	// Valid parameter names in a metadata file
 	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =
-	new HashSet<String>(Arrays.asList(
-		new String[] {IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
-			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
-			AUTHORPARAM, CREATEDPARAM, 
-			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
-			// Parameters related to privacy
-			PRIVACY
-		}));
+		new HashSet<String>
+		(
+			Arrays.asList
+			(
+				new String[] 
+				{
+					IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
+					ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
+					AUTHORPARAM, CREATEDPARAM, 
+					// Parameters related to delimited/csv files.
+					DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
+					// Parameters related to privacy
+					PRIVACY
+				}
+			)
+		);
 
-	public static final String[] READ_VALID_PARAM_NAMES = 
-	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
-		ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
-			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
-	};
+	public static final Set<String> READ_VALID_PARAM_NAMES = 
+		new HashSet<String>
+		(
+			Arrays.asList
+			(
+				new String[] 
+				{	
+					IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
+					ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
+					// Parameters related to delimited/csv files.
+					DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
+				}
+			)
+		);
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -219,11 +234,8 @@ public class DataExpression extends DataIdentifier
 					return null;
 				}
 				// verify parameter names for read function
-				boolean isValidName = false;
-				for (String paramName : READ_VALID_PARAM_NAMES){
-					if (paramName.equals(currName))
-						isValidName = true;
-				}
+				boolean isValidName = READ_VALID_PARAM_NAMES.contains(currName);
+
 				if (!isValidName){
 					errorListener.validationError(parseInfo, "attempted to add invalid read statement parameter " + currName);
 					return null;

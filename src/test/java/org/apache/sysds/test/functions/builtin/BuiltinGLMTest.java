@@ -33,7 +33,8 @@ import org.junit.runners.Parameterized;
 
 import java.util.*;
 @RunWith(value = Parameterized.class)
-@net.jcip.annotations.NotThreadSafe
+
+
 public class BuiltinGLMTest extends AutomatedTestBase {
 
 	protected final static String TEST_NAME = "glmTest";
@@ -224,7 +225,7 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(inputDir(),
+			rCmd = getRCmd(input("X.mtx"), input("Y.mtx"),
 					String.valueOf(distFamilyType),
 					String.valueOf(distParam),
 					String.valueOf(linkType),

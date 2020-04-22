@@ -20,7 +20,6 @@
 #
 #-------------------------------------------------------------
 
-from __future__ import print_function
 import sys
 from setuptools import find_packages, setup
 import time
@@ -37,7 +36,7 @@ ARTIFACT_VERSION = __project_version__
 ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 
 REQUIRED_PACKAGES = [
-    'numpy >= 1.8.2',  # we might want to recheck this version
+    'numpy >= 1.8.2',
     'py4j >= 0.10.0'
 ]
 
@@ -49,19 +48,7 @@ setup(
     name=ARTIFACT_NAME,
     version=ARTIFACT_VERSION_SHORT,
     description='SystemDS is a distributed and declarative machine learning platform.',
-    long_description='''SystemDS is a versatile system for the end-to-end data science lifecycle from data integration,
-     cleaning, and feature engineering, over efficient, local and distributed ML model training,
-     to deployment and serving.
-     To facilitate this, bindings from different languages and different system abstractions provide help for:
-     (1) the different tasks of the data-science lifecycle, and 
-     (2) users with different expertise. 
-
-
-     These high-level scripts are compiled into hybrid execution plans of local, in-memory CPU and GPU operations, 
-     as well as distributed operations on Apache Spark. In contrast to existing systems 
-     - that either provide homogeneous tensors or 2D Datasets - and in order to serve the entire
-     data science lifecycle, the underlying data model are DataTensors, i.e.,
-     tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.''',
+    long_description=open('README.md').read(),
     url='https://github.com/apache/systemml',
     author='SystemDS',
     author_email='dev@systemml.apache.org',
@@ -79,6 +66,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Scientific/Engineering :: Mathematics',
         'Topic :: Software Development :: Libraries :: Python Modules',

@@ -398,8 +398,7 @@ public class SpoofCompiler
 					}
 					
 					//compile generated java source code
-					cla = CodegenUtils.compileClass("codegen."+
-						tmp.getValue().getClassname(), src);
+					cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
 					
 					//maintain plan cache
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )

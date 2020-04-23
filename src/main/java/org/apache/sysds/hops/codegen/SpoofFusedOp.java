@@ -81,7 +81,7 @@ public class SpoofFusedOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		return false;
+		return true;
 	}
 	
 	@Override

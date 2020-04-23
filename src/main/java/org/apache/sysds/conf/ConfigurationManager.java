@@ -177,11 +177,7 @@ public class ConfigurationManager
 	
 	public static boolean isCodegenEnabled() {
 		return (getDMLConfig().getBooleanValue(DMLConfig.CODEGEN)
-			|| getCompilerConfigFlag(ConfigType.CODEGEN_ENABLED))
-			&& !DMLScript.USE_ACCELERATOR;
-		//note: until codegen is supported for the GPU backend, we globally
-		//disable codegen if operations are forced to the GPU to avoid
-		//a counter-productive impact on performance.
+			|| getCompilerConfigFlag(ConfigType.CODEGEN_ENABLED));
 	}
 	
 	///////////////////////////////////////

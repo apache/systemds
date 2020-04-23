@@ -43,7 +43,8 @@ public abstract class GPUInstruction extends Instruction {
 		BuiltinUnary,
 		BuiltinBinary,
 		Builtin,
-		MatrixIndexing
+		MatrixIndexing,
+		SpoofFused
 	}
 
 	// Memory/conversions

@@ -312,6 +312,8 @@ public class DataOp extends Hop
 		
 		setLineNumbers(l);
 		setLops(l);
+
+		l.setPrivacyConstraint(getPrivacy());
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();

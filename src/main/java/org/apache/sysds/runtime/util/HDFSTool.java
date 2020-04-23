@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -341,10 +342,20 @@ public class HDFSTool
 		throws IOException {
 		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo);
 	}
+
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics mc, OutputInfo outinfo, PrivacyConstraint privacyConstraint)
+		throws IOException {
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo, null, privacyConstraint);
+	}
 	
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics mc, OutputInfo outinfo)
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, schema, dt, mc, outinfo, null);
+		writeMetaDataFile(mtdfile, vt, schema, dt, mc, outinfo, (PrivacyConstraint) null);
+	}
+
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics mc, OutputInfo outinfo, PrivacyConstraint privacyConstraint)
+		throws IOException {
+		writeMetaDataFile(mtdfile, vt, schema, dt, mc, outinfo, null, privacyConstraint);
 	}
 
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics dc, OutputInfo outinfo, FileFormatProperties formatProperties)
@@ -356,10 +367,17 @@ public class HDFSTool
 			OutputInfo outinfo, FileFormatProperties formatProperties) 
 		throws IOException 
 	{
+		writeMetaDataFile(mtdfile, vt, schema, dt, dc, outinfo, formatProperties, null);
+	}
+
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
+			OutputInfo outinfo, FileFormatProperties formatProperties, PrivacyConstraint privacyConstraint) 
+		throws IOException 
+	{		
 		Path path = new Path(mtdfile);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
-			String mtd = metaDataToString(vt, schema, dt, dc, outinfo, formatProperties);
+			String mtd = metaDataToString(vt, schema, dt, dc, outinfo, formatProperties, privacyConstraint);
 			br.write(mtd);
 		} catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
@@ -369,10 +387,16 @@ public class HDFSTool
 	public static void writeScalarMetaDataFile(String mtdfile, ValueType vt) 
 		throws IOException 
 	{
+		writeScalarMetaDataFile(mtdfile, vt, null);
+	}
+
+	public static void writeScalarMetaDataFile(String mtdfile, ValueType vt, PrivacyConstraint privacyConstraint) 
+		throws IOException 
+	{
 		Path path = new Path(mtdfile);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
-			String mtd = metaDataToString(vt, null, DataType.SCALAR, null, OutputInfo.TextCellOutputInfo, null);
+			String mtd = metaDataToString(vt, null, DataType.SCALAR, null, OutputInfo.TextCellOutputInfo, null, privacyConstraint);
 			br.write(mtd);
 		} 
 		catch (Exception e) {
@@ -381,7 +405,7 @@ public class HDFSTool
 	}
 
 	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
-			OutputInfo outinfo, FileFormatProperties formatProperties) throws JSONException, DMLRuntimeException
+			OutputInfo outinfo, FileFormatProperties formatProperties, PrivacyConstraint privacyConstraint) throws JSONException, DMLRuntimeException
 	{
 		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
 
@@ -427,6 +451,12 @@ public class HDFSTool
 			}
 		}
 
+		//add privacy constraints
+		if ( privacyConstraint != null ){
+			mtd.put(DataExpression.PRIVACY, privacyConstraint.getPrivacy());
+		}
+
+		//add username and time
 		String userName = System.getProperty("user.name");
 		if (StringUtils.isNotEmpty(userName)) {
 			mtd.put(DataExpression.AUTHORPARAM, userName);

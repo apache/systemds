@@ -352,6 +352,7 @@ public class Dag<N extends Lop>
 						String inst_string = n.getInstructions();
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
 						currInstr.setLocation(n);
+						currInstr.setPrivacyConstraint(n);
 						insts.add(currInstr);
 					} catch (DMLRuntimeException e) {
 						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
@@ -406,7 +407,10 @@ public class Dag<N extends Lop>
 			if (locationInfo != null)
 				currInstr.setLocation(locationInfo);
 			else
+			{
 				currInstr.setLocation(node);
+				currInstr.setPrivacyConstraint(node);
+			}
 			
 			inst.add(currInstr);
 			excludeRemoveInstruction(label, deleteInst);
@@ -593,11 +597,20 @@ public class Dag<N extends Lop>
 						 throw new LopsException("Error parsing the instruction:" + inst_string);
 					}
 					if (node._beginLine != 0)
+					{
 						currInstr.setLocation(node);
+						currInstr.setPrivacyConstraint(node);
+					}
 					else if ( !node.getOutputs().isEmpty() )
+					{
 						currInstr.setLocation(node.getOutputs().get(0));
+						currInstr.setPrivacyConstraint(node.getOutputs().get(0));
+					}
 					else if ( !node.getInputs().isEmpty() )
+					{
 						currInstr.setLocation(node.getInputs().get(0));
+						currInstr.setPrivacyConstraint(node.getInputs().get(0));
+					}	
 						
 					inst.add(currInstr);
 				} catch (Exception e) {
@@ -785,6 +798,7 @@ public class Dag<N extends Lop>
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
 				
 				currInstr.setLocation(node);
+				currInstr.setPrivacyConstraint(node);
 				
 				out.addLastInstruction(currInstr);
 			}
@@ -806,6 +820,7 @@ public class Dag<N extends Lop>
 					oparams.getUpdateType());
 				
 				createvarInst.setLocation(node);
+				createvarInst.setPrivacyConstraint(node);
 				
 				out.addPreInstruction(createvarInst);
 
@@ -813,6 +828,7 @@ public class Dag<N extends Lop>
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
 				
 				currInstr.setLocation(node);
+				currInstr.setPrivacyConstraint(node);
 				
 				out.addLastInstruction(currInstr);
 			}
@@ -832,10 +848,14 @@ public class Dag<N extends Lop>
 							new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getBlocksize(), fnOutParams.getNnz()),
 							oparams.getUpdateType());
 						
-						if (node._beginLine != 0)
+						if (node._beginLine != 0){
 							createvarInst.setLocation(node);
-						else
+							createvarInst.setPrivacyConstraint(node);
+						}
+						else {
 							createvarInst.setLocation(fnOut);
+							createvarInst.setPrivacyConstraint(fnOut);
+						}
 						
 						out.addPreInstruction(createvarInst);
 					}
@@ -985,8 +1005,10 @@ public class Dag<N extends Lop>
 						Instruction currInstr = (node.getExecType() == ExecType.SPARK) ?
 							SPInstructionParser.parseSingleInstruction(io_inst) :
 							CPInstructionParser.parseSingleInstruction(io_inst);
-						currInstr.setLocation((!node.getInputs().isEmpty() 
-							&& node.getInputs().get(0)._beginLine != 0) ? node.getInputs().get(0) : node);
+						Lop useNode = (!node.getInputs().isEmpty() 
+						&& node.getInputs().get(0)._beginLine != 0) ? node.getInputs().get(0) : node; 
+						currInstr.setLocation(useNode);
+						currInstr.setPrivacyConstraint(useNode);
 						
 						out.addLastInstruction(currInstr);
 					}

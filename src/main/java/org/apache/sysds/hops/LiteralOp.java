@@ -111,6 +111,7 @@ public class LiteralOp extends Hop
 			}
 
 			l.getOutputParameters().setDimensions(0, 0, 0, -1);
+			l.setPrivacyConstraint(getPrivacy());
 			setLineNumbers(l);
 			setLops(l);
 		} 

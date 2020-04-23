@@ -143,6 +143,8 @@ def write_script(model: OnnxModel, output_file: str) -> str:
         model_header_render=model_header_render,
         graph_render=graph_function
     )
+
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, 'w') as f:
         f.write(result_render)
     return result_render

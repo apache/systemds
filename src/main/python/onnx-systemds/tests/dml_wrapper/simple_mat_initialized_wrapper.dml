@@ -1,0 +1,7 @@
+
+source("dml_output/simple_mat_initialized.dml") as simple_mat_initialized
+
+O = simple_mat_initialized::gen_simple_mat_initialized_graph()
+
+write(O, "output_test/simple_mat_initialized.out")
+

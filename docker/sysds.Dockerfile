@@ -32,15 +32,12 @@ ENV MAVEN_HOME /usr/lib/mvn
 ENV PATH $MAVEN_HOME/bin:$PATH
 
 RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-  tar -zxvf apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-  rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-  mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
+	tar -zxvf apache-maven-$MAVEN_VERSION-bin.tar.gz && \
+	rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
+	mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 # Install Extras
-RUN apk update && \
-    apk upgrade && \
-    apk add git && \ 
-    apk add bash
+RUN apk add --no-cache git bash
 
 RUN git clone https://github.com/apache/systemml.git
 
@@ -56,7 +53,7 @@ ENV PATH $SYSTEMDS_ROOT/bin:$PATH
 
 # Remove extra files.
 RUN rm -r src/ && \
-    rm -r .git
+	rm -r .git
 
 COPY docker/mountFolder/main.dml /input/main.dml
 

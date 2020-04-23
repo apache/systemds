@@ -20,17 +20,20 @@ limitations under the License.
 # SystemDS Documentation
 
 Various forms of documentation for SystemDS are available.
-In this directory you'll find 
-* a DML language reference
-* a description of builtin functions (WIP)
-* coding style settings for Eclipse (compatible with various other IDEs)
-* an enumerated list of open and completed tasks
+In this directory you'll find
 
-### Pointers to more documentation
-* A [hello world example](https://github.com/apache/systemml/blob/master/src/assembly/bin/README.md) (shipped with the binary distribution) to get you started on how to run SystemDS
-* An extended introductory [example](https://github.com/apache/systemml/blob/master/bin/README.md)
-* Instructions on how to build the [python bindings documentation](https://github.com/apache/systemml/blob/master/src/main/python/docs/README.md)
-* [Packaging](https://github.com/apache/systemml/blob/master/src/main/python/BUILD_INSTRUCTIONS.md)
- the python bindings yourself 
+* a [DML language reference](./dml-language-reference.md)
+* a description of [builtin functions (WIP)](./builtins-reference.md)
+* [coding style settings](./CodeStyle_eclipse.xml) for Eclipse (compatible with various other IDEs)
+  * More information inside our [CONTRIBUTING.md](/CONTRIBUTING.md)
+* an enumerated list of open and completed [tasks](./Tasks.txt)
+
+## Pointers to more documentation
+
+* A [hello world example](/src/assembly/bin/README.md) (shipped with the binary distribution) to get you started on how to run SystemDS
+* An extended introductory [example](/bin/README.md)
+* Instructions on how to build the [python bindings documentation](/src/main/python/docs/README.md)
+* [Packaging](/src/main/python/BUILD_INSTRUCTIONS.md)
+ the python bindings yourself
 * The generated javadoc output will be available from the [releases page](https://github.com/apache/systemml/releases)
   

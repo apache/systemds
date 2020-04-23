@@ -49,6 +49,13 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
 .. toctree::
    :maxdepth: 1
    :hidden:
+   :caption: Guides
+
+   federated.rst
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
    :caption: Central Classes
 
    matrix.rst

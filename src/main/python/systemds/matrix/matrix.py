@@ -104,7 +104,8 @@ def federated(sds_context: 'SystemDSContext', addresses: Iterable[str],
     addresses_str = 'list(' + ','.join(map(lambda s: f'"{s}"', addresses)) + ')'
     ranges_str = 'list('
     for begin, end in ranges:
-        ranges_str += f'list({",".join(map(str, begin))}), list({",".join(map(str, end))})'
+        ranges_str += f'list({",".join(map(str, begin))}), list({",".join(map(str, end))}),'
+    ranges_str = ranges_str[:-1]
     ranges_str += ')'
     named_params = {'addresses': addresses_str, 'ranges': ranges_str}
     named_params.update(kwargs)

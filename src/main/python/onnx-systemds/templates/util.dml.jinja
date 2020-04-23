@@ -1,0 +1,26 @@
+{% macro generate_call_list(variables) -%}
+{% for input in variables -%}
+  {%- if input.data_type == "matrix" -%}
+    {{ '  ' + "matrix" }} [{{ input.value_type }}] {{ input.identifier_name }}
+  {%- elif input.data_type == "scalar" -%}
+    {{ '  ' + input.value_type }} {{ input.identifier_name }}
+  {%- endif -%}
+  {%- if not loop.last -%},
+{% endif %}
+{%- endfor %}
+{%- endmacro %}
+
+{% macro initialize_variable(variable) -%}
+{%- if variable.data_type == "matrix" -%}
+{{ variable.identifier_name }} = matrix("
+    {%- for value in variable.initializer_values -%}
+    {{ value }}
+    {%- if not loop.last %} {% endif -%}
+    {%- endfor %}",
+    rows={{ variable.shape[0] }},
+    cols={{ variable.shape[1] -}}
+)
+{%- elif variable.data_type == "scalar" -%}
+    {{ input.value_type }} {{ input.identifier_name }} = {{ input.initializer_values[0] }}
+  {%- endif -%}
+{%- endmacro %}

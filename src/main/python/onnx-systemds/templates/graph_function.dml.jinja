@@ -1,0 +1,25 @@
+{% import 'util.dml.jinja' as util %}
+{%- if graph_function_description != "" -%} # {{ graph_function_description }} {%- endif %}
+
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# {{ "%+15s" | format("NAME") }}{{ "%+15s" | format("TYPE") }}{{ "%+15s" | format("VALUE_TYPE") }}{{ "%+15s" | format("SHAPE") }}{{ "%+15s" | format("DEFAULT") }}{{ "%+15s" | format("MEANING") }}
+# --------------------------------------------------------------------------------------------
+{% for input in function_inputs -%}
+#  {{ "%+15s" | format(input.identifier_name) }}{{ "%+15s" | format(input.data_type,) }}{{ "%+15s" | format(input.value_type,) }}{{ "%+15s" | format(input.shape,) }}{{ "%+15s" | format("-",) }}{{ "%+15s" | format(input.description,) }}
+{% endfor -%}
+# ---------------------------------------------------------------------------------------------
+
+{{ graph_function_name }} = function(
+{{ util.generate_call_list(function_inputs) }}
+)
+return (
+  {{ util.generate_call_list(function_outputs) }}
+) {
+{%- for initializer in function_start_initializers %}
+  {{ util.initialize_variable(initializer) }}
+{% endfor %}
+{% for node_script in node_scripts %}
+{{ node_script | indent(4, first=true) }}
+{% endfor %}
+}

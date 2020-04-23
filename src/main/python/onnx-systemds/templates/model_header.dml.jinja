@@ -1,0 +1,20 @@
+# -------------------------------------------------------------
+
+# Model
+{% for key, value in header_components.items() -%}
+{%- if value != "" -%}
+#  {{ key }}: {{ value }} {%- if not loop.last -%} {{ "\n" }} {%- endif -%}
+{%- endif %}
+{%- endfor -%}
+# opset_import:
+{%- for opset_domain in opset_import %}
+#  - domain/opset = {{ opset_domain }}
+{%- endfor %}
+{%- for key, value in metadata_props %}
+{% if loop.first %}
+# metadata_props:
+{% endif %}
+#  - {{ key }}: {{ value }}
+{%- endfor %}
+# -------------------------------------------------------------
+

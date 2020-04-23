@@ -95,11 +95,15 @@ public class LineageRewriteReuse
 			return false;
 		
 		//execute instructions & write the o/p to symbol table
+		long t0 = System.nanoTime();
 		executeInst(newInst, lrwec);
+		long t1 = System.nanoTime();
 		ec.setVariable(((ComputationCPInstruction)curr).output.getName(), lrwec.getVariable(LR_VAR));
 
 		//put the result into the cache
-		LineageCache.putMatrix(curr, ec);
+		LineageCache.putMatrix(curr, ec, t1-t0);
+		if (DMLScript.STATISTICS) 
+			LineageCacheStatistics.incrementPRwExecTime(t1-t0);
 		DMLScript.EXPLAIN = et; //TODO can't change this here
 		
 		//cleanup execution context
@@ -755,7 +759,6 @@ public class LineageRewriteReuse
 		DMLScript.EXPLAIN = ExplainType.NONE;
 
 		try {
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			//execute instructions
 			BasicProgramBlock pb = getProgramBlock();
 			pb.setInstructions(newInst);
@@ -763,8 +766,6 @@ public class LineageRewriteReuse
 			LineageCacheConfig.shutdownReuse();
 			pb.execute(lrwec);
 			LineageCacheConfig.restartReuse(oldReuseOption);
-			if (DMLScript.STATISTICS) 
-				LineageCacheStatistics.incrementPRwExecTime(System.nanoTime()-t0);
 		}
 		catch (Exception e) {
 			throw new DMLRuntimeException("Error executing lineage rewrites" , e);

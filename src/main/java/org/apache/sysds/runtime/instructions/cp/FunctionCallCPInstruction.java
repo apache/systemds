@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -172,6 +173,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		fn_ec.setVariables(functionVariables);
 		fn_ec.setLineage(lineage);
 		// execute the function block
+		long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 		try {
 			fpb._functionName = this._functionName;
 			fpb._namespace = this._namespace;
@@ -184,6 +186,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
+		long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 		
 		// cleanup all returned variables w/o binding 
 		HashSet<String> expectRetVars = new HashSet<>();
@@ -226,8 +229,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 		//update lineage cache with the functions outputs
 		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ) {
-			LineageCache.putValue(fpb.getOutputParams(), 
-				liInputs, getCacheFunctionName(_functionName, fpb), ec);
+			LineageCache.putValue(fpb.getOutputParams(), liInputs, 
+					getCacheFunctionName(_functionName, fpb), ec, t1-t0);
 		}
 	}
 

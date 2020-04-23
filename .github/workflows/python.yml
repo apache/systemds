@@ -88,3 +88,12 @@ jobs:
         echo "Beginning tests"
         python -m unittest tests/*.py
         echo "Exit Status: " $?
+
+    - name: Run all lineage python tests
+      run: |
+        export SYSTEMDS_ROOT=$(pwd)
+        export PATH=$SYSTEMDS_ROOT/bin:$PATH
+        export SYSDS_QUIET=1
+        cd src/main/python
+        python -m unittest tests/lineage/*.py
+        echo "Exit Status: " $?

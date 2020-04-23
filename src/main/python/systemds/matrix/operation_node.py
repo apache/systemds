@@ -235,6 +235,15 @@ class OperationNode(DAGNode):
 
     def lm(self, y: DAGNode, **kwargs) -> 'OperationNode':
         self._check_matrix_op()
+
+        if self._np_array.size == 0:
+            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                             .format(s=self._np_array.shape))
+
+        if y._np_array.size == 0:
+            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                             .format(s=y._np_array.shape))
+
         params_dict = {'X': self, 'y': y}
         params_dict.update(kwargs)
 

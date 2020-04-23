@@ -22,6 +22,7 @@
 # Make the `systemds` package importable
 import os
 import sys
+import warnings
 import unittest
 import numpy as np
 import scipy.stats as st
@@ -31,16 +32,23 @@ path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 from systemds.context import SystemDSContext
 
-
-shape = (random.randrange(0, 50), random.randrange(0, 50))
+shape = (random.randrange(1, 50), random.randrange(1, 50))
 min_max = (0, 1)
 sparsity = 0.2
-distributions = ['norm', 'uniform']
+seed = 123
+distributions = ["norm", "uniform"]
 
 sds = SystemDSContext()
 
-
 class TestRand(unittest.TestCase):
+    def setUp(self):
+        warnings.filterwarnings(
+            action="ignore", message="unclosed", category=ResourceWarning)
+
+    def tearDown(self):
+        warnings.filterwarnings(
+            action="ignore", message="unclosed", category=ResourceWarning)
+
     def test_rand_shape(self):
         m = sds.rand(rows=shape[0], cols=shape[1]).compute()
         self.assertTrue(m.shape == shape)
@@ -50,27 +58,48 @@ class TestRand(unittest.TestCase):
         self.assertTrue((m.min() >= min_max[0]) and (m.max() <= min_max[1]))
 
     def test_rand_sparsity(self):
-        m = sds.rand(rows=shape[0], cols=shape[1], sparsity=sparsity).compute()
-
-        m_flat = m.flatten('F')
-        count, bins = np.histogram(m_flat)
-
-        non_zero_value_percent = sum(count[1:]) * 100 / count[0]
+        m = sds.rand(rows=shape[0], cols=shape[1], sparsity=sparsity, seed=seed).compute()
+        count, bins = np.histogram(m.flatten("F"))
+        non_zero_value_percent = sum(count[1:]) * 100 / sum(count)
         e = 0.05
-        self.assertTrue(sum(count) == (shape[0] * shape[1]) and (non_zero_value_percent >= (sparsity - e) * 100)
-                        and (non_zero_value_percent <= (sparsity + e) * 100))
+
+        self.assertTrue(
+            sum(count) == (shape[0] * shape[1])
+            and (non_zero_value_percent >= (sparsity - e) * 100)
+            and (non_zero_value_percent <= (sparsity + e) * 100)
+        )
 
     def test_rand_uniform_distribution(self):
-        m = sds.rand(rows=shape[0], cols=shape[1], pdf="uniform", min=min_max[0], max=min_max[1],).compute()
+        m = sds.rand(
+            rows=shape[0],
+            cols=shape[1],
+            pdf="uniform",
+            min=min_max[0],
+            max=min_max[1],
+            seed=seed).compute()
 
-        dist = find_best_fit_distribution(m.flatten('F'), distributions)
-        self.assertTrue(dist == 'uniform')
+        dist = find_best_fit_distribution(m.flatten("F"), distributions)
+        self.assertTrue(dist == "uniform")
 
     def test_rand_normal_distribution(self):
-        m = sds.rand(rows=shape[0], cols=shape[1], pdf="normal", min=min_max[0], max=min_max[1]).compute()
+        m = sds.rand(
+            rows=shape[0],
+            cols=shape[1],
+            pdf="normal",
+            min=min_max[0],
+            max=min_max[1],
+            seed=seed).compute()
 
-        dist = find_best_fit_distribution(m.flatten('F'), distributions)
-        self.assertTrue(dist == 'norm')
+        dist = find_best_fit_distribution(m.flatten("F"), distributions)
+        self.assertTrue(dist == "norm")
+
+    def test_rand_zero_shape(self):
+        try:
+            m = sds.rand(rows=0, cols=0).compute()
+            self.assertTrue(np.allclose(m, np.array([[]])))
+        except Exception as e:
+            self.assertFalse("This should not raise an exception!")
+            print(e)
 
     def test_rand_invalid_shape(self):
         try:
@@ -82,7 +111,7 @@ class TestRand(unittest.TestCase):
     def test_rand_invalid_pdf(self):
         try:
             sds.rand(rows=1, cols=10, pdf="norm").compute()
-            self.assertTrue(False)
+            self.assertFalse("This should've raised an exception!")
         except Exception as e:
             print(e)
 

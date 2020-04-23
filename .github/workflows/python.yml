@@ -99,3 +99,6 @@ jobs:
         echo "Exit Status: " $?
         python tests/test_l2svm_lineage.py
         echo "Exit Status: " $?
+        sleep 3
+        python tests/test_matrix_rand.py
+        echo "Exit Status: " $?

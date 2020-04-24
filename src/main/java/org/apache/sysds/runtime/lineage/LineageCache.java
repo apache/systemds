@@ -237,8 +237,10 @@ public class LineageCache
 			synchronized( _cache ) {
 				if (data instanceof MatrixObject)
 					_cache.get(item).setValue(((MatrixObject)data).acquireReadAndRelease(), computetime);
-				else
+				else if (data instanceof ScalarObject)
 					_cache.get(item).setValue((ScalarObject)data, computetime);
+				else
+					throw new DMLRuntimeException("Lineage Cache: unsupported data: "+data.getDataType());
 				long size = _cache.get(item).getSize();
 				
 				if (!isBelowThreshold(size))

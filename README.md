@@ -36,3 +36,4 @@ limitations under the License.
 ![Application Test](https://github.com/apache/systemml/workflows/Application%20Test/badge.svg)
 ![Function Test](https://github.com/apache/systemml/workflows/Function%20Test/badge.svg)
 ![Python Test](https://github.com/apache/systemml/workflows/Python%20Test/badge.svg)
+![Federated Python Test](https://github.com/apache/systemml/workflows/Federated%20Python%20Test/badge.svg)

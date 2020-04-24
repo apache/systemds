@@ -1,32 +1,60 @@
-import filecmp
-import io
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to you under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import subprocess
 import unittest
 
 
-from onnx_systemds import onnx2systemds
+from convert import onnx2systemds
+from util import resolve_systemds_root
 
 
 def invoke_systemds(input_file: str, args: [str] = None) -> int:
+    """
+    Runs systemds by running the script in $SYSTEMDS_ROOT_PATH/bin/systemds.sh with the provided input_file,
+    will fail if $SYSTEMDS_ROOT_PATH is not set
+    :param input_file: the dml script to run
+    :param args: additional arguments if needed
+    :return: the return-code of systemds
+    """
     if args is None:
         args = []
-    SYSTEMDS_ROOT_PATH = ""
-    try:
-        SYSTEMDS_ROOT_PATH = os.environ['SYSTEMDS_ROOT']
-    except KeyError as error:
-        print("ERROR environment variable SYSTEMDS_ROOT_PATH not set")
-        exit(-1)
+
+    systemds_root_path = resolve_systemds_root()
 
     try:
         abspath_input = os.path.abspath(input_file)
-        res = subprocess.run([SYSTEMDS_ROOT_PATH + "/bin/systemds.sh", abspath_input] + args,
-                             check=True, stdout=subprocess.PIPE)
+        res = subprocess.run([systemds_root_path + "/bin/systemds.sh", abspath_input] + args,
+                             check=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             timeout=10000)
     except subprocess.CalledProcessError as systemds_error:
         print("SYSTEMDS FAILED!")
         print("error code: " + str(systemds_error.returncode))
-        print(str(systemds_error.output))
+        print("Stdout:")
+        print(systemds_error.output.decode("utf-8"))
+        print("Stderr:")
+        print(systemds_error.stderr.decode("utf-8"))
         return systemds_error.returncode
+
+    if len(res.stderr.decode("utf-8")) != 0:
+        print("No exception but stderr was not empty:")
+        print(res.stderr.decode("utf-8"))
+        return -1
 
     return res.returncode
 
@@ -34,7 +62,7 @@ def invoke_systemds(input_file: str, args: [str] = None) -> int:
 def run_and_compare_output(name: str, test_case: unittest.TestCase) -> None:
     onnx2systemds("test_models/" + name + ".onnx", "dml_output/" + name + ".dml")
     ret = invoke_systemds("dml_wrapper/" + name + "_wrapper.dml")
-    test_case.assertEqual(ret, 0, "systemds exit code was not 0")
+    test_case.assertEqual(ret, 0, "systemds failed")
 
     # We read the file content such that pytest can present the actual difference between the files
     with open("output_reference/" + name + "_reference.out") as reference_file:
@@ -43,8 +71,6 @@ def run_and_compare_output(name: str, test_case: unittest.TestCase) -> None:
     with open("output_test/" + name + ".out") as output_file:
         test_content = output_file.read()
 
-    test_case.assertNotEqual(reference_content, None)
-    test_case.assertNotEqual(test_content, None)
     test_case.assertEqual(
         test_content,
         reference_content,

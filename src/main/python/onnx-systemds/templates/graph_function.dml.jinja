@@ -1,25 +1,41 @@
-{% import 'util.dml.jinja' as util %}
-{%- if graph_function_description != "" -%} # {{ graph_function_description }} {%- endif %}
+{#
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
 
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ #}
+{% import 'util.dml.jinja' as util %}
+{%- if graph_function_description != "" -%} # {{ graph_function_description + "\n" }} {%- endif -%}
+{%- if function_inputs | length > 0 -%}
 # INPUT PARAMETERS:
 # --------------------------------------------------------------------------------------------
-# {{ "%+15s" | format("NAME") }}{{ "%+15s" | format("TYPE") }}{{ "%+15s" | format("VALUE_TYPE") }}{{ "%+15s" | format("SHAPE") }}{{ "%+15s" | format("DEFAULT") }}{{ "%+15s" | format("MEANING") }}
+# {{ "%-15.15s" | format("NAME") }} {{ "%-8.8s" | format("TYPE") }} {{ "%-12.12s" | format("VALUE_TYPE") }} {{ "%-8.8s" | format("SHAPE") }}{{ "%-10.10s" | format("DEFAULT") }} {{ "%-8s" | format("MEANING") }}
 # --------------------------------------------------------------------------------------------
 {% for input in function_inputs -%}
-#  {{ "%+15s" | format(input.identifier_name) }}{{ "%+15s" | format(input.data_type,) }}{{ "%+15s" | format(input.value_type,) }}{{ "%+15s" | format(input.shape,) }}{{ "%+15s" | format("-",) }}{{ "%+15s" | format(input.description,) }}
+# {{ "%-15.15s" | format(input.identifier_name) }} {{ "%-8.8s" | format(input.data_type,) }} {{ "%-12.12s" | format(input.value_type,) }} {{ "%-8.8s" | format(input.shape,) }} {{ "%-10.10s" | format("   -",) }} {{ "%-8s" | format(input.description,) }}
 {% endfor -%}
 # ---------------------------------------------------------------------------------------------
-
+{%- endif %}
 {{ graph_function_name }} = function(
 {{ util.generate_call_list(function_inputs) }}
 )
 return (
-  {{ util.generate_call_list(function_outputs) }}
+{{ util.generate_call_list(function_outputs) }}
 ) {
 {%- for initializer in function_start_initializers %}
   {{ util.initialize_variable(initializer) }}
 {% endfor %}
-{% for node_script in node_scripts %}
+{% for node_script in node_scripts -%}
 {{ node_script | indent(4, first=true) }}
-{% endfor %}
+{% endfor -%}
 }

@@ -14,5 +14,18 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  #}
-{% if doc_string != "" %}# {{ doc_string }} {% endif %}
-{{ output }} = (-{{ input }})
+{% if doc_string != "" %}# {{ doc_string + "\n" }} {% endif %}
+  {%- if outputs | length == 1 -%}
+{%- for output in outputs -%}{{ output }} = {% endfor -%}
+{% elif outputs | length > 1 -%}
+[
+{%- for output in outputs -%}
+{{ output }}
+{%- if loop.last %}] = {% else -%}, {% endif -%}
+{%- endfor -%}
+{%- endif -%}
+{% if function_namespace != "" -%}{{ function_namespace }}::{%- endif -%}{{ function }}(
+  {%- for argument in arguments -%}
+  {{ argument }}
+  {%- if not loop.last -%}, {%- endif -%}
+{%- endfor -%})

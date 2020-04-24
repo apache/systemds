@@ -14,5 +14,4 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  #}
-{% if doc_string != "" %}# {{ doc_string }} {% endif %}
-{{ output }} = (-{{ input }})
+source("{{ path }}") as {{ name }}

@@ -30,7 +30,8 @@ def init_argparse() -> argparse.ArgumentParser:
 
 def onnx2systemds(input_onnx_file: str, output_dml_file: str = None) -> None:
     """
-    Generates the dml script from a onnx file
+    Loads the model from the input file and generates a dml file.
+
     :param input_onnx_file: the onnx input file
     :param output_dml_file: (optional) the dml output file,
         if this parameter is not given the output file will have the same name as the input file

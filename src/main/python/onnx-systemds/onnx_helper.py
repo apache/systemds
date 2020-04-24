@@ -18,7 +18,7 @@ import onnx.version_converter
 
 
 class TreeNode:
-    def __init__(self, node):
+    def __init__(self, node: onnx.NodeProto):
         self.node = node
         self.parent_nodes = list()
         self.child_nodes = list()
@@ -56,12 +56,12 @@ class NodeTree:
             parent_node.child_nodes.remove(node)
         self.end_nodes += node.parent_nodes
         node.parent_nodes = []
-        return node
 
 
 def load_model(onnx_file: str) -> onnx.ModelProto:
     """
-    Loads the onnx file, checks the model and converts it to a common version
+    Loads the onnx file, checks the model and converts it to a common version.
+
     :param onnx_file:
     :return: the loaded onnx-model
     """
@@ -72,7 +72,8 @@ def load_model(onnx_file: str) -> onnx.ModelProto:
 
 def get_graph_inputs_without_initializers(graph: onnx.GraphProto) -> [onnx.ValueInfoProto]:
     """
-    Returns all inputs of the graph that have no associated initializer values
+    Returns all inputs of the graph that have no associated initializer values.
+
     :param graph: the onnx-graph
     :return: list of uninitialized inputs
     """
@@ -92,7 +93,8 @@ def get_graph_inputs_without_initializers(graph: onnx.GraphProto) -> [onnx.Value
 
 def get_graph_inputs_with_initializers(graph: onnx.GraphProto) -> [(onnx.ValueInfoProto, onnx.TensorProto)]:
     """
-    Returns all initialized inputs of the graph with their corresponding initializer
+    Returns all initialized inputs of the graph with their corresponding initializer.
+
     :param graph: the onnx-graph
     :return: list of tuples of (input, initializer)
     """
@@ -106,7 +108,8 @@ def get_graph_inputs_with_initializers(graph: onnx.GraphProto) -> [(onnx.ValueIn
     return inputs_with_initializers
 
 
-class OnnxValue:
+class PreparedValue:
+    """ Class for preparing onnx value structures for writing them to the dml script """
     def __init__(self, value_info: onnx.ValueInfoProto, initializer: onnx.TensorProto = None):
 
         supported_types = ["int", "boolean", "double"]
@@ -136,10 +139,10 @@ class OnnxValue:
         if value_info.type.tensor_type.elem_type not in type_translation.keys():
             raise NotImplementedError("Only support Tensor Types")
 
-        # TODO: add support for scalars
+        # TODO: add support for other data types
 
         self.data_type = "matrix"
-        self.value_type = type_translation[value_info.type.tensor_type.elem_type]  # TODO: other types + translation
+        self.value_type = type_translation[value_info.type.tensor_type.elem_type]
         if self.value_type not in supported_types:
             raise NotImplementedError("The type " + self.value_type + " is currently not supported")
 
@@ -163,16 +166,16 @@ class OnnxValue:
             self.initializer_values = list(initializer.float_data)
 
 
-def prepare_function_inputs(inputs: [onnx.ValueInfoProto]) -> [OnnxValue]:
-    return [OnnxValue(i) for i in inputs]
+def prepare_function_inputs(inputs: [onnx.ValueInfoProto]) -> [PreparedValue]:
+    return [PreparedValue(i) for i in inputs]
 
 
-def prepare_initialized_inputs(inputs: [(onnx.ValueInfoProto, onnx.TensorProto)]) -> [OnnxValue]:
-    return [OnnxValue(info, init) for info, init in inputs]
+def prepare_initialized_inputs(inputs: [(onnx.ValueInfoProto, onnx.TensorProto)]) -> [PreparedValue]:
+    return [PreparedValue(info, init) for info, init in inputs]
 
 
-def prepare_function_outputs(outputs: [onnx.ValueInfoProto]) -> [OnnxValue]:
-    return [OnnxValue(o) for o in outputs]
+def prepare_function_outputs(outputs: [onnx.ValueInfoProto]) -> [PreparedValue]:
+    return [PreparedValue(o) for o in outputs]
 
 
 

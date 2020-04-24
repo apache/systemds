@@ -24,8 +24,10 @@ from util import resolve_systemds_root
 
 def invoke_systemds(input_file: str, args: [str] = None) -> int:
     """
-    Runs systemds by running the script in $SYSTEMDS_ROOT_PATH/bin/systemds.sh with the provided input_file,
-    will fail if $SYSTEMDS_ROOT_PATH is not set
+    Runs systemds by running the script in
+    $SYSTEMDS_ROOT_PATH/bin/systemds.sh with the provided input_file,
+    will fail if environment variable SYSTEMDS_ROOT_PATH is not set.
+
     :param input_file: the dml script to run
     :param args: additional arguments if needed
     :return: the return-code of systemds

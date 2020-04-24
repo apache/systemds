@@ -25,10 +25,11 @@ import operator_gen
 
 def gen_script_from_node(env: jinja2.environment.Environment, node: onnx.NodeProto) -> (str, str):
     """
-    Generates a dml script snippet for the given node
+    Generates a dml script snippet and the required imports for the given node
+
     :param env: Jinja environment to load the template files
     :param node: the node for which the dml snippet shall be generated
-    :return: Tuple of (includes, script)
+    :return: Tuple of (imports, script)
     """
     script_to_operator = {
         "Add": operator_gen.gen_simple_2input_1output_operator,
@@ -53,11 +54,13 @@ def gen_script_from_node(env: jinja2.environment.Environment, node: onnx.NodePro
 
 def gen_node_scripts(env: jinja2.environment.Environment, graph: onnx.GraphProto) -> ([str], [str]):
     """
-    Traverses the node tree of the OnnxModel structure and generates a script string for each node,
-    the returned node list is ordered such that it can be inserted into the finished script
+    Traverses the node tree of the onnx-graph structure and generates a script string for each node,
+    as well as a string for the required imports.
+    The lists are correctly ordered for inserting them in the dml script.
+
     :param env: Jinja environment to load the template files
     :param graph: the onnx graph for which the script shall be generated
-    :return: list of nodes with inserted node scripts in sorted order
+    :return: two lists (imports, scripts)
     """
     # 1. get lowest nodes
     # 2. check if all outputs of nodes are computed
@@ -93,7 +96,8 @@ def gen_node_scripts(env: jinja2.environment.Environment, graph: onnx.GraphProto
 
 def gen_model_header(env: jinja2.environment.Environment, onnx_model: onnx.ModelProto) -> str:
     """
-    Generates the header for the given model
+    Generates the header of the script for the given model
+
     :param env: Jinja environment to load the template files
     :param onnx_model: the onnx model for which the header shall be generated
     :return: the generated header
@@ -128,7 +132,9 @@ def gen_model_header(env: jinja2.environment.Environment, onnx_model: onnx.Model
 def gen_graph_function(env: jinja2.environment.Environment, graph: onnx.GraphProto,
                        generated_node_scripts: [str]) -> str:
     """
-    Generates a function for the given graph
+    Generates the dml function for the given onnx-graph and inserts the node scripts in
+    the function-body.
+
     :param env: Jinja environment to load the template files
     :param graph: the onnx-graph for which the function shall be generated
     :param generated_node_scripts: the node scripts in correct order for the function-body
@@ -163,7 +169,9 @@ def gen_graph_function(env: jinja2.environment.Environment, graph: onnx.GraphPro
 
 def gen_script(onnx_model: onnx.ModelProto, output_file: str = None) -> str:
     """
-    Generate the dml script from the internal model structure
+    Generate the dml script for the given model and return the generated string.
+    If an output_file is given, the script is also written to a file.
+
     :param onnx_model: the model for which the dml script shall be generated
     :param output_file: (optional) the file to which the script shall be written
     :return: the generated dml-script

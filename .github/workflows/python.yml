@@ -57,7 +57,7 @@ jobs:
           ${{ runner.os }}-maven-
   
     - name: Maven clean & package
-      run: mvn clean package
+      run: mvn clean package -P distribution
 
     - name: Setup Python
       uses: actions/setup-python@v1
@@ -86,18 +86,7 @@ jobs:
         cd src/main/python
         ls tests/
         echo "Beginning tests"
-        python tests/test_matrix_binary_op.py
-        echo "Exit Status: " $?
-        sleep 3
-        python tests/test_matrix_aggregations.py
-        echo "Exit Status: " $?
-        sleep 3
-        python tests/test_l2svm.py
-        echo "Exit Status: " $?
-        python tests/test_lineagetrace.py
-        sleep 3
-        echo "Exit Status: " $?
-        python tests/test_l2svm_lineage.py
+        python -m unittest tests/*.py
         echo "Exit Status: " $?
         sleep 3
         python tests/test_matrix_rand.py

@@ -118,16 +118,7 @@ public class TestUtils
 			Path compareFile = new Path(expectedFile);
 			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
 			FSDataInputStream fsin = fs.open(compareFile);
-			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
-				String line;
-				while ((line = compareIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					expectedValues.put(new CellIndex(i, j), v);
-				}
-			}
+			readValuesFromFileStream(fsin, expectedValues);
 
 			HashMap<CellIndex, Double> actualValues = new HashMap<>();
 
@@ -135,16 +126,7 @@ public class TestUtils
 
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				try( BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout)) ) {
-					String line = null;
-					while ((line = outIn.readLine()) != null) {
-						StringTokenizer st = new StringTokenizer(line, " ");
-						int i = Integer.parseInt(st.nextToken());
-						int j = Integer.parseInt(st.nextToken());
-						double v = Double.parseDouble(st.nextToken());
-						actualValues.put(new CellIndex(i, j), v);
-					}
-				}
+				readValuesFromFileStream(fsout, actualValues);
 			}
 
 			ArrayList<Double> e_list = new ArrayList<>();
@@ -208,13 +190,7 @@ public class TestUtils
 				line = compareIn.readLine();
 				expRcn = line.split(" ");
 				
-				while ((line = compareIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					expectedValues.put(new CellIndex(i, j), v);
-				}
+				readValuesFromFileStreamAndPut(compareIn, expectedValues);
 			}
 			
 			HashMap<CellIndex, Double> actualValues = new HashMap<>();
@@ -238,14 +214,8 @@ public class TestUtils
 				else if (Integer.parseInt(expRcn[2]) != Integer.parseInt(rcn[2])) {
 					System.out.println(" Nnz mismatch: expected " + Integer.parseInt(expRcn[2]) + ", actual " + Integer.parseInt(rcn[2]));
 				}
-				
-				while ((line = outIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					actualValues.put(new CellIndex(i, j), v);
-				}
+
+				readValuesFromFileStreamAndPut(outIn, actualValues);
 			}
 			
 
@@ -270,6 +240,38 @@ public class TestUtils
 	}
 
 	/**
+	 * Read doubles from the input stream and put them into the given hashmap of values. 
+	 * @param inputStream input stream of doubles with related indices
+	 * @param values hashmap of values (initially empty)
+	 * @throws IOException 
+	 */
+	public static void readValuesFromFileStream(FSDataInputStream inputStream, HashMap<CellIndex, Double> values)
+		throws IOException
+	{
+		try( BufferedReader inReader = new BufferedReader(new InputStreamReader(inputStream)) ) {
+			readValuesFromFileStreamAndPut(inReader, values);
+		}
+	}
+
+	/**
+	 * Read values from file stream and put into hashmap
+	 * @param inReader BufferedReader to read values from
+	 * @param values hashmap where values are put
+	*/
+	public static void readValuesFromFileStreamAndPut(BufferedReader inReader, HashMap<CellIndex, Double> values) 
+		throws IOException
+	{
+		String line = null;
+		while ((line = inReader.readLine()) != null) {
+			StringTokenizer st = new StringTokenizer(line, " ");
+			int i = Integer.parseInt(st.nextToken());
+			int j = Integer.parseInt(st.nextToken());
+			double v = Double.parseDouble(st.nextToken());
+			values.put(new CellIndex(i, j), v);
+		}
+	}
+
+	/**
 	 * <p>
 	 * Compares the expected values calculated in Java by testcase and which are
 	 * in the normal filesystem, with those calculated by SystemDS located in
@@ -289,37 +291,17 @@ public class TestUtils
 			Path outDirectory = new Path(actualDir);
 			Path compareFile = new Path(expectedFile);
 			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
+			
 			FSDataInputStream fsin = fs.open(compareFile);
-			
 			HashMap<CellIndex, Double> expectedValues = new HashMap<>();
-			
-			try( BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin)) ) {
-				String line;
-				while ((line = compareIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					expectedValues.put(new CellIndex(i, j), v);
-				}
-			}
+			readValuesFromFileStream(fsin, expectedValues);
 			
 			HashMap<CellIndex, Double> actualValues = new HashMap<>();
-
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				try( BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout)) ) {
-					String line = null;
-					while ((line = outIn.readLine()) != null) {
-						StringTokenizer st = new StringTokenizer(line, " ");
-						int i = Integer.parseInt(st.nextToken());
-						int j = Integer.parseInt(st.nextToken());
-						double v = Double.parseDouble(st.nextToken());
-						actualValues.put(new CellIndex(i, j), v);
-					}
-				}
+				readValuesFromFileStream(fsout, actualValues);
 			}
 
 			int countErrors = 0;
@@ -378,20 +360,11 @@ public class TestUtils
 		{
 			Path outDirectory = new Path(filePath);
 			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
-			String line;
 
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 			for (FileStatus file : outFiles) {
 				FSDataInputStream outIn = fs.open(file.getPath());
-				try(BufferedReader reader = new BufferedReader(new InputStreamReader(outIn)) ) {
-					while ((line = reader.readLine()) != null) {
-						StringTokenizer st = new StringTokenizer(line, " ");
-						int i = Integer.parseInt(st.nextToken());
-						int j = Integer.parseInt(st.nextToken());
-						double v = Double.parseDouble(st.nextToken());
-						expectedValues.put(new CellIndex(i,j), v);
-					}
-				}
+				readValuesFromFileStream(outIn, expectedValues);
 			}
 		} 
 		catch (IOException e) {
@@ -1036,33 +1009,17 @@ public class TestUtils
 			HashMap<CellIndex, Double> expectedValues = new HashMap<>();
 			HashMap<CellIndex, Double> actualValues = new HashMap<>();
 			try(BufferedReader compareIn = new BufferedReader(new FileReader(rFile))) {
-				String line;
 				// skip both R header lines
 				compareIn.readLine();
 				compareIn.readLine();
-				while ((line = compareIn.readLine()) != null) {
-					StringTokenizer st = new StringTokenizer(line, " ");
-					int i = Integer.parseInt(st.nextToken());
-					int j = Integer.parseInt(st.nextToken());
-					double v = Double.parseDouble(st.nextToken());
-					expectedValues.put(new CellIndex(i, j), v);
-				}
+				readValuesFromFileStreamAndPut(compareIn, expectedValues);
 			}
 			
 			FileStatus[] outFiles = fs.listStatus(outDirectory);
 
 			for (FileStatus file : outFiles) {
 				FSDataInputStream fsout = fs.open(file.getPath());
-				try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))) {
-					String line = null;
-					while ((line = outIn.readLine()) != null) {
-						StringTokenizer st = new StringTokenizer(line, " ");
-						int i = Integer.parseInt(st.nextToken());
-						int j = Integer.parseInt(st.nextToken());
-						double v = Double.parseDouble(st.nextToken());
-						actualValues.put(new CellIndex(i, j), v);
-					}
-				}
+				readValuesFromFileStream(fsout, actualValues);
 			}
 
 			int countErrors = 0;

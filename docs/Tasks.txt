@@ -260,5 +260,12 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
 SYSTEMDS-350 Data Cleaning Framework
  * 351 New builtin function for error correction by schema            OK
 
+SYSTEMDS-360 Privacy/Data Exchange Constraints
+ * 361 Initial privacy meta data (compiler/runtime)                   OK
+ * 362 Runtime privacy propagation
+ * 363 Compile-time privacy propagation
+ * 364 Error handling violated privacy constraints
+ * 365 Extended privacy/data exchange constraints
+
 Others:
  * Break append instruction to cbind and rbind 

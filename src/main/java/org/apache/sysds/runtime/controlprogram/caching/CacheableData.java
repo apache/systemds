@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Statistics;
@@ -161,6 +162,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * must get the OutputInfo that matches with InputInfo stored inside _mtd.
 	 */
 	protected MetaData _metaData = null;
+
+	/**
+	 * Object holding all privacy constraints associated with the cacheable data. 
+	 */
+	protected PrivacyConstraint _privacyConstraint = null;
 	
 	/** The name of HDFS file in which the data is backed up. */
 	protected String _hdfsFileName = null; // file name and path
@@ -304,6 +310,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	@Override
 	public void removeMetaData() {
 		_metaData = null;
+	}
+
+	public void setPrivacyConstraints(PrivacyConstraint pc) {
+		_privacyConstraint = pc;
+	}
+
+	public PrivacyConstraint getPrivacyConstraint() {
+		return _privacyConstraint;
 	}
 	
 	public DataCharacteristics getDataCharacteristics() {
@@ -930,7 +944,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			
 			//write the actual meta data file
 			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
-				getSchema(), dataType, dc, oinfo, formatProperties);
+				getSchema(), dataType, dc, oinfo, formatProperties, _privacyConstraint);
 		}
 	}
 

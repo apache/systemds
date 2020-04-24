@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 
@@ -112,6 +113,11 @@ public abstract class Lop
 	 */
 	protected ArrayList<Lop> inputs;
 	protected ArrayList<Lop> outputs;
+
+	/**
+	 * Privacy Constraint
+	 */
+	protected PrivacyConstraint privacyConstraint;
 	
 	/**
 	 * refers to #lops whose input is equal to the output produced by this lop.
@@ -272,6 +278,18 @@ public abstract class Lop
 
 	public void addOutput(Lop op) {
 		outputs.add(op);
+	}
+
+	/**
+	 * Method to set privacy constraint of Lop.
+	 * @param privacy privacy constraint instance
+	 */
+	public void setPrivacyConstraint(PrivacyConstraint privacy){
+		privacyConstraint = privacy;
+	}
+
+	public PrivacyConstraint getPrivacyConstraint(){
+		return privacyConstraint;
 	}
 	
 	public void setConsumerCount(int cc) {

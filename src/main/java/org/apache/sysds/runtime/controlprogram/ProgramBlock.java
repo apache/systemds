@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageCache;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.Statistics;
 
@@ -217,10 +218,11 @@ public abstract class ProgramBlock implements ParseInfo
 			// try to reuse instruction result from lineage cache
 			if( !LineageCache.reuse(tmp, ec) ) {
 				// process actual instruction
+				long et0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 				tmp.processInstruction(ec);
 				
 				// cache result
-				LineageCache.putValue(tmp, ec);
+				LineageCache.putValue(tmp, ec, System.nanoTime()-et0);
 				
 				// post-process instruction (debug)
 				tmp.postprocessInstruction( ec );

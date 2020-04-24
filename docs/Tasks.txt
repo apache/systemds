@@ -234,6 +234,7 @@ SYSTEMDS-310 Python Bindings
  * 312 Python 3.6 compatibility                                       OK
  * 313 Python Documentation upload via Github Actions                 OK
  * 314 Python SystemDS context manager                                OK
+ * 315 Python Federated Matrices Tests                                OK
 
 SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
  * 321 Merge histories of SystemDS and SystemML                       OK
@@ -243,7 +244,11 @@ SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
 SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 331 Cache and reuse scalar outputs (instruction and multi-level)   OK
  * 332 Parfor integration with multi-level reuse                      OK
- * 333 Use exact execution time for cost based eviction
+ * 333 Improve cache eviction with actual compute time                OK
+ * 334 Cache scalars only with atleast one matrix inputs
+ * 335 Weighted eviction policy (function of size & computetime)
+ * 336 Better use of cache status to handle multithreading
+ * 337 Adjust disk I/O speed by recording actual time taken           OK
  
 SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations

@@ -658,6 +658,9 @@ public class ParForProgramBlock extends ForProgramBlock
 			ec.setVariable(var, mo); 
 		}
 		
+		//execute exit instructions
+		executeExitInstructions(_exitInstruction, "parfor", ec);
+		
 		///////
 		//end PARALLEL EXECUTION of (PAR)FOR body
 		///////

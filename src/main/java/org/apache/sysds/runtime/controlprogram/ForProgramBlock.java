@@ -170,6 +170,9 @@ public class ForProgramBlock extends ProgramBlock
 		catch (Exception e) {
 			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating for program block", e);
 		}
+		
+		//execute exit instructions
+		executeExitInstructions(_exitInstruction, "for", ec);
 	}
 
 	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec )

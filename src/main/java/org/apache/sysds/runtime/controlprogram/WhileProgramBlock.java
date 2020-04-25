@@ -115,6 +115,9 @@ public class WhileProgramBlock extends ProgramBlock
 		catch (Exception e) {
 			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating while program block", e);
 		}
+		
+		//execute exit instructions
+		executeExitInstructions(_exitInstruction, "while", ec);
 	}
 	
 	public void setChildBlocks(ArrayList<ProgramBlock> childs) {

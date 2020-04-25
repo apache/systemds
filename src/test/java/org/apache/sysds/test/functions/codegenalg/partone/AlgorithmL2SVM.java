@@ -38,15 +38,6 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_L2SVM";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmL2SVM.class.getSimpleName() + "/";
-	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
-	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
-	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
-
-	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
 	
 	private final static double eps = 1e-5;
 	
@@ -61,7 +52,7 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
 	
-	private TestType currentTestType = TestType.DEFAULT;
+	private CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 	
 	@Override
 	public void setUp() {
@@ -71,85 +62,85 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 
 	@Test
 	public void testL2SVMDenseRewritesCP() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testL2SVMSparseRewritesCP() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testL2SVMDenseCP() {
-		runL2SVMTest(TEST_NAME1, false, false, ExecType.CP, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testL2SVMSparseCP() {
-		runL2SVMTest(TEST_NAME1, false, true, ExecType.CP, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testL2SVMDenseRewritesSP() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testL2SVMSparseRewritesSP() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testL2SVMDenseSP() {
-		runL2SVMTest(TEST_NAME1, false, false, ExecType.SPARK, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, false, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testL2SVMSparseSP() {
-		runL2SVMTest(TEST_NAME1, false, true, ExecType.SPARK, TestType.DEFAULT);
+		runL2SVMTest(TEST_NAME1, false, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testL2SVMDenseRewritesCPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_ALL);
+		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testL2SVMSparseRewritesCPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_ALL);
+		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testL2SVMDenseRewritesSPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testL2SVMSparseRewritesSPFuseAll() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testL2SVMDenseRewritesCPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runL2SVMTest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testL2SVMSparseRewritesCPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runL2SVMTest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testL2SVMDenseRewritesSPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runL2SVMTest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testL2SVMSparseRewritesSPFuseNoRedundancy() {
-		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runL2SVMTest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 	
-	private void runL2SVMTest( String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
+	private void runL2SVMTest( String testname, boolean rewrites, boolean sparse, ExecType instType, CodegenTestType CodegenTestType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -157,7 +148,7 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			case SPARK: rtplatform = ExecMode.SPARK; break;
 			default: rtplatform = ExecMode.HYBRID; break;
 		}
-		currentTestType = testType;
+		currentTestType = CodegenTestType;
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
@@ -210,17 +201,6 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 	 */
 	@Override
 	protected File getConfigTemplateFile() {
-		// Instrumentation in this test's output log to show custom configuration file used for template.
-		String message = "This test case overrides default configuration with ";
-		if(currentTestType == TestType.FUSE_ALL){
-			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
-			return TEST_CONF_FILE_FUSE_ALL;
-		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
-			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
-			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
-		} else {
-			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
-			return TEST_CONF_FILE_DEFAULT;
-		}
+		return getCodegenConfigFile(SCRIPT_DIR + TEST_DIR, currentTestType);
 	}
 }

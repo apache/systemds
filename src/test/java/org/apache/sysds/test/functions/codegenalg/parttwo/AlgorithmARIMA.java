@@ -31,16 +31,8 @@ import java.io.File;
 public class AlgorithmARIMA extends ArimaTest 
 {
 	private final static String LOCAL_TEST_DIR = "functions/codegenalg/";
-	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
-	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + LOCAL_TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
-	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + LOCAL_TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + LOCAL_TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
 
-	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
-	private TestType currentTestType = TestType.DEFAULT;
+	private CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 
 	public AlgorithmARIMA(int m, int p, int d, int q, int P, int D, int Q, int s, int include_mean, int useJacobi) {
 		super(m, p, d, q, P, D, Q, s, include_mean, useJacobi);
@@ -49,36 +41,26 @@ public class AlgorithmARIMA extends ArimaTest
 
 	@Test
 	public void testArimaDml() {
-		testArima(TestType.DEFAULT);
+		testArima(CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testArimaDmlFuseAll() {
-		testArima(TestType.FUSE_ALL);
+		testArima(CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testArimaDmlFuseNoRedundancy() {
-		testArima(TestType.FUSE_NO_REDUNDANCY);
+		testArima(CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void testArima(TestType testType){
-		currentTestType = testType;
+	private void testArima(CodegenTestType CodegenTestType){
+		currentTestType = CodegenTestType;
 		testArima();
 	}
 	
 	@Override
 	protected File getConfigTemplateFile() {
-		String message = "This test case overrides default configuration with ";
-		if(currentTestType == TestType.FUSE_ALL){
-			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
-			return TEST_CONF_FILE_FUSE_ALL;
-		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
-			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
-			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
-		} else {
-			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
-			return TEST_CONF_FILE_DEFAULT;
-		}
+		return getCodegenConfigFile(SCRIPT_DIR + LOCAL_TEST_DIR, currentTestType);
 	}
 }

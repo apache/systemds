@@ -36,15 +36,6 @@ public class AlgorithmGLM extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_GLM";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmGLM.class.getSimpleName() + "/";
-	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
-	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
-	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
-
-	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
 
 	//private final static double eps = 1e-5;
 	
@@ -64,7 +55,7 @@ public class AlgorithmGLM extends AutomatedTestBase
 		BINOMIAL_PROBIT,
 	}
 	
-	private TestType currentTestType = TestType.DEFAULT;
+	private CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 	
 	@Override
 	public void setUp() {
@@ -74,215 +65,215 @@ public class AlgorithmGLM extends AutomatedTestBase
 
 	@Test
 	public void testGLMPoissonDenseRewritesCP() {
-		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMPoissonSparseRewritesCP() {
-		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMPoissonDenseCP() {
-		runGLMTest(GLMType.POISSON_LOG, false, false, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.POISSON_LOG, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMPoissonSparseCP() {
-		runGLMTest(GLMType.POISSON_LOG, false, true, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.POISSON_LOG, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMGammaDenseRewritesCP() {
-		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMGammaSparseRewritesCP() {
-		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMGammaDenseCP() {
-		runGLMTest(GLMType.GAMMA_LOG, false, false, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.GAMMA_LOG, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMGammaSparseCP() {
-		runGLMTest(GLMType.GAMMA_LOG, false, true, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.GAMMA_LOG, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMBinomialDenseRewritesCP() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMBinomialSparseRewritesCP() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMBinomialDenseCP() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, false, false, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMBinomialSparseCP() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, false, true, ExecType.CP, TestType.DEFAULT);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMPoissonDenseRewritesSP() {
-		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.SPARK, TestType.DEFAULT);
+		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMPoissonSparseRewritesSP() {
-		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.SPARK, TestType.DEFAULT);
+		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMGammaDenseRewritesSP() {
-		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.SPARK, TestType.DEFAULT);
+		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMGammaSparseRewritesSP() {
-		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.SPARK, TestType.DEFAULT);
+		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMBinomialDenseRewritesSP() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.SPARK, TestType.DEFAULT);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testGLMBinomialSparseRewritesSP() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.SPARK, TestType.DEFAULT);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testGLMPoissonDenseRewritesCPFuseAll() {
-		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.CP, TestType.FUSE_ALL);
+		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMPoissonSparseRewritesCPFuseAll() {
-		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.CP, TestType.FUSE_ALL);
+		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMGammaDenseRewritesCPFuseAll() {
-		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.CP, TestType.FUSE_ALL);
+		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMGammaSparseRewritesCPFuseAll() {
-		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.CP, TestType.FUSE_ALL);
+		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMBinomialDenseRewritesCPFuseAll() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.CP, TestType.FUSE_ALL);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMBinomialSparseRewritesCPFuseAll() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.CP, TestType.FUSE_ALL);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMPoissonDenseRewritesSPFuseAll() {
-		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMPoissonSparseRewritesSPFuseAll() {
-		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMGammaDenseRewritesSPFuseAll() {
-		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMGammaSparseRewritesSPFuseAll() {
-		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMBinomialDenseRewritesSPFuseAll() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMBinomialSparseRewritesSPFuseAll() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testGLMPoissonDenseRewritesCPFuseNoRedundancy() {
-		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMPoissonSparseRewritesCPFuseNoRedundancy() {
-		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMGammaDenseRewritesCPFuseNoRedundancy() {
-		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMGammaSparseRewritesCPFuseNoRedundancy() {
-		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMBinomialDenseRewritesCPFuseNoRedundancy() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMBinomialSparseRewritesCPFuseNoRedundancy() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMPoissonDenseRewritesSPFuseNoRedundancy() {
-		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.POISSON_LOG, true, false, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMPoissonSparseRewritesSPFuseNoRedundancy() {
-		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.POISSON_LOG, true, true, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMGammaDenseRewritesSPFuseNoRedundancy() {
-		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.GAMMA_LOG, true, false, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMGammaSparseRewritesSPFuseNoRedundancy() {
-		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.GAMMA_LOG, true, true, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMBinomialDenseRewritesSPFuseNoRedundancy() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, false, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testGLMBinomialSparseRewritesSPFuseNoRedundancy() {
-		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runGLMTest(GLMType.BINOMIAL_PROBIT, true, true, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void runGLMTest( GLMType type, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
+	private void runGLMTest( GLMType type, boolean rewrites, boolean sparse, ExecType instType, CodegenTestType CodegenTestType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -290,7 +281,7 @@ public class AlgorithmGLM extends AutomatedTestBase
 			case SPARK: rtplatform = ExecMode.SPARK; break;
 			default: rtplatform = ExecMode.HYBRID; break;
 		}
-		currentTestType = testType;
+		currentTestType = CodegenTestType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -357,17 +348,6 @@ public class AlgorithmGLM extends AutomatedTestBase
 	 */
 	@Override
 	protected File getConfigTemplateFile() {
-		// Instrumentation in this test's output log to show custom configuration file used for template.
-		String message = "This test case overrides default configuration with ";
-		if(currentTestType == TestType.FUSE_ALL){
-			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
-			return TEST_CONF_FILE_FUSE_ALL;
-		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
-			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
-			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
-		} else {
-			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
-			return TEST_CONF_FILE_DEFAULT;
-		}
+		return getCodegenConfigFile(SCRIPT_DIR + TEST_DIR, currentTestType);
 	}
 }

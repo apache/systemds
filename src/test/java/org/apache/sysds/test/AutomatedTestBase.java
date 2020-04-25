@@ -116,6 +116,23 @@ public abstract class AutomatedTestBase {
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemDS-config.xml");
 
+	protected enum CodegenTestType {
+		DEFAULT, FUSE_ALL, FUSE_NO_REDUNDANCY;
+		
+		public String getCodgenConfig() {
+			switch(this) {
+				case DEFAULT:
+					return "SystemDS-config-codegen.xml";
+				case FUSE_ALL:
+					return "SystemDS-config-codegen-fuse-all.xml";
+				case FUSE_NO_REDUNDANCY:
+					return "SystemDS-config-codegen-fuse-no-redundancy.xml";
+				default: 
+					throw new RuntimeException("Unsupported codegen test config: "+this.name());
+			}
+		}
+	}
+	
 	/**
 	 * Location under which we create local temporary directories for test cases. To adjust where testTemp is located,
 	 * use -Dsystemds.testTemp.root.dir=<new location>. This is necessary if any parent directories are
@@ -289,6 +306,13 @@ public abstract class AutomatedTestBase {
 		return CONFIG_TEMPLATE_FILE;
 	}
 
+	protected File getCodegenConfigFile(String parent, CodegenTestType type) {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		File tmp = new File(parent, type.getCodgenConfig());
+		System.out.println("This test case overrides default configuration with " + tmp.getPath());
+		return tmp;
+	}
+	
 	protected ExecMode setExecMode(ExecType instType) {
 		switch(instType) {
 			case SPARK: return setExecMode(ExecMode.SPARK);

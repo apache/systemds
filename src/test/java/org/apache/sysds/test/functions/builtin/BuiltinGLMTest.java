@@ -193,7 +193,6 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 
 			MatrixCharacteristics mc_y = new MatrixCharacteristics(rows, y[0].length, defaultBlockSize, nnz_in_y);
 			writeInputMatrixWithMTD("Y", y, true, mc_y);
-			System.out.println("number of cols in Y" + y[0].length);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -219,14 +218,14 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(inputDir(),
+			rCmd = getRCmd(input("X.mtx"), input("Y.mtx"),
 					String.valueOf(distFamilyType),
 					String.valueOf(distParam),
 					String.valueOf(linkType),
 					String.valueOf(linkPower),
 					String.valueOf(intercept),
 					"0.000000000001",
-					expectedDir());
+					expected("betas_R"));
 
 			runTest(true, false, null, -1);
 

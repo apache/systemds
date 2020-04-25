@@ -16,11 +16,11 @@
 import os
 import re
 
-import util
+import onnx_systemds.util as util
 import onnx
-import onnx_helper
+import onnx_systemds.onnx_helper as onnx_helper
 import jinja2
-import operator_gen
+import onnx_systemds.operator_gen as operator_gen
 
 
 def gen_script_from_node(env: jinja2.environment.Environment, node: onnx.NodeProto) -> (str, str):

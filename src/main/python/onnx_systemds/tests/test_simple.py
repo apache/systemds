@@ -14,26 +14,25 @@
 # limitations under the License.
 
 import unittest
-import test_util
-from convert import onnx2systemds
+import util
 
 
 class TestSimpleOperators(unittest.TestCase):
     def test_simple_mat_add(self):
         name = "simple_mat_add"
-        test_util.run_and_compare_output(name, self)
+        util.run_and_compare_output(name, self)
 
     def test_simple_mat_add_mul_sub(self):
         name = "simple_mat_add_mul_sub"
-        test_util.run_and_compare_output(name, self)
+        util.run_and_compare_output(name, self)
 
     def test_simple_mat_initialized(self):
         name = "simple_mat_initialized"
-        test_util.run_and_compare_output(name, self)
+        util.run_and_compare_output(name, self)
 
     def test_simple_relu_tanh_sigmoid_softmax(self):
         name = "simple_relu_tanh_sigmoid_softmax"
-        test_util.run_and_compare_output(name, self)
+        util.run_and_compare_output(name, self)
 
     # TODO: dml implementation of dropout does not work
     # def test_simple_dropout_layer(self):

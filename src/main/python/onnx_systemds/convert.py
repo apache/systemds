@@ -16,8 +16,8 @@
 import argparse
 import os.path
 import ntpath
-import onnx_helper
-import render
+import onnx_systemds.onnx_helper as onnx_helper
+import onnx_systemds.render as render
 
 
 def init_argparse() -> argparse.ArgumentParser:

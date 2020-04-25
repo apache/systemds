@@ -62,19 +62,7 @@ if (model != "") {
 	D = ncol(A);
 
 	# perform z-scoring (centering and scaling)
-	if (center == 1) {
-	    cm = colMeans(A);
-	    A = A - cm;
-	}
-	if (scale == 1) {
-	    cvars = (colSums (A^2));	
-	    if (center == 1){
-		cm = colMeans(A);
-	    	cvars = (cvars - N*(cm^2))/(N-1);		    
- 	    }
-	    Azscored = (A)/sqrt(cvars);
-            A = Azscored;
-	}	
+	A = scale(A, center==1, scale==1);
 
 	# co-variance matrix 
 	mu = colSums(A)/N;

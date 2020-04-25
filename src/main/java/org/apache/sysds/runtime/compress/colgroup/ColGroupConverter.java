@@ -17,19 +17,17 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.utils;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 
-import org.apache.sysds.runtime.compress.ColGroup;
-import org.apache.sysds.runtime.compress.ColGroupDDC1;
-import org.apache.sysds.runtime.compress.ColGroupOLE;
-import org.apache.sysds.runtime.compress.ColGroupRLE;
-import org.apache.sysds.runtime.compress.ColGroupUncompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 
-public class ConverterUtils {
+/**
+ * Utility functions for ColGroup to convert ColGroups or MatrixBlocks. to other representations.
+ */
+public class ColGroupConverter {
 	/**
 	 * Copy col group instance with deep copy of column indices but shallow copy of actual contents;
 	 * 
@@ -68,10 +66,22 @@ public class ConverterUtils {
 		return ret;
 	}
 
+	/**
+	 * Extract the double array primitive from a Matrix Block that is an vector.
+	 * 
+	 * @param vector The Matrix block vector
+	 * @return The double array primitive
+	 */
 	public static double[] getDenseVector(MatrixBlock vector) {
 		return DataConverter.convertToDoubleVector(vector, false);
 	}
 
+	/**
+	 * Extracts the Uncompressed MatrixBlock representation of a Col Group
+	 * 
+	 * @param group an ColGroup to decompress
+	 * @return A MatrixBlock.
+	 */
 	public static MatrixBlock getUncompressedColBlock(ColGroup group) {
 		return (group instanceof ColGroupUncompressed) ? ((ColGroupUncompressed) group)
 			.getData() : new ColGroupUncompressed(Arrays.asList(group)).getData();

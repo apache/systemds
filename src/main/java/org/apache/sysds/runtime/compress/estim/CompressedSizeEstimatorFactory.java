@@ -19,13 +19,18 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorFactory {
+
 	public static final boolean EXTRACT_SAMPLE_ONCE = true;
 
-	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, int numRows, long seed, double sampling_ratio) {
-		return (sampling_ratio == 1.0) ? new CompressedSizeEstimatorExact(data) : new CompressedSizeEstimatorSample(
-			data, (int) Math.ceil(numRows * sampling_ratio), seed);
+	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
+		long elements = compSettings.transposeInput ? data.getNumColumns() : data.getNumRows();
+		elements = data.getNonZeros() / (compSettings.transposeInput ? data.getNumRows() : data.getNumColumns());
+		return (compSettings.samplingRatio >= 1.0 || elements < 1000) ? new CompressedSizeEstimatorExact(data,
+			compSettings) : new CompressedSizeEstimatorSample(data, compSettings,
+				(int) Math.ceil(elements * compSettings.samplingRatio));
 	}
 }

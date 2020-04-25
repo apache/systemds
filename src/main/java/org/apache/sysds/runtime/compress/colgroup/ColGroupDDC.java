@@ -17,23 +17,17 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysds.runtime.functionobjects.ReduceAll;
-import org.apache.sysds.runtime.functionobjects.ReduceCol;
-import org.apache.sysds.runtime.functionobjects.ReduceRow;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
@@ -44,11 +38,16 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 public abstract class ColGroupDDC extends ColGroupValue {
 	private static final long serialVersionUID = -3204391646123465004L;
 
+	@Override
+	public CompressionType getCompType() {
+		return CompressionType.DDC;
+	}
+
 	public ColGroupDDC() {
 		super();
 	}
 
-	public ColGroupDDC(int[] colIndices, int numRows, UncompressedBitmap ubm) {
+	protected ColGroupDDC(int[] colIndices, int numRows, UncompressedBitmap ubm) {
 		super(colIndices, numRows, ubm);
 	}
 
@@ -102,7 +101,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
+	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		int ncol = getNumCols();
 		for(int i = rl; i < ru; i++) {
 			int lnnz = 0;
@@ -112,34 +111,6 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		}
 	}
 
-	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
-		// sum and sumsq (reduceall/reducerow over tuples and counts)
-		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq) {
-			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus) ? KahanPlus
-				.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
-
-			if(op.indexFn instanceof ReduceAll)
-				computeSum(result, kplus);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(result, kplus, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(result, kplus);
-		}
-		// min and max (reduceall/reducerow over tuples only)
-		else if(op.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX ||
-				((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN)) {
-			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
-
-			if(op.indexFn instanceof ReduceAll)
-				computeMxx(result, builtin, false);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowMxx(result, builtin, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColMxx(result, builtin, false);
-		}
-	}
 
 	protected void computeSum(MatrixBlock result, KahanFunction kplus) {
 		int nrow = getNumRows();
@@ -236,7 +207,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		return super.estimateInMemorySize();
+		return ColGroupSizes.estimateInMemorySizeDDC(getNumCols(), getNumValues());
 	}
 
 	@Override
@@ -308,4 +279,12 @@ public abstract class ColGroupDDC extends ColGroupValue {
 				buff[_colIndexes[j]] = _values[off + j];
 		}
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		return sb.toString();
+	}
+
 }

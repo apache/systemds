@@ -17,14 +17,15 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.utils.ConverterUtils;
+import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -37,14 +38,15 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 /**
  * Class to encapsulate information about a column group that is encoded with simple lists of offsets for each set of
  * distinct values.
- * 
  */
 public class ColGroupOLE extends ColGroupOffset {
 	private static final long serialVersionUID = -9157676271360528008L;
 
 	private static final Log LOG = LogFactory.getLog(ColGroupOLE.class.getName());
 
-	public ColGroupOLE() {
+	protected int[] _skiplist;
+
+	protected ColGroupOLE() {
 		super();
 	}
 
@@ -55,7 +57,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	 * @param numRows    total number of rows in the parent block
 	 * @param ubm        Uncompressed bitmap representation of the block
 	 */
-	public ColGroupOLE(int[] colIndices, int numRows, UncompressedBitmap ubm) {
+	protected ColGroupOLE(int[] colIndices, int numRows, UncompressedBitmap ubm) {
 		super(colIndices, numRows, ubm);
 
 		// compress the bitmaps
@@ -69,9 +71,11 @@ public class ColGroupOLE extends ColGroupOffset {
 
 		// compact bitmaps to linearized representation
 		createCompressedBitmaps(numVals, totalLen, lbitmaps);
-		// TODO FIX Skiplist properly... Had to move it out since L2SVM test crash in edge cases. Make Conditions Consistant, or move allocation outside.
+
+		// TODO FIX Skiplist construction Since it is not needed in all cases.
+
 		_skiplist = new int[numVals];
-		if(LOW_LEVEL_OPT && CREATE_SKIPLIST && numRows > 2 * BitmapEncoder.BITMAP_BLOCK_SZ) {
+		if( CREATE_SKIP_LIST && numRows > 2 * BitmapEncoder.BITMAP_BLOCK_SZ) {
 			int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 			// _skiplist = new int[numVals];
 			int rl = (getNumRows() / 2 / blksz) * blksz;
@@ -92,7 +96,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			LOG.warn("OLE group larger than UC dense: " + estimateInMemorySize() + " " + ucSize);
 	}
 
-	public ColGroupOLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps,
+	protected ColGroupOLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps,
 		int[] bitmapOffs) {
 		super(colIndices, numRows, zeros, values);
 		_data = bitmaps;
@@ -101,12 +105,17 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public CompressionType getCompType() {
-		return CompressionType.OLE_BITMAP;
+		return CompressionType.OLE;
+	}
+
+	@Override
+	protected ColGroupType getColGroupType(){
+		return ColGroupType.OLE;
 	}
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		if(LOW_LEVEL_OPT && getNumValues() > 1) {
+		if( getNumValues() > 1) {
 			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
@@ -140,7 +149,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colixTargets) {
-		if(LOW_LEVEL_OPT && getNumValues() > 1) {
+		if( getNumValues() > 1) {
 			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
@@ -245,6 +254,14 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
+	public long estimateInMemorySize() {
+		// LOG.debug(this.toString());
+		// Note 0 is because the size can be calculated based on the given values,
+		// And because the fourth argument is only needed in estimation, not when an OLE ColGroup is created.
+		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(), _values.length, _data.length, 0);
+	}
+
+	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
 
@@ -274,7 +291,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
-		double[] b = ConverterUtils.getDenseVector(vector);
+		double[] b = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
@@ -286,7 +303,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			sb[j] = b[_colIndexes[j]];
 		}
 
-		if(LOW_LEVEL_OPT && numVals > 1 && _numRows > blksz) {
+		if( numVals > 1 && _numRows > blksz) {
 			// since single segment scans already exceed typical L2 cache sizes
 			// and because there is some overhead associated with blocking, the
 			// best configuration aligns with L3 cache size (x*vcores*64K*8B < L3)
@@ -358,14 +375,14 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
-		double[] a = ConverterUtils.getDenseVector(vector);
+		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
 
-		if(LOW_LEVEL_OPT && numVals > 1 && _numRows > blksz) {
+		if( numVals > 1 && _numRows > blksz) {
 			// cache blocking config (see matrix-vector mult for explanation)
 			final int blksz2 = ColGroupOffset.READ_CACHE_BLKSZ;
 
@@ -482,7 +499,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
 
-		if(ALLOW_CACHE_CONSCIOUS_ROWSUMS && LOW_LEVEL_OPT && numVals > 1 && _numRows > blksz) {
+		if(ALLOW_CACHE_CONSCIOUS_ROWSUMS && numVals > 1 && _numRows > blksz) {
 			final int blksz2 = ColGroupOffset.WRITE_CACHE_BLKSZ / 2;
 
 			// step 1: prepare position and value arrays
@@ -640,7 +657,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
+	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int blksz2 = ColGroupOffset.WRITE_CACHE_BLKSZ;
 		final int numVals = getNumValues();
@@ -737,6 +754,15 @@ public class ColGroupOLE extends ColGroupOffset {
 	@Override
 	public ColGroupRowIterator getRowIterator(int rl, int ru) {
 		return new OLERowIterator(rl, ru);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(String.format("\n%15s%5d ", "SkipList:", this._skiplist.length));
+		sb.append(Arrays.toString(this._skiplist));
+		return sb.toString();
 	}
 
 	private class OLEValueIterator implements Iterator<Integer> {

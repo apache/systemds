@@ -185,7 +185,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		}
 	}
 	
-	private void checkValidArguments(List<Data> loData, List<String> loNames, List<String> fArgNames) {
+	private static void checkValidArguments(List<Data> loData, List<String> loNames, List<String> fArgNames) {
 		//check number of parameters
 		int listSize = (loNames != null) ? loNames.size() : loData.size();
 		if( listSize != fArgNames.size() )
@@ -203,7 +203,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		}
 	}
 	
-	private ListObject reorderNamedListForFunctionCall(ListObject in, List<String> fArgNames) {
+	private static ListObject reorderNamedListForFunctionCall(ListObject in, List<String> fArgNames) {
 		List<Data> sortedData = new ArrayList<>();
 		for( String name : fArgNames )
 			sortedData.add(in.getData(name));

@@ -17,14 +17,15 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.utils.ConverterUtils;
+import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -41,7 +42,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	private static final Log LOG = LogFactory.getLog(ColGroupRLE.class.getName());
 
-	public ColGroupRLE() {
+	protected ColGroupRLE() {
 		super();
 	}
 
@@ -52,7 +53,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	 * @param numRows    total number of rows in the parent block
 	 * @param ubm        Uncompressed bitmap representation of the block
 	 */
-	public ColGroupRLE(int[] colIndices, int numRows, UncompressedBitmap ubm) {
+	protected ColGroupRLE(int[] colIndices, int numRows, UncompressedBitmap ubm) {
 		super(colIndices, numRows, ubm);
 
 		// compress the bitmaps
@@ -68,12 +69,13 @@ public class ColGroupRLE extends ColGroupOffset {
 		createCompressedBitmaps(numVals, totalLen, lbitmaps);
 
 		// debug output
-		double ucSize = MatrixBlock.estimateSizeDenseInMemory(numRows, colIndices.length);
+		double ucSize = ColGroupSizes.estimateInMemorySizeUncompressed(numRows, colIndices.length, 1.0);
 		if(estimateInMemorySize() > ucSize)
-			LOG.warn("RLE group larger than UC dense: " + estimateInMemorySize() + " " + ucSize);
+			LOG.warn(
+				String.format("RLE group larger than UC dense: %8d Uncompressed: %8d", estimateInMemorySize(), (int)ucSize));
 	}
 
-	public ColGroupRLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps,
+	protected ColGroupRLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps,
 		int[] bitmapOffs) {
 		super(colIndices, numRows, zeros, values);
 		_data = bitmaps;
@@ -82,12 +84,17 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public CompressionType getCompType() {
-		return CompressionType.RLE_BITMAP;
+		return CompressionType.RLE;
+	}
+
+	@Override
+	protected ColGroupType getColGroupType() {
+		return ColGroupType.RLE;
 	}
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		if(LOW_LEVEL_OPT && getNumValues() > 1) {
+		if(getNumValues() > 1) {
 			final int blksz = 128 * 1024;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
@@ -126,7 +133,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colixTargets) {
-		if(LOW_LEVEL_OPT && getNumValues() > 1) {
+		if(getNumValues() > 1) {
 			final int blksz = 128 * 1024;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
@@ -252,7 +259,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
-		double[] b = ConverterUtils.getDenseVector(vector);
+		double[] b = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -263,7 +270,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			sb[j] = b[_colIndexes[j]];
 		}
 
-		if(LOW_LEVEL_OPT && numVals > 1 && _numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
+		if(numVals > 1 && _numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
 			// L3 cache alignment, see comment rightMultByVector OLE column group
 			// core difference of RLE to OLE is that runs are not segment alignment,
 			// which requires care of handling runs crossing cache-buckets
@@ -346,13 +353,13 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
-		double[] a = ConverterUtils.getDenseVector(vector);
+		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
 
-		if(LOW_LEVEL_OPT && numVals > 1 && _numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
+		if(numVals > 1 && _numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
 			final int blksz = ColGroupOffset.READ_CACHE_BLKSZ;
 
 			// step 1: prepare position and value arrays
@@ -508,7 +515,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 		final int numVals = getNumValues();
 
-		if(ALLOW_CACHE_CONSCIOUS_ROWSUMS && LOW_LEVEL_OPT && numVals > 1 && _numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
+		if(ALLOW_CACHE_CONSCIOUS_ROWSUMS && numVals > 1 && _numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
 			final int blksz = ColGroupOffset.WRITE_CACHE_BLKSZ / 2;
 
 			// step 1: prepare position and value arrays
@@ -661,7 +668,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
+	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
 

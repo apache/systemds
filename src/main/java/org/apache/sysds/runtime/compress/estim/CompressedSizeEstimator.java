@@ -19,134 +19,234 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
-import org.apache.sysds.runtime.compress.BitmapEncoder;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+
+/**
+ * Main abstract class for estimating size of compressions on columns.
+ */
 public abstract class CompressedSizeEstimator {
 
+	private static final boolean LOCAL_DEBUG = false;
+	private static final Level LOCAL_DEBUG_LEVEL = Level.DEBUG;
+	static {
+		if(LOCAL_DEBUG) {
+			Logger.getLogger("org.apache.sysds.runtime.compress.estim").setLevel(LOCAL_DEBUG_LEVEL);
+		}
+	}
+	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimator.class.getName());
+
+	/** The Matrix Block to extract the compression estimates from */
 	protected MatrixBlock _data;
+	/** The number of rows in the matrix block, extracted to a field because the matrix could be transposed */
 	protected final int _numRows;
+	/** The number of columns in the matrix block, extracted to a field because the matrix could be transposed */
+	protected final int _numCols;
+	/** The compression settings to use, for estimating the size, and compress the ColGroups. */
+	protected final CompressionSettings _compSettings;
 
-	public CompressedSizeEstimator(MatrixBlock data) {
+	/**
+	 * Main Constructor for Compression Estimator.
+	 * 
+	 * protected because the factory should be used to construct the CompressedSizeEstimator
+	 * 
+	 * @param data         The matrix block to extract information from
+	 * @param compSettings The Compression settings used.
+	 */
+	protected CompressedSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
 		_data = data;
-		_numRows = CompressedMatrixBlock.TRANSPOSE_INPUT ? _data.getNumColumns() : _data.getNumRows();
+		_numRows = compSettings.transposeInput ? _data.getNumColumns() : _data.getNumRows();
+		_numCols = compSettings.transposeInput ? _data.getNumRows() : _data.getNumColumns();
+		_compSettings = compSettings;
 	}
 
-	public int getNumRows() {
-		return _numRows;
+	/**
+	 * Single threaded version of extracting Compression Size info
+	 * 
+	 * @return The Compression Size info of each Column compressed isolated.
+	 */
+	public CompressedSizeInfo computeCompressedSizeInfos() {
+		return computeCompressedSizeInfos(1);
 	}
 
-	public abstract CompressedSizeInfo estimateCompressedColGroupSize(int[] colIndexes);
+	/**
+	 * Multi threaded version of extracting Compression Size info
+	 * 
+	 * @param k The concurrency degree.
+	 * @return The Compression Size info of each Column compressed isolated.
+	 */
+	public CompressedSizeInfo computeCompressedSizeInfos(int k) {
+		CompressedSizeInfoColGroup[] sizeInfos = estimateIndividualColumnGroupSizes(k);
+		return computeCompressedSizeInfos(sizeInfos);
+	}
 
-	public abstract CompressedSizeInfo estimateCompressedColGroupSize(UncompressedBitmap ubm);
+	private CompressedSizeInfo computeCompressedSizeInfos(CompressedSizeInfoColGroup[] sizeInfos) {
+		List<Integer> colsC = new ArrayList<>();
+		List<Integer> colsUC = new ArrayList<>();
+		HashMap<Integer, Double> compRatios = new HashMap<>();
+		int nnzUC = 0;
 
-	protected SizeEstimationFactors computeSizeEstimationFactors(UncompressedBitmap ubm, boolean inclRLE) {
-		int numVals = ubm.getNumValues();
-		int numRuns = 0;
-		int numOffs = 0;
-		int numSegs = 0;
-		int numSingle = 0;
+		for(int col = 0; col < _numCols; col++) {
+			double uncompSize = sizeInfos[col].getCompressionSize(CompressionType.UNCOMPRESSED);
+			double minCompressedSize = (double) sizeInfos[col].getMinSize();
+			double compRatio = uncompSize / minCompressedSize;
 
-		// compute size estimation factors
-		for(int i = 0; i < numVals; i++) {
-			int[] list = ubm.getOffsetsList(i).extractValues();
-			int listSize = ubm.getNumOffsets(i);
-			numOffs += listSize;
-			numSegs += list[listSize - 1] / BitmapEncoder.BITMAP_BLOCK_SZ + 1;
-			numSingle += (listSize == 1) ? 1 : 0;
-			if(inclRLE) {
-				int lastOff = -2;
-				for(int j = 0; j < listSize; j++) {
-					if(list[j] != lastOff + 1) {
-						numRuns++; // new run
-						numRuns += (list[j] - lastOff) / // empty runs
-							BitmapEncoder.BITMAP_BLOCK_SZ;
-					}
-					lastOff = list[j];
+			if(compRatio > 1000) {
+
+				LOG.warn("\n\tVery good CompressionRatio: " + compRatio + "\n\tUncompressedSize: " + uncompSize
+					+ "\tCompressedSize: " + minCompressedSize + "\tType: " + sizeInfos[col].getBestCompressionType());
+			}
+
+			if(compRatio > 1) {
+				colsC.add(col);
+				compRatios.put(col, compRatio);
+			}
+			else {
+				colsUC.add(col);
+				// TODO nnzUC not incrementing as intended outside this function.
+				nnzUC += sizeInfos[col].getEstNnz();
+			}
+		}
+
+		// correction of column classification (reevaluate dense estimates if necessary)
+		if(!MatrixBlock.evalSparseFormatInMemory(_numRows, colsUC.size(), nnzUC) && !colsUC.isEmpty()) {
+			for(int i = 0; i < colsUC.size(); i++) {
+				int col = colsUC.get(i);
+				double uncompSize = MatrixBlock.estimateSizeInMemory(_numRows, 1, 1.0);
+				// CompressedMatrixBlock.getUncompressedSize(numRows, 1, 1.0);
+				double compRatio = uncompSize / sizeInfos[col].getMinSize();
+				if(compRatio > 1) {
+					colsC.add(col);
+					colsUC.remove(i);
+					i--;
+					compRatios.put(col, compRatio);
+					nnzUC -= sizeInfos[col].getEstNnz();
 				}
 			}
 		}
 
-		// construct estimation factors
-		return new SizeEstimationFactors(numVals, numSegs, numOffs, numRuns, numSingle);
-	}
-
-	/**
-	 * Estimates the number of bytes needed to encode this column group in RLE encoding format.
-	 * 
-	 * @param numVals number of value tuples
-	 * @param numRuns number of runs
-	 * @param numCols number of columns
-	 * @return number of bytes to encode column group in RLE format
-	 */
-	protected static long getRLESize(int numVals, int numRuns, int numCols) {
-		int ret = 0;
-		// distinct value tuples [double per col]
-		ret += 8 * numVals * numCols;
-		// offset/len fields per distinct value tuple [2xint]
-		ret += 8 * numVals;
-		// run data [2xchar]
-		ret += 4 * numRuns;
-		return ret;
-	}
-
-	/**
-	 * Estimates the number of bytes needed to encode this column group in OLE format.
-	 * 
-	 * @param numVals number of value tuples
-	 * @param numOffs number of offsets
-	 * @param numSeqs number of segment headers
-	 * @param numCols number of columns
-	 * @return number of bytes to encode column group in RLE format
-	 */
-	protected static long getOLESize(int numVals, float numOffs, int numSeqs, int numCols) {
-		int ret = 0;
-		// distinct value tuples [double per col]
-		ret += 8 * numVals * numCols;
-		// offset/len fields per distinct value tuple [2xint]
-		ret += 8 * numVals;
-		// offset list data [1xchar]
-		ret += 2 * numOffs;
-		// offset list seqment headers [1xchar]
-		ret += 2 * numSeqs;
-		return ret;
-	}
-
-	/**
-	 * Estimates the number of bytes needed to encode this column group in DDC1 or DDC2 format.
-	 * 
-	 * @param numVals number of value tuples
-	 * @param numRows number of rows
-	 * @param numCols number of columns
-	 * @return number of bytes to encode column group in RLE format
-	 */
-	protected static long getDDCSize(int numVals, int numRows, int numCols) {
-		if(numVals > Character.MAX_VALUE - 1)
-			return Long.MAX_VALUE;
-
-		int ret = 0;
-		// distinct value tuples [double per col]
-		ret += 8 * numVals * numCols;
-		// data [byte or char per row]
-		ret += ((numVals > 255) ? 2 : 1) * numRows;
-		return ret;
-	}
-
-	protected static class SizeEstimationFactors {
-		protected int numVals; // num value tuples
-		protected int numSegs; // num OLE segments
-		protected int numOffs; // num OLE offsets
-		protected int numRuns; // num RLE runs
-		protected int numSingle; // num singletons
-
-		protected SizeEstimationFactors(int numvals, int numsegs, int numoffs, int numruns, int numsingle) {
-			numVals = numvals;
-			numSegs = numsegs;
-			numOffs = numoffs;
-			numRuns = numruns;
-			numSingle = numsingle;
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("C: " + Arrays.toString(colsC.toArray(new Integer[0])));
+			LOG.trace(
+				"-- compression ratios: " + Arrays.toString(colsC.stream().map(c -> compRatios.get(c)).toArray()));
+			LOG.trace("UC: " + Arrays.toString(colsUC.toArray(new Integer[0])));
+			LOG.trace(
+				"-- compression ratios: " + Arrays.toString(colsUC.stream().map(c -> compRatios.get(c)).toArray()));
 		}
+
+		return new CompressedSizeInfo(sizeInfos, colsC, colsUC, compRatios, nnzUC);
+
+	}
+
+	private CompressedSizeInfoColGroup[] estimateIndividualColumnGroupSizes(int k) {
+		return (k > 1) ? CompressedSizeInfoColGroup(_numCols, k) : CompressedSizeInfoColGroup(_numCols);
+	}
+
+	/**
+	 * Method used for compressing into one type of colGroup
+	 * 
+	 * @return CompressedSizeInfo on a compressed colGroup compressing the entire matrix into a single colGroup type.
+	 */
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSize() {
+		int[] colIndexes = makeColIndexes();
+		return estimateCompressedColGroupSize(colIndexes);
+	}
+
+	/**
+	 * Abstract method for extracting Compressed Size Info of specified columns, together in a single ColGroup
+	 * 
+	 * @param colIndexes The Colums to group together inside a ColGroup
+	 * @return The CompressedSizeInformation associated with the selected ColGroups.
+	 */
+	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes);
+
+	/**
+	 * Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitMap. Note this
+	 * method works both for the sample based estimator and the exact estimator, since the bitmap, can be extracted from
+	 * a sample or from the entire dataset.
+	 * 
+	 * @param ubm the UncompressedBitMap, either extracted from a sample or from the entier dataset
+	 * @return The size factors estimated from the Bit Map.
+	 */
+	public CompressedSizeEstimationFactors estimateCompressedColGroupSize(UncompressedBitmap ubm) {
+		return CompressedSizeEstimationFactors.computeSizeEstimationFactors(ubm,
+			_compSettings.validCompressions.contains(CompressionType.RLE),
+			_numRows,
+			ubm.getNumColumns());
+	}
+
+	// ------------------------------------------------
+	// PARALLEL CODE
+	// ------------------------------------------------
+
+	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {
+		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[clen];
+		for(int col = 0; col < clen; col++)
+			ret[col] = estimateCompressedColGroupSize(new int[] {col});
+		return ret;
+	}
+
+	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen, int k) {
+		try {
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<SizeEstimationTask> tasks = new ArrayList<>();
+			for(int col = 0; col < clen; col++)
+				tasks.add(new SizeEstimationTask(this, col));
+			List<Future<CompressedSizeInfoColGroup>> rtask = pool.invokeAll(tasks);
+			ArrayList<CompressedSizeInfoColGroup> ret = new ArrayList<>();
+			for(Future<CompressedSizeInfoColGroup> lrtask : rtask)
+				ret.add(lrtask.get());
+			pool.shutdown();
+			return ret.toArray(new CompressedSizeInfoColGroup[0]);
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	private static class SizeEstimationTask implements Callable<CompressedSizeInfoColGroup> {
+		private final CompressedSizeEstimator _estimator;
+		private final int _col;
+
+		protected SizeEstimationTask(CompressedSizeEstimator estimator, int col) {
+			_estimator = estimator;
+			_col = col;
+		}
+
+		@Override
+		public CompressedSizeInfoColGroup call() {
+			return _estimator.estimateCompressedColGroupSize(new int[] {_col});
+		}
+	}
+
+	// ------------------------------------------------
+	// PARALLEL CODE END
+	// ------------------------------------------------
+
+	// UTIL
+
+	private int[] makeColIndexes() {
+		int[] colIndexes = new int[_numCols];
+		for(int i = 0; i < _numCols; i++) {
+			colIndexes[i] = i;
+		}
+		return colIndexes;
 	}
 }

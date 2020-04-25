@@ -20,32 +20,23 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * Exact compressed size estimator (examines entire dataset).
- * 
  */
 public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
-	public CompressedSizeEstimatorExact(MatrixBlock data) {
-		super(data);
+
+	public CompressedSizeEstimatorExact(MatrixBlock data, CompressionSettings compSettings) {
+		super(data, compSettings);
 	}
 
 	@Override
-	public CompressedSizeInfo estimateCompressedColGroupSize(int[] colIndexes) {
-		return estimateCompressedColGroupSize(BitmapEncoder.extractBitmap(colIndexes, _data));
-	}
-
-	@Override
-	public CompressedSizeInfo estimateCompressedColGroupSize(UncompressedBitmap ubm) {
-		// compute size estimation factors
-		SizeEstimationFactors fact = computeSizeEstimationFactors(ubm, true);
-
-		// construct new size info summary
-		return new CompressedSizeInfo(fact.numVals, fact.numOffs,
-			getRLESize(fact.numVals, fact.numRuns, ubm.getNumColumns()),
-			getOLESize(fact.numVals, fact.numOffs, fact.numSegs, ubm.getNumColumns()),
-			getDDCSize(fact.numVals, _numRows, ubm.getNumColumns()));
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
+		LOG.debug("CompressedSizeEstimatorExact: " + colIndexes.length);
+		UncompressedBitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _compSettings);
+		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap), _compSettings.validCompressions);
 	}
 }

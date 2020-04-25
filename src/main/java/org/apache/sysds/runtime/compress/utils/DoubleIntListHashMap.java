@@ -22,31 +22,28 @@ package org.apache.sysds.runtime.compress.utils;
 import java.util.ArrayList;
 
 /**
- * This class provides a memory-efficient replacement for
- * {@code HashMap<Double,IntArrayList>} for restricted use cases.
+ * This class provides a memory-efficient replacement for {@code HashMap<Double,IntArrayList>} for restricted use cases.
  * 
+ * TODO: Fix allocation of size such that it contains some amount of overhead from the start, to enable hashmap
+ * performance.
  */
-public class DoubleIntListHashMap 
-{
-	private static final int INIT_CAPACITY = 8;
-	private static final int RESIZE_FACTOR = 2;
-	private static final float LOAD_FACTOR = 0.75f;
+public class DoubleIntListHashMap extends CustomHashMap {
 
 	private DIListEntry[] _data = null;
-	private int _size = -1;
 
 	public DoubleIntListHashMap() {
 		_data = new DIListEntry[INIT_CAPACITY];
 		_size = 0;
 	}
 
-	public int size() {
-		return _size;
+	public DoubleIntListHashMap(int init_capacity) {
+		_data = new DIListEntry[init_capacity];
+		_size = 0;
 	}
 
 	public IntArrayList get(double key) {
 		// probe for early abort
-		if( _size == 0 )
+		if(_size == 0)
 			return null;
 
 		// compute entry index position
@@ -54,8 +51,8 @@ public class DoubleIntListHashMap
 		int ix = indexFor(hash, _data.length);
 
 		// find entry
-		for( DIListEntry e = _data[ix]; e != null; e = e.next ) {
-			if( e.key == key ) {
+		for(DIListEntry e = _data[ix]; e != null; e = e.next) {
+			if(e.key == key) {
 				return e.value;
 			}
 		}
@@ -72,18 +69,22 @@ public class DoubleIntListHashMap
 		DIListEntry enew = new DIListEntry(key, value);
 		enew.next = _data[ix]; // colliding entries / null
 		_data[ix] = enew;
+		if(enew.next != null && enew.next.key == key) {
+			enew.next = enew.next.next;
+			_size--;
+		}
 		_size++;
 
 		// resize if necessary
-		if( _size >= LOAD_FACTOR * _data.length )
+		if(_size >= LOAD_FACTOR * _data.length)
 			resize();
 	}
 
 	public ArrayList<DIListEntry> extractValues() {
 		ArrayList<DIListEntry> ret = new ArrayList<>();
-		for( DIListEntry e : _data ) {
-			if (e != null) {
-				while( e.next != null ) {
+		for(DIListEntry e : _data) {
+			if(e != null) {
+				while(e.next != null) {
 					ret.add(e);
 					e = e.next;
 				}
@@ -96,7 +97,7 @@ public class DoubleIntListHashMap
 
 	private void resize() {
 		// check for integer overflow on resize
-		if( _data.length > Integer.MAX_VALUE / RESIZE_FACTOR )
+		if(_data.length > Integer.MAX_VALUE / RESIZE_FACTOR)
 			return;
 
 		// resize data array and copy existing contents
@@ -105,9 +106,9 @@ public class DoubleIntListHashMap
 		_size = 0;
 
 		// rehash all entries
-		for( DIListEntry e : olddata ) {
-			if( e != null ) {
-				while( e.next != null ) {
+		for(DIListEntry e : olddata) {
+			if(e != null) {
+				while(e.next != null) {
 					appendValue(e.key, e.value);
 					e = e.next;
 				}

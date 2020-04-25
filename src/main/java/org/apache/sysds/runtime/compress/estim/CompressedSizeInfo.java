@@ -19,48 +19,49 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import java.util.HashMap;
+import java.util.List;
+
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 
 /**
- * 
- * A helper reusable object for maintaining bitmap sizes
+ * A helper reusable object for maintaining information about estimated compression
  */
 public class CompressedSizeInfo {
-	private final int _estCard;
-	private final int _estNnz;
-	private final long _rleSize;
-	private final long _oleSize;
-	private final long _ddcSize;
 
-	public CompressedSizeInfo(int estCard, int estNnz, long rleSize, long oleSize, long ddcSize) {
-		_estCard = estCard;
-		_estNnz = estNnz;
-		_rleSize = rleSize;
-		_oleSize = oleSize;
-		_ddcSize = ddcSize;
+	public CompressedSizeInfoColGroup[] compressionInfo;
+	public List<Integer> colsC;
+	public List<Integer> colsUC;
+	public HashMap<Integer, Double> compRatios;
+	public int nnzUC;
+
+	public CompressedSizeInfo(CompressedSizeInfoColGroup[] compressionInfo, List<Integer> colsC, List<Integer> colsUC,
+		HashMap<Integer, Double> compRatios, int nnzUC) {
+		this.compressionInfo = compressionInfo;
+		this.colsC = colsC;
+		this.colsUC = colsUC;
+		this.compRatios = compRatios;
+		this.nnzUC = nnzUC;
 	}
 
-	public long getRLESize() {
-		return _rleSize;
+	public CompressedSizeInfoColGroup getGroupInfo(int index) {
+		return compressionInfo[index];
 	}
 
-	public long getOLESize() {
-		return _oleSize;
+	/**
+	 * Method for returning the calculated memory usage from this specific compression plan.
+	 * @return The in memory estimate as a long counting bytes.
+	 */
+	public long memoryEstimate() {
+		// Basic data inherited from MatrixBlock + CompressedMatrixBlock
+		long est = CompressedMatrixBlock.baseSizeInMemory();
+		// Memory usage from all Compression Groups.
+		for(CompressedSizeInfoColGroup csi : compressionInfo) {
+			est += csi.getMinSize();
+		}
+
+		return est;
 	}
 
-	public long getDDCSize() {
-		return CompressedMatrixBlock.ALLOW_DDC_ENCODING ? _ddcSize : Long.MAX_VALUE;
-	}
-
-	public long getMinSize() {
-		return Math.min(Math.min(getRLESize(), getOLESize()), getDDCSize());
-	}
-
-	public int getEstCard() {
-		return _estCard;
-	}
-
-	public int getEstNnz() {
-		return _estNnz;
-	}
+	
 }

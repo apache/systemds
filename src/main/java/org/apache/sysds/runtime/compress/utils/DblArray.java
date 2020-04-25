@@ -23,21 +23,19 @@ import java.util.Arrays;
 
 /**
  * Helper class used for bitmap extraction.
- *
  */
-public class DblArray 
-{
+public class DblArray {
 	private double[] _arr = null;
 	private boolean _zero = false;
-	
+
 	public DblArray() {
 		this(null, false);
 	}
-	
+
 	public DblArray(double[] arr) {
 		this(arr, false);
 	}
-	
+
 	public DblArray(DblArray that) {
 		this(Arrays.copyOf(that._arr, that._arr.length), that._zero);
 	}
@@ -46,11 +44,11 @@ public class DblArray
 		_arr = arr;
 		_zero = allZeros;
 	}
-	
+
 	public double[] getData() {
 		return _arr;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return _zero ? 0 : Arrays.hashCode(_arr);
@@ -58,9 +56,7 @@ public class DblArray
 
 	@Override
 	public boolean equals(Object o) {
-		return ( o instanceof DblArray
-			&& _zero == ((DblArray) o)._zero
-			&& Arrays.equals(_arr, ((DblArray) o)._arr) );
+		return(o instanceof DblArray && _zero == ((DblArray) o)._zero && Arrays.equals(_arr, ((DblArray) o)._arr));
 	}
 
 	@Override
@@ -69,8 +65,8 @@ public class DblArray
 	}
 
 	public static boolean isZero(double[] ds) {
-		for (int i = 0; i < ds.length; i++)
-			if (ds[i] != 0.0)
+		for(int i = 0; i < ds.length; i++)
+			if(ds[i] != 0.0)
 				return false;
 		return true;
 	}

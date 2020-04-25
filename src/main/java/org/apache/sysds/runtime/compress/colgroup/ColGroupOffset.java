@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -26,18 +26,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysds.runtime.functionobjects.ReduceAll;
-import org.apache.sysds.runtime.functionobjects.ReduceCol;
-import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
  * Base class for column groups encoded with various types of bitmap encoding.
@@ -49,7 +44,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 public abstract class ColGroupOffset extends ColGroupValue {
 	private static final long serialVersionUID = -1635828933479403125L;
 
-	protected static final boolean CREATE_SKIPLIST = true;
+	protected static final boolean CREATE_SKIP_LIST = true;
 
 	protected static final int READ_CACHE_BLKSZ = 2 * BitmapEncoder.BITMAP_BLOCK_SZ;
 	public static final int WRITE_CACHE_BLKSZ = 2 * BitmapEncoder.BITMAP_BLOCK_SZ;
@@ -58,9 +53,6 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	/** Bitmaps, one per uncompressed value in {@link #_values}. */
 	protected int[] _ptr; // bitmap offsets per value
 	protected char[] _data; // linearized bitmaps (variable length)
-	protected boolean _zeros; // contains zero values
-
-	protected int[] _skiplist;
 
 	public ColGroupOffset() {
 		super();
@@ -110,16 +102,13 @@ public abstract class ColGroupOffset extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = super.estimateInMemorySize();
-
-		// adding bitmaps size
-		size += 16; // array references
-		if(_data != null) {
-			size += 32 + _ptr.length * 4; // offsets
-			size += 32 + _data.length * 2; // bitmaps
+		// Could use a ternary operator, but it looks odd with our code formatter here.
+		if(_data == null) {
+			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _colIndexes.length, 0, 0);
 		}
-
-		return size;
+		else {
+			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _values.length, _ptr.length, _data.length);
+		}
 	}
 
 	// generic decompression for OLE/RLE, to be overwritten for performance
@@ -342,43 +331,6 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		return ret;
 	}
 
-	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
-		// sum and sumsq (reduceall/reducerow over tuples and counts)
-		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq) {
-			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus) ? KahanPlus
-				.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
-
-			if(op.indexFn instanceof ReduceAll)
-				computeSum(result, kplus);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(result, kplus, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(result, kplus);
-		}
-		// min and max (reduceall/reducerow over tuples only)
-		else if(op.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX ||
-				((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN)) {
-			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
-
-			if(op.indexFn instanceof ReduceAll)
-				computeMxx(result, builtin, _zeros);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowMxx(result, builtin, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColMxx(result, builtin, _zeros);
-		}
-	}
-
-	protected abstract void computeSum(MatrixBlock result, KahanFunction kplus);
-
-	protected abstract void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru);
-
-	protected abstract void computeColSums(MatrixBlock result, KahanFunction kplus);
-
-	protected abstract void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru);
-
 	protected abstract boolean[] computeZeroIndicatorVector();
 
 	@Override
@@ -403,6 +355,23 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	 * @return an iterator over the row offsets in this bitmap
 	 */
 	public abstract Iterator<Integer> getIterator(int k, int rl, int ru);
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(String.format("\n%15s%5d ", "Pointers:" , this._ptr.length ));
+		sb.append(Arrays.toString(this._ptr));
+		sb.append(String.format("\n%15s%5d ", "Data:" , this._data.length));
+		sb.append("[");
+		for(int x = 0; x < _data.length; x++) {
+			sb.append(((int) _data[x]));
+			if(x != _data.length - 1)
+				sb.append(", ");
+		}
+		sb.append("]");
+		return sb.toString();
+	}
 
 	protected class OffsetValueIterator implements Iterator<IJV> {
 		// iterator configuration

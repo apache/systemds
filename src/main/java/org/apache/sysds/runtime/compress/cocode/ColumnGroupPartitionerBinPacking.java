@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.util.SortUtils;
 
 /**
  * Column group partitioning with bin packing heuristic.
- * 
  */
 public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner {
 	private static final boolean FIRST_FIT_DEC = true;

@@ -30,11 +30,13 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * Static functions for encoding bitmaps in various ways.
- * 
  */
 public class BitmapEncoder {
 	/** Size of the blocks used in a blocked bitmap representation. */
+	// Note it is one more than Character.MAX_VALUE.
 	public static final int BITMAP_BLOCK_SZ = 65536;
+
+	public static boolean MATERIALIZE_ZEROS = false;
 
 	public static int getAlignedBlocksize(int blklen) {
 		return blklen + ((blklen % BITMAP_BLOCK_SZ != 0) ? BITMAP_BLOCK_SZ - blklen % BITMAP_BLOCK_SZ : 0);
@@ -43,43 +45,44 @@ public class BitmapEncoder {
 	/**
 	 * Generate uncompressed bitmaps for a set of columns in an uncompressed matrix block.
 	 * 
-	 * @param colIndices indexes (within the block) of the columns to extract
-	 * @param rawblock   an uncompressed matrix block; can be dense or sparse
+	 * @param colIndices   Indexes (within the block) of the columns to extract
+	 * @param rawBlock     An uncompressed matrix block; can be dense or sparse
+	 * @param compSettings The compression settings used for the compression.
 	 * @return uncompressed bitmap representation of the columns
 	 */
-	public static UncompressedBitmap extractBitmap(int[] colIndices, MatrixBlock rawblock) {
+	public static UncompressedBitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock,
+		CompressionSettings compSettings) {
 		// note: no sparse column selection reader because low potential
 		// single column selection
 		if(colIndices.length == 1) {
-			return extractBitmap(colIndices[0], rawblock, !CompressedMatrixBlock.MATERIALIZE_ZEROS);
+			return extractBitmap(colIndices[0], rawBlock, !MATERIALIZE_ZEROS, compSettings);
 		}
 		// multiple column selection (general case)
 		else {
 			ReaderColumnSelection reader = null;
-			if(rawblock.isInSparseFormat() && CompressedMatrixBlock.TRANSPOSE_INPUT)
-				reader = new ReaderColumnSelectionSparse(rawblock, colIndices,
-					!CompressedMatrixBlock.MATERIALIZE_ZEROS);
+			if(rawBlock.isInSparseFormat() && compSettings.transposeInput)
+				reader = new ReaderColumnSelectionSparse(rawBlock, colIndices, !MATERIALIZE_ZEROS, compSettings);
 			else
-				reader = new ReaderColumnSelectionDense(rawblock, colIndices, !CompressedMatrixBlock.MATERIALIZE_ZEROS);
+				reader = new ReaderColumnSelectionDense(rawBlock, colIndices, !MATERIALIZE_ZEROS, compSettings);
 
-			return extractBitmap(colIndices, rawblock, reader);
+			return extractBitmap(colIndices, rawBlock, reader);
 		}
 	}
 
-	public static UncompressedBitmap extractBitmapFromSample(int[] colIndices, MatrixBlock rawblock,
-		int[] sampleIndexes) {
+	public static UncompressedBitmap extractBitmapFromSample(int[] colIndices, MatrixBlock rawBlock,
+		int[] sampleIndexes, CompressionSettings compSettings) {
 		// note: no sparse column selection reader because low potential
 
 		// single column selection
 		if(colIndices.length == 1) {
-			return extractBitmap(colIndices[0], rawblock, sampleIndexes, !CompressedMatrixBlock.MATERIALIZE_ZEROS);
+			return extractBitmap(colIndices[0], rawBlock, sampleIndexes, !MATERIALIZE_ZEROS, compSettings);
 		}
 		// multiple column selection (general case)
 		else {
 			return extractBitmap(colIndices,
-				rawblock,
-				new ReaderColumnSelectionDenseSample(rawblock, colIndices, sampleIndexes,
-					!CompressedMatrixBlock.MATERIALIZE_ZEROS));
+				rawBlock,
+				new ReaderColumnSelectionDenseSample(rawBlock, colIndices, sampleIndexes, !MATERIALIZE_ZEROS,
+					compSettings));
 		}
 	}
 
@@ -88,7 +91,6 @@ public class BitmapEncoder {
 	 * 
 	 * @param offsets uncompressed offset list
 	 * @param len     logical length of the given offset list
-	 * 
 	 * @return compressed version of said bitmap
 	 */
 	public static char[] genRLEBitmap(int[] offsets, int len) {
@@ -163,8 +165,14 @@ public class BitmapEncoder {
 			}
 		}
 
-		// Close out the last run
 		if(curRunLen >= 1) {
+			// Edge case, if the last run overlaps the character length bound.
+			if(curRunOff + curRunLen > Character.MAX_VALUE) {
+				buf.add(Character.MAX_VALUE);
+				buf.add((char) 0);
+				curRunOff -= Character.MAX_VALUE;
+			}
+
 			buf.add((char) curRunOff);
 			buf.add((char) curRunLen);
 		}
@@ -226,16 +234,17 @@ public class BitmapEncoder {
 		return encodedBlocks;
 	}
 
-	private static UncompressedBitmap extractBitmap(int colIndex, MatrixBlock rawblock, boolean skipZeros) {
+	private static UncompressedBitmap extractBitmap(int colIndex, MatrixBlock rawBlock, boolean skipZeros,
+		CompressionSettings compSettings) {
 		// probe map for distinct items (for value or value groups)
 		DoubleIntListHashMap distinctVals = new DoubleIntListHashMap();
 
 		// scan rows and probe/build distinct items
-		final int m = CompressedMatrixBlock.TRANSPOSE_INPUT ? rawblock.getNumColumns() : rawblock.getNumRows();
+		final int m = compSettings.transposeInput ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 
-		if(rawblock.isInSparseFormat() // SPARSE
-			&& CompressedMatrixBlock.TRANSPOSE_INPUT) {
-			SparseBlock a = rawblock.getSparseBlock();
+		if(rawBlock.isInSparseFormat() // SPARSE
+			&& compSettings.transposeInput) {
+			SparseBlock a = rawBlock.getSparseBlock();
 			if(a != null && !a.isEmpty(colIndex)) {
 				int apos = a.pos(colIndex);
 				int alen = a.size(colIndex);
@@ -277,7 +286,7 @@ public class BitmapEncoder {
 		else // GENERAL CASE
 		{
 			for(int i = 0; i < m; i++) {
-				double val = CompressedMatrixBlock.TRANSPOSE_INPUT ? rawblock.quickGetValue(colIndex, i) : rawblock
+				double val = compSettings.transposeInput ? rawBlock.quickGetValue(colIndex, i) : rawBlock
 					.quickGetValue(i, colIndex);
 				if(val != 0 || !skipZeros) {
 					IntArrayList lstPtr = distinctVals.get(val);
@@ -293,8 +302,8 @@ public class BitmapEncoder {
 		return new UncompressedBitmap(distinctVals);
 	}
 
-	private static UncompressedBitmap extractBitmap(int colIndex, MatrixBlock rawblock, int[] sampleIndexes,
-		boolean skipZeros) {
+	private static UncompressedBitmap extractBitmap(int colIndex, MatrixBlock rawBlock, int[] sampleIndexes,
+		boolean skipZeros, CompressionSettings compSettings) {
 		// note: general case only because anyway binary search for small samples
 
 		// probe map for distinct items (for value or value groups)
@@ -304,7 +313,7 @@ public class BitmapEncoder {
 		final int m = sampleIndexes.length;
 		for(int i = 0; i < m; i++) {
 			int rowIndex = sampleIndexes[i];
-			double val = CompressedMatrixBlock.TRANSPOSE_INPUT ? rawblock.quickGetValue(colIndex, rowIndex) : rawblock
+			double val = compSettings.transposeInput ? rawBlock.quickGetValue(colIndex, rowIndex) : rawBlock
 				.quickGetValue(rowIndex, colIndex);
 			if(val != 0 || !skipZeros) {
 				IntArrayList lstPtr = distinctVals.get(val);
@@ -319,7 +328,7 @@ public class BitmapEncoder {
 		return new UncompressedBitmap(distinctVals);
 	}
 
-	private static UncompressedBitmap extractBitmap(int[] colIndices, MatrixBlock rawblock,
+	private static UncompressedBitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock,
 		ReaderColumnSelection rowReader) {
 		// probe map for distinct items (for value or value groups)
 		DblArrayIntListHashMap distinctVals = new DblArrayIntListHashMap();

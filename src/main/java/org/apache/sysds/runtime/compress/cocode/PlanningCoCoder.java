@@ -32,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class PlanningCoCoder {
@@ -44,19 +45,34 @@ public class PlanningCoCoder {
 		BIN_PACKING, STATIC,
 	}
 
-	public static List<int[]> findCocodesByPartitioning(CompressedSizeEstimator sizeEstimator, List<Integer> cols,
-		CompressedSizeInfo[] colInfos, int numRows, int k) {
-		// filtering out non-groupable columns as singleton groups
+	/**
+	 * Main entry point of CoCode.
+	 * 
+	 * This package groups together ColGroups across columns, to improve compression further,
+	 * 
+	 * @param sizeEstimator The size estimator used for estimating ColGroups potential sizes.
+	 * @param colInfos      The information already gathered on the individual ColGroups of columns.
+	 * @param numRows       The number of rows in the input matrix.
+	 * @param k             The concurrency degree allowed for this operation.
+	 * @return The Estimated (hopefully) best groups of ColGroups.
+	 */
+	public static List<int[]> findCocodesByPartitioning(CompressedSizeEstimator sizeEstimator,
+		CompressedSizeInfo colInfos, int numRows, int k) {
+		// filtering out non-group-able columns as singleton groups
 		// weight is the ratio of its cardinality to the number of rows
+
+		List<Integer> cols = colInfos.colsC;
+		CompressedSizeInfoColGroup[] colGroups = colInfos.compressionInfo;
+
 		int numCols = cols.size();
 		List<Integer> groupCols = new ArrayList<>();
 		HashMap<Integer, GroupableColInfo> groupColsInfo = new HashMap<>();
 		for(int i = 0; i < numCols; i++) {
 			int colIx = cols.get(i);
-			double cardinality = colInfos[colIx].getEstCard();
+			double cardinality = colGroups[colIx].getEstCard();
 			double weight = cardinality / numRows;
 			groupCols.add(colIx);
-			groupColsInfo.put(colIx, new GroupableColInfo(weight, colInfos[colIx].getMinSize()));
+			groupColsInfo.put(colIx, new GroupableColInfo(weight, colGroups[colIx].getMinSize()));
 		}
 
 		// use column group partitioner to create partitions of columns
@@ -71,7 +87,7 @@ public class PlanningCoCoder {
 	}
 
 	private static List<int[]> getCocodingGroupsBruteForce(List<int[]> bins,
-		HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen) {
+		HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estimator, int rlen) {
 		List<int[]> retGroups = new ArrayList<>();
 		for(int[] bin : bins) {
 			// building an array of singleton CoCodingGroup
@@ -79,7 +95,7 @@ public class PlanningCoCoder {
 			for(int col : bin)
 				sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
 			// brute force co-coding
-			PlanningCoCodingGroup[] outputGroups = findCocodesBruteForce(estim,
+			PlanningCoCodingGroup[] outputGroups = findCocodesBruteForce(estimator,
 				rlen,
 				sgroups.toArray(new PlanningCoCodingGroup[0]));
 			for(PlanningCoCodingGroup grp : outputGroups)
@@ -90,7 +106,7 @@ public class PlanningCoCoder {
 	}
 
 	private static List<int[]> getCocodingGroupsBruteForce(List<int[]> bins,
-		HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) {
+		HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estimator, int rlen, int k) {
 		List<int[]> retGroups = new ArrayList<>();
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
@@ -100,7 +116,7 @@ public class PlanningCoCoder {
 				ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<>();
 				for(int col : bin)
 					sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
-				tasks.add(new CocodeTask(estim, sgroups, rlen));
+				tasks.add(new CocodeTask(estimator, sgroups, rlen));
 			}
 			List<Future<PlanningCoCodingGroup[]>> rtask = pool.invokeAll(tasks);
 			for(Future<PlanningCoCodingGroup[]> lrtask : rtask)
@@ -119,12 +135,14 @@ public class PlanningCoCoder {
 	 * Identify columns to code together. Uses a greedy approach that merges pairs of column groups into larger groups.
 	 * Each phase of the greedy algorithm considers all combinations of pairs to merge.
 	 * 
+	 * TODO Find better faster ways of finding cocodes than brute force.
+	 * 
 	 * @param sizeEstimator  compressed size estimator
 	 * @param numRowsWeight  number of rows weight
 	 * @param singltonGroups planning co-coding groups
-	 * @return
+	 * @return A PlanningCoCodingGroup.
 	 */
-	private static PlanningCoCodingGroup[] findCocodesBruteForce(CompressedSizeEstimator estim, int numRows,
+	private static PlanningCoCodingGroup[] findCocodesBruteForce(CompressedSizeEstimator estimator, int numRows,
 		PlanningCoCodingGroup[] singletonGroups) {
 		if(LOG.isTraceEnabled())
 			LOG.trace("Cocoding: process " + singletonGroups.length);
@@ -150,7 +168,7 @@ public class PlanningCoCoder {
 						continue;
 
 					// memoization or newly created group (incl bitmap extraction)
-					PlanningCoCodingGroup c1c2 = memo.getOrCreate(c1, c2, estim, numRows);
+					PlanningCoCodingGroup c1c2 = memo.getOrCreate(c1, c2, estimator, numRows);
 
 					// keep best merged group only
 					if(tmp == null || c1c2.getChangeInSize() < tmp.getChangeInSize() ||

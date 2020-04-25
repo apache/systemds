@@ -19,46 +19,32 @@
 
 package org.apache.sysds.test.component.compress;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
+import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
+import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
+import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
+import org.apache.sysds.test.component.compress.TestConstants.ValueType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.apache.sysds.test.TestConstants.CompressionType;
-import org.apache.sysds.test.TestConstants.MatrixType;
-import org.apache.sysds.test.TestConstants.SparsityType;
-import org.apache.sysds.test.TestConstants.ValueType;
-import org.apache.sysds.test.TestConstants.ValueRange;
 
 @RunWith(value = Parameterized.class)
 public class CompressedVectorTest extends CompressedTestBase {
 
-	// Input
-	double[][] input;
-	MatrixBlock mb;
-
-	// Compressed Block
-	CompressedMatrixBlock cmb;
-
-	// Compression Result
-	MatrixBlock cmbResult;
-
-	// Decompressed Result
-	MatrixBlock cmbDeCompressed;
-	double[][] deCompressed;
-
-	protected static MatrixType[] usedMatrixTypeLocal = new MatrixType[] {// types
-		MatrixType.SINGLE_COL, MatrixType.SINGLE_COL_L};
+	protected static MatrixTypology[] usedMatrixTypologyLocal = new MatrixTypology[] {// types
+		MatrixTypology.SINGLE_COL,
+		// MatrixTypology.SINGLE_COL_L
+	};
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -66,11 +52,9 @@ public class CompressedVectorTest extends CompressedTestBase {
 		for(SparsityType st : usedSparsityTypes) {
 			for(ValueType vt : usedValueTypes) {
 				for(ValueRange vr : usedValueRanges) {
-					for(CompressionType ct : usedCompressionTypes) {
-						for(MatrixType mt : usedMatrixTypeLocal) {
-							for(double sr : samplingRatio) {
-								tests.add(new Object[] {st, vt, vr, ct, mt, true, sr});
-							}
+					for(CompressionSettings cs : usedCompressionSettings) {
+						for(MatrixTypology mt : usedMatrixTypologyLocal) {
+							tests.add(new Object[] {st, vt, vr, cs, mt});
 						}
 					}
 				}
@@ -79,26 +63,16 @@ public class CompressedVectorTest extends CompressedTestBase {
 		return tests;
 	}
 
-	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange, CompressionType compType,
-		MatrixType matrixType, boolean compress, double samplingRatio) {
-		super(sparType, valType, valRange, compType, matrixType, compress, samplingRatio);
-		input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7);
-		mb = getMatrixBlockInput(input);
-		cmb = new CompressedMatrixBlock(mb);
-		cmb.setSeed(1);
-		cmb.setSamplingRatio(samplingRatio);
-		if(compress) {
-			cmbResult = cmb.compress();
-		}
-		cmbDeCompressed = cmb.decompress();
-		deCompressed = DataConverter.convertToDoubleMatrix(cmbDeCompressed);
+	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
+		CompressionSettings compSettings, MatrixTypology matrixTypology) {
+		super(sparType, valType, valRange, compSettings, matrixTypology);
 	}
 
 	@Test
 	public void testCentralMoment() throws Exception {
 		// TODO: Make Central Moment Test work on Multi dimensional Matrix
 		try {
-			if(!(cmbResult instanceof CompressedMatrixBlock))
+			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
 
 			// quantile uncompressed
@@ -115,9 +89,6 @@ public class CompressedVectorTest extends CompressedTestBase {
 		}
 		catch(Exception e) {
 			throw new Exception(this.toString() + "\n" + e.getMessage(), e);
-		}
-		finally {
-			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
 	}
 

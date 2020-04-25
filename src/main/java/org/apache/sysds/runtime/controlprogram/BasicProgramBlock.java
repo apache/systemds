@@ -126,7 +126,7 @@ public class BasicProgramBlock extends ProgramBlock
 		
 		//statement-block-level, lineage-based caching
 		if (_sb != null && liInputs != null)
-			LineageCache.putValue(_sb.getOutputsofSB(), liInputs, _sb.getName(), 
-					ec, System.nanoTime()-t0);
+			LineageCache.putValue(_sb.getOutputsofSB(),
+				liInputs, _sb.getName(), ec, System.nanoTime()-t0);
 	}
 }

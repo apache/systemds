@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
@@ -88,6 +89,7 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 
 
 public class DMLTranslator 
@@ -200,6 +202,8 @@ public class DMLTranslator
 				currentLiveOut = sb.analyze(currentLiveOut);
 			}
 		}
+		
+		cleanupLiveOutVariables(dmlp.getStatementBlocks(), new VariableSet());
 	}
 	
 	public void liveVariableAnalysisFunction(DMLProgram dmlp, FunctionStatementBlock fsb) {
@@ -218,15 +222,32 @@ public class DMLTranslator
 		//STEP 2: backward direction
 		VariableSet currentLiveOut = new VariableSet();
 		VariableSet currentLiveIn = new VariableSet();
+		VariableSet unionLiveIn = new VariableSet();
 		
 		for (DataIdentifier id : fstmt.getInputParams())
 			currentLiveIn.addVariable(id.getName(), id);
 		
-		for (DataIdentifier id : fstmt.getOutputParams())
+		for (DataIdentifier id : fstmt.getOutputParams()) {
 			currentLiveOut.addVariable(id.getName(), id);
+			unionLiveIn.addVariable(id.getName(), id);
+		}
 		
 		fsb._liveOut = currentLiveOut;
 		fsb.analyze(currentLiveIn, currentLiveOut);
+		cleanupLiveOutVariables(fstmt.getBody(), unionLiveIn);
+	}
+	
+	public void cleanupLiveOutVariables(List<StatementBlock> sbs, VariableSet unionLiveIn) {
+		//backwards pass to collect union of livein variables of all successors
+		//and cleanup unnecessary liveout variables
+		for(int i=sbs.size()-1; i>=0; i--) {
+			StatementBlock sb = sbs.get(i);
+			//remove liveout variables that are not in unionLivein
+			sb.liveOut().removeVariables(
+				VariableSet.minus(sb.liveOut(), unionLiveIn));
+			//collect all livein information
+			unionLiveIn.addVariables(sb.liveIn());
+		}
 	}
 
 	public void constructHops(DMLProgram dmlp) {
@@ -482,6 +503,9 @@ public class DMLTranslator
 			
 			retPB = rtpb;
 			
+			//post processing for generating missing instructions
+			retPB.setExitInstruction(deriveExitInstruction(sb));
+			
 			// add statement block
 			retPB.setStatementBlock(sb);
 			
@@ -525,7 +549,7 @@ public class DMLTranslator
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
-			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			retPB.setExitInstruction(deriveExitInstruction(sb));
 			
 			// add statement block
 			retPB.setStatementBlock(sb);
@@ -582,6 +606,9 @@ public class DMLTranslator
 			}
 		
 			retPB = rtpb;
+			
+			//post processing for generating missing instructions
+			retPB.setExitInstruction(deriveExitInstruction(sb));
 			
 			// add statement block
 			retPB.setStatementBlock(sb);
@@ -641,7 +668,7 @@ public class DMLTranslator
 			retPB = rtpb;
 			
 			//post processing for generating missing instructions
-			//retPB = verifyAndCorrectProgramBlock(sb.liveIn(), sb.liveOut(), sb._kill, retPB);
+			//retPB.setExitInstruction(deriveExitInstruction(sb));
 			
 			// add statement block
 			retPB.setStatementBlock(sb);
@@ -668,6 +695,14 @@ public class DMLTranslator
 			StatementBlock current = dmlp.getStatementBlock(i);
 			refreshMemEstimates(current);
 		}
+	}
+	
+	private static Instruction deriveExitInstruction(StatementBlock sb) {
+		Set<String> rmVars = VariableSet.union(
+			VariableSet.minus(sb.liveIn(), sb.liveOut()),
+			VariableSet.minus(sb.getKill(), sb.liveOut())).getVariableNames();
+		return rmVars.isEmpty() ? null :
+			VariableCPInstruction.prepareRemoveInstruction(rmVars.toArray(new String[0]));
 	}
 	
 	public static void refreshMemEstimates(StatementBlock current) {

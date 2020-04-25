@@ -514,6 +514,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		switch ( opcode )
 		{
 		case CreateVariable:
+			//PRE: for robustness we cleanup existing variables, because a setVariable
+			//would  cause a buffer pool memory leak as these objects would never be removed
+			if(ec.containsVariable(getInput1()))
+				processRemoveVariableInstruction(ec, getInput1().getName());
 			
 			if ( getInput1().getDataType() == DataType.MATRIX ) {
 				//create new variable for symbol table and cache

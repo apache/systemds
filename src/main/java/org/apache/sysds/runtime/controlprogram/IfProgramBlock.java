@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 public class IfProgramBlock extends ProgramBlock 
 {
 	private ArrayList<Instruction> _predicate;
-	private ArrayList <Instruction> _exitInstructions ;
 	private ArrayList<ProgramBlock> _childBlocksIfBody;
 	private ArrayList<ProgramBlock> _childBlocksElseBody;
 	
@@ -43,7 +42,6 @@ public class IfProgramBlock extends ProgramBlock
 		_childBlocksIfBody = new ArrayList<>();
 		_childBlocksElseBody = new ArrayList<>();
 		_predicate = predicate;
-		_exitInstructions = new ArrayList<>();
 	}
 	
 	public ArrayList<ProgramBlock> getChildBlocksIfBody() { 
@@ -115,8 +113,7 @@ public class IfProgramBlock extends ProgramBlock
 		}
 		else
 		{
-			try 
-			{	
+			try {
 				for (int i=0 ; i < _childBlocksElseBody.size() ; i++) {
 					_childBlocksElseBody.get(i).execute(ec);
 				}
@@ -124,32 +121,20 @@ public class IfProgramBlock extends ProgramBlock
 			catch(DMLScriptException e) {
 				throw e;
 			}
-			catch(Exception e)
-			{
+			catch(Exception e) {
 				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating else statement body ", e);
-			}	
+			}
 		}
 		
 		//execute exit instructions
-		try { 
-			executeInstructions(_exitInstructions, ec);
-		}
-		catch(DMLScriptException e) {
-			throw e;
-		}
-		catch (Exception e){
-			
-			throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if exit instructions ", e);
-		}
+		executeExitInstructions(_exitInstruction, "if", ec);
 	}
 
 	private BooleanObject executePredicate(ExecutionContext ec) 
 	{
 		BooleanObject result = null;
-		try
-		{
-			if( _sb != null )
-			{
+		try {
+			if( _sb != null ) {
 				IfStatementBlock isb = (IfStatementBlock)_sb;
 				result = (BooleanObject) executePredicate(_predicate, isb.getPredicateHops(), 
 					isb.requiresPredicateRecompilation(), ValueType.BOOLEAN, ec);

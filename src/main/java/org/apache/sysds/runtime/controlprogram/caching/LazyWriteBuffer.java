@@ -211,6 +211,10 @@ public class LazyWriteBuffer
 			return _limit - _size; }
 	}
 	
+	public static int getQueueSize() {
+		return _mQueue.size();
+	}
+	
 	public static long getCacheBlockSize(CacheBlock cb) {
 		return cb.isShallowSerialize() ?
 			cb.getInMemorySize() : cb.getExactSerializedSize();
@@ -239,7 +243,8 @@ public class LazyWriteBuffer
 				String fname = entry.getKey();
 				ByteBuffer bbuff = entry.getValue();
 				System.out.println("\tWB: buffer element ("+count+"): "
-					+fname+", "+bbuff.getSize()+", "+bbuff.isShallow());
+					+fname+", "+(bbuff.isShallow()?bbuff._cdata.getClass().getSimpleName():"?")
+					+", "+bbuff.getSize()+", "+bbuff.isShallow());
 				count--;
 			}
 		}

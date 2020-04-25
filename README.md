@@ -29,16 +29,6 @@ limitations under the License.
 
 **Status and Build:** SystemDS is still in pre-alpha status. The original code base was forked from [**Apache SystemML**](http://systemml.apache.org/) 1.2 in September 2018. We will continue to support linear algebra programs over matrices, while replacing the underlying data model and compiler, as well as substantially extending the supported functionalities. Until the first release, you can build your own snapshot via Apache Maven: `mvn clean package -P distribution`.
 
-  
-  ![Build](https://github.com/apache/systemml/workflows/Build/badge.svg)
-  ![Documentation](https://github.com/apache/systemml/workflows/Documentation/badge.svg)
-  ![Component Test](https://github.com/apache/systemml/workflows/Component%20Test/badge.svg)
-  ![Application Test](https://github.com/apache/systemml/workflows/Application%20Test/badge.svg)
-  ![Function Test](https://github.com/apache/systemml/workflows/Function%20Test/badge.svg)
-  ![Python Test](https://github.com/apache/systemml/workflows/Python%20Test/badge.svg)
-  ![Federated Python Test](https://github.com/apache/systemml/workflows/Federated%20Python%20Test/badge.svg)
-
-
 <p align="center">
   <a href="https://github.com/apache/systemml/actions?query=workflow%3ABuild+branch%3Amaster" target="_blank">
     <img src="https://github.com/apache/systemml/workflows/Build/badge.svg"></a>

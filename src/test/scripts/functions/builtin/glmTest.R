@@ -71,17 +71,17 @@ library ("Matrix");
 
 options (warn = -1);
 
-X_here <- readMM (args[1]);  # (paste (args[1], "X.mtx", sep=""));
-y_here <- readMM (args[2]);  # (paste (args[1], "y.mtx", sep=""));
+X_here <- readMM (paste (args[1], "X.mtx", sep=""));
+y_here <- readMM (paste (args[1], "y.mtx", sep=""));
 
 num_records  <- nrow (X_here);
 num_features <- ncol (X_here);
-dist_type  <- as.integer (args[3]);
-dist_param <- as.numeric (args[4]);
-link_type  <- as.integer (args[5]);
-link_power <- as.numeric (args[6]);
-icept <- as.integer (args[7]);
-eps_n <- as.numeric (args[8]);
+dist_type  <- as.integer (args[2]);
+dist_param <- as.numeric (args[3]);
+link_type  <- as.integer (args[4]);
+link_power <- as.numeric (args[5]);
+icept <- as.integer (args[6]);
+eps_n <- as.numeric (args[7]);
 
 f_ly <- gaussian ();
 var_power <- dist_param;
@@ -136,4 +136,4 @@ if (icept == 0) {
 }
 
 print (c("Deviance", glmOut$deviance));
-writeMM (as (betas, "CsparseMatrix"),  paste(args[9], "betas_R", sep=""));
+writeMM (as (betas, "CsparseMatrix"),  paste(args[8], "betas_R", sep=""));

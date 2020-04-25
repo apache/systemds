@@ -33,7 +33,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.*;
 @RunWith(value = Parameterized.class)
-
+@net.jcip.annotations.NotThreadSafe
 
 public class BuiltinGLMTest extends AutomatedTestBase {
 
@@ -70,7 +70,6 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 
 	protected int numRecords, numFeatures, distFamilyType, linkType, intercept;
 	protected double distParam, linkPower, logFeatureVarianceDisbalance, avgLinearForm, stdevLinearForm, dispersion;
-	protected LopProperties.ExecType ec;
 
 	public BuiltinGLMTest(int numRecords_, int numFeatures_, int distFamilyType_, double distParam_,
 			int linkType_, double linkPower_, double logFeatureVarianceDisbalance_,
@@ -86,10 +85,6 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 		this.avgLinearForm = avgLinearForm_;
 		this.stdevLinearForm = stdevLinearForm_;
 		this.dispersion = dispersion_;
-	}
-	private void setExecType(LopProperties.ExecType ec_)
-	{
-		ec = ec_;
 	}
 
 	private void setIntercept(int intercept_)
@@ -107,27 +102,24 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 	@Test
 	public void glmTestIntercept_0_CP() {
 		setIntercept(0);
-		setExecType(LopProperties.ExecType.CP);
 		runtestGLM();
 	}
 
 	@Test
 	public void glmTestIntercept_1_CP() {
 		setIntercept(1);
-		setExecType(LopProperties.ExecType.CP);
 		runtestGLM();
 	}
 
 	@Test
 	public void glmTestIntercept_2_CP() {
 		setIntercept(2);
-		setExecType(LopProperties.ExecType.CP);
 		runtestGLM();
 	}
 
 
 	public void runtestGLM() {
-		Types.ExecMode platformOld = setExecMode(ec);
+		Types.ExecMode platformOld = setExecMode(LopProperties.ExecType.CP);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		try {
@@ -206,6 +198,8 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			List<String> proArgs = new ArrayList<>();
+			proArgs.add("-exec");
+			proArgs.add(" singlenode");
 			proArgs.add("-nvargs");
 			proArgs.add("X=" + input("X"));
 			proArgs.add("Y=" + input("Y"));
@@ -225,7 +219,7 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(input("X.mtx"), input("Y.mtx"),
+			rCmd = getRCmd(inputDir(),
 					String.valueOf(distFamilyType),
 					String.valueOf(distParam),
 					String.valueOf(linkType),
@@ -270,10 +264,6 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 		}
 		finally {
 			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
-			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
-			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
 	}
 
@@ -281,10 +271,10 @@ public class BuiltinGLMTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// SCHEMA:
 		// #RECORDS, #FEATURES, DISTRIBUTION_FAMILY, VARIANCE_POWER or BERNOULLI_NO, LINK_TYPE, LINK_POWER,
-		//	 INTERCEPT, LOG_FEATURE_VARIANCE_DISBALANCE, AVG_LINEAR_FORM, ST_DEV_LINEAR_FORM, DISPERSION
+		//	 LOG_FEATURE_VARIANCE_DISBALANCE, AVG_LINEAR_FORM, ST_DEV_LINEAR_FORM, DISPERSION
 		Object[][] data = new Object[][] {
 
-				//	 #RECS  #FTRS DFM VPOW  LNK LPOW   ICPT  LFVD  AVGLT STDLT  DISP
+				//	 #RECS  #FTRS DFM VPOW  LNK LPOW   LFVD  AVGLT STDLT  DISP
 
 				// Both DML and R work and compute close results:
 

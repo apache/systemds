@@ -666,7 +666,7 @@ public class TestUtils
 	}
 
 	public static void compareMatricesBitAvgDistance(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
-		long maxUnitsOfLeastPrecision, long maxAvgDistance){
+		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message){
 		int countErrors = 0;
 		long sumDistance = 0;
 		long distance;
@@ -680,9 +680,15 @@ public class TestUtils
 				}
 			}
 		}
-		long avgDistance = sumDistance / (rows * cols); 
-		assertTrue("" + countErrors + " values are not in equal", countErrors == 0);
-		assertTrue("The avg distance in bits: "+ avgDistance +" was higher than max: " + maxAvgDistance, avgDistance <= maxAvgDistance);
+		long avgDistance = sumDistance / (rows * cols);
+		assertTrue(message + "\n" + countErrors + " values are not in equal", countErrors == 0);
+		assertTrue(message + "\nThe avg distance in bits: "+ avgDistance +" was higher than max: " + maxAvgDistance,
+			avgDistance <= maxAvgDistance);
+	}
+
+	public static void compareMatricesBitAvgDistance(double[][] expectedMatrix, double[][] actualMatrix, int rows,
+		int cols, long maxUnitsOfLeastPrecision, long maxAvgDistance) {
+			compareMatricesBitAvgDistance(expectedMatrix, actualMatrix, rows, cols, maxUnitsOfLeastPrecision, maxAvgDistance, "");
 	}
 
 	/**

@@ -17,37 +17,32 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.compress.BitmapEncoder;
 
-class SparseRowIterator extends RowIterator<SparseRow> {
-	private final SparseRowVector _ret;
-	private final double[] _tmp;
+public class DenseRowIterator extends RowIterator<double[]> {
 
-	public SparseRowIterator(int rl, int ru, ArrayList<ColGroup> colGroups, int clen) {
+	private final double[] _ret;
+
+	public DenseRowIterator(int rl, int ru, List<ColGroup> colGroups, int clen) {
 		super(rl, ru, colGroups);
-		_ret = new SparseRowVector(clen);
-		_tmp = new double[clen];
+		_ret = new double[clen];
 	}
 
 	@Override
-	public SparseRow next() {
+	public double[] next() {
 		// prepare meta data common across column groups
 		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 		final int ix = _rpos % blksz;
 		final boolean last = (_rpos + 1 == _ru);
-		// copy group rows into consolidated dense vector
-		// to avoid binary search+shifting or final sort
+		// copy group rows into consolidated row
+		Arrays.fill(_ret, 0);
 		for(int j = 0; j < _iters.length; j++)
-			_iters[j].next(_tmp, _rpos, ix, last);
-		// append non-zero values to consolidated sparse row
-		_ret.setSize(0);
-		for(int i = 0; i < _tmp.length; i++)
-			_ret.append(i, _tmp[i]);
+			_iters[j].next(_ret, _rpos, ix, last);
 		// advance to next row and return buffer
 		_rpos++;
 		return _ret;

@@ -19,105 +19,130 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
-import org.junit.runners.Parameterized.Parameters;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.test.TestConstants;
-import org.apache.sysds.test.TestConstants.CompressionType;
-import org.apache.sysds.test.TestConstants.MatrixType;
-import org.apache.sysds.test.TestConstants.SparsityType;
-import org.apache.sysds.test.TestConstants.ValueRange;
-import org.apache.sysds.test.TestConstants.ValueType;
+import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
+import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
+import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
+import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.junit.runners.Parameterized.Parameters;
 
-public class CompressedTestBase extends AutomatedTestBase {
+public class CompressedTestBase extends TestBase {
 
-	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.DENSE, SparsityType.SPARSE,
-		// SparsityType.EMPTY
+	protected static SparsityType[] usedSparsityTypes = new SparsityType[] { // Sparsity 0.9, 0.1, 0.01 and 0.0
+		// SparsityType.DENSE,
+		SparsityType.SPARSE, SparsityType.ULTRA_SPARSE, SparsityType.EMPTY
 	};
 	protected static ValueType[] usedValueTypes = new ValueType[] {
 		// ValueType.RAND,
-		ValueType.CONST, ValueType.RAND_ROUND_DDC, ValueType.RAND_ROUND_OLE,};
+		ValueType.CONST, ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE, ValueType.RLE_COMPRESSIBLE,};
 
-	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL, ValueRange.LARGE,};
-
-	protected static CompressionType[] usedCompressionTypes = new CompressionType[] {CompressionType.LOSSLESS,
-		// CompressionType.LOSSY,
+	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL,
+		// ValueRange.LARGE,
 	};
 
-	protected static MatrixType[] usedMatrixType = new MatrixType[] {MatrixType.SMALL,
-		// MatrixType.LARGE,
-		MatrixType.FEW_COL, MatrixType.FEW_ROW,
-		// MatrixType.SINGLE_COL,
-		// MatrixType.SINGLE_ROW,
-		MatrixType.L_ROWS,
-		// MatrixType.XL_ROWS,
-	};
+	private static List<CompressionType> DDCOnly = new ArrayList<>();
+	private static List<CompressionType> OLEOnly = new ArrayList<>();
+	private static List<CompressionType> RLEOnly = new ArrayList<>();
 
-	public static double[] samplingRatio = {0.05, 1.00};
-
-	protected ValueType valType;
-	protected ValueRange valRange;
-	protected CompressionType compType;
-	protected boolean compress;
-
-	protected int rows;
-	protected int cols;
-	protected int min;
-	protected int max;
-	protected double sparsity;
-
-	public CompressedTestBase(SparsityType sparType, ValueType valType, ValueRange valueRange, CompressionType compType,
-		MatrixType matrixType, boolean compress, double samplingRatio) {
-		this.sparsity = TestConstants.getSparsityValue(sparType);
-		this.rows = TestConstants.getNumberOfRows(matrixType);
-		this.cols = TestConstants.getNumberOfColumns(matrixType);
-
-		this.max = TestConstants.getMaxRangeValue(valueRange);
-		if(valType == ValueType.CONST) {
-			min = max;
-		}
-		else {
-			min = TestConstants.getMinRangeValue(valueRange);
-		}
-		this.valRange = valueRange;
-		this.valType = valType;
-		this.compType = compType;
-		this.compress = compress;
+	static {
+		DDCOnly.add(CompressionType.DDC);
+		OLEOnly.add(CompressionType.OLE);
+		RLEOnly.add(CompressionType.RLE);
 	}
 
-	protected MatrixBlock getMatrixBlockInput(double[][] input) {
-		// generate input data
+	private static final int compressionSeed = 7;
 
-		if(valType == ValueType.RAND_ROUND_OLE || valType == ValueType.RAND_ROUND_DDC) {
-			CompressedMatrixBlock.ALLOW_DDC_ENCODING = (valType == ValueType.RAND_ROUND_DDC);
-			input = TestUtils.round(input);
+	protected static CompressionSettings[] usedCompressionSettings = new CompressionSettings[] {
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(false)
+			.setSeed(compressionSeed).setValidCompressions(DDCOnly).setInvestigateEstimate(true).create(),
+		// TODO: DDC1 sharring does not work correctly in Aggregare Col Max.
+		// The other tests passes fine.
+		// new
+		// CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(true).setSeed(compressionSeed).setValidCompressions(DDCOnly)
+		// .create(),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(OLEOnly)
+			.setInvestigateEstimate(true).create(),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(RLEOnly)
+			.setInvestigateEstimate(true).create(),
+		new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
+			.create()};
+
+	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
+		MatrixTypology.SMALL,
+		// MatrixTypology.FEW_COL,
+		MatrixTypology.FEW_ROW,
+		// MatrixTypology.LARGE,
+		// MatrixTypology.SINGLE_COL,
+		// MatrixTypology.SINGLE_ROW,
+		MatrixTypology.L_ROWS,
+		// MatrixTypology.XL_ROWS,
+	};
+
+	// Compressed Block
+	protected MatrixBlock cmb;
+
+	// Decompressed Result
+	protected MatrixBlock cmbDeCompressed;
+	protected double[][] deCompressed;
+
+	// Threads
+	protected int k = 1;
+
+	protected int sampleTolerance = 1024;
+
+	public CompressedTestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
+		CompressionSettings compSettings, MatrixTypology MatrixTypology) {
+		super(sparType, valType, valueRange, compSettings, MatrixTypology);
+		// System.out.println("HERE !");
+		try {
+
+			cmb = CompressedMatrixBlockFactory.compress(mb, k, compressionSettings);
+
+			if(cmb instanceof CompressedMatrixBlock) {
+				cmbDeCompressed = ((CompressedMatrixBlock) cmb).decompress();
+				if(cmbDeCompressed != null) {
+
+					deCompressed = DataConverter.convertToDoubleMatrix(cmbDeCompressed);
+				}
+			}
+			else {
+				cmbDeCompressed = null;
+				deCompressed = null;
+			}
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			// throw new RuntimeException(
+			// "CompressionTest Init failed with settings: " + this.toString() + "\n" + e.getMessage(), e);
+			assertTrue("\nCompressionTest Init failed with settings: " + this.toString(), false);
 		}
 
-		return DataConverter.convertToMatrixBlock(input);
 	}
 
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
 
-		// Only add a single selected test of constructor with no compression
-		tests.add(new Object[] {SparsityType.SPARSE, ValueType.RAND, ValueRange.SMALL, CompressionType.LOSSLESS,
-			MatrixType.SMALL, false, 1.0});
-
 		for(SparsityType st : usedSparsityTypes) {
 			for(ValueType vt : usedValueTypes) {
 				for(ValueRange vr : usedValueRanges) {
-					for(CompressionType ct : usedCompressionTypes) {
-						for(MatrixType mt : usedMatrixType) {
-							for(double sr : samplingRatio) {
-								tests.add(new Object[] {st, vt, vr, ct, mt, true, sr});
-							}
+					for(CompressionSettings cs : usedCompressionSettings) {
+						for(MatrixTypology mt : usedMatrixTypology) {
+							tests.add(new Object[] {st, vt, vr, cs, mt,});
+
 						}
 					}
 				}
@@ -125,32 +150,5 @@ public class CompressedTestBase extends AutomatedTestBase {
 		}
 
 		return tests;
-	}
-
-	@Override
-	public void setUp() {
-	}
-
-	@Override
-	public void tearDown() {
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-
-		builder.append("args: ");
-
-		builder.append(String.format("%6s%14s", "Vt:", valType));
-		builder.append(String.format("%6s%8s", "Vr:", valRange));
-		builder.append(String.format("%6s%8s", "CP:", compType));
-		builder.append(String.format("%6s%5s", "CD:", compress));
-		builder.append(String.format("%6s%5s", "Rows:", rows));
-		builder.append(String.format("%6s%5s", "Cols:", cols));
-		builder.append(String.format("%6s%12s", "Min:", min));
-		builder.append(String.format("%6s%12s", "Max:", max));
-		builder.append(String.format("%6s%4s", "Spar:", sparsity));
-
-		return builder.toString();
 	}
 }

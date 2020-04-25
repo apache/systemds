@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.GroupableColInfo
 
 /**
  * Column group partitioning with static distribution heuristic.
- * 
  */
 public class ColumnGroupPartitionerStatic extends ColumnGroupPartitioner {
 	private static final int MAX_COL_PER_GROUP = 20;

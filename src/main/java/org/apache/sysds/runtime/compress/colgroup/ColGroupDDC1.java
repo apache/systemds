@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.sysds.runtime.compress.utils.ConverterUtils;
+import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -42,16 +42,17 @@ public class ColGroupDDC1 extends ColGroupDDC {
 
 	private byte[] _data;
 
-	public ColGroupDDC1() {
+	protected ColGroupDDC1() {
 		super();
 	}
 
-	public ColGroupDDC1(int[] colIndices, int numRows, UncompressedBitmap ubm) {
+	protected ColGroupDDC1(int[] colIndices, int numRows, UncompressedBitmap ubm) {
 		super(colIndices, numRows, ubm);
-		_data = new byte[numRows];
 
 		int numVals = ubm.getNumValues();
 		int numCols = ubm.getNumColumns();
+		
+		_data = new byte[numRows];
 
 		// materialize zero values, if necessary
 		if(ubm.getNumOffsets() < (long) numRows * numCols) {
@@ -72,22 +73,26 @@ public class ColGroupDDC1 extends ColGroupDDC {
 		}
 	}
 
-	public ColGroupDDC1(int[] colIndices, int numRows, double[] values, byte[] data) {
+	// Internal Constructor, to be used when copying a DDC Colgroup, and for scalar operations
+	protected ColGroupDDC1(int[] colIndices, int numRows, double[] values, byte[] data) {
 		super(colIndices, numRows, values);
 		_data = data;
 	}
 
+	
 	@Override
-	public CompressionType getCompType() {
-		return CompressionType.DDC1;
+	protected ColGroupType getColGroupType(){
+		return ColGroupType.DDC1;
 	}
 
 	/**
 	 * Getter method to get the data, contained in The DDC ColGroup.
+	 * 
 	 * Not safe if modifications is made to the byte list.
-	 * @return The contained data 
+	 * 
+	 * @return The contained data
 	 */
-	public  byte[] getData(){
+	public byte[] getData() {
 		return _data;
 	}
 
@@ -195,13 +200,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = super.estimateInMemorySize();
-
-		// adding data size
-		if(_data != null)
-			size += _data.length;
-
-		return size;
+		return ColGroupSizes.estimateInMemorySizeDDC1(getNumCols(), getNumValues(), _data.length);
 	}
 
 	@Override
@@ -239,7 +238,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	}
 
 	@Override
-	protected void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
+	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
 
@@ -256,7 +255,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 
 	@Override
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
-		double[] b = ConverterUtils.getDenseVector(vector);
+		double[] b = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -277,7 +276,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	}
 
 	public static void rightMultByVector(ColGroupDDC1[] grps, MatrixBlock vector, MatrixBlock result, int rl, int ru) {
-		double[] b = ConverterUtils.getDenseVector(vector);
+		double[] b = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 
 		// prepare distinct values once
@@ -303,7 +302,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 
 	@Override
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
-		double[] a = ConverterUtils.getDenseVector(vector);
+		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int nrow = getNumRows();
 		final int numVals = getNumValues();
@@ -421,5 +420,13 @@ public class ColGroupDDC1 extends ColGroupDDC {
 		// fast path: sparse-safe and -unsafe operations
 		// as zero are represented, it is sufficient to simply apply the scalar op
 		return new ColGroupDDC1(_colIndexes, _numRows, applyScalarOp(op), _data);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(" DataLength: " + this._data.length);
+		return sb.toString();
 	}
 }

@@ -26,15 +26,12 @@ import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Used to extract the values at certain indexes from each row in a sparse
- * matrix
+ * Used to extract the values at certain indexes from each row in a sparse matrix
  * 
- * Keeps returning all-zeros arrays until reaching the last possible index. The
- * current compression algorithm treats the zero-value in a sparse matrix like
- * any other value.
+ * Keeps returning all-zeros arrays until reaching the last possible index. The current compression algorithm treats the
+ * zero-value in a sparse matrix like any other value.
  */
-public class ReaderColumnSelectionSparse extends ReaderColumnSelection 
-{
+public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	private final DblArray ZERO_DBL_ARRAY;
 	private DblArray nonZeroReturn;
 
@@ -45,62 +42,58 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection
 	// current sparse row positions
 	private SparseRow[] sparseCols = null;
 	private int[] sparsePos = null;
-	
-	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, boolean skipZeros) 
-	{
-		super(colIndexes, CompressedMatrixBlock.TRANSPOSE_INPUT ? 
-				data.getNumColumns() : data.getNumRows(), skipZeros);
+
+	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, boolean skipZeros, CompressionSettings compSettings) {
+		super(colIndexes, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), skipZeros, compSettings);
 		ZERO_DBL_ARRAY = new DblArray(new double[colIndexes.length], true);
 		reusableArr = new double[colIndexes.length];
 		reusableReturn = new DblArray(reusableArr);
-		
-		if( !CompressedMatrixBlock.TRANSPOSE_INPUT ){
+
+		if(!_compSettings.transposeInput) {
 			throw new RuntimeException("SparseColumnSelectionReader should not be used without transposed input.");
 		}
-		
+
 		sparseCols = new SparseRow[colIndexes.length];
 		sparsePos = new int[colIndexes.length];
-		if( data.getSparseBlock()!=null )
-		for( int i=0; i<colIndexes.length; i++ )
-			sparseCols[i] = data.getSparseBlock().get(colIndexes[i]);
+		if(data.getSparseBlock() != null)
+			for(int i = 0; i < colIndexes.length; i++)
+				sparseCols[i] = data.getSparseBlock().get(colIndexes[i]);
 	}
 
 	@Override
 	public DblArray nextRow() {
 		if(_skipZeros) {
-			while ((nonZeroReturn = getNextRow()) != null
-				&& nonZeroReturn == ZERO_DBL_ARRAY){}
+			while((nonZeroReturn = getNextRow()) != null && nonZeroReturn == ZERO_DBL_ARRAY) {
+			}
 			return nonZeroReturn;
-		} else {
+		}
+		else {
 			return getNextRow();
 		}
 	}
 
-	private DblArray getNextRow() 
-	{
-		if(_lastRow == _numRows-1)
+	private DblArray getNextRow() {
+		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
-		
-		if( !CompressedMatrixBlock.TRANSPOSE_INPUT ){
+
+		if(!_compSettings.transposeInput) {
 			throw new RuntimeException("SparseColumnSelectionReader should not be used without transposed input.");
 		}
-		
-		//move pos to current row if necessary (for all columns)
-		for( int i=0; i<_colIndexes.length; i++ )
-			if( sparseCols[i] != null && (sparseCols[i].indexes().length<=sparsePos[i] 
-				|| sparseCols[i].indexes()[sparsePos[i]]<_lastRow) )
-			{
+
+		// move pos to current row if necessary (for all columns)
+		for(int i = 0; i < _colIndexes.length; i++)
+			if(sparseCols[i] != null &&
+				(sparseCols[i].indexes().length <= sparsePos[i] || sparseCols[i].indexes()[sparsePos[i]] < _lastRow)) {
 				sparsePos[i]++;
 			}
-		
-		//extract current values
+
+		// extract current values
 		Arrays.fill(reusableArr, 0);
 		boolean zeroResult = true;
-		for( int i=0; i<_colIndexes.length; i++ ) 
-			if( sparseCols[i] != null && sparseCols[i].indexes().length>sparsePos[i]
-				&&sparseCols[i].indexes()[sparsePos[i]]==_lastRow )
-			{
+		for(int i = 0; i < _colIndexes.length; i++)
+			if(sparseCols[i] != null && sparseCols[i].indexes().length > sparsePos[i] &&
+				sparseCols[i].indexes()[sparsePos[i]] == _lastRow) {
 				reusableArr[i] = sparseCols[i].values()[sparsePos[i]];
 				zeroResult = false;
 			}

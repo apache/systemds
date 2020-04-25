@@ -37,15 +37,6 @@ public class AlgorithmPCA extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_PCA";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmPCA.class.getSimpleName() + "/";
-	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
-	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
-	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
-
-	private enum TestType { DEFAULT, FUSE_ALL, FUSE_NO_REDUNDANCY }
 
 	private final static double eps = 1e-5;
 
@@ -56,7 +47,7 @@ public class AlgorithmPCA extends AutomatedTestBase
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
-	private TestType currentTestType = TestType.DEFAULT;
+	private CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 
 	@Override
 	public void setUp() {
@@ -66,85 +57,85 @@ public class AlgorithmPCA extends AutomatedTestBase
 
 	@Test
 	public void testPCADenseRewritesCP() {
-		runPCATest(TEST_NAME1, true, false, ExecType.CP, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCASparseRewritesCP() {
-		runPCATest(TEST_NAME1, true, true, ExecType.CP, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCADenseCP() {
-		runPCATest(TEST_NAME1, false, false, ExecType.CP, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCASparseCP() {
-		runPCATest(TEST_NAME1, false, true, ExecType.CP, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCADenseRewritesSP() {
-		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCASparseRewritesSP() {
-		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCADenseSP() {
-		runPCATest(TEST_NAME1, false, false, ExecType.SPARK, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, false, false, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCASparseSP() {
-		runPCATest(TEST_NAME1, false, true, ExecType.SPARK, TestType.DEFAULT);
+		runPCATest(TEST_NAME1, false, true, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testPCADenseRewritesCPFuseAll() {
-		runPCATest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_ALL);
+		runPCATest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testPCASparseRewritesCPFuseAll() {
-		runPCATest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_ALL);
+		runPCATest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testPCADenseRewritesSPFuseAll() {
-		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, TestType.FUSE_ALL);
+		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testPCASparseRewritesSPFuseAll() {
-		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testPCADenseRewritesCPFuseNoRedundancy() {
-		runPCATest(TEST_NAME1, true, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runPCATest(TEST_NAME1, true, false, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testPCASparseRewritesCPFuseNoRedundancy() {
-		runPCATest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runPCATest(TEST_NAME1, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testPCADenseRewritesSPFuseNoRedundancy() {
-		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runPCATest(TEST_NAME1, true, false, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testPCASparseRewritesSPFuseNoRedundancy() {
-		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runPCATest(TEST_NAME1, true, true, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void runPCATest(String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
+	private void runPCATest(String testname, boolean rewrites, boolean sparse, ExecType instType, CodegenTestType CodegenTestType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = setExecMode(instType);
@@ -197,17 +188,6 @@ public class AlgorithmPCA extends AutomatedTestBase
 	 */
 	@Override
 	protected File getConfigTemplateFile() {
-		// Instrumentation in this test's output log to show custom configuration file used for template.
-		String message = "This test case overrides default configuration with ";
-		if(currentTestType == AlgorithmPCA.TestType.FUSE_ALL){
-			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
-			return TEST_CONF_FILE_FUSE_ALL;
-		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
-			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
-			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
-		} else {
-			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
-			return TEST_CONF_FILE_DEFAULT;
-		}
+		return getCodegenConfigFile(SCRIPT_DIR + TEST_DIR, currentTestType);
 	}
 }

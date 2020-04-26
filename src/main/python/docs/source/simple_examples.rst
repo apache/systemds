@@ -122,3 +122,42 @@ The output should be similar to::
    [-0.0011352 ]
    [-0.01686351]
    [-0.03839821]]
+
+SystemDS includes Build-In function such as lm, which solves linear regression. The lm function takes as input a matrix of
+feature vectors and a vector of response values y. The output of the function is a vector of weights.
+
+.. code-block:: python
+
+  # Import numpy and SystemDS matrix
+  import numpy as np
+  from systemds.context import SystemDSContext
+
+  # Set a seed
+  np.random.seed(0)
+  # Generate matrix of feature vectors
+  features = np.random.rand(10, 15)
+  # Generate a 1-column matrix of response values
+  y = np.random.rand(10, 1)
+
+  # compute the weights
+  with SystemDSContext() as sds:
+    weights = sds.matrix(features).lm(sds.matrix(y)).compute()
+    print(weights)
+
+The output should be similar to::
+
+  [[-0.11538199]
+  [-0.20386541]
+  [-0.39956035]
+  [ 1.04078623]
+  [ 0.4327084 ]
+  [ 0.18954599]
+  [ 0.49858968]
+  [-0.26812763]
+  [ 0.09961844]
+  [-0.57000751]
+  [-0.43386048]
+  [ 0.55358873]
+  [-0.54638565]
+  [ 0.2205885 ]
+  [ 0.37957689]]

@@ -21,7 +21,7 @@ from typing import Union
 
 MODULE_NAME = 'systemds'
 VALID_INPUT_TYPES = Union['DAGNode', str, int, float, bool]
-BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=']
+BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=', '%*%']
 # TODO add numpy array and implement for numpy array
 VALID_ARITHMETIC_TYPES = Union['DAGNode', int, float]
 

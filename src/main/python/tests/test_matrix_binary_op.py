@@ -80,6 +80,9 @@ class TestBinaryOp(unittest.TestCase):
     def test_div3(self):
         self.assertTrue(np.allclose((sds.matrix(m1) / s).compute(), m1 / s))
 
+    def test_matmul(self):
+        self.assertTrue(np.allclose((sds.matrix(m1) @ sds.matrix(m2)).compute(), m1.dot(m2)))
+
     # TODO arithmetic with scala lhs
 
     def test_lt(self):

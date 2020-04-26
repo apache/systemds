@@ -27,14 +27,15 @@ import unittest
 import numpy as np
 import scipy.stats as st
 import random
+import math
 
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 from systemds.context import SystemDSContext
 
-shape = (random.randrange(1, 50), random.randrange(1, 50))
+shape = (random.randrange(1, 25), random.randrange(1, 25))
 min_max = (0, 1)
-sparsity = 0.2
+sparsity = random.uniform(0.0, 1.0)
 seed = 123
 distributions = ["norm", "uniform"]
 
@@ -58,25 +59,19 @@ class TestRand(unittest.TestCase):
         self.assertTrue((m.min() >= min_max[0]) and (m.max() <= min_max[1]))
 
     def test_rand_sparsity(self):
-        m = sds.rand(rows=shape[0], cols=shape[1], sparsity=sparsity, seed=seed).compute()
-        count, bins = np.histogram(m.flatten("F"))
-        non_zero_value_percent = sum(count[1:]) * 100 / sum(count)
-        e = 0.05
+        m = sds.rand(rows=shape[0], cols=shape[1], sparsity=sparsity, seed=0).compute()
+        non_zero_value_percent = np.count_nonzero(m) * 100 /np.prod(m.shape)
 
-        self.assertTrue(
-            sum(count) == (shape[0] * shape[1])
-            and (non_zero_value_percent >= (sparsity - e) * 100)
-            and (non_zero_value_percent <= (sparsity + e) * 100)
-        )
+        self.assertTrue(math.isclose(non_zero_value_percent, sparsity*100, rel_tol=5))
 
     def test_rand_uniform_distribution(self):
         m = sds.rand(
-            rows=shape[0],
-            cols=shape[1],
+            rows=10,
+            cols=15,
             pdf="uniform",
             min=min_max[0],
             max=min_max[1],
-            seed=seed).compute()
+            seed=0).compute()
 
         dist = find_best_fit_distribution(m.flatten("F"), distributions)
         self.assertTrue(dist == "uniform")

@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 
 
 public class BinaryExpression extends Expression 
@@ -126,24 +127,27 @@ public class BinaryExpression extends Expression
 		output.setValueType(resultVT);
 
 		checkAndSetDimensions(output, conditional);
-		if (this.getOpCode() == Expression.BinaryOp.MATMULT) {
-			if ((this.getLeft().getOutput().getDataType() != DataType.MATRIX) || (this.getRight().getOutput().getDataType() != DataType.MATRIX)) {
+		if (getOpCode() == Expression.BinaryOp.MATMULT) {
+			if ((getLeft().getOutput().getDataType() != DataType.MATRIX) || (getRight().getOutput().getDataType() != DataType.MATRIX)) {
 		// remove exception for now
 		//		throw new LanguageException(
 		//				"Matrix multiplication not supported for scalars",
 		//				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			if (this.getLeft().getOutput().getDim2() != -1
-					&& this.getRight().getOutput().getDim1() != -1
-					&& this.getLeft().getOutput().getDim2() != this.getRight()
-							.getOutput().getDim1()) 
+			if (getLeft().getOutput().getDim2() != -1 && getRight().getOutput().getDim1() != -1
+				&& getLeft().getOutput().getDim2() != getRight().getOutput().getDim1()) 
 			{
-				raiseValidateError("invalid dimensions for matrix multiplication (k1="+this.getLeft().getOutput().getDim2()+", k2="+this.getRight().getOutput().getDim1()+")", 
-						            conditional, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("invalid dimensions for matrix multiplication (k1="
+					+getLeft().getOutput().getDim2()+", k2="+getRight().getOutput().getDim1()+")", 
+					conditional, LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			output.setDimensions(this.getLeft().getOutput().getDim1(), this
-					.getRight().getOutput().getDim2());
+			output.setDimensions(getLeft().getOutput().getDim1(),
+				getRight().getOutput().getDim2());
 		}
+
+		// Set privacy of output
+		output.setPrivacy(PrivacyPropagator.MergeBinary(
+			getLeft().getOutput().getPrivacy(), getRight().getOutput().getPrivacy()));
 
 		this.setOutput(output);
 	}
@@ -199,7 +203,6 @@ public class BinaryExpression extends Expression
 		}
 		return "(" + leftString + " " + _opcode.toString() + " "
 				+ rightString + ")";
-
 	}
 
 	@Override
@@ -223,6 +226,5 @@ public class BinaryExpression extends Expression
 				|| (op == BinaryOp.MULT) || (op == BinaryOp.DIV)
 				|| (op == BinaryOp.MODULUS) || (op == BinaryOp.INTDIV)
 				|| (op == BinaryOp.POW);
-		
 	}
 }

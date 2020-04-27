@@ -514,6 +514,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		switch ( opcode )
 		{
 		case CreateVariable:
+			//PRE: for robustness we cleanup existing variables, because a setVariable
+			//would  cause a buffer pool memory leak as these objects would never be removed
+			if(ec.containsVariable(getInput1()))
+				processRemoveVariableInstruction(ec, getInput1().getName());
 			
 			if ( getInput1().getDataType() == DataType.MATRIX ) {
 				//create new variable for symbol table and cache
@@ -527,6 +531,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
 				obj.setMetaData((MetaData)metadata.clone());
+				obj.setPrivacyConstraints(getPrivacyConstraint());
 				obj.setFileFormatProperties(_formatProperties);
 				obj.setMarkForLinCache(true);
 				obj.enableCleanup(!getInput1().getName()
@@ -895,6 +900,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+				mo.setPrivacyConstraints(getPrivacyConstraint());
 				mo.exportData(fname, outFmt, _formatProperties);
 			}
 		}

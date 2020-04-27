@@ -36,15 +36,6 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_Stepwise";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmStepwiseRegression.class.getSimpleName() + "/";
-	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
-	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
-	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
-
-	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
 
 	private final static int rows = 2468;
 	private final static int cols = 200;
@@ -60,7 +51,7 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 		LINREG_DS,
 	}
 	
-	private TestType currentTestType = TestType.DEFAULT;
+	private CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 	
 	@Override
 	public void setUp() {
@@ -70,22 +61,22 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 
 	@Test
 	public void testStepwiseGLMDenseRewritesCP() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testStepwiseGLMSparseRewritesCP() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testStepwiseGLMDenseNoRewritesCP() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, false, false, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testStepwiseGLMSparseNoRewritesCP() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, true, false, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 //	@Test
@@ -110,66 +101,66 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 	
 	@Test
 	public void testStepwiseLinregDSDenseRewritesCP() {
-		runStepwiseTest(StepwiseType.LINREG_DS, false, true, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.LINREG_DS, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testStepwiseLinregDSSparseRewritesCP() {
-		runStepwiseTest(StepwiseType.LINREG_DS, true, true, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.LINREG_DS, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testStepwiseLinregDSDenseNoRewritesCP() {
-		runStepwiseTest(StepwiseType.LINREG_DS, false, false, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.LINREG_DS, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testStepwiseLinregDSSparseNoRewritesCP() {
-		runStepwiseTest(StepwiseType.LINREG_DS, true, false, ExecType.CP, TestType.DEFAULT);
+		runStepwiseTest(StepwiseType.LINREG_DS, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testStepwiseGLMDenseRewritesCPFuseAll() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, TestType.FUSE_ALL);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testStepwiseGLMSparseRewritesCPFuseAll() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, TestType.FUSE_ALL);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testStepwiseLinregDSDenseRewritesCPFuseAll() {
-		runStepwiseTest(StepwiseType.LINREG_DS, false, true, ExecType.CP, TestType.FUSE_ALL);
+		runStepwiseTest(StepwiseType.LINREG_DS, false, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testStepwiseLinregDSSparseRewritesCPFuseAll() {
-		runStepwiseTest(StepwiseType.LINREG_DS, true, true, ExecType.CP, TestType.FUSE_ALL);
+		runStepwiseTest(StepwiseType.LINREG_DS, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testStepwiseGLMDenseRewritesCPFuseNoRedundancy() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testStepwiseGLMSparseRewritesCPFuseNoRedundancy() {
-		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testStepwiseLinregDSDenseRewritesCPFuseNoRedundancy() {
-		runStepwiseTest(StepwiseType.LINREG_DS, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runStepwiseTest(StepwiseType.LINREG_DS, false, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testStepwiseLinregDSSparseRewritesCPFuseNoRedundancy() {
-		runStepwiseTest(StepwiseType.LINREG_DS, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runStepwiseTest(StepwiseType.LINREG_DS, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	
-	private void runStepwiseTest( StepwiseType type, boolean sparse, boolean rewrites, ExecType instType, TestType testType)
+	private void runStepwiseTest( StepwiseType type, boolean sparse, boolean rewrites, ExecType instType, CodegenTestType CodegenTestType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -177,7 +168,7 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 			case SPARK: rtplatform = ExecMode.SPARK; break;
 			default: rtplatform = ExecMode.HYBRID; break;
 		}
-		currentTestType = testType;
+		currentTestType = CodegenTestType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -230,17 +221,6 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 	 */
 	@Override
 	protected File getConfigTemplateFile() {
-		// Instrumentation in this test's output log to show custom configuration file used for template.
-		String message = "This test case overrides default configuration with ";
-		if(currentTestType == TestType.FUSE_ALL){
-			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
-			return TEST_CONF_FILE_FUSE_ALL;
-		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
-			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
-			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
-		} else {
-			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
-			return TEST_CONF_FILE_DEFAULT;
-		}
+		return getCodegenConfigFile(SCRIPT_DIR + TEST_DIR, currentTestType);
 	}
 }

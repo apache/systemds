@@ -39,15 +39,6 @@ public class AlgorithmMSVM extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_MSVM";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmMSVM.class.getSimpleName() + "/";
-	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
-	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
-	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
-
-	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
 
 	private final static double eps = 1e-5;
 	
@@ -61,7 +52,7 @@ public class AlgorithmMSVM extends AutomatedTestBase
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
 
-	private TestType currentTestType = TestType.DEFAULT;
+	private CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 	
 	@Override
 	public void setUp() {
@@ -71,109 +62,109 @@ public class AlgorithmMSVM extends AutomatedTestBase
 
 	@Test
 	public void testMSVMDenseBinRewritesCP() {
-		runMSVMTest(TEST_NAME1, true, false, 2, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, true, false, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMSparseBinRewritesCP() {
-		runMSVMTest(TEST_NAME1, true, true, 2, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, true, true, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMDenseBinCP() {
-		runMSVMTest(TEST_NAME1, false, false, 2, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, false, false, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMSparseBinCP() {
-		runMSVMTest(TEST_NAME1, false, true, 2, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, false, true, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMDenseMulRewritesCP() {
-		runMSVMTest(TEST_NAME1, true, false, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, true, false, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMSparseMulRewritesCP() {
-		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMDenseMulCP() {
-		runMSVMTest(TEST_NAME1, false, false, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, false, false, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMSparseMulCP() {
-		runMSVMTest(TEST_NAME1, false, true, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, false, true, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testMSVMDenseBinRewritesCPFuseAll() {
-		runMSVMTest(TEST_NAME1, true, false, 2, ExecType.CP, TestType.FUSE_ALL);
+		runMSVMTest(TEST_NAME1, true, false, 2, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testMSVMSparseBinRewritesCPFuseAll() {
-		runMSVMTest(TEST_NAME1, true, true, 2, ExecType.CP, TestType.FUSE_ALL);
+		runMSVMTest(TEST_NAME1, true, true, 2, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testMSVMDenseMulRewritesCPFuseAll() {
-		runMSVMTest(TEST_NAME1, true, false, 4, ExecType.CP, TestType.FUSE_ALL);
+		runMSVMTest(TEST_NAME1, true, false, 4, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testMSVMSparseMulRewritesCPFuseAll() {
-		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP, TestType.FUSE_ALL);
+		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testMSVMDenseBinRewritesCPFuseNoRedundancy() {
-		runMSVMTest(TEST_NAME1, true, false, 2, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runMSVMTest(TEST_NAME1, true, false, 2, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testMSVMSparseBinRewritesCPFuseNoRedundancy() {
-		runMSVMTest(TEST_NAME1, true, true, 2, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runMSVMTest(TEST_NAME1, true, true, 2, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testMSVMDenseMulRewritesCPFuseNoRedundancy() {
-		runMSVMTest(TEST_NAME1, true, false, 4, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runMSVMTest(TEST_NAME1, true, false, 4, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testMSVMSparseMulRewritesCPFuseNoRedundancy() {
-		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, int numClasses, ExecType instType, TestType testType) {
-		runMSVMTest(testname, rewrites, sparse, false, numClasses, instType, testType);
+	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, int numClasses, ExecType instType, CodegenTestType CodegenTestType) {
+		runMSVMTest(testname, rewrites, sparse, false, numClasses, instType, CodegenTestType);
 	}
 	
 	@Test
 	public void testMSVMDenseMulRewritesCPLineage() {
-		runMSVMTest(TEST_NAME1, true, false, true, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, true, false, true, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMSparseMulRewritesCPLineage() {
-		runMSVMTest(TEST_NAME1, true, true, true, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, true, true, true, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMDenseMulCPLineage() {
-		runMSVMTest(TEST_NAME1, false, false, true, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, false, false, true, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testMSVMSparseMulCPLineage() {
-		runMSVMTest(TEST_NAME1, false, true, true, 4, ExecType.CP, TestType.DEFAULT);
+		runMSVMTest(TEST_NAME1, false, true, true, 4, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
-	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, boolean lineage, int numClasses, ExecType instType, TestType testType)
+	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, boolean lineage, int numClasses, ExecType instType, CodegenTestType CodegenTestType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -181,7 +172,7 @@ public class AlgorithmMSVM extends AutomatedTestBase
 			case SPARK: rtplatform = ExecMode.SPARK; break;
 			default: rtplatform = ExecMode.HYBRID; break;
 		}
-		currentTestType = testType;
+		currentTestType = CodegenTestType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -234,17 +225,6 @@ public class AlgorithmMSVM extends AutomatedTestBase
 	 */
 	@Override
 	protected File getConfigTemplateFile() {
-		// Instrumentation in this test's output log to show custom configuration file used for template.
-		String message = "This test case overrides default configuration with ";
-		if(currentTestType == TestType.FUSE_ALL){
-			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
-			return TEST_CONF_FILE_FUSE_ALL;
-		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
-			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
-			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
-		} else {
-			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
-			return TEST_CONF_FILE_DEFAULT;
-		}
+		return getCodegenConfigFile(SCRIPT_DIR + TEST_DIR, currentTestType);
 	}
 }

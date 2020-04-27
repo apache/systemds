@@ -275,6 +275,7 @@ public class ProgramConverter
 		tmpPB.setStatementBlock( createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), pid, plain, forceDeepCopy) );
 		tmpPB.setThreadID(pid);
 		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
+		tmpPB.setExitInstruction(wpb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -285,6 +286,7 @@ public class ProgramConverter
 		tmpPB.setThreadID(pid);
 		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
 		tmpPB.setChildBlocksElseBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksElseBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
+		tmpPB.setExitInstruction(ipb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -296,6 +298,7 @@ public class ProgramConverter
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(fpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy) );
+		tmpPB.setExitInstruction(fpb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -305,6 +308,7 @@ public class ProgramConverter
 		tmpPB.setToInstructions( fpb.getToInstructions() );
 		tmpPB.setIncrementInstructions( fpb.getIncrementInstructions() );
 		tmpPB.setChildBlocks( fpb.getChildBlocks() );
+		tmpPB.setExitInstruction(fpb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -332,6 +336,7 @@ public class ProgramConverter
 			tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(pfpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy) ); 
 		else
 			tmpPB.setChildBlocks( pfpb.getChildBlocks() );
+		tmpPB.setExitInstruction(pfpb.getExitInstruction());
 		
 		return tmpPB;
 	}

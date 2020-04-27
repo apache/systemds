@@ -945,8 +945,8 @@ public class Statistics
 			}
 			if (DMLScript.LINEAGE && !ReuseCacheType.isNone()) {
 				sb.append("LinCache hits (Mem/FS/Del): \t" + LineageCacheStatistics.displayHits() + ".\n");
-				sb.append("LinCache MultiLevel (Ins/SB/Fn):" + LineageCacheStatistics.displayMultiLvlHits() + ".\n");
-				sb.append("LinCache writes (Mem/FS): \t" + LineageCacheStatistics.displayWtrites() + ".\n");
+				sb.append("LinCache MultiLevel (Ins/SB/Fn):" + LineageCacheStatistics.displayMultiLevelHits() + ".\n");
+				sb.append("LinCache writes (Mem/FS/Del): \t" + LineageCacheStatistics.displayWtrites() + ".\n");
 				sb.append("LinCache FStimes (Rd/Wr): \t" + LineageCacheStatistics.displayTime() + " sec.\n");
 				sb.append("LinCache costing time:  \t" + LineageCacheStatistics.displayCostingTime() + " sec.\n");
 				sb.append("LinCache Rewrites:    \t\t" + LineageCacheStatistics.displayRewrites() + ".\n");

@@ -476,8 +476,11 @@ public class PreparedScript implements ConfigurableAPI
 
 	/**
 	 * Capture lineage of the DML/PyDML program and view result as a string.
-	 * 
+	 *
+	 * @param var the output variable name on which lineage trace is sought
+	 *
 	 * @return string results of lineage trace
+	 *
 	 */
 	public String getLineageTrace(String var) {
 		return _outVarLineage.get(var);

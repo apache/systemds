@@ -287,18 +287,15 @@ public class Explain
 		return sb.toString();
 	}
 
-	public static String explain( ProgramBlock pb )
-	{
+	public static String explain( ProgramBlock pb ) {
 		return explainProgramBlock(pb, 0);
 	}
 
-	public static String explain( ArrayList<Instruction> inst )
-	{
+	public static String explain( ArrayList<Instruction> inst ) {
 		return explainInstructions(inst, 0);
 	}
 
-	public static String explain( ArrayList<Instruction> inst, int level )
-	{
+	public static String explain( ArrayList<Instruction> inst, int level ) {
 		return explainInstructions(inst, level);
 	}
 
@@ -693,6 +690,8 @@ public class Explain
 			sb.append(explainInstructions(wpb.getPredicate(), level+1));
 			for( ProgramBlock pbc : wpb.getChildBlocks() )
 				sb.append( explainProgramBlock( pbc, level+1) );
+			if( wpb.getExitInstruction() != null )
+				sb.append(explainInstructions(wpb.getExitInstruction(), level+1));
 		}
 		else if (pb instanceof IfProgramBlock) {
 			IfProgramBlock ipb = (IfProgramBlock) pb;
@@ -707,6 +706,8 @@ public class Explain
 				for( ProgramBlock pbc : ipb.getChildBlocksElseBody() )
 					sb.append( explainProgramBlock( pbc, level+1) );
 			}
+			if( ipb.getExitInstruction() != null )
+				sb.append(explainInstructions(ipb.getExitInstruction(), level+1));
 		}
 		else if (pb instanceof ForProgramBlock) { //incl parfor
 			ForProgramBlock fpb = (ForProgramBlock) pb;
@@ -725,7 +726,8 @@ public class Explain
 			sb.append(explainInstructions(fpb.getIncrementInstructions(), level+1));
 			for( ProgramBlock pbc : fpb.getChildBlocks() )
 				sb.append( explainProgramBlock( pbc, level+1) );
-
+			if( fpb.getExitInstruction() != null )
+				sb.append(explainInstructions(fpb.getExitInstruction(), level+1));
 		}
 		else if( pb instanceof BasicProgramBlock ) {
 			BasicProgramBlock bpb = (BasicProgramBlock) pb;
@@ -740,24 +742,27 @@ public class Explain
 		return sb.toString();
 	}
 
-	private static String explainInstructions( ArrayList<Instruction> instSet, int level )
-	{
+	private static String explainInstructions( ArrayList<Instruction> instSet, int level ) {
 		StringBuilder sb = new StringBuilder();
 		String offsetInst = createOffset(level);
-
-		for( Instruction inst : instSet )
-		{
+		for( Instruction inst : instSet ) {
 			String tmp = explainGenericInstruction(inst, level);
-
 			sb.append( offsetInst );
 			sb.append( tmp );
-
 			sb.append( '\n' );
 		}
 
 		return sb.toString();
 	}
 
+	private static String explainInstructions( Instruction inst, int level ) {
+		StringBuilder sb = new StringBuilder();
+		sb.append( createOffset(level) );
+		sb.append( explainGenericInstruction(inst, level) );
+		sb.append( '\n' );
+		return sb.toString();
+	}
+	
 	private static String explainGenericInstruction( Instruction inst, int level )
 	{
 		String tmp = null;

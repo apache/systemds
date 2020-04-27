@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['Matrix', 'federated', 'full', 'seq']
+__all__ = ['Matrix', 'federated', 'full', 'seq', 'rand']
 
 import os
 from typing import Union, Optional, Iterable, Dict, Tuple, Sequence, TYPE_CHECKING
@@ -104,7 +104,8 @@ def federated(sds_context: 'SystemDSContext', addresses: Iterable[str],
     addresses_str = 'list(' + ','.join(map(lambda s: f'"{s}"', addresses)) + ')'
     ranges_str = 'list('
     for begin, end in ranges:
-        ranges_str += f'list({",".join(map(str, begin))}), list({",".join(map(str, end))})'
+        ranges_str += f'list({",".join(map(str, begin))}), list({",".join(map(str, end))}),'
+    ranges_str = ranges_str[:-1]
     ranges_str += ')'
     named_params = {'addresses': addresses_str, 'ranges': ranges_str}
     named_params.update(kwargs)
@@ -141,3 +142,32 @@ def seq(sds_context: 'SystemDSContext', start: Union[float, int], stop: Union[fl
         start = 0
     unnamed_input_nodes = [start, stop, step]
     return OperationNode(sds_context, 'seq', unnamed_input_nodes)
+
+
+def rand(sds_context: 'SystemDSContext', rows: int, cols: int, min: Union[float, int] = None, max: Union[float, int] = None, pdf: str = "uniform",
+         sparsity: Union[float, int] = None, seed: Union[float, int] = None,
+         lambd: Union[float, int] = 1) -> OperationNode:
+    """Generates a matrix filled with random values
+
+    :param rows: number of rows
+    :param cols: number of cols
+    :param min: min value for cells
+    :param max: max value for cells
+    :param pdf: "uniform"/"normal"/"poison" distribution
+    :param sparsity: fraction of non-zero cells
+    :param seed: random seed
+    :param lambd: lamda value for "poison" distribution
+    :return:
+    """
+    pdf = '\"' + pdf + '\"'
+    named_input_nodes = {'rows': rows, 'cols': cols, 'pdf': pdf, 'lambda': lambd}
+    if min is not None:
+        named_input_nodes['min'] = min
+    if max is not None:
+        named_input_nodes['max'] = max
+    if sparsity is not None:
+        named_input_nodes['sparsity'] = sparsity
+    if seed is not None:
+        named_input_nodes['seed'] = seed
+
+    return OperationNode(sds_context, 'rand', [], named_input_nodes=named_input_nodes)

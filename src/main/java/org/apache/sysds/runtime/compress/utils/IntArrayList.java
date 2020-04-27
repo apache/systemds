@@ -22,12 +22,9 @@ package org.apache.sysds.runtime.compress.utils;
 import java.util.Arrays;
 
 /**
- * This class provides a memory-efficient replacement for {@code ArrayList<Integer>} for
- * restricted use cases.
- * 
+ * This class provides a memory-efficient replacement for {@code ArrayList<Integer>} for restricted use cases.
  */
-public class IntArrayList 
-{
+public class IntArrayList {
 	private static final int INIT_CAPACITY = 4;
 	private static final int RESIZE_FACTOR = 2;
 
@@ -39,7 +36,7 @@ public class IntArrayList
 		_data = null;
 		_size = 0;
 	}
-	
+
 	public IntArrayList(int value) {
 		this();
 		appendValue(value);
@@ -51,18 +48,18 @@ public class IntArrayList
 
 	public void appendValue(int value) {
 		// embedded value (no array allocation)
-		if( _size == 0 ) {
+		if(_size == 0) {
 			_val0 = value;
 			_size = 1;
 			return;
 		}
 
 		// allocate or resize array if necessary
-		if( _data == null ) {
+		if(_data == null) {
 			_data = new int[INIT_CAPACITY];
 			_data[0] = _val0;
-		} 
-		else if( _size + 1 >= _data.length ) {
+		}
+		else if(_size + 1 >= _data.length) {
 			resize();
 		}
 
@@ -72,31 +69,27 @@ public class IntArrayList
 	}
 
 	/**
-	 * Returns the underlying array of offsets. Note that this array might be 
-	 * physically larger than the actual length of the offset lists. Use size() 
-	 * to obtain the actual length.
+	 * Returns the underlying array of offsets. Note that this array might be physically larger than the actual length
+	 * of the offset lists. Use size() to obtain the actual length.
 	 * 
-	 * @return integer array of offsets, the physical array length
-	 * may be larger than the length of the offset list 
+	 * @return integer array of offsets, the physical array length may be larger than the length of the offset list
 	 */
 	public int[] extractValues() {
-		if( _size == 1 )
-			return new int[] { _val0 };
+		if(_size == 1)
+			return new int[] {_val0};
 		else
 			return _data;
 	}
-	
+
 	public int[] extractValues(boolean trim) {
 		int[] ret = extractValues();
-		return (trim && _size < ret.length) ?
-			Arrays.copyOfRange(ret, 0, _size) : ret;
+		return (trim && _size < ret.length) ? Arrays.copyOfRange(ret, 0, _size) : ret;
 	}
 
 	private void resize() {
 		// check for integer overflow on resize
-		if( _data.length > Integer.MAX_VALUE / RESIZE_FACTOR )
-			throw new RuntimeException(
-					"IntArrayList resize leads to integer overflow: size=" + _size);
+		if(_data.length > Integer.MAX_VALUE / RESIZE_FACTOR)
+			throw new RuntimeException("IntArrayList resize leads to integer overflow: size=" + _size);
 
 		// resize data array and copy existing contents
 		_data = Arrays.copyOf(_data, _data.length * RESIZE_FACTOR);

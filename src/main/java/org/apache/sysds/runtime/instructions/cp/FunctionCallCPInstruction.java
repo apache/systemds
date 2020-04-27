@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -104,7 +105,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		if( LOG.isTraceEnabled() ){
-			LOG.trace("Executing instruction : " + this.toString());
+			LOG.trace("Executing instruction : " + toString());
 		}
 		// get the function program block (stored in the Program object)
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);
@@ -172,6 +173,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		fn_ec.setVariables(functionVariables);
 		fn_ec.setLineage(lineage);
 		// execute the function block
+		long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 		try {
 			fpb._functionName = this._functionName;
 			fpb._namespace = this._namespace;
@@ -184,6 +186,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			String fname = DMLProgram.constructFunctionKey(_namespace, _functionName);
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
+		long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 		
 		// cleanup all returned variables w/o binding 
 		HashSet<String> expectRetVars = new HashSet<>();
@@ -225,8 +228,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 
 		//update lineage cache with the functions outputs
-		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() )
-			LineageCache.putValue(fpb.getOutputParams(), liInputs, _functionName, ec);
+		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ) {
+			LineageCache.putValue(fpb.getOutputParams(), liInputs, 
+					getCacheFunctionName(_functionName, fpb), ec, t1-t0);
+		}
 	}
 
 	@Override
@@ -249,7 +254,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		//split current instruction
 		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		if( parts[3].equals(pattern) )
-			parts[3] = replace;	
+			parts[3] = replace;
 		
 		//construct and set modified instruction
 		StringBuilder sb = new StringBuilder();
@@ -262,14 +267,25 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 	
 	private boolean reuseFunctionOutputs(LineageItem[] liInputs, FunctionProgramBlock fpb, ExecutionContext ec) {
+		//prepare lineage cache probing
+		String funcName = getCacheFunctionName(_functionName, fpb);
 		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
-		boolean reuse = LineageCache.reuse(_boundOutputNames, fpb.getOutputParams(), numOutputs, liInputs, _functionName, ec);
+		
+		//reuse of function outputs
+		boolean reuse = LineageCache.reuse(
+			_boundOutputNames, fpb.getOutputParams(), numOutputs, liInputs, funcName, ec);
 
+		//statistics maintenance
 		if (reuse && DMLScript.STATISTICS) {
 			//decrement the call count for this function
-			Statistics.maintainCPFuncCallStats(this.getExtendedOpcode());
+			Statistics.maintainCPFuncCallStats(getExtendedOpcode());
 			LineageCacheStatistics.incrementFuncHits();
 		}
 		return reuse;
+	}
+	
+	private static String getCacheFunctionName(String fname, FunctionProgramBlock fpb) {
+		return !fpb.hasThreadID() ? fname :
+			fname.substring(0, fname.lastIndexOf(Lop.CP_CHILD_THREAD+fpb.getThreadID()));
 	}
 }

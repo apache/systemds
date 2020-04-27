@@ -612,16 +612,12 @@ public class LineageItemUtils {
 	public static boolean containsRandDataGen(HashSet<LineageItem> entries, LineageItem root) {
 		if (entries.contains(root) || root.isVisited())
 			return false;
-
-		boolean isRand = false;
-		if (isNonDeterministic(root))
-			isRand |= true;
-		if (!root.isLeaf()) 
+		boolean isRand = isNonDeterministic(root);
+		if (!root.isLeaf() && !isRand) 
 			for (LineageItem input : root.getInputs())
-				isRand = isRand ? true : containsRandDataGen(entries, input);
+				isRand |= containsRandDataGen(entries, input);
 		root.setVisited();
 		return isRand;
-		//TODO: unmark for caching in compile time
 	}
 	
 	private static boolean isNonDeterministic(LineageItem li) {

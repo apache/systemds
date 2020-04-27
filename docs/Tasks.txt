@@ -91,7 +91,7 @@ SYSTEMDS-110 New Builtin Functions
  * 115 Builtin function for model debugging (slice finder)            OK
  * 116 Builtin function for kmeans                                    OK
  * 117 Builtin function for lm cross validation                       OK
- * 118 Builtin function for hyperparameter grid search with CVlm
+ * 118 Builtin function for hyperparameter grid search                
  * 119 Builtin functions for l2svm and msvm                           OK
 
 SYSTEMDS-120 Performance Features
@@ -165,6 +165,8 @@ SYSTEMDS-200 Various Fixes
  * 204 Fix rewrite simplify sequences of binary comparisons           OK
  * 205 Fix scoping of builtin dml-bodied functions (vs user-defined)
  * 206 Fix codegen outer template compilation (tsmm)                  OK
+ * 207 Fix builtin function call hoisting from expressions            OK
+ * 208 Fix bufferpool leak (live var analysis and createvar)          OK
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK
@@ -210,6 +212,19 @@ SYSTEMDS-260 Misc Tools
 SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK
  * 272 Simplify and speedup compression tests                         OK
+ * 273 Refactor compressed Matrix Block to simplify responsibilities  OK
+ * 273a Redesign allocation of ColGroups in ColGroupFactory
+ * 274 Make the DDC Compression dictionary share correctly
+ * 275 Include compressionSettings in DMLConfiguration
+ * 276 Allow Uncompressed Columns to be in sparse formats
+ * 277 Sampling based estimators fix
+ * 278 Compression-CoCode algorithm optimization
+ * 278a Return ColGroups estimated compression ratio to Factory
+ * 279 Add missing standard lossless compression techniques
+ * 279a ColGroup FOR (Frame of reference) encoding
+ * 279b ColGroup DEL (Delta) encoding
+ * MINOR Reduce memory usage for compression statistics.
+ * MINOR Make ContainsAZero() method in UncompressedBitMap
 
 SYSTEMDS-280 New Rewrites
  * 281 New rewrites sum(rmEmpty), sum(table)                          OK
@@ -233,6 +248,8 @@ SYSTEMDS-310 Python Bindings
  * 312 Python 3.6 compatibility                                       OK
  * 313 Python Documentation upload via Github Actions                 OK
  * 314 Python SystemDS context manager                                OK
+ * 315 Python Federated Matrices Tests                                OK
+ * 316 Extended Python API (rand, lm, mm)                             OK
 
 SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
  * 321 Merge histories of SystemDS and SystemML                       OK
@@ -242,7 +259,11 @@ SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
 SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 331 Cache and reuse scalar outputs (instruction and multi-level)   OK
  * 332 Parfor integration with multi-level reuse                      OK
- * 333 Use exact execution time for cost based eviction
+ * 333 Improve cache eviction with actual compute time                OK
+ * 334 Cache scalars only with atleast one matrix inputs
+ * 335 Weighted eviction policy (function of size & computetime)
+ * 336 Better use of cache status to handle multithreading
+ * 337 Adjust disk I/O speed by recording actual time taken           OK
  
 SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations
@@ -253,6 +274,20 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
 
 SYSTEMDS-350 Data Cleaning Framework
  * 351 New builtin function for error correction by schema            OK
+
+SYSTEMDS-360 Privacy/Data Exchange Constraints
+ * 361 Initial privacy meta data (compiler/runtime)                   OK
+ * 362 Runtime privacy propagation
+ * 363 Compile-time privacy propagation
+ * 364 Error handling violated privacy constraints
+ * 365 Extended privacy/data exchange constraints
+
+SYSTEMDS-370 Lossy Compression Blocks
+ * 361 ColGroup Quantization
+ * 362 ColGroup Base Data change (from Double to ??)
+
+SYSTEMDS-380 Memory Footprint
+ * 371 Matrix Block Memory footprint update
 
 Others:
  * Break append instruction to cbind and rbind 

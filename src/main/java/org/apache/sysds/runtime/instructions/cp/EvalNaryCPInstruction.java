@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -28,6 +30,7 @@ import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.FunctionStatementBlock;
@@ -62,9 +65,9 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		
 		// bound the inputs to avoiding being deleted after the function call
 		CPOperand[] boundInputs = Arrays.copyOfRange(inputs, 1, inputs.length);
-		ArrayList<String> boundOutputNames = new ArrayList<>();
+		List<String> boundOutputNames = new ArrayList<>();
 		boundOutputNames.add(output.getName());
-		ArrayList<String> boundInputNames = new ArrayList<>();
+		List<String> boundInputNames = new ArrayList<>();
 		for (CPOperand input : boundInputs) {
 			boundInputNames.add(input.getName());
 		}
@@ -73,19 +76,43 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
 
 		//3. lazy loading of dml-bodied builtin functions (incl. rename 
-		// of function name to dml-bodied builtin scheme (data-type-specific) 
-		if( !ec.getProgram().containsFunctionProgramBlock(null, funcName) ) {
-			compileFunctionProgramBlock(funcName, boundInputs[0].getDataType(), ec.getProgram());
-			funcName = Builtins.getInternalFName(funcName, boundInputs[0].getDataType());
+		// of function name to dml-bodied builtin scheme (data-type-specific)
+		DataType dt1 = boundInputs[0].getDataType().isList() ? 
+			DataType.MATRIX : boundInputs[0].getDataType();
+		String funcName2 = Builtins.getInternalFName(funcName, dt1);
+		if( !ec.getProgram().containsFunctionProgramBlock(null, funcName)) {
+			if( !ec.getProgram().containsFunctionProgramBlock(null,funcName2) )
+				compileFunctionProgramBlock(funcName, dt1, ec.getProgram());
+			funcName = funcName2;
 		}
 		
-		//4. call the function
+		//4. expand list arguments if needed
+		CPOperand[] boundInputs2 = null;
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, funcName);
+		if( boundInputs.length == 1 && boundInputs[0].getDataType().isList()
+			&& fpb.getInputParams().size() > 1 && !fpb.getInputParams().get(0).getDataType().isList()) 
+		{
+			ListObject lo = ec.getListObject(boundInputs[0]);
+			checkValidArguments(lo.getData(), lo.getNames(), fpb.getInputParamNames());
+			if( lo.isNamedList() )
+				lo = reorderNamedListForFunctionCall(lo, fpb.getInputParamNames());
+			boundInputs2 = new CPOperand[lo.getLength()];
+			for( int i=0; i<lo.getLength(); i++ ) {
+				Data in = lo.getData(i);
+				String varName = Dag.getNextUniqueVarname(in.getDataType());
+				ec.getVariables().put(varName, in);
+				boundInputs2[i] = new CPOperand(varName, in);
+			}
+			boundInputNames = lo.isNamedList() ? lo.getNames() : fpb.getInputParamNames();
+			boundInputs = boundInputs2;
+		}
+		
+		//5. call the function
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(null, funcName,
 			boundInputs, boundInputNames, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 
-		//5. convert the result to matrix
+		//6. convert the result to matrix
 		Data newOutput = ec.getVariable(output);
 		if (newOutput instanceof MatrixObject) {
 			return;
@@ -102,6 +129,12 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		outputMO.acquireModify(mb);
 		outputMO.release();
 		ec.setVariable(output.getName(), outputMO);
+		
+		//7. cleanup of variable expanded from list
+		if( boundInputs2 != null ) {
+			for( CPOperand op : boundInputs2 )
+				VariableCPInstruction.processRemoveVariableInstruction(ec, op.getName());
+		}
 	}
 	
 	private static void compileFunctionProgramBlock(String name, DataType dt, Program prog) {
@@ -150,5 +183,30 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 				.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
 			prog.addFunctionProgramBlock(null, fsb.getKey(), fpb);
 		}
+	}
+	
+	private static void checkValidArguments(List<Data> loData, List<String> loNames, List<String> fArgNames) {
+		//check number of parameters
+		int listSize = (loNames != null) ? loNames.size() : loData.size();
+		if( listSize != fArgNames.size() )
+			throw new DMLRuntimeException("Failed to expand list for function call "
+				+ "(mismatching number of arguments: "+listSize+" vs. "+fArgNames.size()+").");
+		
+		//check individual parameters
+		if( loNames != null ) {
+			HashSet<String> probe = new HashSet<>();
+			for( String var : fArgNames )
+				probe.add(var);
+			for( String var : loNames )
+				if( !probe.contains(var) )
+					throw new DMLRuntimeException("List argument named '"+var+"' not in function signature.");
+		}
+	}
+	
+	private static ListObject reorderNamedListForFunctionCall(ListObject in, List<String> fArgNames) {
+		List<Data> sortedData = new ArrayList<>();
+		for( String name : fArgNames )
+			sortedData.add(in.getData(name));
+		return new ListObject(sortedData, new ArrayList<>(fArgNames));
 	}
 }

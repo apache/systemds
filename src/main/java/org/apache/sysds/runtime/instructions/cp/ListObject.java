@@ -104,6 +104,14 @@ public class ListObject extends Data {
 		return _data;
 	}
 	
+	public Data getData(int ix) {
+		return _data.get(ix);
+	}
+	
+	public Data getData(String name) {
+		return slice(name);
+	}
+	
 	public List<LineageItem> getLineageItems() {
 		return _lineage;
 	}
@@ -219,6 +227,8 @@ public class ListObject extends Data {
 		if( _names != null && name == null )
 			throw new DMLRuntimeException("Cannot add to a named list");
 		//otherwise append and ignore name
+		if( _names != null )
+			_names.add(name);
 		_data.add(dat);
 		if (_lineage == null && li!= null) 
 			_lineage = new ArrayList<>();

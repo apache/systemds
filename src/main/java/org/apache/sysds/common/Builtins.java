@@ -90,6 +90,7 @@ public enum Builtins {
 	EVAL("eval", false),
 	FLOOR("floor", false),
 	GNMF("gnmf", true),
+	GRID_SEARCH("gridSearch", true),
 	IFELSE("ifelse", false),
 	IMG_MIRROR("img_mirror", true),
 	IMG_BRIGHTNESS("img_brightness", true),

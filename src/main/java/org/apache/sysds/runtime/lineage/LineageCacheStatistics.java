@@ -34,6 +34,7 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numHitsFunc     = new LongAdder();
 	private static final LongAdder _numWritesMem    = new LongAdder();
 	private static final LongAdder _numWritesFS     = new LongAdder();
+	private static final LongAdder _numMemDel       = new LongAdder();
 	private static final LongAdder _numRewrites     = new LongAdder();
 	private static final LongAdder _ctimeFSRead     = new LongAdder(); //in nano sec
 	private static final LongAdder _ctimeFSWrite    = new LongAdder(); //in nano sec
@@ -50,6 +51,7 @@ public class LineageCacheStatistics {
 		_numHitsFunc.reset();
 		_numWritesMem.reset();
 		_numWritesFS.reset();
+		_numMemDel.reset();
 		_numRewrites.reset();
 		_ctimeFSRead.reset();
 		_ctimeFSWrite.reset();
@@ -102,6 +104,12 @@ public class LineageCacheStatistics {
 		// Number of times written in local FS.
 		_numWritesFS.increment();
 	}
+	
+	public static void incrementMemDeletes() {
+		// Number of deletions from cache (including spilling).
+		_numMemDel.increment();
+	}
+
 
 	public static void incrementFSReadTime(long delta) {
 		// Total time spent on reading from FS.
@@ -122,6 +130,14 @@ public class LineageCacheStatistics {
 		// Total time spent compiling lineage rewrites.
 		_ctimeRewrite.add(delta);
 	}
+	
+	public static long getMultiLevelFnHits() {
+		return _numHitsFunc.longValue();
+	}
+	
+	public static long getMultiLevelSBHits() {
+		return _numHitsSB.longValue();
+	}
 
 	public static void incrementPRwExecTime(long delta) {
 		// Total time spent executing lineage rewrites.
@@ -138,7 +154,7 @@ public class LineageCacheStatistics {
 		return sb.toString();
 	}
 
-	public static String displayMultiLvlHits() {
+	public static String displayMultiLevelHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsInst.longValue());
 		sb.append("/");
@@ -153,6 +169,8 @@ public class LineageCacheStatistics {
 		sb.append(_numWritesMem.longValue());
 		sb.append("/");
 		sb.append(_numWritesFS.longValue());
+		sb.append("/");
+		sb.append(_numMemDel.longValue());
 		return sb.toString();
 	}
 

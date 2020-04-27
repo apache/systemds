@@ -155,7 +155,7 @@ public class Recompiler
 		}
 		
 		// replace thread ids in new instructions
-		if( tid != 0 ) //only in parfor context
+		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// remove writes if called through mlcontext or jmlc 
@@ -187,7 +187,7 @@ public class Recompiler
 		}
 		
 		// replace thread ids in new instructions
-		if( tid != 0 ) //only in parfor context
+		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled instructions
@@ -209,7 +209,7 @@ public class Recompiler
 		}
 		
 		// replace thread ids in new instructions
-		if( tid != 0 ) //only in parfor context
+		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled instructions
@@ -231,7 +231,7 @@ public class Recompiler
 		}
 		
 		// replace thread ids in new instructions
-		if( tid != 0 ) //only in parfor context
+		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled hops / instructions
@@ -253,7 +253,7 @@ public class Recompiler
 		}
 
 		// replace thread ids in new instructions
-		if( tid != 0 ) //only in parfor context
+		if( ProgramBlock.isThreadID(tid) ) //only in parfor context
 			newInst = ProgramConverter.createDeepCopyInstructionSet(newInst, tid, -1, null, null, null, false, false);
 		
 		// explain recompiled hops / instructions

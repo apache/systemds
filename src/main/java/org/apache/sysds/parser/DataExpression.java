@@ -45,6 +45,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Map.Entry;
 
 
@@ -96,6 +98,8 @@ public class DataExpression extends DataIdentifier
 	public static final String SCHEMAPARAM = "schema";
 	public static final String CREATEDPARAM = "created";
 
+	public static final String PRIVACY = "privacy";
+
 	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
 	public static final String DELIM_HAS_HEADER_ROW = "header";
@@ -107,31 +111,34 @@ public class DataExpression extends DataIdentifier
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
-	public static final String[] RAND_VALID_PARAM_NAMES = 
-		{RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA};
+	public static final Set<String> RAND_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(RAND_ROWS, RAND_COLS, RAND_DIMS,
+			RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA));
 	
-	public static final String[] RESHAPE_VALID_PARAM_NAMES =
-		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
+	public static final Set<String> RESHAPE_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS));
 	
-	public static final String[] SQL_VALID_PARAM_NAMES = {SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY};
+	public static final Set<String> SQL_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY));
 	
-	public static final String[] FEDERATED_VALID_PARAM_NAMES = {FED_ADDRESSES, FED_RANGES};
+	public static final Set<String> FEDERATED_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(FED_ADDRESSES, FED_RANGES));
 
 	// Valid parameter names in a metadata file
-	public static final String[] READ_VALID_MTD_PARAM_NAMES =
-		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
-			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
-			AUTHORPARAM, CREATEDPARAM,
+	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =new HashSet<>(
+		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM,
+			FORMAT_TYPE, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM,
+			VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM, AUTHORPARAM, CREATEDPARAM,
 			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
-		};
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
+			// Parameters related to privacy
+			PRIVACY));
 
-	public static final String[] READ_VALID_PARAM_NAMES = 
-	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
-		ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM, 
+	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM,
+			VALUETYPEPARAM, SCHEMAPARAM, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
 			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
-	};
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -210,11 +217,8 @@ public class DataExpression extends DataIdentifier
 					return null;
 				}
 				// verify parameter names for read function
-				boolean isValidName = false;
-				for (String paramName : READ_VALID_PARAM_NAMES){
-					if (paramName.equals(currName))
-						isValidName = true;
-				}
+				boolean isValidName = READ_VALID_PARAM_NAMES.contains(currName);
+
 				if (!isValidName){
 					errorListener.validationError(parseInfo, "attempted to add invalid read statement parameter " + currName);
 					return null;
@@ -466,15 +470,7 @@ public class DataExpression extends DataIdentifier
 			return;
 		}
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			for (String name : RAND_VALID_PARAM_NAMES){
-				if (name.equals(paramName)) {
-					found = true;
-					break;
-				}			
-			}
-		}
+		boolean found = RAND_VALID_PARAM_NAMES.contains(paramName);
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
@@ -500,10 +496,7 @@ public class DataExpression extends DataIdentifier
 	public void addMatrixExprParam(String paramName, Expression paramValue) 
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.stream(RESHAPE_VALID_PARAM_NAMES).anyMatch((name) -> name.equals(paramName));
-		}
+		boolean found = RESHAPE_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName +
@@ -529,10 +522,7 @@ public class DataExpression extends DataIdentifier
 	public void addTensorExprParam(String paramName, Expression paramValue)
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.asList(RESHAPE_VALID_PARAM_NAMES).contains(paramName);
-		}
+		boolean found = RESHAPE_VALID_PARAM_NAMES.contains(paramName);
 
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for tensor statement are "
@@ -558,10 +548,7 @@ public class DataExpression extends DataIdentifier
 	public void addSqlExprParam(String paramName, Expression paramValue)
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.asList(SQL_VALID_PARAM_NAMES).contains(paramName);
-		}
+		boolean found = SQL_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for sql statement are "
@@ -578,8 +565,7 @@ public class DataExpression extends DataIdentifier
 	
 	public void addFederatedExprParam(String paramName, Expression paramValue) {
 		// check name is valid
-		boolean found = (paramName != null ) &&
-			Arrays.asList(FEDERATED_VALID_PARAM_NAMES).contains(paramName);
+		boolean found = FEDERATED_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found)
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for federated statement are "
@@ -988,17 +974,11 @@ public class DataExpression extends DataIdentifier
 								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) || key.equals(VALUETYPEPARAM)
 								|| key.equals(SCHEMAPARAM)) )
 						{	
-							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
-									   + SCHEMAPARAM + "," 
-									   + DELIM_HAS_HEADER_ROW   + "," 
-									   + DELIM_DELIMITER 	+ ","
-									   + DELIM_FILL 		+ ","
-									   + DELIM_FILL_VALUE 	+ ","
-									   + READROWPARAM     + "," 
-									   + READCOLPARAM;
-							
+							String msg = "Only parameters allowed are: " + Arrays.toString(new String[] {
+								IO_FILENAME, SCHEMAPARAM, DELIM_HAS_HEADER_ROW, DELIM_DELIMITER,
+								DELIM_FILL, DELIM_FILL_VALUE, READROWPARAM, READCOLPARAM});
 							raiseValidateError("Invalid parameter " + key + " in read statement: " +
-									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+								toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 					}
 				}
@@ -1087,18 +1067,25 @@ public class DataExpression extends DataIdentifier
 						isMatrix = true;
 				
 				// set data type
-		        getOutput().setDataType(isMatrix ? DataType.MATRIX : DataType.FRAME);
-		        
-		        // set number non-zeros
-		        Expression ennz = this.getVarParam("nnz");
-		        long nnz = -1;
-		        if( ennz != null )
-		        {
-			        nnz = Long.valueOf(ennz.toString());
-			        getOutput().setNnz(nnz);
-		        }
-		        
-		        // Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
+				getOutput().setDataType(isMatrix ? DataType.MATRIX : DataType.FRAME);
+
+				// set number non-zeros
+				Expression ennz = getVarParam("nnz");
+				long nnz = -1;
+				if( ennz != null ) {
+					nnz = Long.valueOf(ennz.toString());
+					getOutput().setNnz(nnz);
+				}
+				
+				// set privacy
+				Expression eprivacy = getVarParam("privacy");
+				boolean privacy = false;
+				if ( eprivacy != null ) {
+					privacy = Boolean.valueOf(eprivacy.toString());
+					getOutput().setPrivacy(privacy);
+				}
+
+				// Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
@@ -1919,13 +1906,10 @@ public class DataExpression extends DataIdentifier
 		}
 	}
 
-	private void validateParams(boolean conditional, String[] validParamNames, String legalMessage) {
+	private void validateParams(boolean conditional, Set<String> validParamNames, String legalMessage) {
 		for( String key : _varParams.keySet() )
 		{
-			boolean found = false;
-			for (String name : validParamNames) {
-				found |= name.equals(key);
-			}
+			boolean found = validParamNames.contains(key);
 			if( !found ) {
 				raiseValidateError("unexpected parameter \"" + key + "\". "
 						+ legalMessage, conditional);
@@ -2061,11 +2045,7 @@ public class DataExpression extends DataIdentifier
     		Object key = e.getKey();
     		Object val = e.getValue();
 			
-    		boolean isValidName = false;
-    		for (String paramName : READ_VALID_MTD_PARAM_NAMES){
-				if (paramName.equals(key))
-					isValidName = true;
-			}
+			boolean isValidName = READ_VALID_MTD_PARAM_NAMES.contains(key);
     		
 			if (!isValidName){ //wrong parameters always rejected
 				raiseValidateError("MTD file " + mtdFileName + " contains invalid parameter name: " + key, false);
@@ -2091,6 +2071,7 @@ public class DataExpression extends DataIdentifier
 						if ( key.toString().equalsIgnoreCase(DELIM_HAS_HEADER_ROW) 
 								|| key.toString().equalsIgnoreCase(DELIM_FILL)
 								|| key.toString().equalsIgnoreCase(DELIM_SPARSE)
+								|| key.toString().equalsIgnoreCase(PRIVACY)
 								) {
 							// parse these parameters as boolean values
 							BooleanIdentifier boolId = null; 

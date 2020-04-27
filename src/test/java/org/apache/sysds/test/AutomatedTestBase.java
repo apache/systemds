@@ -37,6 +37,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
+import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
@@ -61,6 +62,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.ParameterBuilder;
@@ -114,6 +116,23 @@ public abstract class AutomatedTestBase {
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemDS-config.xml");
 
+	protected enum CodegenTestType {
+		DEFAULT, FUSE_ALL, FUSE_NO_REDUNDANCY;
+		
+		public String getCodgenConfig() {
+			switch(this) {
+				case DEFAULT:
+					return "SystemDS-config-codegen.xml";
+				case FUSE_ALL:
+					return "SystemDS-config-codegen-fuse-all.xml";
+				case FUSE_NO_REDUNDANCY:
+					return "SystemDS-config-codegen-fuse-no-redundancy.xml";
+				default: 
+					throw new RuntimeException("Unsupported codegen test config: "+this.name());
+			}
+		}
+	}
+	
 	/**
 	 * Location under which we create local temporary directories for test cases. To adjust where testTemp is located,
 	 * use -Dsystemds.testTemp.root.dir=<new location>. This is necessary if any parent directories are
@@ -287,6 +306,13 @@ public abstract class AutomatedTestBase {
 		return CONFIG_TEMPLATE_FILE;
 	}
 
+	protected File getCodegenConfigFile(String parent, CodegenTestType type) {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		File tmp = new File(parent, type.getCodgenConfig());
+		System.out.println("This test case overrides default configuration with " + tmp.getPath());
+		return tmp;
+	}
+	
 	protected ExecMode setExecMode(ExecType instType) {
 		switch(instType) {
 			case SPARK: return setExecMode(ExecMode.SPARK);
@@ -439,17 +465,32 @@ public abstract class AutomatedTestBase {
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, long nnz, boolean bIncludeR) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length,
 			OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
-		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
+	}
+
+	protected double [][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
+	MatrixCharacteristics mc) {
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
+	}
+
+	protected double [][] writeInputMatrixWithMTD(String name, double[][] matrix, PrivacyConstraint privacyConstraint) {
+		return writeInputMatrixWithMTD(name, matrix, false, null, privacyConstraint);
+	}
+
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, PrivacyConstraint privacyConstraint) {
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length,
+			OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, privacyConstraint);
 	}
 
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
-		MatrixCharacteristics mc) {
+		MatrixCharacteristics mc, PrivacyConstraint privacyConstraint) {
 		writeInputMatrix(name, matrix, bIncludeR);
 
 		// write metadata file
 		try {
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, OutputInfo.stringToOutputInfo("textcell"));
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, OutputInfo.stringToOutputInfo("textcell"), privacyConstraint);
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -678,8 +719,7 @@ public abstract class AutomatedTestBase {
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
 		try {
-			String fname = baseDirectory + OUTPUT_DIR + fileName + ".mtd";
-			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
+			JSONObject meta = getMetaDataJSON(fileName);
 			long rlen = Long.parseLong(meta.get(DataExpression.READROWPARAM).toString());
 			long clen = Long.parseLong(meta.get(DataExpression.READCOLPARAM).toString());
 			return new MatrixCharacteristics(rlen, clen, -1, -1);
@@ -689,10 +729,23 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
+	public static JSONObject getMetaDataJSON(String fileName) {
+		return getMetaDataJSON(fileName, OUTPUT_DIR);
+	}
+
+	public static JSONObject getMetaDataJSON(String fileName, String outputDir) {
+		String fname = baseDirectory + outputDir + fileName + ".mtd";
+		return new DataExpression().readMetadataFile(fname, false);
+	}
+
+	public static String readDMLMetaDataValue(String fileName, String outputDir, String key) throws JSONException {
+			JSONObject meta = getMetaDataJSON(fileName, outputDir);
+			return meta.get(key).toString();
+	}
+
 	public static ValueType readDMLMetaDataValueType(String fileName) {
 		try {
-			String fname = baseDirectory + OUTPUT_DIR + fileName + ".mtd";
-			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
+			JSONObject meta = getMetaDataJSON(fileName);
 			return ValueType.fromExternalString(meta.get(DataExpression.VALUETYPEPARAM).toString());
 		}
 		catch(Exception ex) {

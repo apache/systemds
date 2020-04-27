@@ -58,8 +58,8 @@ public abstract class MatrixReader
 	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int blen, long estnnz )
 		throws IOException, DMLRuntimeException;
 
-	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int blen, long estnnz )
-			throws IOException, DMLRuntimeException;
+	public abstract MatrixBlock readMatrixFromInputStream( InputStream is, long rlen, long clen, int blen, long estnnz) 
+		throws IOException, DMLRuntimeException;
 	
 	/**
 	 * NOTE: mallocDense controls if the output matrix blocks is fully allocated, this can be redundant

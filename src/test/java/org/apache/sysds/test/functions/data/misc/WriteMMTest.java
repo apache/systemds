@@ -119,7 +119,7 @@ public class WriteMMTest extends AutomatedTestBase
 				input("A"), Integer.toString(rows), Integer.toString(cols), output("B") };
 	
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, System.currentTimeMillis()); 
+			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, System.currentTimeMillis());
 			writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows,cols, 1000, 1000));
 			writeExpectedMatrixMarket("B", A);
 	

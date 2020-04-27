@@ -166,6 +166,7 @@ SYSTEMDS-200 Various Fixes
  * 205 Fix scoping of builtin dml-bodied functions (vs user-defined)
  * 206 Fix codegen outer template compilation (tsmm)                  OK
  * 207 Fix builtin function call hoisting from expressions            OK
+ * 208 Fix bufferpool leak (live var analysis and createvar)          OK
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK
@@ -211,6 +212,19 @@ SYSTEMDS-260 Misc Tools
 SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK
  * 272 Simplify and speedup compression tests                         OK
+ * 273 Refactor compressed Matrix Block to simplify responsibilities  OK
+ * 273a Redesign allocation of ColGroups in ColGroupFactory
+ * 274 Make the DDC Compression dictionary share correctly
+ * 275 Include compressionSettings in DMLConfiguration
+ * 276 Allow Uncompressed Columns to be in sparse formats
+ * 277 Sampling based estimators fix
+ * 278 Compression-CoCode algorithm optimization
+ * 278a Return ColGroups estimated compression ratio to Factory
+ * 279 Add missing standard lossless compression techniques
+ * 279a ColGroup FOR (Frame of reference) encoding
+ * 279b ColGroup DEL (Delta) encoding
+ * MINOR Reduce memory usage for compression statistics.
+ * MINOR Make ContainsAZero() method in UncompressedBitMap
 
 SYSTEMDS-280 New Rewrites
  * 281 New rewrites sum(rmEmpty), sum(table)                          OK
@@ -235,6 +249,7 @@ SYSTEMDS-310 Python Bindings
  * 313 Python Documentation upload via Github Actions                 OK
  * 314 Python SystemDS context manager                                OK
  * 315 Python Federated Matrices Tests                                OK
+ * 316 Extended Python API (rand, lm, mm)                             OK
 
 SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
  * 321 Merge histories of SystemDS and SystemML                       OK
@@ -259,6 +274,20 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
 
 SYSTEMDS-350 Data Cleaning Framework
  * 351 New builtin function for error correction by schema            OK
+
+SYSTEMDS-360 Privacy/Data Exchange Constraints
+ * 361 Initial privacy meta data (compiler/runtime)                   OK
+ * 362 Runtime privacy propagation
+ * 363 Compile-time privacy propagation
+ * 364 Error handling violated privacy constraints
+ * 365 Extended privacy/data exchange constraints
+
+SYSTEMDS-370 Lossy Compression Blocks
+ * 361 ColGroup Quantization
+ * 362 ColGroup Base Data change (from Double to ??)
+
+SYSTEMDS-380 Memory Footprint
+ * 371 Matrix Block Memory footprint update
 
 Others:
  * Break append instruction to cbind and rbind 

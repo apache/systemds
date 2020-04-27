@@ -23,11 +23,10 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.GroupableColInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 /**
  * Class to represent information about co-coding a group of columns.
- * 
  */
 public class PlanningCoCodingGroup {
 	private int[] _colIndexes;
@@ -62,7 +61,8 @@ public class PlanningCoCodingGroup {
 		_colIndexes = getMergedIndexes(grp1._colIndexes, grp2._colIndexes);
 
 		// estimating size info
-		CompressedSizeInfo groupSizeInfo = estim.estimateCompressedColGroupSize(_colIndexes);
+		CompressedSizeInfoColGroup groupSizeInfo = estim.estimateCompressedColGroupSize(_colIndexes);
+		
 		_estSize = groupSizeInfo.getMinSize();
 		_cardRatio = groupSizeInfo.getEstCard() / numRows;
 

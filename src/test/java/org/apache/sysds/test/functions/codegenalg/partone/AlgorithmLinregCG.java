@@ -38,16 +38,8 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_LinregCG";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmLinregCG.class.getSimpleName() + "/";
-	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
-	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
-	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
-	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
-			TEST_CONF_FUSE_NO_REDUNDANCY);
 
-	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
-	private static TestType currentTestType = TestType.DEFAULT;
+	private static CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 
 	private final static double eps = 1e-1;
 	
@@ -68,245 +60,245 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 
 	@Test
 	public void testLinregCG0DenseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG0SparseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG0DenseCP() {
-		runLinregCGTest(TEST_NAME1, false, false, 0, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, false, 0, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG0SparseCP() {
-		runLinregCGTest(TEST_NAME1, false, true, 0, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, true, 0, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testLinregCG0DenseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG0SparseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG0DenseSP() {
-		runLinregCGTest(TEST_NAME1, false, false, 0, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, false, 0, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG0SparseSP() {
-		runLinregCGTest(TEST_NAME1, false, true, 0, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, true, 0, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG1DenseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG1SparseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG1DenseCP() {
-		runLinregCGTest(TEST_NAME1, false, false, 1, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, false, 1, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG1SparseCP() {
-		runLinregCGTest(TEST_NAME1, false, true, 1, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, true, 1, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testLinregCG1DenseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG1SparseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG1DenseSP() {
-		runLinregCGTest(TEST_NAME1, false, false, 1, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, false, 1, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG1SparseSP() {
-		runLinregCGTest(TEST_NAME1, false, true, 1, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, true, 1, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG2DenseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG2SparseRewritesCP() {
-		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG2DenseCP() {
-		runLinregCGTest(TEST_NAME1, false, false, 2, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, false, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG2SparseCP() {
-		runLinregCGTest(TEST_NAME1, false, true, 2, ExecType.CP, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, true, 2, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testLinregCG2DenseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG2SparseRewritesSP() {
-		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG2DenseSP() {
-		runLinregCGTest(TEST_NAME1, false, false, 2, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, false, 2, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
 	public void testLinregCG2SparseSP() {
-		runLinregCGTest(TEST_NAME1, false, true, 2, ExecType.SPARK, TestType.DEFAULT);
+		runLinregCGTest(TEST_NAME1, false, true, 2, ExecType.SPARK, CodegenTestType.DEFAULT);
 	}
 
 	@Test
 	public void testLinregCG0DenseRewritesCPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.CP, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG0SparseRewritesCPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.CP, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG0DenseRewritesSPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.SPARK, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG0SparseRewritesSPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.SPARK, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG1DenseRewritesCPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.CP, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG1SparseRewritesCPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.CP, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG1DenseRewritesSPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.SPARK, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG1SparseRewritesSPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.SPARK, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG2DenseRewritesCPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.CP, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG2SparseRewritesCPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.CP, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG2DenseRewritesSPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.SPARK, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG2SparseRewritesSPFuseAll() {
-		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.SPARK, TestType.FUSE_ALL);
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.SPARK, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testLinregCG0DenseRewritesCPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG0SparseRewritesCPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG0DenseRewritesSPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, false, 0, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG0SparseRewritesSPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, true, 0, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG1DenseRewritesCPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG1SparseRewritesCPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG1DenseRewritesSPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, false, 1, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG1SparseRewritesSPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, true, 1, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG2DenseRewritesCPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG2SparseRewritesCPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG2DenseRewritesSPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, false, 2, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
 	public void testLinregCG2SparseRewritesSPFuseNoRedundancy() {
-		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+		runLinregCGTest(TEST_NAME1, true, true, 2, ExecType.SPARK, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void runLinregCGTest( String testname, boolean rewrites, boolean sparse, int intercept, ExecType instType, TestType testType)
+	private void runLinregCGTest( String testname, boolean rewrites, boolean sparse, int intercept, ExecType instType, CodegenTestType CodegenTestType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -314,7 +306,7 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 			case SPARK: rtplatform = ExecMode.SPARK; break;
 			default: rtplatform = ExecMode.HYBRID; break;
 		}
-		currentTestType = testType;
+		currentTestType = CodegenTestType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -366,17 +358,6 @@ public class AlgorithmLinregCG extends AutomatedTestBase
 	 */
 	@Override
 	protected File getConfigTemplateFile() {
-		// Instrumentation in this test's output log to show custom configuration file used for template.
-		String message = "This test case overrides default configuration with ";
-		if(currentTestType == TestType.FUSE_ALL){
-			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
-			return TEST_CONF_FILE_FUSE_ALL;
-		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
-			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
-			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
-		} else {
-			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
-			return TEST_CONF_FILE_DEFAULT;
-		}
+		return getCodegenConfigFile(SCRIPT_DIR + TEST_DIR, currentTestType);
 	}
 }

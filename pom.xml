@@ -262,6 +262,8 @@
 					<forkCount>1C</forkCount>
 					<argLine>-Xms4g -Xmx4g</argLine>
 					<reuseForks>false</reuseForks>
+					<reportFormat>plain</reportFormat>
+					<trimStackTrace>true</trimStackTrace>
 				</configuration>
 			</plugin>
 
@@ -936,6 +938,13 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>org.openjdk.jol</groupId>
+			<artifactId>jol-core</artifactId>
+			<version>0.10</version>
+			<scope>test</scope>
+		</dependency>
+		
 		<dependency>
 			<!--Used for annotations in tests to execute tests in thread safe manner-->
 			<groupId>com.github.stephenc.jcip</groupId>

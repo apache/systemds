@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -40,15 +40,14 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		CPOperand out = new CPOperand(parts[2]);
 		return new CompressionCPInstruction(null, in1, out, opcode, str);
 	}
-	
+
 	@Override
-	public void processInstruction( ExecutionContext ec ) {
-		//get matrix block input
+	public void processInstruction(ExecutionContext ec) {
+		// Get matrix block input
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
-		//compress the matrix block
-		MatrixBlock out = new CompressedMatrixBlock(in)
-			.compress(OptimizerUtils.getConstrainedNumThreads(-1));
-		//set output and release input
+		// Compress the matrix block
+		MatrixBlock out = CompressedMatrixBlockFactory.compress(in, OptimizerUtils.getConstrainedNumThreads(-1));
+		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);
 	}

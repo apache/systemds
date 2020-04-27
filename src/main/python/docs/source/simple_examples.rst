@@ -123,7 +123,7 @@ The output should be similar to::
    [-0.01686351]
    [-0.03839821]]
 
-SystemDS includes Build-In function such as lm, which solves linear regression. The lm function takes as input a matrix of
+SystemDS includes a built-in function lm, which solves linear regression. The lm function takes as input a matrix of
 feature vectors and a vector of response values y. The output of the function is a vector of weights.
 
 .. code-block:: python

@@ -35,13 +35,15 @@ class SparkNode:
     key: ""
 
     def __init__(self, loss, preds):
-        self.error = loss,
+        if loss:
+            self.error = loss,
+        if preds:
+            self.preds = preds
         self.parents = []
         self.attributes = []
         self.size = 0
         self.score = 0
         self.loss = 0
-        self.preds = preds
         self.s_lower = 1
         self.key = ''
 
@@ -75,9 +77,8 @@ class SparkNode:
                     flag = False
             if flag:
                 size = size + 1
-                # TODO
-                # if self.y_test[row[0]][1] != self.preds[row[0]][1]:
-                 #   mistakes = mistakes + 1
+                if row[1] == 0:
+                    mistakes += 1
         self.size = size
         if size != 0:
             self.loss = mistakes / size

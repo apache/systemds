@@ -34,6 +34,7 @@ sys.path.insert(0, path)
 from systemds.context import SystemDSContext
 
 shape = (random.randrange(1, 25), random.randrange(1, 25))
+dist_shape = (10, 15)
 min_max = (0, 1)
 sparsity = random.uniform(0.0, 1.0)
 seed = 123
@@ -66,8 +67,8 @@ class TestRand(unittest.TestCase):
 
     def test_rand_uniform_distribution(self):
         m = sds.rand(
-            rows=10,
-            cols=15,
+            rows=dist_shape[0],
+            cols=dist_shape[1],
             pdf="uniform",
             min=min_max[0],
             max=min_max[1],
@@ -78,12 +79,12 @@ class TestRand(unittest.TestCase):
 
     def test_rand_normal_distribution(self):
         m = sds.rand(
-            rows=shape[0],
-            cols=shape[1],
+            rows=dist_shape[0],
+            cols=dist_shape[1],
             pdf="normal",
             min=min_max[0],
             max=min_max[1],
-            seed=seed).compute()
+            seed=0).compute()
 
         dist = find_best_fit_distribution(m.flatten("F"), distributions)
         self.assertTrue(dist == "norm")

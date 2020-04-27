@@ -58,8 +58,13 @@ public class BuiltinOutlierBySDTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testOutlierRepair2SP() {
+		runOutlierTest(false, 2,2, 0, LopProperties.ExecType.CP);
+	}
+
+	@Test
 	public void testOutlierRepair0SP() {
-		runOutlierTest(false, 2,0, 10, LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2,0, 0, LopProperties.ExecType.SPARK);
 	}
 
 	@Test

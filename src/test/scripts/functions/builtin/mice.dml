@@ -21,11 +21,25 @@
 
 X = read($X, data_type="frame", format="csv");
 M = read($Mask)
-[dataset, singleSet]= mice(F=X, cMask=M, iter=$iteration, complete=$com)
-n = as.matrix(dataset) * (1-M)
-n = removeEmpty(target=n, margin = "cols")
-c = as.matrix(dataset) * (M)
-c = removeEmpty(target=c, margin = "cols")
-write(n, $dataN)
-write(c, $dataC)
+[dataset, singleSet]= mice(F=X, cMask=M, iter=$iteration, complete=$com, verbose = FALSE)
 
+if(sum(M) == ncol(X))
+{
+  c = as.matrix(singleSet[,3:4]) # comparing only selected columns with R results because dataset is continuos and
+  write(c, $dataC)               # for categorical imputation R polyreg only support upto 50 distinct items (50 categories/feature)
+}
+else if (sum(M) == 0)
+{
+  n = as.matrix(dataset) * (1-M)
+  n = removeEmpty(target=n, margin = "cols")
+  write(n, $dataN)
+}
+else
+{
+  c = as.matrix(dataset) * (M)
+  c = removeEmpty(target=c, margin = "cols")
+  n = as.matrix(dataset) * (1-M)
+  n = removeEmpty(target=n, margin = "cols")
+  write(n, $dataN)
+  write(c, $dataC)
+}

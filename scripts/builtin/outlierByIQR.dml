@@ -30,7 +30,8 @@
 # k               Double   1.5       a constant used to discern outliers k*IQR 
 # isIterative     Boolean  TRUE      iterative repair or single repair 
 # repairMethod    Integer  1         values: 0 = delete rows having outliers, 
-#                                    1 = replace outliers as missing values
+#                                            1 = replace outliers with zeros 
+#                                            2 = replace outliers as missing values 
 # max_iterations  Integer  0         values: 0 = arbitrary number of iteraition until all outliers are removed, 
 #                                    n = any constant defined by user
 # ---------------------------------------------------------------------------------------------
@@ -90,8 +91,13 @@ fix_outliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer 
   }
   else if(repairMethod == 1)
     X = (outlierFilter == 0) * X
+  else if(repairMethod == 2)
+  {
+    outlierFilter = replace(target = (outlierFilter == 0), pattern = 0, replacement = NaN)
+    X = outlierFilter * X
+  }
   else
-    stop("outlierByIQR: invalid argument - repair required 0-1 found: "+repairMethod)
+    stop("outlierByIQR: invalid argument - repair required 0-2 found: "+repairMethod)
 
   fixed_X = X
 }

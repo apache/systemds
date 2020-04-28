@@ -89,7 +89,7 @@ public abstract class AutomatedTestBase {
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 
 	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite
-	public static final boolean TEST_GPU = false;
+	public static boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	public static final int FED_WORKER_WAIT = 500; // in ms
@@ -158,7 +158,7 @@ public abstract class AutomatedTestBase {
 	 */
 	protected static ExecMode rtplatform = ExecMode.HYBRID;
 
-	protected static final boolean DEBUG = false;
+	protected static boolean DEBUG = false;
 
 	protected String fullDMLScriptName; // utilize for both DML and PyDML, should probably be renamed.
 	// protected String fullPYDMLScriptName;

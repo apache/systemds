@@ -62,11 +62,14 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME25 = TEST_NAME+25; //bias_add
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
+	private static final String TEST_NAME28 = TEST_NAME+28; // run TEST1 with spoof native cuda config
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF6 = "SystemDS-config-codegen6.xml";
 	private final static String TEST_CONF7 = "SystemDS-config-codegen.xml";
+	private final static String TEST_CONF8 = "SystemDS-config-codegen-cuda.xml";
+
 	private static String TEST_CONF = TEST_CONF7;
 	
 	private static final double eps = Math.pow(10, -10);
@@ -74,7 +77,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=27; i++ ) {
+		for( int i=1; i<=28; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -461,6 +464,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME27, true, ExecType.SPARK );
 	}
 
+	@Test
+	public void testCodegenCellwiseRewrite28() {
+		testCodegenIntegration( TEST_NAME28, true, ExecType.CP );
+	}
+
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -469,7 +477,14 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
-		
+
+		// ToDo: remove when done with testing
+		if( testname.equals(TEST_NAME28) ) {
+			TEST_CONF = TEST_CONF8;
+			TEST_GPU = true;
+			DEBUG = true;
+		}
+
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
@@ -504,7 +519,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			if( !(rewrites && (testname.equals(TEST_NAME2)
 				|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
 				Assert.assertTrue(heavyHittersContainsSubString(
-						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
+						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "SpoofNativeCUDA"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused

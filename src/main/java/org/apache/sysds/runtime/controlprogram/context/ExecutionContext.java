@@ -383,6 +383,14 @@ public class ExecutionContext {
 		return mo;
 	}
 
+	public long getGPUPointerAddress(MatrixObject obj) {
+
+			if(obj.getGPUObject(getGPUContext(0)) == null)
+				return 0;
+			else
+				return obj.getGPUObject(getGPUContext(0)).getPointerAddress();
+	}
+
 	public MatrixObject getMatrixInputForGPUInstruction(String varName, String opcode) {
 		GPUContext gCtx = getGPUContext(0);
 		MatrixObject mo = getMatrixObject(varName);

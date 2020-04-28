@@ -23,12 +23,13 @@ import java.util.ArrayList;
 
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeCell extends CNodeTpl 
 {	
-	private static final String TEMPLATE = 
+	private static final String TEMPLATE_JAVA =
 			  "package codegen;\n"
 			+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
 			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"
@@ -46,7 +47,28 @@ public class CNodeCell extends CNodeTpl
 			+ "    return %OUT%;\n"
 			+ "  }\n"
 			+ "}\n";
-	
+
+	private static final String TEMPLATE_CUDA =
+			"%TMP%\n"
+					+ "template<typename T>\n"
+					+ "	__device__ T genexec(T a, T* b, T* scalars, int m, int n, long grix, int rix, int cix) {\n"
+					+ "		%BODY_dense%"
+					+ "	}\n"
+					+ "template<typename T>\n"
+					+ "	__global__\n"
+					+ " 	void %TMP% (T *a, T* b, T* c, T* scalars, int m, int n, long grix, int rix, int cix) {\n"
+					+ "		int tid = threadIdx.y * blockDim.x + threadIdx.x;\n" // ToDo: correct indexing!
+					+ "		if(threadIdx.x < m && threadIdx.y < n) {\n"
+//					  + "  			if(tid == 1)\n"
+//					  + "			    printf(\"MxN=%dx%d, a[0]=%f, scalars[0]=%f, b[0]=%f\\n\",m, n, a[0], scalars[0], b[0]);\n"
+//					  + "			    printf(\"MxN=%dx%d, a[%d]=%f\\n\",m, n, tid, a[tid]);\n"
+					+ "			c[tid] = genexec(a[tid], b, scalars, m, n, grix, threadIdx.x, threadIdx.y);\n"
+//					  + " 	 		if(tid == 1)\n"
+//					  + "				printf(\"c[%d]=%f\\n\", tid, c[tid]);\n"
+					+ "		}\n"
+					+ "	}\n";
+
+
 	private CellType _type = null;
 	private AggOp _aggOp = null;
 	private boolean _sparseSafe = false;
@@ -83,7 +105,25 @@ public class CNodeCell extends CNodeTpl
 	public AggOp getAggOp() {
 		return _aggOp;
 	}
-	
+
+	public SpoofCellwise.AggOp getSpoofAggOp() {
+		if(_aggOp != null)
+			switch(_aggOp) {
+				case SUM:
+					return SpoofCellwise.AggOp.SUM;
+				case SUM_SQ:
+					return SpoofCellwise.AggOp.SUM_SQ;
+				case MIN:
+					return SpoofCellwise.AggOp.MIN;
+				case MAX:
+					return SpoofCellwise.AggOp.MAX;
+				default:
+					throw new RuntimeException("Unsupported cell type: "+_type.toString());
+		}
+		else
+			return null;
+	}
+
 	public void setSparseSafe(boolean flag) {
 		_sparseSafe = flag;
 	}
@@ -117,7 +157,29 @@ public class CNodeCell extends CNodeTpl
 	
 	@Override
 	public String codegen(boolean sparse) {
-		String tmp = TEMPLATE;
+		// ToDo: remove java default
+		return codegen_java(sparse);
+	}
+
+	public String codegen_cuda(boolean sparse) {
+		String tmp = TEMPLATE_CUDA;
+		String tmpDense =
+	//			  "  T TMP1 = a + scalars[0];\n"
+					"T TMP1 = a + 64.0;\n"
+	//			+ "		T TMP2 = abs(TMP1);\n"
+				+ "		T TMP2 = max(-TMP1, TMP1);\n"
+				+ "		T TMP3 = round(TMP2);\n"
+				+ "		T TMP4 = TMP3 + 5;\n"
+				+ "		return TMP4;\n";
+		tmp = tmp.replace("%TMP%", createVarname());
+		tmp = tmp.replace("%BODY_dense%", tmpDense);
+		return tmp;
+}
+
+
+
+	public String codegen_java(boolean sparse) {
+		String tmp = TEMPLATE_JAVA;
 		
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false);

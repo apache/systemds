@@ -40,6 +40,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler.CompilerType;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.PlanSelector;
 import org.apache.sysds.lops.Compression;
 import org.apache.sysds.parser.ParseException;
@@ -70,6 +71,7 @@ public class DMLConfig
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
 	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
+	public static final String CODEGEN_API          = "sysds.codegen.api"; // see SpoofCompiler.API
 	public static final String CODEGEN_COMPILER     = "sysds.codegen.compiler"; //see SpoofCompiler.CompilerType
 	public static final String CODEGEN_OPTIMIZER    = "sysds.codegen.optimizer"; //see SpoofCompiler.PlanSelector
 	public static final String CODEGEN_PLANCACHE    = "sysds.codegen.plancache"; //boolean
@@ -114,6 +116,7 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.AUTO.name() );
 		_defaultVals.put(CODEGEN,                "false" );
+		_defaultVals.put(CODEGEN_API,		     GeneratorAPI.JAVA.name() );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
 		_defaultVals.put(CODEGEN_OPTIMIZER,      PlanSelector.FUSE_COST_BASED_V2.name() );
 		_defaultVals.put(CODEGEN_PLANCACHE,      "true" );
@@ -375,7 +378,7 @@ public class DMLConfig
 			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
 			CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
 			COMPRESSED_LINALG,
-			CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
+			CODEGEN, CODEGEN_API, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 			STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO,
 			AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, 
 			LOCAL_SPARK_NUM_THREADS, EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR

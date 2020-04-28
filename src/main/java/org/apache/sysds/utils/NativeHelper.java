@@ -293,9 +293,11 @@ public class NativeHelper {
 	 * @param optionalMsg message for debugging
 	 * @return true if successfully loaded BLAS
 	 */
-	private static boolean loadBLAS(String customLibPath, String blas, String optionalMsg) {
+	public static boolean loadBLAS(String customLibPath, String blas, String optionalMsg) {
 		// First attempt to load from custom library path
 		if((customLibPath != null) && (!customLibPath.equalsIgnoreCase("none"))) {
+			if(SystemUtils.IS_OS_LINUX && blas.startsWith("lib"))
+				blas = blas.substring(3);
 			String libPath = customLibPath + File.separator + System.mapLibraryName(blas);
 			try {
 				System.load(libPath);
@@ -325,7 +327,7 @@ public class NativeHelper {
 	}
 
 
-	private static boolean loadLibraryHelper(String path)  {
+	public static boolean loadLibraryHelper(String path)  {
 		OutputStream out = null;
 		try(InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+path)) {
 			// This logic is added because Java does not allow to load library from a resource file.

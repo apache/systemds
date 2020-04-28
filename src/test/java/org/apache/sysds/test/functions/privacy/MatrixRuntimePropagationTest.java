@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.privacy;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import org.apache.sysds.parser.DataExpression;
@@ -92,22 +93,23 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase {
         // Check that the output metadata is correct
         if (privacy) {
             String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-		    assertEquals(String.valueOf(privacy), actualPrivacyValue);
+		    assertEquals(String.valueOf(true), actualPrivacyValue);
         } else {
-            // Check that a JSONException is thrown 
+            // Check that a JSONException is thrown
+            // or that privacy is set to false 
             // because no privacy metadata should be written to c
-            // TODO: Should the privacy constraint be allowed
-            // to be false (but still be propagated)?
+            // except if the privacy written is set to false
             boolean JSONExceptionThrown = false;
+            String actualPrivacyValue = null;
             try{
-                readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
+                actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
             } catch (JSONException e){
                 JSONExceptionThrown = true;
             } catch (Exception e){
                 fail("Exception occured, but JSONException was expected. The exception thrown is: " + e.getMessage());
                 e.printStackTrace();
             }
-            assert(JSONExceptionThrown);
+            assert(JSONExceptionThrown || (String.valueOf(false).equals(actualPrivacyValue)));
         }
 		
 	}

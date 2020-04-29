@@ -7,10 +7,10 @@ from slicing.spark_modules import spark_utils
 from slicing.spark_modules.spark_utils import approved_join_slice
 
 
-def rows_mapper(row, buckets):
+def rows_mapper(row, buckets, loss_type):
     filtered = dict(filter(lambda bucket: all(attr in row[1] for attr in bucket[1].attributes), buckets.items()))
     for item in filtered:
-        filtered[item].tuples[row[0]] = row
+        filtered[item].update_metrics(row, loss_type)
     return filtered
 
 
@@ -36,7 +36,7 @@ def combiner(a):
 
 
 def merge_values(a, b):
-    a + b
+    a.combine_with(b)
     return a
 
 
@@ -61,16 +61,17 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
     b_buckets = SparkContext.broadcast(sc, buckets)
     rows = predictions.rdd.map(lambda row: (row[0], row[1].indices, row[2]))\
         .map(lambda item: (item[0], item[1].tolist(), item[2]))
-    mapped = rows.map(lambda row: rows_mapper(row, b_buckets.value))
+    mapped = rows.map(lambda row: rows_mapper(row, b_buckets.value, loss_type))
     flattened = mapped.flatMap(lambda line: (line.items()))
-    reduced = flattened.combineByKey(combiner, merge_values, merge_values)
+    reduced = flattened.combineByKey(combiner, merge_values, merge_combiners)
     cur_lvl_nodes = reduced.values()\
-        .map(lambda bucket: spark_utils.calc_bucket_metrics(bucket, loss, w, loss_type, x_size, b_cur_lvl.value))
+        .map(lambda bucket: spark_utils.calc_bucket_metrics(bucket, loss, w, x_size, b_cur_lvl.value))
     if debug:
         cur_lvl_nodes.map(lambda bucket: bucket.print_debug(b_topk.value)).collect()
     cur_lvl = 1
     prev_level = cur_lvl_nodes.collect()
     top_k = b_topk.value.buckets_top_k(prev_level, x_size, alpha)
+    top_k.print_topk()
     while len(prev_level) > 0:
         b_cur_lvl_nodes = SparkContext.broadcast(sc, prev_level)
         b_topk = SparkContext.broadcast(sc, top_k)
@@ -78,14 +79,14 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
         b_topk.value.print_topk()
         buckets = join_enum(b_cur_lvl_nodes.value, b_cur_lvl.value, x_size, alpha, b_topk.value, w, loss)
         b_buckets = SparkContext.broadcast(sc, buckets)
-        mapped = rows.map(lambda row: rows_mapper(row, b_buckets.value))
+        mapped = rows.map(lambda row: rows_mapper(row, b_buckets.value, loss_type))
         flattened = mapped.flatMap(lambda line: (line.items()))
-        cur_lvl_nodes = flattened.combineByKey(combiner, merge_values, merge_values)
+        cur_lvl_nodes = flattened.combineByKey(combiner, merge_values, merge_combiners)
         if debug:
             cur_lvl_nodes.values().map(lambda bucket: bucket.print_debug(b_topk.value)).collect()
         to_slice = cur_lvl_nodes.values().filter(lambda bucket: bucket.check_bounds(x_size, alpha, b_topk.value))
         prev_level = to_slice\
-            .map(lambda bucket: spark_utils.calc_bucket_metrics(bucket, loss, w, loss_type, x_size, b_cur_lvl.value))\
+            .map(lambda bucket: spark_utils.calc_bucket_metrics(bucket, loss, w, x_size, b_cur_lvl.value))\
             .collect()
         cur_lvl = b_cur_lvl.value + 1
         top_k = b_topk.value.buckets_top_k(prev_level, x_size, alpha)

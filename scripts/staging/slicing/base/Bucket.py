@@ -1,12 +1,13 @@
 class Bucket:
 
     key: []
-    tuples: dict
     attributes: []
     name: ""
     error: float
     e_upper: float
     size: float
+    sum_error: float
+    max_tuple_error: float
     s_upper: float
     s_lower: float
     e_max: float
@@ -18,6 +19,9 @@ class Bucket:
     def __init__(self, node, cur_lvl, w, x_size):
         self.attributes = []
         self.parents = []
+        self.sum_error = 0
+        self.size = 0
+        self.max_tuple_error = 0
         if cur_lvl == 0:
             self.key = node
             self.attributes.append(node)
@@ -26,51 +30,41 @@ class Bucket:
             self.key = node.attributes
         self.name = self.make_name()
         self.__hash__()
-        self.tuples = {}
 
     def __hash__(self):
         return hash(self.name)
 
     def __add__(self, other):
-        self.tuples.update(other.tuples)
+        self.size += other.size
+        self.sum_error += other.sum_error
+        return self
+
+    def combine_with(self, other):
+        self.size = max(self.size, other.size)
+        self.sum_error = max(self.sum_error, other.sum_error)
         return self
 
     def __eq__(self, other):
         return (
             self.__hash__ == other.__hash__ and self.key == other.key)
 
-    def calc_loss(self, loss_type):
+    def update_metrics(self, row, loss_type):
+        self.size += 1
         if loss_type == 0:
-            self.calc_l2()
+            self.sum_error += row[2]
+            if row[2] > self.max_tuple_error:
+                self.max_tuple_error = row[2]
         else:
-            self.class_loss()
-
-    def calc_l2(self):
-        sum_error = 0
-        max_tuple_error = 0
-        for row in self.tuples.values():
-            sum_error += row[2]
-            if row[2] > max_tuple_error:
-                max_tuple_error = row[2]
-        if self.size != 0:
-            self.error = sum_error / self.size
-        else:
-            self.error = 0
-        self.e_max = max_tuple_error
-        self.e_max_upper = self.e_max
-        self.e_upper = self.error
-
-    def class_loss(self):
-        self.e_max = 1
-        self.e_max_upper = self.e_max
-        mistakes = 0
-        for row in self.tuples.values():
             if row[2] != 0:
-                mistakes += 1
+                self.sum_error += 1
+
+    def calc_error(self):
         if self.size != 0:
-            self.error = mistakes / self.size
+            self.error = self.sum_error / self.size
         else:
             self.error = 0
+        self.e_max = self.max_tuple_error
+        self.e_max_upper = self.e_max
         self.e_upper = self.error
 
     def check_constraint(self, top_k, x_size, alpha):

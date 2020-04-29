@@ -40,10 +40,10 @@ programs over matrices, while replacing the underlying data model and compiler, 
 supported functionalities. Until the first release, you can build your own snapshot via Apache Maven:
  `mvn clean package -P distribution`.
   
-![Build](https://github.com/apache/systemml/workflows/Build/badge.svg)
-![Documentation](https://github.com/apache/systemml/workflows/Documentation/badge.svg)
-![Component Test](https://github.com/apache/systemml/workflows/Component%20Test/badge.svg)
-![Application Test](https://github.com/apache/systemml/workflows/Application%20Test/badge.svg)
-![Function Test](https://github.com/apache/systemml/workflows/Function%20Test/badge.svg)
-![Python Test](https://github.com/apache/systemml/workflows/Python%20Test/badge.svg)
-![Federated Python Test](https://github.com/apache/systemml/workflows/Federated%20Python%20Test/badge.svg)
+[![Build](https://github.com/apache/systemml/workflows/Build/badge.svg?branch=master&event=push)](https://github.com/apache/systemml/actions?query=workflow%3A%22Build%22+branch%3Amaster+event%3Apush)
+[![Documentation](https://github.com/apache/systemml/workflows/Documentation/badge.svg?branch=master&event=push)](https://github.com/apache/systemml/actions?query=workflow%3ADocumentation+branch%3Amaster+event%3Apush)
+[![Component Test](https://github.com/apache/systemml/workflows/Component%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemml/actions?query=workflow%3A%22Component+Test%22+branch%3Amaster+event%3Apush)
+[![Application Test](https://github.com/apache/systemml/workflows/Application%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemml/actions?query=workflow%3A%22Application+Test%22+branch%3Amaster+event%3Apush)
+[![Function Test](https://github.com/apache/systemml/workflows/Function%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemml/actions?query=workflow%3A%22Function+Test%22+branch%3Amaster+event%3Apush)
+[![Python Test](https://github.com/apache/systemml/workflows/Python%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemml/actions?query=workflow%3A%22Python+Test%22+branch%3Amaster+event%3Apush)
+[![Federated Python Test](https://github.com/apache/systemml/workflows/Federated%20Python%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemml/actions?query=workflow%3A%22Federated+Python+Test%22+branch%3Amaster+event%3Apush)

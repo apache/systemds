@@ -1,0 +1,36 @@
+"onnx-systemds test-graph generator:ö
+9
+x
+Wy"Conv*
+kernel_shape@@ *
+pads@@@@ A simple convolution graphZ<
+x
+
+
+
+
+A multi dimensional input valueZ<
+W
+
+
+
+
+A multi dimensional input valueb%
+y
+
+
+
+
+Y outputj<
+x
+
+
+
+
+A multi dimensional input valuej<
+W
+
+
+
+
+A multi dimensional input valueB

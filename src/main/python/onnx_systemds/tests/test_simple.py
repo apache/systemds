@@ -34,6 +34,18 @@ class TestSimpleOperators(unittest.TestCase):
         name = "simple_relu_tanh_sigmoid_softmax"
         util.run_and_compare_output(name, self)
 
+    def test_simple_conv2d_layer(self):
+        name = "simple_conv_layer"
+        util.run_and_compare_output(name, self)
+
+    def test_simple_conv2d_layer_2(self):
+        name = "simple_conv_layer_2"
+        util.run_and_compare_output(name, self)
+
+    def test_simple_maxpool_layer(self):
+        name = "simple_maxpool_layer"
+        util.run_and_compare_output(name, self)
+
     # TODO: dml implementation of dropout does not work
     # def test_simple_dropout_layer(self):
     #     name = "simple_dropout_layer"

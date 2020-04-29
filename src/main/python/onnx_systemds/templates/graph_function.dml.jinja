@@ -14,15 +14,28 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  #}
+{%- macro parameter_description() -%}
+# {{ "%-15.15s" | format("NAME") }} {{ "%-8.8s" | format("TYPE") }} {{ "%-12.12s" | format("VALUE_TYPE") }} {{ "%-8.8s" | format("SHAPE") }} {{ "%-10s" | format("MEANING") }}
+{%- endmacro -%}
+
 {% import 'util.dml.jinja' as util %}
 {%- if graph_function_description != "" -%} # {{ graph_function_description + "\n" }} {%- endif -%}
 {%- if function_inputs | length > 0 -%}
+# --------------------------------------------------------------------------------------------
 # INPUT PARAMETERS:
 # --------------------------------------------------------------------------------------------
-# {{ "%-15.15s" | format("NAME") }} {{ "%-8.8s" | format("TYPE") }} {{ "%-12.12s" | format("VALUE_TYPE") }} {{ "%-8.8s" | format("SHAPE") }}{{ "%-10.10s" | format("DEFAULT") }} {{ "%-8s" | format("MEANING") }}
-# --------------------------------------------------------------------------------------------
+{{ parameter_description() }}
 {% for input in function_inputs -%}
-# {{ "%-15.15s" | format(input.identifier_name) }} {{ "%-8.8s" | format(input.data_type,) }} {{ "%-12.12s" | format(input.value_type,) }} {{ "%-8.8s" | format(input.shape,) }} {{ "%-10.10s" | format("   -",) }} {{ "%-8s" | format(input.description,) }}
+# {{ "%-15.15s" | format(input.identifier_name) }} {{ "%-8.8s" | format(input.data_type,) }} {{ "%-12.12s" | format(input.value_type,) }} {{ "%-8.8s" | format(input.shape,) }} {{ "%-10s" | format(input.description,) }}
+{% endfor -%}
+{%- endif %}
+{%- if function_outputs | length > 0 -%}
+# ---------------------------------------------------------------------------------------------
+# OUTPUTS:
+# ---------------------------------------------------------------------------------------------
+{{ parameter_description() }}
+{% for output in function_outputs -%}
+# {{ "%-15.15s" | format(output.identifier_name) }} {{ "%-8.8s" | format(output.data_type,) }} {{ "%-12.12s" | format(output.value_type,) }} {{ "%-8.8s" | format(output.shape,) }} {{ "%-10s" | format(output.description,) }}
 {% endfor -%}
 # ---------------------------------------------------------------------------------------------
 {%- endif %}

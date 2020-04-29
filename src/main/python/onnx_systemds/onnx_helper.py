@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from functools import reduce
 
 import onnx
 import onnx.version_converter
@@ -65,14 +66,46 @@ def load_model(onnx_file: str) -> onnx.ModelProto:
     :param onnx_file:
     :return: the loaded onnx-model
     """
+    TARGET_VERSION = 11
     model = onnx.load(onnx_file)
     onnx.checker.check_model(model)
-    return onnx.version_converter.convert_version(model, 11)
+    if len(list(model.opset_import)) == 1 and list(model.opset_import)[0].version == TARGET_VERSION:
+        return model
+    else:
+        return onnx.version_converter.convert_version(model, TARGET_VERSION)
+
+
+def get_value_info(graph: onnx.GraphProto, name: str) -> onnx.ValueInfoProto:
+    """
+    Searches the `graph` for the given `name` and returns the associated ValueInfo,
+    if the name is not found None is returned
+
+    :param graph: the onnx-graph that shall be searched
+    :param name: the name for of the value
+    :return: the value-info or None if it is not found
+    """
+    for info in graph.input:
+        if info.name == name:
+            return info
+
+    for info in graph.value_info:
+        if info.name == name:
+            return info
+
+    for info in graph.output:
+        if info.name == name:
+            return info
+
+    return None
+
+
+def get_valueinfo_dimensions(value_info: onnx.ValueInfoProto) -> [int]:
+    return [dim.dim_value for dim in value_info.type.tensor_type.shape.dim]
 
 
 def get_graph_inputs_without_initializers(graph: onnx.GraphProto) -> [onnx.ValueInfoProto]:
     """
-    Returns all inputs of the graph that have no associated initializer values.
+    Returns all inputs of the `graph` that have no associated initializer values.
 
     :param graph: the onnx-graph
     :return: list of uninitialized inputs
@@ -93,7 +126,7 @@ def get_graph_inputs_without_initializers(graph: onnx.GraphProto) -> [onnx.Value
 
 def get_graph_inputs_with_initializers(graph: onnx.GraphProto) -> [(onnx.ValueInfoProto, onnx.TensorProto)]:
     """
-    Returns all initialized inputs of the graph with their corresponding initializer.
+    Returns all initialized inputs of the `graph` with their corresponding initializer.
 
     :param graph: the onnx-graph
     :return: list of tuples of (input, initializer)
@@ -148,15 +181,19 @@ class PreparedValue:
 
         self.shape = []
         shape_dimensions = value_info.type.tensor_type.shape.dim
-        if len(shape_dimensions) > 2:
-            # TODO: might want to add support for that
-            raise NotImplementedError("Only support up to 2 dimensions")
 
         for dim in shape_dimensions:
             # TODO: shapes with no value but instead name -> support?
             if len(dim.dim_param) != 0:
                 raise NotImplementedError("Only support dim_value")
             self.shape.append(dim.dim_value)
+
+        if len(self.shape) > 2:
+            # TODO: not sure this is the solution for every instance of this problem
+            # Multiply all shapes right
+            rows = self.shape[0]
+            cols = reduce(lambda s0, s1: s0*s1, self.shape[1:])
+            self.shape = [rows, cols]
 
         self.identifier_name = value_info.name
         self.description = value_info.doc_string

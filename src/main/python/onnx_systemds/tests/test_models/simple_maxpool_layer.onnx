@@ -1,0 +1,23 @@
+"onnx-systemds test-graph generator:ö
+9
+xy"MaxPool*
+kernel_shape@@ *
+pads@@@@ A simple maxpool graphZ<
+x
+
+
+
+
+A multi dimensional input valueb%
+y
+
+
+
+
+Y outputj<
+x
+
+
+
+
+A multi dimensional input valueB

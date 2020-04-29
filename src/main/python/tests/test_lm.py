@@ -38,7 +38,7 @@ sds = SystemDSContext()
 
 regressor = LinearRegression(fit_intercept=False)
 shape = (random.randrange(1, 30), random.randrange(1, 30))
-eps = 1e-05
+eps = 1e-03
 
 class TestLm(unittest.TestCase):
     def setUp(self):
@@ -60,8 +60,8 @@ class TestLm(unittest.TestCase):
             model.coef_ = model.coef_.reshape(sds_model_weights.shape)
             self.assertTrue(np.allclose(sds_model_weights, model.coef_, eps))
         except Exception as e:
-            self.assertTrue(False, "This should not raise an exception!")
             print(e)
+            self.assertTrue(False, "This should not raise an exception!")
 
     def test_lm_invalid_shape(self):
         X = np.random.rand(shape[0], 0)

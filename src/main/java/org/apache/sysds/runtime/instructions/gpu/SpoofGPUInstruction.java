@@ -67,10 +67,10 @@ public class SpoofGPUInstruction extends GPUInstruction implements LineageTracea
 //        String opcode = "TMP0";
 //        SpoofNativeCUDA op = new SpoofNativeCUDA(opcode, SpoofCellwise.CellType.NO_AGG, true, false, SpoofCellwise.AggOp.SUM);
 
-        SpoofNativeCUDA op = CodegenUtils.getNativeOpData(parts[1]);
+        SpoofNativeCUDA op = CodegenUtils.getNativeOpData(parts[2]);
         String opcode =  op.getSpoofType();
 
-        for( int i=2; i<parts.length-1; i++ )
+        for( int i=3; i<parts.length-1; i++ )
             inlist.add(new CPOperand(parts[i]));
         CPOperand out = new CPOperand(parts[parts.length-2]);
 //        int k = Integer.parseInt(parts[parts.length-1]);

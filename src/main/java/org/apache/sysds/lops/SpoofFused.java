@@ -108,12 +108,12 @@ public class SpoofFused extends Lop
 		sb.append( "spoof" );
 
 		sb.append( OPERAND_DELIMITOR );
-//		sb.append( _api);
-//		sb.append( OPERAND_DELIMITOR );
+		sb.append( _api);
+		sb.append( OPERAND_DELIMITOR );
 		if(_class != null)
 			sb.append( _class.getName() );
 		else
-			sb.append("codegen.cuda." + _genVarName);
+			sb.append("codegen." + _genVarName);
 
 
 		for(int i=0; i < inputs.length; i++) {

@@ -536,168 +536,38 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			break;
 			
 		case RemoveVariableAndFile:
-			 // Remove the variable from HashMap _variables, and possibly delete the data on disk.
-			boolean del = ( (BooleanObject) ec.getScalarInput(getInput2().getName(), getInput2().getValueType(), true) ).getBooleanValue();
-			MatrixObject m = (MatrixObject) ec.removeVariable(getInput1().getName());
-			
-			if ( !del ) {
-				// HDFS file should be retailed after clearData(),
-				// therefore data must be exported if dirty flag is set
-				if ( m.isDirty() )
-					m.exportData();
-			}
-			else {
-				//throw new DMLRuntimeException("rmfilevar w/ true is not expected! " + instString);
-				//cleanDataOnHDFS(pb, input1.getName());
-				cleanDataOnHDFS( m );
-			}
-			
-			// check if in-memory object can be cleaned up
-			if ( !ec.getVariables().hasReferences(m) ) {
-				// no other variable in the symbol table points to the same Data object as that of input1.getName()
-				
-				//remove matrix object from cache
-				m.clearData();
-			}
-
+			 processRemoveVariableAndFileInstruction(ec);
 			break;
 			
 		case CastAsScalarVariable: //castAsScalarVariable
-			if( getInput1().getDataType().isFrame() ) {
-				FrameBlock fBlock = ec.getFrameInput(getInput1().getName());
-				if( fBlock.getNumRows()!=1 || fBlock.getNumColumns()!=1 )
-					throw new DMLRuntimeException("Dimension mismatch - unable to cast frame '"+getInput1().getName()+"' of dimension ("+fBlock.getNumRows()+" x "+fBlock.getNumColumns()+") to scalar.");
-				Object value = fBlock.get(0,0);
-				ec.releaseFrameInput(getInput1().getName());
-				ec.setScalarOutput(output.getName(),
-						ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
-			}
-			else if( getInput1().getDataType().isMatrix() ) {
-				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName());
-				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
-					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
-				double value = mBlock.getValue(0,0);
-				ec.releaseMatrixInput(getInput1().getName());
-				ec.setScalarOutput(output.getName(), new DoubleObject(value));
-			}
-			else if( getInput1().getDataType().isTensor() ) {
-				TensorBlock tBlock = ec.getTensorInput(getInput1().getName());
-				if (tBlock.getNumDims() != 2 || tBlock.getNumRows() != 1 || tBlock.getNumColumns() != 1)
-					throw new DMLRuntimeException("Dimension mismatch - unable to cast tensor '" + getInput1().getName() + "' to scalar.");
-				ValueType vt = !tBlock.isBasic() ? tBlock.getSchema()[0] : tBlock.getValueType();
-				ec.setScalarOutput(output.getName(), ScalarObjectFactory
-					.createScalarObject(vt, tBlock.get(new int[] {0, 0})));
-				ec.releaseTensorInput(getInput1().getName());
-			}
-			else if( getInput1().getDataType().isList() ) {
-				//TODO handling of cleanup status, potentially new object
-				ListObject list = (ListObject)ec.getVariable(getInput1().getName());
-				ec.setVariable(output.getName(), list.slice(0));
-			}
-			else {
-				throw new DMLRuntimeException("Unsupported data type "
-					+ "in as.scalar(): "+getInput1().getDataType().name());
-			}
+			processCastAsScalarVariableInstruction(ec);
 			break;
-		case CastAsMatrixVariable:{
-			if( getInput1().getDataType().isFrame() ) {
-				FrameBlock fin = ec.getFrameInput(getInput1().getName());
-				MatrixBlock out = DataConverter.convertToMatrixBlock(fin);
-				ec.releaseFrameInput(getInput1().getName());
-				ec.setMatrixOutput(output.getName(), out);
-			}
-			else if( getInput1().getDataType().isScalar() ) {
-				ScalarObject scalarInput = ec.getScalarInput(
-					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
-				MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
-				ec.setMatrixOutput(output.getName(), out);
-			}
-			else if( getInput1().getDataType().isList() ) {
-				//TODO handling of cleanup status, potentially new object
-				ListObject list = (ListObject)ec.getVariable(getInput1().getName());
-				if( list.getLength() > 1 ) {
-					if( !list.checkAllDataTypes(DataType.SCALAR) )
-						throw new DMLRuntimeException("as.matrix over multi-entry list only allows scalars.");
-					MatrixBlock out = new MatrixBlock(list.getLength(), 1, false);
-					for( int i=0; i<list.getLength(); i++ )
-						out.quickSetValue(i, 0, ((ScalarObject)list.slice(i)).getDoubleValue());
-					ec.setMatrixOutput(output.getName(), out);
-				}
-				else {
-					//pass through matrix input or create 1x1 matrix for scalar
-					Data tmp = list.slice(0);
-					if( tmp instanceof ScalarObject && tmp.getValueType()!=ValueType.STRING ) {
-						MatrixBlock out = new MatrixBlock(((ScalarObject)tmp).getDoubleValue());
-						ec.setMatrixOutput(output.getName(), out);
-					}
-					else {
-						ec.setVariable(output.getName(), tmp);
-					}
-				}
-			}
-			else {
-				throw new DMLRuntimeException("Unsupported data type "
-					+ "in as.matrix(): "+getInput1().getDataType().name());
-			}
+
+		case CastAsMatrixVariable:
+			processCastAsMatrixVariableInstruction(ec);
 			break;
-		}
-		case CastAsFrameVariable:{
-			FrameBlock out = null;
-			if( getInput1().getDataType()==DataType.SCALAR ) {
-				ScalarObject scalarInput = ec.getScalarInput(getInput1());
-				out = new FrameBlock(1, getInput1().getValueType());
-				out.ensureAllocatedColumns(1);
-				out.set(0, 0, scalarInput.getStringValue());
-			}
-			else { //DataType.FRAME
-				MatrixBlock min = ec.getMatrixInput(getInput1().getName());
-				out = DataConverter.convertToFrameBlock(min);
-				ec.releaseMatrixInput(getInput1().getName());
-			}
-			ec.setFrameOutput(output.getName(), out);
+
+		case CastAsFrameVariable:
+			processCastAsFrameVariableInstruction(ec);
 			break;
-		}
-		case CastAsDoubleVariable:{
-			ScalarObject in = ec.getScalarInput(getInput1());
-			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToDouble(in));
+			
+		case CastAsDoubleVariable:
+			ScalarObject scalarDoubleInput = ec.getScalarInput(getInput1());
+			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToDouble(scalarDoubleInput));
 			break;
-		}
-		case CastAsIntegerVariable:{
-			ScalarObject in = ec.getScalarInput(getInput1());
-			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToLong(in));
+
+		case CastAsIntegerVariable:
+			ScalarObject scalarLongInput = ec.getScalarInput(getInput1());
+			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToLong(scalarLongInput));
 			break;
-		}
-		case CastAsBooleanVariable:{
-			ScalarObject scalarInput = ec.getScalarInput(getInput1());
-			ec.setScalarOutput(output.getName(), new BooleanObject(scalarInput.getBooleanValue()));
+
+		case CastAsBooleanVariable:
+			ScalarObject scalarBooleanInput = ec.getScalarInput(getInput1());
+			ec.setScalarOutput(output.getName(), new BooleanObject(scalarBooleanInput.getBooleanValue()));
 			break;
-		}
 			
 		case Read:
-			ScalarObject res = null;
-			try {
-				switch(getInput1().getValueType()) {
-					case FP64:
-						res = new DoubleObject(HDFSTool.readDoubleFromHDFSFile(getInput2().getName()));
-						break;
-					case INT64:
-						res = new IntObject(HDFSTool.readIntegerFromHDFSFile(getInput2().getName()));
-						break;
-					case BOOLEAN:
-						res = new BooleanObject(HDFSTool.readBooleanFromHDFSFile(getInput2().getName()));
-						break;
-					case STRING:
-						res = new StringObject(HDFSTool.readStringFromHDFSFile(getInput2().getName()));
-						break;
-					default:
-						throw new DMLRuntimeException("Invalid value type (" 
-							+ getInput1().getValueType() + ") while processing readScalar instruction.");
-				}
-			} catch ( IOException e ) {
-				throw new DMLRuntimeException(e);
-			}
-			ec.setScalarOutput(getInput1().getName(), res);
-			
+			processReadInstruction(ec);
 			break;
 			
 		case Write:
@@ -705,17 +575,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			break;
 			
 		case SetFileName:
-			Data data = ec.getVariable(getInput1().getName());
-			if ( data.getDataType() == DataType.MATRIX ) {
-				if ( getInput3().getName().equalsIgnoreCase("remote") ) {
-					((MatrixObject)data).setFileName(getInput2().getName());
-				}
-				else {
-					throw new DMLRuntimeException("Invalid location (" + getInput3().getName() + ") in SetFileName instruction: " + instString);
-				}
-			} else{
-				throw new DMLRuntimeException("Invalid data type (" + getInput1().getDataType() + ") in SetFileName instruction: " + instString);
-			}
+			processSetFileNameInstruction(ec);
 			break;
 	
 		default:
@@ -832,7 +692,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			if ( ec.getVariable(getInput1().getName()) == null )
 				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + getInput1().getName() + ", while processing instruction " +this.toString());
 			
-			Object object = ec.getVariable(getInput1().getName());
+			Data object = ec.getVariable(getInput1().getName());
 			
 			if ( getInput3().getName().equalsIgnoreCase("binaryblock") ) {
 				boolean success = false;
@@ -849,6 +709,176 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					throw new DMLRuntimeException("Unexpected formats while copying: from fram object ["
 							+ ((FrameObject)object).getNumColumns() + "," + ((FrameObject)object).getNumColumns() + "] to " + getInput3().getName());
 		}
+	}
+
+	/**
+	 * Handler for RemoveVariableAndFile instruction
+	 * 
+	 * @param ec execution context
+	 */
+	private void processRemoveVariableAndFileInstruction(ExecutionContext ec){
+		// Remove the variable from HashMap _variables, and possibly delete the data on disk.
+		boolean del = ( (BooleanObject) ec.getScalarInput(getInput2().getName(), getInput2().getValueType(), true) ).getBooleanValue();
+		MatrixObject m = (MatrixObject) ec.removeVariable(getInput1().getName());
+		
+		if ( !del ) {
+			// HDFS file should be retailed after clearData(),
+			// therefore data must be exported if dirty flag is set
+			if ( m.isDirty() )
+				m.exportData();
+		}
+		else {
+			//throw new DMLRuntimeException("rmfilevar w/ true is not expected! " + instString);
+			//cleanDataOnHDFS(pb, input1.getName());
+			cleanDataOnHDFS( m );
+		}
+		
+		// check if in-memory object can be cleaned up
+		if ( !ec.getVariables().hasReferences(m) ) {
+			// no other variable in the symbol table points to the same Data object as that of input1.getName()
+			
+			//remove matrix object from cache
+			m.clearData();
+		}
+	}
+
+	/**
+	 * Process CastAsScalarVariable instruction.
+	 * @param ec execution context
+	 */
+	private void processCastAsScalarVariableInstruction(ExecutionContext ec){
+		//TODO: Create privacy constraints for ScalarObject so that the privacy constraints can be propagated to scalars as well.
+		if( getInput1().getDataType().isFrame() ) {
+			FrameBlock fBlock = ec.getFrameInput(getInput1().getName());
+			if( fBlock.getNumRows()!=1 || fBlock.getNumColumns()!=1 )
+				throw new DMLRuntimeException("Dimension mismatch - unable to cast frame '"+getInput1().getName()+"' of dimension ("+fBlock.getNumRows()+" x "+fBlock.getNumColumns()+") to scalar.");
+			Object value = fBlock.get(0,0);
+			ec.releaseFrameInput(getInput1().getName());
+			ec.setScalarOutput(output.getName(),
+					ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
+		}
+		else if( getInput1().getDataType().isMatrix() ) {
+			MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName());
+			if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
+				throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
+			double value = mBlock.getValue(0,0);
+			ec.releaseMatrixInput(getInput1().getName());
+			ec.setScalarOutput(output.getName(), new DoubleObject(value));
+		}
+		else if( getInput1().getDataType().isTensor() ) {
+			TensorBlock tBlock = ec.getTensorInput(getInput1().getName());
+			if (tBlock.getNumDims() != 2 || tBlock.getNumRows() != 1 || tBlock.getNumColumns() != 1)
+				throw new DMLRuntimeException("Dimension mismatch - unable to cast tensor '" + getInput1().getName() + "' to scalar.");
+			ValueType vt = !tBlock.isBasic() ? tBlock.getSchema()[0] : tBlock.getValueType();
+			ec.setScalarOutput(output.getName(), ScalarObjectFactory
+				.createScalarObject(vt, tBlock.get(new int[] {0, 0})));
+			ec.releaseTensorInput(getInput1().getName());
+		}
+		else if( getInput1().getDataType().isList() ) {
+			//TODO handling of cleanup status, potentially new object
+			ListObject list = (ListObject)ec.getVariable(getInput1().getName());
+			ec.setVariable(output.getName(), list.slice(0));
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported data type "
+				+ "in as.scalar(): "+getInput1().getDataType().name());
+		}
+	}
+
+	/**
+	 * Handler for CastAsMatrixVariable instruction
+	 * @param ec execution context
+	 */
+	private void processCastAsMatrixVariableInstruction(ExecutionContext ec){
+		if( getInput1().getDataType().isFrame() ) {
+			FrameBlock fin = ec.getFrameInput(getInput1().getName());
+			MatrixBlock out = DataConverter.convertToMatrixBlock(fin);
+			ec.releaseFrameInput(getInput1().getName());
+			ec.setMatrixOutput(output.getName(), out);
+		}
+		else if( getInput1().getDataType().isScalar() ) {
+			ScalarObject scalarInput = ec.getScalarInput(
+				getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
+			MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
+			ec.setMatrixOutput(output.getName(), out);
+		}
+		else if( getInput1().getDataType().isList() ) {
+			//TODO handling of cleanup status, potentially new object
+			ListObject list = (ListObject)ec.getVariable(getInput1().getName());
+			if( list.getLength() > 1 ) {
+				if( !list.checkAllDataTypes(DataType.SCALAR) )
+					throw new DMLRuntimeException("as.matrix over multi-entry list only allows scalars.");
+				MatrixBlock out = new MatrixBlock(list.getLength(), 1, false);
+				for( int i=0; i<list.getLength(); i++ )
+					out.quickSetValue(i, 0, ((ScalarObject)list.slice(i)).getDoubleValue());
+				ec.setMatrixOutput(output.getName(), out);
+			}
+			else {
+				//pass through matrix input or create 1x1 matrix for scalar
+				Data tmp = list.slice(0);
+				if( tmp instanceof ScalarObject && tmp.getValueType()!=ValueType.STRING ) {
+					MatrixBlock out = new MatrixBlock(((ScalarObject)tmp).getDoubleValue());
+					ec.setMatrixOutput(output.getName(), out);
+				}
+				else {
+					ec.setVariable(output.getName(), tmp);
+				}
+			}
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported data type "
+				+ "in as.matrix(): "+getInput1().getDataType().name());
+		}
+	}
+
+	/**
+	 * Handler for CastAsFrameVariable instruction
+	 * @param ec execution context
+	 */
+	private void processCastAsFrameVariableInstruction(ExecutionContext ec){
+		FrameBlock out = null;
+		if( getInput1().getDataType()==DataType.SCALAR ) {
+			ScalarObject scalarInput = ec.getScalarInput(getInput1());
+			out = new FrameBlock(1, getInput1().getValueType());
+			out.ensureAllocatedColumns(1);
+			out.set(0, 0, scalarInput.getStringValue());
+		}
+		else { //DataType.FRAME
+			MatrixBlock min = ec.getMatrixInput(getInput1().getName());
+			out = DataConverter.convertToFrameBlock(min);
+			ec.releaseMatrixInput(getInput1().getName());
+		}
+		ec.setFrameOutput(output.getName(), out);
+	}
+
+	/**
+	 * Handler for Read instruction
+	 * @param ec execution context
+	 */
+	private void processReadInstruction(ExecutionContext ec){
+		ScalarObject res = null;
+			try {
+				switch(getInput1().getValueType()) {
+					case FP64:
+						res = new DoubleObject(HDFSTool.readDoubleFromHDFSFile(getInput2().getName()));
+						break;
+					case INT64:
+						res = new IntObject(HDFSTool.readIntegerFromHDFSFile(getInput2().getName()));
+						break;
+					case BOOLEAN:
+						res = new BooleanObject(HDFSTool.readBooleanFromHDFSFile(getInput2().getName()));
+						break;
+					case STRING:
+						res = new StringObject(HDFSTool.readStringFromHDFSFile(getInput2().getName()));
+						break;
+					default:
+						throw new DMLRuntimeException("Invalid value type (" 
+							+ getInput1().getValueType() + ") while processing readScalar instruction.");
+				}
+			} catch ( IOException e ) {
+				throw new DMLRuntimeException(e);
+			}
+			ec.setScalarOutput(getInput1().getName(), res);
 	}
 	
 	/**
@@ -920,6 +950,21 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			TensorObject to = ec.getTensorObject(getInput1().getName());
 			to.exportData(fname, outFmt, _formatProperties);
 		}
+	}
+
+	/**
+	 * Handler for SetFileName instruction
+	 * @param ec execution context
+	 */
+	private void processSetFileNameInstruction(ExecutionContext ec){
+		Data data = ec.getVariable(getInput1().getName());
+		if ( data.getDataType() == DataType.MATRIX ) {
+			if ( getInput3().getName().equalsIgnoreCase("remote") )
+				((MatrixObject)data).setFileName(getInput2().getName());
+			else
+				throw new DMLRuntimeException("Invalid location (" + getInput3().getName() + ") in SetFileName instruction: " + instString);
+		} else
+			throw new DMLRuntimeException("Invalid data type (" + getInput1().getDataType() + ") in SetFileName instruction: " + instString);
 	}
 	
 	/**

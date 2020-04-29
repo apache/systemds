@@ -514,71 +514,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		switch ( opcode )
 		{
 		case CreateVariable:
-			//PRE: for robustness we cleanup existing variables, because a setVariable
-			//would  cause a buffer pool memory leak as these objects would never be removed
-			if(ec.containsVariable(getInput1()))
-				processRemoveVariableInstruction(ec, getInput1().getName());
-			
-			if ( getInput1().getDataType() == DataType.MATRIX ) {
-				//create new variable for symbol table and cache
-				//(existing objects gets cleared through rmvar instructions)
-				String fname = getInput2().getName();
-				// check if unique filename needs to be generated
-				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = fname + '_' + _uniqueVarID.getNextID();
-				}
-				MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
-				//clone meta data because it is updated on copy-on-write, otherwise there
-				//is potential for hidden side effects between variables.
-				obj.setMetaData((MetaData)metadata.clone());
-				obj.setPrivacyConstraints(getPrivacyConstraint());
-				obj.setFileFormatProperties(_formatProperties);
-				obj.setMarkForLinCache(true);
-				obj.enableCleanup(!getInput1().getName()
-					.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
-				ec.setVariable(getInput1().getName(), obj);
-
-				obj.setUpdateType(_updateType);
-				if(DMLScript.STATISTICS && _updateType.isInPlace())
-					Statistics.incrementTotalUIPVar();
-			}
-			else if( getInput1().getDataType() == DataType.TENSOR ) {
-				//create new variable for symbol table and cache
-				//(existing objects gets cleared through rmvar instructions)
-				String fname = getInput2().getName();
-				// check if unique filename needs to be generated
-				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = fname + '_' + _uniqueVarID.getNextID();
-				}
-				CacheableData<?> obj = new TensorObject(getInput1().getValueType(), fname);
-				//clone meta data because it is updated on copy-on-write, otherwise there
-				//is potential for hidden side effects between variables.
-				obj.setMetaData((MetaData)metadata.clone());
-				obj.setFileFormatProperties(_formatProperties);
-				obj.enableCleanup(!getInput1().getName()
-						.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
-				ec.setVariable(getInput1().getName(), obj);
-
-				// TODO update
-			}
-			else if( getInput1().getDataType() == DataType.FRAME ) {
-				String fname = getInput2().getName();
-				FrameObject fobj = new FrameObject(fname);
-				fobj.setMetaData((MetaData)metadata.clone());
-				fobj.setFileFormatProperties(_formatProperties);
-				if( _schema != null )
-					fobj.setSchema(_schema); //after metadata
-				fobj.enableCleanup(!getInput1().getName()
-					.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
-				ec.setVariable(getInput1().getName(), fobj);
-			}
-			else if ( getInput1().getDataType() == DataType.SCALAR ){
-				//created variable not called for scalars
-				ec.setScalarOutput(getInput1().getName(), null);
-			}
-			else {
-				throw new DMLRuntimeException("Unexpected data type: " + getInput1().getDataType());
-			}
+			processCreateVariableInstruction(ec);
 			break;
 		
 		case AssignVariable:
@@ -785,6 +721,75 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		default:
 			throw new DMLRuntimeException("Unknown opcode: " + opcode );
 		}
+	}
+
+	/**
+	 * Handler for processInstruction "CreateVariable" case
+	 * @param ec execution context of the instruction
+	 */
+	private void processCreateVariableInstruction(ExecutionContext ec){
+		//PRE: for robustness we cleanup existing variables, because a setVariable
+		//would  cause a buffer pool memory leak as these objects would never be removed
+		if(ec.containsVariable(getInput1()))
+			processRemoveVariableInstruction(ec, getInput1().getName());
+		
+		if ( getInput1().getDataType() == DataType.MATRIX ) {
+			String fname = createUniqueFilename();
+			MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
+			setCacheableDataFields(obj);
+
+			obj.setUpdateType(_updateType);
+			obj.setMarkForLinCache(true);
+
+			ec.setVariable(getInput1().getName(), obj);
+			if(DMLScript.STATISTICS && _updateType.isInPlace())
+				Statistics.incrementTotalUIPVar();
+		}
+		else if( getInput1().getDataType() == DataType.TENSOR ) {
+			String fname = createUniqueFilename();
+			CacheableData<?> obj = new TensorObject(getInput1().getValueType(), fname);
+			setCacheableDataFields(obj);
+			
+			ec.setVariable(getInput1().getName(), obj);
+		}
+		else if( getInput1().getDataType() == DataType.FRAME ) {
+			String fname = getInput2().getName();
+			FrameObject fobj = new FrameObject(fname);
+			setCacheableDataFields(fobj);
+
+			if( _schema != null )
+				fobj.setSchema(_schema); //after metadata
+			
+			ec.setVariable(getInput1().getName(), fobj);
+		}
+		else if ( getInput1().getDataType() == DataType.SCALAR ){
+			//created variable not called for scalars
+			ec.setScalarOutput(getInput1().getName(), null);
+		}
+		else {
+			throw new DMLRuntimeException("Unexpected data type: " + getInput1().getDataType());
+		}
+	}
+
+	private String createUniqueFilename(){
+		//create new variable for symbol table and cache
+		//(existing objects gets cleared through rmvar instructions)
+		String fname = getInput2().getName();
+		// check if unique filename needs to be generated
+		if( Boolean.parseBoolean(getInput3().getName()) ) {
+			fname = fname + '_' + _uniqueVarID.getNextID();
+		}
+		return fname;
+	}
+
+	private void setCacheableDataFields(CacheableData<?> obj){
+		//clone meta data because it is updated on copy-on-write, otherwise there
+		//is potential for hidden side effects between variables.
+		obj.setMetaData((MetaData)metadata.clone());
+		obj.setPrivacyConstraints(getPrivacyConstraint());
+		obj.enableCleanup(!getInput1().getName()
+			.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
+		obj.setFileFormatProperties(_formatProperties);
 	}
 	
 	/**

@@ -27,6 +27,8 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 
 public class CNodeMultiAgg extends CNodeTpl
 {
@@ -105,14 +107,14 @@ public class CNodeMultiAgg extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
 		// note: ignore sparse flag, generate both
 		String tmp = TEMPLATE;
 		
 		//generate dense/sparse bodies
 		StringBuilder sb = new StringBuilder();
 		for( CNode out : _outputs )
-			sb.append(out.codegen(false));
+			sb.append(out.codegen(false, api, lang));
 		for( CNode out : _outputs )
 			out.resetGenerated();
 

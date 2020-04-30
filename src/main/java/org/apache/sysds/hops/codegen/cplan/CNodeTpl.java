@@ -24,7 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 
 public abstract class CNodeTpl extends CNode implements Cloneable
@@ -74,7 +75,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	}
 	
 	public String codegen() {
-		return codegen(false);
+		return codegen(false, GeneratorAPI.AUTO, GeneratorLang.AUTO);
 	}
 	
 	@Override
@@ -83,7 +84,7 @@ public abstract class CNodeTpl extends CNode implements Cloneable
 	public abstract SpoofOutputDimsType getOutputDimType();
 	
 	public abstract String getTemplateInfo();
-	
+
 	public abstract void renameInputs();
 	
 	protected void renameInputs(ArrayList<CNode> inputs, int startIndex) {

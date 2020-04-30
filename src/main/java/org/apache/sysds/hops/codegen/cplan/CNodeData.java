@@ -22,6 +22,8 @@ package org.apache.sysds.hops.codegen.cplan;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 
 public class CNodeData extends CNode 
 {
@@ -80,7 +82,7 @@ public class CNodeData extends CNode
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
 		return "";
 	}
 

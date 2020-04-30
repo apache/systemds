@@ -22,53 +22,18 @@ package org.apache.sysds.hops.codegen.cplan;
 import java.util.ArrayList;
 
 import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import sun.reflect.Reflection;
+
+import static org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI.CUDA;
 
 public class CNodeCell extends CNodeTpl 
-{	
-	private static final String TEMPLATE_JAVA =
-			  "package codegen;\n"
-			+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;\n"
-			+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
-			+ "import org.apache.commons.math3.util.FastMath;\n"
-			+ "\n"
-			+ "public final class %TMP% extends SpoofCellwise {\n" 
-			+ "  public %TMP%() {\n"
-			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP%);\n"
-			+ "  }\n"
-			+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n"
-			+ "%BODY_dense%"
-			+ "    return %OUT%;\n"
-			+ "  }\n"
-			+ "}\n";
-
-	private static final String TEMPLATE_CUDA =
-			"%TMP%\n"
-					+ "template<typename T>\n"
-					+ "	__device__ T genexec(T a, T* b, T* scalars, int m, int n, long grix, int rix, int cix) {\n"
-					+ "		%BODY_dense%"
-					+ "	}\n"
-					+ "template<typename T>\n"
-					+ "	__global__\n"
-					+ " 	void %TMP% (T *a, T* b, T* c, T* scalars, int m, int n, long grix, int rix, int cix) {\n"
-					+ "		int tid = threadIdx.y * blockDim.x + threadIdx.x;\n" // ToDo: correct indexing!
-					+ "		if(threadIdx.x < m && threadIdx.y < n) {\n"
-//					  + "  			if(tid == 1)\n"
-//					  + "			    printf(\"MxN=%dx%d, a[0]=%f, scalars[0]=%f, b[0]=%f\\n\",m, n, a[0], scalars[0], b[0]);\n"
-//					  + "			    printf(\"MxN=%dx%d, a[%d]=%f\\n\",m, n, tid, a[tid]);\n"
-					+ "			c[tid] = genexec(a[tid], b, scalars, m, n, grix, threadIdx.x, threadIdx.y);\n"
-//					  + " 	 		if(tid == 1)\n"
-//					  + "				printf(\"c[%d]=%f\\n\", tid, c[tid]);\n"
-					+ "		}\n"
-					+ "	}\n";
-
-
+{
 	private CellType _type = null;
 	private AggOp _aggOp = null;
 	private boolean _sparseSafe = false;
@@ -154,35 +119,20 @@ public class CNodeCell extends CNodeTpl
 		rRenameDataNode(_output, _inputs.get(0), "a");
 		renameInputs(_inputs, 1);
 	}
-	
-	@Override
-	public String codegen(boolean sparse) {
-		// ToDo: remove java default
-		return codegen_java(sparse);
-	}
 
-	public String codegen_cuda(boolean sparse) {
-		String tmp = TEMPLATE_CUDA;
-		String tmpDense =
-	//			  "  T TMP1 = a + scalars[0];\n"
-					"T TMP1 = a + 64.0;\n"
-	//			+ "		T TMP2 = abs(TMP1);\n"
-				+ "		T TMP2 = max(-TMP1, TMP1);\n"
-				+ "		T TMP3 = round(TMP2);\n"
-				+ "		T TMP4 = TMP3 + 5;\n"
-				+ "		return TMP4;\n";
-		tmp = tmp.replace("%TMP%", createVarname());
-		tmp = tmp.replace("%BODY_dense%", tmpDense);
-		return tmp;
-}
+	//		String tmpDense =
+//				  "T TMP1 = a + scalars[0];\n"
+//	//			+ "		T TMP2 = abs(TMP1);\n"
+//				+ "		T TMP2 = max(-TMP1, TMP1);\n"
+//				+ "		T TMP3 = round(TMP2);\n"
+//				+ "		T TMP4 = TMP3 + 5;\n"
+//				+ "		return TMP4;\n";
 
+	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
+		String tmp = getLanguageTemplateClass(this, api, lang).getTemplate();
 
-
-	public String codegen_java(boolean sparse) {
-		String tmp = TEMPLATE_JAVA;
-		
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false);
+		String tmpDense = _output.codegen(false, api, lang);
 		_output.resetGenerated();
 
 		tmp = tmp.replace("%TMP%", createVarname());
@@ -190,13 +140,14 @@ public class CNodeCell extends CNodeTpl
 		
 		//return last TMP
 		tmp = tmp.replace("%OUT%", _output.getVarname());
-		
-		//replace meta data information
-		tmp = tmp.replace("%TYPE%", getCellType().name());
-		tmp = tmp.replace("%AGG_OP%", (_aggOp!=null) ? "AggOp."+_aggOp.name() : "null" );
-		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
-		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
-		
+
+		if(lang == GeneratorLang.JAVA) {
+			//replace meta data information
+			tmp = tmp.replace("%TYPE%", getCellType().name());
+			tmp = tmp.replace("%AGG_OP%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
+			tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
+			tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
+		}
 		return tmp;
 	}
 

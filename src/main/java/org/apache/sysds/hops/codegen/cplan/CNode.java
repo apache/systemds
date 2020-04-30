@@ -25,6 +25,10 @@ import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
+
+import static org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI.CUDA;
 
 public abstract class CNode
 {
@@ -161,7 +165,7 @@ public abstract class CNode
 		setVisited(false);
 	}
 	
-	public abstract String codegen(boolean sparse);
+	public abstract String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang);
 	
 	public abstract void setOutputDims();
 	
@@ -227,5 +231,35 @@ public abstract class CNode
 			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
 		
 		return tmp;
+	}
+
+	protected CodeTemplate getLanguageTemplateClass(CNode caller, GeneratorAPI api, GeneratorLang lang) {
+		switch (lang) {
+			case CPP: {
+				if (api == CUDA) {
+					if(caller instanceof CNodeCell)
+						return new org.apache.sysds.hops.codegen.cplan.cpp.CellWise();
+					else if (caller instanceof CNodeUnary)
+						return new org.apache.sysds.hops.codegen.cplan.cpp.Unary();
+					else if (caller instanceof CNodeBinary)
+						return new org.apache.sysds.hops.codegen.cplan.cpp.Binary();
+					else
+						return null;
+				}
+				else
+					throw new RuntimeException("Trying to generate C++ code with unknown API " + api.toString());
+			}
+			case JAVA:
+				if(caller instanceof CNodeCell)
+					return new org.apache.sysds.hops.codegen.cplan.java.CellWise();
+				else if (caller instanceof CNodeUnary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Unary();
+				else if (caller instanceof CNodeBinary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Binary();
+				else
+					return null;
+			default:
+				throw new RuntimeException("Language not supported by code generator: " + lang.toString());
+		}
 	}
 }

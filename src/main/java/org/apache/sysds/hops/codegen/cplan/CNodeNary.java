@@ -27,6 +27,8 @@ import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 
 public class CNodeNary extends CNode
 {
@@ -43,7 +45,7 @@ public class CNodeNary extends CNode
 					return true;
 			return false;
 		}
-		public String getTemplate(boolean sparseGen, long len, ArrayList<CNode> inputs) {
+		public String getTemplate(boolean sparseGen, long len, ArrayList<CNode> inputs, GeneratorAPI api, GeneratorLang lang) {
 			switch (this) {
 				case VECT_CBIND:
 					StringBuilder sb = new StringBuilder();
@@ -111,7 +113,7 @@ public class CNodeNary extends CNode
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
 		if( isGenerated() )
 			return "";
 		
@@ -119,14 +121,14 @@ public class CNodeNary extends CNode
 		
 		//generate children
 		for(CNode in : _inputs)
-			sb.append(in.codegen(sparse));
+			sb.append(in.codegen(sparse, api, lang));
 		
 		//generate nary operation (use sparse template, if data input)
 		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
 			&& _inputs.get(0).getVarname().startsWith("a")
 			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
-		String tmp = _type.getTemplate(lsparse, _cols, _inputs);
+		String tmp = _type.getTemplate(lsparse, _cols, _inputs, api, lang);
 		tmp = tmp.replace("%TMP%", var);
 		
 		//replace sparse and dense inputs

@@ -26,6 +26,8 @@ import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 
 public class CNodeRow extends CNodeTpl
 {
@@ -95,15 +97,15 @@ public class CNodeRow extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
 		// note: ignore sparse flag, generate both
 		String tmp = TEMPLATE;
 		
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false)
+		String tmpDense = _output.codegen(false, api, lang)
 			+ getOutputStatement(_output.getVarname());
 		_output.resetGenerated();
-		String tmpSparse = _output.codegen(true)
+		String tmpSparse = _output.codegen(true, api, lang)
 			+ getOutputStatement(_output.getVarname());
 		tmp = tmp.replace("%TMP%", createVarname());
 		tmp = tmp.replace("%BODY_dense%", tmpDense);

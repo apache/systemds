@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
+import com.sun.tools.javah.Gen;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
@@ -134,6 +136,12 @@ public class SpoofCompiler
 		CUDA
 	}
 
+	public enum GeneratorLang {
+		AUTO,
+		JAVA,
+		CPP
+	}
+
 
 	public enum IntegrationType {
 		HOPS,
@@ -226,6 +234,9 @@ public class SpoofCompiler
 			destroy_cuda_context(native_contexts.get(GeneratorAPI.CUDA), 0);
 	}
 
+	private static boolean compile_cuda(String name, String src) {
+		return compile_cuda_kernel(native_contexts.get(GeneratorAPI.CUDA), name, src);
+	}
 	private static native long initialize_cuda_context(int device_id);
 
 	private static native boolean compile_cuda_kernel(long ctx, String name, String src);
@@ -450,21 +461,16 @@ public class SpoofCompiler
 					String src;
 					switch(API) {
 						case CUDA:
-							// ToDo: codegen dummy setup
-							CNodeCell cnc = (CNodeCell)tmp.getValue();
-							src = ((CNodeCell)tmp.getValue()).codegen_cuda(false);
-							boolean res = compile_cuda_kernel(native_contexts.get(GeneratorAPI.CUDA),
-									tmp.getValue().getVarname(), src);
+							src = tmp.getValue().codegen(false, GeneratorAPI.CUDA, GeneratorLang.CPP);
+							if(compile_cuda(tmp.getValue().getVarname(), src))
+								CodegenUtils.putNativeOpData(new SpoofNativeCUDA(tmp.getValue()));
+							else
+								LOG.error("cuda compilation failed"); // ToDo: Fallback to java
 
-							CodegenUtils.putNativeOpData(new SpoofNativeCUDA("codegen.cuda." + cnc.getVarname(),
-									cnc.getCellType(), cnc.isSparseSafe(), cnc.containsSeq(), cnc.getSpoofAggOp()));
-
-							if(!res)
-								LOG.error("cuda compilation failed");
 							break;
 						case JAVA:
 						default:
-							src = tmp.getValue().codegen(false);
+							src = tmp.getValue().codegen(false, GeneratorAPI.JAVA, GeneratorLang.JAVA);
 							//compile generated java source code
 							cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
 					}

@@ -23,6 +23,8 @@ import java.util.Arrays;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 
 
 public class CNodeTernary extends CNode
@@ -37,7 +39,7 @@ public class CNodeTernary extends CNode
 			return Arrays.stream(values()).anyMatch(tt -> tt.name().equals(value));
 		}
 		
-		public String getTemplate(boolean sparse) {
+		public String getTemplate(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
 			switch (this) {
 				case PLUS_MULT:
 					return "    double %TMP% = %IN1% + %IN2% * %IN3%;\n";
@@ -94,23 +96,23 @@ public class CNodeTernary extends CNode
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
 		if( isGenerated() )
 			return "";
 			
 		StringBuilder sb = new StringBuilder();
 		
 		//generate children
-		sb.append(_inputs.get(0).codegen(sparse));
-		sb.append(_inputs.get(1).codegen(sparse));
-		sb.append(_inputs.get(2).codegen(sparse));
+		sb.append(_inputs.get(0).codegen(sparse, api, lang));
+		sb.append(_inputs.get(1).codegen(sparse, api, lang));
+		sb.append(_inputs.get(2).codegen(sparse, api, lang));
 		
 		//generate binary operation
 		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
 			&& _inputs.get(0).getVarname().startsWith("a")
 			&& !_inputs.get(0).isLiteral());
 		String var = createVarname();
-		String tmp = _type.getTemplate(lsparse);
+		String tmp = _type.getTemplate(lsparse, api, lang);
 		tmp = tmp.replace("%TMP%", var);
 		for( int j=1; j<=3; j++ ) {
 			String varj = _inputs.get(j-1).getVarname();

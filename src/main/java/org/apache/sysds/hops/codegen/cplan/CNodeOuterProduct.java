@@ -25,6 +25,8 @@ import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
 
 
 public class CNodeOuterProduct extends CNodeTpl
@@ -78,12 +80,12 @@ public class CNodeOuterProduct extends CNodeTpl
 	}
 	
 	@Override
-	public String codegen(boolean sparse) {
+	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
 		// note: ignore sparse flag, generate both
 		String tmp = TEMPLATE;
 		
 		//generate dense/sparse bodies
-		String tmpDense = _output.codegen(false);
+		String tmpDense = _output.codegen(false, api, lang);
 		_output.resetGenerated();
 
 		tmp = tmp.replace("%TMP%", createVarname());

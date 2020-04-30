@@ -89,6 +89,7 @@ public enum Builtins {
 	EXP("exp", false),
 	EVAL("eval", false),
 	FLOOR("floor", false),
+	GLM("glm", true),
 	GNMF("gnmf", true),
 	GRID_SEARCH("gridSearch", true),
 	IFELSE("ifelse", false),

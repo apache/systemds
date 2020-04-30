@@ -15,13 +15,21 @@ class Bucket:
     score: float
     c_upper: float
     parents: []
+    x_size: int
+    loss: float
+    w: float
 
-    def __init__(self, node, cur_lvl, w, x_size):
+    def __init__(self, node, cur_lvl, w, x_size, loss):
         self.attributes = []
         self.parents = []
         self.sum_error = 0
         self.size = 0
+        self.score = 0
+        self.error = 0
         self.max_tuple_error = 0
+        self.x_size = x_size
+        self.w = w
+        self.loss = loss
         if cur_lvl == 0:
             self.key = node
             self.attributes.append(node)
@@ -43,6 +51,19 @@ class Bucket:
         self.size = max(self.size, other.size)
         self.sum_error = max(self.sum_error, other.sum_error)
         return self
+
+    def minimize_bounds(self, other):
+        minimized = min(self.s_upper, other.s_upper)
+        self.s_upper = minimized
+        minimized = min(other.s_lower, self.s_lower)
+        self.s_lower = minimized
+        minimized = min(other.e_upper, self.e_upper)
+        self.e_upper = minimized
+        minimized = min(other.e_max_upper, self.e_max_upper)
+        self.e_max_upper = minimized
+        c_upper = self.calc_c_upper(self.w, self.x_size, self.loss)
+        minimized = min(c_upper, self.c_upper)
+        self.c_upper = minimized
 
     def __eq__(self, other):
         return (

@@ -9,7 +9,7 @@ import pyspark.sql.functions as sf
 from pyspark.sql.functions import udf
 from sklearn.model_selection import train_test_split
 
-from slicing.spark_modules import spark_utils, join_data_parallel
+from slicing.spark_modules import spark_utils, join_data_parallel, union_data_parallel
 
 binner = udf(lambda arg: int(int(arg) // 5))
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         b_update = True
         debug = True
         loss_type = 0
-        enumerator = "join"
+        enumerator = "union"
 
     conf = SparkConf().setAppName("salary_test").setMaster('local[2]')
     num_partitions = 2
@@ -103,8 +103,8 @@ if __name__ == "__main__":
     all_features = range(predictions.toPandas().values[1][1].size)
     k = 10
     if enumerator == "join":
-        join_data_parallel.parallel_process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha, k=k, w=w,
-                                       loss_type=loss_type)
-    # elif enumerator == "union":
-    #     union_data_parallel.process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha, k=k, w=w,
-    #                                loss_type=loss_type, enumerator=enumerator)
+        join_data_parallel.parallel_process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha,
+                                            k=k, w=w, loss_type=loss_type)
+    elif enumerator == "union":
+        union_data_parallel.parallel_process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha,
+                                             k=k, w=w, loss_type=loss_type)

@@ -9,8 +9,11 @@ import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.utils.NativeHelper;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 public class SpoofNativeCUDA extends SpoofOperator {
@@ -44,20 +47,43 @@ public class SpoofNativeCUDA extends SpoofOperator {
         throw new RuntimeException("method not implemented for SpoofNativeCUDA");
     }
 
-    public void execute(ArrayList<MatrixObject> inputs, ArrayList<ScalarObject> scalarObjects, MatrixObject out_obj,
+    public double execute(ArrayList<MatrixObject> inputs, ArrayList<ScalarObject> scalarObjects, MatrixObject out_obj,
                                ExecutionContext ec) {
+        double ret = 0;
+        long out_ptr = 0;
+
+        if(out_obj != null)
+            out_ptr = ec.getGPUPointerAddress(out_obj);
+
+        int offset = 1;
+        if(cnt instanceof CNodeOuterProduct)
+            offset = 2;
 
         // only dense input preparation for now
-//        SideInput[] b = prepInputMatrices(inputs, 1, true);
+        long[] in_ptrs = new long[offset+1];
+        for(int i = 0; i < offset; ++i)
+            in_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
+
+        long[] side_ptrs = new long[inputs.size() - offset];
+        for(int i = offset; i < inputs.size(); ++i)
+            side_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
+
         double[] scalars = prepInputScalars(scalarObjects);
 
-        MatrixObject a = inputs.get(0);
-
-
-        execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
-                ec.getGPUPointerAddress(inputs.get(0)), 0, ec.getGPUPointerAddress(out_obj), scalars,
-                scalars.length, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
-
+        if(LibMatrixNative.isSinglePrecision() ) {
+            // ToDo: handle float
+//            FloatBuffer fin1 = LibMatrixNative.toFloatBuffer(m1.getDenseBlockValues(), inBuff, true);
+//            FloatBuffer fin2 = LibMatrixNative.toFloatBuffer(m2.getDenseBlockValues(), filterBuff, true);
+//            FloatBuffer fout = LibMatrixNative.toFloatBuffer(ret.getDenseBlockValues(), outBuff, false);
+//            ret = execute_f();
+//            LibMatrixNative.fromFloatBuffer(outBuff.get(), ret.getDenseBlockValues());
+        }
+        else {
+            ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
+                    in_ptrs, in_ptrs.length, side_ptrs, side_ptrs.length, out_ptr, scalars,
+                    scalars.length, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+        }
+        return ret;
     }
 
     @Override
@@ -66,6 +92,9 @@ public class SpoofNativeCUDA extends SpoofOperator {
             return  tmp[tmp.length-1] + "_" + getSpoofTemplateType() + "_" + name.split("\\.")[1];
     }
 
-    private native boolean execute_d(long ctx, String name, long in_ptr, long side_ptr, long out_ptr, double[] scalars,
-            long num_scalars, long m, long n, long grix);
+    private native float execute_f(long ctx, String name, long[] in_ptr, long num_inputs, long[] side_ptr, long num_sides,
+                                   long out_ptr, float[] scalars, long num_scalars, long m, long n, long grix);
+
+    private native double execute_d(long ctx, String name, long[] in_ptr, long num_inputs, long[] side_ptr, long num_sides,
+                                    long out_ptr, double[] scalars, long num_scalars, long m, long n, long grix);
 }

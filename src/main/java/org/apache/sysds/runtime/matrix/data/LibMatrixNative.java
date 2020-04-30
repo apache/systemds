@@ -295,12 +295,12 @@ public class LibMatrixNative
 		LibMatrixDNN.conv2dBackwardData(filter, dout, outputBlock, params);
 	}
 	
-	private static boolean isSinglePrecision() {
+	public static boolean isSinglePrecision() {
 		return ConfigurationManager.getDMLConfig()
 			.getTextValue(DMLConfig.FLOATING_POINT_PRECISION).equals("single");
 	}
 	
-	private static FloatBuffer toFloatBuffer(double[] input, ThreadLocal<FloatBuffer> buff, boolean copy) {
+	public static FloatBuffer toFloatBuffer(double[] input, ThreadLocal<FloatBuffer> buff, boolean copy) {
 		//maintain thread-local buffer (resized on demand)
 		FloatBuffer ret = buff.get();
 		if( ret == null || ret.capacity() < input.length ) {

@@ -39,10 +39,10 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
  * Method:    execute
  * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT jdouble JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
-    JNIEnv *, jobject, jlong, jstring, jlong, jlong, jlong, jdoubleArray, jlong,
-    jlong, jlong, jlong);
+    JNIEnv *, jobject, jlong, jstring, jlongArray, jlong, jlongArray, jlong,
+    jlong, jdoubleArray, jlong, jlong, jlong, jlong);
 
 #ifdef __cplusplus
 }

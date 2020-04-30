@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 
 import java.util.ArrayList;
 
@@ -60,20 +60,12 @@ public class SpoofGPUInstruction extends GPUInstruction implements LineageTracea
         String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 
         ArrayList<CPOperand> inlist = new ArrayList<>();
-//        Class<?> cla = CodegenUtils.getClass(parts[1]);
-//        SpoofOperator op = CodegenUtils.createInstance(cla);
-//        String opcode =  parts[0] + op.getSpoofType();
-
-//        String opcode = "TMP0";
-//        SpoofNativeCUDA op = new SpoofNativeCUDA(opcode, SpoofCellwise.CellType.NO_AGG, true, false, SpoofCellwise.AggOp.SUM);
-
         SpoofNativeCUDA op = CodegenUtils.getNativeOpData(parts[2]);
         String opcode =  op.getSpoofType();
 
-        for( int i=3; i<parts.length-1; i++ )
+        for( int i=3; i<parts.length-2; i++ )
             inlist.add(new CPOperand(parts[i]));
         CPOperand out = new CPOperand(parts[parts.length-2]);
-//        int k = Integer.parseInt(parts[parts.length-1]);
 
         return new SpoofGPUInstruction(op, inlist.toArray(new CPOperand[0]), out, opcode, str);
     }
@@ -86,7 +78,7 @@ public class SpoofGPUInstruction extends GPUInstruction implements LineageTracea
         ArrayList<ScalarObject> scalars = new ArrayList<>();
         for (CPOperand input : _in) {
             if(input.getDataType()== Types.DataType.MATRIX)
-                inputs.add(ec.getMatrixInputForGPUInstruction(_in[0].getName(), getExtendedOpcode()));
+                inputs.add(ec.getMatrixInputForGPUInstruction(input.getName(), getExtendedOpcode()));
             else if(input.getDataType()== Types.DataType.SCALAR) {
                 //note: even if literal, it might be compiled as scalar placeholder
                 scalars.add(ec.getScalarInput(input));
@@ -95,25 +87,20 @@ public class SpoofGPUInstruction extends GPUInstruction implements LineageTracea
 
         // set the output dimensions to the hop node matrix dimensions
         if( _out.getDataType() == Types.DataType.MATRIX) {
-            MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(),
-                    inputs.get(0).getNumRows(), inputs.get(0).getNumColumns()).getKey();
-
+            MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), inputs.get(0).getNumRows(),
+                    inputs.get(0).getNumColumns()).getKey();
             ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
-
             _op.execute(inputs, scalars, out_obj, ec);
-
             ec.releaseMatrixOutputForGPUInstruction(_out.getName());
         }
-//        else if (_out.getDataType() == Types.DataType.SCALAR) {
-//            ScalarObject out = _op.execute(inputs, scalars);
-//            ec.setScalarOutput(_out.getName(), out);
-//        }
+        else if (_out.getDataType() == Types.DataType.SCALAR) {
+            ScalarObject out = new DoubleObject(_op.execute(inputs, scalars, null, ec));
+            ec.setScalarOutput(_out.getName(), out);
+        }
 
-        // release input matrices
-//        for (CPOperand input : _in)
-//            if(input.getDataType()== Types.DataType.MATRIX)
-//                ec.releaseMatrixInputForGPUInstruction(input.getName());
-            ec.releaseMatrixInputForGPUInstruction(_in[0].getName());
+        for (CPOperand input : _in)
+            if(input.getDataType()== Types.DataType.MATRIX)
+                ec.releaseMatrixInputForGPUInstruction(input.getName());
     }
 
     @Override

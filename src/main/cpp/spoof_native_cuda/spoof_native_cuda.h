@@ -5,11 +5,17 @@
 
 #include "jitify.hpp"
 
+struct SpoofOperator {
+  enum AggType { NO_AGG, ROW_AGG, COL_AGG, FULL_AGG };
+
+  jitify::Program program;
+  AggType agg_type;
+};
+
 class SpoofCudaContext {
 
   jitify::JitCache kernel_cache;
-  std::map<const std::string, jitify::Program> program_map;
-  std::vector<jitify::Program> program_vec;
+  std::map<const std::string, SpoofOperator> ops;
 
 public:
   static long initialize_cuda(uint32_t device_id);
@@ -24,42 +30,50 @@ public:
   //                      long grix);
 
   template <typename T>
-  bool execute_kernel(const std::string &name, T **in_ptr, T **side_ptr,
-                      T **out_ptr, T **scalars_ptr, long num_scalars, long m,
-                      long n, long grix) {
+  T execute_kernel(const std::string &name, T **in_ptrs, int num_inputs,
+                   T **side_ptrs, int num_sides, T *out_ptr, T *scalars_ptr,
+                   int num_scalars, int m, int n, int grix) {
 
-    auto p = program_map.find(name);
-    jitify::Program *pr = &(p->second);
+    using jitify::reflection::type_of;
 
-    std::cout << "launching kernel " << name << std::endl;
+    double result = 0.0;
 
-    if (p != program_map.end()) {
+    auto o = ops.find(name);
+    if (o != ops.end()) {
+      SpoofOperator *op = &(o->second);
+      std::cout << "launching kernel " << name << std::endl;
 
-      std::cout << "p->first=" << p->first << std::endl;
-      std::cout << "p->second=" << &(p->second) << std::endl;
-      std::cout << "p=" << &(p) << std::endl;
-
+      // Todo: proper cta config
       dim3 grid(1);
       dim3 block(m, n);
       std::cout << "launching " << block.x << "x" << block.y
                 << "==" << block.x * block.y << " threads" << std::endl;
-      using jitify::reflection::type_of;
 
-      double tmp;
-      pr->kernel(name)
-          //                   .instantiate(type_of(*in_ptr))
-          .instantiate(type_of(tmp))
+      T *d_scalars;
+      size_t dev_buf_size;
+      if (op->agg_type == SpoofOperator::FULL_AGG)
+        dev_buf_size = sizeof(T) * num_scalars + 1;
+      else
+        dev_buf_size = sizeof(T) * num_scalars;
+
+      cudaMalloc((void **)&d_scalars, dev_buf_size);
+      cudaMemcpy(d_scalars, scalars_ptr, dev_buf_size, cudaMemcpyHostToDevice);
+
+      // ToDo: fix type handling
+      // ToDo: copy pointer array
+      op->program.kernel(name)
+          .instantiate(type_of(result))
           .configure(grid, block)
-          //          .launch(reinterpret_cast<double **>(in_ptr), (double
-          //          **)side_ptr,
-          //                  (double **)out_ptr, (double **)scalars_ptr, m, n,
-          //                  grix, 0, 0);
-
-          .launch(in_ptr, side_ptr, out_ptr, 0, m, n, grix, 0, 0);
-
+          .launch(in_ptrs[0], side_ptrs, out_ptr, d_scalars, m, n, grix, 0, 0);
+      cudaDeviceSynchronize();
+      if (op->agg_type == SpoofOperator::FULL_AGG)
+        cudaMemcpy(&result, (scalars_ptr + num_scalars * sizeof(T)), sizeof(T),
+                   cudaMemcpyDeviceToHost);
+      cudaFree(d_scalars);
     } else {
       std::cout << "kernel " << name << " not found." << std::endl;
+      return result;
     }
-    return true;
+    return result;
   }
 };

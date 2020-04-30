@@ -32,7 +32,10 @@ bool SpoofCudaContext::compile_cuda(const std::string &src,
   std::cout << "compiling cuda kernel " << name << std::endl;
   std::cout << src << std::endl;
   jitify::Program program = kernel_cache.program(src);
-  program_map.insert(std::make_pair(name, std::move(program)));
+
+  // ToDo: agg type
+  ops.insert(std::make_pair(
+      name, SpoofOperator({std::move(program), SpoofOperator::NO_AGG})));
   return true;
 }
 

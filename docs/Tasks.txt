@@ -264,6 +264,7 @@ SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 335 Weighted eviction policy (function of size & computetime)
  * 336 Better use of cache status to handle multithreading
  * 337 Adjust disk I/O speed by recording actual time taken           OK
+ * 338 Extended lineage tracing (rmEmpty, lists), partial rewrites    OK
  
 SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations

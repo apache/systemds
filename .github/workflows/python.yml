@@ -74,10 +74,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
   
     - name: Install pip Dependencies
-      run: |
-        pip install numpy py4j wheel
-        pip install scipy
-        pip install sklearn
+      run: pip install numpy py4j wheel scipy sklearn
 
     - name: Build Python Package
       run: |

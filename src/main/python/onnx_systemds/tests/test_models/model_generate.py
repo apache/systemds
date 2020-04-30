@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import onnx
-from onnx import helper, numpy_helper
+from onnx import helper
 
 
 def save_graph(graph_def, name):
@@ -331,8 +330,53 @@ def generate_simple_maxpool():
     save_graph(graph, "simple_maxpool_layer.onnx")
 
 
+def generate_simple_if():
+    A = helper.make_tensor_value_info('A', onnx.TensorProto.FLOAT, [2, 2],
+                                      doc_string="This is a description of variable A")
+    E = helper.make_tensor_value_info('E', onnx.TensorProto.FLOAT, [2, 2],
+                                      doc_string="This is a description of variable E")
+    condition = helper.make_tensor_value_info('cond', onnx.TensorProto.BOOL, [1], doc_string="Condition for the if")
+
+    else_node = helper.make_node("Relu", ["A"], ["E"], doc_string="Call of Relu function in else branch")
+    else_graph = helper.make_graph(
+        nodes=[else_node],
+        name="The Else branch graph",
+        inputs=[A],
+        outputs=[E],
+        value_info=[A]
+    )
+
+    then_node = helper.make_node("Tanh", ["A"], ["E"], doc_string="Call of Tanh function in then branch")
+    then_graph = helper.make_graph(
+        nodes=[then_node],
+        name="The Then branch graph",
+        inputs=[A],
+        outputs=[E],
+        value_info=[A]
+    )
+
+    node = helper.make_node(
+        op_type="If",
+        name="A simple if graph",
+        inputs=["cond"],
+        outputs=["E"],
+        else_branch=else_graph,
+        then_branch=then_graph
+    )
+
+    graph = helper.make_graph(
+        nodes=[node],
+        name="A simple if graph",
+        inputs=[A, condition],
+        outputs=[E]
+    )
+
+    save_graph(graph, "simple_if_graph.onnx")
+
+
 if __name__ == '__main__':
     generate_simple_add_graph()
+    # generate_simple_boolean_noshape()
     generate_simple_mat_add_mul_sub_graph()
     generate_simple_initialized_graph()
     generate_simple_relu_tanh_sigmoid_softmax()
@@ -340,4 +384,4 @@ if __name__ == '__main__':
     generate_simple_conv()
     generate_simple_conv_2()
     generate_simple_maxpool()
-    # generate_simple_boolean_noshape()
+    generate_simple_if()

@@ -17,9 +17,31 @@ from random import randint
 import jinja2
 import onnx
 import onnx_systemds.onnx_helper as onnx_helper
+from onnx_systemds import util
 
 
-def gen_simple_function_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) -> (str, str):
+class GeneratedScriptPart:
+    def __init__(self, dml_script: str, imports: [str] = None, sub_graphs: [onnx.GraphProto] = None):
+        if sub_graphs is None:
+            sub_graphs = []
+        if imports is None:
+            imports = []
+        self.dml_script = dml_script
+        self.imports = imports
+        self.sub_graphs = sub_graphs
+
+
+def gen_simple_function_call(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                             node: onnx.NodeProto) -> GeneratedScriptPart:
+    """
+    Generates a simple function call by directly providing the node inputs as arguments
+    and node outputs as outputs to a function call. Additionally adds the required imports.
+
+    :param env: Jinja environment to load the template files
+    :param graph: the onnx-graph for which the script shall be generated
+    :param node: the onnx-node for which the script shall be generated
+    :return: The generated script part
+    """
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
     import_template = env.get_template("module_import.dml.jinja")
 
@@ -27,7 +49,7 @@ def gen_simple_function_call(env: jinja2.environment.Environment, graph: onnx.Gr
         raise Exception("Function call needs output")
 
     if len(node.attribute) != 0:
-        raise Exception("attributes not supported for operator")
+        raise Exception("Attributes not supported for this generator")
 
     required_import = {
         "Relu": {"path": "/nn/layers/relu.dml", "import_name": "relu_layer", "function_name": "forward"},
@@ -55,11 +77,18 @@ def gen_simple_function_call(env: jinja2.environment.Environment, graph: onnx.Gr
         outputs=list(node.output),
         doc_string=node.doc_string
     )
-    return import_render, node_render
+    return GeneratedScriptPart(imports=[import_render], dml_script=node_render)
 
 
-def gen_simple_2input_1output_operator(env: jinja2.environment.Environment, graph: onnx.GraphProto,
-                                       node: onnx.NodeProto) -> (str, str):
+def gen_2input_1output_operator(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                                node: onnx.NodeProto) -> GeneratedScriptPart:
+    """
+    Generates simple operator calls like 'z = x + y' which have two inputs (left and right) and one output.
+    :param env: Jinja environment to load the template files
+    :param graph: the onnx-graph for which the script shall be generated
+    :param node: the onnx-node for which the script shall be generated
+    :return: The generated script part
+    """
     operator = {
         "Add": "+",
         "Sub": "-",
@@ -82,11 +111,18 @@ def gen_simple_2input_1output_operator(env: jinja2.environment.Environment, grap
         operator=operator[node.op_type],
         doc_string=node.doc_string
     )
-    return "", node_render
+    return GeneratedScriptPart(node_render)
 
 
-def gen_simple_1input_1output_mat_operator(env: jinja2.environment.Environment, graph: onnx.GraphProto,
-                                           node: onnx.NodeProto) -> (str, str):
+def gen_1input_1output_mat_operator(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                                    node: onnx.NodeProto) -> GeneratedScriptPart:
+    """
+    Generates simple operators like 'y = -x' which have one input and one output.
+    :param env:  Jinja environment to load the template files
+    :param graph: the onnx-graph for which the script shall be generated
+    :param node: the onnx-node for which the script shall be generated
+    :return: The generated script part
+    """
     template_for_operator = {
         "Neg": "neg.dml.jinja",
     }
@@ -104,11 +140,11 @@ def gen_simple_1input_1output_mat_operator(env: jinja2.environment.Environment, 
         output=list(node.output)[0],
         doc_string=node.doc_string
     )
-    return "", node_render
+    return GeneratedScriptPart(dml_script=node_render)
 
 
-def gen_dropout_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) -> (str, str):
-    # TODO: finish this
+def gen_dropout_call(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                     node: onnx.NodeProto) -> GeneratedScriptPart:
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
     import_template = env.get_template("module_import.dml.jinja")
 
@@ -146,10 +182,11 @@ def gen_dropout_call(env: jinja2.environment.Environment, graph: onnx.GraphProto
         outputs=list(node.output),
         doc_string=node.doc_string
     )
-    return import_render, node_render
+    return GeneratedScriptPart(imports=[import_render], dml_script=node_render)
 
 
-def gen_maxpool_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) -> (str, str):
+def gen_maxpool_call(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                     node: onnx.NodeProto) -> GeneratedScriptPart:
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
     import_template = env.get_template("module_import.dml.jinja")
 
@@ -261,12 +298,11 @@ def gen_maxpool_call(env: jinja2.environment.Environment, graph: onnx.GraphProto
         name=function_namespace
     )
 
-    return import_render, node_render
-
-    raise NotImplementedError
+    return GeneratedScriptPart(imports=[import_render], dml_script=node_render)
 
 
-def gen_conv_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) -> (str, str):
+def gen_conv_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) \
+        -> GeneratedScriptPart:
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
     import_template = env.get_template("module_import.dml.jinja")
 
@@ -382,7 +418,6 @@ def gen_conv_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, n
     else:
         raise Exception("Invalid auto_pad value")
 
-    # Create render
     node_render = operator_template.render(
         function_namespace=function_namespace,
         function=function_name,
@@ -396,4 +431,46 @@ def gen_conv_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, n
         name=function_namespace
     )
 
-    return import_render, bias_initializer_render + "\n" + node_render
+    return GeneratedScriptPart(imports=[import_render], dml_script=bias_initializer_render + "\n" + node_render)
+
+
+def gen_if_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) \
+        -> GeneratedScriptPart:
+    operator_template = env.get_template("operators/if_operator.dml.jinja")
+    function_call_template = env.get_template("operators/function_call.dml.jinja")
+
+    if len(node.input) != 1:
+        raise Exception("Wrong number of inputs")
+    if len(node.attribute) != 2:
+        raise Exception("Wrong number of attributes")
+    if node.attribute[0].name != "else_branch" or node.attribute[1].name != "then_branch":
+        raise Exception("Wrong attributes")
+
+    else_graph = node.attribute[0].g
+    then_graph = node.attribute[1].g
+
+    else_call = function_call_template.render(
+        doc_string="",
+        function_namespace="",
+        function=util.generate_function_name(else_graph.name),
+        arguments=[i.name for i in list(else_graph.input)],
+        outputs=[o.name for o in list(else_graph.output)],
+    )
+
+    then_call = function_call_template.render(
+        doc_string="",
+        function_namespace="",
+        function=util.generate_function_name(then_graph.name),
+        arguments=[i.name for i in list(then_graph.input)],
+        outputs=[o.name for o in list(then_graph.output)],
+    )
+
+    sub_graphs = [else_graph, then_graph]
+
+    node_render = operator_template.render(
+        cond=node.input[0],
+        then_function_call=then_call,
+        else_function_call=else_call
+    )
+
+    return GeneratedScriptPart(dml_script=node_render, sub_graphs=sub_graphs)

@@ -17,15 +17,13 @@ import os
 import subprocess
 import unittest
 
-
 from onnx_systemds.convert import onnx2systemds
 from onnx_systemds.util import resolve_systemds_root
 
 
 def invoke_systemds(input_file: str, args: [str] = None) -> int:
     """
-    Runs systemds by running the script in
-    $SYSTEMDS_ROOT_PATH/bin/systemds.sh with the provided input_file,
+    Runs systemds by running the script in $SYSTEMDS_ROOT_PATH/bin/systemds.sh with the provided input_file,
     will fail if environment variable SYSTEMDS_ROOT_PATH is not set.
 
     :param input_file: the dml script to run
@@ -53,15 +51,22 @@ def invoke_systemds(input_file: str, args: [str] = None) -> int:
         print(systemds_error.stderr.decode("utf-8"))
         return systemds_error.returncode
 
-    if len(res.stderr.decode("utf-8")) != 0:
+    stderr = res.stderr.decode("utf-8")
+    if len(stderr) != 0:
         print("No exception but stderr was not empty:")
-        print(res.stderr.decode("utf-8"))
+        print(stderr)
         return -1
 
     return res.returncode
 
 
 def run_and_compare_output(name: str, test_case: unittest.TestCase) -> None:
+    """
+    Converts the onnx-model to dml, runs systemds with the dml-wrapper and compares the resulting output
+     with the reference output.
+    :param name: The name of the test-case (also used for finding onnx-model, dml-wrapper and reference output)
+    :param test_case: The testcase
+    """
     onnx2systemds("test_models/" + name + ".onnx", "dml_output/" + name + ".dml")
     ret = invoke_systemds("dml_wrapper/" + name + "_wrapper.dml")
     test_case.assertEqual(ret, 0, "systemds failed")

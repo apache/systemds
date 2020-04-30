@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import unittest
-import util
+import onnx_systemds.tests.util as util
 
 
 class TestSimpleOperators(unittest.TestCase):
@@ -44,6 +44,10 @@ class TestSimpleOperators(unittest.TestCase):
 
     def test_simple_maxpool_layer(self):
         name = "simple_maxpool_layer"
+        util.run_and_compare_output(name, self)
+
+    def test_simple_if_graph(self):
+        name = "simple_if_graph"
         util.run_and_compare_output(name, self)
 
     # TODO: dml implementation of dropout does not work

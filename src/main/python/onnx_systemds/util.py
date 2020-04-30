@@ -14,9 +14,24 @@
 # limitations under the License.
 
 import os
+import re
+
+
+def generate_function_name(graph_name: str) -> str:
+    """
+    Takes the given graph name and constructs a valid function name from it.
+    :param graph_name: The name of the graph.
+    :return: the constructed function name.
+    """
+    function_name = "gen_" + re.sub(r"[-| ]", "_", graph_name.lower())
+    return re.sub(r"[^0-9a-z_]", "", function_name)
 
 
 def resolve_systemds_root() -> str:
+    """
+    Searches for SYSTEMDS_ROOT in the environment variables.
+    :return: The SYSTEMDS_ROOT path
+    """
     try:
         systemds_root_path = os.environ['SYSTEMDS_ROOT']
         return systemds_root_path

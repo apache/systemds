@@ -14,13 +14,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  #}
-### {{ title }}
-{{ model_header_render }}
-{% if wdir != "" -%} setwd("{{ wdir }}") {%- endif %}
-{% for import in imports  -%}
-{{ import }}
-{% endfor %}
-{% for sub_function in sub_functions %}
-{{ sub_function }}
-{% endfor %}
-{{ main_function }}
+if ({{ cond }}) { {{ then_function_call | indent(4) }}
+} else { {{ else_function_call | indent(4) }}
+}

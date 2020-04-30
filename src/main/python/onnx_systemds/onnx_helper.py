@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from functools import reduce
 
 import onnx
@@ -27,10 +28,11 @@ class TreeNode:
 
 class NodeTree:
     """ A simple class for representing a tree structure of nodes """
+
     def __init__(self, nodes: [onnx.NodeProto]):
         self.nodes = [TreeNode(node) for node in nodes]
         self.root_nodes = []  # nodes that have no parents
-        self.end_nodes = []   # nodes that have no children
+        self.end_nodes = []  # nodes that have no children
 
         # find parents and children for each node
         for tree_node in self.nodes:
@@ -48,6 +50,11 @@ class NodeTree:
                 self.root_nodes.append(node)
 
     def remove_end_node(self, node: TreeNode):
+        """
+        Removes the given end-node from the tree.
+        Removing a non-existing or non end-node raises an exception.
+        :param node: The node that shall be removed
+        """
         if node not in self.end_nodes:
             raise Exception("Can only remove end nodes")
         self.end_nodes.remove(node)
@@ -61,7 +68,7 @@ class NodeTree:
 
 def load_model(onnx_file: str) -> onnx.ModelProto:
     """
-    Loads the onnx file, checks the model and converts it to a common version.
+    Loads the onnx file, checks the model and converts it to a common version if necessary.
 
     :param onnx_file:
     :return: the loaded onnx-model
@@ -78,10 +85,10 @@ def load_model(onnx_file: str) -> onnx.ModelProto:
 def get_value_info(graph: onnx.GraphProto, name: str) -> onnx.ValueInfoProto:
     """
     Searches the `graph` for the given `name` and returns the associated ValueInfo,
-    if the name is not found None is returned
+    if the name is not found None is returned.
 
     :param graph: the onnx-graph that shall be searched
-    :param name: the name for of the value
+    :param name: the name of the value
     :return: the value-info or None if it is not found
     """
     for info in graph.input:
@@ -97,10 +104,6 @@ def get_value_info(graph: onnx.GraphProto, name: str) -> onnx.ValueInfoProto:
             return info
 
     return None
-
-
-def get_valueinfo_dimensions(value_info: onnx.ValueInfoProto) -> [int]:
-    return [dim.dim_value for dim in value_info.type.tensor_type.shape.dim]
 
 
 def get_graph_inputs_without_initializers(graph: onnx.GraphProto) -> [onnx.ValueInfoProto]:
@@ -157,7 +160,7 @@ class PreparedValue:
             6: "int",  # int32_t
             7: "int",  # int64_t
             8: "string",
-            9: "boolean", # bool
+            9: "boolean",  # bool
 
             10: "double",  # float16,
             11: "double",
@@ -174,26 +177,31 @@ class PreparedValue:
 
         # TODO: add support for other data types
 
-        self.data_type = "matrix"
         self.value_type = type_translation[value_info.type.tensor_type.elem_type]
         if self.value_type not in supported_types:
             raise NotImplementedError("The type " + self.value_type + " is currently not supported")
 
         self.shape = []
-        shape_dimensions = value_info.type.tensor_type.shape.dim
+        dims = get_valueinfo_dimensions(value_info)
 
-        for dim in shape_dimensions:
-            # TODO: shapes with no value but instead name -> support?
-            if len(dim.dim_param) != 0:
-                raise NotImplementedError("Only support dim_value")
-            self.shape.append(dim.dim_value)
+        if len(dims) == 1 and dims[0] == 1:
+            self.data_type = "scalar"
+            self.shape = [1]
+        else:
+            self.data_type = "matrix"
+            shape_dimensions = value_info.type.tensor_type.shape.dim
+            for dim in shape_dimensions:
+                # TODO: shapes with no value but instead name -> support?
+                if len(dim.dim_param) != 0:
+                    raise NotImplementedError("Only support dim_value")
+                self.shape.append(dim.dim_value)
 
-        if len(self.shape) > 2:
-            # TODO: not sure this is the solution for every instance of this problem
-            # Multiply all shapes right
-            rows = self.shape[0]
-            cols = reduce(lambda s0, s1: s0*s1, self.shape[1:])
-            self.shape = [rows, cols]
+            if len(self.shape) > 2:
+                # TODO: not sure this is the solution for every instance of this problem
+                # Multiply all shapes right
+                rows = self.shape[0]
+                cols = reduce(lambda s0, s1: s0 * s1, self.shape[1:])
+                self.shape = [rows, cols]
 
         self.identifier_name = value_info.name
         self.description = value_info.doc_string
@@ -203,16 +211,6 @@ class PreparedValue:
             self.initializer_values = list(initializer.float_data)
 
 
-def prepare_function_inputs(inputs: [onnx.ValueInfoProto]) -> [PreparedValue]:
-    return [PreparedValue(i) for i in inputs]
-
-
-def prepare_initialized_inputs(inputs: [(onnx.ValueInfoProto, onnx.TensorProto)]) -> [PreparedValue]:
-    return [PreparedValue(info, init) for info, init in inputs]
-
-
-def prepare_function_outputs(outputs: [onnx.ValueInfoProto]) -> [PreparedValue]:
-    return [PreparedValue(o) for o in outputs]
-
-
+def get_valueinfo_dimensions(value_info: onnx.ValueInfoProto) -> [int]:
+    return [dim.dim_value for dim in value_info.type.tensor_type.shape.dim]
 

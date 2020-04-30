@@ -41,6 +41,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 	protected static final String TEST_NAME6 = "RewriteTest10";
 	protected static final String TEST_NAME7 = "RewriteTest11";
 	protected static final String TEST_NAME8 = "RewriteTest12";
+	protected static final String TEST_NAME9 = "RewriteTest13";
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageRewriteTest.class.getSimpleName() + "/";
 	
@@ -58,6 +59,7 @@ public class LineageRewriteTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7));
 		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8));
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9));
 	}
 	
 	@Test
@@ -100,6 +102,12 @@ public class LineageRewriteTest extends AutomatedTestBase {
 		testRewrite(TEST_NAME8, false, 2);
 	}
 
+	@Test
+	public void testTsmmCbindOnes() {
+		// This also tests testMatmulCbindRightOnes.
+		testRewrite(TEST_NAME9, false, 0);
+	}
+
 	private void testRewrite(String testname, boolean elementwise, int classes) {
 		try {
 			getAndLoadTestConfiguration(testname);
@@ -130,8 +138,6 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromHDFS("Res");
 
 			proArgs.clear();
-			proArgs.add("-explain");
-			proArgs.add("recompile_hops");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("reuse_hybrid");

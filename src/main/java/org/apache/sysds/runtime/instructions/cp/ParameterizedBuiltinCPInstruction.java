@@ -410,6 +410,14 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return new LineageItem[]{new LineageItem(output.getName(),
 				getOpcode(), LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups))};
 		}
+		else if (opcode.equalsIgnoreCase("rmempty")) {
+			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
+			CPOperand margin = new CPOperand(params.get("margin"), ValueType.STRING, DataType.SCALAR, true);
+			String sl = params.containsKey("select") ? params.get("select") : String.valueOf(-1);
+			CPOperand select = new CPOperand(sl, ValueType.FP64, DataType.MATRIX); 
+			return new LineageItem[]{new LineageItem(output.getName(),
+				getOpcode(), LineageItemUtils.getLineage(ec, target, margin, select))};
+		}
 		//TODO: generic interface to support all the ops
 		else
 			return new LineageItem[]{new LineageItem(output.getName(),

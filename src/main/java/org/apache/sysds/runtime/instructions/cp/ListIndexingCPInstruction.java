@@ -25,6 +25,8 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 
 public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 
@@ -92,5 +94,10 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in ListIndexingCPInstruction.");
+	}
+	@Override
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
+			LineageItemUtils.getLineage(ec, input1,input2,input3,rowLower,rowUpper))};
 	}
 }

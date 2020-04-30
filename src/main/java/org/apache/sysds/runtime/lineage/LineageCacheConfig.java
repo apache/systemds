@@ -24,6 +24,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 
 import java.util.ArrayList;
 
@@ -101,9 +102,11 @@ public class LineageCacheConfig {
 	}
 	
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
-		return inst instanceof ComputationCPInstruction
-			&& (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-				|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
+		boolean insttype = inst instanceof ComputationCPInstruction 
+			&& !(inst instanceof ListIndexingCPInstruction);
+		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
+			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
+		return insttype && rightop;
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {

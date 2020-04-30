@@ -164,6 +164,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public long getSeed() {
 		return seed;
 	}
+	
+	public boolean isOnesCol() {
+		return minValue == maxValue && minValue == 1 && sparsity == 1 && getCols() == 1;
+	}
 
 	public static DataGenCPInstruction parseInstruction(String str)
 	{

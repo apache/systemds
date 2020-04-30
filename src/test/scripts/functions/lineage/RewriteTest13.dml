@@ -19,15 +19,21 @@
 #
 #-------------------------------------------------------------
 
-# Increase rows and cols for better performance gains
+X = read($1);
+y = rand(rows=nrow(X), cols=1, sparsity=1.0, seed=2);
 
-X = rand(rows=100, cols=10, sparsity=1.0, seed=1);
-y = X %*% rand(rows=10, cols=1, sparsity=1.0, seed=1);
-R = matrix(0, 101, 2);
+R = matrix(0, 1, 1);
 
-[C, S] = steplm(X=X, y=y, icpt=2);
-S = cbind(S, matrix(1, 1, 1));
-R[1:nrow(C) ,1] = C;
-R[1:ncol(S) ,2] = t(S);
+Res1 = t(X) %*% X;
+Res2 = t(X) %*% y;
 
-write(R, $1, format="text");
+while(FALSE) {}
+
+X = cbind(X, matrix(1, rows=nrow(X), cols=1));
+Res11 = t(X) %*% X;
+Res22 = t(X) %*% y;
+while(FALSE) {}
+R[1,1] = sum(Res1) + sum(Res2) + sum(Res11) + sum(Res22);
+
+
+write(R, $3, format="text");

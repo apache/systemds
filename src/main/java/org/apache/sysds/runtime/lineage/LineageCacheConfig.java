@@ -77,6 +77,14 @@ public class LineageCacheConfig {
 			return this == CACHED || this == RELOADED;
 		}
 	 }
+	 
+	 public enum LineageCachePolicy {
+		 LRU,
+		 WEIGHTED;
+		 public boolean isLRUcache() {
+			 return this == LRU;
+		 }
+	 }
 	
 	public ArrayList<String> _MMult = new ArrayList<>();
 	public static boolean _allowSpill = true;
@@ -94,16 +102,19 @@ public class LineageCacheConfig {
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
+	private static LineageCachePolicy _cachepolicy = null;
 	private static boolean _compilerAssistedRW = true;
+
 	static {
 		//setup static configuration parameters
 		setSpill(true); //enable/disable disk spilling.
+		setCachePolicy(LineageCachePolicy.WEIGHTED);
 	}
 	
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		return inst instanceof ComputationCPInstruction
-			&& (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-				|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
+				&& (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
+					|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
@@ -149,8 +160,16 @@ public class LineageCacheConfig {
 		_allowSpill = toSpill;
 	}
 	
+	public static void setCachePolicy(LineageCachePolicy policy) {
+		_cachepolicy = policy;
+	}
+	
 	public static boolean isSetSpill() {
 		return _allowSpill;
+	}
+	
+	public static LineageCachePolicy getCachePolicy() {
+		return _cachepolicy;
 	}
 
 	public static ReuseCacheType getCacheType() {
@@ -173,4 +192,5 @@ public class LineageCacheConfig {
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
 	}
+
 }

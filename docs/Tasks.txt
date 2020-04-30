@@ -261,7 +261,7 @@ SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 332 Parfor integration with multi-level reuse                      OK
  * 333 Improve cache eviction with actual compute time                OK
  * 334 Cache scalars only with atleast one matrix inputs
- * 335 Weighted eviction policy (function of size & computetime)
+ * 335 Weighted eviction policy (function of size & computetime)      OK
  * 336 Better use of cache status to handle multithreading
  * 337 Adjust disk I/O speed by recording actual time taken           OK
  

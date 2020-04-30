@@ -127,18 +127,18 @@ if (dir == "forward") {
  
 	if (intercept_status == 0) {
 		# Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-		[AIC_best] = glm (X_global, Y, 0, num_features, columns_fixed_ordered, " ");
+		[AIC_best] = glm_fit (X_global, Y, 0, num_features, columns_fixed_ordered, " ");
 	} else {
 		# compute AIC of an empty model with only intercept (all Ys are constant)
 		all_ones = matrix (1, rows = num_records, cols = 1);
-		[AIC_best] = glm (all_ones, Y, 0, num_features, columns_fixed_ordered, " ");
+		[AIC_best] = glm_fit (all_ones, Y, 0, num_features, columns_fixed_ordered, " ");
 	}
 	print ("Best AIC without any features: " + AIC_best);
   
 	# First pass to examine single features
 	AICs = matrix (AIC_best, rows = 1, cols = num_features);
 	parfor (i in 1:num_features) { 	
-		[AIC_1] = glm (X_orig[,i], Y, intercept_status, num_features, columns_fixed_ordered, " ");
+		[AIC_1] = glm_fit (X_orig[,i], Y, intercept_status, num_features, columns_fixed_ordered, " ");
 		AICs[1,i] = AIC_1;
 	}
   
@@ -156,11 +156,11 @@ if (dir == "forward") {
 		print ("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
 		if (intercept_status == 0) {
 			# Compute AIC of an empty model with no features and no intercept (all Ys are zero)
-			[AIC_best] = glm (X_global, Y, 0, num_features, columns_fixed_ordered, fileB);
+			[AIC_best] = glm_fit (X_global, Y, 0, num_features, columns_fixed_ordered, fileB);
 		} else {
 			# compute AIC of an empty model with only intercept (all Ys are constant)
 			###all_ones = matrix (1, rows = num_records, cols = 1);
-			[AIC_best] = glm (all_ones, Y, 0, num_features, columns_fixed_ordered, fileB);
+			[AIC_best] = glm_fit (all_ones, Y, 0, num_features, columns_fixed_ordered, fileB);
 		}
 	};
   
@@ -177,7 +177,7 @@ if (dir == "forward") {
 				# Construct the feature matrix
 				X = cbind (X_global, X_orig[,i]);
         
-				[AIC_2] = glm (X, Y, intercept_status, num_features, columns_fixed_ordered, " ");
+				[AIC_2] = glm_fit (X, Y, intercept_status, num_features, columns_fixed_ordered, " ");
 				AICs[1,i] = AIC_2;
 			}		
 		}
@@ -209,7 +209,7 @@ if (dir == "forward") {
   
 	# run GLM with selected set of features
 	print ("Running GLM with selected features...");
-	[AIC] = glm (X_global, Y, intercept_status, num_features, columns_fixed_ordered, fileB);
+	[AIC] = glm_fit (X_global, Y, intercept_status, num_features, columns_fixed_ordered, fileB);
   
 } else {
 	stop ("Currently only forward selection strategy is supported!");
@@ -218,7 +218,7 @@ if (dir == "forward") {
 
 ################### UDFS USED IN THIS SCRIPT ##################
 
-glm = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double num_features_orig, Matrix[Double] Selected, String fileB) return (Double AIC) {
+glm_fit = function (Matrix[Double] X, Matrix[Double] Y, Int intercept_status, Double num_features_orig, Matrix[Double] Selected, String fileB) return (Double AIC) {
 		
 	# distribution family code: 1 = Power, 2 = Bernoulli/Binomial; currently only Bernouli distribution family is supported!		
 	distribution_type = 2;                		# $dfam = 2;

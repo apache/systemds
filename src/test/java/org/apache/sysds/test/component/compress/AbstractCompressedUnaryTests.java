@@ -40,7 +40,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 		super(sparType, valType, valRange, compSettings, matrixTypology);
 	}
 
-	enum AggType {
+	public enum AggType {
 		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN,
 	}
 

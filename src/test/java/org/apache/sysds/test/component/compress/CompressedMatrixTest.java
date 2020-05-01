@@ -31,7 +31,6 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -49,10 +48,6 @@ import org.apache.sysds.test.component.compress.TestConstants.ValueType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.openjdk.jol.datamodel.X86_64_DataModel;
-import org.openjdk.jol.info.ClassLayout;
-import org.openjdk.jol.layouters.HotSpotLayouter;
-import org.openjdk.jol.layouters.Layouter;
 
 @RunWith(value = Parameterized.class)
 public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
@@ -448,42 +443,5 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
-	}
-
-	@SuppressWarnings("unused")
-	private static long getJolSize(CompressedMatrixBlock cmb) {
-		Layouter l = new HotSpotLayouter(new X86_64_DataModel());
-		long jolEstimate = 0;
-		CompressionStatistics cStat = cmb.getCompressionStatistics();
-		for(Object ob : new Object[] {cmb, cStat, cStat.getColGroups(), cStat.getTimeArrayList(), cmb.getColGroups()}) {
-			jolEstimate += ClassLayout.parseInstance(ob, l).instanceSize();
-		}
-		for(ColGroup cg : cmb.getColGroups()) {
-			jolEstimate += cg.estimateInMemorySize();
-		}
-		return jolEstimate;
-	}
-
-	@SuppressWarnings("unused")
-	private static String getJolSizeString(CompressedMatrixBlock cmb) {
-		StringBuilder builder = new StringBuilder();
-		Layouter l = new HotSpotLayouter(new X86_64_DataModel());
-		long diff;
-		long jolEstimate = 0;
-		CompressionStatistics cStat = cmb.getCompressionStatistics();
-		for(Object ob : new Object[] {cmb, cStat, cStat.getColGroups(), cStat.getTimeArrayList(), cmb.getColGroups()}) {
-			ClassLayout cl = ClassLayout.parseInstance(ob, l);
-			diff = cl.instanceSize();
-			jolEstimate += diff;
-			builder.append(cl.toPrintable());
-			builder.append("TOTAL MEM: " + jolEstimate + " diff " + diff + "\n");
-		}
-		for(ColGroup cg : cmb.getColGroups()) {
-			diff = cg.estimateInMemorySize();
-			jolEstimate += diff;
-			builder.append(cg.getCompType());
-			builder.append("TOTAL MEM: " + jolEstimate + " diff " + diff + "\n");
-		}
-		return builder.toString();
 	}
 }

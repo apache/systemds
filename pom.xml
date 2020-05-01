@@ -255,9 +255,9 @@
 				<version>3.0.0-M4</version><!--$NO-MVN-MAN-VER$ -->
 				<configuration>
 					<skipTests>${skipTests}</skipTests>
-					<!--parallel>classes</parallel-->
+					<parallel>classes</parallel>
 					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
-					<threadCount>1</threadCount>
+					<threadCount>12</threadCount>
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>1C</forkCount>
 					<argLine>-Xms4g -Xmx4g</argLine>

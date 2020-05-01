@@ -39,7 +39,7 @@ public class LineageReuseAlg extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "LineageReuseAlg";
-	protected static final int TEST_VARIANTS = 2;
+	protected static final int TEST_VARIANTS = 3;
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageReuseAlg.class.getSimpleName() + "/";
 	
 	@Override
@@ -57,6 +57,11 @@ public class LineageReuseAlg extends AutomatedTestBase {
 	@Test
 	public void testGridSearchLM() {
 		testLineageTrace(TEST_NAME+"2", ReuseCacheType.REUSE_HYBRID.name().toLowerCase());
+	}
+
+	@Test
+	public void testMultiLogReg() {
+		testLineageTrace(TEST_NAME+"3", ReuseCacheType.REUSE_HYBRID.name().toLowerCase());
 	}
 
 	public void testLineageTrace(String testname, String reuseType) {

@@ -262,7 +262,7 @@
 					<forkCount>1C</forkCount>
 					<argLine>-Xms4g -Xmx4g</argLine>
 					<reuseForks>false</reuseForks>
-					<reportFormat>plain</reportFormat>
+					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
 				</configuration>
 			</plugin>

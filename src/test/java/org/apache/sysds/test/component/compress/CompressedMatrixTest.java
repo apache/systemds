@@ -391,34 +391,34 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 	}
 
-	@Test
-	public void testCompressionEstimationVSJolEstimate() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return;
-			CompressionStatistics cStat = ((CompressedMatrixBlock) cmb).getCompressionStatistics();
-			long actualSize = cStat.size;
-			long originalSize = cStat.originalSize;
-			long JolEstimatedSize = getJolSize(((CompressedMatrixBlock) cmb));
-
-			StringBuilder builder = new StringBuilder();
-			builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
-			builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
-			builder.append("\n\t" + String.format("%-40s - %12d", "and equal to JOL Size: ", JolEstimatedSize));
-			// builder.append("\n\t " + getJolSizeString(cmb));
-			builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
-			builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
-			builder.append("\n\t" + this.toString());
-
-			assertTrue(builder.toString(), actualSize == JolEstimatedSize && actualSize <= originalSize);
-			// assertTrue(builder.toString(), groupsEstimate < actualSize && colsEstimate < groupsEstimate);
-
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
+//	@Test
+//	public void testCompressionEstimationVSJolEstimate() {
+//		try {
+//			if(!(cmb instanceof CompressedMatrixBlock))
+//				return;
+//			CompressionStatistics cStat = ((CompressedMatrixBlock) cmb).getCompressionStatistics();
+//			long actualSize = cStat.size;
+//			long originalSize = cStat.originalSize;
+//			long JolEstimatedSize = getJolSize(((CompressedMatrixBlock) cmb));
+//
+//			StringBuilder builder = new StringBuilder();
+//			builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
+//			builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
+//			builder.append("\n\t" + String.format("%-40s - %12d", "and equal to JOL Size: ", JolEstimatedSize));
+//			// builder.append("\n\t " + getJolSizeString(cmb));
+//			builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
+//			builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
+//			builder.append("\n\t" + this.toString());
+//
+//			assertTrue(builder.toString(), actualSize == JolEstimatedSize && actualSize <= originalSize);
+//			// assertTrue(builder.toString(), groupsEstimate < actualSize && colsEstimate < groupsEstimate);
+//
+//		}
+//		catch(Exception e) {
+//			e.printStackTrace();
+//			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+//		}
+//	}
 
 	@Test
 	public void testCompressionScale() {
@@ -450,6 +450,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static long getJolSize(CompressedMatrixBlock cmb) {
 		Layouter l = new HotSpotLayouter(new X86_64_DataModel());
 		long jolEstimate = 0;

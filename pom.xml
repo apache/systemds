@@ -257,7 +257,7 @@
 					<skipTests>${skipTests}</skipTests>
 					<parallel>classes</parallel>
 					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
-					<threadCount>12</threadCount>
+					<threadCount>1</threadCount>
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>1C</forkCount>
 					<argLine>-Xms4g -Xmx4g</argLine>

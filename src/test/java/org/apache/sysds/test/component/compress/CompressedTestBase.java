@@ -151,4 +151,11 @@ public class CompressedTestBase extends TestBase {
 
 		return tests;
 	}
+	
+	public void tearDown() {
+		cmb = null;
+		cmbDeCompressed = null;
+		deCompressed = null;
+		super.tearDown();
+	}
 }

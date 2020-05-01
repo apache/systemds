@@ -59,6 +59,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test
 	public void testConstruction() {
+		//System.out.println(System.identityHashCode(cmb)+" "+System.identityHashCode(this));
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock)) {
 				return; // Input was not compressed then just pass test

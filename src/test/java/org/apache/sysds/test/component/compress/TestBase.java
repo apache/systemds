@@ -106,6 +106,9 @@ public class TestBase extends AutomatedTestBase {
 
 	@Override
 	public void tearDown() {
+		mb = null;
+		input = null;
+		super.tearDown();
 	}
 
 	@Override

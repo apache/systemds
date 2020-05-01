@@ -1865,6 +1865,39 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return this;
 	}
 
+	/*
+		This method validate the frame data against a column length constrain
+		if data value in any column is greater than specific threshold
+		output vector will store a 1 for that column position.
+		@param input MatrixBlock of valid lengths
+		@param output 0/1 MatrixBlock for valid/invalid features
+	 */
+	public FrameBlock invalidByLength(MatrixBlock feaLen) {
+		//sanity checks
+		if(this.getNumColumns() != feaLen.getNumColumns())
+			throw new DMLException("mismatch in number of columns in frame and corresponding feature-length vector");
+
+		ValueType[] outSchema = UtilFunctions.nCopies(this.getNumColumns(), ValueType.BOOLEAN);
+		String[][] outData = new String[this.getNumRows()][this.getNumColumns()];
+		FrameBlock outBlock = new FrameBlock(outSchema, outData);
+		outer: for (int i = 0; i < this.getNumColumns(); i++) {
+			if(feaLen.quickGetValue(0, i) == -1)
+				continue outer;
+			int validLength = (int)feaLen.quickGetValue(0, i);
+			Array obj = this.getColumn(i);
+			inner: for (int j = 0; j < obj._size; j++)
+			{
+				if(obj.get(j) == null)
+					continue inner;
+				String dataValue = obj.get(j).toString();
+				if(dataValue.length() > validLength)
+					outBlock.set(j, i, true);
+			}
+		}
+
+		return outBlock;
+	}
+
 	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {
 		String[] rowTemp1 = temp1.getStringRowIterator().next();
 		String[] rowTemp2 = temp2.getStringRowIterator().next();

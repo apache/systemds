@@ -550,7 +550,9 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
 		else if( opcode.equalsIgnoreCase("dropInvalid"))
 			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalid"));
-		
+		else if( opcode.equalsIgnoreCase("dropInvalidLen"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLen"));
+
 		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}
 	

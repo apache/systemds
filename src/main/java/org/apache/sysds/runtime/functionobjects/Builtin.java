@@ -50,7 +50,7 @@ public class Builtin extends ValueFunction
 	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
 		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
-		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID }
+		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID, DROP_INVALID_LENGTH }
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -103,6 +103,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "isnan", BuiltinCode.ISNAN);
 		String2BuiltinCode.put( "isinf", BuiltinCode.ISINF);
 		String2BuiltinCode.put( "dropInvalid", BuiltinCode.DROP_INVALID);
+		String2BuiltinCode.put( "dropInvalidLen", BuiltinCode.DROP_INVALID_LENGTH);
 	}
 	
 	private Builtin(BuiltinCode bf) {

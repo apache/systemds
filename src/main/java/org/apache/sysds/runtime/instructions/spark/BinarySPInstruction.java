@@ -92,6 +92,8 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 				else
 					return new BinaryMatrixMatrixSPInstruction(operator, in1, in2, out, opcode, str);
 			}
+			else if(dt1 == DataType.FRAME && dt2 == DataType.MATRIX)
+				return  new BinaryFrameMatrixSPInstruction(operator, in1, in2, out, opcode, str);
 			else
 				return new BinaryMatrixScalarSPInstruction(operator, in1, in2, out, opcode, str);
 		}
@@ -106,7 +108,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 				throw new DMLRuntimeException("Tensor binary operation not yet implemented for tensor-scalar, or tensor-matrix");
 		}
 		else if( dt1 == DataType.FRAME || dt2 == DataType.FRAME ) {
-			return BinaryFrameFrameSPInstruction.parseInstruction(str);
+			if(dt1 == DataType.FRAME && dt2 == DataType.FRAME)
+				return BinaryFrameFrameSPInstruction.parseInstruction(str);
+
 		}
 
 		return null;

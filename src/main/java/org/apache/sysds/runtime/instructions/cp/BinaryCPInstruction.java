@@ -41,8 +41,9 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseBinaryInstruction(str, in1, in2, out);
-		
-		checkOutputDataType(in1, in2, out);
+
+		if(!(in1.getDataType() == DataType.FRAME || in2.getDataType() == DataType.FRAME))
+			checkOutputDataType(in1, in2, out);
 		
 		Operator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
 
@@ -52,8 +53,10 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 			return new BinaryMatrixMatrixCPInstruction(operator, in1, in2, out, opcode, str);
 		else if (in1.getDataType() == DataType.TENSOR && in2.getDataType() == DataType.TENSOR)
 			return new BinaryTensorTensorCPInstruction(operator, in1, in2, out, opcode, str);
-		else if (in1.getDataType() == DataType.FRAME && in2.getDataType() == DataType.FRAME)
+		else if (in1.getDataType() == DataType.FRAME && (in2.getDataType() == DataType.FRAME))
 			return new BinaryFrameFrameCPInstruction(operator, in1, in2, out, opcode, str);
+		else if (in1.getDataType() == DataType.FRAME && in2.getDataType() == DataType.MATRIX)
+			return new BinaryFrameMatrixCPInstruction(operator, in1, in2, out, opcode, str);
 		else
 			return new BinaryMatrixScalarCPInstruction(operator, in1, in2, out, opcode, str);
 	}
@@ -87,7 +90,7 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 	
 	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {
 		// check for valid data type of output
-		if((in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) && out.getDataType() != DataType.MATRIX)
+		if((in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) )
 			throw new DMLRuntimeException("Element-wise matrix operations between variables " + in1.getName() + 
 					" and " + in2.getName() + " must produce a matrix, which " + out.getName() + " is not");
 	}

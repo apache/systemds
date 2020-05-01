@@ -1529,7 +1529,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.STRING);
 			break;
 
-		default:
+		case DROP_INVALID_LENGTH:
+			checkNumParameters(2);
+			checkMatrixFrameParam(getFirstExpr());
+			checkMatrixFrameParam(getSecondExpr());
+			output.setDataType(DataType.FRAME);
+			output.setDimensions(id.getDim1(), id.getDim2());
+			output.setBlocksize (id.getBlocksize());
+			output.setValueType(ValueType.BOOLEAN);
+			break;
+			default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();
 				//unary operations

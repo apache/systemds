@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.misc;
+package org.apache.sysds.test.componentx.misc;
 
 import static org.junit.Assert.assertEquals;
 

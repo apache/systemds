@@ -1,4 +1,4 @@
-package org.apache.sysds.test.component.compress.colgroup;
+package org.apache.sysds.test.componentx.compress;
 
 import java.util.ArrayList;
 import java.util.Collection;

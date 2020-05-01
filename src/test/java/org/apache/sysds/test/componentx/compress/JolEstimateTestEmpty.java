@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.compress.colgroup;
+package org.apache.sysds.test.componentx.compress;
 
 import static org.junit.Assert.assertTrue;
 

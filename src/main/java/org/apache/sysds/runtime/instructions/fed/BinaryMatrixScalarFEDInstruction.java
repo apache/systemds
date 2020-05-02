@@ -24,10 +24,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.*;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -77,7 +79,7 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 				if (!federatedResponse.isSuccessful())
 					throw new DMLRuntimeException("Federated binary operation failed: " + federatedResponse.getErrorMessage());
 
-				MatrixBlock shard = (MatrixBlock) federatedResponse.getData();
+				MatrixBlock shard = (MatrixBlock) federatedResponse.getData()[0];
 				ret.copy(range.getBeginDimsInt()[0], range.getEndDimsInt()[0]-1,
 					range.getBeginDimsInt()[1], range.getEndDimsInt()[1]-1, shard, false);
 			}

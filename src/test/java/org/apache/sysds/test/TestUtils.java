@@ -238,7 +238,7 @@ public class TestUtils
 			fail("unable to read file: " + e.getMessage());
 		}
 	}
-
+	
 	/**
 	 * Read doubles from the input stream and put them into the given hashmap of values. 
 	 * @param inputStream input stream of doubles with related indices
@@ -273,6 +273,60 @@ public class TestUtils
 
 	/**
 	 * <p>
+	 * Read the cell values of the expected file and actual files. Schema is used for correct parsing if the file is a
+	 * frame and if it is null FP64 will be used for all values (useful for Matrices).
+	 * </p>
+	 *
+	 * @param schema         the schema of the frame, can be null (for FP64)
+	 * @param expectedFile   the file with expected values
+	 * @param actualDir      the directory where the actual values were written
+	 * @param expectedValues the HashMap where the expected values will be written to
+	 * @param actualValues   the HashMap where the actual values will be written to
+	 */
+	private static void readActualAndExpectedFile(ValueType[] schema, String expectedFile, String actualDir,
+		HashMap<CellIndex, Object> expectedValues, HashMap<CellIndex, Object> actualValues) {
+		try {
+			Path outDirectory = new Path(actualDir);
+			Path compareFile = new Path(expectedFile);
+			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
+			FSDataInputStream fsin = fs.open(compareFile);
+
+			try(BufferedReader compareIn = new BufferedReader(new InputStreamReader(fsin))) {
+				String line;
+				while((line = compareIn.readLine()) != null) {
+					StringTokenizer st = new StringTokenizer(line, " ");
+					int i = Integer.parseInt(st.nextToken());
+					int j = Integer.parseInt(st.nextToken());
+					ValueType vt = (schema != null) ? schema[j - 1] : ValueType.FP64;
+					Object obj = UtilFunctions.stringToObject(vt, st.nextToken());
+					expectedValues.put(new CellIndex(i, j), obj);
+				}
+			}
+
+			FileStatus[] outFiles = fs.listStatus(outDirectory);
+
+			for(FileStatus file : outFiles) {
+				FSDataInputStream fsout = fs.open(file.getPath());
+				try(BufferedReader outIn = new BufferedReader(new InputStreamReader(fsout))) {
+					String line;
+					while((line = outIn.readLine()) != null) {
+						StringTokenizer st = new StringTokenizer(line, " ");
+						int i = Integer.parseInt(st.nextToken());
+						int j = Integer.parseInt(st.nextToken());
+						ValueType vt = (schema != null) ? schema[j - 1] : ValueType.FP64;
+						Object obj = UtilFunctions.stringToObject(vt, st.nextToken());
+						actualValues.put(new CellIndex(i, j), obj);
+					}
+				}
+			}
+		}
+		catch(IOException e) {
+			fail("unable to read file: " + e.getMessage());
+		}
+	}
+	
+	/**
+	 * <p>
 	 * Compares the expected values calculated in Java by testcase and which are
 	 * in the normal filesystem, with those calculated by SystemDS located in
 	 * HDFS
@@ -287,41 +341,61 @@ public class TestUtils
 	 */
 	@SuppressWarnings("resource")
 	public static void compareDMLMatrixWithJavaMatrix(String expectedFile, String actualDir, double epsilon) {
-		try {
-			Path outDirectory = new Path(actualDir);
-			Path compareFile = new Path(expectedFile);
-			FileSystem fs = IOUtilFunctions.getFileSystem(outDirectory, conf);
-			
-			FSDataInputStream fsin = fs.open(compareFile);
-			HashMap<CellIndex, Double> expectedValues = new HashMap<>();
-			readValuesFromFileStream(fsin, expectedValues);
-			
-			HashMap<CellIndex, Double> actualValues = new HashMap<>();
-			FileStatus[] outFiles = fs.listStatus(outDirectory);
+		HashMap<CellIndex, Object> expectedValues = new HashMap<>();
+		HashMap<CellIndex, Object> actualValues = new HashMap<>();
 
-			for (FileStatus file : outFiles) {
-				FSDataInputStream fsout = fs.open(file.getPath());
-				readValuesFromFileStream(fsout, actualValues);
+		readActualAndExpectedFile(null, expectedFile, actualDir, expectedValues, actualValues);
+
+		int countErrors = 0;
+		for(CellIndex index : expectedValues.keySet()) {
+			Double expectedValue = (Double) expectedValues.get(index);
+			Double actualValue = (Double) actualValues.get(index);
+			if(expectedValue == null)
+				expectedValue = 0.0;
+			if(actualValue == null)
+				actualValue = 0.0;
+
+			if(!compareCellValue(expectedValue, actualValue, epsilon, false)) {
+				System.out.println(
+					expectedFile + ": " + index + " mismatch: expected " + expectedValue + ", actual " + actualValue);
+				countErrors++;
 			}
-
-			int countErrors = 0;
-			for (CellIndex index : expectedValues.keySet()) {
-				Double expectedValue = expectedValues.get(index);
-				Double actualValue = actualValues.get(index);
-				if (expectedValue == null)
-					expectedValue = 0.0;
-				if (actualValue == null)
-					actualValue = 0.0;
-
-				if (!compareCellValue(expectedValue, actualValue, epsilon, false)) {
-					System.out.println(expectedFile+": "+index+" mismatch: expected " + expectedValue + ", actual " + actualValue);
-					countErrors++;
-				}
-			}
-			assertTrue("for file " + actualDir + " " + countErrors + " values are not equal", countErrors == 0);
-		} catch (IOException e) {
-			fail("unable to read file: " + e.getMessage());
 		}
+		assertEquals("for file " + actualDir + " " + countErrors + " values are not equal", 0, countErrors);
+	}
+	
+	/**
+	 * <p>
+	 * Compares the expected values calculated in Java by testcase and which are
+	 * in the normal filesystem, with those calculated by SystemDS located in
+	 * HDFS
+	 * </p>
+	 *
+	 * @param expectedFile
+	 *            file with expected values, which is located in OS filesystem
+	 * @param actualDir
+	 *            file with actual values, which is located in HDFS
+	 */
+	@SuppressWarnings("resource")
+	public static void compareDMLFrameWithJavaFrame(ValueType[] schema, String expectedFile, String actualDir) {
+		HashMap<CellIndex, Object> expectedValues = new HashMap<>();
+		HashMap<CellIndex, Object> actualValues = new HashMap<>();
+
+		readActualAndExpectedFile(schema, expectedFile, actualDir, expectedValues, actualValues);
+
+		int countErrors = 0;
+		for(CellIndex index : expectedValues.keySet()) {
+			Object expectedValue = expectedValues.get(index);
+			Object actualValue = actualValues.get(index);
+
+			int j = index.column;
+			if(UtilFunctions.compareTo(schema[j - 1], expectedValue, actualValue) != 0) {
+				System.out.println(
+					expectedFile + ": " + index + " mismatch: expected " + expectedValue + ", actual " + actualValue);
+				countErrors++;
+			}
+		}
+		assertEquals("for file " + actualDir + " " + countErrors + " values are not equal", 0, countErrors);
 	}
 	
 	public static void compareTensorBlocks(TensorBlock tb1, TensorBlock tb2) {

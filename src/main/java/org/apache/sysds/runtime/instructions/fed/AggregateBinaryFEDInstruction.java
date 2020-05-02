@@ -211,7 +211,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		FederatedResponse federatedResponse, MatrixBlock resultBlock, boolean matrixVectorOp)
 	{
 		int[] beginDims = range.getBeginDimsInt();
-		MatrixBlock mb = (MatrixBlock) federatedResponse.getData();
+		MatrixBlock mb = (MatrixBlock) federatedResponse.getData()[0];
 		// TODO performance optimizations
 		// TODO Improve Vector Matrix multiplication accuracy: An idea would be to make use of kahan plus here,
 		//  this should improve accuracy a bit, although we still lose out on the small error lost on the worker
@@ -323,8 +323,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				// TODO experiment if sending multiple requests at the same time to the same worker increases
 				//  performance (remove get and do multithreaded?)
 				FederatedResponse response = executeMVMultiply(_range, _data, vec, _distributeCols).get();
-				if (response.isSuccessful()) {
-					result.copy(r, r, 0, endDims[1] - beginDims[1] - 1, (MatrixBlock) response.getData(), true);
+				if(response.isSuccessful()) {
+					result.copy(r, r, 0, endDims[1] - beginDims[1] - 1, (MatrixBlock) response.getData()[0], true);
 				}
 				else
 					throw new DMLRuntimeException(
@@ -366,8 +366,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				// TODO experiment if sending multiple requests at the same time to the same worker increases
 				//  performance
 				FederatedResponse response = executeMVMultiply(_range, _data, vec, _distributeCols).get();
-				if (response.isSuccessful()) {
-					result.copy(0, endDims[0] - beginDims[0] - 1, c, c, (MatrixBlock) response.getData(), true);
+				if(response.isSuccessful()) {
+					result.copy(0, endDims[0] - beginDims[0] - 1, c, c, (MatrixBlock) response.getData()[0], true);
 				}
 				else
 					throw new DMLRuntimeException(

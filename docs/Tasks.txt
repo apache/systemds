@@ -178,13 +178,14 @@ SYSTEMDS-210 Extended lists Operations
 
 SYSTEMDS-220 Federated Tensors and Instructions
  * 221 Initial infrastructure federated operations                    OK
- * 222 Federated matrix-vector multiplication
+ * 222 Federated matrix-vector multiplication                         OK
  * 223 Federated unary aggregates                                     OK
- * 224 Federated transform functionality
+ * 224 Federated frames                                               OK
  * 225 Federated elementwise operations                               OK
  * 226 Federated rbind and cbind                                      OK
  * 227 Federated worker setup and infrastructure                      OK
  * 228 Federated matrix-matrix multiplication                         OK
+ * 229 Federated transform functionality
 
 SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool

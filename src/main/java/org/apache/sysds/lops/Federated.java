@@ -26,15 +26,19 @@ import static org.apache.sysds.common.Types.DataType;
 import static org.apache.sysds.common.Types.ValueType;
 import static org.apache.sysds.parser.DataExpression.FED_ADDRESSES;
 import static org.apache.sysds.parser.DataExpression.FED_RANGES;
+import static org.apache.sysds.parser.DataExpression.FED_TYPE;
 
 public class Federated extends Lop {
-	private Lop _addresses, _ranges;
+	private Lop _type, _addresses, _ranges;
 	
 	public Federated(HashMap<String, Lop> inputLops, DataType dataType, ValueType valueType) {
 		super(Type.Federated, dataType, valueType);
+		_type = inputLops.get(FED_TYPE);
 		_addresses = inputLops.get(FED_ADDRESSES);
 		_ranges = inputLops.get(FED_RANGES);
 		
+		addInput(_type);
+		_type.addOutput(this);
 		addInput(_addresses);
 		_addresses.addOutput(this);
 		addInput(_ranges);
@@ -42,10 +46,12 @@ public class Federated extends Lop {
 	}
 	
 	@Override
-	public String getInstructions(String addresses, String ranges, String output) {
+	public String getInstructions(String type, String addresses, String ranges, String output) {
 		StringBuilder sb = new StringBuilder("FED");
 		sb.append(OPERAND_DELIMITOR);
 		sb.append("fedinit");
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(_type.prepScalarInputOperand(type));
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(_addresses.prepScalarInputOperand(addresses));
 		sb.append(OPERAND_DELIMITOR);

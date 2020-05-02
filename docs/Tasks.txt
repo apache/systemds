@@ -292,7 +292,8 @@ SYSTEMDS-380 Memory Footprint
  * 371 Matrix Block Memory footprint update
 
 SYSTEMDS-390 New Builtin Functions IV
- * 391 New GLM builtin-in function (from algorithms)                  OK
+ * 391 New GLM builtin function (from algorithms)                     OK
+ * 392 Builtin function for missing value imputation via FDs          OK
 
 Others:
  * Break append instruction to cbind and rbind 

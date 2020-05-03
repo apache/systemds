@@ -231,6 +231,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ) {
 			LineageCache.putValue(fpb.getOutputParams(), liInputs, 
 					getCacheFunctionName(_functionName, fpb), ec, t1-t0);
+			//FIXME: send _boundOutputNames instead of fpb.getOutputParams as 
+			//those are already replaced by boundoutput names in the lineage map.
 		}
 	}
 

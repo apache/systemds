@@ -195,7 +195,7 @@ def gen_script(model: onnx.ModelProto, output_file: str = None) -> str:
     wdir = ""
     if len(imports) > 0:
         # need to set wdir to enable imports
-        wdir = util.resolve_systemds_root() + "scripts"
+        wdir = util.resolve_systemds_root() + "/scripts"
 
     main_template = env.get_template("main.dml.jinja")
     result_render = main_template.render(

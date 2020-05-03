@@ -2,6 +2,8 @@
 
 A tool for importing/exporting [ONNX](https://github.com/onnx/onnx/blob/master/docs/IR.md) graphs into/from SystemDS DML scripts.
 
+For a more detailed description of this converter refer to the [description of the converter design](docs/onnx-systemds-design.md)
+
 
 
 ## Prerequisites
@@ -9,12 +11,12 @@ A tool for importing/exporting [ONNX](https://github.com/onnx/onnx/blob/master/d
 to run onnx-systemds you need [onnx](https://github.com/onnx/onnx)
 
 * [Installation instructions](https://github.com/onnx/onnx#installation)
+* The conda install seems to work best 
+* the environment variable `SYSTEMDS_ROOT` needs to be set to the root of the repository
 
 
 
 ## Usage
-
-For running onnx-systemds the environment variable `SYSTEMDS_ROOT` needs to be set. 
 
 An example call from the `src/main/python` directory of systemds:
 
@@ -25,8 +27,6 @@ An example call from the `src/main/python` directory of systemds:
 
 
 ### Run Tests
-
-Again `SYSTEMDS_ROOT` needs to be set. 
 
 Form within the `onnx_systemds/tests` directory call:
 

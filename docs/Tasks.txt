@@ -203,7 +203,8 @@ SYSTEMDS-240 GPU Backend Improvements
 
 SYSTEMDS-250 Extended Slice Finding
  * 251 Alternative slice enumeration approach                         OK
- * 252 Initial data slicing implementation Python
+ * 252 Initial data slicing implementation Python                     OK
+ * 253 Distributed slicing algorithms (task/data parallel)            OK
 
 SYSTEMDS-260 Misc Tools
  * 261 Stable marriage algorithm                                      OK

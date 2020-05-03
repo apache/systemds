@@ -51,5 +51,8 @@ class Topk:
         for candidate in self.slices:
             print(candidate.name + ": " + "score = " + str(candidate.score) + "; size = " + str(candidate.size))
 
-            print(candidate.name + ": " + "score = " + str(candidate.score) + "; size = " + str(candidate.size))
-
+    def buckets_top_k(self, cur_lvl_slices, x_size, alpha):
+        for bucket in cur_lvl_slices:
+            if bucket.check_constraint(self, x_size, alpha):
+                self.add_new_top_slice(bucket)
+        return self

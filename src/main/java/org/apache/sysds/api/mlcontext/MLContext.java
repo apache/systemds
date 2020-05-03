@@ -19,7 +19,6 @@
  
 package org.apache.sysds.api.mlcontext;
 
-import java.util.Date;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -330,9 +329,8 @@ public class MLContext implements ConfigurableAPI
 		try {
 			executionScript = script;
 
-			Long time = new Long((new Date()).getTime());
 			if ((script.getName() == null) || (script.getName().equals(""))) {
-				script.setName(time.toString());
+				script.setName(String.valueOf(System.currentTimeMillis()));
 			}
 
 			MLResults results = scriptExecutor.execute(script);

@@ -25,6 +25,8 @@ library("Matrix")
 library("DescTools")
 
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-Y = Winsorize(X);
+Y = matrix(0, nrow(X), ncol(X))
+for(i in 1:ncol(X))
+  Y[,i] = Winsorize(X[,i]);
 writeMM(as(Y, "CsparseMatrix"), paste(args[2], "B", sep="")); 
  

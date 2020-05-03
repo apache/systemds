@@ -20,6 +20,13 @@
 #-------------------------------------------------------------
 
 m_winsorize = function(Matrix[Double] X) return (Matrix[Double] Y) {
+  Y = matrix(0, nrow(X), ncol(X))
+  parfor(i in 1:ncol(X))
+    Y[,i] = fixOutliersWinsorize(X[,i])
+}
+
+fixOutliersWinsorize = function(Matrix[Double] X) return (Matrix[Double] Y)
+{
   # compute quantiles for lower and upper probs
   q = quantile(X, matrix("0.05 0.95", rows=2, cols=1));
   ql = as.scalar(q[1,1]);

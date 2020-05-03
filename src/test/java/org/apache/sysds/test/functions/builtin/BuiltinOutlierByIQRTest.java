@@ -83,6 +83,15 @@ public class BuiltinOutlierByIQRTest extends AutomatedTestBase {
 		runOutlierTest(false, 1.5, 1, 0,LopProperties.ExecType.SPARK);
 	}
 
+	@Test
+	public void testOutlierRepair2IterativeCP() {
+		runOutlierTest(false, 1.5, 2, 0,LopProperties.ExecType.CP);
+	}
+
+	@Test
+	public void testOutlierRepair2IterativeSP() {
+		runOutlierTest(false, 1.5, 2, 0,LopProperties.ExecType.SPARK);
+	}
 
 	private void runOutlierTest(boolean sparse, double  k,  int repair, int max_iterations, LopProperties.ExecType instType)
 	{

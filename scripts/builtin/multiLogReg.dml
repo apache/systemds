@@ -259,7 +259,8 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Integer icpt = 2, D
     iter = iter + 1;
     converge = ((norm_Grad < (tol * norm_Grad_initial)) | (iter > maxi) |
       ((is_trust_boundary_reached == 0) & (abs (actred) < (abs (obj) + abs (obj_new)) * 0.00000000000001)));
-    if (converge) { print ("Termination / Convergence condition satisfied."); }
+    if (verbose & converge) 
+      print ("Termination / Convergence condition satisfied.");
   }
 
   if (icpt == 2) {

@@ -28,9 +28,9 @@
 # ---------------------------------------------------------------------------------------------
 # X               Double    ---       Matrix X  
 # k               Double    3         threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
-# repairMethod    Integer   1         values: 0 = delete rows having outliers, 1 = replace outliers as missing values 
-#                                     (this script replaces outliers with zeros)
-# max_iterations  Integer     0       values: 0 = arbitrary number of iteration until all outliers are removed, 
+# repairMethod    Integer   1         values: 0 = delete rows having outliers, 1 = replace outliers as  zeros 
+#                                             2 = replace outliers as missing values 
+# max_iterations  Integer   0         values: 0 = arbitrary number of iteration until all outliers are removed, 
 #                                     n = any constant defined by user
 # ---------------------------------------------------------------------------------------------
  
@@ -61,11 +61,11 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
 
     outlierFilter = (X < lowerBound) | (X > upperBound)
 
-    if(sum(outlierFilter) > 1 & sum(X) != 0 & sumPrevious != sumNext) {
+		if(sum(outlierFilter) > 1 & sumNext != 0 & sumPrevious != sumNext) {
       #TODO why is the check with sumPrevious and sumNext necessary
-      sumPrevious = sum(X)
-      X = fix_outliers(X, outlierFilter, repairMethod)
-      sumNext = sum(X)
+      sumPrevious = sum(X * !is.nan(X))
+      X = fix_outliers_sd(X, outlierFilter, repairMethod)
+      sumNext = sum(X * !is.nan(X))
     }
     else
       max_iterations = - 1;
@@ -85,7 +85,7 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
   }
 }
 
-fix_outliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 2)
+fix_outliers_sd = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 2)
   return(Matrix[Double] fixed_X)
 {
   rows = nrow(X)
@@ -96,6 +96,10 @@ fix_outliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer 
   }
   else if(repairMethod == 1)
     X = (outlierFilter == 0) * X
+  else if (repairMethod == 2) {    
+    outlierFilter = replace(target = (outlierFilter == 0), pattern = 0, replacement = NaN)
+    X = outlierFilter * X
+  }
   else
     stop("outlierBySd: invalid argument - repair required 0-1 found: "+repairMethod)
 

@@ -45,20 +45,30 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"}));
 	}
 	@Test
-	public void testMiceCP() {
-		runMiceNominalTest( LopProperties.ExecType.CP);
+	public void testMiceMixCP() {
+		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
+		runMiceNominalTest(mask, 1, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testMiceSpark() {
-//		runMiceNominalTest( LopProperties.ExecType.SPARK);
-//	}
+	@Test
+	public void testMiceNumberCP() {
+		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
+		runMiceNominalTest(mask, 2, LopProperties.ExecType.CP);
+	}
 
+	@Test
+	public void testMiceCategoricalCP() {
+		double[][] mask = {{ 1.0, 1.0, 1.0, 1.0, 1.0}};
+		runMiceNominalTest(mask, 3, LopProperties.ExecType.CP);
+	}
+	//	@Test
+	//	public void testMiceSpark() {
+	//		runMiceNominalTest( LopProperties.ExecType.SPARK);
+	//	}
 
-	private void runMiceNominalTest( LopProperties.ExecType instType) {
+	private void runMiceNominalTest(double[][] mask, int testType, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
-			double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -71,30 +81,53 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 			runRScript(true);
 
-			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfileN = readDMLMatrixFromHDFS("N");
-			HashMap<MatrixValue.CellIndex, Double> rfileN  = readRMatrixFromFS("N");
 
-			HashMap<MatrixValue.CellIndex, Double> dmlfileC = readDMLMatrixFromHDFS("C");
-			HashMap<MatrixValue.CellIndex, Double> rfileC  = readRMatrixFromFS("C");
-			// compare numerical imputations
-			TestUtils.compareMatrices(dmlfileN, rfileN, eps, "Stat-DML", "Stat-R");
-			// compare categorical imputations
-			int countTrue = 0;
-			for (MatrixValue.CellIndex index : dmlfileC.keySet()) {
-				Double v1 = dmlfileC.get(index);
-				Double v2 = rfileC.get(index);
-				if(v1.equals(v2))
-					countTrue++;
-				}
-
-			if(countTrue / (double)dmlfileC.size() > 0.98)
-				Assert.assertTrue(true);
-			else
-				Assert.fail();
+			switch (testType)
+			{
+				case 1:
+					testCategoricalOutput();
+					testNumericOutput();
+					break;
+				case 2:
+					testNumericOutput();
+					break;
+				case 3:
+					testCategoricalOutput();
+					break;
+			}
 		}
 		finally {
 			rtplatform = platformOld;
 		}
+	}
+
+	private void testNumericOutput()
+	{
+		//compare matrices
+		HashMap<MatrixValue.CellIndex, Double> dmlfileN = readDMLMatrixFromHDFS("N");
+		HashMap<MatrixValue.CellIndex, Double> rfileN  = readRMatrixFromFS("N");
+
+		// compare numerical imputations
+		TestUtils.compareMatrices(dmlfileN, rfileN, eps, "Stat-DML", "Stat-R");
+
+	}
+	private void testCategoricalOutput()
+	{
+		HashMap<MatrixValue.CellIndex, Double> dmlfileC = readDMLMatrixFromHDFS("C");
+		HashMap<MatrixValue.CellIndex, Double> rfileC  = readRMatrixFromFS("C");
+
+		// compare categorical imputations
+		int countTrue = 0;
+		for (MatrixValue.CellIndex index : dmlfileC.keySet()) {
+			Double v1 = dmlfileC.get(index);
+			Double v2 = rfileC.get(index);
+			if(v1.equals(v2))
+				countTrue++;
+		}
+
+		if(countTrue / (double)dmlfileC.size() > 0.98)
+			Assert.assertTrue(true);
+		else
+			Assert.fail();
 	}
 }

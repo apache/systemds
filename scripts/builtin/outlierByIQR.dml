@@ -30,7 +30,8 @@
 # k               Double   1.5       a constant used to discern outliers k*IQR 
 # isIterative     Boolean  TRUE      iterative repair or single repair 
 # repairMethod    Integer  1         values: 0 = delete rows having outliers, 
-#                                    1 = replace outliers as missing values
+#                                            1 = replace outliers with zeros 
+#                                            2 = replace outliers as missing values 
 # max_iterations  Integer  0         values: 0 = arbitrary number of iteraition until all outliers are removed, 
 #                                    n = any constant defined by user
 # ---------------------------------------------------------------------------------------------
@@ -56,11 +57,11 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
     lowerBound = (Q1 - (k * IQR));
     outlierFilter = X < lowerBound | X > upperBound
 
-    if(sum(outlierFilter) > 1 & sum(X) != 0 & sumPrevious != sumNext ) {
+    if(sum(outlierFilter) > 1 & sumNext != 0 & sumPrevious != sumNext ) {
       #TODO: see outlierBySd why are sumPrevious and sumNext necessary    	
-      sumPrevious = sum(X)
-      X = fix_outliers(X, outlierFilter, repairMethod)
-      sumNext = sum(X)
+      sumPrevious = sum(X * !is.nan(X))
+      X = fix_outliers_iqr(X, outlierFilter, repairMethod)
+      sumNext = sum(X * !is.nan(X))
     }
     else
       max_iterations = -1
@@ -79,7 +80,7 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
   }
 }
   
-fix_outliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 1)
+fix_outliers_iqr = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 1)
   return(Matrix[Double] fixed_X)
 {
   rows = nrow(X)
@@ -90,8 +91,13 @@ fix_outliers = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer 
   }
   else if(repairMethod == 1)
     X = (outlierFilter == 0) * X
+  else if(repairMethod == 2)
+  {
+    outlierFilter = replace(target = (outlierFilter == 0), pattern = 0, replacement = NaN)
+    X = outlierFilter * X
+  }
   else
-    stop("outlierByIQR: invalid argument - repair required 0-1 found: "+repairMethod)
+    stop("outlierByIQR: invalid argument - repair required 0-2 found: "+repairMethod)
 
   fixed_X = X
 }

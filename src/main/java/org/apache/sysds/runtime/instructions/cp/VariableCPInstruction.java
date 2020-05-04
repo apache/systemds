@@ -30,6 +30,7 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.runtime.DMLPrivacyException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -58,6 +59,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -748,11 +750,13 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 */
 	private void processCastAsScalarVariableInstruction(ExecutionContext ec){
 		//TODO: Create privacy constraints for ScalarObject so that the privacy constraints can be propagated to scalars as well.
+		blockIfInputPrivacyActivated(ec.getVariable(getInput1()));
+
 		if( getInput1().getDataType().isFrame() ) {
 			FrameBlock fBlock = ec.getFrameInput(getInput1().getName());
 			if( fBlock.getNumRows()!=1 || fBlock.getNumColumns()!=1 )
 				throw new DMLRuntimeException("Dimension mismatch - unable to cast frame '"+getInput1().getName()+"' of dimension ("+fBlock.getNumRows()+" x "+fBlock.getNumColumns()+") to scalar.");
-			Object value = fBlock.get(0,0);
+				Object value = fBlock.get(0,0);
 			ec.releaseFrameInput(getInput1().getName());
 			ec.setScalarOutput(output.getName(),
 					ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
@@ -782,6 +786,20 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		else {
 			throw new DMLRuntimeException("Unsupported data type "
 				+ "in as.scalar(): "+getInput1().getDataType().name());
+		}
+	}
+
+
+	/**
+	 * Throw DMLPrivacyException if privacy is activated for the input variable
+	 * @param input variable for which the privacy constraint is checked
+	 */
+	private void blockIfInputPrivacyActivated(Data input){
+		if ( input != null && (input instanceof CacheableData<?>)){
+			PrivacyConstraint privacyConstraintIn = ((CacheableData<?>) input).getPrivacyConstraint();
+			if ( privacyConstraintIn != null && privacyConstraintIn.getPrivacy() ){
+				throw new DMLPrivacyException("Privacy constraint cannot be propagated to scalar for input " + getInput1().getName());
+			}
 		}
 	}
 

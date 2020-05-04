@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+
 /**
  * Class with static methods merging privacy constraints of operands 
  * in expressions to generate the privacy constraints of the output. 
@@ -34,5 +38,14 @@ public class PrivacyPropagator {
 		else if (privacyConstraint2 != null)
 			return privacyConstraint2; 
 		return null;
+	}
+
+	public static Instruction preprocessCPInstruction(Instruction inst, ExecutionContext ec){
+		if (inst.getOpcode().equalsIgnoreCase("write")){
+			VariableCPInstruction tmp = (VariableCPInstruction) inst;	
+			inst.setPrivacyConstraint(ec.getMatrixObject(tmp.getInput1().getName()).getPrivacyConstraint() );
+		}
+
+		return inst;
 	}
 }

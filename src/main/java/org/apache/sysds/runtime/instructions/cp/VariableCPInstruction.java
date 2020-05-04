@@ -935,20 +935,23 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-				mo.setPrivacyConstraints(getPrivacyConstraint());
 				mo.exportData(fname, outFmt, _formatProperties);
 			}
+			// Set privacy constraint of write instruction to the same as that of the input
+			setPrivacyConstraint(ec.getMatrixObject(getInput1().getName()).getPrivacyConstraint());
 		}
 		else if( getInput1().getDataType() == DataType.FRAME ) {
 			String outFmt = getInput3().getName();
 			FrameObject mo = ec.getFrameObject(getInput1().getName());
 			mo.exportData(fname, outFmt, _formatProperties);
+			setPrivacyConstraint(mo.getPrivacyConstraint());
 		}
 		else if( getInput1().getDataType() == DataType.TENSOR ) {
 			// TODO write tensor
 			String outFmt = getInput3().getName();
 			TensorObject to = ec.getTensorObject(getInput1().getName());
 			to.exportData(fname, outFmt, _formatProperties);
+			setPrivacyConstraint(to.getPrivacyConstraint());
 		}
 	}
 
@@ -1010,7 +1013,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					mo.exportData(fname, outFmt, _formatProperties);
 				}
-				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, OutputInfo.CSVOutputInfo, _formatProperties);
+				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, OutputInfo.CSVOutputInfo, _formatProperties, mo.getPrivacyConstraint());
 			}
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);

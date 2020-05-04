@@ -78,7 +78,7 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase {
             sum = TestUtils.sum(a, m, n) + 1;
         } else {
             writeExpectedMatrix("c", b);
-            sum = 0;
+            sum = TestUtils.sum(a, m, n) - 1;
         }
 
         programArgs = new String[]{"-nvargs",

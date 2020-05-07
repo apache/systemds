@@ -207,6 +207,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		else
 			throw new DMLRuntimeException("Invalid function: " + str);
 	}
+
+	public VariableOperationCode getOpcodeVariable(){
+		return getVariableOperationCode(instOpcode);
+	}
 	
 	/**
 	 * Checks if this instruction is a remove instruction for varName
@@ -289,6 +293,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		if( output != null )
 			ret = output.getName();
 		return ret;
+	}
+
+	public CPOperand getOutput(){
+		return output;
 	}
 
 	private static int getArity(VariableOperationCode op) {

@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
 public class QuaternaryCPInstruction extends ComputationCPInstruction {
 
-	private final CPOperand input4;
+	public final CPOperand input4;
 	private final int _numThreads;
 
 	private QuaternaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4,

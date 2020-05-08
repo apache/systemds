@@ -37,7 +37,7 @@ A simple guide to do this is in the SystemDS Repository_.
 If that is setup correctly simply start a worker using the following command.
 Here the ``8001`` refer to the port used by the worker.
 
-  systemds.sh WORKER 8001
+  systemds WORKER 8001
 
 Simple Aggregation Example
 --------------------------
@@ -88,9 +88,9 @@ Using the data created from the last example we can simulate
 multiple federated workers by starting multiple ones on different ports.
 I recommend to start 3 different terminals, and run one federated environment in each.
 
-| systemds.sh WORKER 8001
-| systemds.sh WORKER 8002
-| systemds.sh WORKER 8003
+| systemds WORKER 8001
+| systemds WORKER 8002
+| systemds WORKER 8003
 
 Once all three workers are up and running we can leverage all three in the following example::
 

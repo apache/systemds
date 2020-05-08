@@ -57,4 +57,4 @@ RUN rm -r src/ && \
 
 COPY docker/mountFolder/main.dml /input/main.dml
 
-CMD ["systemds.sh", "/input/main.dml"]
+CMD ["systemds", "/input/main.dml"]

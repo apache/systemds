@@ -79,7 +79,7 @@ def create_execute_and_trace_dml(script: str, name: str):
 
     # Call SYSDS!
     result_file_name = temp_dir + "/" + name + ".txt"
-    os.system("systemds.sh " + script_file_name + " > " + result_file_name)
+    os.system("systemds " + script_file_name + " > " + result_file_name)
 
     return parse_trace(result_file_name)
 

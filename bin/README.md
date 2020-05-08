@@ -49,7 +49,7 @@ first open an terminal and go to an empty folder, then execute the following.
 # Create a hello World script
 echo 'print("HelloWorld!")' > hello.dml
 # Execute hello world Script
-systemds.sh hello.dml
+systemds hello.dml
 # Remove the hello.dml
 rm hello.dml
 ```
@@ -79,7 +79,7 @@ echo '{"rows": 1, "cols": 4, "format": "csv"}' > data/types.csv.mtd
 ### Executing the DML script
 
 ```shell script
-bin/systemds.sh Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+bin/systemds Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
 ```
 
 ## Using Intel MKL native instructions

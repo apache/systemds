@@ -270,13 +270,14 @@ public class PrivacyPropagator {
 		PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, inputOperand);
 		if ( privacyConstraint != null ) {
 			inst.setPrivacyConstraint(privacyConstraint);
-			setOutputPrivacyConstraint(ec, privacyConstraint, outputOperand);
+			if ( outputOperand != null)
+				setOutputPrivacyConstraint(ec, privacyConstraint, outputOperand);
 		}
 		return inst;
 	}
 
 	private static PrivacyConstraint getInputPrivacyConstraint(ExecutionContext ec, CPOperand input){
-		Data dd = ec.getVariable(input);
+		Data dd = ec.getVariable(input.getName());
 		if ( dd != null && dd instanceof CacheableData)
 			return ((CacheableData<?>) dd).getPrivacyConstraint();
 		return null;
@@ -292,11 +293,13 @@ public class PrivacyPropagator {
 	}
 
 	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, CPOperand output){
-		Data dd = ec.getVariable(output);
-		if ( dd != null && dd instanceof CacheableData ){
-			((CacheableData<?>) dd).setPrivacyConstraints(privacyConstraint);
-			ec.setVariable(output.getName(), dd);
+		Data dd = ec.getVariable(output.getName());
+		if ( dd != null ){
+			if ( dd instanceof CacheableData ){
+				((CacheableData<?>) dd).setPrivacyConstraints(privacyConstraint);
+				ec.setVariable(output.getName(), dd);
+			}
+			else throw new DMLPrivacyException("Privacy constraint of " + output + " cannot be set since it is not an instance of CacheableData");
 		}
-		else throw new DMLPrivacyException("Privacy constraint of " + output + " cannot be set since it is not an instance of CacheableData");
 	}
 }

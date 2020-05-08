@@ -524,6 +524,16 @@ public class HopRewriteUtils
 			&& ((DataGenOp)hop).hasConstantValue(value);
 	}
 	
+	public static boolean isDataGenOpWithNonDeterminism(Hop hop) {
+		if (!isDataGenOp(hop, OpOpDG.RAND, OpOpDG.SAMPLE))
+			return false;
+
+		return (isDataGenOp(hop, OpOpDG.RAND) 
+					&& !((DataGenOp)hop).hasConstantValue()
+					&& ((DataGenOp)hop).hasUnspecifiedSeed())
+				|| isDataGenOp(hop, OpOpDG.SAMPLE);
+	}
+	
 	public static Hop getDataGenOpConstantValue(Hop hop) {
 		return ((DataGenOp) hop).getConstantValue();
 	}

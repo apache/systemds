@@ -468,6 +468,15 @@ public class DataGenOp extends MultiThreadedHop
 		return ret;
 	}
 	
+	public boolean hasUnspecifiedSeed() {
+		if (_op == OpOpDG.RAND || _op == OpOpDG.SINIT){
+			Hop seed = getInput().get(_paramIndexMap.get(DataExpression.RAND_SEED));
+			if( seed.getName().equals(String.valueOf(DataGenOp.UNSPECIFIED_SEED)))
+				return true;
+		}
+		return false;
+	}
+	
 	public Hop getConstantValue() {
 		return getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
 	}

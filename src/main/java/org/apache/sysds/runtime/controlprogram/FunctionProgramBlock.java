@@ -44,6 +44,7 @@ public class FunctionProgramBlock extends ProgramBlock
 	protected ArrayList<DataIdentifier> _outputParams;
 	
 	private boolean _recompileOnce = false;
+	private boolean _nondeterministic = false;
 	
 	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) {
 		super(prog);
@@ -159,6 +160,14 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	public boolean isRecompileOnce() {
 		return _recompileOnce;
+	}
+
+	public void setNondeterministic(boolean flag) {
+		_nondeterministic = flag;
+	}
+	
+	public boolean isNondeterministic() {
+		return _nondeterministic;
 	}
 	
 	@Override

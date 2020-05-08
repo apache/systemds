@@ -97,7 +97,7 @@ public abstract class CPInstruction extends Instruction
 		//robustness federated instructions (runtime assignment)
 		tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
 
-		tmp = PrivacyPropagator.preprocessCPInstruction((CPInstruction) tmp, ec);
+		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
 		
 		return tmp;
 	}

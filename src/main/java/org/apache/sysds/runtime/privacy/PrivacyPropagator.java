@@ -30,12 +30,12 @@ import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 
@@ -72,6 +72,21 @@ public class PrivacyPropagator {
 		return mergedPrivacyConstraint;
 	}
 
+	public static Instruction preprocessInstruction(Instruction inst, ExecutionContext ec){
+		switch ( inst.getType() ){
+			case CONTROL_PROGRAM:
+				return preprocessCPInstruction( (CPInstruction) inst, ec );
+			case BREAKPOINT:
+			case SPARK:
+			case GPU:
+			case FEDERATED:
+				return inst;
+			default:
+				throwExceptionIfPrivacyActivated(inst, ec);
+				return inst;
+		}
+	}
+
 	public static Instruction preprocessCPInstruction(CPInstruction inst, ExecutionContext ec){
 		switch ( inst.getCPInstructionType() )
 		{
@@ -87,7 +102,7 @@ public class PrivacyPropagator {
 				return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
 			case AggregateTernary: 
 			case Ternary:
-				return preprocessTernaryCPInstruction((TernaryCPInstruction) inst, ec);
+				return preprocessTernaryCPInstruction((ComputationCPInstruction) inst, ec);
 			case Quaternary: 
 				return preprocessQuaternary((QuaternaryCPInstruction) inst, ec);
 			case BuiltinNary:
@@ -134,7 +149,7 @@ public class PrivacyPropagator {
 		return inst;
 	}
 
-	public static Instruction preprocessTernaryCPInstruction(TernaryCPInstruction inst, ExecutionContext ec){
+	public static Instruction preprocessTernaryCPInstruction(ComputationCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, new CPOperand[]{inst.input1, inst.input2, inst.input3});
 		PrivacyConstraint mergedPrivacyConstraint = mergeTernary(privacyConstraints);
 		inst.setPrivacyConstraint(mergedPrivacyConstraint);
@@ -191,8 +206,7 @@ public class PrivacyPropagator {
 			case Read:
 				return inst;
 			case Write:
-				inst.setPrivacyConstraint(ec.getMatrixObject(inst.getInput1().getName()).getPrivacyConstraint() );
-				return inst;
+				return propagateFirstInputPrivacy(inst, ec);
 			case SetFileName:
 				return propagateFirstInputPrivacy(inst, ec);
 			default:
@@ -202,7 +216,7 @@ public class PrivacyPropagator {
 	}
 
 	private static void throwExceptionIfPrivacyActivated(Instruction inst, ExecutionContext ec){
-		if ( inst.getPrivacyConstraint() != null ){
+		if ( inst.getPrivacyConstraint() != null && inst.getPrivacyConstraint().getPrivacy() ) {
 			throw new DMLPrivacyException("Instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
 		}
 	}

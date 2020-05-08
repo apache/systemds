@@ -457,6 +457,26 @@ public class DataConverter
 		return mb;
 	}
 
+
+	/**
+	 * Ease of use method converting the an int input to double.
+	 * 
+	 * @param data int matrix input that is converted to double matrix
+	 * @return
+	 */
+	public static MatrixBlock convertToMatrixBlock(int[][] data){
+
+
+		double[][] input = new double[data.length][];
+		int index = 0;
+		for(int[] x: data){
+			input[index] = Arrays.stream(x).asDoubleStream().toArray();
+			index++;
+		}
+
+		return convertToMatrixBlock(input);
+	}
+
 	/**
 	 * Creates a dense Matrix Block and copies the given double vector into it.
 	 * 

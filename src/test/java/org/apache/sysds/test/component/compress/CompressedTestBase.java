@@ -68,8 +68,8 @@ public class CompressedTestBase extends AutomatedTestBase {
 
 	protected int rows;
 	protected int cols;
-	protected int min;
-	protected int max;
+	protected double min;
+	protected double max;
 	protected double sparsity;
 
 	public CompressedTestBase(SparsityType sparType, ValueType valType, ValueRange valueRange, CompressionType compType,

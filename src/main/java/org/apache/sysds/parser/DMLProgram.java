@@ -76,6 +76,7 @@ public class DMLProgram
 	}
 	
 	public FunctionStatementBlock getFunctionStatementBlock(String namespaceKey, String functionName) {
+		System.out.println(namespaceKey  + "  " + functionName);
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null)
 			return null;

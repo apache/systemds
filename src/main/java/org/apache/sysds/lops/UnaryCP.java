@@ -31,7 +31,8 @@ public class UnaryCP extends Lop
 	public enum OperationTypes {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, SINH, COSH, TANH,
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, ASSERT, NROW, NCOL, LENGTH, EXISTS, LINEAGE, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX, TYPEOF, DETECTSCHEMA
+		PRINT, ASSERT, NROW, NCOL, LENGTH, EXISTS, LINEAGE, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX, 
+		TYPEOF, DETECTSCHEMA, UNIQUE_LENGTH
 	}
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
@@ -170,6 +171,9 @@ public class UnaryCP extends Lop
 		
 		case SOFTMAX:
 			return "softmax";
+		
+		case UNIQUE_LENGTH:
+			return "unique_length";
 			
 		default:
 			throw new LopsException("Unknown operation: " + op);

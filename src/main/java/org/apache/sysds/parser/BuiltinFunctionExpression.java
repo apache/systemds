@@ -1518,7 +1518,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);
 			break;
-
+		case UNIQUE_LENGTH:
+			checkNumParameters(1);
+			output.setDataType(DataType.SCALAR);
+			output.setValueType(ValueType.INT64);
+			output.setDimensions(0, 0);
+			output.setBlocksize(0);
+			break;
 		default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();

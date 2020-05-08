@@ -2627,6 +2627,10 @@ public class DMLTranslator
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
+		case UNIQUE_LENGTH:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOp1.valueOf(source.getOpCode().name()), expr);
+			break;
 		
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());

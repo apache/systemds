@@ -28,8 +28,8 @@ public class TestConstants {
 	private static final int cols[] = {20, 20, 13, 998, 321, 1, 30, 21, 1};
 	private static final double[] sparsityValues = {0.9, 0.1, 0.0};
 
-	private static final int[] mins = {-10, -2147};
-	private static final int[] maxs = {10, 2147};
+	private static final double[] mins = {-10, -2147};
+	private static final double[] maxs = {10, 2147};
 
 	public enum SparsityType {
 		DENSE, SPARSE, EMPTY,
@@ -73,7 +73,7 @@ public class TestConstants {
 		}
 	}
 
-	public static int getMinRangeValue(ValueRange valueRange) {
+	public static double getMinRangeValue(ValueRange valueRange) {
 		switch(valueRange) {
 			case SMALL:
 				return mins[0];
@@ -84,7 +84,7 @@ public class TestConstants {
 		}
 	}
 
-	public static int getMaxRangeValue(ValueRange valueRange) {
+	public static double getMaxRangeValue(ValueRange valueRange) {
 		switch(valueRange) {
 			case SMALL:
 				return maxs[0];

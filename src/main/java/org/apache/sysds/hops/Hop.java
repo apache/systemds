@@ -1044,6 +1044,7 @@ public abstract class Hop implements ParseInfo
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
+		UNIQUE_LENGTH, // Count of unique elements
 	}
 
 	// Operations that require two operands
@@ -1230,6 +1231,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.STOP, org.apache.sysds.lops.UnaryCP.OperationTypes.STOP);
 		HopsOpOp1LopsUS.put(OpOp1.TYPEOF, UnaryCP.OperationTypes.TYPEOF);
 		HopsOpOp1LopsUS.put(OpOp1.DETECTSCHEMA, UnaryCP.OperationTypes.DETECTSCHEMA);
+		HopsOpOp1LopsUS.put(OpOp1.UNIQUE_LENGTH, UnaryCP.OperationTypes.UNIQUE_LENGTH);
 	}
 
 	protected static final HashMap<OpOp1, String> HopsOpOp12String;

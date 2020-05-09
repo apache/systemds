@@ -21,13 +21,12 @@ package org.apache.sysds.runtime.controlprogram.parfor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -90,14 +89,11 @@ public abstract class DataPartitioner
 		//analyze input matrix object
 		MetaDataFormat meta = (MetaDataFormat)in.getMetaData();
 		DataCharacteristics dc = meta.getDataCharacteristics();
-		InputInfo ii = meta.getInputInfo();
-		OutputInfo oi = meta.getOutputInfo();
+		FileFormat fmt = meta.getFileFormat();
 		long rows = dc.getRows();
 		long cols = dc.getCols();
 		int blen = dc.getBlocksize();
 		long nonZeros = dc.getNonZeros();
-		double sparsity = dc.dimsKnown(true) ?
-				((double)nonZeros)/(rows*cols) : 1.0;
 		
 		if( !force ) //try to optimize, if format not forced
 		{
@@ -121,18 +117,6 @@ public abstract class DataPartitioner
 			//_format = PDataPartitionFormat.ROW_BLOCK_WISE_N;
 		}
 		
-		//check changing to binarycell in case of sparse cols (robustness)
-		boolean convertBlock2Cell = false;
-		if(    ii == InputInfo.BinaryBlockInputInfo 
-			&& _allowBinarycell
-			&& _format == PDataPartitionFormat.COLUMN_WISE	
-			&& sparsity < SPARSITY_CELL_THRESHOLD )
-		{
-			LOG.debug("Changing partition outputinfo from binaryblock to binarycell due to sparsity="+sparsity);
-			oi = OutputInfo.BinaryCellOutputInfo;
-			convertBlock2Cell = true;
-		}
-				
 		//prepare filenames and cleanup if required
 		String fnameNew = out.getFileName();
 		try{
@@ -143,20 +127,17 @@ public abstract class DataPartitioner
 		}
 		
 		//core partitioning (depending on subclass)
-		partitionMatrix( in, fnameNew, ii, oi, rows, cols, blen );
+		partitionMatrix( in, fnameNew, fmt, rows, cols, blen );
 		
 		//create output matrix object
 		out.setPartitioned( _format, _n ); 
 		
 		MatrixCharacteristics mcNew = new MatrixCharacteristics(rows, cols, blen);
 		mcNew.setNonZeros( nonZeros );
-		if( convertBlock2Cell )
-			ii = InputInfo.BinaryCellInputInfo;
-		MetaDataFormat metaNew = new MetaDataFormat(mcNew,oi,ii);
-		out.setMetaData(metaNew);	 
+		MetaDataFormat metaNew = new MetaDataFormat(mcNew, fmt);
+		out.setMetaData(metaNew);
 		
 		return out;
-		
 	}
 
 	public void disableBinaryCell()
@@ -164,7 +145,7 @@ public abstract class DataPartitioner
 		_allowBinarycell = false;
 	}
 
-	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int blen );
+	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, FileFormat fmt, long rlen, long clen, int blen );
 
 	
 	public static MatrixBlock createReuseMatrixBlock( PDataPartitionFormat dpf, int rows, int cols ) {

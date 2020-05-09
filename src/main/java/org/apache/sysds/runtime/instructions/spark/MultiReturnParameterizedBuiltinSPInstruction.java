@@ -27,6 +27,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.AccumulatorV2;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -44,7 +45,6 @@ import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock.ColumnMetadata;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -105,7 +105,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			FrameObject fo = sec.getFrameObject(input1.getName());
 			FrameObject fometa = sec.getFrameObject(_outputs.get(1).getName());
 			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
-				sec.getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
+				sec.getRDDHandleForFrameObject(fo, FileFormat.BINARY);
 			String spec = ec.getScalarInput(input2).getStringValue();
 			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
@@ -130,7 +130,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			rcMaps.saveAsTextFile(fometa.getFileName()); //trigger eval
 			
 			//consolidate meta data frame (reuse multi-threaded reader, special handling missing values) 
-			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.TextCellInputInfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.TEXT);
 			FrameBlock meta = reader.readFrameFromHDFS(fometa.getFileName(), accMax.value(), fo.getNumColumns());
 			meta.recomputeColumnCardinality(); //recompute num distinct items per column
 			meta.setColumnNames((colnames!=null)?colnames:meta.getColumnNames());

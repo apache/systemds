@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -50,9 +51,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -355,8 +354,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
-			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
-			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 
 			MetaDataFormat iimd = null;
 			if (dt == DataType.MATRIX || dt == DataType.FRAME) {
@@ -373,7 +370,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 				}
-				iimd = new MetaDataFormat(mc, oi, ii);
+				iimd = new MetaDataFormat(mc, FileFormat.safeValueOf(fmt));
 			}
 			else if (dt == DataType.TENSOR) {
 				TensorCharacteristics tc = new TensorCharacteristics(new long[]{1, 1}, 0);
@@ -389,7 +386,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 				}
-				iimd = new MetaDataFormat(tc, oi, ii);
+				iimd = new MetaDataFormat(tc, FileFormat.safeValueOf(fmt));
 			}
 			UpdateType updateType = UpdateType.COPY;
 			if ( parts.length >= 11 )
@@ -949,9 +946,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			try {
-				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				FileFormat fmt = ((MetaDataFormat)mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
-				if( oi == OutputInfo.CSVOutputInfo 
+				if( fmt == FileFormat.CSV 
 					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
 				{
 					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)_formatProperties);
@@ -960,7 +957,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					mo.exportData(fname, outFmt, _formatProperties);
 				}
-				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, OutputInfo.CSVOutputInfo, _formatProperties);
+				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, FileFormat.CSV, _formatProperties);
 			}
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);
@@ -984,9 +981,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			try {
-				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				FileFormat fmt = ((MetaDataFormat)mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = mo.getDataCharacteristics();
-				if( oi == OutputInfo.TextCellOutputInfo 
+				if( fmt == FileFormat.TEXT 
 					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
 				{
 					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(),

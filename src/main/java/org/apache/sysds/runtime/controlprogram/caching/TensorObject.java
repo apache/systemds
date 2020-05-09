@@ -24,6 +24,7 @@ import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -31,8 +32,6 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -120,7 +119,7 @@ public class TensorObject extends CacheableData<TensorBlock> {
 
 		int blen = dc.getBlocksize();
 		//read tensor and maintain meta data
-		TensorBlock newData = DataConverter.readTensorFromHDFS(fname, iimd.getInputInfo(), dims, blen, getSchema());
+		TensorBlock newData = DataConverter.readTensorFromHDFS(fname, iimd.getFileFormat(), dims, blen, getSchema());
 		setHDFSFileExists(true);
 
 		//sanity check correct output
@@ -159,11 +158,10 @@ public class TensorObject extends CacheableData<TensorBlock> {
 			// Get the dimension information from the metadata stored within TensorObject
 			DataCharacteristics dc = iimd.getDataCharacteristics();
 			// Write the tensor to HDFS in requested format
-			OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo(ofmt) :
-					InputInfo.getMatchingOutputInfo(iimd.getInputInfo()));
+			FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 
 			//TODO check correct blocking
-			DataConverter.writeTensorToHDFS(_data, fname, oinfo, dc);
+			DataConverter.writeTensorToHDFS(_data, fname, fmt, dc);
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Writing tensor to HDFS ("+fname+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
 		}

@@ -30,11 +30,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 
@@ -49,8 +49,8 @@ public class FrameWriterTextCellParallel extends FrameWriterTextCell
 		throws IOException
 	{
 		//estimate output size and number of output blocks (min 1)
-		int numPartFiles = Math.max((int)(OptimizerUtils.estimateSizeTextOutput(rlen, clen, rlen*clen, 
-				              OutputInfo.TextCellOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
+		int numPartFiles = Math.max((int)(OptimizerUtils.estimateSizeTextOutput(
+			rlen, clen, rlen*clen, FileFormat.TEXT)  / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
 		
 		//determine degree of parallelism
 		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();

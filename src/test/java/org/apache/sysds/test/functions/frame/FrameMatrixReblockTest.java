@@ -24,22 +24,19 @@ import java.io.IOException;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-/**
- * 
- */
 public class FrameMatrixReblockTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
@@ -231,15 +228,14 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 		FrameBlock fb = DataConverter.convertToFrameBlock(mb);
 		
 		//write input data
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(
-			InputInfo.getMatchingOutputInfo(InputInfo.fromExternalString(ofmt)));
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.safeValueOf(ofmt));
 		writer.writeFrameToHDFS(fb, fname, rows, cols);
 	}
 	
 	private static double[][] readMatrixOutput(String fname, String ofmt, int rows, int cols) 
 		throws IOException 
 	{
-		MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.fromExternalString(ofmt));
+		MatrixReader reader = MatrixReaderFactory.createMatrixReader(FileFormat.safeValueOf(ofmt));
 		MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, 1000, -1);
 		return DataConverter.convertToDoubleMatrix(mb); 
 	}

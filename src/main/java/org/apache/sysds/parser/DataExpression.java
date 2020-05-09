@@ -26,6 +26,7 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -86,11 +87,6 @@ public class DataExpression extends DataIdentifier
 	public static final String FED_TYPE = "type";
 	
 	public static final String FORMAT_TYPE = "format";
-	public static final String FORMAT_TYPE_VALUE_TEXT = "text";
-	public static final String FORMAT_TYPE_VALUE_BINARY = "binary";
-	public static final String FORMAT_TYPE_VALUE_CSV = "csv";
-	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET = "mm";
-	public static final String FORMAT_TYPE_VALUE_LIBSVM = "libsvm";
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
@@ -185,15 +181,15 @@ public class DataExpression extends DataIdentifier
 
 			if (functionName.equals("readMM"))
 				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
-						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET, parseInfo));
+					new StringIdentifier(FileFormat.MM.toString(), parseInfo));
 
 			if (functionName.equals("read.csv"))
 				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
-						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, parseInfo));
+					new StringIdentifier(FileFormat.CSV.toString(), parseInfo));
 
 			if (functionName.equals("read.libsvm"))
 				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
-						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_LIBSVM, parseInfo));
+					new StringIdentifier(FileFormat.LIBSVM.toString(), parseInfo));
 
 			// validate the filename is the first parameter
 			if (passedParamExprs.size() < 1){
@@ -866,13 +862,14 @@ public class DataExpression extends DataIdentifier
 			boolean inferredFormatType = false;
 			
 			// get format type string
-			String formatTypeString = (getVarParam(FORMAT_TYPE) == null) ? null : getVarParam(FORMAT_TYPE).toString();
+			String formatTypeString = (getVarParam(FORMAT_TYPE) == null) ?
+				null : getVarParam(FORMAT_TYPE).toString();
 			
 			// check if file is matrix market format
 			if (formatTypeString == null && shouldReadMTD){
 				if ( checkHasMatrixMarketFormat(inputFileName, mtdFileName, conditional) ) {
-					formatTypeString = FORMAT_TYPE_VALUE_MATRIXMARKET;
-					addVarParam(FORMAT_TYPE, new StringIdentifier(FORMAT_TYPE_VALUE_MATRIXMARKET, this));
+					formatTypeString = FileFormat.MM.toString();
+					addVarParam(FORMAT_TYPE, new StringIdentifier(formatTypeString, this));
 					inferredFormatType = true;
 					shouldReadMTD = false;
 				}
@@ -887,7 +884,7 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			
-			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET)){
+			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.MM.toString())){
 				/*
 				 *  handle MATRIXMARKET_FORMAT_TYPE format
 				 *
@@ -972,11 +969,11 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			boolean isCSV = false;
-			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV));
+			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.CSV.toString()));
 			if (isCSV){
 				 // Handle delimited file format
 				 // 
-				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM
 				 //  
 				 // 2) open the file
 				 //
@@ -984,7 +981,7 @@ public class DataExpression extends DataIdentifier
 				// there should be no MTD file for delimited file format
 				shouldReadMTD = true;
 				
-				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM
 				//		as ONLY valid parameters
 				if( !inferredFormatType ){
 					for (String key : _varParams.keySet()){
@@ -1053,7 +1050,7 @@ public class DataExpression extends DataIdentifier
 			} 
 
 			boolean islibsvm = false;
-			islibsvm = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM));
+			islibsvm = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.LIBSVM.toString()));
 			if (islibsvm){
 				 // Handle libsvm file format
 				shouldReadMTD = true;
@@ -1139,32 +1136,13 @@ public class DataExpression extends DataIdentifier
 				// initialize block dimensions to UNKNOWN 
 				getOutput().setBlocksize(-1);
 				
-				// find "format": 1=text, 2=binary
-				int format = 1; // default is "text"
-				String fmt =  (getVarParam(FORMAT_TYPE) == null ? null : getVarParam(FORMAT_TYPE).toString());
-				
-				if (fmt == null || fmt.equalsIgnoreCase("text")){
-					getOutput().setFormatType(FormatType.TEXT);
-					format = 1;
-				} else if ( fmt.equalsIgnoreCase("binary") ) {
-					getOutput().setFormatType(FormatType.BINARY);
-					format = 2;
-				} else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) 
-				{
-					getOutput().setFormatType(FormatType.CSV);
-					format = 1;
+				String fmt =  (getVarParam(FORMAT_TYPE) == null ?
+					FileFormat.defaultFormatString() : getVarParam(FORMAT_TYPE).toString());
+				try {
+					getOutput().setFileFormat(FileFormat.safeValueOf(fmt));
 				}
-				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) )
-				{
-					getOutput().setFormatType(FormatType.MM);
-					format = 1;
-				} 
-				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)) 
-				{
-					getOutput().setFormatType(FormatType.LIBSVM);
-					format = 1;
-				} else {
-					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + this.toString(), conditional);
+				catch(Exception ex) {
+					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + toString(), conditional);
 				}
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
@@ -1176,7 +1154,7 @@ public class DataExpression extends DataIdentifier
 				// block dimensions must be -1x-1 when format="text"
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
-				if ( (format == 1 || !isMatrix)  && getOutput().getBlocksize() != -1 ){
+				if ( (getOutput().getFileFormat().isTextFormat() || !isMatrix)  && getOutput().getBlocksize() != -1 ){
 					raiseValidateError("Invalid block dimensions (" + getOutput().getBlocksize() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
 				}
 			
@@ -1219,7 +1197,7 @@ public class DataExpression extends DataIdentifier
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)){
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.CSV.toString())){
 				if (getVarParam(DELIM_DELIMITER) == null) {
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
@@ -1231,7 +1209,7 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)){
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.LIBSVM.toString())){
 				if (getVarParam(DELIM_SPARSE) == null) {
 					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
 				}
@@ -1265,18 +1243,13 @@ public class DataExpression extends DataIdentifier
 			}*/
 			
 			//validate read filename
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
+			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
 				getOutput().setBlocksize(-1);
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
 				getOutput().setBlocksize(ConfigurationManager.getBlocksize());
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || 
-					(getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) ||
-					 getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM))
-				getOutput().setBlocksize(-1);
-			
-			else{
-				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE) +  " in statement: " + this.toString(), conditional);
-			}
+			else
+				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)
+					+ " in statement: " + toString(), conditional);
 			break;
 
 			case RAND:
@@ -1595,7 +1568,7 @@ public class DataExpression extends DataIdentifier
 				maxExpr.validateExpression(ids, currConstVars, conditional);
 			}
 		
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			if (isTensorOperation) {
 				getOutput().setDataType(DataType.TENSOR);
 				getOutput().setValueType(getVarParam(RAND_MIN).getOutput().getValueType());
@@ -1804,7 +1777,7 @@ public class DataExpression extends DataIdentifier
 					colsExpr.validateExpression(ids, currConstVars, conditional);
 				}
 			}	
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			getOutput().setDataType(DataType.MATRIX);
 			getOutput().setValueType(ValueType.FP64);
 			getOutput().setDimensions(rowsLong, colsLong);
@@ -1842,7 +1815,7 @@ public class DataExpression extends DataIdentifier
 			getVarParam(RAND_DATA).validateExpression(ids, currConstVars, conditional);
 			getVarParam(RAND_DIMS).validateExpression(ids, currConstVars, conditional);
 
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			getOutput().setDataType(DataType.TENSOR);
 			getOutput().setValueType(getVarParam(RAND_DATA).getOutput().getValueType());
 			// TODO get size
@@ -1890,7 +1863,7 @@ public class DataExpression extends DataIdentifier
 			getVarParam(SQL_PASS).validateExpression(ids, currConstVars, conditional);
 			getVarParam(SQL_QUERY).validateExpression(ids, currConstVars, conditional);
 			
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			getOutput().setDataType(DataType.TENSOR);
 			getOutput().setValueType(ValueType.UNKNOWN);
 			getOutput().setDimensions(-1, -1);
@@ -1920,8 +1893,7 @@ public class DataExpression extends DataIdentifier
 			}
 			getVarParam(FED_TYPE).validateExpression(ids, currConstVars, conditional);
 			
-			// TODO format type?
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			StringIdentifier fedType = (StringIdentifier) exp;
 			if(fedType.getValue().equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
 				getOutput().setDataType(DataType.MATRIX);
@@ -2233,28 +2205,22 @@ public class DataExpression extends DataIdentifier
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd", conditional);
 		if (mtdObject != null) {
 			String formatTypeString = (String)JSONHelper.get(mtdObject,FORMAT_TYPE);
-			if ((formatTypeString != null ) && 
-				(formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)
-				|| formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)))
+			if( FileFormat.isDelimitedFormat(formatTypeString) )
 				return formatTypeString;
-			else
-				return null;
 		}
 		return null;
 		// The file format must be specified either in .mtd file or in read() statement
 		// Therefore, one need not actually read the data to infer the format.
 	}
 	
-	public boolean isCSVReadWithUnknownSize()
-	{
+	public boolean isCSVReadWithUnknownSize() {
 		Expression format = getVarParam(FORMAT_TYPE);
-		if( _opcode == DataOp.READ && format!=null && format.toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV) ) {
+		if( _opcode == DataOp.READ && format!=null && format.toString().equalsIgnoreCase(FileFormat.CSV.toString()) ) {
 			Expression rows = getVarParam(READROWPARAM);
 			Expression cols = getVarParam(READCOLPARAM);
 			return (rows==null || Long.parseLong(rows.toString())<0)
 				||(cols==null || Long.parseLong(cols.toString())<0);
 		}
-		
 		return false;
 	}
 	

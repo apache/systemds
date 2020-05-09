@@ -19,33 +19,26 @@
 
 package org.apache.sysds.runtime.meta;
 
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.common.Types.FileFormat;
 
 public class MetaDataFormat extends MetaData 
 {
-	private final InputInfo iinfo;
-	private final OutputInfo oinfo;
+	private final FileFormat _fmt;
 	
-	public MetaDataFormat(DataCharacteristics dc, OutputInfo oinfo, InputInfo iinfo ) {
+	public MetaDataFormat(DataCharacteristics dc, FileFormat fmt) {
 		super(dc);
-		this.oinfo = oinfo;
-		this.iinfo = iinfo;
+		_fmt = fmt;
 	}
 	
-	public InputInfo getInputInfo() {
-		return iinfo;
-	}
-	
-	public OutputInfo getOutputInfo() {
-		return oinfo;
+	public FileFormat getFileFormat() {
+		return _fmt;
 	}
 	
 	@Override
 	public Object clone() {
 		if (_dc instanceof MatrixCharacteristics)
-			return new MetaDataFormat(new MatrixCharacteristics(_dc), oinfo, iinfo);
+			return new MetaDataFormat(new MatrixCharacteristics(_dc), _fmt);
 		else
-			return new MetaDataFormat(new TensorCharacteristics(_dc), oinfo, iinfo);
+			return new MetaDataFormat(new TensorCharacteristics(_dc), _fmt);
 	}
 }

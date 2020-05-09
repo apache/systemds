@@ -81,7 +81,6 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -945,7 +944,7 @@ public class Recompiler
 		int blksz = ConfigurationManager.getBlocksize();
 		DataCharacteristics mc = new MatrixCharacteristics(
 				dim1, dim2, blksz, nnz);
-		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
+		MetaDataFormat meta = new MetaDataFormat(mc,null);
 		moOut.setMetaData(meta);
 		return moOut;
 	}
@@ -1167,14 +1166,14 @@ public class Recompiler
 					MatrixObject mo = new MatrixObject(ValueType.FP64, null);
 					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(),
 						hop.getDim2(), ConfigurationManager.getBlocksize(), hop.getNnz());
-					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
+					MetaDataFormat meta = new MetaDataFormat(mc,null);
 					mo.setMetaData(meta);	
 					vars.put(varName, mo);
 				} else if( hop.getDataType()==DataType.TENSOR ) {
 					TensorObject to = new TensorObject(hop.getValueType(), null);
 					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(),
 						hop.getDim2(), ConfigurationManager.getBlocksize(), hop.getNnz());
-					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
+					MetaDataFormat meta = new MetaDataFormat(mc,null);
 					to.setMetaData(meta);
 					vars.put(varName, to);
 				}
@@ -1532,14 +1531,10 @@ public class Recompiler
 		}
 
 		//robustness for usage through mlcontext (key/values of input rdds are 
-		//not serializable for text; also bufferpool rdd read only supported for 
-		// binarycell and binaryblock)
+		//not serializable for text; also bufferpool rdd read only supported for binary)
 		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
-		if( obj.getRDDHandle() != null 
-			&& iimd.getInputInfo() != InputInfo.BinaryBlockInputInfo 
-			&& iimd.getInputInfo() != InputInfo.BinaryCellInputInfo ) {
+		if( obj.getRDDHandle() != null && iimd.getFileFormat() != FileFormat.BINARY )
 			return false;
-		}		
 		
 		//robustness unknown dimensions, e.g., for csv reblock
 		if( rows <= 0 || cols <= 0 ) {

@@ -19,23 +19,21 @@
 
 package org.apache.sysds.runtime.io;
 
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 
 public class TensorWriterFactory {
 
-	public static TensorWriter createTensorWriter(OutputInfo oinfo) {
-		TensorWriter writer;
-
-		if (oinfo == OutputInfo.TextCellOutputInfo) {
+	public static TensorWriter createTensorWriter(FileFormat fmt) {
+		TensorWriter writer = null;
+		if (fmt == FileFormat.TEXT) {
 			writer = new TensorWriterTextCell();
 		}
-		else if (oinfo == OutputInfo.BinaryBlockOutputInfo) {
+		else if (fmt == FileFormat.BINARY) {
 			writer = new TensorWriterBinaryBlock();
 		}
 		else {
-			throw new DMLRuntimeException("Failed to create tensor writer for unknown output info: "
-					+ OutputInfo.outputInfoToString(oinfo));
+			throw new DMLRuntimeException("Failed to create tensor writer for unknown format: " + fmt.toString());
 		}
 		return writer;
 	}

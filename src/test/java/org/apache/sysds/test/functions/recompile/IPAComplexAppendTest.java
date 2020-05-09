@@ -23,9 +23,9 @@ import java.io.IOException;
 
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -92,8 +92,8 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			//generate input data
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, OptimizerUtils.getSparsity(rows, cols, nnz), -1, 1, "uniform", 7);
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,1000,nnz);
-			DataConverter.writeMatrixToHDFS(mb, output("X"), OutputInfo.BinaryBlockOutputInfo, mc1);
-			HDFSTool.writeMetaDataFile(output("X.mtd"), ValueType.FP64, mc1, OutputInfo.BinaryBlockOutputInfo);
+			DataConverter.writeMatrixToHDFS(mb, output("X"), FileFormat.BINARY, mc1);
+			HDFSTool.writeMetaDataFile(output("X.mtd"), ValueType.FP64, mc1, FileFormat.BINARY);
 			
 			//run test
 			runTest(true, false, null, -1); 

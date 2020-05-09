@@ -35,6 +35,7 @@ import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -59,7 +60,6 @@ import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
@@ -372,10 +372,10 @@ public class Connection implements Closeable
 			long nnz = jmtd.containsKey(DataExpression.READNNZPARAM)?
 					jmtd.getLong(DataExpression.READNNZPARAM) : -1;
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			InputInfo iinfo = InputInfo.fromExternalString(format);
+			FileFormat fmt = FileFormat.safeValueOf(format);
 		
 			//read matrix file
-			return readDoubleMatrix(fname, iinfo, rows, cols, blen, nnz);
+			return readDoubleMatrix(fname, fmt, rows, cols, blen, nnz);
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);
@@ -387,7 +387,7 @@ public class Connection implements Closeable
 	 * NOTE: this call currently only supports default configurations for CSV.
 	 * 
 	 * @param fname the filename of the input matrix
-	 * @param iinfo InputInfo object
+	 * @param fmt file format
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
 	 * @param blen block length
@@ -395,13 +395,13 @@ public class Connection implements Closeable
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] readDoubleMatrix(String fname, InputInfo iinfo, long rows, long cols, int blen, long nnz) 
+	public double[][] readDoubleMatrix(String fname, FileFormat fmt, long rows, long cols, int blen, long nnz) 
 		throws IOException
 	{
 		setLocalConfigs();
 		
 		try {
-			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(fmt);
 			MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, blen, nnz);
 			return DataConverter.convertToDoubleMatrix(mb);
 		}
@@ -454,7 +454,7 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public double[][] convertToDoubleMatrix(InputStream input, int rows, int cols) throws IOException {
-		return convertToDoubleMatrix(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+		return convertToDoubleMatrix(input, rows, cols, FileFormat.defaultFormatString());
 	}
 	
 	/**
@@ -536,24 +536,24 @@ public class Connection implements Closeable
 	}
 	
 	/**
-	 * Converts an input stream of a string matrix in textcell format
+	 * Converts an input stream of a string matrix in text format
 	 * into a matrix block. 
 	 * 
-	 * @param input InputStream to a string matrix in textcell format
+	 * @param input InputStream to a string matrix in text format
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
 	 * @return matrix as a matrix block
 	 * @throws IOException if IOException occurs
 	 */
 	public MatrixBlock convertToMatrix(InputStream input, int rows, int cols) throws IOException {
-		return convertToMatrix(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+		return convertToMatrix(input, rows, cols, FileFormat.defaultFormatString());
 	}
 	
 	/**
-	 * Converts an input stream of a string matrix in csv or textcell format
+	 * Converts an input stream of a string matrix in csv or text format
 	 * into a matrix block. 
 	 * 
-	 * @param input InputStream to a string matrix in csv or textcell format
+	 * @param input InputStream to a string matrix in csv or text format
 	 * @param rows number of rows in the matrix
 	 * @param cols number of columns in the matrix
 	 * @param format input format of the given stream
@@ -566,9 +566,9 @@ public class Connection implements Closeable
 		MatrixBlock ret = null;
 
 		//sanity check input format
-		if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
-			||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format)
-			||DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format)) ) {
+		if(!(FileFormat.TEXT.toString().equals(format)
+			||FileFormat.MM.toString().equals(format)
+			||FileFormat.CSV.toString().equals(format)) ) {
 			throw new IOException("Invalid input format (expected: csv, text or mm): "+format);
 		}
 		
@@ -576,9 +576,8 @@ public class Connection implements Closeable
 		
 		try {
 			//read input matrix
-			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
-					InputInfo.CSVInputInfo : InputInfo.TextCellInputInfo;
-			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
+			FileFormat fmt = FileFormat.safeValueOf(format);
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(fmt);
 			int blksz = ConfigurationManager.getBlocksize();
 			ret = reader.readMatrixFromInputStream(
 				input, rows, cols, blksz, (long)rows*cols);
@@ -614,10 +613,10 @@ public class Connection implements Closeable
 			long rows = jmtd.getLong(DataExpression.READROWPARAM);
 			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			InputInfo iinfo = InputInfo.fromExternalString(format);
+			FileFormat fmt = FileFormat.safeValueOf(format);
 		
 			//read frame file
-			return readStringFrame(fname, iinfo, rows, cols);
+			return readStringFrame(fname, fmt, rows, cols);
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);
@@ -629,19 +628,19 @@ public class Connection implements Closeable
 	 * NOTE: this call currently only supports default configurations for CSV.
 	 * 
 	 * @param fname the filename of the input frame
-	 * @param iinfo InputInfo object
+	 * @param fmt file format type
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
 	 * @return frame as a two-dimensional string array
 	 * @throws IOException if IOException occurs
 	 */
-	public String[][] readStringFrame(String fname, InputInfo iinfo, long rows, long cols) 
+	public String[][] readStringFrame(String fname, FileFormat fmt, long rows, long cols) 
 		throws IOException
 	{
 		setLocalConfigs();
 		
 		try {
-			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
 			FrameBlock mb = reader.readFrameFromHDFS(fname, rows, cols);
 			return DataConverter.convertToStringFrame(mb);
 		}
@@ -687,21 +686,21 @@ public class Connection implements Closeable
 	 * Converts an input stream of a string frame in textcell format
 	 * into a dense string array. 
 	 * 
-	 * @param input InputStream to a string frame in textcell format
+	 * @param input InputStream to a string frame in text format
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
 	 * @return frame as a two-dimensional string array
 	 * @throws IOException if IOException occurs
 	 */
 	public String[][] convertToStringFrame(InputStream input, int rows, int cols) throws IOException {
-		return convertToStringFrame(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+		return convertToStringFrame(input, rows, cols, FileFormat.defaultFormatString());
 	}
 	
 	/**
-	 * Converts an input stream of a string frame in csv or textcell format
+	 * Converts an input stream of a string frame in csv or text format
 	 * into a dense string array. 
 	 * 
-	 * @param input InputStream to a string frame in csv or textcell format
+	 * @param input InputStream to a string frame in csv or text format
 	 * @param rows number of rows in the frame
 	 * @param cols number of columns in the frame
 	 * @param format input format of the given stream
@@ -786,7 +785,7 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock convertToFrame(InputStream input, int rows, int cols) throws IOException {
-		return convertToFrame(input, rows, cols, DataExpression.FORMAT_TYPE_VALUE_TEXT);
+		return convertToFrame(input, rows, cols, FileFormat.TEXT.toString());
 	}
 	
 	/**
@@ -806,9 +805,9 @@ public class Connection implements Closeable
 		FrameBlock ret = null;
 	
 		//sanity check input format
-		if(!(DataExpression.FORMAT_TYPE_VALUE_TEXT.equals(format)
-			||DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET.equals(format)
-			||DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format))) {
+		if(!(FileFormat.TEXT.toString().equals(format)
+			||FileFormat.MM.toString().equals(format)
+			||FileFormat.CSV.toString().equals(format))) {
 			throw new IOException("Invalid input format (expected: csv, text or mm): "+format);
 		}
 		
@@ -816,9 +815,8 @@ public class Connection implements Closeable
 		
 		try {
 			//read input frame
-			InputInfo iinfo = DataExpression.FORMAT_TYPE_VALUE_CSV.equals(format) ? 
-					InputInfo.CSVInputInfo : InputInfo.TextCellInputInfo;
-			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+			FileFormat fmt = FileFormat.safeValueOf(format);
+			FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
 			ret = reader.readFrameFromInputStream(input, rows, cols);
 		}
 		catch(DMLRuntimeException rex) {

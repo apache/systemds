@@ -21,8 +21,8 @@ package org.apache.sysds.test.functions.misc;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -91,7 +91,7 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 			int cols = 73;
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, 7);
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
-			DataConverter.writeMatrixToHDFS(mb, input("A"), OutputInfo.CSVOutputInfo, 
+			DataConverter.writeMatrixToHDFS(mb, input("A"), FileFormat.CSV, 
 				new MatrixCharacteristics(rows,cols,-1,-1));
 	        HDFSTool.deleteFileIfExistOnHDFS(input("A.mtd"));
 			

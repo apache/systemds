@@ -24,11 +24,11 @@ import java.io.IOException;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -172,7 +172,7 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 		throws IOException 
 	{
 		//read input data
-		FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.fromExternalString(ofmt));
+		FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.safeValueOf(ofmt));
 		FrameBlock fb = reader.readFrameFromHDFS(fname, rows, cols);
 		MatrixBlock ret = DataConverter.convertToMatrixBlock(fb);
 		

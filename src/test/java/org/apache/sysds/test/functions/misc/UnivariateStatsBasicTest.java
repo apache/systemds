@@ -21,10 +21,10 @@ package org.apache.sysds.test.functions.misc;
 
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -77,10 +77,10 @@ public class UnivariateStatsBasicTest extends AutomatedTestBase
 			
 			//write input types
 			MatrixBlock mb = new MatrixBlock(1d);
-			MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo)
+			MatrixWriterFactory.createMatrixWriter(FileFormat.CSV)
 				.writeMatrixToHDFS(mb, input("uni-types.csv"), 1, 1, 1, 1);
 			HDFSTool.writeMetaDataFile(input("uni-types.csv.mtd"), ValueType.FP64, 
-					new MatrixCharacteristics(1,1,1,1), OutputInfo.CSVOutputInfo);
+					new MatrixCharacteristics(1,1,1,1), FileFormat.CSV);
 			
 			//run univariate stats 
 			fullDMLScriptName = "./scripts/algorithms/"+TEST_NAME+".dml";

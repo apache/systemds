@@ -24,6 +24,7 @@ import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderBinaryBlock;
@@ -31,8 +32,6 @@ import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -131,14 +130,14 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 			initFrameData(frame1, A, schema);
 			
 			//write frame data to hdfs
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.CSVOutputInfo);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
 			writer.writeFrameToHDFS(frame1, input("A"), rows, schema.length);
 
 			//run testcase
 			runTest(true, false, null, -1);
 			
 			//read frame data from hdfs (not via readers to test physical schema)
-			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.BinaryBlockInputInfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.BINARY);
 			FrameBlock frame2 = ((FrameReaderBinaryBlock)reader).readFirstBlock(output("B"));
 			
 			//verify output schema

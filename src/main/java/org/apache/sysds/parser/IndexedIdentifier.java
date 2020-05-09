@@ -24,8 +24,6 @@ import java.util.HashMap;
 
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-
-
 public class IndexedIdentifier extends DataIdentifier 
 {
 	
@@ -681,7 +679,7 @@ public class IndexedIdentifier extends DataIdentifier
 		_dim2 = i.getDim2();
 		_blocksize = i.getBlocksize();
 		_nnz = i.getNnz();
-		_formatType = i.getFormatType();
+		_format = i.getFileFormat();
 		
 		if (i instanceof IndexedIdentifier){
 			_origDim1 = ((IndexedIdentifier)i).getOrigDim1();

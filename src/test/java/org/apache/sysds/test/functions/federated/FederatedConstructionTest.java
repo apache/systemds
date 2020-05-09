@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.federated;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -111,7 +111,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		
 		Types.ValueType[] schema = new Types.ValueType[cols];
 		schemaList.toArray(schema);
-		writeInputFrameWithMTD("A", A, false, schema, OutputInfo.BinaryBlockOutputInfo);
+		writeInputFrameWithMTD("A", A, false, schema, FileFormat.BINARY);
 		federatedConstruction(execMode, FRAME_TEST_FILE_NAME, "A", schema);
 	}
 

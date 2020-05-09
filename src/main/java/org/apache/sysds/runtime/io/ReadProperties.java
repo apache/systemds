@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.io;
 
-import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.common.Types.FileFormat;
 
 public class ReadProperties 
 {
@@ -28,7 +28,7 @@ public class ReadProperties
 	public long rlen, clen;
 	public int blen;
 	public long expectedNnz;
-	public InputInfo inputInfo;
+	public FileFormat fmt;
 	public boolean localFS;
 	
 	// Properties specific to CSV files
@@ -39,7 +39,7 @@ public class ReadProperties
 		clen = -1;
 		blen = -1;
 		expectedNnz = -1;
-		inputInfo = null;
+		fmt = null;
 		localFS = false;
 	}
 }

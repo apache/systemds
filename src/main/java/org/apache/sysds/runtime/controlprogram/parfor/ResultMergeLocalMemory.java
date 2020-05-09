@@ -24,9 +24,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -231,13 +229,9 @@ public class ResultMergeLocalMemory extends ResultMerge
 		
 		//create deep copy of metadata obj
 		DataCharacteristics mcOld = metadata.getDataCharacteristics();
-		OutputInfo oiOld = metadata.getOutputInfo();
-		InputInfo iiOld = metadata.getInputInfo();
-		MatrixCharacteristics mc = new MatrixCharacteristics(
-			mcOld.getRows(),mcOld.getCols(), mcOld.getBlocksize());
+		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
 		mc.setNonZeros(data.getNonZeros());
-		MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
-		moNew.setMetaData( meta );
+		moNew.setMetaData(new MetaDataFormat(mc, metadata.getFileFormat()));
 		
 		//adjust dense/sparse representation
 		data.examSparsity();

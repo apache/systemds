@@ -36,11 +36,11 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.IJV;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.FastStringTokenizer;
@@ -71,8 +71,8 @@ public class ReaderTextCellParallel extends ReaderTextCell
 	
 	private int _numThreads = 1;
 	
-	public ReaderTextCellParallel(InputInfo info) {
-		super(info, false);
+	public ReaderTextCellParallel(FileFormat fmt) {
+		super(fmt, false);
 		_numThreads = OptimizerUtils.getParallelTextReadParallelism();
 	}
 

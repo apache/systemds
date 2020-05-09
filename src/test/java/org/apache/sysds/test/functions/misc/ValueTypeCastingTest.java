@@ -22,8 +22,8 @@ package org.apache.sysds.test.functions.misc;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -150,7 +150,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 			if( matrixInput ){
 				writeInputMatrix("V", V, false);	
 				MatrixCharacteristics mc = new MatrixCharacteristics(numVals,numVals,1000,1000);
-				HDFSTool.writeMetaDataFile(input("V.mtd"), vtIn, mc, OutputInfo.TextCellOutputInfo);
+				HDFSTool.writeMetaDataFile(input("V.mtd"), vtIn, mc, FileFormat.TEXT);
 			}
 			else{
 				HDFSTool.deleteFileIfExistOnHDFS(input("V"));

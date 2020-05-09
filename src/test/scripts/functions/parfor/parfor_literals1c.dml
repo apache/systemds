@@ -25,6 +25,6 @@ parfor( i in 1:1, mode=LOCAL, opt=NONE ) {
   parfor( j in 1:1, mode=LOCAL, opt=NONE ) {
     B = A + 0;
     # param should include internal 'thread root prefix' _t0
-    write(B, $4, "textcell");
+    write(B, $4, "text");
   }
 }

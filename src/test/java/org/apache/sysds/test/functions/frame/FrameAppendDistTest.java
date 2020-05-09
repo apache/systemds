@@ -27,12 +27,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.BinaryOp.AppendMethod;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -151,12 +150,12 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			//initialize the frame data.
 			ValueType[] lschemaA = genMixSchema(cols1);
 			double[][] A = getRandomMatrix(rows1, cols1, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-			writeInputFrameWithMTD("A", A, true, lschemaA, OutputInfo.BinaryBlockOutputInfo);	        
-	        
+			writeInputFrameWithMTD("A", A, true, lschemaA, FileFormat.BINARY);
+
 			ValueType[] lschemaB = genMixSchema(cols2);
 			double[][] B = getRandomMatrix(rows2, cols2, min, max, sparsity, 2345 /*\\System.currentTimeMillis()*/);
-			writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);	        
-	        	        
+			writeInputFrameWithMTD("B", B, true, lschemaB, FileFormat.BINARY);
+
 			boolean exceptionExpected = false;
 			int expectedNumberOfJobs = -1;
 			runTest(true, exceptionExpected, null, expectedNumberOfJobs);
@@ -166,9 +165,9 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			
 			for(String file: config.getOutputFiles())
 			{
-				FrameBlock frameBlock = readDMLFrameFromHDFS(file, InputInfo.BinaryBlockInputInfo);
+				FrameBlock frameBlock = readDMLFrameFromHDFS(file, FileFormat.BINARY);
 				MatrixCharacteristics md = new MatrixCharacteristics(frameBlock.getNumRows(), frameBlock.getNumColumns(), -1, -1);
-				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", InputInfo.CSVInputInfo, md);
+				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", FileFormat.CSV, md);
 				verifyFrameData(frameBlock, frameRBlock, lschemaAB);
 				System.out.println("File processed is " + file);
 			}

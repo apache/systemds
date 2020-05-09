@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.controlprogram.context;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
@@ -44,9 +45,7 @@ import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineagePath;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -308,11 +307,8 @@ public class ExecutionContext {
 		MetaData oldMetaData = mo.getMetaData();
 		if( oldMetaData == null || !(oldMetaData instanceof MetaDataFormat) )
 			throw new DMLRuntimeException("Metadata not available");
-		MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols,
-			(int) mo.getBlocksize());
-		mo.setMetaData(new MetaDataFormat(mc,
-			((MetaDataFormat)oldMetaData).getOutputInfo(),
-			((MetaDataFormat)oldMetaData).getInputInfo()));
+		MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols, (int) mo.getBlocksize());
+		mo.setMetaData(new MetaDataFormat(mc, ((MetaDataFormat)oldMetaData).getFileFormat()));
 	}
 	
 	/**
@@ -512,7 +508,7 @@ public class ExecutionContext {
 		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
-		setMetaData(varName, new MetaDataFormat(mo.getDataCharacteristics(), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		setMetaData(varName, new MetaDataFormat(mo.getDataCharacteristics(), FileFormat.BINARY));
 		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 	

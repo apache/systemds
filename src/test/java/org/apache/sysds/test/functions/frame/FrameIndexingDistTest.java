@@ -30,13 +30,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.LeftIndexingOp;
 import org.apache.sysds.hops.LeftIndexingOp.LeftIndexingMethod;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -139,27 +138,27 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 			}
 			
 			if(et == ExecType.SPARK) {
-		    	rtplatform = ExecMode.SPARK;
-		    }
+				rtplatform = ExecMode.SPARK;
+			}
 			else {
 				// rtplatform = (et==ExecType.MR)? ExecMode.HADOOP : ExecMode.SINGLE_NODE;
-			    rtplatform = ExecMode.HYBRID;
+				rtplatform = ExecMode.HYBRID;
 			}
 			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
-		    
-	        config.addVariable("rows", rows);
-	        config.addVariable("cols", cols);
-	      
-	        long rowstart=816, rowend=1229, colstart=109 /*967*/, colend=1009;
+			
+			config.addVariable("rows", rows);
+			config.addVariable("cols", cols);
+		  
+			long rowstart=816, rowend=1229, colstart=109 /*967*/, colend=1009;
 
-	        config.addVariable("rowstart", rowstart);
-	        config.addVariable("rowend", rowend);
-	        config.addVariable("colstart", colstart);
-	        config.addVariable("colend", colend);
+			config.addVariable("rowstart", rowstart);
+			config.addVariable("rowend", rowend);
+			config.addVariable("colstart", colstart);
+			config.addVariable("colend", colend);
 			loadTestConfiguration(config);
-	        
+			
 			if (itype == IXType.LIX) {
 				/* This is for running the junit test the new way, i.e., construct the arguments directly */
 				String LI_HOME = SCRIPT_DIR + TEST_DIR;
@@ -181,24 +180,24 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 				//initialize the frame data.
 
 				double sparsity=sparsity1;//rand.nextDouble(); 
-		        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-		        writeInputFrameWithMTD("A", A, true, schema, OutputInfo.BinaryBlockOutputInfo);	        
-		        
-		        sparsity=sparsity3;//rand.nextDouble();
-		        double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
-		        ValueType[] lschemaB = Arrays.copyOfRange(schema, (int)colstart-1, (int)colend);
-		        writeInputFrameWithMTD("B", B, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);
+				double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
+				writeInputFrameWithMTD("A", A, true, schema, FileFormat.BINARY);
+				
+				sparsity=sparsity3;//rand.nextDouble();
+				double[][] B = getRandomMatrix((int)(rowend-rowstart+1), (int)(colend-colstart+1), min, max, sparsity, 2345 /*System.currentTimeMillis()*/);
+				ValueType[] lschemaB = Arrays.copyOfRange(schema, (int)colstart-1, (int)colend);
+				writeInputFrameWithMTD("B", B, true, lschemaB, FileFormat.BINARY);
 	
-		        sparsity=sparsity2;//rand.nextDouble();
-		        double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, 3267 /*System.currentTimeMillis()*/);
-		        ValueType[] lschemaC = Arrays.copyOfRange(schema, (int)colstart-1, cols);
-		        writeInputFrameWithMTD("C", C, true, lschemaC, OutputInfo.BinaryBlockOutputInfo);
+				sparsity=sparsity2;//rand.nextDouble();
+				double[][] C = getRandomMatrix((int)(rowend), (int)(cols-colstart+1), min, max, sparsity, 3267 /*System.currentTimeMillis()*/);
+				ValueType[] lschemaC = Arrays.copyOfRange(schema, (int)colstart-1, cols);
+				writeInputFrameWithMTD("C", C, true, lschemaC, FileFormat.BINARY);
 	
-		        sparsity=sparsity4;//rand.nextDoublBe();
-		        double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, 4856 /*System.currentTimeMillis()*/);
-		        writeInputFrameWithMTD("D", D, true, lschemaB, OutputInfo.BinaryBlockOutputInfo);
+				sparsity=sparsity4;//rand.nextDoublBe();
+				double[][] D = getRandomMatrix(rows, (int)(colend-colstart+1), min, max, sparsity, 4856 /*System.currentTimeMillis()*/);
+				writeInputFrameWithMTD("D", D, true, lschemaB, FileFormat.BINARY);
 		
-		        boolean exceptionExpected = false;
+				boolean exceptionExpected = false;
 				int expectedNumberOfJobs = -1;
 				runTest(true, exceptionExpected, null, expectedNumberOfJobs);
 				
@@ -221,16 +220,16 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 		
 				//initialize the frame data.
 		
-			    double sparsity = bSparse ? sparsity4 : sparsity2;
-		        double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
-		        writeInputFrameWithMTD("A", A, true, schema, OutputInfo.BinaryBlockOutputInfo);	        
-		        
-		        ValueType[] schemaB = new ValueType[(int) (colend-colstart+1)]; 
-		        System.arraycopy(schema, (int)(colstart-1), schemaB, 0, (int)(colend-colstart+1)); 
+				double sparsity = bSparse ? sparsity4 : sparsity2;
+				double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 1111 /*\\System.currentTimeMillis()*/);
+				writeInputFrameWithMTD("A", A, true, schema, FileFormat.BINARY);
+				
+				ValueType[] schemaB = new ValueType[(int) (colend-colstart+1)]; 
+				System.arraycopy(schema, (int)(colstart-1), schemaB, 0, (int)(colend-colstart+1)); 
 				outputSchema.put(config.getOutputFiles()[0], schemaB);
 
-		        ValueType[] schemaC = new ValueType[(int) (cols-colstart+1)]; 
-		        System.arraycopy(schema, (int)(colstart-1), schemaC, 0, (int)(cols-colstart+1)); 
+				ValueType[] schemaC = new ValueType[(int) (cols-colstart+1)]; 
+				System.arraycopy(schema, (int)(colstart-1), schemaC, 0, (int)(cols-colstart+1)); 
 				outputSchema.put(config.getOutputFiles()[1], schemaC);
 
 				outputSchema.put(config.getOutputFiles()[2], schemaB);
@@ -255,9 +254,9 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 	
 		for(String file: config.getOutputFiles())
 		{
-			FrameBlock frameBlock = readDMLFrameFromHDFS(file, InputInfo.BinaryBlockInputInfo);
+			FrameBlock frameBlock = readDMLFrameFromHDFS(file, FileFormat.BINARY);
 			MatrixCharacteristics md = new MatrixCharacteristics(frameBlock.getNumRows(), frameBlock.getNumColumns(), -1, -1);
-			FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", InputInfo.CSVInputInfo, md);
+			FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", FileFormat.CSV, md);
 			ValueType[] schemaOut = outputSchema.get(file);
 			verifyFrameData(frameBlock, frameRBlock, schemaOut);
 			System.out.println("File processed is " + file);

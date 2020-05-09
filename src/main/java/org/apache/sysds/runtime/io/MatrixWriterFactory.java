@@ -20,65 +20,65 @@
 package org.apache.sysds.runtime.io;
 
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 
 public class MatrixWriterFactory 
 {
 
-	public static MatrixWriter createMatrixWriter( OutputInfo oinfo ) {
-		return createMatrixWriter(oinfo, -1, null);
+	public static MatrixWriter createMatrixWriter(FileFormat fmt) {
+		return createMatrixWriter(fmt, -1, null);
 	}
 
-	public static MatrixWriter createMatrixWriter( OutputInfo oinfo, int replication, FileFormatProperties props ) 
+	public static MatrixWriter createMatrixWriter(FileFormat fmt, int replication, FileFormatProperties props) 
 	{
 		MatrixWriter writer = null;
 		
-		if( oinfo == OutputInfo.TextCellOutputInfo ) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
-				writer = new WriterTextCellParallel();
-			else
-				writer = new WriterTextCell();
-		}
-		else if( oinfo == OutputInfo.MatrixMarketOutputInfo ) {
-			//note: disabled parallel cp write of matrix market in order to ensure the
-			//requirement of writing out a single file
+		switch(fmt) {
+			case TEXT:
+				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+					writer = new WriterTextCellParallel();
+				else
+					writer = new WriterTextCell();
+				break;
 			
-			//if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
-			//	writer = new WriterMatrixMarketParallel();
-			
-			writer = new WriterMatrixMarket();
-		}
-		else if( oinfo == OutputInfo.CSVOutputInfo ) {
-			if( props!=null && !(props instanceof FileFormatPropertiesCSV) )
-				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
-				writer = new WriterTextCSVParallel((FileFormatPropertiesCSV)props);
-			else
-				writer = new WriterTextCSV((FileFormatPropertiesCSV)props);
-		}
-		else if( oinfo == OutputInfo.LIBSVMOutputInfo) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
-				writer = new WriterTextLIBSVMParallel();
-			else
-				writer = new WriterTextLIBSVM();
-		}
-		else if( oinfo == OutputInfo.BinaryCellOutputInfo ) {
-			writer = new WriterBinaryCell();
-		}
-		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
-				writer = new WriterBinaryBlockParallel(replication);
-			else
-				writer = new WriterBinaryBlock(replication);
-		}
-		else {
-			throw new DMLRuntimeException("Failed to create matrix writer for unknown output info: "
-		                                   + OutputInfo.outputInfoToString(oinfo));
+			case MM:
+				//note: disabled parallel cp write of matrix market in order to ensure the
+				//requirement of writing out a single file
+				
+				//if( OptimizerUtils.PARALLEL_CP_WRITE_TEXTFORMATS )
+				//	writer = new WriterMatrixMarketParallel();
+				writer = new WriterMatrixMarket();
+				break;
+		
+			case CSV:
+				if( props!=null && !(props instanceof FileFormatPropertiesCSV) )
+					throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
+				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+					writer = new WriterTextCSVParallel((FileFormatPropertiesCSV)props);
+				else
+					writer = new WriterTextCSV((FileFormatPropertiesCSV)props);
+				break;
+				
+			case LIBSVM:
+				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+					writer = new WriterTextLIBSVMParallel();
+				else
+					writer = new WriterTextLIBSVM();
+				break;
+		
+			case BINARY:
+				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
+					writer = new WriterBinaryBlockParallel(replication);
+				else
+					writer = new WriterBinaryBlock(replication);
+				break;
+		
+			default:
+				throw new DMLRuntimeException("Failed to create matrix writer for unknown format: " + fmt.toString());
 		}
 		
 		return writer;
 	}
-	
 }

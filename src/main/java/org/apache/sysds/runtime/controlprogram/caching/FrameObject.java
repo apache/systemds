@@ -24,6 +24,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -36,8 +37,6 @@ import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -219,7 +218,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		FrameBlock data = null;
 		try {
 			data = isFederated() ? acquireReadAndRelease() :
-				FrameReaderFactory.createFrameReader(iimd.getInputInfo(), getFileFormatProperties())
+				FrameReaderFactory.createFrameReader(iimd.getFileFormat(), getFileFormatProperties())
 					.readFrameFromHDFS(fname, lschema, dc.getRows(), dc.getCols());
 		}
 		catch( DMLRuntimeException ex ) {
@@ -275,26 +274,24 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
-	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop) 
+	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)
 		throws IOException, DMLRuntimeException 
 	{
-		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt);
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo, fprop);
+		FileFormat fmt = FileFormat.safeValueOf(ofmt);
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
 		writer.writeFrameToHDFS(_data, fname,  getNumRows(), getNumColumns());
 	}
 
 	@Override
-	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
+	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt)
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare output info
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt ) 
-				: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
-	    
+
 		//note: the write of an RDD to HDFS might trigger
-		//lazy evaluation of pending transformations.				
-		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, oinfo);	
+		//lazy evaluation of pending transformations.
+		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, iimd.getFileFormat());
 	}
 
 }

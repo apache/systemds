@@ -32,6 +32,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
@@ -44,10 +45,8 @@ import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
@@ -68,7 +67,7 @@ public class RemoteDPParForSpark
 	protected static final Log LOG = LogFactory.getLog(RemoteDPParForSpark.class.getName());
 
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, HashMap<String, byte[]> clsMap,
-			String resultFile, MatrixObject input, ExecutionContext ec, PartitionFormat dpf, OutputInfo oi, 
+			String resultFile, MatrixObject input, ExecutionContext ec, PartitionFormat dpf, FileFormat fmt, 
 			boolean tSparseCol, boolean enableCPCaching, int numReducers ) 
 	{
 		String jobname = "ParFor-DPESP";
@@ -92,12 +91,12 @@ public class RemoteDPParForSpark
 		
 		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, 
-				matrixvar, itervar, enableCPCaching, mc, tSparseCol, dpf, oi, aTasks, aIters);
-		JavaPairRDD<Long,Writable> tmp = getPartitionedInput(sec, matrixvar, oi, dpf);
+				matrixvar, itervar, enableCPCaching, mc, tSparseCol, dpf, fmt, aTasks, aIters);
+		JavaPairRDD<Long,Writable> tmp = getPartitionedInput(sec, matrixvar, fmt, dpf);
 		List<Tuple2<Long,String>> out = (requiresGrouping(dpf, mo) ?
 				tmp.groupByKey(numReducers2) : tmp.map(new PseudoGrouping()) )
-				   .mapPartitionsToPair(efun)  //execute parfor tasks, incl cleanup
-		           .collect();                 //get output handles 
+					.mapPartitionsToPair(efun)  //execute parfor tasks, incl cleanup
+					.collect();                 //get output handles 
 		
 		//de-serialize results
 		LocalVariableMap[] results = RemoteParForUtils.getResults(out, LOG);
@@ -119,9 +118,8 @@ public class RemoteDPParForSpark
 	
 	@SuppressWarnings("unchecked")
 	private static JavaPairRDD<Long, Writable> getPartitionedInput(SparkExecutionContext sec, 
-			String matrixvar, OutputInfo oi, PartitionFormat dpf) 
+			String matrixvar, FileFormat fmt, PartitionFormat dpf) 
 	{
-		InputInfo ii = InputInfo.BinaryBlockInputInfo;
 		MatrixObject mo = sec.getMatrixObject(matrixvar);
 		DataCharacteristics mc = mo.getDataCharacteristics();
 
@@ -148,7 +146,7 @@ public class RemoteDPParForSpark
 		{
 			//get input rdd and data partitioning 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(matrixvar);
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf._dpf, dpf._N);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, fmt, dpf._dpf, dpf._N);
 			return in.flatMapToPair(dpfun);
 		}
 		//default binary block input rdd with grouping
@@ -162,7 +160,7 @@ public class RemoteDPParForSpark
 						mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
 			
 			//data partitioning of input rdd 
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf._dpf, dpf._N);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, fmt, dpf._dpf, dpf._N);
 			return in.flatMapToPair(dpfun);
 		}
 	} 
@@ -233,7 +231,7 @@ public class RemoteDPParForSpark
 				}
 				else { //dense
 					for( int j=0; j<_clen; j++ )
-						mb.appendValue(0, j, vect.apply(j));	
+						mb.appendValue(0, j, vect.apply(j));
 				}
 			}
 			else { //row

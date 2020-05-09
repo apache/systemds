@@ -21,12 +21,11 @@ package org.apache.sysds.test.functions.frame;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -107,7 +106,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 			
 			//write inputs
 			if( testname.equals(TEST_NAME1) )
-				FrameWriterFactory.createFrameWriter(OutputInfo.TextCellOutputInfo)
+				FrameWriterFactory.createFrameWriter(FileFormat.TEXT)
 					.writeFrameToHDFS(fb, input("A"), 1, 1);
 			else
 				HDFSTool.writeObjectToHDFS(inval, input("A"));
@@ -121,7 +120,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 				retval = HDFSTool.readObjectFromHDFSFile(output("B"), vt);
 			}
 			else {
-				retval = FrameReaderFactory.createFrameReader(InputInfo.TextCellInputInfo)
+				retval = FrameReaderFactory.createFrameReader(FileFormat.TEXT)
 					.readFrameFromHDFS(output("B"), new ValueType[]{vt}, 1, 1)
 					.get(0, 0);
 			}

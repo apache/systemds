@@ -24,6 +24,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -51,10 +52,8 @@ import org.apache.sysds.runtime.io.TensorWriterFactory;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.IJV;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.io.IOException;
@@ -84,36 +83,36 @@ public class DataConverter
 	// (textcell, binarycell, binaryblock)
 	///////
 
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo,  DataCharacteristics dc )
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, FileFormat fmt,  DataCharacteristics dc )
 		throws IOException {
-		writeMatrixToHDFS(mat, dir, outputinfo, dc, -1, null);
+		writeMatrixToHDFS(mat, dir, fmt, dc, -1, null);
 	}
 
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, DataCharacteristics dc, int replication, FileFormatProperties formatProperties)
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, FileFormat fmt, DataCharacteristics dc, int replication, FileFormatProperties formatProperties)
 		throws IOException {
-		writeMatrixToHDFS(mat, dir, outputinfo, dc, -1, null, false);
+		writeMatrixToHDFS(mat, dir, fmt, dc, -1, null, false);
 	}
 	
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, DataCharacteristics dc, int replication, FileFormatProperties formatProperties, boolean diag)
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, FileFormat fmt, DataCharacteristics dc, int replication, FileFormatProperties formatProperties, boolean diag)
 		throws IOException {
-		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter( outputinfo, replication, formatProperties );
+		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter( fmt, replication, formatProperties );
 		writer.writeMatrixToHDFS(mat, dir, dc.getRows(), dc.getCols(), dc.getBlocksize(), dc.getNonZeros(), diag);
 	}
 
-	public static void writeTensorToHDFS(TensorBlock tensor, String dir, OutputInfo outputinfo, DataCharacteristics dc)
+	public static void writeTensorToHDFS(TensorBlock tensor, String dir, FileFormat fmt, DataCharacteristics dc)
 			throws IOException {
-		TensorWriter writer = TensorWriterFactory.createTensorWriter(outputinfo);
+		TensorWriter writer = TensorWriterFactory.createTensorWriter(fmt);
 		int blen = dc.getBlocksize();
 		writer.writeTensorToHDFS(tensor, dir, blen);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, boolean localFS)
+	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen, boolean localFS)
 		throws IOException
 	{	
 		ReadProperties prop = new ReadProperties();
 		
 		prop.path = dir;
-		prop.inputInfo = inputinfo;
+		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
@@ -122,13 +121,13 @@ public class DataConverter
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen)
+	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)
 		throws IOException
 	{	
 		ReadProperties prop = new ReadProperties();
 		
 		prop.path = dir;
-		prop.inputInfo = inputinfo;
+		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
@@ -136,13 +135,13 @@ public class DataConverter
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int blen, long expectedNnz)
+	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen, long expectedNnz)
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
 		
 		prop.path = dir;
-		prop.inputInfo = inputinfo;
+		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
@@ -151,14 +150,14 @@ public class DataConverter
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
+	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, 
 			int blen, long expectedNnz, boolean localFS)
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
 		
 		prop.path = dir;
-		prop.inputInfo = inputinfo;
+		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
@@ -168,14 +167,14 @@ public class DataConverter
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, 
+	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, 
 			int blen, long expectedNnz, FileFormatProperties formatProperties)
 	throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
 		
 		prop.path = dir;
-		prop.inputInfo = inputinfo;
+		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
@@ -185,11 +184,11 @@ public class DataConverter
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static TensorBlock readTensorFromHDFS(String dir, InputInfo inputinfo, long[] dims, int blen,
+	public static TensorBlock readTensorFromHDFS(String dir, FileFormat fmt, long[] dims, int blen,
 			ValueType[] schema) throws IOException {
 		TensorBlock ret;
 		try {
-			TensorReader reader = TensorReaderFactory.createTensorReader(inputinfo);
+			TensorReader reader = TensorReaderFactory.createTensorReader(fmt);
 			ret = reader.readTensorFromHDFS(dir, dims, blen, schema);
 		}
 		catch(DMLRuntimeException rex)

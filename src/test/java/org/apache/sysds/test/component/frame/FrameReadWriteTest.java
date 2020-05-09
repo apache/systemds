@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
@@ -32,7 +33,6 @@ import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -61,101 +61,95 @@ public class FrameReadWriteTest extends AutomatedTestBase
 
 	@Test
 	public void testFrameStringsStringsBinary()  {
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaStrings, schemaStrings, false);
+		runFrameReadWriteTest(FileFormat.BINARY, schemaStrings, schemaStrings, false);
 	}
 	
 	@Test
 	public void testFrameStringsStringsBinaryParallel()  { 
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaStrings, schemaStrings, true);
+		runFrameReadWriteTest(FileFormat.BINARY, schemaStrings, schemaStrings, true);
 	}
 	
 	@Test
 	public void testFrameMixedStringsBinary()  {
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaMixed, schemaStrings, false);
+		runFrameReadWriteTest(FileFormat.BINARY, schemaMixed, schemaStrings, false);
 	}
 	
 	@Test
 	public void testFrameStringsMixedBinaryParallel()  {
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaStrings, schemaMixed, true);
+		runFrameReadWriteTest(FileFormat.BINARY, schemaStrings, schemaMixed, true);
 	}
 	
 	@Test
 	public void testFrameMixedMixedBinary()  {
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaMixed, schemaMixed, false);
+		runFrameReadWriteTest(FileFormat.BINARY, schemaMixed, schemaMixed, false);
 	}
 	
 	@Test
 	public void testFrameMixedMixedBinaryParallel()  {
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, schemaMixed, schemaMixed, true);
+		runFrameReadWriteTest(FileFormat.BINARY, schemaMixed, schemaMixed, true);
 	}
 
 	@Test
 	public void testFrameStringsStringsTextCell()  {
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaStrings, schemaStrings, false);
+		runFrameReadWriteTest(FileFormat.TEXT, schemaStrings, schemaStrings, false);
 	}
 	
 	@Test
 	public void testFrameStringsStringsTextCellParallel()  { 
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaStrings, schemaStrings, true);
+		runFrameReadWriteTest(FileFormat.TEXT, schemaStrings, schemaStrings, true);
 	}
 	
 	@Test
 	public void testFrameMixedStringsTextCell()  {
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaMixed, schemaStrings, false);
+		runFrameReadWriteTest(FileFormat.TEXT, schemaMixed, schemaStrings, false);
 	}
 	
 	@Test
 	public void testFrameStringsMixedTextCellParallel()  {
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaStrings, schemaMixed, true);
+		runFrameReadWriteTest(FileFormat.TEXT, schemaStrings, schemaMixed, true);
 	}
 	
 	@Test
 	public void testFrameMixedMixedTextCell()  {
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaMixed, schemaMixed, false);
+		runFrameReadWriteTest(FileFormat.TEXT, schemaMixed, schemaMixed, false);
 	}
 	
 	@Test
 	public void testFrameMixedMixedTextCellParallel()  {
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, schemaMixed, schemaMixed, true);
+		runFrameReadWriteTest(FileFormat.TEXT, schemaMixed, schemaMixed, true);
 	}
 
 	@Test
 	public void testFrameStringsStringsTextCSV()  {
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaStrings, schemaStrings, false);
+		runFrameReadWriteTest(FileFormat.CSV, schemaStrings, schemaStrings, false);
 	}
 	
 	@Test
 	public void testFrameStringsStringsTextCSVParallel()  { 
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaStrings, schemaStrings, true);
+		runFrameReadWriteTest(FileFormat.CSV, schemaStrings, schemaStrings, true);
 	}
 	
 	@Test
 	public void testFrameMixedStringsTextCSV()  {
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaMixed, schemaStrings, false);
+		runFrameReadWriteTest(FileFormat.CSV, schemaMixed, schemaStrings, false);
 	}
 	
 	@Test
 	public void testFrameStringsMixedTextCSVParallel()  {
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaStrings, schemaMixed, true);
+		runFrameReadWriteTest(FileFormat.CSV, schemaStrings, schemaMixed, true);
 	}
 	
 	@Test
 	public void testFrameMixedMixedTextCSV()  {
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaMixed, schemaMixed, false);
+		runFrameReadWriteTest(FileFormat.CSV, schemaMixed, schemaMixed, false);
 	}
 	
 	@Test
 	public void testFrameMixedMixedTextCSVParallel()  {
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, schemaMixed, schemaMixed, true);
+		runFrameReadWriteTest(FileFormat.CSV, schemaMixed, schemaMixed, true);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
-	private void runFrameReadWriteTest( OutputInfo oinfo, ValueType[] schema1, ValueType[] schema2, boolean parallel)
+	private void runFrameReadWriteTest( FileFormat fmt, ValueType[] schema1, ValueType[] schema2, boolean parallel)
 	{
 		boolean oldParText = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		boolean oldParBin = CompilerConfig.FLAG_PARREADWRITE_BINARY;
@@ -180,11 +174,11 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			initFrameData(frame2, B, schema2);
 			
 			//Write frame data to disk
-			FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();			
+			FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();
 			fprop.setDelim(DELIMITER);
 			fprop.setHeader(HEADER);
 			
-			writeAndVerifyData(oinfo, frame1, frame2, fprop);
+			writeAndVerifyData(fmt, frame1, frame2, fprop);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -219,15 +213,15 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			}
 	}
 	
-	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, FileFormatPropertiesCSV fprop)
+	void writeAndVerifyData(FileFormat fmt, FrameBlock frame1, FrameBlock frame2, FileFormatPropertiesCSV fprop)
 		throws IOException
 	{
 		String fname1 = SCRIPT_DIR + TEST_DIR + "/frameData1";
 		String fname2 = SCRIPT_DIR + TEST_DIR + "/frameData2";
 		
 		//Create reader/writer
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo, fprop);
-		FrameReader reader = FrameReaderFactory.createFrameReader(OutputInfo.getMatchingInputInfo(oinfo), fprop);
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
+		FrameReader reader = FrameReaderFactory.createFrameReader(fmt, fprop);
 		
 		//Write frame data to disk
 		writer.writeFrameToHDFS(frame1, fname1, frame1.getNumRows(), frame1.getNumColumns());
@@ -238,7 +232,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 		FrameBlock frame2Read = reader.readFrameFromHDFS(fname2, frame2.getSchema(), frame2.getNumRows(), frame2.getNumColumns());
 		
 		// Verify that data read with original frames
-		verifyFrameData(frame1, frame1Read);			
+		verifyFrameData(frame1, frame1Read);
 		verifyFrameData(frame2, frame2Read);
 		HDFSTool.deleteFileIfExistOnHDFS(fname1);
 		HDFSTool.deleteFileIfExistOnHDFS(fname2);

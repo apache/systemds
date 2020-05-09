@@ -24,14 +24,13 @@ import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -228,14 +227,12 @@ public class NoRenameTest extends AutomatedTestBase
 			//write input
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
-			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(
-				OutputInfo.fromExternalString(fmt));
+			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.safeValueOf(fmt));
 			writer.writeMatrixToHDFS(mbA, input("A"), rows, cols, blocksize, mbA.getNonZeros());
 			
 			//execute test
 			runTest(true, false, null, -1);
-			MatrixReader reader = MatrixReaderFactory.createMatrixReader(
-				InputInfo.fromExternalString(fmt));
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(FileFormat.safeValueOf(fmt));
 			MatrixBlock mbC = reader.readMatrixFromHDFS(output("C"), rows, cols, blocksize, -1);
 			double[][] C = DataConverter.convertToDoubleMatrix(mbC);
 			

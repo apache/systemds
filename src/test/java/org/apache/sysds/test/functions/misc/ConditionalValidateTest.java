@@ -21,9 +21,9 @@ package org.apache.sysds.test.functions.misc;
 
 import org.junit.Test;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -120,8 +120,8 @@ public class ConditionalValidateTest extends AutomatedTestBase
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(Y);
 			MatrixCharacteristics mc = new MatrixCharacteristics(10,15,1000,1000);
 			
-			DataConverter.writeMatrixToHDFS(mb, input+(fileExists?"":"b"), OutputInfo.TextCellOutputInfo, mc);
-			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.FP64, mc, OutputInfo.TextCellOutputInfo);
+			DataConverter.writeMatrixToHDFS(mb, input+(fileExists?"":"b"), FileFormat.TEXT, mc);
+			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.FP64, mc, FileFormat.TEXT);
 			
 			//run tests
 			runTest(true, exceptionExpected, DMLException.class, -1);

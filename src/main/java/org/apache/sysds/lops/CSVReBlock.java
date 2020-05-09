@@ -27,7 +27,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 
 /**
- * Lop to convert CSV data into SystemDS data format (TextCell, BinaryCell, or BinaryBlock)
+ * Lop to convert CSV data into SystemDS data format
  */
 public class CSVReBlock extends Lop 
 {

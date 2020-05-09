@@ -1245,7 +1245,7 @@ public class DataExpression extends DataIdentifier
 			//validate read filename
 			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
 				getOutput().setBlocksize(-1);
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString()))
 				getOutput().setBlocksize(ConfigurationManager.getBlocksize());
 			else
 				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)
@@ -2059,11 +2059,9 @@ public class DataExpression extends DataIdentifier
 			// if the read method parameter is a constant, then verify value matches MTD metadata file
 			if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier)
 					&& !getVarParam(key.toString()).toString().equalsIgnoreCase(val.toString())) {
-				raiseValidateError(
-						"Parameter '" + key.toString()
-								+ "' has conflicting values in metadata and read statement. MTD file value: '"
-								+ val.toString() + "'. Read statement value: '" + getVarParam(key.toString()) + "'.",
-						conditional);
+				raiseValidateError("Parameter '" + key.toString()
+					+ "' has conflicting values in metadata and read statement. MTD file value: '"
+					+ val.toString() + "'. Read statement value: '" + getVarParam(key.toString()) + "'.", conditional);
 			} else {
 				// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
 				if (getVarParam(key.toString()) == null){

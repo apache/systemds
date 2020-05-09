@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -154,8 +155,16 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			csvInstruction.processInstruction(sec);
 			return;
 		}
-		else if(fmt == FileFormat.BINARY)
-		{
+		else if(fmt == FileFormat.BINARY && mc.getBlocksize() <= 0) {
+			//BINARY BLOCK <- BINARY CELL (e.g., after grouped aggregate)
+			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForMatrixObject(mo, FileFormat.BINARY);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellToBinaryBlock(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
+
+			//put output RDD handle into symbol table
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+		}
+		else if(fmt == FileFormat.BINARY) {
 			//BINARY BLOCK <- BINARY BLOCK (different sizes)
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 			

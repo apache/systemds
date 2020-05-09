@@ -57,6 +57,8 @@ public class FrameReaderFactory
 					reader = new FrameReaderBinaryBlockParallel();
 				else
 					reader = new FrameReaderBinaryBlock();
+				break;
+				
 			default:
 				throw new DMLRuntimeException(
 					"Failed to create frame reader for unknown format: " + fmt.toString());

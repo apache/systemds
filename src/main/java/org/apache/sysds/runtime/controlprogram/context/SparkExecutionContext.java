@@ -517,7 +517,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * in order to support the old transform implementation.
 	 *
 	 * @param fo frame object
-	 * @param inputInfo input info
+	 * @param fmt file format type
 	 * @return JavaPairRDD handle for a frame object
 	 */
 	@SuppressWarnings({ "unchecked", "resource" })

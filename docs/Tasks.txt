@@ -51,6 +51,9 @@ SYSTEMDS-50 I/O Formats
  * 52 Support for libsvm files (local/distributed)
  * 53 New sql data source (local, distributed)                        
  * 54 Support for is.na, is.nan, is.infinite                          OK
+ * 55 Cleanup file formats, binary cell, input/output infos           OK
+ * 56 Consolidate single/multi-threaded readers
+ * 57 Support for hdf5 files (local/distributed)
 
 SYSTEMDS-60 Update SystemML improvements
  * 61 Take over cumulative aggregate improvements                     OK

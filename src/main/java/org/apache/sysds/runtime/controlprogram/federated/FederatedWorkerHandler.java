@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.DataExpression;
@@ -42,10 +43,8 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -138,9 +137,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not recognize datatype");
 		}
 		
-		OutputInfo oi;
-		InputInfo ii;
 		// read metadata
+		FileFormat fmt = null;
 		try {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
@@ -151,17 +149,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 						return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-					String format = mtd.getString(DataExpression.FORMAT_TYPE);
-					oi = OutputInfo.fromExternalString(format);
-					ii = OutputInfo.getMatchingInputInfo(oi);
+					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 				}
 			}
 		}
 		catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-		MetaDataFormat mdf = new MetaDataFormat(mc, oi, ii);
-		cd.setMetaData(mdf);
+		cd.setMetaData(new MetaDataFormat(mc, fmt));
 		cd.acquireRead();
 		cd.refreshMetaData();
 		cd.release();
@@ -291,8 +286,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse createMatrixObject(MatrixBlock result) {
 		MatrixObject resTo = new MatrixObject(Types.ValueType.FP64, OptimizerUtils.getUniqueTempFileName());
 		MetaDataFormat metadata = new MetaDataFormat(
-			new MatrixCharacteristics(result.getNumRows(), result.getNumColumns()),
-			OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			new MatrixCharacteristics(result.getNumRows(), result.getNumColumns()), FileFormat.BINARY);
 		resTo.setMetaData(metadata);
 		resTo.acquireModify(result);
 		resTo.release();

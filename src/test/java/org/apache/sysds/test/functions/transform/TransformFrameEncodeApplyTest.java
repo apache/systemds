@@ -23,8 +23,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.io.MatrixReaderFactory;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -399,10 +399,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			
 			//read input/output and compare
 			double[][] R1 = DataConverter.convertToDoubleMatrix(MatrixReaderFactory
-				.createMatrixReader(InputInfo.CSVInputInfo)
+				.createMatrixReader(FileFormat.CSV)
 				.readMatrixFromHDFS(output("tfout1"), -1L, -1L, 1000, -1));
 			double[][] R2 = DataConverter.convertToDoubleMatrix(MatrixReaderFactory
-				.createMatrixReader(InputInfo.CSVInputInfo)
+				.createMatrixReader(FileFormat.CSV)
 				.readMatrixFromHDFS(output("tfout2"), -1L, -1L, 1000, -1));
 			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);
 			

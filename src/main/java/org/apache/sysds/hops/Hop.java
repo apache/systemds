@@ -309,8 +309,7 @@ public abstract class Hop implements ParseInfo
 					reblock = new CSVReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), et);
 				}
-				else //TEXT / MM / BINARYBLOCK / BINARYCELL
-				{
+				else { //ALL OTHER
 					reblock = new ReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), _outputEmptyBlocks, et);
 				}

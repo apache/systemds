@@ -26,8 +26,8 @@ import java.io.IOException;
 import org.junit.Test;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -359,7 +359,7 @@ public class ReadMMTest extends AutomatedTestBase
 			HDFSTool.deleteFileIfExistOnHDFS(fname + ".mtd");
 			TestUtils.createFile(fname + "/in");
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
-			HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mc, OutputInfo.stringToOutputInfo("binaryblock"));
+			HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mc, FileFormat.BINARY);
 			runTest(true, DMLException.class);
 		} catch (IOException e) {
 			e.printStackTrace();

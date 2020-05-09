@@ -21,16 +21,15 @@ package org.apache.sysds.runtime.controlprogram.parfor;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.Statistics;
@@ -56,7 +55,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int blen)
+	protected void partitionMatrix(MatrixObject in, String fnameNew, FileFormat fmt, long rlen, long clen, int blen)
 	{
 		String jobname = "ParFor-DPSP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -69,15 +68,15 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 			//get input rdd
 			JavaPairRDD<MatrixIndexes, MatrixBlock> inRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
-					sec.getRDDHandleForMatrixObject(in, InputInfo.BinaryBlockInputInfo);
+					sec.getRDDHandleForMatrixObject(in, FileFormat.BINARY);
 			
 			//determine degree of parallelism
 			DataCharacteristics mc = in.getDataCharacteristics();
 			int numRed = (int)determineNumReducers(inRdd, mc, _numRed);
 	
 			//run spark remote data partition job 
-			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format, _n);
-			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi, _replication);
+			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, fmt, _format, _n);
+			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, fmt, _replication);
 			inRdd.flatMapToPair(dpfun) //partition the input blocks
 				.groupByKey(numRed)    //group partition blocks
 				.foreach(wfun);        //write partitions to hdfs

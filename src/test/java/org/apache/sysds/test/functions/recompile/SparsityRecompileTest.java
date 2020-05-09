@@ -25,9 +25,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -123,8 +123,8 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			MatrixBlock mb = MatrixBlock.randOperations((int)rows, (int)cols, sparsity, 0, 1, "uniform", System.currentTimeMillis());
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,OptimizerUtils.DEFAULT_BLOCKSIZE,(long)(rows*cols*sparsity));
 			
-			DataConverter.writeMatrixToHDFS(mb, input("V"), OutputInfo.TextCellOutputInfo, mc);
-			HDFSTool.writeMetaDataFile(input("V.mtd"), ValueType.FP64, mc, OutputInfo.TextCellOutputInfo);
+			DataConverter.writeMatrixToHDFS(mb, input("V"), FileFormat.TEXT, mc);
+			HDFSTool.writeMetaDataFile(input("V.mtd"), ValueType.FP64, mc, FileFormat.TEXT);
 			
 			runTest(true, false, null, -1);
 			

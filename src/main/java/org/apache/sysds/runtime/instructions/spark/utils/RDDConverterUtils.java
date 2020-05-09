@@ -45,6 +45,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -59,7 +60,6 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -320,7 +320,7 @@ public class RDDConverterUtils
 			out1 = RDDAggregateUtils.mergeByKey(out1, numPartitions2, false);
 			out1.saveAsHadoopFile(pathY, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			mc1.setNonZeros(aNnz1.value()); //update nnz after triggered save
-			HDFSTool.writeMetaDataFile(pathY+".mtd", ValueType.FP64, mc1, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(pathY+".mtd", ValueType.FP64, mc1, FileFormat.BINARY);
 			
 			//extract data and convert to binary block
 			DataCharacteristics mc2 = new MatrixCharacteristics(mcOutX.getRows(), mcOutX.getCols(), mcOutX.getBlocksize(), -1);
@@ -330,7 +330,7 @@ public class RDDConverterUtils
 			out2 = RDDAggregateUtils.mergeByKey(out2, numPartitions, false);
 			out2.saveAsHadoopFile(pathX, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			mc2.setNonZeros(aNnz2.value()); //update nnz after triggered save
-			HDFSTool.writeMetaDataFile(pathX+".mtd", ValueType.FP64, mc2, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(pathX+".mtd", ValueType.FP64, mc2, FileFormat.BINARY);
 			
 			//asynchronous cleanup of cached intermediates
 			ilpoints.unpersist(false);

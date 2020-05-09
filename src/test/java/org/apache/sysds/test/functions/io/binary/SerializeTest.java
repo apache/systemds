@@ -21,10 +21,9 @@ package org.apache.sysds.test.functions.io.binary;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -103,13 +102,13 @@ public class SerializeTest extends AutomatedTestBase
 			double[][] X = getRandomMatrix(rows, cols, -1.0, 1.0, sparsity, 7); 
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, 1000, 1000);
-			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.BinaryBlockOutputInfo, mc);
-			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.FP64, mc, OutputInfo.BinaryBlockOutputInfo);
+			DataConverter.writeMatrixToHDFS(mb, input("X"), FileFormat.BINARY, mc);
+			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.FP64, mc, FileFormat.BINARY);
 			
 			runTest(true, false, null, -1); //mult 7
 			
 			//compare matrices 
-			MatrixBlock mb2 = DataConverter.readMatrixFromHDFS(output("X"), InputInfo.BinaryBlockInputInfo, rows, cols, 1000, 1000);
+			MatrixBlock mb2 = DataConverter.readMatrixFromHDFS(output("X"), FileFormat.BINARY, rows, cols, 1000, 1000);
 			for( int i=0; i<mb.getNumRows(); i++ )
 				for( int j=0; j<mb.getNumColumns(); j++ )
 				{

@@ -19,22 +19,21 @@
 
 package org.apache.sysds.runtime.io;
 
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 
 public class TensorReaderFactory {
-	public static TensorReader createTensorReader(InputInfo iinfo) {
+	public static TensorReader createTensorReader(FileFormat fmt) {
 		TensorReader reader;
 
-		if (iinfo == InputInfo.TextCellInputInfo) {
+		if (fmt == FileFormat.TEXT) {
 			reader = new TensorReaderTextCell();
 		}
-		else if (iinfo == InputInfo.BinaryTensorBlockInputInfo) {
+		else if (fmt == FileFormat.BINARY) {
 			reader = new TensorReaderBinaryBlock();
 		}
 		else {
-			throw new DMLRuntimeException("Failed to create tensor reader for unknown output info: "
-					+ InputInfo.inputInfoToString(iinfo));
+			throw new DMLRuntimeException("Failed to create tensor reader for unknown format: " + fmt.toString());
 		}
 		return reader;
 	}

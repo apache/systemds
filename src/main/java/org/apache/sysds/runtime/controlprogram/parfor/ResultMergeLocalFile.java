@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -39,11 +40,8 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.IJV;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -150,37 +148,25 @@ public class ResultMergeLocalFile extends ResultMerge
 		
 		//create deep copy of metadata obj
 		DataCharacteristics mcOld = metadata.getDataCharacteristics();
-		OutputInfo oiOld = metadata.getOutputInfo();
-		InputInfo iiOld = metadata.getInputInfo();
 		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
 		mc.setNonZeros(_isAccum ? -1 : computeNonZeros(output, inMO));
-		MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
-		moNew.setMetaData( meta );
+		moNew.setMetaData(new MetaDataFormat(mc, metadata.getFileFormat()));
 		
 		return moNew;
 	}
 
 	private void merge( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
 	{
-		OutputInfo oi = ((MetaDataFormat)outMo.getMetaData()).getOutputInfo();
+		FileFormat fmt = ((MetaDataFormat)outMo.getMetaData()).getFileFormat();
 		boolean withCompare = ( outMo.getNnz() != 0 ); //if nnz exist or unknown (-1)
 		
-		if( oi == OutputInfo.TextCellOutputInfo )
-		{
+		if( fmt == FileFormat.TEXT ) {
 			if(withCompare)
 				mergeTextCellWithComp(fnameNew, outMo, inMO);
 			else
 				mergeTextCellWithoutComp( fnameNew, outMo, inMO );
 		}
-		else if( oi == OutputInfo.BinaryCellOutputInfo )
-		{
-			if(withCompare)
-				mergeBinaryCellWithComp(fnameNew, outMo, inMO);
-			else
-				mergeBinaryCellWithoutComp( fnameNew, outMo, inMO );
-		}
-		else if( oi == OutputInfo.BinaryBlockOutputInfo )
-		{
+		else if( fmt == FileFormat.BINARY ) {
 			if(withCompare)
 				mergeBinaryBlockWithComp( fnameNew, outMo, inMO );
 			else
@@ -286,104 +272,6 @@ public class ResultMergeLocalFile extends ResultMerge
 		catch(Exception ex)
 		{
 			throw new DMLRuntimeException("Unable to merge text cell results.", ex);
-		}
-		
-		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
-		LocalFileUtils.cleanupWorkingDirectory(fnameStagingCompare);
-	}
-
-	@SuppressWarnings("deprecation")
-	private static void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-	{
-		try
-		{	
-			//delete target file if already exists
-			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
-			
-			if( ALLOW_COPY_CELLFILES )
-			{
-				copyAllFiles(fnameNew, inMO);
-				return; //we're done
-			}
-			
-			//actual merge
-			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-			Path path = new Path( fnameNew );					
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-			SequenceFile.Writer out = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
-			
-			MatrixIndexes key = new MatrixIndexes();
-			MatrixCell value = new MatrixCell();
-			
-			try
-			{
-				for( MatrixObject in : inMO ) //read/write all inputs
-				{
-					if( LOG.isTraceEnabled() )
-						LOG.trace("ResultMerge (local, file): Merge input "
-							+in.hashCode()+" (fname="+in.getFileName()+") via stream merge");
-					
-					JobConf tmpJob = new JobConf(ConfigurationManager.getCachedJobConf());
-					Path tmpPath = new Path(in.getFileName());
-					
-					for(Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, tmpPath) )
-					{
-						SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,tmpJob);
-						try
-						{
-							while(reader.next(key, value))
-							{
-								out.append(key, value);
-							}
-						}
-						finally {
-							IOUtilFunctions.closeSilently(reader);
-						}
-					}					
-				}	
-			}
-			finally {
-				IOUtilFunctions.closeSilently(out);
-			}
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException("Unable to merge binary cell results.", ex);
-		}	
-	}
-
-	private void mergeBinaryCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-	{
-		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
-		String fnameStagingCompare = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
-		
-		try
-		{
-			//delete target file if already exists
-			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
-			
-			//Step 0) write compare blocks to staging area (if necessary)
-			if( LOG.isTraceEnabled() )
-				LOG.trace("ResultMerge (local, file): Create merge compare matrix for output "
-					+outMo.hashCode()+" (fname="+outMo.getFileName()+")");
-			createBinaryCellStagingFile(fnameStagingCompare, outMo, 0);
-			
-			//Step 1) read and write blocks to staging area
-			for( MatrixObject in : inMO )
-			{
-				if( LOG.isTraceEnabled() )
-					LOG.trace("ResultMerge (local, file): Merge input "+in.hashCode()+" (fname="+in.getFileName()+")");
-				
-				long ID = _seq.getNextID();
-				createBinaryCellStagingFile( fnameStaging, in, ID );
-			}
-	
-			//Step 2) read blocks, consolidate, and write to HDFS
-			createBinaryCellResultFile(fnameStaging, fnameStagingCompare, fnameNew, (MetaDataFormat)outMo.getMetaData(), true);
-		}	
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException("Unable to merge binary cell results.", ex);
 		}
 		
 		LocalFileUtils.cleanupWorkingDirectory(fnameStaging);
@@ -528,51 +416,6 @@ public class ResultMergeLocalFile extends ResultMerge
 					
 					Cell tmp = new Cell( row, col, lvalue ); 
 					
-					buffer.addLast( tmp );
-					if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
-					{
-						appendCellBufferToStagingArea(fnameStaging, ID, buffer, blen);
-						buffer.clear();
-					}
-				}
-				
-				//final flush
-				if( !buffer.isEmpty() )
-				{
-					appendCellBufferToStagingArea(fnameStaging, ID, buffer, blen);
-					buffer.clear();
-				}
-			}
-			finally {
-				IOUtilFunctions.closeSilently(reader);
-			}
-		}
-	}
-
-	@SuppressWarnings("deprecation")
-	private static void createBinaryCellStagingFile( String fnameStaging, MatrixObject mo, long ID ) 
-		throws IOException, DMLRuntimeException
-	{		
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path(mo.getFileName());
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		
-		LinkedList<Cell> buffer = new LinkedList<>();
-		MatrixIndexes key = new MatrixIndexes();
-		MatrixCell value = new MatrixCell();
-	
-		DataCharacteristics mc = mo.getDataCharacteristics();
-		int blen = mc.getBlocksize();
-		
-		for(Path lpath: IOUtilFunctions.getSequenceFilePaths(fs, path))
-		{
-			SequenceFile.Reader reader = new SequenceFile.Reader(fs,lpath,job);
-			try
-			{
-				while(reader.next(key, value))
-				{
-					Cell tmp = new Cell( key.getRowIndex(), key.getColumnIndex(), value.getValue() ); 
-	
 					buffer.addLast( tmp );
 					if( buffer.size() > StagingFileUtils.CELL_BUFFER_SIZE ) //periodic flush
 					{
@@ -833,124 +676,6 @@ public class ResultMergeLocalFile extends ResultMerge
 			
 			if( !written )
 				out.write(IOUtilFunctions.EMPTY_TEXT_LINE);
-		}
-	}
-
-	@SuppressWarnings("deprecation")
-	private void createBinaryCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
-		throws IOException, DMLRuntimeException
-	{
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path( fnameNew );	
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		
-		DataCharacteristics mc = metadata.getDataCharacteristics();
-		long rlen = mc.getRows();
-		long clen = mc.getCols();
-		int blen = mc.getBlocksize();
-		
-		MatrixIndexes indexes = new MatrixIndexes(1,1);
-		MatrixCell cell = new MatrixCell(0);
-		
-		SequenceFile.Writer out = new SequenceFile.Writer(fs, job, path, MatrixIndexes.class, MatrixCell.class); //beware ca 50ms
-		try
-		{
-			boolean written=false;
-			for(long brow = 1; brow <= (long)Math.ceil(rlen/(double)blen); brow++)
-				for(long bcol = 1; bcol <= (long)Math.ceil(clen/(double)blen); bcol++)
-				{
-					File dir = new File(fnameStaging+"/"+brow+"_"+bcol);
-					File dir2 = new File(fnameStagingCompare+"/"+brow+"_"+bcol);
-					MatrixBlock mb = null;
-					
-					long row_offset = (brow-1)*blen + 1;
-					long col_offset = (bcol-1)*blen + 1;
-					
-					
-					if( dir.exists() )
-					{
-						if( withCompare && dir2.exists() ) //WITH COMPARE BLOCK
-						{
-							//copy only values that are different from the original
-							String[] lnames2 = dir2.list();
-							if( lnames2.length != 1 ) //there should be exactly 1 compare block
-								throw new DMLRuntimeException("Unable to merge results because multiple compare blocks found.");
-							mb = StagingFileUtils.readCellList2BlockFromLocal( dir2+"/"+lnames2[0], blen );
-							boolean appendOnly = mb.isInSparseFormat();
-							DenseBlock compare = DataConverter.convertToDenseBlock(mb, false);
-							for( String lname : dir.list() ) {
-								MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, blen );
-								mergeWithComp(mb, tmp, compare);
-							}
-							
-							//sort sparse due to append-only
-							if( appendOnly && !_isAccum )
-								mb.sortSparseRows();
-							
-							//change sparsity if required after 
-							mb.examSparsity(); 
-						}
-						else //WITHOUT COMPARE BLOCK
-						{
-							//copy all non-zeros from all workers
-							boolean appendOnly = false;
-							for( String lname : dir.list() ) {
-								if( mb == null ) {
-									mb = StagingFileUtils.readCellList2BlockFromLocal( dir+"/"+lname, blen );
-									appendOnly = mb.isInSparseFormat();
-								}
-								else {
-									MatrixBlock tmp = StagingFileUtils.readCellList2BlockFromLocal(  dir+"/"+lname, blen );
-									mergeWithoutComp(mb, tmp, appendOnly);
-								}
-							}
-							
-							//sort sparse due to append-only
-							if( appendOnly && !_isAccum )
-								mb.sortSparseRows();
-							
-							//change sparsity if required after 
-							mb.examSparsity(); 
-						}
-					}
-					
-					//write the block to binary cell
-					if( mb!=null )
-					{
-						if( mb.isInSparseFormat() )
-						{
-							Iterator<IJV> iter = mb.getSparseBlockIterator();
-							while( iter.hasNext() ) {
-								IJV lcell = iter.next();
-								indexes.setIndexes(row_offset+lcell.getI(), col_offset+lcell.getJ());
-								cell.setValue(lcell.getV());
-								out.append(indexes,cell);
-								written = true;
-							}
-						}
-						else
-						{
-							for( int i=0; i<blen; i++ )
-								for( int j=0; j<blen; j++ )
-								{
-									double lvalue = mb.getValueDenseUnsafe(i, j);
-									if( lvalue != 0 ) //for nnz
-									{
-										indexes.setIndexes(row_offset+i, col_offset+j);
-										cell.setValue(lvalue);
-										out.append(indexes,cell);
-										written = true;
-									}
-								}
-						}
-					}
-				}	
-			
-			if( !written )
-				out.append(indexes,cell);
-		}
-		finally {
-			IOUtilFunctions.closeSilently(out);
 		}
 	}
 

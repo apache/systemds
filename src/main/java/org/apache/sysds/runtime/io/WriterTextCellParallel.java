@@ -30,11 +30,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 
@@ -47,7 +47,7 @@ public class WriterTextCellParallel extends WriterTextCell
 	{
 		//estimate output size and number of output blocks (min 1)
 		int numPartFiles = (int)(OptimizerUtils.estimateSizeTextOutput(src.getNumRows(), src.getNumColumns(), 
-				src.getNonZeros(), OutputInfo.TextCellOutputInfo)  / InfrastructureAnalyzer.getHDFSBlockSize());
+				src.getNonZeros(), FileFormat.TEXT)  / InfrastructureAnalyzer.getHDFSBlockSize());
 		numPartFiles = Math.max(numPartFiles, 1);
 		
 		//determine degree of parallelism

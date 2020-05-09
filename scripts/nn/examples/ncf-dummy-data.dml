@@ -46,7 +46,11 @@ js_dummy_code_spec = "{ids:true, dummycode:[1]}";
 [users_val, y] = transformencode(target=as.frame(users_val_int_encoded), spec=js_dummy_code_spec);
 
 # Train
-NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val);
+[biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val);
+
+b1 = as.matrix(biases[1]);
+
+print(toString(b1));
 
 # Write model out
 #write(w0, out_dir+"/w0");

@@ -26,6 +26,7 @@
 # Imports
 source("nn/optim/adam.dml") as adam
 source("nn/layers/relu.dml") as relu
+source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/affine.dml") as affine
 source("nn/layers/l2_loss.dml") as l2_loss
 source("nn/layers/l2_reg.dml") as l2_reg
@@ -36,8 +37,7 @@ train = function( matrix[double] users_train,
                   matrix[double] users_val, 
                   matrix[double] items_val, 
                   matrix[double] targets_val)
-    return (/* matrix[double] w0, matrix[double] W, matrix[double] V */) {
-  # TODO: return weights and biases and everything later
+    return (List[unknown] biases, List[unknown] weights) {
   # /*
   #  * Train NCF model
   #  *
@@ -45,7 +45,8 @@ train = function( matrix[double] users_train,
   #  *  TODO: elaborate
   #  *
   #  * Outputs:
-  #  *  - w0, W, V : model parameters.
+  #  *  - biases: list of biases
+  #  *  - weights: list o weights
   #  *
   #  * Network Architecture:
   #  * TODO: update
@@ -72,6 +73,8 @@ train = function( matrix[double] users_train,
   N = ncol(items_train); # number items
   M = ncol(users_train); # number users
 
+  E = 8; # embedding dimension
+
   print("NCF training starting with " 
           + K_train + " training samples, " 
           + K_val + " validation samples, " 
@@ -79,7 +82,8 @@ train = function( matrix[double] users_train,
           + M + " users...");
 
   # 1.initialize layers
-  [W1, b1] = affine::init(N, 1);
+  [UW1, Ub1] = affine::init(N, E); # user embedding
+  [UW2, Ub2] = affine::init(E, 1); # final prediction
 
   # 2.initialize adam optimizer
   ## Default values for some parameters
@@ -89,20 +93,26 @@ train = function( matrix[double] users_train,
   epsilon = 0.00000001;
   t       = 0;
 
-  [mW1, vW1] = adam::init(W1);
-  [mb1, vb1] = adam::init(b1);
+  # user layer 1
+  [mUW1, vUW1] = adam::init(UW1);
+  [mUb1, vUb1] = adam::init(Ub1);
+  # user layer 2
+  [mUW2, vUW2] = adam::init(UW2);
+  [mUb2, vUb2] = adam::init(Ub2);
 
   # regularization
   lambda = 0; #5e-04;
 
   # Optimize 
   batch_size = 10;
-  epochs = 1000;
+  epochs = 100000;
   N = K_train;
   iters = ceil(N / batch_size);
 
     for (e in 1:epochs) {
       for (i in 1:iters) {
+        print("----------------");
+
         # Get the next batch
         beg = ((i-1) * batch_size) %% N + 1;
         end = min(N, beg + batch_size - 1);
@@ -110,45 +120,56 @@ train = function( matrix[double] users_train,
         X_batch = items_train[beg:end,];
         y_batch = targets_train[beg:end,];
 
-        # 3.Send inputs through affine::forward
-        out = affine::forward(X_batch, W1, b1);
+        print("X_batch ∈ " + nrow(X_batch) + "×" + ncol(X_batch));
+        print("y_batch ∈ " + nrow(y_batch) + "×" + ncol(y_batch));
 
-        # 4.compute gradients from a loss l2_loss::backward
-        dout = l2_loss::backward(out, y_batch);# (predictions, targets)
+        # 3.Send inputs through layers
+        out_U1 = affine::forward(X_batch, UW1, Ub1);
+        out_U2 = affine::forward(out_U1, UW2, Ub2);
+        # add missing layers here...
+
+        out = out_U2; # final prediction
+
+        print("out ∈ " + nrow(out) + "×" + ncol(out));
+
+        # 4.compute gradients 
+        dout = sigmoid::backward(out, y_batch);# (predictions, targets)
 
         # Compute loss & accuracy for training & validation data every 100 iterations.
-        if (i %% 100 == 0) {
-          # Compute training loss & accuracy
-          [loss_data, accuracy] = eval(out, y_batch);
-          loss_reg_b1 = l2_reg::forward(b1, lambda);
-          loss_reg_W1  = l2_reg::forward(W1 , lambda);
-          loss = loss_data + loss_reg_b1 + loss_reg_W1;
+        # TODO: fixme later
+        # if (i %% 100 == 0) {
+        #   # Compute training loss & accuracy
+        #   [loss_data, accuracy] = eval(out, y_batch);
+        #   loss_reg_b1 = l2_reg::forward(b1, lambda);
+        #   loss_reg_W1  = l2_reg::forward(W1 , lambda);
+        #   loss = loss_data + loss_reg_b1 + loss_reg_W1;
 
-          # Compute validation loss & accuracy
-          probs_val = predict(items_val, b1, W1)
-          [loss_val, accuracy_val] = eval(probs_val, targets_val);
+        #   # Compute validation loss & accuracy
+        #   probs_val = predict(items_val, b1, W1)
+        #   [loss_val, accuracy_val] = eval(probs_val, targets_val);
 
-          # Output results
-          print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
-                 + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
-        }
+        #   # Output results
+        #   print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
+        #          + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+        # }
 
         # 5.Send the above result through affine::backward
-        [dX, dW1, db1] = affine::backward(dout, X_batch, W1, b1);
+        [dout_U2, dUW2, dUb2] = affine::backward(dout, out_U1, UW2, Ub2); # (gradient from upstream, input, weights, biases) 
+        [dX, dUW1, dUb1] = affine::backward(dout_U2, X_batch, UW1, Ub1); 
 
         # 6.update timestep
         t = e * i - 1;
 
         # 7.Call adam::update for all parameters
-        [b1, mb1, vb1] = adam::update(b1, db1, lr, beta1, beta2, epsilon, t, mb1, vb1);
-        [W1, mW1, vW1] = adam::update(W1, dW1, lr, beta1, beta2, epsilon, t, mW1, vW1);
+        [Ub1, mUb1, vUb1] = adam::update(Ub1, dUb1, lr, beta1, beta2, epsilon, t, mUb1, vUb1);
+        [UW1, mUW1, vUW1] = adam::update(UW1, dUW1, lr, beta1, beta2, epsilon, t, mUW1, vUW1);
+        [Ub2, mUb2, vUb2] = adam::update(Ub2, dUb2, lr, beta1, beta2, epsilon, t, mUb2, vUb2);
+        [UW2, mUW2, vUW2] = adam::update(UW2, dUW2, lr, beta1, beta2, epsilon, t, mUW2, vUW2);
       }
     }
 
-  # TODO: return proper values in the end
-  w0 = matrix(0, rows=10, cols=10)
-  W = matrix(0, rows=10, cols=10)
-  V = matrix(0, rows=10, cols=10)
+  biases = list(Ub1, Ub2);
+  weights = list(UW1, UW2);
 }
 
 predict = function(matrix[double] X, matrix[double] b1, matrix[double] W1)
@@ -166,7 +187,7 @@ predict = function(matrix[double] X, matrix[double] b1, matrix[double] W1)
 
     # 1.Send inputs through affine::forward
     out = affine::forward(X, W1, b1);
-
+    # TODO: adapt to new network structure
 }
 
 eval = function(matrix[double] probs, matrix[double] y)
@@ -177,6 +198,7 @@ eval = function(matrix[double] probs, matrix[double] y)
 
     # compute the log loss
     loss = l2_loss::forward(probs, y);
+    # TODO: does this also need to be adapted?
 
     # compute accuracy
     sqr_mean = mean( (probs - y)^2 )

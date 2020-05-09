@@ -45,9 +45,8 @@ js_dummy_code_spec = "{ids:true, dummycode:[1]}";
 [items_val, y] = transformencode(target=as.frame(items_val_int_encoded), spec=js_dummy_code_spec);
 [users_val, y] = transformencode(target=as.frame(users_val_int_encoded), spec=js_dummy_code_spec);
 
-
 # Train
-# [w0, W, V] = NCF::train(X, y, X_val, y_val);
+NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val);
 
 # Write model out
 #write(w0, out_dir+"/w0");

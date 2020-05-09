@@ -955,7 +955,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new DMLRuntimeException("Unexpected error while writing mtd file (" + filePathAndName + ") -- metadata is null.");
 			
 		// Write the matrix to HDFS in requested format
-		FileFormat fmt = iimd.getFileFormat();
+		FileFormat fmt = FileFormat.safeValueOf(outputFormat);
 		if ( fmt != FileFormat.MM ) {
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics dc = iimd.getDataCharacteristics();

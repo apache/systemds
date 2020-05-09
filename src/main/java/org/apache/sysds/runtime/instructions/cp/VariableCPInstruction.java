@@ -879,8 +879,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void processWriteInstruction(ExecutionContext ec) {
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
-		if (!getInput3().getName().equalsIgnoreCase("libsvm"))
-		{
+		String fmtStr = getInput3().getName();
+		FileFormat fmt = FileFormat.safeValueOf(fmtStr);
+		if( fmt != FileFormat.LIBSVM ) {
 			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
 			_formatProperties.setDescription(desc);
 		}
@@ -889,28 +890,25 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			writeScalarToHDFS(ec, fname);
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
-			String outFmt = getInput3().getName();
-			if (outFmt.equalsIgnoreCase("matrixmarket"))
+			if( fmt == FileFormat.MM )
 				writeMMFile(ec, fname);
-			else if (outFmt.equalsIgnoreCase("csv") )
+			else if( fmt == FileFormat.CSV )
 				writeCSVFile(ec, fname);
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 				mo.setPrivacyConstraints(getPrivacyConstraint());
-				mo.exportData(fname, outFmt, _formatProperties);
+				mo.exportData(fname, fmtStr, _formatProperties);
 			}
 		}
 		else if( getInput1().getDataType() == DataType.FRAME ) {
-			String outFmt = getInput3().getName();
 			FrameObject mo = ec.getFrameObject(getInput1().getName());
-			mo.exportData(fname, outFmt, _formatProperties);
+			mo.exportData(fname, fmtStr, _formatProperties);
 		}
 		else if( getInput1().getDataType() == DataType.TENSOR ) {
 			// TODO write tensor
-			String outFmt = getInput3().getName();
 			TensorObject to = ec.getTensorObject(getInput1().getName());
-			to.exportData(fname, outFmt, _formatProperties);
+			to.exportData(fname, fmtStr, _formatProperties);
 		}
 	}
 	
@@ -973,7 +971,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 */
 	private void writeMMFile(ExecutionContext ec, String fname) {
 		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-		String outFmt = "matrixmarket";
+		String outFmt = FileFormat.MM.toString();
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
 			// i.e., it is either in-memory or in evicted space

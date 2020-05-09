@@ -81,7 +81,6 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		
-		//SPARK°write°_mVar2·MATRIX·DOUBLE°./src/test/scripts/functions/data/out/B·SCALAR·STRING·true°matrixmarket·SCALAR·STRING·true
 		// _mVar2·MATRIX·DOUBLE
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);

@@ -1,3 +1,25 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
 from pyspark.sql.functions import udf
 from pyspark.sql.types import FloatType
 
@@ -27,6 +49,12 @@ def approved_join_slice(node_i, node_j, cur_lvl):
     return commons == cur_lvl - 1
 
 
+def approved_union_slice(node_i, node_j):
+    if set(node_i.attributes).intersection(set(node_j.attributes)):
+        return False
+    return True
+
+
 def make_first_level(features, predictions, loss, top_k, w, loss_type):
     first_level = []
     # First level slices are enumerated in a "classic way" (getting data and not analyzing bounds
@@ -42,15 +70,6 @@ def make_first_level(features, predictions, loss, top_k, w, loss_type):
         first_level.append(new_node)
         new_node.print_debug(top_k, 0)
     return first_level
-
-
-def approved_union_slice(node_i, node_j):
-    for attr1 in node_i.attributes:
-        for attr2 in node_j.attributes:
-            if attr1 == attr2:
-                # there are common attributes which is not the case we need
-                return False
-    return True
 
 
 def process_node(node_i, level, loss, predictions, cur_lvl, top_k, alpha, loss_type, w, debug, enumerator):

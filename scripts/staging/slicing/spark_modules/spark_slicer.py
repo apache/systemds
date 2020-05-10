@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 from pyspark import SparkContext
 
 from slicing.base.SparkNode import SparkNode
@@ -52,14 +73,15 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
                                                                                           b_topk.value, w, loss_type)) \
         .map(lambda node: (node.key, node)).collect()
     first_level.update(init_slices)
-    update_top_k(first_level, b_topk.value, alpha, predictions)
+    update_top_k(first_level, top_k, alpha, predictions)
     prev_level = SparkContext.broadcast(sc, first_level)
     levels.append(prev_level)
     cur_lvl = cur_lvl + 1
-    b_topk.value.print_topk()
+    top_k.print_topk()
     # checking the first partition of level. if not empty then processing otherwise no elements were added to this level
     while len(levels[cur_lvl - 1].value) > 0:
         nodes_list = {}
+        b_topk = SparkContext.broadcast(sc, top_k)
         partitions = sc.parallelize(levels[cur_lvl - 1].value.values())
         mapped = partitions.mapPartitions(lambda nodes: spark_utils.nodes_enum(nodes, levels[cur_lvl - 1].value.values(),
                                                                                predictions, loss, b_topk.value, alpha, k, w,
@@ -68,7 +90,7 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
         nodes_list.update(flattened.map(lambda node: (node.key, node)).distinct().collect())
         prev_level = SparkContext.broadcast(sc, nodes_list)
         levels.append(prev_level)
-        update_top_k(nodes_list, b_topk.value, alpha, predictions)
+        update_top_k(nodes_list, top_k, alpha, predictions)
         cur_lvl = cur_lvl + 1
         b_topk.value.print_topk()
         print("Level " + str(cur_lvl) + " had " + str(len(levels[cur_lvl - 1].value) * (len(levels[cur_lvl - 1].value) - 1)) +
@@ -76,4 +98,4 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
     print("Program stopped at level " + str(cur_lvl))
     print()
     print("Selected slices are: ")
-    b_topk.value.print_topk()
+    top_k.print_topk()

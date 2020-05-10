@@ -44,42 +44,47 @@ public class BuiltinOutlierBySDTest extends AutomatedTestBase {
 
 	@Test
 	public void testOutlierRepair0CP() {
-		runOutlierTest(false, 2,0, 0, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 0, 0, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair1CP() {
-		runOutlierTest(false, 2,1, 0, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 1, 0, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair2CP() {
-		runOutlierTest(false, 2,2, 10, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 2, 10, LopProperties.ExecType.CP);
+	}
+
+	@Test
+	public void testOutlierRepair2SP() {
+		runOutlierTest(false, 2, 2, 0, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair0SP() {
-		runOutlierTest(false, 2,0, 10, LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2, 0, 10, LopProperties.ExecType.SPARK);
 	}
 
 	@Test
 	public void testOutlierRepair1SP() {
-		runOutlierTest(false, 2,1, 0, LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2, 1, 10, LopProperties.ExecType.SPARK);
 	}
 
 	@Test
 	public void testOutlierK3CP() {
-		runOutlierTest(true, 3,1, 10,LopProperties.ExecType.CP);
+		runOutlierTest(true, 3, 1, 10,LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierIterativeCP() {
-		runOutlierTest(false, 2,1, 0, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 1, 0, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierIterativeSP() {
-		runOutlierTest(false, 2,1, 0, LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2, 1, 10, LopProperties.ExecType.SPARK);
 	}
 
 	private void runOutlierTest(boolean sparse, double  k,  int repair, int max_iterations, LopProperties.ExecType instType)

@@ -178,13 +178,14 @@ SYSTEMDS-210 Extended lists Operations
 
 SYSTEMDS-220 Federated Tensors and Instructions
  * 221 Initial infrastructure federated operations                    OK
- * 222 Federated matrix-vector multiplication
+ * 222 Federated matrix-vector multiplication                         OK
  * 223 Federated unary aggregates                                     OK
- * 224 Federated transform functionality
+ * 224 Federated frames                                               OK
  * 225 Federated elementwise operations                               OK
  * 226 Federated rbind and cbind                                      OK
  * 227 Federated worker setup and infrastructure                      OK
  * 228 Federated matrix-matrix multiplication                         OK
+ * 229 Federated transform functionality
 
 SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool
@@ -202,7 +203,8 @@ SYSTEMDS-240 GPU Backend Improvements
 
 SYSTEMDS-250 Extended Slice Finding
  * 251 Alternative slice enumeration approach                         OK
- * 252 Initial data slicing implementation Python
+ * 252 Initial data slicing implementation Python                     OK
+ * 253 Distributed slicing algorithms (task/data parallel)            OK
 
 SYSTEMDS-260 Misc Tools
  * 261 Stable marriage algorithm                                      OK
@@ -261,9 +263,10 @@ SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 332 Parfor integration with multi-level reuse                      OK
  * 333 Improve cache eviction with actual compute time                OK
  * 334 Cache scalars only with atleast one matrix inputs
- * 335 Weighted eviction policy (function of size & computetime)
+ * 335 Weighted eviction policy (function of size & computetime)      OK
  * 336 Better use of cache status to handle multithreading
  * 337 Adjust disk I/O speed by recording actual time taken           OK
+ * 338 Extended lineage tracing (rmEmpty, lists), partial rewrites    OK
  
 SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations
@@ -288,6 +291,10 @@ SYSTEMDS-370 Lossy Compression Blocks
 
 SYSTEMDS-380 Memory Footprint
  * 371 Matrix Block Memory footprint update
+
+SYSTEMDS-390 New Builtin Functions IV
+ * 391 New GLM builtin function (from algorithms)                     OK
+ * 392 Builtin function for missing value imputation via FDs          OK
 
 Others:
  * Break append instruction to cbind and rbind 

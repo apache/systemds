@@ -1,20 +1,23 @@
 #-------------------------------------------------------------
 #
-# Copyright 2020 Graz University of Technology
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 #
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 
 from slicing.base.node import Node
 from slicing.base.top_k import Topk
@@ -35,12 +38,10 @@ def opt_fun(fi, si, f, x_size, w):
 # valid combination example: node ABC + node BCD (on 4th level) // three attributes nodes have two common attributes
 # invalid combination example: node ABC + CDE (on 4th level) // result node - ABCDE (absurd for 4th level)
 def slice_name_nonsense(node_i, node_j, cur_lvl):
-    commons = 0
-    for attr1 in node_i.attributes:
-        for attr2 in node_j.attributes:
-            if attr1[0].split("_")[0] == attr2[0].split("_")[0]:
-                commons = commons + 1
-    return commons != cur_lvl - 1
+    attr1 = list(map(lambda x: x[0].split("_")[0], node_i.attributes))
+    attr2 = list(map(lambda x: x[0].split("_")[0], node_j.attributes))
+    commons = len(list(set(attr1) & set(attr2)))
+    return commons == cur_lvl - 1
 
 
 def union(lst1, lst2):
@@ -78,7 +79,7 @@ def join_enum(node_i, prev_lvl, complete_x, loss, x_size, y_test, errors, debug,
               all_nodes, top_k, cur_lvl_nodes):
     for node_j in range(len(prev_lvl)):
         flag = slice_name_nonsense(prev_lvl[node_i], prev_lvl[node_j], cur_lvl)
-        if not flag and prev_lvl[node_j].key[0] > prev_lvl[node_i].key[0]:
+        if flag and prev_lvl[node_j].key[0] > prev_lvl[node_i].key[0]:
             new_node = Node(complete_x, loss, x_size, y_test, errors)
             parents_set = set(new_node.parents)
             parents_set.add(prev_lvl[node_i])

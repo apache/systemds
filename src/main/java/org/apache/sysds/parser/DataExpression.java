@@ -49,8 +49,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_FRAME_IDENTIFIER;
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_MATRIX_IDENTIFIER;
 
-public class DataExpression extends DataIdentifier 
+public class DataExpression extends DataIdentifier
 {
 	public static final String RAND_DIMS = "dims";
 
@@ -81,6 +83,7 @@ public class DataExpression extends DataIdentifier
 	
 	public static final String FED_ADDRESSES = "addresses";
 	public static final String FED_RANGES = "ranges";
+	public static final String FED_TYPE = "type";
 	
 	public static final String FORMAT_TYPE = "format";
 	public static final String FORMAT_TYPE_VALUE_TEXT = "text";
@@ -122,7 +125,7 @@ public class DataExpression extends DataIdentifier
 		Arrays.asList(SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY));
 	
 	public static final Set<String> FEDERATED_VALID_PARAM_NAMES = new HashSet<>(
-		Arrays.asList(FED_ADDRESSES, FED_RANGES));
+		Arrays.asList(FED_ADDRESSES, FED_RANGES, FED_TYPE));
 
 	// Valid parameter names in a metadata file
 	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =new HashSet<>(
@@ -432,30 +435,43 @@ public class DataExpression extends DataIdentifier
 				else
 					namedParamCount++;
 			}
-			if (passedParamExprs.size() != 2){
-				errorListener.validationError(parseInfo, "for federated statement, must specify exactly 2 argument: addresses, ranges");
+			if(passedParamExprs.size() < 2) {
+				errorListener.validationError(parseInfo,
+					"for federated statement, must specify at least 2 arguments: addresses, ranges");
 				return null;
 			}
-			if (unnamedParamCount > 0) {
-				if (namedParamCount > 0) {
-					errorListener.validationError(parseInfo, "for federated statement, cannot mix named and unnamed parameters");
+			if(unnamedParamCount > 0) {
+				if(namedParamCount > 0) {
+					errorListener.validationError(parseInfo,
+						"for federated statement, cannot mix named and unnamed parameters");
 					return null;
 				}
-				ParameterExpression param = passedParamExprs.get(0);
-				dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
-				param = passedParamExprs.get(1);
-				dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+				if(unnamedParamCount == 2) {
+					// first parameter addresses second are the ranges (type defaults to Matrix)
+					ParameterExpression param = passedParamExprs.get(0);
+					dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+					param = passedParamExprs.get(1);
+					dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+				}
+				else if(unnamedParamCount == 3) {
+					ParameterExpression param = passedParamExprs.get(0);
+					dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+					param = passedParamExprs.get(1);
+					dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+					param = passedParamExprs.get(2);
+					dataExpr.addFederatedExprParam(DataExpression.FED_TYPE, param.getExpr());
+				}
+				else {
+					errorListener.validationError(parseInfo,
+						"for federated statement, at most 3 arguments are supported: addresses, ranges, type");
+				}
 			}
 			else {
-				ParameterExpression firstParam = passedParamExprs.get(0);
-				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.FED_ADDRESSES)){
-					errorListener.validationError(parseInfo, "federated method must have addresses parameter as first parameter or unnamed parameter");
-					return null;
-				}
 				for (ParameterExpression passedParamExpr : passedParamExprs) {
 					dataExpr.addFederatedExprParam(passedParamExpr.getName(), passedParamExpr.getExpr());
 				}
 			}
+			dataExpr.setFederatedDefault();
 		}
 
 		if (dataExpr != null) {
@@ -569,7 +585,7 @@ public class DataExpression extends DataIdentifier
 		
 		if (!found)
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for federated statement are "
-				+ "(capitalization-sensitive): " + FED_ADDRESSES + ", " + FED_RANGES);
+				+ "(capitalization-sensitive): " + FED_ADDRESSES + ", " + FED_RANGES + ", " + FED_TYPE);
 		if (getVarParam(paramName) != null)
 			raiseValidateError("attempted to add federated statement parameter " + paramValue + " more than once");
 		
@@ -618,6 +634,11 @@ public class DataExpression extends DataIdentifier
 	public void setTensorDefault(){
 		if (getVarParam(RAND_BY_ROW) == null)
 			addVarParam(RAND_BY_ROW, new BooleanIdentifier(true, this));
+	}
+	
+	public void setFederatedDefault(){
+		if (getVarParam(FED_TYPE) == null)
+			addVarParam(FED_TYPE, new StringIdentifier(FED_MATRIX_IDENTIFIER, this));
 	}
 	
 	private void setSqlDefault() {
@@ -1881,8 +1902,8 @@ public class DataExpression extends DataIdentifier
 			
 		case FEDERATED:
 			validateParams(conditional, FEDERATED_VALID_PARAM_NAMES,
-					"Legal parameters for federated statement are (case-sensitive): " + FED_ADDRESSES + ", " +
-					FED_RANGES);
+				"Legal parameters for federated statement are (case-sensitive): "
+				+ FED_TYPE + ", " + FED_ADDRESSES + ", " + FED_RANGES);
 			exp = getVarParam(FED_ADDRESSES);
 			if( !(exp instanceof DataIdentifier) ) {
 				raiseValidateError("for federated statement " + FED_ADDRESSES + " has incorrect value type", conditional);
@@ -1893,14 +1914,26 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("for federated statement " + FED_RANGES + " has incorrect value type", conditional);
 			}
 			getVarParam(FED_RANGES).validateExpression(ids, currConstVars, conditional);
+			exp = getVarParam(FED_TYPE);
+			if( !(exp instanceof StringIdentifier) ) {
+				raiseValidateError("for federated statement " + FED_TYPE + " has incorrect value type", conditional);
+			}
+			getVarParam(FED_TYPE).validateExpression(ids, currConstVars, conditional);
 			
 			// TODO format type?
 			getOutput().setFormatType(FormatType.BINARY);
-			getOutput().setDataType(DataType.MATRIX);
-			// TODO value type for federated object
-			getOutput().setValueType(ValueType.FP64);
+			StringIdentifier fedType = (StringIdentifier) exp;
+			if(fedType.getValue().equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
+				getOutput().setDataType(DataType.MATRIX);
+				// TODO value type for federated object
+				getOutput().setValueType(ValueType.FP64);
+			}
+			else if(fedType.getValue().equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
+				getOutput().setDataType(DataType.FRAME);
+			}
 			getOutput().setDimensions(-1, -1);
 			break;
+			
 		default:
 			raiseValidateError("Unsupported Data expression "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
 		}

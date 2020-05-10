@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
+
 
 class Node:
     error: float
@@ -38,9 +39,14 @@ class Node:
         self.parents = []
         self.attributes = []
         self.size = 0
+        self.s_upper = 0
+        self.s_lower = 0
         self.score = 0
         self.complete_x = complete_x
         self.loss = 0
+        self.e_upper = 0
+        self.e_max_upper = 0
+        self.c_upper = 0
         self.x_size = x_size
         self.preds = preds
         self.s_lower = 1
@@ -66,38 +72,27 @@ class Node:
 
     def calc_class(self, mask):
         self.e_max = 1
-        size = 0
         mistakes = 0
-        for row in self.complete_x:
-            flag = True
-            for attr in mask:
-                if row[1][attr] == 0:
-                    flag = False
-            if flag:
-                size = size + 1
-                if self.y_test[row[0]][1] != self.preds[row[0]][1]:
-                    mistakes = mistakes + 1
-        self.size = size
-        if size != 0:
-            self.loss = mistakes / size
+        filtered = self.filter_by_mask(mask)
+        for row in filtered:
+            if self.y_test[row[0]][1] != self.preds[row[0]][1]:
+                mistakes = mistakes + 1
+        self.size = len(filtered)
+        if self.size != 0:
+            self.loss = mistakes / self.size
         else:
             self.loss = 0
         self.e_upper = self.loss
 
     def calc_l2(self, mask):
+        filtered = self.filter_by_mask(mask)
         max_tuple_error = 0
         sum_error = 0
-        size = 0
-        for row in self.complete_x:
-            flag = True
-            for attr in mask:
-                if row[1][attr] == 0:
-                    flag = False
-            if flag:
-                size = size + 1
-                if float(self.preds[row[0]][1]) > max_tuple_error:
+        size = len(filtered)
+        for row in filtered:
+            if float(self.preds[row[0]][1]) > max_tuple_error:
                     max_tuple_error = float(self.preds[row[0]][1])
-                sum_error = sum_error + float(self.preds[row[0]][1])
+            sum_error += float(self.preds[row[0]][1])
         self.e_max = max_tuple_error
         self.e_upper = max_tuple_error
         if size != 0:
@@ -105,6 +100,9 @@ class Node:
         else:
             self.loss = 0
         self.size = size
+
+    def filter_by_mask(self, mask):
+        return list(filter(lambda row: all(row[1][attr] == 1 for attr in mask), self.complete_x))
 
     def calc_s_upper(self, cur_lvl):
         cur_min = self.parents[0].size
@@ -163,28 +161,36 @@ class Node:
         return self.s_upper >= x_size / alpha and self.c_upper >= top_k.min_score
 
     def update_bounds(self, s_upper, s_lower, e_upper, e_max_upper, w):
-        try:
+        if self.s_upper:
             minimized = min(s_upper, self.s_upper)
             self.s_upper = minimized
+        else:
+            self.s_upper = s_upper
+
+        if self.s_lower:
             minimized = min(s_lower, self.s_lower)
             self.s_lower = minimized
+        else:
+            self.s_lower = s_lower
+
+        if self.e_upper:
             minimized = min(e_upper, self.e_upper)
             self.e_upper = minimized
+        else:
+            self.e_upper = e_upper
+
+        if self.e_max_upper:
             minimized = min(e_max_upper, self.e_max_upper)
             self.e_max_upper = minimized
-            c_upper = self.calc_c_upper(w)
+        else:
+            self.e_max_upper = e_max_upper
+
+        c_upper = self.calc_c_upper(w)
+        if self.c_upper:
             minimized = min(c_upper, self.c_upper)
             self.c_upper = minimized
-        except AttributeError:
-            # initial bounds calculation
-            self.s_upper = s_upper
-            self.s_lower = s_lower
-            self.e_upper = e_upper
-            self.e_max_upper = e_max_upper
-            c_upper = self.calc_c_upper(w)
+        else:
             self.c_upper = c_upper
-        minimized = min(c_upper, self.c_upper)
-        self.c_upper = minimized
 
     def print_debug(self, topk, level):
         print("new node has been created: " + self.make_name() + "\n")

@@ -31,6 +31,8 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -167,6 +169,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Object holding all privacy constraints associated with the cacheable data. 
 	 */
 	protected PrivacyConstraint _privacyConstraint = null;
+	
+	protected Map<FederatedRange, FederatedData> _fedMapping = null;
+	
 	
 	/** The name of HDFS file in which the data is backed up. */
 	protected String _hdfsFileName = null; // file name and path
@@ -326,6 +331,30 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	public abstract void refreshMetaData();
 
+	/**
+	 * Check if object is federated.
+	 * @return true if federated else false
+	 */
+	public boolean isFederated() {
+		return _fedMapping != null;
+	}
+	
+	/**
+	 * Gets the mapping of indices ranges to federated objects.
+	 * @return fedMapping mapping
+	 */
+	public Map<FederatedRange, FederatedData> getFedMapping() {
+		return _fedMapping;
+	}
+	
+	/**
+	 * Sets the mapping of indices ranges to federated objects.
+	 * @param fedMapping mapping
+	 */
+	public void setFedMapping(Map<FederatedRange, FederatedData> fedMapping) {
+		_fedMapping = fedMapping;
+	}
+	
 	public RDDObject getRDDHandle() {
 		return _rddHandle;
 	}

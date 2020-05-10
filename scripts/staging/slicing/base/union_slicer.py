@@ -1,17 +1,35 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 from slicing.base.node import Node
 from slicing.base.top_k import Topk
 from slicing.base.slicer import opt_fun, union
 
 
 def check_attributes(left_node, right_node):
-    flag = False
-    for attr1 in left_node.attributes:
-        for attr2 in right_node.attributes:
-            if attr1[0].split("_")[0] == attr2[0].split("_")[0]:
-                # there are common attributes which is not the case we need
-                flag = True
-                break
-    return flag
+    attr1 = list(map(lambda x: x[0].split("_")[0], left_node.attributes))
+    attr2 = list(map(lambda x: x[0].split("_")[0], right_node.attributes))
+    if set(attr1).intersection(set(attr2)):
+        return False
+    return True
 
 
 def make_first_level(all_features, complete_x, loss, x_size, y_test, errors, loss_type, w, alpha, top_k):
@@ -44,10 +62,6 @@ def make_first_level(all_features, complete_x, loss, x_size, y_test, errors, los
     return first_level, all_nodes
 
 
-def union_enum():
-    return None
-
-
 def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha, k, w, loss_type, b_update):
     top_k = Topk(k)
     # First level slices are enumerated in a "classic way" (getting data and not analyzing bounds
@@ -55,7 +69,6 @@ def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha
     first_level = make_first_level(all_features, complete_x, loss, x_size, y_test, errors, loss_type, w, alpha, top_k)
     # double appending of first level nodes in order to enumerating second level in the same way as others
     levels.append((first_level[0], len(all_features)))
-    # levels.append((first_level[0], len(all_features)))
     all_nodes = first_level[1]
     # cur_lvl - index of current level, correlates with number of slice forming features
     cur_lvl = 1  # level that is planned to be filled later
@@ -74,7 +87,7 @@ def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha
             for node_i in range(len(levels[left][0])):
                 for node_j in range(len(levels[right][0])):
                     flag = check_attributes(levels[left][0][node_i], levels[right][0][node_j])
-                    if not flag:
+                    if flag:
                         new_node = Node(complete_x, loss, x_size, y_test, errors)
                         parents_set = set(new_node.parents)
                         parents_set.add(levels[left][0][node_i])

@@ -22,11 +22,16 @@
 # Imports
 source("staging/NCF.dml") as NCF
 
-K_train = 1000; # number of samples
-K_val = 300;
+# This stupid dummy data only deals with user-item-matrices, 
+# meaning that every user only rates one item
 
-N = 1000; # number items
-M = 50; # number users
+K_train = 1000; # number of samples
+K_val = K_train; # needs to be the same, as dummy_encoding doesn't work properly
+
+# artificially set very high, s.t. there are no collisions
+# FIXME: fails sometimes!
+N = 100000000; # number items
+M = 100000000; # number users
 
 # targets
 targets_train = round(rand(rows=K_train, cols=1));
@@ -40,6 +45,7 @@ users_val_int_encoded = round(rand(rows=K_val, cols=1, min=1, max=M));
 
 # user/items matrices by applying one-hot-encoding
 js_dummy_code_spec = "{ids:true, dummycode:[1]}";
+
 [items_train, y] = transformencode(target=as.frame(items_train_int_encoded), spec=js_dummy_code_spec);
 [users_train, y] = transformencode(target=as.frame(users_train_int_encoded), spec=js_dummy_code_spec);
 [items_val, y] = transformencode(target=as.frame(items_val_int_encoded), spec=js_dummy_code_spec);

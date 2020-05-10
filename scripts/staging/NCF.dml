@@ -54,15 +54,18 @@ train = function( matrix[double] users_train,
   #  *
   #  */
 
+  print("items_val ∈ " + nrow(items_val) + "×" + ncol(items_val));
+  print("items_train ∈ " + nrow(items_train) + "×" + ncol(items_train));
+  print("users_val ∈ " + nrow(users_val) + "×" + ncol(users_val));
+  print("users_train ∈ " + nrow(users_train) + "×" + ncol(users_train));
+
   # sanity checks
   assert(nrow(items_train) == nrow(users_train));
   assert(nrow(users_train) == nrow(targets_train));
   assert(nrow(items_val) == nrow(users_val));
   assert(nrow(users_val) == nrow(targets_val));
-  
-  # FIXME: transform s.t. this works when checking with validation later! 
-  # assert(ncol(items_val) == ncol(items_train));
-  # assert(ncol(users_val) == ncol(users_train));
+  assert(ncol(items_val) == ncol(items_train));
+  assert(ncol(users_val) == ncol(users_train));
   
   assert(ncol(targets_val) == ncol(targets_train));
   assert(ncol(targets_train) == 1);
@@ -84,6 +87,10 @@ train = function( matrix[double] users_train,
   # 1.initialize layers
   [UW1, Ub1] = affine::init(N, E); # user embedding
   [UW2, Ub2] = affine::init(E, 1); # final prediction
+
+  # initialize bias and weight lists
+  biases = list(Ub1, Ub2);
+  weights = list(UW1, UW2);
 
   # 2.initialize adam optimizer
   ## Default values for some parameters
@@ -111,8 +118,6 @@ train = function( matrix[double] users_train,
 
     for (e in 1:epochs) {
       for (i in 1:iters) {
-        print("----------------");
-
         # Get the next batch
         beg = ((i-1) * batch_size) %% N + 1;
         end = min(N, beg + batch_size - 1);
@@ -120,38 +125,29 @@ train = function( matrix[double] users_train,
         X_batch = items_train[beg:end,];
         y_batch = targets_train[beg:end,];
 
-        print("X_batch ∈ " + nrow(X_batch) + "×" + ncol(X_batch));
-        print("y_batch ∈ " + nrow(y_batch) + "×" + ncol(y_batch));
-
         # 3.Send inputs through layers
-        out_U1 = affine::forward(X_batch, UW1, Ub1);
-        out_U2 = affine::forward(out_U1, UW2, Ub2);
-        # add missing layers here...
-
-        out = out_U2; # final prediction
-
-        print("out ∈ " + nrow(out) + "×" + ncol(out));
+        [out, out_U1, out_U2] = predict(X_batch, biases, weights);
 
         # 4.compute gradients 
-        dout = sigmoid::backward(out, y_batch);# (predictions, targets)
+        dout = sigmoid::backward(out, y_batch); # (predictions, targets)
 
         # Compute loss & accuracy for training & validation data every 100 iterations.
-        # TODO: fixme later
-        # if (i %% 100 == 0) {
-        #   # Compute training loss & accuracy
-        #   [loss_data, accuracy] = eval(out, y_batch);
-        #   loss_reg_b1 = l2_reg::forward(b1, lambda);
-        #   loss_reg_W1  = l2_reg::forward(W1 , lambda);
-        #   loss = loss_data + loss_reg_b1 + loss_reg_W1;
+        if (i %% 100 == 0) {
+          # Compute training loss & accuracy
+          [loss, accuracy] = eval(out, y_batch);
+          # ignore regularization for now..
+          # loss_reg_b1 = l2_reg::forward(b1, lambda);
+          # loss_reg_W1  = l2_reg::forward(W1 , lambda);
+          # loss = loss_data + loss_reg_b1 + loss_reg_W1;
 
-        #   # Compute validation loss & accuracy
-        #   probs_val = predict(items_val, b1, W1)
-        #   [loss_val, accuracy_val] = eval(probs_val, targets_val);
+          # Compute validation loss & accuracy
+          probs_val = predict(items_val, biases, weights);
+          [loss_val, accuracy_val] = eval(probs_val, targets_val);
 
-        #   # Output results
-        #   print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
-        #          + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
-        # }
+          # Output results
+          print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
+                 + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+        }
 
         # 5.Send the above result through affine::backward
         [dout_U2, dUW2, dUb2] = affine::backward(dout, out_U1, UW2, Ub2); # (gradient from upstream, input, weights, biases) 
@@ -165,29 +161,41 @@ train = function( matrix[double] users_train,
         [UW1, mUW1, vUW1] = adam::update(UW1, dUW1, lr, beta1, beta2, epsilon, t, mUW1, vUW1);
         [Ub2, mUb2, vUb2] = adam::update(Ub2, dUb2, lr, beta1, beta2, epsilon, t, mUb2, vUb2);
         [UW2, mUW2, vUW2] = adam::update(UW2, dUW2, lr, beta1, beta2, epsilon, t, mUW2, vUW2);
+
+        # 8. Update lists, TODO: find out if necessary
+        biases = list(Ub1, Ub2);
+        weights = list(UW1, UW2);
       }
     }
-
-  biases = list(Ub1, Ub2);
-  weights = list(UW1, UW2);
 }
 
-predict = function(matrix[double] X, matrix[double] b1, matrix[double] W1)
-    return (matrix[double] out) {
-  /*
-   * Computes the predictions for the given inputs.
-   *
-   * Inputs:
-   *  - X : n examples with d features, of shape (n, d).
-   *  - w0, W, V : trained model parameters.
-   *
-   * Outputs:
-   *  - out : target vector, y.
-   */
+predict = function(matrix[double] X, List[unknown] biases, List[unknown] weights)
+    return (matrix[double] out, matrix[double] out_U1, matrix[double] out_U2) {
+  #
+  # Computes the predictions for the given inputs.
+  #
+  # Inputs:
+  #  - X : n examples with d features, of shape (n, d).
+  #  - biases, weights : list of trained model parameters
+  #
+  # Outputs:
+  #  - out : target vector, y.
+  #
+  
+  # parse parameters
+  Ub1 = as.matrix(biases[1]);
+  Ub2 = as.matrix(biases[2]);
 
-    # 1.Send inputs through affine::forward
-    out = affine::forward(X, W1, b1);
-    # TODO: adapt to new network structure
+  UW1 = as.matrix(weights[1]);
+  UW2 = as.matrix(weights[2]);
+
+  # send inputs through layers
+  out_U1 = affine::forward(X, UW1, Ub1);
+  out_U2 = affine::forward(out_U1, UW2, Ub2);
+  
+  # TODO: add missing layers here
+  
+  out = out_U2; # final prediction
 }
 
 eval = function(matrix[double] probs, matrix[double] y)

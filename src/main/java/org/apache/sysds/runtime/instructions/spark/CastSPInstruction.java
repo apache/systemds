@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.UnaryCP;
@@ -30,7 +31,6 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -60,7 +60,7 @@ public class CastSPInstruction extends UnarySPInstruction {
 		String opcode = getOpcode();
 		
 		//get input RDD and prepare output
-		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), InputInfo.BinaryBlockInputInfo, -1, true);
+		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), FileFormat.BINARY, -1, true);
 		DataCharacteristics mcIn = sec.getDataCharacteristics( input1.getName() );
 		JavaPairRDD<?,?> out = null;
 		

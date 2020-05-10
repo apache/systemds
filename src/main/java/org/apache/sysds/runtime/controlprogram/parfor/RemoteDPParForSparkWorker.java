@@ -23,6 +23,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.util.LongAccumulator;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -35,7 +36,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import scala.Tuple2;
@@ -56,7 +56,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final String _inputVar;
 	private final String _iterVar;
 	
-	private final OutputInfo _oinfo;
+	private final FileFormat _fmt;
 	private final int _rlen;
 	private final int _clen;
 	private final int _blen;
@@ -67,7 +67,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final LongAccumulator _aIters;
 	
 	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar,
-		boolean cpCaching, DataCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, OutputInfo oinfo,
+		boolean cpCaching, DataCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, FileFormat fmt,
 		LongAccumulator atasks, LongAccumulator aiters)
 	{
 		_prog = program;
@@ -75,7 +75,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_caching = cpCaching;
 		_inputVar = inputVar;
 		_iterVar = iterVar;
-		_oinfo = oinfo;
+		_fmt = fmt;
 		
 		//setup spark accumulators
 		_aTasks = atasks;
@@ -103,7 +103,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			Tuple2<Long,Iterable<Writable>> larg = arg0.next();
 			
 			//collect input partition (check via equals because oinfo deserialized instance)
-			if( _oinfo.equals(OutputInfo.BinaryBlockOutputInfo) )
+			if( _fmt == FileFormat.BINARY )
 				partition = collectBinaryBlock( larg._2(), partition );
 			else
 				partition = collectBinaryCellInput( larg._2() );

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Checkpoint;
@@ -38,7 +39,6 @@ import org.apache.sysds.runtime.instructions.spark.functions.CopyFrameBlockFunct
 import org.apache.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -99,7 +99,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		}
 		
 		//get input rdd handle (for matrix or frame)
-		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), InputInfo.BinaryBlockInputInfo, -1, true);
+		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), FileFormat.BINARY, -1, true);
 		
 		// Step 2: Checkpoint given rdd (only if currently in different storage level to prevent redundancy)
 		// -------

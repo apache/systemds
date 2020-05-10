@@ -24,6 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -35,9 +36,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -124,9 +123,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		super(mo);
 
 		MetaDataFormat metaOld = (MetaDataFormat)mo.getMetaData();
-		_metaData = new MetaDataFormat(new MatrixCharacteristics(metaOld.getDataCharacteristics()),
-				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
-		
+		_metaData = new MetaDataFormat(
+			new MatrixCharacteristics(metaOld.getDataCharacteristics()), metaOld.getFileFormat());
 		_updateType = mo._updateType;
 		_diag = mo._diag;
 		_partitioned = mo._partitioned;
@@ -479,7 +477,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		//read matrix and maintain meta data
 		MatrixBlock newData = isFederated() ? acquireReadAndRelease() :
-			DataConverter.readMatrixFromHDFS(fname, iimd.getInputInfo(), rlen,
+			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(), rlen,
 			clen, mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
 		
 		setHDFSFileExists(true);
@@ -507,7 +505,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics mc = iimd.getDataCharacteristics();
-		InputInfo ii = iimd.getInputInfo();
+		FileFormat fmt = iimd.getFileFormat();
 		MatrixBlock mb = null;
 		try 
 		{
@@ -523,12 +521,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
-			if( ii == InputInfo.BinaryBlockInputInfo && //guarded collect not for binary cell
+			if( fmt == FileFormat.BINARY && //guarded collect not for binary cell
 				!OptimizerUtils.checkSparkCollectMemoryBudget(mc, getPinnedSize()+getBroadcastSize(), true) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
 				if( !HDFSTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
-					long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
+					long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(lrdd, _hdfsFileName, iimd.getFileFormat());
 					_metaData.getDataCharacteristics().setNonZeros(newnnz);
 					rdd.setPending(false); //mark rdd as non-pending (for export)
 					rdd.setHDFSFile(true); //mark rdd as hdfs file (for restore)
@@ -537,10 +535,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 					//reference to the input not to an rdd of the hdfs file but the resulting behavior is correct
 				}
 				mb = readBlobFromHDFS(_hdfsFileName);
-			}
-			else if( ii == InputInfo.BinaryCellInputInfo ) {
-				//collect matrix block from binary block RDD
-				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, nnz);
 			}
 			else {
 				//collect matrix block from binary cell RDD
@@ -579,19 +573,18 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics mc = iimd.getDataCharacteristics();
 			// Write the matrix to HDFS in requested format
-			OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt) : 
-					InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+			FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
-			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
+			if ( fmt == FileFormat.BINARY && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
 				&& mc.getBlocksize() != ConfigurationManager.getBlocksize() )
 			{
-				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
+				DataConverter.writeMatrixToHDFS(_data, fname, fmt, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
 					ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
 			}
 			else {
-				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, mc, rep, fprop, _diag);
+				DataConverter.writeMatrixToHDFS(_data, fname, fmt, mc, rep, fprop, _diag);
 			}
 
 			if( LOG.isTraceEnabled() )
@@ -607,16 +600,15 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	
 	@Override
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String outputFormat) 
-	    throws IOException, DMLRuntimeException
+		throws IOException, DMLRuntimeException
 	{
 		//prepare output info
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) : 
-			InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+		FileFormat fmt = (outputFormat != null ? FileFormat.safeValueOf(outputFormat) : iimd.getFileFormat());
 		
 		//note: the write of an RDD to HDFS might trigger
-		//lazy evaluation of pending transformations.				
-		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);
+		//lazy evaluation of pending transformations.
+		long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(rdd, fname, fmt);
 		_metaData.getDataCharacteristics().setNonZeros(newnnz);
 	}
 }

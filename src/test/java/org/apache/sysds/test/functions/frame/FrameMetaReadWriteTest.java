@@ -23,12 +23,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -51,35 +51,35 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 
 	@Test
 	public void testFrameBinaryCP()  {
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, ExecType.CP);
+		runFrameReadWriteTest(FileFormat.BINARY, ExecType.CP);
 	}
 
 	@Test
 	public void testFrameBinarySpark()  {
-		runFrameReadWriteTest(OutputInfo.BinaryBlockOutputInfo, ExecType.SPARK);
+		runFrameReadWriteTest(FileFormat.BINARY, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testFrameTextcellCP()  {
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, ExecType.CP);
+		runFrameReadWriteTest(FileFormat.TEXT, ExecType.CP);
 	}
 	
 	@Test
 	public void testFrameTextcellSpark()  {
-		runFrameReadWriteTest(OutputInfo.TextCellOutputInfo, ExecType.SPARK);
+		runFrameReadWriteTest(FileFormat.TEXT, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testFrameCsvCP()  {
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, ExecType.CP);
+		runFrameReadWriteTest(FileFormat.CSV, ExecType.CP);
 	}
 
 	@Test
 	public void testFrameCsvSpark()  {
-		runFrameReadWriteTest(OutputInfo.CSVOutputInfo, ExecType.SPARK);
+		runFrameReadWriteTest(FileFormat.CSV, ExecType.SPARK);
 	}
 	
-	private void runFrameReadWriteTest( OutputInfo oinfo, ExecType et)
+	private void runFrameReadWriteTest(FileFormat fmt, ExecType et)
 	{
 		//rtplatform for MR
 		ExecMode platformOld = rtplatform;
@@ -92,7 +92,7 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
-		String ofmt = OutputInfo.outputInfoToStringExternal(oinfo);
+		String ofmt = fmt.toString();
 		
 		try
 		{
@@ -112,7 +112,7 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 				fA.getColumnMetadata(j).setMvValue(String.valueOf(j+1));
 				fA.getColumnMetadata(j).setNumDistinct(j+1);
 			}
-			FrameWriterFactory.createFrameWriter(oinfo)
+			FrameWriterFactory.createFrameWriter(fmt)
 				.writeFrameToHDFS(fA, input("A"), rows, cols);
 			
 			//run testcase
@@ -120,7 +120,7 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 			
 			//read output and compare meta data
 			FrameBlock fB = FrameReaderFactory
-					.createFrameReader(OutputInfo.getMatchingInputInfo(oinfo))
+					.createFrameReader(fmt)
 					.readFrameFromHDFS(output("B"), rows, cols);
 			for( int j=0; j<cols; j++ ) {
 				Assert.assertEquals("MV meta data wrong!",

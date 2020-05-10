@@ -21,9 +21,9 @@ package org.apache.sysds.test.functions.caching;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -37,7 +37,7 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + CachingPWriteExportTest.class.getSimpleName() + "/";
 
 	private final static int rows = (int)Hop.CPThreshold-1;
-	private final static int cols = (int)Hop.CPThreshold-1;    
+	private final static int cols = (int)Hop.CPThreshold-1;
 	private final static double sparsity = 0.7;
 	
 	@Override
@@ -84,11 +84,11 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 		double[][] Vp = null;
 		try
 		{
-			InputInfo ii = null;
+			FileFormat ii = null;
 			if( outputFormat.equals("binary") )
-				ii = InputInfo.BinaryBlockInputInfo;
+				ii = FileFormat.BINARY;
 			else
-				ii = InputInfo.TextCellInputInfo;
+				ii = FileFormat.TEXT;
 			
 			MatrixBlock mb = DataConverter.readMatrixFromHDFS(output("V"),
 				ii, rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
@@ -39,9 +40,7 @@ import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 import java.util.Arrays;
@@ -149,8 +148,8 @@ public class LineageCache
 				Data boundValue = null;
 				//convert to matrix object
 				if (e.isMatrixValue()) {
-					MetaDataFormat md = new MetaDataFormat(e.getMBValue().getDataCharacteristics(),
-						OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
+					MetaDataFormat md = new MetaDataFormat(
+						e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
 					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
 					((MatrixObject)boundValue).acquireModify(e.getMBValue());
 					((MatrixObject)boundValue).release();

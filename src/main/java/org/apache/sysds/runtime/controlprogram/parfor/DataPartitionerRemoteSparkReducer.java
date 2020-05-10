@@ -28,12 +28,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 import scala.Tuple2;
@@ -45,7 +45,7 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 	private final String _fnameNew;
 	private final int _replication;
 	
-	public DataPartitionerRemoteSparkReducer(String fnameNew, OutputInfo oi, int replication) {
+	public DataPartitionerRemoteSparkReducer(String fnameNew, FileFormat fmt, int replication) {
 		_fnameNew = fnameNew;
 		_replication = replication;
 	}

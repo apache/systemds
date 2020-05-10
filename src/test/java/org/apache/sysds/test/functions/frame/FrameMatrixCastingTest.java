@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.DataType;
@@ -37,9 +38,7 @@ import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -183,18 +182,18 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		//write input data
 		if( dt == DataType.FRAME ) {
 			FrameBlock fb = DataConverter.convertToFrameBlock(DataConverter.convertToMatrixBlock(A), vt);
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.BinaryBlockOutputInfo);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.BINARY);
 			writer.writeFrameToHDFS(fb, fname, rows, cols);
 		}
 		else {
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
-			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(OutputInfo.BinaryBlockOutputInfo);
+			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
 			writer.writeMatrixToHDFS(mb, fname, rows, cols, blksize, -1);
 		}
 		
 		//write meta data
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blksize, blksize);
-		HDFSTool.writeMetaDataFile(fname+".mtd", vt, null, dt, mc, OutputInfo.BinaryBlockOutputInfo);
+		HDFSTool.writeMetaDataFile(fname+".mtd", vt, null, dt, mc, FileFormat.BINARY);
 	
 	}
 	
@@ -205,13 +204,13 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		
 		//read input data
 		if( dt == DataType.FRAME ) {
-			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.BinaryBlockInputInfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.BINARY);
 			FrameBlock fb = reader.readFrameFromHDFS(fname, rows, cols);
 			ret = DataConverter.convertToMatrixBlock(fb);
 		}
 		else {
 			int blksize = ConfigurationManager.getBlocksize();
-			MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.BinaryBlockInputInfo);
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(FileFormat.BINARY);
 			ret = reader.readMatrixFromHDFS(fname, rows, cols, blksize, -1);
 		}
 		

@@ -26,6 +26,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysds.common.Types.CorrectionLocationType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.Statement;
@@ -52,7 +53,6 @@ import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
@@ -437,7 +437,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//get input RDD and meta data
 			FrameObject fo = sec.getFrameObject(params.get("target"));
 			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
-					sec.getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
+				sec.getRDDHandleForFrameObject(fo, FileFormat.BINARY);
 			FrameBlock meta = sec.getFrameInput(params.get("meta"));
 			DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
 			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());

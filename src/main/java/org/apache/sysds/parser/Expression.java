@@ -69,13 +69,6 @@ public abstract class Expression implements ParseInfo
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
 	}
-
-	/**
-	 * Format types (text, binary, matrix market, csv, libsvm, unknown).
-	 */
-	public enum FormatType {
-		TEXT, BINARY, MM, CSV, LIBSVM
-	}
 	
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
 	
@@ -211,27 +204,11 @@ public abstract class Expression implements ParseInfo
 	 * type is set to {@code FileFormatTypes.TEXT}.
 	 */
 	public static FileFormat convertFormatType(String format) {
-		if (format == null)
-			return FileFormat.TEXT;
-		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)) {
-			return FileFormat.TEXT;
-		}
-		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)) {
-			return FileFormat.BINARY;
-		}
-		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET))  {
-			return FileFormat.MM;
-		}
-		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV))  {
-			return FileFormat.CSV;
-		}
-		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_LIBSVM))  {
-			return FileFormat.LIBSVM;
-		}
-		// ToDo : throw parse exception for invalid / unsupported format type
-		return FileFormat.TEXT;
+		if( format == null )
+			return FileFormat.defaultFormat();
+		return FileFormat.safeValueOf(format);
 	}
-    
+
 	/**
 	 * Obtain temporary name ("parsertemp" + _tempId) for expression. Used to construct Hops from
 	 * parse tree.

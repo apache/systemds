@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.junit.Assert;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.io.FrameWriter;
@@ -38,7 +39,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -1798,8 +1798,8 @@ public class TestUtils
 	 * @param isR
 	 * @throws IOException 
 	 */
-	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi, boolean isR) throws IOException {
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(oi);
+	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, FileFormat fmt, boolean isR) throws IOException {
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt);
 		FrameBlock frame = new FrameBlock(schema);
 		initFrameData(frame, data, schema, data.length);
 		writer.writeFrameToHDFS(frame, file, data.length, schema.length);
@@ -1816,8 +1816,8 @@ public class TestUtils
 	 *            frame data
 	 * @throws IOException 
 	 */
-	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi) throws IOException {
-		writeTestFrame(file, data, schema, oi, false);
+	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, FileFormat fmt) throws IOException {
+		writeTestFrame(file, data, schema, fmt, false);
 	}
 
 	public static void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema, int rows) {

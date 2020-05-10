@@ -24,11 +24,10 @@ import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -37,7 +36,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class FullDynWriteTest extends AutomatedTestBase 
+public class FullDynWriteTest extends AutomatedTestBase
 {
 	
 	private final static String TEST_NAME1 = "DynWriteScalar";
@@ -65,34 +64,34 @@ public class FullDynWriteTest extends AutomatedTestBase
 	@Test
 	public void testScalarCP() 
 	{
-		runDynamicWriteTest( Type.Scalar, OutputInfo.TextCellOutputInfo, ExecType.CP);
+		runDynamicWriteTest( Type.Scalar, FileFormat.TEXT, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixTextCP() 
 	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.TextCellOutputInfo, ExecType.CP);
+		runDynamicWriteTest( Type.Matrix, FileFormat.TEXT, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixCSVCP() 
 	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.CSVOutputInfo, ExecType.CP);
+		runDynamicWriteTest( Type.Matrix, FileFormat.CSV, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixMMCP() 
 	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.MatrixMarketOutputInfo, ExecType.CP);
+		runDynamicWriteTest( Type.Matrix, FileFormat.MM, ExecType.CP);
 	}
 	
 	@Test
 	public void testMatrixBinaryCP() 
 	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.BinaryBlockOutputInfo, ExecType.CP);
+		runDynamicWriteTest( Type.Matrix, FileFormat.BINARY, ExecType.CP);
 	}
 	
-	private void runDynamicWriteTest( Type type, OutputInfo fmt, ExecType et )
+	private void runDynamicWriteTest( Type type, FileFormat fmt, ExecType et )
 	{		
 		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : TEST_NAME2;
 		ExecMode platformOld = rtplatform;
@@ -106,7 +105,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[]{ "-explain","-args",
-			input("A"), getFormatString(fmt), outputDir()};
+			input("A"), fmt.toString(), outputDir()};
 		
 		try 
 		{
@@ -126,7 +125,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 				Assert.assertEquals(val, sum);
 			}
 			else{
-				double[][] B = readMatrix(fname, OutputInfo.getMatchingInputInfo(fmt), rows, cols, 1000);
+				double[][] B = readMatrix(fname, fmt, rows, cols, 1000);
 				TestUtils.compareMatrices(A, B, rows, cols, eps);
 			}
 		
@@ -144,15 +143,15 @@ public class FullDynWriteTest extends AutomatedTestBase
 		}
 	}
 	
-	private static double[][] readMatrix( String fname, InputInfo ii, long rows, long cols, int blen ) 
+	private static double[][] readMatrix( String fname, FileFormat fmt, long rows, long cols, int blen ) 
 		throws IOException
 	{
-		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, ii, rows, cols, blen);
+		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, fmt, rows, cols, blen);
 		double[][] C = DataConverter.convertToDoubleMatrix(mb);
 		return C;
 	}
 	
-	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int blen, long nnz ) 
+	private static void writeMatrix( double[][] A, String fname, FileFormat fmt, long rows, long cols, int blen, long nnz ) 
 		throws IOException
 	{
 		HDFSTool.deleteFileIfExistOnHDFS(fname);
@@ -160,23 +159,9 @@ public class FullDynWriteTest extends AutomatedTestBase
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blen, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
-		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
-		if( oi != OutputInfo.MatrixMarketOutputInfo )
-			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.FP64, mc, oi);
-	}
-	
-	private static String getFormatString(OutputInfo oinfo)
-	{
-		if( oinfo==OutputInfo.BinaryBlockOutputInfo )
-			return "binary";
-		else if( oinfo==OutputInfo.TextCellOutputInfo )
-			return "text";
-		else if( oinfo==OutputInfo.MatrixMarketOutputInfo )
-			return "mm";
-		else if( oinfo==OutputInfo.CSVOutputInfo )
-			return "csv";
-		
-		return null;
+		DataConverter.writeMatrixToHDFS(mb, fname, fmt, mc);
+		if( fmt != FileFormat.MM )
+			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.FP64, mc, fmt);
 	}
 	
 	private static long computeSum( double[][] A ) {

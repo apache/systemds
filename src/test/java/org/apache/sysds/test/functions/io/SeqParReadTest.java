@@ -24,9 +24,9 @@ import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -76,92 +76,92 @@ public class SeqParReadTest extends AutomatedTestBase {
 	
 	@Test
 	public void testSeqReadCSVSparseSmall() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.CSVOutputInfo, false, false);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.CSV, false, false);
 	}
 
 	@Test
 	public void testSeqReadTextcellSparseSmall() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.TextCellOutputInfo, false, false);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.TEXT, false, false);
 	}
 	
 	@Test
 	public void testSeqReadMMSparseSmall() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.MatrixMarketOutputInfo, false, false);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.MM, false, false);
 	}
 
 	@Test
 	public void testParReadTextcellSparseSmall() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.TextCellOutputInfo, false, false);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.TEXT, false, false);
 	}
 	
 	@Test
 	public void testParReadMMSparseSmall() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.MatrixMarketOutputInfo, false, false);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.MM, false, false);
 	}
 
 	@Test
 	public void testSeqReadTextcellDenseSmall() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.TextCellOutputInfo, true, false);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.TEXT, true, false);
 	}
 	
 	@Test
 	public void testSeqReadMMDenseSmall() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.MatrixMarketOutputInfo, true, false);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.MM, true, false);
 	}
 
 	@Test
 	public void testParReadTextcellDenseSmall() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.TextCellOutputInfo, true, false);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.TEXT, true, false);
 	}
 	
 	@Test
 	public void testParReadMMDenseSmall() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.MatrixMarketOutputInfo, false, false);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.MM, false, false);
 	}
 
 	@Test
 	public void testSeqReadTextcellSparseBig() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.TextCellOutputInfo, false, true);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.TEXT, false, true);
 	}
 	
 	@Test
 	public void testSeqReadMMSparseBig() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.MatrixMarketOutputInfo, false, true);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.MM, false, true);
 	}
 
 	@Test
 	public void testParReadTextcellSparseBig() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.TextCellOutputInfo, false, true);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.TEXT, false, true);
 	}
 	
 	@Test
 	public void testParReadMMSparseBig() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.MatrixMarketOutputInfo, false, true);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.MM, false, true);
 	}
 
 	@Test
 	public void testSeqReadTextcellDenseBig() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.TextCellOutputInfo, true, true);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.TEXT, true, true);
 	}
 	
 	@Test
 	public void testSeqReadMMDenseBig() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.MatrixMarketOutputInfo, true, true);
+		runReadTypeFormatSparsitySizeTest(false, FileFormat.MM, true, true);
 	}
 
 	@Test
 	public void testParReadCSVDenseBig() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.CSVOutputInfo, true, true);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.CSV, true, true);
 	}
 
 	@Test
 	public void testParReadTextcellDenseBig() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.TextCellOutputInfo, true, true);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.TEXT, true, true);
 	}
 	
 	@Test
 	public void testParReadMMDenseBig() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.MatrixMarketOutputInfo, true, true);
+		runReadTypeFormatSparsitySizeTest(true, FileFormat.MM, true, true);
 	}
 
 	/*
@@ -177,7 +177,7 @@ public class SeqParReadTest extends AutomatedTestBase {
 	 * 
 	 */
 	
-	private void runReadTypeFormatSparsitySizeTest(boolean parallel, OutputInfo fmt, boolean dense, boolean big ) {
+	private void runReadTypeFormatSparsitySizeTest(boolean parallel, FileFormat fmt, boolean dense, boolean big ) {
 		
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
@@ -195,7 +195,7 @@ public class SeqParReadTest extends AutomatedTestBase {
 			writeMatrix(A, input("AX"), fmt, rowsA, big?colsA:colsB, 1000, rowsA*(big?colsA:colsB));
 			
 			//always write in MM format for R
-			writeMatrix(A, input("BX"), OutputInfo.MatrixMarketOutputInfo, rowsA, big?colsA:colsB, 1000, rowsA*(big?colsA:colsB));
+			writeMatrix(A, input("BX"), FileFormat.MM, rowsA, big?colsA:colsB, 1000, rowsA*(big?colsA:colsB));
 			
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
@@ -223,14 +223,14 @@ public class SeqParReadTest extends AutomatedTestBase {
 		}
 	}
 	
-	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int blen, long nnz ) 
+	private static void writeMatrix( double[][] A, String fname, FileFormat fmt, long rows, long cols, int blen, long nnz ) 
 		throws IOException
 	{
 		HDFSTool.deleteFileWithMTDIfExistOnHDFS(fname);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blen, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
-		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
-		if( oi != OutputInfo.MatrixMarketOutputInfo )
-			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.FP64, mc, oi);
+		DataConverter.writeMatrixToHDFS(mb, fname, fmt, mc);
+		if( fmt != FileFormat.MM )
+			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.FP64, mc, fmt);
 	}
 }

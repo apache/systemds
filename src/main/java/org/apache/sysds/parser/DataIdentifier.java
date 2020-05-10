@@ -103,7 +103,7 @@ public class DataIdentifier extends Identifier
 			return false;
 		if(getValueType() != null && !getValueType().equals(target.getValueType()))
 			return false;
-		if(getFormatType()!= null && !this.getFormatType().equals(target.getFormatType()))
+		if(getFileFormat()!= null && getFileFormat() != target.getFileFormat())
 			return false;
 		if(!(this.getDim1() == target.getDim1()))
 			return false;

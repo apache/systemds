@@ -37,9 +37,9 @@ log="$outputdir/out.log"
 
 # Make the workers start quietly and pipe their output to a file to print later
 export SYSDS_QUIET=1
-systemds.sh WORKER 8001 >$w1_Output 2>&1 &
+systemds WORKER 8001 >$w1_Output 2>&1 &
 Fed1=$!
-systemds.sh WORKER 8002 >$w2_Output 2>&1 &
+systemds WORKER 8002 >$w2_Output 2>&1 &
 Fed2=$!
 echo "Starting workers" && sleep 3 && echo "Starting tests"
 

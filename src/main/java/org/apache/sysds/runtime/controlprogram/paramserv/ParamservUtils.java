@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
@@ -56,10 +57,8 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -160,7 +159,7 @@ public class ParamservUtils {
 	public static MatrixObject newMatrixObject(MatrixBlock mb, boolean cleanup) {
 		MatrixObject result = new MatrixObject(ValueType.FP64, OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),
-			ConfigurationManager.getBlocksize()), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+			ConfigurationManager.getBlocksize()), FileFormat.BINARY));
 		result.acquireModify(mb);
 		result.release();
 		result.enableCleanup(cleanup);
@@ -387,9 +386,9 @@ public class ParamservUtils {
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		// Get input RDD
 		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-			sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
+			sec.getRDDHandleForMatrixObject(features, FileFormat.BINARY);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-			sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
+			sec.getRDDHandleForMatrixObject(labels, FileFormat.BINARY);
 
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int) features.getNumRows());
 		JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = ParamservUtils

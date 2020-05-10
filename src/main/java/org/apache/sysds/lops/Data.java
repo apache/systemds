@@ -280,25 +280,11 @@ public class Data extends Lop
 		OutputParameters oparams = getOutputParameters();
 		if ( _op.isWrite() ) {
 			sb.append( OPERAND_DELIMITOR );
-			String fmt = "";
-			if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME ) {
-				if ( oparams.getFormat() == FileFormat.MM )
-					fmt = "matrixmarket";
-				else if (oparams.getFormat() == FileFormat.TEXT)
-					fmt = "textcell";
-				else if (oparams.getFormat() == FileFormat.CSV)
-					fmt = "csv";
-				else if (oparams.getFormat() == FileFormat.LIBSVM)
-					fmt = "libsvm";
-				else if ( oparams.getFormat() == FileFormat.BINARY )
-					fmt = oparams.getBlocksize() > 0 ? "binaryblock" : "binarycell" ;
-				else
-					throw new LopsException("Unexpected format: " + oparams.getFormat());
-			}
-			else {
-				// scalars will always be written in text format
-				fmt = "textcell";
-			}
+			String fmt = null;
+			if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME )
+				fmt = oparams.getFormat().toString();
+			else // scalars will always be written in text format
+				fmt = FileFormat.TEXT.toString();
 			
 			sb.append( prepOperand(fmt, DataType.SCALAR, ValueType.STRING, true));
 			
@@ -384,19 +370,6 @@ public class Data extends Lop
 				throw new LopsException("getInstructions() should not be called for transient nodes.");
 			
 			OutputParameters oparams = getOutputParameters();
-			String fmt = "";
-			if ( oparams.getFormat() == FileFormat.TEXT )
-				fmt = "textcell";
-			else if ( oparams.getFormat() == FileFormat.MM )
-				fmt = "matrixmarket";
-			else if ( oparams.getFormat() == FileFormat.CSV )
-				fmt = "csv";
-			else if ( oparams.getFormat() == FileFormat.LIBSVM )
-				fmt = "libsvm";
-			else { //binary
-				fmt = ( getDataType() == DataType.FRAME || oparams.getBlocksize() > 0
-					|| oparams.getBlocksize() > 0 ) ? "binaryblock" : "binarycell";
-			}
 			
 			StringBuilder sb = new StringBuilder();
 			sb.append( "CP" );
@@ -411,7 +384,7 @@ public class Data extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getDataType() );
 			sb.append( OPERAND_DELIMITOR ); // only persistent reads come here!
-			sb.append( fmt );
+			sb.append( oparams.getFormat().toString() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( oparams.getNumRows() );
 			sb.append( OPERAND_DELIMITOR );

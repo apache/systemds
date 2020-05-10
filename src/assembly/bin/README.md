@@ -53,7 +53,7 @@ of sparsity. As you can see, DML can access these parameters by specifying $1, $
 #### Running a script locally 
 
 ```shell script
-$ ./systemds.sh hello.dml -args 10 10 1.0
+$ ./systemds hello.dml -args 10 10 1.0
 ```
 
 #### Running a script locally, providing your own SystemDS.jar file
@@ -61,14 +61,14 @@ $ ./systemds.sh hello.dml -args 10 10 1.0
 If you compiled SystemDS from source, you can of course use the created JAR file with the run script. 
 
 ```shell script
-$ ./systemds.sh path/to/the/SystemDS.jar hello.dml -args 10 10 1.0
+$ ./systemds path/to/the/SystemDS.jar hello.dml -args 10 10 1.0
 ```
 
 #### Running a script locally, in your SystemDS source environment
 If you have cloned the SystemDS source repository and want to run your DML script with that, you can point the
 shell script to the source directory by setting the `SYSTEMDS_ROOT` environment variable.
 ```shell script
-$ SYSTEMDS_ROOT=../../code/my-systemds/source  ./systemds.sh hello.dml -args 10 10 1.0
+$ SYSTEMDS_ROOT=../../code/my-systemds/source  ./systemds hello.dml -args 10 10 1.0
 ```
 
 #### Running a script distributed on a Spark cluster 
@@ -78,7 +78,7 @@ To force cluster mode in this little test, we will increase the matrix size to g
 something to do and force SystemDS to only generate Spark instructions by adding -exec spark to the command line
 parameters:
 ```shell script
-$ SYSDS_DISTRIBUTED=1 ./systemds.sh hello.dml -args 10000 10000 1.0 -exec spark
+$ SYSDS_DISTRIBUTED=1 ./systemds hello.dml -args 10000 10000 1.0 -exec spark
 ```
 
 The output should read something similar to this (the warning can be safely ignored):

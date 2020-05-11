@@ -46,7 +46,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 		
 		//sanity check block sizes
 		if(in_blen <= 0 || out_blen <= 0)
-			throw new DMLRuntimeException("Block sizes not unknown:" + in_blen + "," +  out_blen);
+			throw new DMLRuntimeException("Block sizes unknown:" + in_blen + ", " +  out_blen);
 	}
 	
 	@Override

@@ -34,11 +34,11 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.IJV;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.FastStringTokenizer;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -49,13 +49,13 @@ public class ReaderTextCell extends MatrixReader
 	protected final boolean _isMMFile;
 	protected FileFormatPropertiesMM _mmProps = null;
 	
-	public ReaderTextCell(InputInfo info) {
-		this(info, true);
+	public ReaderTextCell(FileFormat fmt) {
+		this(fmt, true);
 	}
 	
-	public ReaderTextCell(InputInfo info, boolean allowRaw) {
+	public ReaderTextCell(FileFormat fmt, boolean allowRaw) {
 		_allowRawRead = allowRaw;
-		_isMMFile = (info == InputInfo.MatrixMarketInputInfo);
+		_isMMFile = (fmt == FileFormat.MM);
 	}
 	
 	@SuppressWarnings("resource")

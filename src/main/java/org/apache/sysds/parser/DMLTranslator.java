@@ -67,6 +67,7 @@ import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
@@ -77,7 +78,6 @@ import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.parser.Expression.FormatType;
 import org.apache.sysds.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -2860,7 +2860,7 @@ public class DMLTranslator
 						if (pWrites.containsKey(pfname) && !pfname.trim().isEmpty()) {
 							// update read with essential write meta data
 							DataIdentifier di = pWrites.get(pfname);
-							FormatType ft = (di.getFormatType() != null) ? di.getFormatType() : FormatType.TEXT;
+							FileFormat ft = (di.getFileFormat() != null) ? di.getFileFormat() : FileFormat.TEXT;
 							dexpr.addVarParam(DataExpression.FORMAT_TYPE, new StringIdentifier(ft.toString(), di));
 							if (di.getDim1() >= 0)
 								dexpr.addVarParam(DataExpression.READROWPARAM, new IntIdentifier(di.getDim1(), di));

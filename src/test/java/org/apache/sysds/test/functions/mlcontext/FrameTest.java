@@ -36,7 +36,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.api.mlcontext.FrameFormat;
 import org.apache.sysds.api.mlcontext.FrameMetadata;
 import org.apache.sysds.api.mlcontext.FrameSchema;
@@ -49,9 +51,8 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
+import org.apache.sysds.runtime.io.InputOutputInfo;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -98,32 +99,32 @@ public class FrameTest extends MLContextTestBase
 	
 	@Test
 	public void testCSVInCSVOut() throws IOException, DMLException, ParseException {
-		testFrameGeneral(InputInfo.CSVInputInfo, OutputInfo.CSVOutputInfo);
+		testFrameGeneral(FileFormat.CSV, FileFormat.CSV);
 	}
 	
 	@Test
 	public void testCSVInTextOut() throws IOException, DMLException, ParseException {
-		testFrameGeneral(InputInfo.TextCellInputInfo, OutputInfo.CSVOutputInfo);
+		testFrameGeneral(FileFormat.TEXT, FileFormat.CSV);
 	}
 	
 	@Test
 	public void testTextInCSVOut() throws IOException, DMLException, ParseException {
-		testFrameGeneral(InputInfo.CSVInputInfo, OutputInfo.TextCellOutputInfo);
+		testFrameGeneral(FileFormat.CSV, FileFormat.TEXT);
 	}
 	
 	@Test
 	public void testTextInTextOut() throws IOException, DMLException, ParseException {
-		testFrameGeneral(InputInfo.TextCellInputInfo, OutputInfo.TextCellOutputInfo);
+		testFrameGeneral(FileFormat.TEXT, FileFormat.TEXT);
 	}
 	
 	@Test
 	public void testDataFrameInCSVOut() throws IOException, DMLException, ParseException {
-		testFrameGeneral(InputInfo.CSVInputInfo, true, false);
+		testFrameGeneral(FileFormat.CSV, true, false);
 	}
 	
 	@Test
 	public void testDataFrameInTextOut() throws IOException, DMLException, ParseException {
-		testFrameGeneral(InputInfo.TextCellInputInfo, true, false);
+		testFrameGeneral(FileFormat.TEXT, true, false);
 	}
 	
 	@Test
@@ -131,19 +132,19 @@ public class FrameTest extends MLContextTestBase
 		testFrameGeneral(true, true);
 	}
 	
-	private void testFrameGeneral(InputInfo iinfo, OutputInfo oinfo) throws IOException, DMLException, ParseException {
+	private void testFrameGeneral(FileFormat iinfo, FileFormat oinfo) throws IOException, DMLException, ParseException {
 		testFrameGeneral(iinfo, oinfo, false, false);
 	}
 	
-	private void testFrameGeneral(InputInfo iinfo, boolean bFromDataFrame, boolean bToDataFrame) throws IOException, DMLException, ParseException {
-		testFrameGeneral(iinfo, OutputInfo.CSVOutputInfo, bFromDataFrame, bToDataFrame);
+	private void testFrameGeneral(FileFormat iinfo, boolean bFromDataFrame, boolean bToDataFrame) throws IOException, DMLException, ParseException {
+		testFrameGeneral(iinfo, FileFormat.CSV, bFromDataFrame, bToDataFrame);
 	}
 	
 	private void testFrameGeneral(boolean bFromDataFrame, boolean bToDataFrame) throws IOException, DMLException, ParseException {
-		testFrameGeneral(InputInfo.BinaryBlockInputInfo, OutputInfo.CSVOutputInfo, bFromDataFrame, bToDataFrame);
+		testFrameGeneral(FileFormat.BINARY, FileFormat.CSV, bFromDataFrame, bToDataFrame);
 	}
 	
-	private void testFrameGeneral(InputInfo iinfo, OutputInfo oinfo, boolean bFromDataFrame, boolean bToDataFrame) throws IOException, DMLException, ParseException {
+	private void testFrameGeneral(FileFormat iinfo, FileFormat oinfo, boolean bFromDataFrame, boolean bToDataFrame) throws IOException, DMLException, ParseException {
 		
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -230,7 +231,7 @@ public class FrameTest extends MLContextTestBase
 			Script script = ScriptFactory.dmlFromFile(fullDMLScriptName);
 			
 			String format = "csv";
-			if(oinfo == OutputInfo.TextCellOutputInfo)
+			if(oinfo == FileFormat.TEXT)
 				format = "text";
 
 			if(bFromDataFrame) {
@@ -263,7 +264,7 @@ public class FrameTest extends MLContextTestBase
 			MLResults results = ml.execute(script);
 			
 			format = "csv";
-			if(iinfo == InputInfo.TextCellInputInfo)
+			if(iinfo == FileFormat.TEXT)
 				format = "text";
 			
 			String fName = output("AB");
@@ -290,7 +291,8 @@ public class FrameTest extends MLContextTestBase
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.dataFrameToBinaryBlock(sc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
-				rddOut.saveAsHadoopFile(output("AB"), LongWritable.class, FrameBlock.class, OutputInfo.BinaryBlockOutputInfo.outputFormatClass);
+				InputOutputInfo tmp = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
+				rddOut.saveAsHadoopFile(output("AB"), LongWritable.class, FrameBlock.class, tmp.outputFormatClass);
 			}
 
 			fName = output("C");
@@ -316,7 +318,8 @@ public class FrameTest extends MLContextTestBase
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.dataFrameToBinaryBlock(sc, df, mc, bFromDataFrame)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
-				rddOut.saveAsHadoopFile(fName, LongWritable.class, FrameBlock.class, OutputInfo.BinaryBlockOutputInfo.outputFormatClass);
+				InputOutputInfo tmp = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
+				rddOut.saveAsHadoopFile(fName, LongWritable.class, FrameBlock.class, tmp.outputFormatClass);
 			}
 			
 			runRScript(true);
@@ -330,7 +333,7 @@ public class FrameTest extends MLContextTestBase
 			{
 				MatrixCharacteristics md = outputMC.get(file);
 				FrameBlock frameBlock = readDMLFrameFromHDFS(file, iinfo, md);
-				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", InputInfo.CSVInputInfo, md);
+				FrameBlock frameRBlock = readRFrameFromHDFS(file+".csv", FileFormat.CSV, md);
 				ValueType[] schemaOut = outputSchema.get(file);
 				verifyFrameData(frameBlock, frameRBlock, schemaOut);
 				System.out.println("File " + file +  " processed successfully.");

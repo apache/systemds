@@ -27,9 +27,9 @@ import org.junit.Test;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.api.jmlc.PreparedScript;
 import org.apache.sysds.api.jmlc.ResultVariables;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -92,7 +92,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		
 		//write out R input and model once
 		MatrixBlock mb = DataConverter.readMatrixFromHDFS(SCRIPT_DIR + TEST_DIR + MODEL_FILE,
-			InputInfo.TextCellInputInfo, rows, cols, 1000, 1000);
+			FileFormat.TEXT, rows, cols, 1000, 1000);
 		writeInputMatrix("X", Xset.get(0), true);
 		writeInputMatrix("W", DataConverter.convertToDoubleMatrix(mb), true);
 		

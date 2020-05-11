@@ -19,7 +19,6 @@
  
 package org.apache.sysds.api.mlcontext;
 
-import java.util.Date;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -29,6 +28,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.sysds.api.ConfigurableAPI;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.parser.DataExpression;
@@ -41,7 +41,6 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.MLContextProxy;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -330,9 +329,8 @@ public class MLContext implements ConfigurableAPI
 		try {
 			executionScript = script;
 
-			Long time = new Long((new Date()).getTime());
 			if ((script.getName() == null) || (script.getName().equals(""))) {
-				script.setName(time.toString());
+				script.setName(String.valueOf(System.currentTimeMillis()));
 			}
 
 			MLResults results = scriptExecutor.execute(script);
@@ -525,21 +523,13 @@ public class MLContext implements ConfigurableAPI
 
 						if (mo.getMetaData() instanceof MetaDataFormat) {
 							MetaDataFormat metaData = (MetaDataFormat) mo.getMetaData();
-							if (metaData.getOutputInfo() == OutputInfo.CSVOutputInfo) {
-								exp.addVarParam(DataExpression.FORMAT_TYPE,
-										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, source));
-							} else if (metaData.getOutputInfo() == OutputInfo.TextCellOutputInfo) {
-								exp.addVarParam(DataExpression.FORMAT_TYPE,
-										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_TEXT, source));
-							} else if (metaData.getOutputInfo() == OutputInfo.BinaryBlockOutputInfo) {
+							exp.addVarParam(DataExpression.FORMAT_TYPE,
+								new StringIdentifier(metaData.getFileFormat().toString(), source));
+							if( metaData.getFileFormat() == FileFormat.BINARY ) {
 								exp.addVarParam(DataExpression.ROWBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getBlocksize(), source));
+									new IntIdentifier(mo.getBlocksize(), source));
 								exp.addVarParam(DataExpression.COLUMNBLOCKCOUNTPARAM,
-										new IntIdentifier(mo.getBlocksize(), source));
-								exp.addVarParam(DataExpression.FORMAT_TYPE,
-										new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_BINARY, source));
-							} else {
-								throw new MLContextException("Unsupported format through MLContext");
+									new IntIdentifier(mo.getBlocksize(), source));
 							}
 						}
 					}

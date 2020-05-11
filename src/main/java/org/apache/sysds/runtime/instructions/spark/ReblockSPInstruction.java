@@ -23,6 +23,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -40,7 +41,6 @@ import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -92,7 +92,6 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
 		if(iimd == null)
 			throw new DMLRuntimeException("Error: Metadata not found");
-		InputInfo iinfo = iimd.getInputInfo();
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
 		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {
@@ -106,25 +105,25 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		
 		//execute matrix/frame reblock
 		if( input1.getDataType() == DataType.MATRIX )
-			processMatrixReblockInstruction(sec, iinfo);
+			processMatrixReblockInstruction(sec, iimd.getFileFormat());
 		else if( input1.getDataType() == DataType.FRAME )
-			processFrameReblockInstruction(sec, iinfo);
+			processFrameReblockInstruction(sec, iimd.getFileFormat());
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processMatrixReblockInstruction(SparkExecutionContext sec, InputInfo iinfo) {
+	protected void processMatrixReblockInstruction(SparkExecutionContext sec, FileFormat fmt) {
 		MatrixObject mo = sec.getMatrixObject(input1.getName());
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
-		if(iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
+		if(fmt == FileFormat.TEXT || fmt == FileFormat.MM ) {
 			//get matrix market file properties if necessary
-			FileFormatPropertiesMM mmProps = (iinfo == InputInfo.MatrixMarketInputInfo) ?
+			FileFormatPropertiesMM mmProps = (fmt == FileFormat.MM) ?
 				IOUtilFunctions.readAndParseMatrixMarketHeader(mo.getFileName()) : null;
 			
 			//get the input textcell rdd
 			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>)
-				sec.getRDDHandleForMatrixObject(mo, iinfo);
+				sec.getRDDHandleForMatrixObject(mo, fmt);
 			
 			//convert textcell to binary block
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.textCellToBinaryBlock(
@@ -134,7 +133,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
-		else if(iinfo == InputInfo.CSVInputInfo) {
+		else if(fmt == FileFormat.CSV) {
 			// HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
 			// throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
 			CSVReblockSPInstruction csvInstruction = null;
@@ -156,17 +155,16 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			csvInstruction.processInstruction(sec);
 			return;
 		}
-		else if(iinfo == InputInfo.BinaryCellInputInfo)
-		{
-			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForMatrixObject(mo, iinfo);
+		else if(fmt == FileFormat.BINARY && mc.getBlocksize() <= 0) {
+			//BINARY BLOCK <- BINARY CELL (e.g., after grouped aggregate)
+			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForMatrixObject(mo, FileFormat.BINARY);
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellToBinaryBlock(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
-			
+
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
-		else if(iinfo == InputInfo.BinaryBlockInputInfo)
-		{
+		else if(fmt == FileFormat.BINARY) {
 			//BINARY BLOCK <- BINARY BLOCK (different sizes)
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 			
@@ -184,21 +182,21 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 		else {
-			throw new DMLRuntimeException("The given InputInfo is not implemented "
-					+ "for ReblockSPInstruction:" + InputInfo.inputInfoToString(iinfo));
+			throw new DMLRuntimeException("The given format is not implemented "
+				+ "for ReblockSPInstruction:" + fmt.toString());
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processFrameReblockInstruction(SparkExecutionContext sec, InputInfo iinfo)
+	protected void processFrameReblockInstruction(SparkExecutionContext sec, FileFormat fmt)
 	{
 		FrameObject fo = sec.getFrameObject(input1.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
-		if(iinfo == InputInfo.TextCellInputInfo ) {
+		if(fmt == FileFormat.TEXT) {
 			//get the input textcell rdd
 			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>)
-				sec.getRDDHandleForFrameObject(fo, iinfo);
+				sec.getRDDHandleForFrameObject(fo, fmt);
 			
 			//convert textcell to binary block
 			JavaPairRDD<Long, FrameBlock> out =
@@ -208,7 +206,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
-		else if(iinfo == InputInfo.CSVInputInfo) {
+		else if(fmt == FileFormat.CSV) {
 			// HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read
 			// throw new DMLRuntimeException("CSVInputInfo is not supported for ReblockSPInstruction");
 			CSVReblockSPInstruction csvInstruction = null;
@@ -230,8 +228,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			csvInstruction.processInstruction(sec);
 		}
 		else {
-			throw new DMLRuntimeException("The given InputInfo is not implemented "
-				+ "for ReblockSPInstruction: " + InputInfo.inputInfoToString(iinfo));
+			throw new DMLRuntimeException("The given format is not implemented "
+				+ "for ReblockSPInstruction: " + fmt.toString());
 		}
 	}
 }

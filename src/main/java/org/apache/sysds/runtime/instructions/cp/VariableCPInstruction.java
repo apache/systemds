@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -51,9 +52,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -365,8 +364,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
-			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
-			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 
 			MetaDataFormat iimd = null;
 			if (dt == DataType.MATRIX || dt == DataType.FRAME) {
@@ -383,7 +380,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 				}
-				iimd = new MetaDataFormat(mc, oi, ii);
+				iimd = new MetaDataFormat(mc, FileFormat.safeValueOf(fmt));
 			}
 			else if (dt == DataType.TENSOR) {
 				TensorCharacteristics tc = new TensorCharacteristics(new long[]{1, 1}, 0);
@@ -399,7 +396,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 				}
-				iimd = new MetaDataFormat(tc, oi, ii);
+				iimd = new MetaDataFormat(tc, FileFormat.safeValueOf(fmt));
 			}
 			UpdateType updateType = UpdateType.COPY;
 			if ( parts.length >= 11 )
@@ -943,8 +940,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void processWriteInstruction(ExecutionContext ec) {
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
-		if (!getInput3().getName().equalsIgnoreCase("libsvm"))
-		{
+		String fmtStr = getInput3().getName();
+		FileFormat fmt = FileFormat.safeValueOf(fmtStr);
+		if( fmt != FileFormat.LIBSVM ) {
 			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
 			_formatProperties.setDescription(desc);
 		}
@@ -953,31 +951,28 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			writeScalarToHDFS(ec, fname);
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
-			String outFmt = getInput3().getName();
-			if (outFmt.equalsIgnoreCase("matrixmarket"))
+			if( fmt == FileFormat.MM )
 				writeMMFile(ec, fname);
-			else if (outFmt.equalsIgnoreCase("csv") )
+			else if( fmt == FileFormat.CSV )
 				writeCSVFile(ec, fname);
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-				mo.exportData(fname, outFmt, _formatProperties);
+				mo.exportData(fname, fmtStr, _formatProperties);
 			}
 			// Set privacy constraint of write instruction to the same as that of the input
 			setPrivacyConstraint(ec.getMatrixObject(getInput1().getName()).getPrivacyConstraint());
 		}
 		else if( getInput1().getDataType() == DataType.FRAME ) {
-			String outFmt = getInput3().getName();
 			FrameObject mo = ec.getFrameObject(getInput1().getName());
-			mo.exportData(fname, outFmt, _formatProperties);
+			mo.exportData(fname, fmtStr, _formatProperties);
 			setPrivacyConstraint(mo.getPrivacyConstraint());
 		}
 		else if( getInput1().getDataType() == DataType.TENSOR ) {
 			// TODO write tensor
-			String outFmt = getInput3().getName();
 			TensorObject to = ec.getTensorObject(getInput1().getName());
-			to.exportData(fname, outFmt, _formatProperties);
 			setPrivacyConstraint(to.getPrivacyConstraint());
+			to.exportData(fname, fmtStr, _formatProperties);
 		}
 	}
 
@@ -1028,9 +1023,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			try {
-				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				FileFormat fmt = ((MetaDataFormat)mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
-				if( oi == OutputInfo.CSVOutputInfo 
+				if( fmt == FileFormat.CSV 
 					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
 				{
 					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)_formatProperties);
@@ -1039,7 +1034,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					mo.exportData(fname, outFmt, _formatProperties);
 				}
-				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, OutputInfo.CSVOutputInfo, _formatProperties, mo.getPrivacyConstraint());
+				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc,  FileFormat.CSV, _formatProperties, mo.getPrivacyConstraint());
 			}
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);
@@ -1055,7 +1050,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 */
 	private void writeMMFile(ExecutionContext ec, String fname) {
 		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-		String outFmt = "matrixmarket";
+		String outFmt = FileFormat.MM.toString();
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
 			// i.e., it is either in-memory or in evicted space
@@ -1063,9 +1058,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			try {
-				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				FileFormat fmt = ((MetaDataFormat)mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = mo.getDataCharacteristics();
-				if( oi == OutputInfo.TextCellOutputInfo 
+				if( fmt == FileFormat.TEXT 
 					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
 				{
 					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(),

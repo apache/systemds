@@ -31,16 +31,23 @@ public class FederatedResponse implements Serializable {
 	}
 	
 	private FederatedResponse.Type _status;
-	private Object _data;
+	private Object[] _data;
 	
 	public FederatedResponse(FederatedResponse.Type status) {
 		this(status, null);
 	}
 	
-	public FederatedResponse(FederatedResponse.Type status, Object data) {
+	public FederatedResponse(FederatedResponse.Type status, Object[] data) {
 		_status = status;
 		_data = data;
 		if( _status == FederatedResponse.Type.SUCCESS && data == null )
+			_status = FederatedResponse.Type.SUCCESS_EMPTY;
+	}
+	
+	public FederatedResponse(FederatedResponse.Type status, Object data) {
+		_status = status;
+		_data = new Object[] {data};
+		if(_status == FederatedResponse.Type.SUCCESS && data == null)
 			_status = FederatedResponse.Type.SUCCESS_EMPTY;
 	}
 	
@@ -49,10 +56,10 @@ public class FederatedResponse implements Serializable {
 	}
 	
 	public String getErrorMessage() {
-		return (String) _data;
+		return (String) _data[0];
 	}
 	
-	public Object getData() {
+	public Object[] getData() {
 		return _data;
 	}
 }

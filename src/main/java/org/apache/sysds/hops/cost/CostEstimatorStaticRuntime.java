@@ -19,6 +19,7 @@
 
 package org.apache.sysds.hops.cost;
 
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.RightIndex;
@@ -172,16 +173,15 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		double ret = -1;
 		
-		if( format.equals("textcell") || format.equals("csv") )
-		{
+		FileFormat fmt = FileFormat.safeValueOf(format);
+		if( fmt.isTextFormat() ) {
 			if( sparse )
 				ret = mbytes / DEFAULT_MBS_HDFSWRITE_TEXT_SPARSE;
 			else //dense
-				ret = mbytes / DEFAULT_MBS_HDFSWRITE_TEXT_DENSE;	
+				ret = mbytes / DEFAULT_MBS_HDFSWRITE_TEXT_DENSE;
 			ret *= 2.75; //text commonly 2x-3.5x larger than binary
 		}
-		else
-		{
+		else {
 			if( sparse )
 				ret = mbytes / DEFAULT_MBS_HDFSWRITE_BINARYBLOCK_SPARSE;
 			else //dense
@@ -189,7 +189,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		}
 		//if( LOG.isDebugEnabled() )
 		//	LOG.debug("Costs[export] = "+ret+"s, "+mbytes+" MB ("+dm+","+dn+","+ds+").");
-		
 		
 		return ret;
 	}
@@ -438,7 +437,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				
 				case Variable: //opcodes: assignvar, cpvar, rmvar, rmfilevar, assignvarwithfile, attachfiletovar, valuepick, iqsize, read, write, createvar, setfilename, castAsMatrix
 					if( optype.equals("write") ){
-						boolean text = args[0].equals("textcell") || args[0].equals("csv");
+						FileFormat fmt = FileFormat.safeValueOf(args[0]);
+						boolean text = fmt.isTextFormat();
 						double xwrite =  text ? DEFAULT_NFLOP_TEXT_IO : DEFAULT_NFLOP_CP;
 						
 						if( !leftSparse )

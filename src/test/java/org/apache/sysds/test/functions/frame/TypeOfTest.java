@@ -25,11 +25,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -111,16 +110,16 @@ public class TypeOfTest extends AutomatedTestBase {
 			initFrameData(frame1, A, schema);
 
 			//write frame data to hdfs
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.CSVOutputInfo);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
 			writer.writeFrameToHDFS(frame1, input("A"), rows, schema.length);
 			//write meta file
-			HDFSTool.writeMetaDataFile(input("A.mtd"), Types.ValueType.FP64, schema, Types.DataType.FRAME, new MatrixCharacteristics(rows, schema.length, 1000), OutputInfo.CSVOutputInfo);
+			HDFSTool.writeMetaDataFile(input("A.mtd"), Types.ValueType.FP64, schema, Types.DataType.FRAME, new MatrixCharacteristics(rows, schema.length, 1000), FileFormat.CSV);
 
 			//run testcase
 			runTest(true, false, null, -1);
 
 			//read frame data from hdfs (not via readers to test physical schema)
-			FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.BinaryBlockInputInfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.BINARY);
 			FrameBlock frame2 = ((FrameReaderBinaryBlock) reader).readFirstBlock(output("B"));
 
 			//verify output schema

@@ -29,7 +29,8 @@
 # Make configuration changes here:
 ##############################################################
 
-#  if not set by env,  set to 1 to run spark-submit instead of local java
+#  If not set by env,  set to 1 to run spark-submit instead of local java
+#  This should be used if "-exec SPARK" or "-exec HYBRID" is required
 if [ -z "$SYSDS_DISTRIBUTED" ]; then
   SYSDS_DISTRIBUTED=0
 fi
@@ -76,7 +77,7 @@ fi
 printUsageExit()
 {
 cat << EOF
-Usage: $0 [SystemDS.jar] <dml-filename> [arguments] [-help]
+Usage: $0 [SystemDS.jar] [-f] <dml-filename> [arguments] [-help]
 
     SystemDS.jar - Specify a custom SystemDS.jar file (this will be prepended to the classpath
                    or fed to spark-submit
@@ -104,7 +105,7 @@ if [ -z "$1" ] ; then
     printUsageExit;
 fi
 
-while getopts "h:" options; do
+while getopts "h:f:" options; do
   case $options in
     h ) echo Warning: Help requested. Will exit after usage message;
         printUsageExit
@@ -112,24 +113,14 @@ while getopts "h:" options; do
     \? ) echo Warning: Help requested. Will exit after usage message;
         printUsageExit
         ;;
+    f )
+        # silently remove -f (this variant is triggered if there's no
+        # jar file or WORKER as first parameter)
+        shift
+        ;;
     * ) echo Error: Unexpected error while processing options;
   esac
 done
-
-# convert directory delimiter from *nix to windows
-win_delim()
-{
-  declare -n ret=$1
-  OLDIFS=$IFS
-  IFS="/"
-  new_path=""
-  for i in ${ret}; do
-    new_path="${new_path}$i\\"
-  done
-  IFS=$OLDIFS
-  
-  ret=${new_path:0:-1}
-}
 
 # an echo toggle
 print_out()
@@ -139,54 +130,19 @@ print_out()
   fi
 }
 
-# converts a relative path to an absolute path
-rel_path()
-{
-  declare -n ret=${1}
-	source=$(pwd)
-	target=${2}
-	common_part=$source
-#	echo "${target#$common_part}"
-	back=
-	while [ "${target#$common_part}" == "${target}" ]; do
-	  common_part=$(dirname "$common_part")
-	  back="../${back}"
-	  # echo ${back}
-	  # echo ${common_part}
-	  # if [ back == common_part ]; then 
-		# break 
-	  # fi
-	done
-
-#	 echo ${back}${target#$common_part/}
-
-if [ -z "${back=}" ]; then
-  ret=./${target#$common_part/}
-  else
-	ret=${back}${target#$common_part/}
-	fi
-}
-
-# converts an absolute to a relative path
-abs_path()
-{
-	OLD=$(pwd)
-	cd "$1"
-	ABS=$(pwd)
-	cd "$OLD"
-	echo "$ABS"/
-}
-
-# above be helper functions
-#-------------------------------------------------------------
-
-
 # Peel off first and/or second argument so that $@ contains arguments to DML script
 if  echo "$1" | grep -q "jar"; then
   SYSTEMDS_JAR_FILE=$1
   shift
-  SCRIPT_FILE=$1
-  shift
+  # handle optional '-f' before DML file (for consistency)
+  if  echo "$1" | grep -q "\-f"; then
+    shift
+    SCRIPT_FILE=$1
+    shift
+  else
+    SCRIPT_FILE=$1
+    shift
+  fi
 elif echo "$1" | grep -q "WORKER"; then
   WORKER=1
   shift
@@ -201,31 +157,39 @@ elif echo "$1" | grep -q "WORKER"; then
     printUsageExit
   fi
 else
-  SCRIPT_FILE=$1
-  shift
+  # handle optional '-f' before DML file (for consistency)
+  if  echo "$1" | grep -q "\-f"; then
+    shift
+    SCRIPT_FILE=$1
+    shift
+  else
+    SCRIPT_FILE=$1
+    shift
+  fi
 fi
 
 if [ -z "$WORKER" ] ; then
   WORKER=0
 fi
 
-
 if [ -z "$SYSTEMDS_ROOT" ] ; then
   SYSTEMDS_ROOT=.
 else
   # construct a relative path
-	rel_path REL "$(abs_path ${SYSTEMDS_ROOT})"
-	SYSTEMDS_ROOT=${REL}
+	SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
 	echo "Using existing SystemDS at ${SYSTEMDS_ROOT}"
 fi;
 
+# when using find, look in the directories in this order
+DIR_SEARCH_ORDER="conf lib $SYSTEMDS_ROOT/conf $SYSTEMDS_ROOT/target"
+
 # find me a SystemDS jar file to run
 if [ -z "$SYSTEMDS_JAR_FILE" ];then
-  SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT" -iname "systemds.jar" | tail -n 1)
+  SYSTEMDS_JAR_FILE=$(find $DIR_SEARCH_ORDER -iname "systemds.jar" 2> /dev/null | tail -n 1)
   if [ -z "$SYSTEMDS_JAR_FILE" ];then
-    SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT" -iname "systemds-?.?.?.jar" | tail -n 1)
+    SYSTEMDS_JAR_FILE=$(find $DIR_SEARCH_ORDER -iname "systemds-?.?.?.jar" 2> /dev/null | head -n 1)
     if [ -z "$SYSTEMDS_JAR_FILE" ];then
-      SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT" -iname "systemds-?.?.?-SNAPSHOT.jar" | tail -n 1)
+      SYSTEMDS_JAR_FILE=$(find $DIR_SEARCH_ORDER -iname "systemds-?.?.?-SNAPSHOT.jar" 2> /dev/null | head -n 1)
     fi
   fi
 else
@@ -234,23 +198,56 @@ fi
 
 # check if log4j config file exists, otherwise unset
 # to run with a non fatal complaint by SystemDS
-LOG4JPROP=$(find "$SYSTEMDS_ROOT" -iname "log4j*properties" | tail -n 1)
-if [ -z "${LOG4JPROP}" ]; then
-  LOG4JPROP=""
-fi
-
-# same as above: set config file param if the file exists
-CONFIG_FILE=$(find "$SYSTEMDS_ROOT" -iname "SystemDS*config*.xml" | tail -n 1)
-if [ -z "$CONFIG_FILE" ]; then
-  CONFIG_FILE=""  
+if [ -z "$LOG4JPROP" ] ; then
+  LOG4JPROP=$(find $DIR_SEARCH_ORDER -iname "log4j*properties" 2> /dev/null | head -n 1)
+  if [ -z "${LOG4JPROP}" ]; then
+    LOG4JPROP=""
+  else
+    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP"
+  fi
 else
-  CONFIG_FILE="--config $CONFIG_FILE"
+  # L4J was set by env var. Unset if that setting is wrong
+  LOG4JPROP2=$(find "$LOG4JPROP")
+  if [ -z "${LOG4JPROP2}" ]; then
+    LOG4JPROP=""
+  else
+      LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
+  fi
 fi
 
+if [ -z "$CONFIG_FILE" ] ; then
+  # same as above: set config file param if the file exists
+  CONFIG_FILE=$(find $DIR_SEARCH_ORDER -iname "SystemDS*config*.xml" 2> /dev/null  | head -n 1)
+  if [ -z "$CONFIG_FILE" ]; then
+    CONFIG_FILE=""
+  else
+    CONFIG_FILE="--config $CONFIG_FILE"
+  fi
+else
+  # CONFIG_FILE was set by env var. Unset if that setting is wrong
+  CONFIG_FILE2=$(find "$CONFIG_FILE")
+  if [ -z "${CONFIG_FILE2}" ]; then
+    CONFIG_FILE=""
+  else
+    CONFIG_FILE="--config $CONFIG_FILE"
+  fi
+fi
+
+# find absolute path to hadoop home in SYSTEMDS_ROOT
+if [ -z "$HADOOP_HOME" ]; then
+  HADOOP_HOME=$(realpath "$(find "$SYSTEMDS_ROOT" -iname hadoop | tail -n 1 )")
+  export HADOOP_HOME
+fi
+# add hadoop home to path and lib path for loading hadoop jni
+HADOOP_REL=$(realpath --relative-to=. "$HADOOP_HOME")
+
+# default directory separator unix style
 DIR_SEP=/
 # detect operating system to set correct path separator
-if [ "$OSTYPE" == "win32" ] ||  [ "$OSTYPE" == "msys" ] ; then
+if [ "$OSTYPE" == "win32" ] ||  [ "$OSTYPE" == "msys" ] ||  [ "$OSTYPE" == "cygwin" ]; then
   PATH_SEP=\;
+  DIR_SEP=\\
+  HADOOP_REL="${HADOOP_REL////\\}"
 else
   PATH_SEP=:
 fi
@@ -259,19 +256,11 @@ fi
 JARNAME=$(basename "$SYSTEMDS_JAR_FILE")
 
 # relative path to jar file
-rel_path R "$(abs_path "$(dirname "$SYSTEMDS_JAR_FILE")")"
-SYSTEMDS_JAR_FILE="${R}${DIR_SEP}${JARNAME}"
+SYSTEMDS_JAR_FILE=$(realpath --relative-to=. "$(dirname "$SYSTEMDS_JAR_FILE")")${DIR_SEP}${JARNAME}
 
-# find hadoop home
-if [ -z "$HADOOP_HOME" ]; then
-  HADOOP_HOME=$(abs_path "$(find "$SYSTEMDS_ROOT" -iname hadoop | tail -n 1 )")
-  export HADOOP_HOME
-fi
-
-# add hadoop home to path and lib path for loading hadoop jni
-rel_path HADOOP_REL "$HADOOP_HOME"
-export PATH=${PATH}${PATH_SEP}${HADOOP_REL}bin
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}${PATH_SEP}${HADOOP_REL}bin
+NATIVE_LIBS="$SYSTEMDS_ROOT${DIR_SEP}target${DIR_SEP}classes${DIR_SEP}lib"
+export PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${PATH}${PATH_SEP}$NATIVE_LIBS
+export LD_LIBRARY_PATH=${HADOOP_REL}${DIR_SEP}bin${PATH_SEP}${LD_LIBRARY_PATH}
 
 # set java class path
 CLASSPATH="${SYSTEMDS_JAR_FILE}${PATH_SEP} \
@@ -311,7 +300,7 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
-  -Dlog4j.configuration=file:$LOG4JPROP \
+  $LOG4JPROP \
   org.apache.sysds.api.DMLScript \
   -f $SCRIPT_FILE \
   -exec singlenode \

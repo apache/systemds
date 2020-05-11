@@ -21,6 +21,8 @@ package org.apache.sysds.common;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 public class Types
 {
 	/**
@@ -455,6 +457,64 @@ public class Types
 	
 
 	public enum FileFormat {
-		TEXT, BINARY, MM, CSV, LIBSVM
+		TEXT,   // text cell IJV representation (mm w/o header)
+		MM,     // text matrix market IJV representation
+		CSV,    // text dense representation
+		LIBSVM, // text libsvm sparse row representation
+		JSONL,  // text nested JSON (Line) representation
+		BINARY; // binary block representation (dense/sparse/ultra-sparse) 
+		
+		public boolean isIJVFormat() {
+			return this == TEXT || this == MM;
+		}
+		
+		public boolean isTextFormat() {
+			return this != BINARY;
+		}
+		
+		public static boolean isTextFormat(String fmt) {
+			try {
+				return valueOf(fmt.toUpperCase()).isTextFormat();
+			}
+			catch(Exception ex) {
+				return false;
+			}
+		}
+		
+		public boolean isDelimitedFormat() {
+			return this == CSV || this == LIBSVM;
+		}
+		
+		public static boolean isDelimitedFormat(String fmt) {
+			try {
+				return valueOf(fmt.toUpperCase()).isDelimitedFormat();
+			}
+			catch(Exception ex) {
+				return false;
+			}
+		}
+		
+		@Override
+		public String toString() {
+			return name().toLowerCase();
+		}
+
+		public static FileFormat defaultFormat() {
+			return TEXT;
+		}
+		
+		public static String defaultFormatString() {
+			return defaultFormat().toString();
+		}
+		
+		public static FileFormat safeValueOf(String fmt) {
+			try {
+				return valueOf(fmt.toUpperCase());
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException("Unknown file format: "+fmt
+					+ " (valid values: "+Arrays.toString(FileFormat.values())+")");
+			}
+		}
 	}
 }

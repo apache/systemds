@@ -21,13 +21,12 @@ package org.apache.sysds.runtime.controlprogram.parfor;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.parfor.util.PairWritableBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import scala.Tuple2;
@@ -55,7 +54,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	private PDataPartitionFormat _dpf;
 	private final long _n;
 	
-	public DataPartitionerRemoteSparkMapper(DataCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n) {
+	public DataPartitionerRemoteSparkMapper(DataCharacteristics mc, FileFormat fmt, PDataPartitionFormat dpf, int n) {
 		_rlen = mc.getRows();
 		_clen = mc.getCols();
 		_blen = mc.getBlocksize();
@@ -162,5 +161,4 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 		
 		return ret.iterator();
 	}
-	
 }

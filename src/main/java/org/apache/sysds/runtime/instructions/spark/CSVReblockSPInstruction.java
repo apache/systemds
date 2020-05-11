@@ -23,6 +23,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -35,7 +36,6 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -90,9 +90,9 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//sanity check input info
 		CacheableData<?> obj = sec.getCacheableData(input1.getName());
 		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
-		if (iimd.getInputInfo() != InputInfo.CSVInputInfo) {
-			throw new DMLRuntimeException("The given InputInfo is not implemented for "
-					+ "CSVReblockSPInstruction:" + iimd.getInputInfo());
+		if (iimd.getFileFormat() != FileFormat.CSV) {
+			throw new DMLRuntimeException("The given format is not implemented for "
+					+ "CSVReblockSPInstruction:" + iimd.getFileFormat().toString());
 		}
 		
 		//set output characteristics
@@ -127,7 +127,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
 		//serialization issues create longwritableser/textser as serializable wrappers
 		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>)
-			sec.getRDDHandleForMatrixObject(sec.getMatrixObject(input1), InputInfo.CSVInputInfo);
+			sec.getRDDHandleForMatrixObject(sec.getMatrixObject(input1), FileFormat.CSV);
 		
 		//reblock csv to binary block
 		return RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
@@ -139,7 +139,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
 		//serialization issues create longwritableser/textser as serializable wrappers
 		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) 
-			sec.getRDDHandleForFrameObject(sec.getFrameObject(input1), InputInfo.CSVInputInfo);
+			sec.getRDDHandleForFrameObject(sec.getFrameObject(input1), FileFormat.CSV);
 		
 		//reblock csv to binary block
 		return FrameRDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),

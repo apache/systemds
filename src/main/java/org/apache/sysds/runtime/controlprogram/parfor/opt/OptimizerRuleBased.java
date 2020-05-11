@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.controlprogram.parfor.opt;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggBinaryOp.MMultMethod;
@@ -80,7 +81,6 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -2077,19 +2077,15 @@ public class OptimizerRuleBased extends Optimizer
 		for( ResultVar rVar : resultVars )
 		{
 			Data dat = vars.get(rVar._name);
-			if( dat == null || !(dat instanceof MatrixObject) )
-			{
+			if( dat == null || !(dat instanceof MatrixObject) ) {
 				ret = false; 
 				break;
 			}
-			else
-			{
+			else {
 				MatrixObject mo = (MatrixObject)dat;
 				MetaDataFormat meta = (MetaDataFormat) mo.getMetaData();
-				OutputInfo oi = meta.getOutputInfo();
 				long nnz = meta.getDataCharacteristics().getNonZeros();
-				
-				if( oi == OutputInfo.BinaryBlockOutputInfo || nnz != 0 ) {
+				if( meta.getFileFormat() == FileFormat.BINARY || nnz != 0 ) {
 					ret = false; 
 					break;
 				}

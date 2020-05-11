@@ -1,0 +1,127 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# ------------------------------------------
+# Guassian Mixture Model
+# ------------------------------------------
+
+m_gmm = function(Matrix[Double] X, Integer components = 3, Integer iter = 10, String model = "V", Double eps = 0.000001, Boolean verbose = FALSE )
+return (Matrix[Double] weights)
+{
+  # Determine the initial GMM paramters from Kmeans
+  # μ, σ, weights and phi
+  
+  phi = matrix(1/components, 1, components)
+  weights = matrix(1/components, nrow(X), components)
+  
+  [C, Y] = kmeans(X,  components, 10, 10, eps, FALSE, 25)
+  mu = C
+  sigma = list()
+  for(i in 1:components)
+    sigma = append(sigma, diag(matrix(1, ncol(X), 1))) #covMatrix(X, matrix(1, nrow(X), 1))
+
+  
+  loglikNew = sum(log(rowSums(weights*phi)))
+  loglikPre = 0
+  loglikDiff = 0
+  i = 1
+  bic = matrix(0, iter, 1)
+  while(i <= iter & loglikDiff < eps){
+    # Estimation Step
+    weights = predict_prob(X, components, mu, sigma, phi)
+    phi = colMeans(weights)
+  
+    # Maximization Step - Update parameter
+  
+    for(j in 1:components)
+    {
+      wk = weights[, j]
+      sum_wk = sum(wk)
+      mu[j, ] = colSums(X*wk)/sum_wk
+      sigma[j] = covMatrix(X, (wk/sum_wk)) # A covariance matrix instead of single covariance value
+    }
+    loglikPre = loglikNew
+    loglikNew = sum(log(rowSums(weights*phi)))
+    loglikDiff = loglikNew - loglikPre
+    bic[i,1] = -2 * loglikNew + 14 * log(nrow(X))
+    i = i+1
+  }
+  
+  # predict 
+  predict = rowIndexMax(weights)
+  if(verbose) {
+    print("logliklihood "+loglikNew)
+    print("BIC for each iteration "+toString(bic))
+    print("predictions \n"+toString(predict))
+    print("weights \n"+toString(weights))
+  }
+
+}
+
+
+
+covMatrix = function(Matrix[Double] X, Matrix[Double] w)
+return (Matrix[Double] covM) 
+{ 
+  covM = matrix(0, ncol(X), ncol(X))
+  if(ncol(X) < 2 )
+    covM[1,1] = var(X)
+
+  for(i in 1:ncol(X))
+    for(j in 1:ncol(X))
+      covM[i, j] = cov(X[,i], X[,j], w)
+}
+
+
+predict_prob = function(Matrix[Double] X, Integer components, Matrix[Double] mu, List[Unknown] sigma, Matrix[Double] phi)
+  return (Matrix[Double] weights)
+{
+  likelihood = matrix(0, nrow(X), components )
+  for(i in 1:components)
+  {
+    likelihood[, i] = mvpdf(X, mu[i,], as.matrix(sigma[i]))
+  }
+  numer = likelihood * phi
+  denom = rowSums(numer)
+  weights = numer/denom
+}
+
+
+mvpdf = function(Matrix[Double] X, Matrix[Double] mu, Matrix[Double] sigma) 
+return (Matrix[Double] pdf)
+{
+  pdf = matrix(0, nrow(X), 1)
+  [eva, evec] = eigen(sigma)
+  det = colProds(eva)
+  det = as.scalar(det)
+  if (det == 0) {
+    stop("Determinant is equal to 0.")
+  }
+  d = ncol(X)
+  for(i in 1:nrow(X))
+  {
+    x_m = X[i, ] - mu 
+    p1 = 1/sqrt((2*pi)^d*det) 
+    p2 = -0.5 * x_m %*% inverse(sigma) %*% t(x_m)
+    p3 = p1 * exp(p2)
+    pdf[i,1] += as.scalar(p1 * exp(p2))
+  }
+}

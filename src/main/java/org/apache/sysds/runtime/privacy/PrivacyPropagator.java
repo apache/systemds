@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.privacy;
 
 import java.util.function.Function;
 
-import org.apache.directory.api.util.exception.NotImplementedException;
 import org.apache.sysds.runtime.DMLPrivacyException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -122,15 +121,18 @@ public class PrivacyPropagator {
 	}
 
 	public static Instruction preprocessParameterizedBuiltinInstruction(ParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
-		throw new NotImplementedException();
+		throwExceptionIfPrivacyActivated(inst, ec);
+		return inst;
 	}
 
 	public static Instruction preprocessMultiReturnParameterizedBuiltinInstruction(MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
-		throw new NotImplementedException();
+		throwExceptionIfPrivacyActivated(inst, ec);
+		return inst;
 	}
 
 	public static Instruction preprocessCtableInstruction(CtableCPInstruction inst, ExecutionContext ec){
-		throw new NotImplementedException();
+		throwExceptionIfPrivacyActivated(inst, ec);
+		return inst;
 	}
 
 	public static Instruction preprocessBuiltinNary(BuiltinNaryCPInstruction inst, ExecutionContext ec){

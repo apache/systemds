@@ -31,6 +31,7 @@ public class LineageCacheEntry {
 	protected MatrixBlock _MBval;
 	protected ScalarObject _SOval;
 	protected long _computeTime;
+	protected long _timestamp = 0;
 	protected LineageCacheStatus _status;
 	protected LineageCacheEntry _prev;
 	protected LineageCacheEntry _next;
@@ -108,5 +109,13 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
+	}
+	
+	protected synchronized void setTimestamp() {
+		_timestamp = System.currentTimeMillis();
+	}
+	
+	protected synchronized long getTimestamp() {
+		return _timestamp;
 	}
 }

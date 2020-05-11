@@ -93,12 +93,13 @@ public class LineageCacheConfig {
 	public static final double MIN_SPILL_TIME_ESTIMATE = 100;
 	// Minimum reliable data size for spilling estimate in MB.
 	public static final double MIN_SPILL_DATA = 20;
-
 	// Default I/O in MB per second for binary blocks
 	public static double FSREAD_DENSE = 200;
 	public static double FSREAD_SPARSE = 100;
 	public static double FSWRITE_DENSE = 150;
 	public static double FSWRITE_SPARSE = 75;
+	// Weights for scoring components (computeTime/size, LRU timestamp)
+	public static double[] WEIGHTS = {0, 1};
 
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;

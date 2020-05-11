@@ -33,12 +33,13 @@ Making use of SystemDS, let us multiply an Matrix with an scalar:
 
   # Import SystemDSContext
   from systemds.context import SystemDSContext
+  from systemds.matrix.data_gen import full
   # Create a context and if necessary (no SystemDS py4j instance running)
   # it starts a subprocess which does the execution in SystemDS
   with SystemDSContext() as sds:
       # Full generates a matrix completely filled with one number.
       # Generate a 5x10 matrix filled with 4.2
-      m = sds.full((5, 10), 4.20)
+      m = full(sds,(5, 10), 4.20)
       # multiply with scalar. Nothing is executed yet!
       m_res = m * 3.1
       # Do the calculation in SystemDS by calling compute().
@@ -64,6 +65,7 @@ Remember to first start up a new terminal:
 
   # Import SystemDSContext
   from systemds.context import SystemDSContext
+  from systemds.matrix import Matrix
 
   # create a random array
   m1 = np.array(np.random.randint(100, size=5 * 5) + 1.01, dtype=np.double)
@@ -75,7 +77,7 @@ Remember to first start up a new terminal:
   # Create a context
   with SystemDSContext() as sds:
       # element-wise matrix multiplication, note that nothing is executed yet!
-      m_res = sds.matrix(m1) * sds.matrix(m2)
+      m_res = Matrix(sds, m1) * Matrix(sds, m2)
       # lets do the actual computation in SystemDS! The result is an numpy array
       m_res_np = m_res.compute()
       print(m_res_np)
@@ -91,6 +93,8 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
   # Import numpy and SystemDS matrix
   import numpy as np
   from systemds.context import SystemDSContext
+  from systemds.matrix import Matrix
+  from systemds.operator.algorithm import l2svm
 
   # Set a seed
   np.random.seed(0)
@@ -107,7 +111,7 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
 
   # compute our model
   with SystemDSContext() as sds:
-      model = sds.matrix(features).l2svm(sds.matrix(labels)).compute()
+      model = l2svm(Matrix(sds, features), Matrix(sds, labels)).compute()
       print(model)
 
 The output should be similar to::
@@ -123,41 +127,3 @@ The output should be similar to::
    [-0.01686351]
    [-0.03839821]]
 
-SystemDS includes a built-in function lm, which solves linear regression. The lm function takes as input a matrix of
-feature vectors and a vector of response values y. The output of the function is a vector of weights.
-
-.. code-block:: python
-
-  # Import numpy and SystemDS matrix
-  import numpy as np
-  from systemds.context import SystemDSContext
-
-  # Set a seed
-  np.random.seed(0)
-  # Generate matrix of feature vectors
-  features = np.random.rand(10, 15)
-  # Generate a 1-column matrix of response values
-  y = np.random.rand(10, 1)
-
-  # compute the weights
-  with SystemDSContext() as sds:
-    weights = sds.matrix(features).lm(sds.matrix(y)).compute()
-    print(weights)
-
-The output should be similar to::
-
-  [[-0.11538199]
-  [-0.20386541]
-  [-0.39956035]
-  [ 1.04078623]
-  [ 0.4327084 ]
-  [ 0.18954599]
-  [ 0.49858968]
-  [-0.26812763]
-  [ 0.09961844]
-  [-0.57000751]
-  [-0.43386048]
-  [ 0.55358873]
-  [-0.54638565]
-  [ 0.2205885 ]
-  [ 0.37957689]]

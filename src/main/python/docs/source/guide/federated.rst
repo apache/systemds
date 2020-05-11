@@ -19,8 +19,8 @@
 .. 
 .. ------------------------------------------------------------
 
-Federated SystemDS
-==================
+Federated Environment
+=====================
 
 The python SystemDS supports federated execution.
 To enable this, each of the federated environments have to have 
@@ -35,7 +35,7 @@ A simple guide to do this is in the SystemDS Repository_.
 .. _Repository: https://github.com/apache/systemml/tree/master/bin/
 
 If that is setup correctly simply start a worker using the following command.
-Here the ``8001`` refer to the port used by the worker.
+Here the ``8001`` refer to the port used by the worker.::
 
   systemds WORKER 8001
 
@@ -49,7 +49,7 @@ In this example we simply use Numpy to create a ``test.csv`` file::
 
   # Import numpy
   import numpy as np
-  a = np.asarray([[1,2,3],[4,5,6],[7,8,9]])
+  a = np.asarray([[1,2,3], [4,5,6], [7,8,9]])
   np.savetxt("temp/test.csv", a, delimiter=",")
 
 Currently we also require a metadata file for the federated worker.
@@ -63,21 +63,24 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
 
   # Import numpy and SystemDS federated
   import numpy as np
-  from systemds.matrix import federated
+  from systemds.matrix import Federated
   from systemds.context import SystemDSContext
+
   # Create a federated matrix
   ## Indicate the dimensions of the data:
   ### Here the first list in the tuple is the top left Coordinate, 
   ### and the second the bottom left coordinate.
   ### It is ordered as [col,row].
-  dims = ([0,0],[3,3])
+  dims = ([0,0], [3,3])
+
   ## Specify the address + file path from worker:
   address = "localhost:8001/temp/test.csv"
+
   with SystemDSContext() as sds:
-  	fed_a = federated(sds,[address],[dims])
-  	# Sum the federated matrix and call compute to execute
-  	print(fed_a.sum().compute())
-  	# Result should be 45.
+    fed_a = Federated(sds, [address], [dims])
+    # Sum the federated matrix and call compute to execute
+    print(fed_a.sum().compute())
+    # Result should be 45.
 
 Multiple Federated Environments 
 -------------------------------
@@ -86,32 +89,37 @@ In this example we multiply matrices that are located in different federated env
 
 Using the data created from the last example we can simulate
 multiple federated workers by starting multiple ones on different ports.
-I recommend to start 3 different terminals, and run one federated environment in each.
+Start with 3 different terminals, and run one federated environment in each.::
 
-| systemds WORKER 8001
-| systemds WORKER 8002
-| systemds WORKER 8003
+  systemds WORKER 8001
+  systemds WORKER 8002
+  systemds WORKER 8003
 
 Once all three workers are up and running we can leverage all three in the following example::
 
   # Import numpy and SystemDS federated
   import numpy as np
-  from systemds.matrix import federated
+  from systemds.matrix import Federated
   from systemds.context import SystemDSContext
+
+  addr1 = "localhost:8001/temp/test.csv"
+  addr2 = "localhost:8002/temp/test.csv"
+  addr3 = "localhost:8003/temp/test.csv"
+
   # Create a federated matrix using two federated environments
   # Note that the two federated matrices are stacked on top of each other
+
   with SystemDSContext() as sds:
-  	fed_a = federated(sds,[
-		  "localhost:8001/temp/test.csv",
-		  "localhost:8002/temp/test.csv"
-		  ],[([0,0],[3,3]),([0,3],[3,6])])
-  	# Create another federated matrix using the first environment again, and the third.
-  	fed_b = federated(sds,[
-		  "localhost:8001/temp/test.csv",
-		  "localhost:8003/temp/test.csv"
-		  ],[([0,0],[3,3]),([0,3],[3,6])])
-  	# Multiply, compute and print.
-  	res = (fed_a * fed_b).compute()
+    fed_a = Federated(sds,
+      [addr1, addr2],
+      [([0,0], [3,3]), ([0,3], [3,6])])
+    
+    fed_b = Federated(sds,
+      [addr1, addr3],
+      [([0,0], [3,3]), ([0,3], [3,6])])
+    
+    # Multiply, compute and print.
+    res = (fed_a * fed_b).compute()
 
   print(res)
 
@@ -121,6 +129,9 @@ The print should look like::
    [16. 25. 36. 16. 25. 36.]
    [49. 64. 81. 49. 64. 81.]]
 
+.. note::
 
-:Author: Sebastian Baunsgaard
-:Version: 1.0 of 2020/03/26
+  If it does not work, then double check 
+  that you have:
+  
+  a csv file, mtd file, and SystemDS Environment is set correctly.

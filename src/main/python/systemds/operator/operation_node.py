@@ -34,9 +34,6 @@ if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
     from systemds.context import SystemDSContext
 
-__all__ = ["OperationNode"]
-
-
 class OperationNode(DAGNode):
     """A Node representing an operation in SystemDS"""
     _result_var: Optional[Union[float, np.array]]
@@ -83,7 +80,7 @@ class OperationNode(DAGNode):
             if self.output_type == OutputType.DOUBLE:
                 self._result_var = result_variables.getDouble(self._script.out_var_name)
             elif self.output_type == OutputType.MATRIX:
-                self._result_var = matrix_block_to_numpy(self.sds_context._java_gateway.jvm,
+                self._result_var = matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
                                                          result_variables.getMatrixBlock(self._script.out_var_name))
         if verbose:
             print(self._script.dml_script)
@@ -162,16 +159,6 @@ class OperationNode(DAGNode):
     def __matmul__(self, other: VALID_ARITHMETIC_TYPES):
         return OperationNode(self.sds_context, '%*%', [self, other])
 
-    def l2svm(self, labels: DAGNode, **kwargs) -> 'OperationNode':
-        """Perform l2svm on matrix with labels given.
-
-        :return: `OperationNode` representing operation
-        """
-        self._check_matrix_op()
-        params_dict = {'X': self, 'Y': labels}
-        params_dict.update(kwargs)
-        return OperationNode(self.sds_context, 'l2svm', named_input_nodes=params_dict)
-
     def sum(self, axis: int = None) -> 'OperationNode':
         """Calculate sum of matrix.
 
@@ -232,19 +219,3 @@ class OperationNode(DAGNode):
             unnamed_inputs.append(weights)
         unnamed_inputs.append(moment)
         return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
-
-    def lm(self, y: DAGNode, **kwargs) -> 'OperationNode':
-        self._check_matrix_op()
-
-        if self._np_array.size == 0:
-            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                             .format(s=self._np_array.shape))
-
-        if y._np_array.size == 0:
-            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                             .format(s=y._np_array.shape))
-
-        params_dict = {'X': self, 'y': y}
-        params_dict.update(kwargs)
-
-        return OperationNode(self.sds_context, 'lm', named_input_nodes=params_dict)

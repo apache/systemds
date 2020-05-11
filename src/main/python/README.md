@@ -16,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 {% end comment %}
 -->
+
 # SystemDS
 
 ![Python Test](https://github.com/apache/systemml/workflows/Python%20Test/badge.svg)
@@ -35,3 +36,5 @@ as well as distributed operations on Apache Spark. In contrast to existing syste
 provide homogeneous tensors or 2D Datasets - and in order to serve the entire
 data science lifecycle, the underlying data model are DataTensors, i.e.,
 tensors (multi-dimensional arrays) whose first dimension may have a heterogeneous and nested schema.
+
+To execute the tests associated with the Python interface see [Run Tests](./tests/README.md).

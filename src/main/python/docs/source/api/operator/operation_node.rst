@@ -19,45 +19,8 @@
 ..
 .. -------------------------------------------------------------
 
-
-Matrix API
-==========
-
-SystemDSContext
----------------
-
-All operations using SystemDS need a java instance running.
-The connection is ensured by an ``SystemDSContext`` object.
-An ``SystemDSContext`` object can be created using:
-
-.. code_block:: python
-  sysds = SystemDSContext()
-
-When the calculations are finished the context has to be closed again:
-
-.. code_block:: python
-  sysds.close()
-
-Since it is annoying that it is always necessary to close the context, ``SystemDSContext``
-implements the python context management protocol, which supports the following syntax:
-
-.. code_block:: python
-  with SystemDSContext() as sds:
-    # do something with sds which is an SystemDSContext
-    pass
-
-This will automatically close the ``SystemDSContext`` once the with-block is left.
-
-.. note::
-
-  Creating a context is an expensive procedure, because a sub-process starting a JVM might have to start, therefore
-  try to do this only once for your program, or always leave at least one context open.
-
-.. autoclass:: systemds.context.SystemDSContext
-  :members:
-
-OperationNode
--------------
+Operation Node
+==============
 
   .. todo
     The explanation for overloade methods seems weird and does not really describe which
@@ -67,6 +30,7 @@ OperationNode
 An ``OperationNode`` represents an operation that executes in SystemDS.
 Most methods are overloaded for ``OperationNode``.
 This means that they return an ``OperationNode``.
+
 To get the result from an ``OperationNode`` you simply call ``.compute()`` on it, thereby getting the numpy equivalent result.
 Even comparisons like ``__eq__``, ``__lt__`` etc. return ``OperationNode``.
 
@@ -75,27 +39,7 @@ Even comparisons like ``__eq__``, ``__lt__`` etc. return ``OperationNode``.
   All operations are lazily evaluated, meaning before calling ``.compute()`` nothing will be executed in SystemDS.
   Therefore errors will not immediately be recognized while constructing an sequence of operators.
 
-.. autoclass:: systemds.matrix.OperationNode
+.. autoclass:: systemds.operator.OperationNode
   :members:
 
-Matrix
-------
-
-A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
-An Matrix can be recognized it by checking the ``output_type`` of the object.
-
-Matrices are the most fundamental objects SystemDS operates on.
-
-Although it is possible to generate matrices with the function calls or object construction specified below,
-the recommended way is to use the methods defined on ``SystemDSContext``.
-
-.. autoclass:: systemds.matrix.Matrix
-    :members:
-
-.. autofunction:: systemds.matrix.federated
-
-.. autofunction:: systemds.matrix.full
-
-.. autofunction:: systemds.matrix.seq
-
-.. autofunction:: systemds.matrix.rand
+  .. automethod:: __init__

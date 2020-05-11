@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.utils;
+package org.apache.sysds.runtime.util;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

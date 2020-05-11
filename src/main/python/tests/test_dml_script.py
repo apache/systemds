@@ -21,13 +21,13 @@
 
 import unittest
 
-import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
-from systemds.operator.algorithm import l2svm
+from systemds.script_building import DMLScript
 
 
-class TestL2svm(unittest.TestCase):
+class Test_DMLScript(unittest.TestCase):
+    """Test class for testing behavior of the fundamental DMLScript class
+    """
 
     sds: SystemDSContext = None
 
@@ -39,27 +39,36 @@ class TestL2svm(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_10x10(self):
-        features, labels = self.generate_matrices_for_l2svm(10, seed=1304)
-        model = l2svm(features, labels).compute()
-        # TODO make better verification.
-        self.assertTrue(np.allclose(
-            model,
-            np.array([[-0.03277166], [-0.00820981], [0.00657115],
-                      [0.03228764], [-0.01685067], [0.00892918],
-                      [0.00945636], [0.01514383], [0.0713272],
-                      [-0.05113976]])))
+    def test_simple_print_1(self):
+        script = DMLScript(self.sds)
+        script.add_code('print("Hello")')
+        script.execute()
+        stdout = self.sds.get_stdout(100)
+        self.assertListEqual(["Hello"], stdout)
 
-    def generate_matrices_for_l2svm(self, dims: int, seed: int = 1234):
-        np.random.seed(seed)
-        m1 = np.array(np.random.randint(
-            100, size=dims * dims) + 1.01, dtype=np.double)
-        m1.shape = (dims, dims)
-        m2 = np.zeros((dims, 1))
-        for i in range(dims):
-            if np.random.random() > 0.5:
-                m2[i][0] = 1
-        return Matrix(self.sds, m1), Matrix(self.sds, m2)
+    def test_simple_print_2(self):
+        script = DMLScript(self.sds)
+        script.add_code('print("Hello")')
+        script.add_code('print("World")')
+        script.add_code('print("!")')
+        script.execute()
+        stdout = self.sds.get_stdout(100)
+        self.assertListEqual(['Hello', 'World', '!'], stdout)
+
+    def test_multiple_executions_1(self):
+        scr_a = DMLScript(self.sds)
+        scr_a.add_code('x = 4')
+        scr_a.add_code('print(x)')
+        # TODO FIX HERE TO ENABLE MULTI EXECUTION
+        # scr_a.execute()
+        scr_a.add_code('y = x + 1')
+        scr_a.add_code('print(y)')
+        # print(scr_a.dml_script)
+        scr_a.execute()
+        stdout = self.sds.get_stdout(100)
+        # print(stdout)
+        self.assertEqual("4", stdout[0])
+        self.assertEqual("5", stdout[1])
 
 
 if __name__ == "__main__":

@@ -19,8 +19,7 @@
 #
 # -------------------------------------------------------------
 
-from systemds.matrix.matrix import Matrix
-from systemds.matrix.federated import Federated
-from systemds.matrix import data_gen
+from systemds.operator.operation_node import OperationNode
+from systemds.operator import algorithm
 
-__all__ = [Matrix, Federated, data_gen]
+__all__ = [OperationNode, algorithm]

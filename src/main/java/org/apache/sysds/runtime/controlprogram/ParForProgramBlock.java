@@ -1351,7 +1351,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			LineageItem current = lineages[0].get(var._name);
 			for( int i=1; i<lineages.length; i++ ) {
 				LineageItem next = lineages[i].get(var._name);
-				current = LineageItemUtils.replace(next, retIn, current);
+				if( next != null ) //robustness for cond. control flow
+					current = LineageItemUtils.replace(next, retIn, current);
 			}
 			ec.getLineage().set(var._name, current);
 		}

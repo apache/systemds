@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstructio
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 /**
  * Class with static methods merging privacy constraints of operands 
@@ -45,9 +46,21 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 public class PrivacyPropagator {
 
 	public static PrivacyConstraint mergeBinary(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2) {
-		if (privacyConstraint1 != null && privacyConstraint2 != null)
-			return new PrivacyConstraint(
-				privacyConstraint1.getPrivacy() || privacyConstraint2.getPrivacy());
+		if (privacyConstraint1 != null && privacyConstraint2 != null){
+			PrivacyLevel privacyLevel1 = privacyConstraint1.getPrivacyLevel();
+			PrivacyLevel privacyLevel2 = privacyConstraint2.getPrivacyLevel();
+
+			// One of the inputs are private, hence the output must be private.
+			if (privacyLevel1 == PrivacyLevel.Private || privacyLevel2 == PrivacyLevel.Private)
+				return new PrivacyConstraint(PrivacyLevel.Private);
+			// One of the inputs are private with aggregation allowed, but none of the inputs are completely private,
+			// hence the output must be private with aggregation.
+			else if (privacyLevel1 == PrivacyLevel.PrivateAggregation || privacyLevel2 == PrivacyLevel.PrivateAggregation)
+				return new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+			// Both inputs have privacy level "None", hence the privacy constraint can be removed.
+			else  
+				return null;
+		}
 		else if (privacyConstraint1 != null)
 			return privacyConstraint1;
 		else if (privacyConstraint2 != null)
@@ -218,7 +231,7 @@ public class PrivacyPropagator {
 	}
 
 	private static void throwExceptionIfPrivacyActivated(Instruction inst, ExecutionContext ec){
-		if ( inst.getPrivacyConstraint() != null && inst.getPrivacyConstraint().getPrivacy() ) {
+		if ( inst.getPrivacyConstraint() != null && inst.getPrivacyConstraint().getPrivacyLevel().equals(PrivacyLevel.Private) ) {
 			throw new DMLPrivacyException("Instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
 		}
 	}
@@ -230,7 +243,7 @@ public class PrivacyPropagator {
 	 * @return instruction with or without privacy constraints
 	 */
 	private static Instruction propagateCastAsScalarVariablePrivacy(VariableCPInstruction inst, ExecutionContext ec){
-		inst = (VariableCPInstruction) propagateFirstInputPrivacy(inst, ec);
+		inst = (VariableCPInstruction) propagateFirstInputPrivacy(inst, ec); 
 		throwExceptionIfPrivacyActivated(inst, ec);
 		return inst;
 	}

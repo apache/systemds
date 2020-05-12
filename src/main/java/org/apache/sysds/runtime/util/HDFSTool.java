@@ -457,7 +457,7 @@ public class HDFSTool
 
 		//add privacy constraints
 		if ( privacyConstraint != null ){
-			mtd.put(DataExpression.PRIVACY, privacyConstraint.getPrivacy());
+			mtd.put(DataExpression.PRIVACY, privacyConstraint.getPrivacyLevel().name());
 		}
 
 		//add username and time

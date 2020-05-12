@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -46,17 +47,22 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase {
     }
 
     @Test
-    public void testRuntimePropagation() throws JSONException {
-        conditionalPropagation(true);
+    public void testRuntimePropagationPrivate() throws JSONException {
+        conditionalPropagation(PrivacyLevel.Private);
     }
 
     @Test
-    public void testRuntimeNoPropagation() throws JSONException {
-        conditionalPropagation(false);
+    public void testRuntimePropagationNone() throws JSONException {
+        conditionalPropagation(PrivacyLevel.None);
+    }
+
+    @Test
+    public void testRuntimePropagationPrivateAggregation() throws JSONException {
+        conditionalPropagation(PrivacyLevel.PrivateAggregation);
     }
     
 
-    private void conditionalPropagation(boolean privacy) throws JSONException {
+    private void conditionalPropagation(PrivacyLevel privacyLevel) throws JSONException {
 
 		TestConfiguration config = availableTestConfigurations.get("MatrixRuntimePropagationTest");
 		loadTestConfiguration(config);
@@ -66,13 +72,13 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase {
 		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
         double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
         double sum;
-		
-		PrivacyConstraint privacyConstraint = new PrivacyConstraint(true);
+
+		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacyLevel);
 		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
 
         writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
         writeInputMatrix("b", b);
-        if ( privacy ){
+        if ( privacyLevel.equals(PrivacyLevel.Private) || privacyLevel.equals(PrivacyLevel.PrivateAggregation) ){
             writeExpectedMatrix("c", a);
             sum = TestUtils.sum(a, m, n) + 1;
         } else {
@@ -90,14 +96,19 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase {
 		compareResults(1e-9);
 
         // Check that the output metadata is correct
-        if (privacy) {
+        if ( privacyLevel.equals(PrivacyLevel.Private) ) {
             String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-		    assertEquals(String.valueOf(true), actualPrivacyValue);
-        } else {
+		    assertEquals(PrivacyLevel.Private.name(), actualPrivacyValue);
+        }
+        else if ( privacyLevel.equals(PrivacyLevel.PrivateAggregation) ){
+            String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
+		    assertEquals(PrivacyLevel.PrivateAggregation.name(), actualPrivacyValue);
+        } 
+        else {
             // Check that a JSONException is thrown
-            // or that privacy is set to false 
+            // or that privacy level is set to none 
             // because no privacy metadata should be written to c
-            // except if the privacy written is set to false
+            // except if the privacy written is set to private
             boolean JSONExceptionThrown = false;
             String actualPrivacyValue = null;
             try{
@@ -108,7 +119,7 @@ public class MatrixRuntimePropagationTest extends AutomatedTestBase {
                 fail("Exception occured, but JSONException was expected. The exception thrown is: " + e.getMessage());
                 e.printStackTrace();
             }
-            assert(JSONExceptionThrown || (String.valueOf(false).equals(actualPrivacyValue)));
+            assert(JSONExceptionThrown || (PrivacyLevel.None.name().equals(actualPrivacyValue)));
         }
 		
 	}

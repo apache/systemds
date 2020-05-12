@@ -59,6 +59,7 @@ import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -802,7 +803,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void blockIfInputPrivacyActivated(Data input){
 		if ( input != null && (input instanceof CacheableData<?>)){
 			PrivacyConstraint privacyConstraintIn = ((CacheableData<?>) input).getPrivacyConstraint();
-			if ( privacyConstraintIn != null && privacyConstraintIn.getPrivacy() ){
+			if ( privacyConstraintIn != null && (privacyConstraintIn.getPrivacyLevel() == PrivacyLevel.Private) ){
 				throw new DMLPrivacyException("Privacy constraint cannot be propagated to scalar for input " + getInput1().getName());
 			}
 		}

@@ -139,24 +139,24 @@ train = function( matrix[double] users_train,
         y_batch = targets_train[beg:end,];
 
         # 3.Send inputs through layers and get activations
-        [out_F, out_D1, out_concat, out_U, out_I] = predict(users_batch, items_batch, biases, weights);
+        [out_FA, out_F, out_D1A, out_D1, out_concat, out_U, out_I] = predict(users_batch, items_batch, biases, weights);
 
         # 4.compute final error gradients 
         # params: (predictions, targets)
-        dout = l2_loss::backward(out_F, y_batch);  # TODO: really correct error function?
+        dout = l2_loss::backward(out_FA, y_batch);  # TODO: really correct error function?
 
         # Compute loss & accuracy for training & validation data every 100 iterations.
         if (i %% 100 == 0) {
           # Compute training loss & accuracy
-          [loss, accuracy] = eval(out_F, y_batch);
+          [loss, accuracy] = eval(out_FA, y_batch);
           # ignore regularization for now..
           # loss_reg_b1 = l2_reg::forward(b1, lambda);
           # loss_reg_W1  = l2_reg::forward(W1 , lambda);
           # loss = loss_data + loss_reg_b1 + loss_reg_W1;
 
           # Compute validation loss & accuracy
-          out_F_val = predict(users_val, items_val, biases, weights);
-          [loss_val, accuracy_val] = eval(out_F_val, targets_val);
+          out_FA_val = predict(users_val, items_val, biases, weights);
+          [loss_val, accuracy_val] = eval(out_FA_val, targets_val);
 
           # Output results
           print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
@@ -165,8 +165,11 @@ train = function( matrix[double] users_train,
 
         # 5.Backpropagation
         # params: (gradient from upstream, activation, weights, biases) 
-        [dout_F, dW_F, db_F] = affine::backward(dout, out_D1, W_F, b_F); # TODO: should be sigmoid?
-        [dout_D1, dW_D1, db_D1] = affine::backward(dout_F, out_concat, W_D1, b_D1); 
+        dout_FA = sigmoid::backward(dout, out_F);
+        [dout_F, dW_F, db_F] = affine::backward(dout_FA, out_D1A, W_F, b_F);
+
+        dout_D1A = relu::backward(dout_F, out_D1);
+        [dout_D1, dW_D1, db_D1] = affine::backward(dout_D1A, out_concat, W_D1, b_D1); 
 
         # backprop concatenation: split the gradients up
         dout_U = dout_D1[,1:E];
@@ -199,8 +202,8 @@ train = function( matrix[double] users_train,
 }
 
 predict = function(matrix[double] users, matrix[double] items, List[unknown] biases, List[unknown] weights)
-    return (matrix[double] out_F, matrix[double] out_D1, matrix[double] out_concat,
-            matrix[double] out_U, matrix[double] out_I) {
+    return (matrix[double] out_FA, matrix[double] out_F, matrix[double] out_D1A, matrix[double] out_D1, 
+            matrix[double] out_concat, matrix[double] out_U, matrix[double] out_I) {
   #
   # Computes the predictions for the given inputs.
   #
@@ -234,11 +237,13 @@ predict = function(matrix[double] users, matrix[double] items, List[unknown] bia
 
   # (2) Dense layers
   out_D1 = affine::forward(out_concat, W_D1, b_D1);
+  out_D1A = relu::forward(out_D1); # separate "activation" for ReLU activation function
 
   # TODO: add missing layers dense layers here
 
   # (N) final prediction
-  out_F = affine::forward(out_D1, W_F, b_F); # TODO: should be sigmoid?
+  out_F = affine::forward(out_D1A, W_F, b_F);
+  out_FA = sigmoid::forward(out_F);
 }
 
 eval = function(matrix[double] probs, matrix[double] y)

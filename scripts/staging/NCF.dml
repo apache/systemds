@@ -77,6 +77,7 @@ train = function( matrix[double] users_train,
   M = ncol(users_train); # number users
 
   E = 8; # embedding dimension
+  D = 16; # dense layer (NCF) dimension
 
   print("NCF training starting with " 
           + K_train + " training samples, " 
@@ -85,12 +86,14 @@ train = function( matrix[double] users_train,
           + M + " users...");
 
   # 1.initialize layers
-  [UW1, Ub1] = affine::init(N, E); # user embedding
-  [UW2, Ub2] = affine::init(E, 1); # final prediction
+  [W_U,  b_U] = affine::init(M, E); # user embedding
+  [W_I,  b_I] = affine::init(N, E); # item embedding
+  [W_D1, b_D1] = affine::init(2 * E, D); # dense layer
+  [W_F,  b_F] = affine::init(D, 1); # final prediction
 
   # initialize bias and weight lists
-  biases = list(Ub1, Ub2);
-  weights = list(UW1, UW2);
+  biases = list(b_U, b_I, b_D1, b_F);
+  weights = list(W_U, W_I, W_D1, W_F);
 
   # 2.initialize adam optimizer
   ## Default values for some parameters
@@ -100,12 +103,21 @@ train = function( matrix[double] users_train,
   epsilon = 0.00000001;
   t       = 0;
 
-  # user layer 1
-  [mUW1, vUW1] = adam::init(UW1);
-  [mUb1, vUb1] = adam::init(Ub1);
-  # user layer 2
-  [mUW2, vUW2] = adam::init(UW2);
-  [mUb2, vUb2] = adam::init(Ub2);
+  # (1) user embedding
+  [mW_U, vW_U] = adam::init(W_U);
+  [mb_U, vb_U] = adam::init(b_U);
+
+  # (1) item embedding
+  [mW_I, vW_I] = adam::init(W_I);
+  [mb_I, vb_I] = adam::init(b_I);
+
+  # (2) Dense 1
+  [mW_D1, vW_D1] = adam::init(W_D1);
+  [mb_D1, vb_D1] = adam::init(b_D1);
+
+  # (N) final prediction
+  [mW_F, vW_F] = adam::init(W_F);
+  [mb_F, vb_F] = adam::init(b_F);
 
   # regularization
   lambda = 0; #5e-04;
@@ -122,80 +134,111 @@ train = function( matrix[double] users_train,
         beg = ((i-1) * batch_size) %% N + 1;
         end = min(N, beg + batch_size - 1);
         
-        X_batch = items_train[beg:end,];
+        items_batch = items_train[beg:end,];
+        users_batch = users_train[beg:end,];
         y_batch = targets_train[beg:end,];
 
-        # 3.Send inputs through layers
-        [out, out_U1, out_U2] = predict(X_batch, biases, weights);
+        # 3.Send inputs through layers and get activations
+        [out_F, out_D1, out_concat, out_U, out_I] = predict(users_batch, items_batch, biases, weights);
 
-        # 4.compute gradients 
-        dout = sigmoid::backward(out, y_batch); # (predictions, targets)
+        # 4.compute final error gradients 
+        # params: (predictions, targets)
+        dout = l2_loss::backward(out_F, y_batch);  # TODO: really correct error function?
 
         # Compute loss & accuracy for training & validation data every 100 iterations.
         if (i %% 100 == 0) {
           # Compute training loss & accuracy
-          [loss, accuracy] = eval(out, y_batch);
+          [loss, accuracy] = eval(out_F, y_batch);
           # ignore regularization for now..
           # loss_reg_b1 = l2_reg::forward(b1, lambda);
           # loss_reg_W1  = l2_reg::forward(W1 , lambda);
           # loss = loss_data + loss_reg_b1 + loss_reg_W1;
 
           # Compute validation loss & accuracy
-          probs_val = predict(items_val, biases, weights);
-          [loss_val, accuracy_val] = eval(probs_val, targets_val);
+          out_F_val = predict(users_val, items_val, biases, weights);
+          [loss_val, accuracy_val] = eval(out_F_val, targets_val);
 
           # Output results
           print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
                  + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
         }
 
-        # 5.Send the above result through affine::backward
-        [dout_U2, dUW2, dUb2] = affine::backward(dout, out_U1, UW2, Ub2); # (gradient from upstream, input, weights, biases) 
-        [dX, dUW1, dUb1] = affine::backward(dout_U2, X_batch, UW1, Ub1); 
+        # 5.Backpropagation
+        # params: (gradient from upstream, activation, weights, biases) 
+        [dout_F, dW_F, db_F] = affine::backward(dout, out_D1, W_F, b_F); # TODO: should be sigmoid?
+        [dout_D1, dW_D1, db_D1] = affine::backward(dout_F, out_concat, W_D1, b_D1); 
+
+        # backprop concatenation: split the gradients up
+        dout_U = dout_D1[,1:E];
+        dout_I = dout_D1[,E+1:2*E];
+
+        [dUsers, dW_U, db_U] = affine::backward(dout_U, users_batch, W_U, b_U); 
+        [dItems, dW_I, db_I] = affine::backward(dout_I, items_batch, W_I, b_I); 
 
         # 6.update timestep
         t = e * i - 1;
 
         # 7.Call adam::update for all parameters
-        [Ub1, mUb1, vUb1] = adam::update(Ub1, dUb1, lr, beta1, beta2, epsilon, t, mUb1, vUb1);
-        [UW1, mUW1, vUW1] = adam::update(UW1, dUW1, lr, beta1, beta2, epsilon, t, mUW1, vUW1);
-        [Ub2, mUb2, vUb2] = adam::update(Ub2, dUb2, lr, beta1, beta2, epsilon, t, mUb2, vUb2);
-        [UW2, mUW2, vUW2] = adam::update(UW2, dUW2, lr, beta1, beta2, epsilon, t, mUW2, vUW2);
+        [b_U, mb_U, vb_U] = adam::update(b_U, db_U, lr, beta1, beta2, epsilon, t, mb_U, vb_U);
+        [W_U, mW_U, vW_U] = adam::update(W_U, dW_U, lr, beta1, beta2, epsilon, t, mW_U, vW_U);
+
+        [b_I, mb_I, vb_I] = adam::update(b_I, db_I, lr, beta1, beta2, epsilon, t, mb_I, vb_I);
+        [W_I, mW_I, vW_I] = adam::update(W_I, dW_I, lr, beta1, beta2, epsilon, t, mW_I, vW_I);
+
+        [b_D1, mb_D1, vb_D1] = adam::update(b_D1, db_D1, lr, beta1, beta2, epsilon, t, mb_D1, vb_D1);
+        [W_D1, mW_D1, vW_D1] = adam::update(W_D1, dW_D1, lr, beta1, beta2, epsilon, t, mW_D1, vW_D1);
+        
+        [b_F, mb_F, vb_F] = adam::update(b_F, db_F, lr, beta1, beta2, epsilon, t, mb_F, vb_F);
+        [W_F, mW_F, vW_F] = adam::update(W_F, dW_F, lr, beta1, beta2, epsilon, t, mW_F, vW_F);
 
         # 8. Update lists, TODO: find out if necessary
-        biases = list(Ub1, Ub2);
-        weights = list(UW1, UW2);
+        biases = list(b_U, b_I, b_D1, b_F);
+        weights = list(W_U, W_I, W_D1, W_F);
       }
     }
 }
 
-predict = function(matrix[double] X, List[unknown] biases, List[unknown] weights)
-    return (matrix[double] out, matrix[double] out_U1, matrix[double] out_U2) {
+predict = function(matrix[double] users, matrix[double] items, List[unknown] biases, List[unknown] weights)
+    return (matrix[double] out_F, matrix[double] out_D1, matrix[double] out_concat,
+            matrix[double] out_U, matrix[double] out_I) {
   #
   # Computes the predictions for the given inputs.
   #
   # Inputs:
-  #  - X : n examples with d features, of shape (n, d).
+  #  - users : K user examples with E features, of shape (K, E).
+  #  - items : K item examples with E features, of shape (K, E).
   #  - biases, weights : list of trained model parameters
   #
   # Outputs:
   #  - out : target vector, y.
   #
-  
-  # parse parameters
-  Ub1 = as.matrix(biases[1]);
-  Ub2 = as.matrix(biases[2]);
 
-  UW1 = as.matrix(weights[1]);
-  UW2 = as.matrix(weights[2]);
+  # parse parameters
+  b_U = as.matrix(biases[1]);
+  b_I = as.matrix(biases[2]);
+  b_D1 = as.matrix(biases[3]);
+  b_F = as.matrix(biases[4]);
+
+  W_U = as.matrix(weights[1]);
+  W_I = as.matrix(weights[2]);
+  W_D1 = as.matrix(weights[3]);
+  W_F = as.matrix(weights[4]);
 
   # send inputs through layers
-  out_U1 = affine::forward(X, UW1, Ub1);
-  out_U2 = affine::forward(out_U1, UW2, Ub2);
-  
-  # TODO: add missing layers here
-  
-  out = out_U2; # final prediction
+
+  # (1) User and item embeddings + concatenation
+  out_U = affine::forward(users, W_U, b_U);
+  out_I = affine::forward(items, W_I, b_I);
+
+  out_concat = cbind(out_U, out_I); 
+
+  # (2) Dense layers
+  out_D1 = affine::forward(out_concat, W_D1, b_D1);
+
+  # TODO: add missing layers dense layers here
+
+  # (N) final prediction
+  out_F = affine::forward(out_D1, W_F, b_F); # TODO: should be sigmoid?
 }
 
 eval = function(matrix[double] probs, matrix[double] y)
@@ -206,7 +249,7 @@ eval = function(matrix[double] probs, matrix[double] y)
 
     # compute the log loss
     loss = l2_loss::forward(probs, y);
-    # TODO: does this also need to be adapted?
+    # TODO: this probably needs to be adapted
 
     # compute accuracy
     sqr_mean = mean( (probs - y)^2 )

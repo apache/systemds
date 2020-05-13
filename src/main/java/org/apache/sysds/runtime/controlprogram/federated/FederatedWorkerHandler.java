@@ -27,13 +27,14 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -42,10 +43,8 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -53,6 +52,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.JSONHelper;
+import org.apache.wink.json4j.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -63,9 +63,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
 	private final IDSequence _seq;
-	private Map<Long, CacheableData<?>> _vars;
+	private Map<Long, Data> _vars;
 
-	public FederatedWorkerHandler(IDSequence seq, Map<Long, CacheableData<?>> _vars2) {
+	public FederatedWorkerHandler(IDSequence seq, Map<Long, Data> _vars2) {
 		_seq = seq;
 		_vars = _vars2;
 	}
@@ -93,8 +93,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedRequest.FedMethod method = request.getMethod();
 		try {
 			switch (method) {
-				case READ:
-					return readMatrix(request);
+				case READ_MATRIX:
+					return readData(request, Types.DataType.MATRIX);
+				case READ_FRAME:
+					return readData(request, Types.DataType.FRAME);
 				case MATVECMULT:
 					return executeMatVecMult(request);
 				case TRANSFER:
@@ -113,19 +115,30 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse readMatrix(FederatedRequest request) {
+	private FederatedResponse readData(FederatedRequest request, Types.DataType dataType) {
 		checkNumParams(request.getNumParams(), 1);
 		String filename = (String) request.getParam(0);
-		return readMatrix(filename);
+		return readData(filename, dataType);
 	}
 
-	private FederatedResponse readMatrix(String filename) {
+	private FederatedResponse readData(String filename, Types.DataType dataType) {
 		MatrixCharacteristics mc = new MatrixCharacteristics();
 		mc.setBlocksize(ConfigurationManager.getBlocksize());
-		MatrixObject mo = new MatrixObject(Types.ValueType.FP64, filename);
-		OutputInfo oi = null;
-		InputInfo ii = null;
+		CacheableData<?> cd;
+		switch (dataType) {
+			case MATRIX:
+				cd = new MatrixObject(Types.ValueType.FP64, filename);
+				break;
+			case FRAME:
+				cd = new FrameObject(filename);
+				break;
+			default:
+				// should NEVER happen (if we keep request codes in sync with actual behaviour)
+				return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not recognize datatype");
+		}
+		
 		// read metadata
+		FileFormat fmt = null;
 		try {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
@@ -136,23 +149,24 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 						return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-					String format = mtd.getString(DataExpression.FORMAT_TYPE);
-					oi = OutputInfo.fromExternalString(format);
-					ii = OutputInfo.getMatchingInputInfo(oi);
+					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 				}
 			}
 		}
 		catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-		MetaDataFormat mdf = new MetaDataFormat(mc, oi, ii);
-		mo.setMetaData(mdf);
-		mo.acquireRead();
-		mo.refreshMetaData();
-		mo.release();
+		cd.setMetaData(new MetaDataFormat(mc, fmt));
+		cd.acquireRead();
+		cd.refreshMetaData();
+		cd.release();
 
 		long id = _seq.getNextID();
-		_vars.put(id, mo);
+		_vars.put(id, cd);
+		if (dataType == Types.DataType.FRAME) {
+			FrameObject frameObject = (FrameObject) cd;
+			return new FederatedResponse(FederatedResponse.Type.SUCCESS, new Object[] {id, frameObject.getSchema()});
+		}
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, id);
 	}
 
@@ -192,6 +206,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			case MATRIX:
 				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
 					((MatrixObject) dataObject).acquireReadAndRelease());
+			case FRAME:
+				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
+						((FrameObject) dataObject).acquireReadAndRelease());
 			case LIST:
 				return new FederatedResponse(FederatedResponse.Type.SUCCESS, ((ListObject) dataObject).getData());
 			// TODO rest of the possible datatypes
@@ -269,8 +286,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse createMatrixObject(MatrixBlock result) {
 		MatrixObject resTo = new MatrixObject(Types.ValueType.FP64, OptimizerUtils.getUniqueTempFileName());
 		MetaDataFormat metadata = new MetaDataFormat(
-			new MatrixCharacteristics(result.getNumRows(), result.getNumColumns()),
-			OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			new MatrixCharacteristics(result.getNumRows(), result.getNumColumns()), FileFormat.BINARY);
 		resTo.setMetaData(metadata);
 		resTo.acquireModify(result);
 		resTo.release();

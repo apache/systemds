@@ -26,6 +26,7 @@ import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -45,10 +46,14 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Map.Entry;
 
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_FRAME_IDENTIFIER;
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_MATRIX_IDENTIFIER;
 
-public class DataExpression extends DataIdentifier 
+public class DataExpression extends DataIdentifier
 {
 	public static final String RAND_DIMS = "dims";
 
@@ -79,13 +84,9 @@ public class DataExpression extends DataIdentifier
 	
 	public static final String FED_ADDRESSES = "addresses";
 	public static final String FED_RANGES = "ranges";
+	public static final String FED_TYPE = "type";
 	
 	public static final String FORMAT_TYPE = "format";
-	public static final String FORMAT_TYPE_VALUE_TEXT = "text";
-	public static final String FORMAT_TYPE_VALUE_BINARY = "binary";
-	public static final String FORMAT_TYPE_VALUE_CSV = "csv";
-	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET = "mm";
-	public static final String FORMAT_TYPE_VALUE_LIBSVM = "libsvm";
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
@@ -95,6 +96,8 @@ public class DataExpression extends DataIdentifier
 	public static final String AUTHORPARAM = "author";
 	public static final String SCHEMAPARAM = "schema";
 	public static final String CREATEDPARAM = "created";
+
+	public static final String PRIVACY = "privacy";
 
 	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
@@ -107,31 +110,34 @@ public class DataExpression extends DataIdentifier
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
-	public static final String[] RAND_VALID_PARAM_NAMES = 
-		{RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA};
+	public static final Set<String> RAND_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(RAND_ROWS, RAND_COLS, RAND_DIMS,
+			RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA));
 	
-	public static final String[] RESHAPE_VALID_PARAM_NAMES =
-		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
+	public static final Set<String> RESHAPE_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS));
 	
-	public static final String[] SQL_VALID_PARAM_NAMES = {SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY};
+	public static final Set<String> SQL_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(SQL_CONN, SQL_USER, SQL_PASS, SQL_QUERY));
 	
-	public static final String[] FEDERATED_VALID_PARAM_NAMES = {FED_ADDRESSES, FED_RANGES};
+	public static final Set<String> FEDERATED_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(FED_ADDRESSES, FED_RANGES, FED_TYPE));
 
 	// Valid parameter names in a metadata file
-	public static final String[] READ_VALID_MTD_PARAM_NAMES =
-		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
-			ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM,
-			AUTHORPARAM, CREATEDPARAM,
+	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =new HashSet<>(
+		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM,
+			FORMAT_TYPE, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM,
+			VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM, AUTHORPARAM, CREATEDPARAM,
 			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
-		};
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
+			// Parameters related to privacy
+			PRIVACY));
 
-	public static final String[] READ_VALID_PARAM_NAMES = 
-	{	IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM, VALUETYPEPARAM, SCHEMAPARAM,
-		ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM, 
+	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
+		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM,
+			VALUETYPEPARAM, SCHEMAPARAM, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
 			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
-	};
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -175,15 +181,15 @@ public class DataExpression extends DataIdentifier
 
 			if (functionName.equals("readMM"))
 				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
-						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET, parseInfo));
+					new StringIdentifier(FileFormat.MM.toString(), parseInfo));
 
 			if (functionName.equals("read.csv"))
 				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
-						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, parseInfo));
+					new StringIdentifier(FileFormat.CSV.toString(), parseInfo));
 
 			if (functionName.equals("read.libsvm"))
 				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
-						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_LIBSVM, parseInfo));
+					new StringIdentifier(FileFormat.LIBSVM.toString(), parseInfo));
 
 			// validate the filename is the first parameter
 			if (passedParamExprs.size() < 1){
@@ -210,11 +216,8 @@ public class DataExpression extends DataIdentifier
 					return null;
 				}
 				// verify parameter names for read function
-				boolean isValidName = false;
-				for (String paramName : READ_VALID_PARAM_NAMES){
-					if (paramName.equals(currName))
-						isValidName = true;
-				}
+				boolean isValidName = READ_VALID_PARAM_NAMES.contains(currName);
+
 				if (!isValidName){
 					errorListener.validationError(parseInfo, "attempted to add invalid read statement parameter " + currName);
 					return null;
@@ -428,30 +431,43 @@ public class DataExpression extends DataIdentifier
 				else
 					namedParamCount++;
 			}
-			if (passedParamExprs.size() != 2){
-				errorListener.validationError(parseInfo, "for federated statement, must specify exactly 2 argument: addresses, ranges");
+			if(passedParamExprs.size() < 2) {
+				errorListener.validationError(parseInfo,
+					"for federated statement, must specify at least 2 arguments: addresses, ranges");
 				return null;
 			}
-			if (unnamedParamCount > 0) {
-				if (namedParamCount > 0) {
-					errorListener.validationError(parseInfo, "for federated statement, cannot mix named and unnamed parameters");
+			if(unnamedParamCount > 0) {
+				if(namedParamCount > 0) {
+					errorListener.validationError(parseInfo,
+						"for federated statement, cannot mix named and unnamed parameters");
 					return null;
 				}
-				ParameterExpression param = passedParamExprs.get(0);
-				dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
-				param = passedParamExprs.get(1);
-				dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+				if(unnamedParamCount == 2) {
+					// first parameter addresses second are the ranges (type defaults to Matrix)
+					ParameterExpression param = passedParamExprs.get(0);
+					dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+					param = passedParamExprs.get(1);
+					dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+				}
+				else if(unnamedParamCount == 3) {
+					ParameterExpression param = passedParamExprs.get(0);
+					dataExpr.addFederatedExprParam(DataExpression.FED_ADDRESSES, param.getExpr());
+					param = passedParamExprs.get(1);
+					dataExpr.addFederatedExprParam(DataExpression.FED_RANGES, param.getExpr());
+					param = passedParamExprs.get(2);
+					dataExpr.addFederatedExprParam(DataExpression.FED_TYPE, param.getExpr());
+				}
+				else {
+					errorListener.validationError(parseInfo,
+						"for federated statement, at most 3 arguments are supported: addresses, ranges, type");
+				}
 			}
 			else {
-				ParameterExpression firstParam = passedParamExprs.get(0);
-				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.FED_ADDRESSES)){
-					errorListener.validationError(parseInfo, "federated method must have addresses parameter as first parameter or unnamed parameter");
-					return null;
-				}
 				for (ParameterExpression passedParamExpr : passedParamExprs) {
 					dataExpr.addFederatedExprParam(passedParamExpr.getName(), passedParamExpr.getExpr());
 				}
 			}
+			dataExpr.setFederatedDefault();
 		}
 
 		if (dataExpr != null) {
@@ -466,15 +482,7 @@ public class DataExpression extends DataIdentifier
 			return;
 		}
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			for (String name : RAND_VALID_PARAM_NAMES){
-				if (name.equals(paramName)) {
-					found = true;
-					break;
-				}			
-			}
-		}
+		boolean found = RAND_VALID_PARAM_NAMES.contains(paramName);
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName +
 					"\". Legal parameters for Rand statement are " 
@@ -500,10 +508,7 @@ public class DataExpression extends DataIdentifier
 	public void addMatrixExprParam(String paramName, Expression paramValue) 
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.stream(RESHAPE_VALID_PARAM_NAMES).anyMatch((name) -> name.equals(paramName));
-		}
+		boolean found = RESHAPE_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName +
@@ -529,10 +534,7 @@ public class DataExpression extends DataIdentifier
 	public void addTensorExprParam(String paramName, Expression paramValue)
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.asList(RESHAPE_VALID_PARAM_NAMES).contains(paramName);
-		}
+		boolean found = RESHAPE_VALID_PARAM_NAMES.contains(paramName);
 
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for tensor statement are "
@@ -558,10 +560,7 @@ public class DataExpression extends DataIdentifier
 	public void addSqlExprParam(String paramName, Expression paramValue)
 	{
 		// check name is valid
-		boolean found = false;
-		if (paramName != null ){
-			found = Arrays.asList(SQL_VALID_PARAM_NAMES).contains(paramName);
-		}
+		boolean found = SQL_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for sql statement are "
@@ -578,12 +577,11 @@ public class DataExpression extends DataIdentifier
 	
 	public void addFederatedExprParam(String paramName, Expression paramValue) {
 		// check name is valid
-		boolean found = (paramName != null ) &&
-			Arrays.asList(FEDERATED_VALID_PARAM_NAMES).contains(paramName);
+		boolean found = FEDERATED_VALID_PARAM_NAMES.contains(paramName);
 		
 		if (!found)
 			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for federated statement are "
-				+ "(capitalization-sensitive): " + FED_ADDRESSES + ", " + FED_RANGES);
+				+ "(capitalization-sensitive): " + FED_ADDRESSES + ", " + FED_RANGES + ", " + FED_TYPE);
 		if (getVarParam(paramName) != null)
 			raiseValidateError("attempted to add federated statement parameter " + paramValue + " more than once");
 		
@@ -632,6 +630,11 @@ public class DataExpression extends DataIdentifier
 	public void setTensorDefault(){
 		if (getVarParam(RAND_BY_ROW) == null)
 			addVarParam(RAND_BY_ROW, new BooleanIdentifier(true, this));
+	}
+	
+	public void setFederatedDefault(){
+		if (getVarParam(FED_TYPE) == null)
+			addVarParam(FED_TYPE, new StringIdentifier(FED_MATRIX_IDENTIFIER, this));
 	}
 	
 	private void setSqlDefault() {
@@ -859,13 +862,14 @@ public class DataExpression extends DataIdentifier
 			boolean inferredFormatType = false;
 			
 			// get format type string
-			String formatTypeString = (getVarParam(FORMAT_TYPE) == null) ? null : getVarParam(FORMAT_TYPE).toString();
+			String formatTypeString = (getVarParam(FORMAT_TYPE) == null) ?
+				null : getVarParam(FORMAT_TYPE).toString();
 			
 			// check if file is matrix market format
 			if (formatTypeString == null && shouldReadMTD){
 				if ( checkHasMatrixMarketFormat(inputFileName, mtdFileName, conditional) ) {
-					formatTypeString = FORMAT_TYPE_VALUE_MATRIXMARKET;
-					addVarParam(FORMAT_TYPE, new StringIdentifier(FORMAT_TYPE_VALUE_MATRIXMARKET, this));
+					formatTypeString = FileFormat.MM.toString();
+					addVarParam(FORMAT_TYPE, new StringIdentifier(formatTypeString, this));
 					inferredFormatType = true;
 					shouldReadMTD = false;
 				}
@@ -880,7 +884,7 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			
-			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET)){
+			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.MM.toString())){
 				/*
 				 *  handle MATRIXMARKET_FORMAT_TYPE format
 				 *
@@ -965,11 +969,11 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			boolean isCSV = false;
-			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV));
+			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.CSV.toString()));
 			if (isCSV){
 				 // Handle delimited file format
 				 // 
-				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM
 				 //  
 				 // 2) open the file
 				 //
@@ -977,7 +981,7 @@ public class DataExpression extends DataIdentifier
 				// there should be no MTD file for delimited file format
 				shouldReadMTD = true;
 				
-				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM   
+				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM
 				//		as ONLY valid parameters
 				if( !inferredFormatType ){
 					for (String key : _varParams.keySet()){
@@ -988,17 +992,11 @@ public class DataExpression extends DataIdentifier
 								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) || key.equals(VALUETYPEPARAM)
 								|| key.equals(SCHEMAPARAM)) )
 						{	
-							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
-									   + SCHEMAPARAM + "," 
-									   + DELIM_HAS_HEADER_ROW   + "," 
-									   + DELIM_DELIMITER 	+ ","
-									   + DELIM_FILL 		+ ","
-									   + DELIM_FILL_VALUE 	+ ","
-									   + READROWPARAM     + "," 
-									   + READCOLPARAM;
-							
+							String msg = "Only parameters allowed are: " + Arrays.toString(new String[] {
+								IO_FILENAME, SCHEMAPARAM, DELIM_HAS_HEADER_ROW, DELIM_DELIMITER,
+								DELIM_FILL, DELIM_FILL_VALUE, READROWPARAM, READCOLPARAM});
 							raiseValidateError("Invalid parameter " + key + " in read statement: " +
-									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+								toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 					}
 				}
@@ -1052,7 +1050,7 @@ public class DataExpression extends DataIdentifier
 			} 
 
 			boolean islibsvm = false;
-			islibsvm = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM));
+			islibsvm = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.LIBSVM.toString()));
 			if (islibsvm){
 				 // Handle libsvm file format
 				shouldReadMTD = true;
@@ -1087,18 +1085,25 @@ public class DataExpression extends DataIdentifier
 						isMatrix = true;
 				
 				// set data type
-		        getOutput().setDataType(isMatrix ? DataType.MATRIX : DataType.FRAME);
-		        
-		        // set number non-zeros
-		        Expression ennz = this.getVarParam("nnz");
-		        long nnz = -1;
-		        if( ennz != null )
-		        {
-			        nnz = Long.valueOf(ennz.toString());
-			        getOutput().setNnz(nnz);
-		        }
-		        
-		        // Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
+				getOutput().setDataType(isMatrix ? DataType.MATRIX : DataType.FRAME);
+
+				// set number non-zeros
+				Expression ennz = getVarParam("nnz");
+				long nnz = -1;
+				if( ennz != null ) {
+					nnz = Long.valueOf(ennz.toString());
+					getOutput().setNnz(nnz);
+				}
+				
+				// set privacy
+				Expression eprivacy = getVarParam("privacy");
+				boolean privacy = false;
+				if ( eprivacy != null ) {
+					privacy = Boolean.valueOf(eprivacy.toString());
+					getOutput().setPrivacy(privacy);
+				}
+
+				// Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
@@ -1131,32 +1136,13 @@ public class DataExpression extends DataIdentifier
 				// initialize block dimensions to UNKNOWN 
 				getOutput().setBlocksize(-1);
 				
-				// find "format": 1=text, 2=binary
-				int format = 1; // default is "text"
-				String fmt =  (getVarParam(FORMAT_TYPE) == null ? null : getVarParam(FORMAT_TYPE).toString());
-				
-				if (fmt == null || fmt.equalsIgnoreCase("text")){
-					getOutput().setFormatType(FormatType.TEXT);
-					format = 1;
-				} else if ( fmt.equalsIgnoreCase("binary") ) {
-					getOutput().setFormatType(FormatType.BINARY);
-					format = 2;
-				} else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) 
-				{
-					getOutput().setFormatType(FormatType.CSV);
-					format = 1;
+				String fmt =  (getVarParam(FORMAT_TYPE) == null ?
+					FileFormat.defaultFormatString() : getVarParam(FORMAT_TYPE).toString());
+				try {
+					getOutput().setFileFormat(FileFormat.safeValueOf(fmt));
 				}
-				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) )
-				{
-					getOutput().setFormatType(FormatType.MM);
-					format = 1;
-				} 
-				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)) 
-				{
-					getOutput().setFormatType(FormatType.LIBSVM);
-					format = 1;
-				} else {
-					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + this.toString(), conditional);
+				catch(Exception ex) {
+					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + toString(), conditional);
 				}
 				
 				if (getVarParam(ROWBLOCKCOUNTPARAM) instanceof ConstIdentifier && getVarParam(COLUMNBLOCKCOUNTPARAM) instanceof ConstIdentifier)  {
@@ -1168,7 +1154,7 @@ public class DataExpression extends DataIdentifier
 				// block dimensions must be -1x-1 when format="text"
 				// NOTE MB: disabled validate of default blocksize for inputs w/ format="binary"
 				// because we automatically introduce reblocks if blocksizes don't match
-				if ( (format == 1 || !isMatrix)  && getOutput().getBlocksize() != -1 ){
+				if ( (getOutput().getFileFormat().isTextFormat() || !isMatrix)  && getOutput().getBlocksize() != -1 ){
 					raiseValidateError("Invalid block dimensions (" + getOutput().getBlocksize() + ") when format=" + getVarParam(FORMAT_TYPE) + " in \"" + this.toString() + "\".", conditional);
 				}
 			
@@ -1211,7 +1197,7 @@ public class DataExpression extends DataIdentifier
 		case WRITE:
 			
 			// for delimited format, if no delimiter specified THEN set default ","
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)){
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.CSV.toString())){
 				if (getVarParam(DELIM_DELIMITER) == null) {
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
 				}
@@ -1223,7 +1209,7 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)){
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.LIBSVM.toString())){
 				if (getVarParam(DELIM_SPARSE) == null) {
 					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
 				}
@@ -1257,18 +1243,13 @@ public class DataExpression extends DataIdentifier
 			}*/
 			
 			//validate read filename
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("text"))
+			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
 				getOutput().setBlocksize(-1);
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString()))
 				getOutput().setBlocksize(ConfigurationManager.getBlocksize());
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || 
-					(getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) ||
-					 getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM))
-				getOutput().setBlocksize(-1);
-			
-			else{
-				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE) +  " in statement: " + this.toString(), conditional);
-			}
+			else
+				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)
+					+ " in statement: " + toString(), conditional);
 			break;
 
 			case RAND:
@@ -1587,7 +1568,7 @@ public class DataExpression extends DataIdentifier
 				maxExpr.validateExpression(ids, currConstVars, conditional);
 			}
 		
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			if (isTensorOperation) {
 				getOutput().setDataType(DataType.TENSOR);
 				getOutput().setValueType(getVarParam(RAND_MIN).getOutput().getValueType());
@@ -1796,7 +1777,7 @@ public class DataExpression extends DataIdentifier
 					colsExpr.validateExpression(ids, currConstVars, conditional);
 				}
 			}	
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			getOutput().setDataType(DataType.MATRIX);
 			getOutput().setValueType(ValueType.FP64);
 			getOutput().setDimensions(rowsLong, colsLong);
@@ -1834,7 +1815,7 @@ public class DataExpression extends DataIdentifier
 			getVarParam(RAND_DATA).validateExpression(ids, currConstVars, conditional);
 			getVarParam(RAND_DIMS).validateExpression(ids, currConstVars, conditional);
 
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			getOutput().setDataType(DataType.TENSOR);
 			getOutput().setValueType(getVarParam(RAND_DATA).getOutput().getValueType());
 			// TODO get size
@@ -1882,7 +1863,7 @@ public class DataExpression extends DataIdentifier
 			getVarParam(SQL_PASS).validateExpression(ids, currConstVars, conditional);
 			getVarParam(SQL_QUERY).validateExpression(ids, currConstVars, conditional);
 			
-			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setFileFormat(FileFormat.BINARY);
 			getOutput().setDataType(DataType.TENSOR);
 			getOutput().setValueType(ValueType.UNKNOWN);
 			getOutput().setDimensions(-1, -1);
@@ -1894,8 +1875,8 @@ public class DataExpression extends DataIdentifier
 			
 		case FEDERATED:
 			validateParams(conditional, FEDERATED_VALID_PARAM_NAMES,
-					"Legal parameters for federated statement are (case-sensitive): " + FED_ADDRESSES + ", " +
-					FED_RANGES);
+				"Legal parameters for federated statement are (case-sensitive): "
+				+ FED_TYPE + ", " + FED_ADDRESSES + ", " + FED_RANGES);
 			exp = getVarParam(FED_ADDRESSES);
 			if( !(exp instanceof DataIdentifier) ) {
 				raiseValidateError("for federated statement " + FED_ADDRESSES + " has incorrect value type", conditional);
@@ -1906,26 +1887,34 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("for federated statement " + FED_RANGES + " has incorrect value type", conditional);
 			}
 			getVarParam(FED_RANGES).validateExpression(ids, currConstVars, conditional);
+			exp = getVarParam(FED_TYPE);
+			if( !(exp instanceof StringIdentifier) ) {
+				raiseValidateError("for federated statement " + FED_TYPE + " has incorrect value type", conditional);
+			}
+			getVarParam(FED_TYPE).validateExpression(ids, currConstVars, conditional);
 			
-			// TODO format type?
-			getOutput().setFormatType(FormatType.BINARY);
-			getOutput().setDataType(DataType.MATRIX);
-			// TODO value type for federated object
-			getOutput().setValueType(ValueType.FP64);
+			getOutput().setFileFormat(FileFormat.BINARY);
+			StringIdentifier fedType = (StringIdentifier) exp;
+			if(fedType.getValue().equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
+				getOutput().setDataType(DataType.MATRIX);
+				// TODO value type for federated object
+				getOutput().setValueType(ValueType.FP64);
+			}
+			else if(fedType.getValue().equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
+				getOutput().setDataType(DataType.FRAME);
+			}
 			getOutput().setDimensions(-1, -1);
 			break;
+			
 		default:
 			raiseValidateError("Unsupported Data expression "+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
 		}
 	}
 
-	private void validateParams(boolean conditional, String[] validParamNames, String legalMessage) {
+	private void validateParams(boolean conditional, Set<String> validParamNames, String legalMessage) {
 		for( String key : _varParams.keySet() )
 		{
-			boolean found = false;
-			for (String name : validParamNames) {
-				found |= name.equals(key);
-			}
+			boolean found = validParamNames.contains(key);
 			if( !found ) {
 				raiseValidateError("unexpected parameter \"" + key + "\". "
 						+ legalMessage, conditional);
@@ -2061,11 +2050,7 @@ public class DataExpression extends DataIdentifier
     		Object key = e.getKey();
     		Object val = e.getValue();
 			
-    		boolean isValidName = false;
-    		for (String paramName : READ_VALID_MTD_PARAM_NAMES){
-				if (paramName.equals(key))
-					isValidName = true;
-			}
+			boolean isValidName = READ_VALID_MTD_PARAM_NAMES.contains(key);
     		
 			if (!isValidName){ //wrong parameters always rejected
 				raiseValidateError("MTD file " + mtdFileName + " contains invalid parameter name: " + key, false);
@@ -2074,11 +2059,9 @@ public class DataExpression extends DataIdentifier
 			// if the read method parameter is a constant, then verify value matches MTD metadata file
 			if (getVarParam(key.toString()) != null && (getVarParam(key.toString()) instanceof ConstIdentifier)
 					&& !getVarParam(key.toString()).toString().equalsIgnoreCase(val.toString())) {
-				raiseValidateError(
-						"Parameter '" + key.toString()
-								+ "' has conflicting values in metadata and read statement. MTD file value: '"
-								+ val.toString() + "'. Read statement value: '" + getVarParam(key.toString()) + "'.",
-						conditional);
+				raiseValidateError("Parameter '" + key.toString()
+					+ "' has conflicting values in metadata and read statement. MTD file value: '"
+					+ val.toString() + "'. Read statement value: '" + getVarParam(key.toString()) + "'.", conditional);
 			} else {
 				// if the read method does not specify parameter value, then add MTD metadata file value to parameter list
 				if (getVarParam(key.toString()) == null){
@@ -2091,6 +2074,7 @@ public class DataExpression extends DataIdentifier
 						if ( key.toString().equalsIgnoreCase(DELIM_HAS_HEADER_ROW) 
 								|| key.toString().equalsIgnoreCase(DELIM_FILL)
 								|| key.toString().equalsIgnoreCase(DELIM_SPARSE)
+								|| key.toString().equalsIgnoreCase(PRIVACY)
 								) {
 							// parse these parameters as boolean values
 							BooleanIdentifier boolId = null; 
@@ -2219,28 +2203,22 @@ public class DataExpression extends DataIdentifier
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd", conditional);
 		if (mtdObject != null) {
 			String formatTypeString = (String)JSONHelper.get(mtdObject,FORMAT_TYPE);
-			if ((formatTypeString != null ) && 
-				(formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)
-				|| formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)))
+			if( FileFormat.isDelimitedFormat(formatTypeString) )
 				return formatTypeString;
-			else
-				return null;
 		}
 		return null;
 		// The file format must be specified either in .mtd file or in read() statement
 		// Therefore, one need not actually read the data to infer the format.
 	}
 	
-	public boolean isCSVReadWithUnknownSize()
-	{
+	public boolean isCSVReadWithUnknownSize() {
 		Expression format = getVarParam(FORMAT_TYPE);
-		if( _opcode == DataOp.READ && format!=null && format.toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV) ) {
+		if( _opcode == DataOp.READ && format!=null && format.toString().equalsIgnoreCase(FileFormat.CSV.toString()) ) {
 			Expression rows = getVarParam(READROWPARAM);
 			Expression cols = getVarParam(READCOLPARAM);
 			return (rows==null || Long.parseLong(rows.toString())<0)
 				||(cols==null || Long.parseLong(cols.toString())<0);
 		}
-		
 		return false;
 	}
 	

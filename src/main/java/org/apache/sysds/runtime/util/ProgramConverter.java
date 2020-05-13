@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
@@ -80,9 +81,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -275,6 +274,7 @@ public class ProgramConverter
 		tmpPB.setStatementBlock( createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), pid, plain, forceDeepCopy) );
 		tmpPB.setThreadID(pid);
 		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
+		tmpPB.setExitInstruction(wpb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -285,6 +285,7 @@ public class ProgramConverter
 		tmpPB.setThreadID(pid);
 		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
 		tmpPB.setChildBlocksElseBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksElseBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
+		tmpPB.setExitInstruction(ipb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -296,6 +297,7 @@ public class ProgramConverter
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(fpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy) );
+		tmpPB.setExitInstruction(fpb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -305,6 +307,7 @@ public class ProgramConverter
 		tmpPB.setToInstructions( fpb.getToInstructions() );
 		tmpPB.setIncrementInstructions( fpb.getIncrementInstructions() );
 		tmpPB.setChildBlocks( fpb.getChildBlocks() );
+		tmpPB.setExitInstruction(fpb.getExitInstruction());
 		return tmpPB;
 	}
 
@@ -332,6 +335,7 @@ public class ProgramConverter
 			tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(pfpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy) ); 
 		else
 			tmpPB.setChildBlocks( pfpb.getChildBlocks() );
+		tmpPB.setExitInstruction(pfpb.getExitInstruction());
 		
 		return tmpPB;
 	}
@@ -851,12 +855,11 @@ public class ProgramConverter
 				metaData[1] = String.valueOf( dc.getCols() );
 				metaData[2] = String.valueOf( dc.getBlocksize() );
 				metaData[3] = String.valueOf( dc.getNonZeros() );
-				metaData[4] = InputInfo.inputInfoToString( md.getInputInfo() );
-				metaData[5] = OutputInfo.outputInfoToString( md.getOutputInfo() );
-				metaData[6] = String.valueOf( partFormat );
-				metaData[7] = String.valueOf( mo.getUpdateType() );
-				metaData[8] = String.valueOf(mo.isHDFSFileExists());
-				metaData[9] = String.valueOf(mo.isCleanupEnabled());
+				metaData[4] = md.getFileFormat().toString();
+				metaData[5] = String.valueOf( partFormat );
+				metaData[6] = String.valueOf( mo.getUpdateType() );
+				metaData[7] = String.valueOf(mo.isHDFSFileExists());
+				metaData[8] = String.valueOf(mo.isCleanupEnabled());
 				break;
 			case LIST:
 				// SCHEMA: <name>|<datatype>|<valuetype>|value|<metadata>|<tab>element1<tab>element2<tab>element3 (this is the list)
@@ -1543,12 +1546,11 @@ public class ProgramConverter
 				long cols = Long.parseLong( st.nextToken() );
 				int blen = Integer.parseInt( st.nextToken() );
 				long nnz = Long.parseLong( st.nextToken() );
-				InputInfo iin = InputInfo.stringToInputInfo( st.nextToken() );
-				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );
+				FileFormat fmt = FileFormat.safeValueOf(st.nextToken());
 				PartitionFormat partFormat = PartitionFormat.valueOf( st.nextToken() );
 				UpdateType inplace = UpdateType.valueOf( st.nextToken() );
 				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blen, nnz);
-				MetaDataFormat md = new MetaDataFormat( mc, oin, iin );
+				MetaDataFormat md = new MetaDataFormat(mc, fmt);
 				mo.setMetaData( md );
 				if( partFormat._dpf != PDataPartitionFormat.NONE )
 					mo.setPartitioned( partFormat._dpf, partFormat._N );

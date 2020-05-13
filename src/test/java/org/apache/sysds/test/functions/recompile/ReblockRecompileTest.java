@@ -24,8 +24,8 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -114,7 +114,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		//compare matrices
 		try 
 		{
-			MatrixBlock mo = DataConverter.readMatrixFromHDFS(output("R"), InputInfo.BinaryBlockInputInfo,
+			MatrixBlock mo = DataConverter.readMatrixFromHDFS(output("R"), FileFormat.BINARY,
 				rows, 1, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
 			HashMap<CellIndex, Double> dmlfile = new HashMap<>();
 			for( int i=0; i<mo.getNumRows(); i++ )

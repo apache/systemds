@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,10 +35,11 @@ import org.apache.sysds.hops.rewrite.StatementBlockRewriteRule;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.parser.Expression.FormatType;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysds.parser.PrintStatement.PRINTTYPE;
+import org.apache.sysds.parser.dml.DmlSyntacticValidator;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.utils.MLContextProxy;
 
@@ -191,7 +194,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			if (stmt instanceof AssignmentStatement) {
 				AssignmentStatement astmt = (AssignmentStatement)stmt;
 				// for now, ensure that an assignment statement containing a read from csv ends up in own statement block
-				if(astmt.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && astmt.getSource().toString().contains("read"))
+				if(astmt.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + FileFormat.CSV.toString()) 
+					&& astmt.getSource().toString().contains("read"))
 					return false;
 				if (astmt.controlStatement())
 					return false;
@@ -296,7 +300,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					FunctionCallIdentifier fcall = (FunctionCallIdentifier) as.getSource();
 					FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
 					ret &= rIsInlineableFunction(fblock2, prog);
-					if( as.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && as.getSource().toString().contains("read"))
+					if( as.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + FileFormat.CSV.toString())
+						&& as.getSource().toString().contains("read"))
 						return false;
 			
 					if( !ret ) return false;
@@ -460,13 +465,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	}
 	
-	public static List<StatementBlock> rHoistFunctionCallsFromExpressions(StatementBlock current) {
+	public static List<StatementBlock> rHoistFunctionCallsFromExpressions(StatementBlock current, DMLProgram prog) {
 		if (current instanceof FunctionStatementBlock) {
 			FunctionStatementBlock fsb = (FunctionStatementBlock)current;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : fstmt.getBody())
-				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb, prog));
 			fstmt.setBody(tmp);
 		}
 		else if (current instanceof WhileStatementBlock) {
@@ -475,7 +480,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			//TODO handle predicates
 			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : wstmt.getBody())
-				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb, prog));
 			wstmt.setBody(tmp);
 		}
 		else if (current instanceof IfStatementBlock) {
@@ -484,12 +489,12 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			//TODO handle predicates
 			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : istmt.getIfBody())
-				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb, prog));
 			istmt.setIfBody(tmp);
 			if( istmt.getElseBody() != null && !istmt.getElseBody().isEmpty() ) {
 				ArrayList<StatementBlock> tmp2 = new ArrayList<>();
 				for (StatementBlock sb : istmt.getElseBody())
-					tmp2.addAll(rHoistFunctionCallsFromExpressions(sb));
+					tmp2.addAll(rHoistFunctionCallsFromExpressions(sb, prog));
 				istmt.setElseBody(tmp2);
 			}
 		}
@@ -499,25 +504,25 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			//TODO handle predicates
 			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : fstmt.getBody())
-				tmp.addAll(rHoistFunctionCallsFromExpressions(sb));
+				tmp.addAll(rHoistFunctionCallsFromExpressions(sb, prog));
 			fstmt.setBody(tmp);
 		}
 		else { //generic (last-level)
 			ArrayList<Statement> tmp = new ArrayList<>();
 			for(Statement stmt : current.getStatements())
-				tmp.addAll(rHoistFunctionCallsFromExpressions(stmt));
+				tmp.addAll(rHoistFunctionCallsFromExpressions(stmt, prog));
 			if( current.getStatements().size() != tmp.size() )
 				return createStatementBlocks(current, tmp);
 		}
 		return Arrays.asList(current);
 	}
 
-	public static List<Statement> rHoistFunctionCallsFromExpressions(Statement stmt) {
+	public static List<Statement> rHoistFunctionCallsFromExpressions(Statement stmt, DMLProgram prog) {
 		ArrayList<Statement> tmp = new ArrayList<>();
 		if( stmt instanceof AssignmentStatement ) {
 			AssignmentStatement astmt = (AssignmentStatement)stmt;
 			boolean ix = (astmt.getTargetList().get(0) instanceof IndexedIdentifier);
-			rHoistFunctionCallsFromExpressions(astmt.getSource(), !ix, tmp);
+			rHoistFunctionCallsFromExpressions(astmt.getSource(), !ix, tmp, prog);
 			if( ix && astmt.getSource() instanceof FunctionCallIdentifier ) {
 				AssignmentStatement lstmt = (AssignmentStatement) tmp.get(tmp.size()-1);
 				astmt.setSource(copy(lstmt.getTarget()));
@@ -525,13 +530,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		}
 		else if( stmt instanceof MultiAssignmentStatement ) {
 			MultiAssignmentStatement mstmt = (MultiAssignmentStatement)stmt;
-			rHoistFunctionCallsFromExpressions(mstmt.getSource(), true, tmp);
+			rHoistFunctionCallsFromExpressions(mstmt.getSource(), true, tmp, prog);
 		}
 		else if( stmt instanceof PrintStatement ) {
 			PrintStatement pstmt = (PrintStatement)stmt;
 			for(int i=0; i<pstmt.expressions.size(); i++) {
 				Expression lexpr = pstmt.getExpressions().get(i);
-				rHoistFunctionCallsFromExpressions(lexpr, false, tmp);
+				rHoistFunctionCallsFromExpressions(lexpr, false, tmp, prog);
 				if( lexpr instanceof FunctionCallIdentifier ) {
 					AssignmentStatement lstmt = (AssignmentStatement) tmp.get(tmp.size()-1);
 					pstmt.getExpressions().set(i, copy(lstmt.getTarget()));
@@ -550,52 +555,64 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return ret;
 	}
 	
-	public static Expression rHoistFunctionCallsFromExpressions(Expression expr, boolean root, ArrayList<Statement> tmp) {
+	public static Expression rHoistFunctionCallsFromExpressions(Expression expr, boolean root, ArrayList<Statement> tmp, DMLProgram prog) {
 		if( expr == null || expr instanceof ConstIdentifier )
 			return expr; //do nothing
 		if( expr instanceof BinaryExpression ) {
 			BinaryExpression lexpr = (BinaryExpression) expr;
-			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp));
-			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp));
+			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp, prog));
+			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp, prog));
 		}
 		else if( expr instanceof RelationalExpression ) {
 			RelationalExpression lexpr = (RelationalExpression) expr;
-			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp));
-			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp));
+			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp, prog));
+			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp, prog));
 		}
 		else if( expr instanceof BooleanExpression ) {
 			BooleanExpression lexpr = (BooleanExpression) expr;
-			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp));
-			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp));
+			lexpr.setLeft(rHoistFunctionCallsFromExpressions(lexpr.getLeft(), false, tmp, prog));
+			lexpr.setRight(rHoistFunctionCallsFromExpressions(lexpr.getRight(), false, tmp, prog));
 		}
 		else if( expr instanceof BuiltinFunctionExpression ) {
 			BuiltinFunctionExpression lexpr = (BuiltinFunctionExpression) expr;
 			Expression[] clexpr = lexpr.getAllExpr();
 			for( int i=0; i<clexpr.length; i++ )
-				clexpr[i] = rHoistFunctionCallsFromExpressions(clexpr[i], false, tmp);
+				clexpr[i] = rHoistFunctionCallsFromExpressions(clexpr[i], false, tmp, prog);
 		}
 		else if( expr instanceof ParameterizedBuiltinFunctionExpression ) {
 			ParameterizedBuiltinFunctionExpression lexpr = (ParameterizedBuiltinFunctionExpression) expr;
 			HashMap<String, Expression> clexpr = lexpr.getVarParams();
 			for( String key : clexpr.keySet() )
-				clexpr.put(key, rHoistFunctionCallsFromExpressions(clexpr.get(key), false, tmp));
+				clexpr.put(key, rHoistFunctionCallsFromExpressions(clexpr.get(key), false, tmp, prog));
 		}
 		else if( expr instanceof DataExpression ) {
 			DataExpression lexpr = (DataExpression) expr;
 			HashMap<String, Expression> clexpr = lexpr.getVarParams();
 			for( String key : clexpr.keySet() )
-				clexpr.put(key, rHoistFunctionCallsFromExpressions(clexpr.get(key), false, tmp));
+				clexpr.put(key, rHoistFunctionCallsFromExpressions(clexpr.get(key), false, tmp, prog));
 		}
 		else if( expr instanceof FunctionCallIdentifier ) {
 			FunctionCallIdentifier fexpr = (FunctionCallIdentifier) expr;
 			for( ParameterExpression pexpr : fexpr.getParamExprs() )
-				pexpr.setExpr(rHoistFunctionCallsFromExpressions(pexpr.getExpr(), false, tmp));
+				pexpr.setExpr(rHoistFunctionCallsFromExpressions(pexpr.getExpr(), false, tmp, prog));
 			if( !root ) { //core hoisting
 				String varname = StatementBlockRewriteRule.createCutVarName(true);
 				DataIdentifier di = new DataIdentifier(varname);
 				di.setDataType(fexpr.getDataType());
 				di.setValueType(fexpr.getValueType());
 				tmp.add(new AssignmentStatement(di, fexpr, di));
+				//add hoisted dml-bodied builtin function to program (if not already loaded)
+				if( Builtins.contains(fexpr.getName(), true, false)
+					&& !prog.containsFunctionStatementBlock(Builtins.getInternalFName(fexpr.getName(), DataType.SCALAR))
+					&& !prog.containsFunctionStatementBlock(Builtins.getInternalFName(fexpr.getName(), DataType.MATRIX))) {
+					Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
+						.loadAndParseBuiltinFunction(fexpr.getName(), fexpr.getNamespace());
+					for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
+						if( !prog.containsFunctionStatementBlock(fsb.getKey()) )
+							prog.addFunctionStatementBlock(fsb.getKey(), fsb.getValue());
+						fsb.getValue().setDMLProg(prog);
+					}
+				}
 				return di;
 			}
 		}
@@ -1058,61 +1075,46 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 						+ " can only be a string with one of following values: binary, text, mm, csv.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			String ft = formatTypeExpr.toString();
-			if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)){
-				s.getIdentifier().setFormatType(FormatType.BINARY);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)){
-				s.getIdentifier().setFormatType(FormatType.TEXT);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET)){
-				s.getIdentifier().setFormatType(FormatType.MM);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV)){
-				s.getIdentifier().setFormatType(FormatType.CSV);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_LIBSVM)){
-				s.getIdentifier().setFormatType(FormatType.LIBSVM);
-			} else{
+			try {
+				s.getIdentifier().setFileFormat(FileFormat.safeValueOf(ft));
+			}
+			catch(Exception ex) {
 				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
-						+ " can only be a string with one of following values: binary, text, mm, csv, libsvm; invalid format: '"+ft+"'.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+					+ " can only be a string with one of following values: binary, text, mm, csv, libsvm, jsonl;"
+					+ " invalid format: '"+ft+"'.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 		//case of unspecified format parameter, use default
 		else {
-			s.addExprParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FormatType.TEXT.toString(), s), true);
-			s.getIdentifier().setFormatType(FormatType.TEXT);
+			s.addExprParam(DataExpression.FORMAT_TYPE, new StringIdentifier(FileFormat.TEXT.toString(), s), true);
+			s.getIdentifier().setFileFormat(FileFormat.TEXT);
 		}
 	}
 
 	public void setStatementFormatType(AssignmentStatement s, boolean conditionalValidate)
 	{
-
 		if (!(s.getSource() instanceof DataExpression))
 			return;
 		DataExpression dataExpr = (DataExpression)s.getSource();
 
 		if (dataExpr.getVarParam(DataExpression.FORMAT_TYPE)!= null ){
-
 	 		Expression formatTypeExpr = dataExpr.getVarParam(DataExpression.FORMAT_TYPE);
 			if (!(formatTypeExpr instanceof StringIdentifier)){
 				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
-						+ " can only be a string with one of following values: binary, text", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
+					+ " can only be a string with one of following values: binary, text", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			String ft = formatTypeExpr.toString();
-			if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_BINARY)){
-				s.getTarget().setFormatType(FormatType.BINARY);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_TEXT)){
-				s.getTarget().setFormatType(FormatType.TEXT);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET)){
-				s.getTarget().setFormatType(FormatType.MM);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV)){
-				s.getTarget().setFormatType(FormatType.CSV);
-			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_LIBSVM)){
-				s.getTarget().setFormatType(FormatType.LIBSVM);
-			} else{
+			try {
+				s.getTarget().setFileFormat(FileFormat.safeValueOf(ft));
+			}
+			catch(Exception ex) {
 				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
-						+ " can only be a string with one of following values: binary, text, mm, csv, libsvm", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
+					+ " can only be a string with one of following values: binary, text, mm, csv, libsvm", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		} else {
 			dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
-					new StringIdentifier(FormatType.TEXT.toString(), dataExpr));
-			s.getTarget().setFormatType(FormatType.TEXT);
+				new StringIdentifier(FileFormat.TEXT.toString(), dataExpr));
+			s.getTarget().setFileFormat(FileFormat.TEXT);
 		}
 	}
 

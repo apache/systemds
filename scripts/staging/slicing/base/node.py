@@ -36,20 +36,18 @@ class Node:
     e_max_upper: float
     key: ""
 
-    def __init__(self, all_features, model, complete_x, loss, x_size, y_test, preds):
+    def __init__(self, complete_x, loss, x_size, y_test, preds):
         self.error = loss,
         self.parents = []
         self.attributes = []
         self.size = 0
         self.score = 0
-        self.model = model
         self.complete_x = complete_x
         self.loss = 0
         self.x_size = x_size
         self.preds = preds
         self.s_lower = 1
         self.y_test = y_test
-        self.all_features = all_features
         self.key = ''
 
     def calc_c_upper(self, w):
@@ -166,6 +164,30 @@ class Node:
 
     def check_bounds(self, top_k, x_size, alpha):
         return self.s_upper >= x_size / alpha and self.c_upper >= top_k.min_score
+
+    def update_bounds(self, s_upper, s_lower, e_upper, e_max_upper, w):
+        try:
+            minimized = min(s_upper, self.s_upper)
+            self.s_upper = minimized
+            minimized = min(s_lower, self.s_lower)
+            self.s_lower = minimized
+            minimized = min(e_upper, self.e_upper)
+            self.e_upper = minimized
+            minimized = min(e_max_upper, self.e_max_upper)
+            self.e_max_upper = minimized
+            c_upper = self.calc_c_upper(w)
+            minimized = min(c_upper, self.c_upper)
+            self.c_upper = minimized
+        except AttributeError:
+            # initial bounds calculation
+            self.s_upper = s_upper
+            self.s_lower = s_lower
+            self.e_upper = e_upper
+            self.e_max_upper = e_max_upper
+            c_upper = self.calc_c_upper(w)
+            self.c_upper = c_upper
+        minimized = min(c_upper, self.c_upper)
+        self.c_upper = minimized
 
     def print_debug(self, topk, level):
         print("new node has been created: " + self.make_name() + "\n")

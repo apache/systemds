@@ -19,10 +19,39 @@
 
 package org.apache.sysds.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.SparkSession.Builder;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.io.FrameReaderFactory;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.ParameterBuilder;
+import org.apache.sysds.utils.Statistics;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,38 +62,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.SparkSession.Builder;
-import org.apache.wink.json4j.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.FrameReader;
-import org.apache.sysds.runtime.io.FrameReaderFactory;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
-import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.runtime.util.HDFSTool;
-import org.apache.sysds.utils.ParameterBuilder;
-import org.apache.sysds.utils.Statistics;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * <p>
@@ -114,6 +115,23 @@ public abstract class AutomatedTestBase {
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemDS-config.xml");
 
+	protected enum CodegenTestType {
+		DEFAULT, FUSE_ALL, FUSE_NO_REDUNDANCY;
+		
+		public String getCodgenConfig() {
+			switch(this) {
+				case DEFAULT:
+					return "SystemDS-config-codegen.xml";
+				case FUSE_ALL:
+					return "SystemDS-config-codegen-fuse-all.xml";
+				case FUSE_NO_REDUNDANCY:
+					return "SystemDS-config-codegen-fuse-no-redundancy.xml";
+				default: 
+					throw new RuntimeException("Unsupported codegen test config: "+this.name());
+			}
+		}
+	}
+	
 	/**
 	 * Location under which we create local temporary directories for test cases. To adjust where testTemp is located,
 	 * use -Dsystemds.testTemp.root.dir=<new location>. This is necessary if any parent directories are
@@ -287,6 +305,13 @@ public abstract class AutomatedTestBase {
 		return CONFIG_TEMPLATE_FILE;
 	}
 
+	protected File getCodegenConfigFile(String parent, CodegenTestType type) {
+		// Instrumentation in this test's output log to show custom configuration file used for template.
+		File tmp = new File(parent, type.getCodgenConfig());
+		System.out.println("This test case overrides default configuration with " + tmp.getPath());
+		return tmp;
+	}
+	
 	protected ExecMode setExecMode(ExecType instType) {
 		switch(instType) {
 			case SPARK: return setExecMode(ExecMode.SPARK);
@@ -439,17 +464,32 @@ public abstract class AutomatedTestBase {
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, long nnz, boolean bIncludeR) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length,
 			OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
-		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
+	}
+
+	protected double [][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
+	MatrixCharacteristics mc) {
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
+	}
+
+	protected double [][] writeInputMatrixWithMTD(String name, double[][] matrix, PrivacyConstraint privacyConstraint) {
+		return writeInputMatrixWithMTD(name, matrix, false, null, privacyConstraint);
+	}
+
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, PrivacyConstraint privacyConstraint) {
+		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length,
+			OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, privacyConstraint);
 	}
 
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
-		MatrixCharacteristics mc) {
+		MatrixCharacteristics mc, PrivacyConstraint privacyConstraint) {
 		writeInputMatrix(name, matrix, bIncludeR);
 
 		// write metadata file
 		try {
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, OutputInfo.stringToOutputInfo("textcell"));
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.TEXT, privacyConstraint);
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -524,7 +564,7 @@ public abstract class AutomatedTestBase {
 		writeInputBinaryMatrix(name, matrix, rowsInBlock, colsInBlock, sparseFormat);
 		// write metadata file
 		String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-		HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, OutputInfo.stringToOutputInfo("binaryblock"));
+		HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.BINARY);
 	}
 
 	/**
@@ -635,32 +675,32 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readDMLString(baseDirectory + OUTPUT_DIR + fileName + ".lineage");
 	}
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt) throws IOException {
 		// read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
-		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+		FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
 
 		MatrixCharacteristics md = readDMLMetaDataFile(fileName);
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md)
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt, MatrixCharacteristics md)
 		throws IOException {
 		// read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
-		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+		FrameReader reader = FrameReaderFactory.createFrameReader(fmt);
 
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
-	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md)
+	protected static FrameBlock readRFrameFromHDFS(String fileName, FileFormat fmt, MatrixCharacteristics md)
 		throws IOException {
 		// read frame data from hdfs
 		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
 
 		FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();
 		fprop.setHeader(true);
-		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo, fprop);
+		FrameReader reader = FrameReaderFactory.createFrameReader(fmt, fprop);
 
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
@@ -678,8 +718,7 @@ public abstract class AutomatedTestBase {
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
 		try {
-			String fname = baseDirectory + OUTPUT_DIR + fileName + ".mtd";
-			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
+			JSONObject meta = getMetaDataJSON(fileName);
 			long rlen = Long.parseLong(meta.get(DataExpression.READROWPARAM).toString());
 			long clen = Long.parseLong(meta.get(DataExpression.READCOLPARAM).toString());
 			return new MatrixCharacteristics(rlen, clen, -1, -1);
@@ -689,10 +728,23 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
+	public static JSONObject getMetaDataJSON(String fileName) {
+		return getMetaDataJSON(fileName, OUTPUT_DIR);
+	}
+
+	public static JSONObject getMetaDataJSON(String fileName, String outputDir) {
+		String fname = baseDirectory + outputDir + fileName + ".mtd";
+		return new DataExpression().readMetadataFile(fname, false);
+	}
+
+	public static String readDMLMetaDataValue(String fileName, String outputDir, String key) throws JSONException {
+			JSONObject meta = getMetaDataJSON(fileName, outputDir);
+			return meta.get(key).toString();
+	}
+
 	public static ValueType readDMLMetaDataValueType(String fileName) {
 		try {
-			String fname = baseDirectory + OUTPUT_DIR + fileName + ".mtd";
-			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
+			JSONObject meta = getMetaDataJSON(fileName);
 			return ValueType.fromExternalString(meta.get(DataExpression.VALUETYPEPARAM).toString());
 		}
 		catch(Exception ex) {
@@ -1282,6 +1334,19 @@ public abstract class AutomatedTestBase {
 			}
 		}
 	}
+	
+	/**
+	 * <p>
+	 * Compares the results of the computation of the frame with the expected ones.
+	 * </p>
+	 *
+	 * @param schema the frame schema
+	 */
+	protected void compareResults(ValueType[] schema) {
+		for (int i = 0; i < comparisonFiles.length; i++) {
+			TestUtils.compareDMLFrameWithJavaFrame(schema, comparisonFiles[i], outputDirectories[i]);
+		}
+	}
 
 
 	/**
@@ -1629,7 +1694,7 @@ public abstract class AutomatedTestBase {
 	 *            generates also the corresponding R frame data
 	 * @throws IOException
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) throws IOException {
+	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, FileFormat fmt) throws IOException {
 		String completePath = baseDirectory + INPUT_DIR + name;
 		String completeRPath = baseDirectory + INPUT_DIR + name + ".csv";
 
@@ -1640,31 +1705,31 @@ public abstract class AutomatedTestBase {
 			throw new RuntimeException(e);
 		}
 
-		TestUtils.writeTestFrame(completePath, data, schema, oi);
+		TestUtils.writeTestFrame(completePath, data, schema, fmt);
 		if (bIncludeR) {
-			TestUtils.writeTestFrame(completeRPath, data, schema, OutputInfo.CSVOutputInfo, true);
+			TestUtils.writeTestFrame(completeRPath, data, schema, FileFormat.CSV, true);
 			inputRFiles.add(completeRPath);
 		}
 		if (DEBUG)
-			TestUtils.writeTestFrame(DEBUG_TEMP_DIR + completePath, data, schema, oi);
+			TestUtils.writeTestFrame(DEBUG_TEMP_DIR + completePath, data, schema, fmt);
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 
 		return data;
 	}
 
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) throws IOException {
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, FileFormat fmt) throws IOException {
 		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
-		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, oi);
+		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, fmt);
 	}
 
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, OutputInfo oi) throws IOException {
-		writeInputFrame(name, data, bIncludeR, schema, oi);
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, FileFormat fmt) throws IOException {
+		writeInputFrame(name, data, bIncludeR, schema, fmt);
 
 		// write metadata file
 		try
 		{
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, null, schema, DataType.FRAME, mc, oi);
+			HDFSTool.writeMetaDataFile(completeMTDPath, null, schema, DataType.FRAME, mc, fmt);
 		}
 		catch(IOException e)
 		{
@@ -1688,10 +1753,10 @@ public abstract class AutomatedTestBase {
 	 * @param oi
 	 * @throws IOException
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, OutputInfo oi)
+	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, FileFormat fmt)
 			throws IOException
 	{
-		return writeInputFrame(name, data, false, schema, oi);
+		return writeInputFrame(name, data, false, schema, fmt);
 	}
 
 	protected boolean heavyHittersContainsString(String... str) {

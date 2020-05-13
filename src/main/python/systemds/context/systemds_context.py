@@ -30,7 +30,7 @@ import numpy as np
 from py4j.java_gateway import JavaGateway
 from py4j.protocol import Py4JNetworkError
 
-from systemds.matrix import full, seq, federated, Matrix, OperationNode
+from systemds.matrix import full, seq, federated, Matrix, rand, OperationNode
 from systemds.utils.helpers import get_module_dir
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -147,3 +147,31 @@ class SystemDSContext(object):
         :return: the OperationNode representing this operation
         """
         return seq(self, start, stop, step)
+
+    def rand(self, rows: int, cols: int, min: Union[float, int] = None,
+             max: Union[float, int] = None, pdf: str = "uniform",
+             sparsity: Union[float, int] = None, seed: Union[float, int] = None,
+             lambd: Union[float, int] = 1) -> OperationNode:
+        """Generates a matrix filled with random values
+
+        :param rows: number of rows
+        :param cols: number of cols
+        :param min: min value for cells
+        :param max: max value for cells
+        :param pdf: "uniform"/"normal"/"poison" distribution
+        :param sparsity: fraction of non-zero cells
+        :param seed: random seed
+        :param lambd: lamda value for "poison" distribution
+        :return:
+        """
+        available_pdfs = ["uniform", "normal", "poisson"]
+        if rows < 0:
+            raise ValueError("In rand statement, can only assign rows a long (integer) value >= 0 "
+                            "-- attempted to assign value: {r}".format(r=rows))
+        if cols < 0:
+            raise ValueError("In rand statement, can only assign cols a long (integer) value >= 0 "
+                            "-- attempted to assign value: {c}".format(c=cols))
+        if pdf not in available_pdfs:
+            raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(g=pdf, e=available_pdfs))
+
+        return rand(self, rows, cols, min, max, pdf, sparsity, seed, lambd)

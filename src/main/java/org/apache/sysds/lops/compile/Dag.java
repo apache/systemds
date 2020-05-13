@@ -26,7 +26,6 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.Lop;
@@ -46,7 +45,6 @@ import org.apache.sysds.runtime.instructions.SPInstructionParser;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
@@ -87,7 +85,7 @@ public class Dag<N extends Lop>
 	}
 
 	private static class NodeOutput {
-		OutputInfo outInfo;
+		FileFormat outInfo;
 		ArrayList<Instruction> preInstructions; // instructions added before a MR instruction
 		ArrayList<Instruction> lastInstructions;
 		
@@ -97,10 +95,10 @@ public class Dag<N extends Lop>
 			lastInstructions = new ArrayList<>();
 		}
 		
-		public OutputInfo getOutInfo() {
+		public FileFormat getOutInfo() {
 			return outInfo;
 		}
-		public void setOutInfo(OutputInfo outInfo) {
+		public void setOutInfo(FileFormat outInfo) {
 			this.outInfo = outInfo;
 		}
 		public ArrayList<Instruction> getPreInstructions() {
@@ -352,6 +350,9 @@ public class Dag<N extends Lop>
 						String inst_string = n.getInstructions();
 						CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(inst_string);
 						currInstr.setLocation(n);
+						// TODO find a more direct way of communicating the privacy constraints
+						// (visible to runtime explain); This change should apply to all occurrences.
+						currInstr.setPrivacyConstraint(n);
 						insts.add(currInstr);
 					} catch (DMLRuntimeException e) {
 						throw new LopsException(n.printErrorLocation() + "error generating instructions from input variables in Dag -- \n", e);
@@ -406,7 +407,10 @@ public class Dag<N extends Lop>
 			if (locationInfo != null)
 				currInstr.setLocation(locationInfo);
 			else
+			{
 				currInstr.setLocation(node);
+				currInstr.setPrivacyConstraint(node);
+			}
 			
 			inst.add(currInstr);
 			excludeRemoveInstruction(label, deleteInst);
@@ -593,12 +597,21 @@ public class Dag<N extends Lop>
 						 throw new LopsException("Error parsing the instruction:" + inst_string);
 					}
 					if (node._beginLine != 0)
+					{
 						currInstr.setLocation(node);
+						currInstr.setPrivacyConstraint(node);
+					}
 					else if ( !node.getOutputs().isEmpty() )
+					{
 						currInstr.setLocation(node.getOutputs().get(0));
+						currInstr.setPrivacyConstraint(node.getOutputs().get(0));
+					}
 					else if ( !node.getInputs().isEmpty() )
+					{
 						currInstr.setLocation(node.getInputs().get(0));
-						
+						currInstr.setPrivacyConstraint(node.getInputs().get(0));
+					}
+					
 					inst.add(currInstr);
 				} catch (Exception e) {
 					throw new LopsException(node.printErrorLocation() + "Problem generating simple inst - "
@@ -690,52 +703,14 @@ public class Dag<N extends Lop>
 	 * @param cellModeOverride override mode
 	 * @return output info
 	 */
-	private static OutputInfo getOutputInfo(Lop node, boolean cellModeOverride)
+	private static FileFormat getOutputFileFormat(Lop node, boolean cellModeOverride)
 	{
 		if ( (node.getDataType() == DataType.SCALAR && node.getExecType() == ExecType.CP) 
 				|| node instanceof FunctionCallCP )
 			return null;
 	
-		OutputInfo oinfo = null;
 		OutputParameters oparams = node.getOutputParameters();
-		
-		if (oparams.isBlocked()) {
-			if ( !cellModeOverride )
-				oinfo = OutputInfo.BinaryBlockOutputInfo;
-			else {
-				// output format is overridden, for example, due to recordReaderInstructions in the job
-				oinfo = OutputInfo.BinaryCellOutputInfo;
-				
-				// record decision of overriding in lop's outputParameters so that 
-				// subsequent jobs that use this lop's output know the correct format.
-				// TODO: ideally, this should be done by having a member variable in Lop 
-				//       which stores the outputInfo.   
-				try {
-					oparams.setDimensions(oparams.getNumRows(), oparams.getNumCols(), -1, oparams.getNnz(), oparams.getUpdateType());
-				} catch(HopsException e) {
-					throw new LopsException(node.printErrorLocation() + "error in getOutputInfo in Dag ", e);
-				}
-			}
-		} else {
-			if (oparams.getFormat() == FileFormat.TEXT || oparams.getFormat() == FileFormat.MM)
-				oinfo = OutputInfo.TextCellOutputInfo;
-			else if ( oparams.getFormat() == FileFormat.CSV ) {
-				oinfo = OutputInfo.CSVOutputInfo;
-			}
-			else {
-				oinfo = OutputInfo.BinaryCellOutputInfo;
-			}
-		}
-
-		if (node.getType() == Type.CentralMoment
-				|| node.getType() == Type.CoVariance )  
-		{
-			// CMMR always operate in "cell mode",
-			// and the output is always in cell format
-			oinfo = OutputInfo.BinaryCellOutputInfo;
-		}
-
-		return oinfo;
+		return oparams.getFormat();
 	}
 	
 	private static String prepareAssignVarInstruction(Lop input, Lop node) {
@@ -772,7 +747,7 @@ public class Dag<N extends Lop>
 		node.setConsumerCount(node.getOutputs().size());
 		
 		// Compute the output format for this node
-		out.setOutInfo(getOutputInfo(node, cellModeOverride));
+		out.setOutInfo(getOutputFileFormat(node, cellModeOverride));
 		
 		// If node is NOT of type Data then we must generate
 		// a variable to hold the value produced by this node
@@ -785,6 +760,7 @@ public class Dag<N extends Lop>
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
 				
 				currInstr.setLocation(node);
+				currInstr.setPrivacyConstraint(node);
 				
 				out.addLastInstruction(currInstr);
 			}
@@ -801,11 +777,12 @@ public class Dag<N extends Lop>
 				int blen = (int) oparams.getBlocksize();
 				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 					oparams.getLabel(), oparams.getFile_name(), true, node.getDataType(),
-					OutputInfo.outputInfoToString(getOutputInfo(node, false)),
+					getOutputFileFormat(node, false).toString(),
 					new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), blen, oparams.getNnz()),
 					oparams.getUpdateType());
 				
 				createvarInst.setLocation(node);
+				createvarInst.setPrivacyConstraint(node);
 				
 				out.addPreInstruction(createvarInst);
 
@@ -813,6 +790,7 @@ public class Dag<N extends Lop>
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
 				
 				currInstr.setLocation(node);
+				currInstr.setPrivacyConstraint(node);
 				
 				out.addLastInstruction(currInstr);
 			}
@@ -827,15 +805,18 @@ public class Dag<N extends Lop>
 						//OutputInfo oinfo = getOutputInfo((N)fnOut, false);
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 							fnOutParams.getLabel(), getFilePath() + fnOutParams.getLabel(), 
-							true, fnOut.getDataType(),
-							OutputInfo.outputInfoToString(getOutputInfo(fnOut, false)),
+							true, fnOut.getDataType(), getOutputFileFormat(fnOut, false).toString(),
 							new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)fnOutParams.getBlocksize(), fnOutParams.getNnz()),
 							oparams.getUpdateType());
 						
-						if (node._beginLine != 0)
+						if (node._beginLine != 0){
 							createvarInst.setLocation(node);
-						else
+							createvarInst.setPrivacyConstraint(node);
+						}
+						else {
 							createvarInst.setLocation(fnOut);
+							createvarInst.setPrivacyConstraint(fnOut);
+						}
 						
 						out.addPreInstruction(createvarInst);
 					}
@@ -933,8 +914,7 @@ public class Dag<N extends Lop>
 						
 						int blen = (int) oparams.getBlocksize();
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
-							tempVarName, tempFileName, true, node.getDataType(),
-							OutputInfo.outputInfoToString(out.getOutInfo()), 
+							tempVarName, tempFileName, true, node.getDataType(), out.getOutInfo().toString(), 
 							new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), blen, oparams.getNnz()),
 							oparams.getUpdateType());
 						
@@ -985,8 +965,10 @@ public class Dag<N extends Lop>
 						Instruction currInstr = (node.getExecType() == ExecType.SPARK) ?
 							SPInstructionParser.parseSingleInstruction(io_inst) :
 							CPInstructionParser.parseSingleInstruction(io_inst);
-						currInstr.setLocation((!node.getInputs().isEmpty() 
-							&& node.getInputs().get(0)._beginLine != 0) ? node.getInputs().get(0) : node);
+						Lop useNode = (!node.getInputs().isEmpty() 
+						&& node.getInputs().get(0)._beginLine != 0) ? node.getInputs().get(0) : node; 
+						currInstr.setLocation(useNode);
+						currInstr.setPrivacyConstraint(useNode);
 						
 						out.addLastInstruction(currInstr);
 					}

@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageCache;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.Statistics;
 
@@ -57,7 +58,11 @@ public abstract class ProgramBlock implements ParseInfo
 	private static final boolean CHECK_MATRIX_SPARSITY = false;
 
 	protected Program _prog; // pointer to Program this ProgramBlock is part of
-
+	
+	//optional exit instructions, necessary for proper cleanup in while/for/if
+	//in case a variable needs to be removed (via rmvar) after the control block
+	protected Instruction _exitInstruction = null; //single packed rmvar
+	
 	//additional attributes for recompile
 	protected StatementBlock _sb = null;
 	protected long _tid = 0; //by default _t0
@@ -102,6 +107,13 @@ public abstract class ProgramBlock implements ParseInfo
 		return _tid;
 	}
 	
+	public void setExitInstruction(Instruction rmVar) {
+		_exitInstruction = rmVar;
+	}
+	
+	public Instruction getExitInstruction() {
+		return _exitInstruction;
+	}
 	
 	/**
 	 * Get the list of child program blocks if nested;
@@ -170,6 +182,20 @@ public abstract class ProgramBlock implements ParseInfo
 		return executePredicateInstructions(tmp, retType, ec);
 	}
 
+	protected void executeExitInstructions(Instruction inst, String ctx, ExecutionContext ec) {
+		try {
+			if( _exitInstruction != null )
+				executeSingleInstruction(_exitInstruction, ec);
+		}
+		catch(DMLScriptException e) {
+			throw e;
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException(printBlockErrorLocation() 
+				+ "Error evaluating "+ctx+" exit instructions ", e);
+		}
+	}
+	
 	protected void executeInstructions(ArrayList<Instruction> inst, ExecutionContext ec) {
 		for (int i = 0; i < inst.size(); i++) {
 			//indexed access required due to dynamic add
@@ -217,10 +243,11 @@ public abstract class ProgramBlock implements ParseInfo
 			// try to reuse instruction result from lineage cache
 			if( !LineageCache.reuse(tmp, ec) ) {
 				// process actual instruction
+				long et0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 				tmp.processInstruction(ec);
 				
 				// cache result
-				LineageCache.putValue(tmp, ec);
+				LineageCache.putValue(tmp, ec, System.nanoTime()-et0);
 				
 				// post-process instruction (debug)
 				tmp.postprocessInstruction( ec );

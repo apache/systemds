@@ -57,7 +57,7 @@ jobs:
           ${{ runner.os }}-maven-
   
     - name: Maven clean & package
-      run: mvn clean package
+      run: mvn clean package -P distribution
 
     - name: Setup Python
       uses: actions/setup-python@v1
@@ -74,7 +74,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel
+      run: pip install numpy py4j wheel scipy sklearn
 
     - name: Build Python Package
       run: |
@@ -86,16 +86,14 @@ jobs:
         cd src/main/python
         ls tests/
         echo "Beginning tests"
-        python tests/test_matrix_binary_op.py
+        python -m unittest tests/*.py
         echo "Exit Status: " $?
-        sleep 3
-        python tests/test_matrix_aggregations.py
-        echo "Exit Status: " $?
-        sleep 3
-        python tests/test_l2svm.py
-        echo "Exit Status: " $?
-        python tests/test_lineagetrace.py
-        sleep 3
-        echo "Exit Status: " $?
-        python tests/test_l2svm_lineage.py
+
+    - name: Run all lineage python tests
+      run: |
+        export SYSTEMDS_ROOT=$(pwd)
+        export PATH=$SYSTEMDS_ROOT/bin:$PATH
+        export SYSDS_QUIET=1
+        cd src/main/python
+        python -m unittest tests/lineage/*.py
         echo "Exit Status: " $?

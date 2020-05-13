@@ -25,6 +25,8 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -32,10 +34,9 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.instructions.spark.functions.CopyMatrixBlockPairFunction;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
+import org.apache.sysds.runtime.io.InputOutputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -89,12 +90,9 @@ public class ResultMergeRemoteSpark extends ResultMerge
 				
 				//create new output matrix (e.g., to prevent potential export<->read file access conflict
 				moNew = new MatrixObject(_output.getValueType(), _outputFName);
-				OutputInfo oiOld = metadata.getOutputInfo();
-				InputInfo iiOld = metadata.getInputInfo();
 				DataCharacteristics mc = new MatrixCharacteristics(mcOld);
 				mc.setNonZeros(_isAccum ? -1 : computeNonZeros(_output, Arrays.asList(_inputs)));
-				MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
-				moNew.setMetaData( meta );
+				moNew.setMetaData(new MetaDataFormat(mc, metadata.getFileFormat()));
 				moNew.setRDDHandle( ro );
 			}
 			else {
@@ -133,7 +131,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			
 			//Step 1: construct input rdd from all result files of parfor workers
 			//a) construct job conf with all files
-			InputInfo ii = InputInfo.BinaryBlockInputInfo;
+			InputOutputInfo ii = InputOutputInfo.get(DataType.MATRIX, FileFormat.BINARY);
 			JobConf job = new JobConf( "test" );
 			job.setJobName(jobname);
 			job.setInputFormat(ii.inputFormatClass);
@@ -150,14 +148,14 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			
 			//b) create rdd from input files w/ deep copy of keys and blocks
 			JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = sec.getSparkContext()
-					.hadoopRDD(job, ii.inputFormatClass, ii.inputKeyClass, ii.inputValueClass)
+					.hadoopRDD(job, ii.inputFormatClass, ii.keyClass, ii.valueClass)
 					.mapPartitionsToPair(new CopyMatrixBlockPairFunction(true), true);
 			
 			//Step 2a: merge with compare
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
 			if( withCompare ) {
 				JavaPairRDD<MatrixIndexes, MatrixBlock> compareRdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) 
-						sec.getRDDHandleForMatrixObject(compare, InputInfo.BinaryBlockInputInfo);
+						sec.getRDDHandleForMatrixObject(compare, FileFormat.BINARY);
 				
 				//merge values which differ from compare values
 				ResultMergeRemoteSparkWCompare cfun = new ResultMergeRemoteSparkWCompare(_isAccum);
@@ -202,9 +200,9 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	
 	@SuppressWarnings({ "unchecked", "cast" })
 	private static void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
-		InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+		InputOutputInfo iinfo = InputOutputInfo.get(DataType.MATRIX, FileFormat.BINARY);
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) sec.getSparkContext().hadoopFile(
-			mo.getFileName(), iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+			mo.getFileName(), iinfo.inputFormatClass, iinfo.keyClass, iinfo.valueClass);
 		RDDObject rddhandle = new RDDObject(rdd);
 		rddhandle.setHDFSFile(true);
 		mo.setRDDHandle(rddhandle);

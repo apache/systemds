@@ -22,14 +22,13 @@ package org.apache.sysds.test.component.frame;
 import java.lang.reflect.Method;
 
 import org.junit.Test;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -41,7 +40,7 @@ public class FrameEvictionTest extends AutomatedTestBase
 {
 	private final static int rows = 1593;
 	private final static double sparsity1 = 0.9;
-	private final static double sparsity2 = 0.1;		
+	private final static double sparsity2 = 0.1;
 	
 	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.FP64, ValueType.FP64, ValueType.FP64};	
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
@@ -203,8 +202,7 @@ public class FrameEvictionTest extends AutomatedTestBase
 			
 			//create frame object
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, schema.length, -1, -1);
-			MetaDataFormat meta = new MetaDataFormat (mc, 
-					OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+			MetaDataFormat meta = new MetaDataFormat (mc, FileFormat.BINARY);
 			FrameObject fo = new FrameObject("fA",  meta, schema);
 			fo.acquireModify(fA);
 			fo.release();

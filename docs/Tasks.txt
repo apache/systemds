@@ -34,6 +34,7 @@ SYSTEMDS-30 Builtin and Packaging
  * 35 Replace unnecessary dependencies w/ custom
  * 36 Shell script for AWS execution                                  OK
  * 37 Cleanup mvn package, compile, test                              OK
+ * 38 Runscript rename, improve, fix cygwin                           OK
 
 SYSTEMDS-40 Preprocessing builtins
  * 41 Add new winsorize builtin function                              OK
@@ -50,6 +51,9 @@ SYSTEMDS-50 I/O Formats
  * 52 Support for libsvm files (local/distributed)
  * 53 New sql data source (local, distributed)                        
  * 54 Support for is.na, is.nan, is.infinite                          OK
+ * 55 Cleanup file formats, binary cell, input/output infos           OK
+ * 56 Consolidate single/multi-threaded readers
+ * 57 Support for hdf5 files (local/distributed)
 
 SYSTEMDS-60 Update SystemML improvements
  * 61 Take over cumulative aggregate improvements                     OK
@@ -165,6 +169,8 @@ SYSTEMDS-200 Various Fixes
  * 204 Fix rewrite simplify sequences of binary comparisons           OK
  * 205 Fix scoping of builtin dml-bodied functions (vs user-defined)
  * 206 Fix codegen outer template compilation (tsmm)                  OK
+ * 207 Fix builtin function call hoisting from expressions            OK
+ * 208 Fix bufferpool leak (live var analysis and createvar)          OK
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK
@@ -176,13 +182,14 @@ SYSTEMDS-210 Extended lists Operations
 
 SYSTEMDS-220 Federated Tensors and Instructions
  * 221 Initial infrastructure federated operations                    OK
- * 222 Federated matrix-vector multiplication
+ * 222 Federated matrix-vector multiplication                         OK
  * 223 Federated unary aggregates                                     OK
- * 224 Federated transform functionality
+ * 224 Federated frames                                               OK
  * 225 Federated elementwise operations                               OK
  * 226 Federated rbind and cbind                                      OK
  * 227 Federated worker setup and infrastructure                      OK
  * 228 Federated matrix-matrix multiplication                         OK
+ * 229 Federated transform functionality
 
 SYSTEMDS-230 Lineage Integration
  * 231 Use lineage in buffer pool
@@ -200,7 +207,8 @@ SYSTEMDS-240 GPU Backend Improvements
 
 SYSTEMDS-250 Extended Slice Finding
  * 251 Alternative slice enumeration approach                         OK
- * 252 Initial data slicing implementation Python
+ * 252 Initial data slicing implementation Python                     OK
+ * 253 Distributed slicing algorithms (task/data parallel)            OK
 
 SYSTEMDS-260 Misc Tools
  * 261 Stable marriage algorithm                                      OK
@@ -210,6 +218,19 @@ SYSTEMDS-260 Misc Tools
 SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK
  * 272 Simplify and speedup compression tests                         OK
+ * 273 Refactor compressed Matrix Block to simplify responsibilities  OK
+ * 273a Redesign allocation of ColGroups in ColGroupFactory
+ * 274 Make the DDC Compression dictionary share correctly
+ * 275 Include compressionSettings in DMLConfiguration
+ * 276 Allow Uncompressed Columns to be in sparse formats
+ * 277 Sampling based estimators fix
+ * 278 Compression-CoCode algorithm optimization
+ * 278a Return ColGroups estimated compression ratio to Factory
+ * 279 Add missing standard lossless compression techniques
+ * 279a ColGroup FOR (Frame of reference) encoding
+ * 279b ColGroup DEL (Delta) encoding
+ * MINOR Reduce memory usage for compression statistics.
+ * MINOR Make ContainsAZero() method in UncompressedBitMap
 
 SYSTEMDS-280 New Rewrites
  * 281 New rewrites sum(rmEmpty), sum(table)                          OK
@@ -233,6 +254,8 @@ SYSTEMDS-310 Python Bindings
  * 312 Python 3.6 compatibility                                       OK
  * 313 Python Documentation upload via Github Actions                 OK
  * 314 Python SystemDS context manager                                OK
+ * 315 Python Federated Matrices Tests                                OK
+ * 316 Extended Python API (rand, lm, mm)                             OK
 
 SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
  * 321 Merge histories of SystemDS and SystemML                       OK
@@ -242,7 +265,12 @@ SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
 SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 331 Cache and reuse scalar outputs (instruction and multi-level)   OK
  * 332 Parfor integration with multi-level reuse                      OK
- * 333 Use exact execution time for cost based eviction
+ * 333 Improve cache eviction with actual compute time                OK
+ * 334 Cache scalars only with atleast one matrix inputs
+ * 335 Weighted eviction policy (function of size & computetime)      OK
+ * 336 Better use of cache status to handle multithreading
+ * 337 Adjust disk I/O speed by recording actual time taken           OK
+ * 338 Extended lineage tracing (rmEmpty, lists), partial rewrites    OK
  
 SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations
@@ -253,6 +281,24 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
 
 SYSTEMDS-350 Data Cleaning Framework
  * 351 New builtin function for error correction by schema            OK
+
+SYSTEMDS-360 Privacy/Data Exchange Constraints
+ * 361 Initial privacy meta data (compiler/runtime)                   OK
+ * 362 Runtime privacy propagation
+ * 363 Compile-time privacy propagation
+ * 364 Error handling violated privacy constraints
+ * 365 Extended privacy/data exchange constraints
+
+SYSTEMDS-370 Lossy Compression Blocks
+ * 361 ColGroup Quantization
+ * 362 ColGroup Base Data change (from Double to ??)
+
+SYSTEMDS-380 Memory Footprint
+ * 371 Matrix Block Memory footprint update
+
+SYSTEMDS-390 New Builtin Functions IV
+ * 391 New GLM builtin function (from algorithms)                     OK
+ * 392 Builtin function for missing value imputation via FDs          OK
 
 Others:
  * Break append instruction to cbind and rbind 

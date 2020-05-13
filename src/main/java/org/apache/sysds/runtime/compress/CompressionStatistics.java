@@ -19,25 +19,113 @@
 
 package org.apache.sysds.runtime.compress;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+
 public class CompressionStatistics {
-	public double timePhase1 = -1;
-	public double timePhase2 = -1;
-	public double timePhase3 = -1;
-	public double timePhase4 = -1;
-	public double timePhase5 = -1;
-	public double estSize = -1;
-	public double size = -1;
-	public double ratio = -1;
+
+	private ArrayList<Double> timePhases = new ArrayList<>();
+	public double ratio;
+	public long originalSize;
+	public long estimatedSizeColGroups;
+	public long estimatedSizeCols;
+	public long size;
+
+	private Map<CompressionType, int[]> colGroupCounts;
 
 	public CompressionStatistics() {
-		// do nothing
 	}
 
-	public CompressionStatistics(double t1, double t2, double t3, double t4, double t5) {
-		timePhase1 = t1;
-		timePhase2 = t2;
-		timePhase3 = t3;
-		timePhase4 = t4;
-		timePhase5 = t5;
+	public void setNextTimePhase(double time) {
+		timePhases.add(time);
+	}
+
+	public double getLastTimePhase() {
+		return timePhases.get(timePhases.size() - 1);
+	}
+
+	/**
+	 * Set array of counts regarding col group types. 
+	 * 
+	 * The position corresponds with the enum ordinal.
+	 * 
+	 * @param colGroups list of ColGroups used in compression.
+	 */
+	public void setColGroupsCounts(List<ColGroup> colGroups) {
+		HashMap<CompressionType, int[]> ret = new HashMap<>();
+		for(ColGroup c : colGroups) {
+			CompressionType ct = c.getCompType();
+			int colCount = c.getNumCols();
+			int[] values;
+			if(ret.containsKey(ct)) {
+				values = ret.get(ct);
+				values[0] += 1;
+				values[1] += colCount;
+			}
+			else {
+				values = new int[] {1, colCount};
+			}
+			ret.put(ct, values);
+		}
+		this.colGroupCounts = ret;
+	}
+
+	public Map<CompressionType, int[]> getColGroups() {
+		return colGroupCounts;
+	}
+
+	public ArrayList<Double> getTimeArrayList() {
+		return timePhases;
+	}
+
+	public String getGroupsTypesString() {
+		StringBuilder sb = new StringBuilder();
+
+		for(CompressionType ctKey : colGroupCounts.keySet()) {
+			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[0] + " ");
+		}
+		return sb.toString();
+	}
+
+	public String getGroupsSizesString() {
+		StringBuilder sb = new StringBuilder();
+		for(CompressionType ctKey : colGroupCounts.keySet()) {
+
+			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[1] + " ");
+		}
+		return sb.toString();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Compression Statistics:\n");
+		sb.append("\t" + getGroupsTypesString() + "\n");
+		sb.append("\t" + getGroupsSizesString() + "\n");
+		return sb.toString();
+	}
+
+	public static long getSizeInMemory() {
+		long total = 16; // header
+		total += 8; // compression ratio
+		total += 8; // original size
+		total += 8; // estimated size col groups
+		total += 8; // estimated size cols
+		total += 8; // actual size
+
+		total += 8; // Array list Time phases
+		total += 8; // Map colGroup Counts
+
+		// TODO what happens if we scale number of col Groups...
+		// TODO Reduce memory usage for compression statistics.
+		total += 64; // HashMap col Groups.
+		total += 40; // ArrayList time phases
+
+		return total;
 	}
 }

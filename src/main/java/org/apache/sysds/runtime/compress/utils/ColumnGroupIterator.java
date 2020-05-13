@@ -19,10 +19,10 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
-import org.apache.sysds.runtime.compress.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.matrix.data.IJV;
 
 public class ColumnGroupIterator implements Iterator<IJV> {
@@ -36,9 +36,9 @@ public class ColumnGroupIterator implements Iterator<IJV> {
 	private int _posColGroup = -1;
 	private Iterator<IJV> _iterColGroup = null;
 	private boolean _noNext = false;
-	private ArrayList<ColGroup> _colGroups;
+	private List<ColGroup> _colGroups;
 
-	public ColumnGroupIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros, ArrayList<ColGroup> colGroups) {
+	public ColumnGroupIterator(int rl, int ru, int cgl, int cgu, boolean inclZeros, List<ColGroup> colGroups) {
 		_rl = rl;
 		_ru = ru;
 		_cgu = cgu;

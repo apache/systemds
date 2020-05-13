@@ -36,7 +36,9 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -49,15 +51,14 @@ import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
+import org.apache.sysds.runtime.io.InputOutputInfo;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -208,34 +209,34 @@ public class FrameConverterTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, schema.length, -10, 10, 0.9, 2373); 
 			
 			//prepare input/output infos
-			OutputInfo oinfo = null;
-			InputInfo iinfo = null;
+			FileFormat oinfo = null;
+			FileFormat iinfo = null;
 			switch( type ) {
 				case CSV2BIN:
 				case DFRM2BIN:
-					oinfo = OutputInfo.CSVOutputInfo;
-					iinfo = InputInfo.BinaryBlockInputInfo;
+					oinfo = FileFormat.CSV;
+					iinfo = FileFormat.BINARY;
 					break;
 				case BIN2CSV:
-					oinfo = OutputInfo.BinaryBlockOutputInfo;
-					iinfo = InputInfo.CSVInputInfo;
+					oinfo = FileFormat.BINARY;
+					iinfo = FileFormat.CSV;
 					break;
 				case TXTCELL2BIN:
-					oinfo = OutputInfo.TextCellOutputInfo;
-					iinfo = InputInfo.BinaryBlockInputInfo;
+					oinfo = FileFormat.TEXT;
+					iinfo = FileFormat.BINARY;
 					break;
 				case BIN2TXTCELL:
-					oinfo = OutputInfo.BinaryBlockOutputInfo;
-					iinfo = InputInfo.TextCellInputInfo;
+					oinfo = FileFormat.BINARY;
+					iinfo = FileFormat.TEXT;
 					break;
 				case MAT2BIN: 
 				case BIN2DFRM:
-					oinfo = OutputInfo.BinaryBlockOutputInfo;
-					iinfo = InputInfo.BinaryBlockInputInfo;
+					oinfo = FileFormat.BINARY;
+					iinfo = FileFormat.BINARY;
 					break;
 				case BIN2MAT:
-					oinfo = OutputInfo.BinaryBlockOutputInfo;
-					iinfo = InputInfo.BinaryBlockInputInfo;
+					oinfo = FileFormat.BINARY;
+					iinfo = FileFormat.BINARY;
 					break;
 				default: 
 					throw new RuntimeException("Unsuported converter type: "+type.toString());
@@ -259,7 +260,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 	}
 	
-	private void runConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
+	private void runConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, FileFormat iinfo, FileFormat oinfo )
 		throws IOException
 	{
 		try
@@ -293,7 +294,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 	}
 	
-	private void runMatrixConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
+	private void runMatrixConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, FileFormat iinfo, FileFormat oinfo )
 		throws IOException
 	{
 		try
@@ -401,10 +402,10 @@ public class FrameConverterTest extends AutomatedTestBase
 		
 		switch( type ) {
 			case CSV2BIN: {
-				InputInfo iinfo = InputInfo.CSVInputInfo;
-				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				InputOutputInfo iinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.CSV);
+				InputOutputInfo oinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 				JavaPairRDD<LongWritable,Text> rddIn = (JavaPairRDD<LongWritable,Text>) sc
-					.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+					.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.keyClass, iinfo.valueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.csvToBinaryBlock(sc, rddIn, mc, null, false, separator, false, 0)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
@@ -412,7 +413,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				break;
 			}
 			case BIN2CSV: {
-				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+				InputOutputInfo iinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
 				JavaPairRDD<Long, FrameBlock> rddIn2 = rddIn.mapToPair(new CopyFrameBlockPairFunction(false));
 				FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();
@@ -421,10 +422,10 @@ public class FrameConverterTest extends AutomatedTestBase
 				break;
 			}
 			case TXTCELL2BIN: {
-				InputInfo iinfo = InputInfo.TextCellInputInfo;
-				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				InputOutputInfo iinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.TEXT);
+				InputOutputInfo oinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 				JavaPairRDD<LongWritable,Text> rddIn = (JavaPairRDD<LongWritable,Text>)
-					sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+					sc.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.keyClass, iinfo.valueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
 						.textCellToBinaryBlock(sc, rddIn, mc, lschema)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
@@ -432,7 +433,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				break;
 			}
 			case BIN2TXTCELL: {
-				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
+				InputOutputInfo iinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
 				JavaPairRDD<Long, FrameBlock> rddIn2 = rddIn.mapToPair(new CopyFrameBlockPairFunction(false));
 				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToTextCell(rddIn2, mc);
@@ -440,17 +441,17 @@ public class FrameConverterTest extends AutomatedTestBase
 				break;
 			}
 			case MAT2BIN: {
-				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
-				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				InputOutputInfo iinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
+				InputOutputInfo oinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 				JavaPairRDD<MatrixIndexes,MatrixBlock> rddIn = (JavaPairRDD<MatrixIndexes,MatrixBlock>) sc
-					.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.inputKeyClass, iinfo.inputValueClass);
+					.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.keyClass, iinfo.valueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils.matrixBlockToBinaryBlock(sc, rddIn, mcMatrix);
 				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 				break;
 			}
 			case BIN2MAT: {
-				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
-				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				InputOutputInfo iinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
+				InputOutputInfo oinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 				JavaPairRDD<Long, FrameBlock> rddIn = sc
 						.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class)
 						.mapToPair(new LongWritableFrameToLongFrameFunction());
@@ -459,7 +460,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				break;
 			}
 			case DFRM2BIN: {
-				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				InputOutputInfo oinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 
 				//Create DataFrame 
 				SparkSession sparkSession = SparkSession.builder().sparkContext(sc.sc()).getOrCreate();
@@ -474,8 +475,8 @@ public class FrameConverterTest extends AutomatedTestBase
 				break;
 			}
 			case BIN2DFRM: {
-				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
-				OutputInfo oinfo = OutputInfo.BinaryBlockOutputInfo;
+				InputOutputInfo iinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
+				InputOutputInfo oinfo = InputOutputInfo.get(DataType.FRAME, FileFormat.BINARY);
 				JavaPairRDD<Long, FrameBlock> rddIn = sc
 						.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class)
 				 		.mapToPair(new LongWritableFrameToLongFrameFunction());

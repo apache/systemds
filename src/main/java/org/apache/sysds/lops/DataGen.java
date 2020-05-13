@@ -127,8 +127,8 @@ public class DataGen extends Lop
 		//sanity checks
 		if ( _op != OpOpDG.RAND )
 			throw new LopsException("Invalid instruction generation for data generation method " + _op);
-		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length - 2 && // tensor
-				getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length - 1 ) { // matrix
+		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.size() - 2 && // tensor
+				getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.size() - 1 ) { // matrix
 			throw new LopsException(printErrorLocation() + "Invalid number of operands (" 
 				+ getInputs().size() + ") for a Rand operation");
 		}

@@ -21,14 +21,13 @@ package org.apache.sysds.test.functions.frame;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -119,7 +118,7 @@ public class FrameIsCorrectTypeTest extends AutomatedTestBase
 			programArgs = new String[] {"-args", input("A"), input("M"),
 				String.valueOf(rows), Integer.toString(cols), output("B")};
 			FrameBlock frame1 = new FrameBlock(schema);
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.CSVOutputInfo);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
 			FrameBlock frame2 = new FrameBlock(UtilFunctions.nCopies(cols, Types.ValueType.STRING));
 			String[] meta = new String[]{"FP64", "STRING"};
 
@@ -174,7 +173,7 @@ public class FrameIsCorrectTypeTest extends AutomatedTestBase
 			frame2.appendRow(meta);
 			writer.writeFrameToHDFS(frame2, input("M"), 1, schema.length);
 			runTest(true, false, null, -1);
-			FrameBlock frameout = readDMLFrameFromHDFS("B", InputInfo.BinaryBlockInputInfo);
+			FrameBlock frameout = readDMLFrameFromHDFS("B", FileFormat.BINARY);
 
 			//read output data and compare results
 			ArrayList<Object> data = new ArrayList<>();

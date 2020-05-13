@@ -26,6 +26,7 @@
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # F               String    ---        Data Frame
+# cMask           Double    ---        A 0/1 row vector for identifying numeric (0) adn categorical features (1)
 # iter            Integer    3         Number of iteration for multiple imputations 
 # complete        Integer    3         A complete dataset generated though a specific iteration
 # ---------------------------------------------------------------------------------------------
@@ -40,28 +41,36 @@
 
 # Assumption missing value are represented with empty string i.e ",," in csv file  
 # variables with suffix n are storing continous/numeric data and variables with suffix c are storing categorical data
-s_mice= function(Frame[String] F, Matrix[Double] cMask, Integer iter = 3, Integer complete = 3)
+s_mice= function(Frame[String] F, Matrix[Double] cMask, Integer iter = 3, Integer complete = 3, Boolean verbose = FALSE)
 return(Frame[String] dataset, Frame[String] singleSet)
 {
 
   if(ncol(F) == 1)
     stop("invalid aregument: can not apply mice on single column")
+    
+  if(complete > iter)
+    complete = iter
 
-  # adding a temporary categorical feature (in-case all attributes are continous)
+
+  # adding a temporary  feature (in-case all attributes are of same type)
   F = cbind(F,  as.frame(matrix(1,nrow(F), 1)))
   cMask = cbind(cMask, matrix(1,1,1))
-  
+
   n = nrow(F)
   row = n*complete;
   col = ncol(F) 
   Result = matrix(0, rows=1, cols = col)
   Mask_Result = matrix(0, rows=1, cols=col)
-  cat = t(cMask) * seq(1, ncol(cMask))
-  cat = removeEmpty(target = cat, margin = "rows")
+  scat = seq(1, ncol(cMask))
+  cat = removeEmpty(target=scat, margin="rows", select=t(cMask))
+
+  if(nrow(cat) == ncol(F))
+    cMask[1,ncol(cMask)] = 0
+  
   s=""
   for(i in 1: nrow(cat), check =0)
-    s = s+as.integer(as.scalar(cat[i, 1]))+",";  
-      
+    s = s+as.integer(as.scalar(cat[i, 1]))+",";
+  
   
   # encoding categorical columns using recode transformation
   jspecR = "{ids:true, recode:["+s+"]}";
@@ -70,7 +79,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
   XO = replace(target=X, pattern=NaN, replacement=0);
 
   # remove categorical features and impute continous features with mean
-  eX_n = removeEmpty(target=X, margin="cols", select=(1-cMask))
+  eX_n = removeEmpty(target=X, margin="cols", select=(cMask==0))
   col_n = ncol(eX_n);
   # storing the mask/address of missing values
   Mask_n = is.na(eX_n);
@@ -80,7 +89,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
   # filling the missing data with their means
   X2_n = eX_n+(Mask_n*colMeans(eX_n))
   # matrices for computing actul data
-  p_n = table( (seq(1, ncol(eX_n))) , (removeEmpty(target = t(cMask==0)*seq(1, ncol(cMask)), margin ="rows")) ,  1 )
+  p_n = table(seq(1, ncol(eX_n)), removeEmpty(target=scat, margin="rows", select=t(cMask==0)))
   if(ncol(p_n) < ncol(cMask))
     p_n = cbind(p_n, matrix(0, nrow(p_n), ncol(cMask)-ncol(p_n)))
   q = XO * cMask
@@ -91,8 +100,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
   eX_c2 = removeEmpty(target = eX_c, margin = "rows", select = (rowSums(eX_c != 0)==col_c))
   colMod = matrix(0, 1, ncol(eX_c))
   # compute columnwise mode
-  parfor(i in 1: col_c)
-  {
+  parfor(i in 1: col_c) {
     f = eX_c2[, i] # adding one in data for dealing with zero category
     cat_counts = table(f, 1, n, 1);  # counts for each category
     mode = as.scalar(rowIndexMax(t(cat_counts)));
@@ -100,13 +108,10 @@ return(Frame[String] dataset, Frame[String] singleSet)
   }
   
   # find the mask of missing values 
-  tmpMask_c = (eX_c == 0);
-  tmpMask_c = (tmpMask_c * colMod) # fill missing values with mode
+  tmpMask_c = (eX_c==0) * colMod # fill missing values with mode
   
   # Generate a matrix of actual length
-  p_c = table((seq(1, ncol(tmpMask_c))) , (removeEmpty(target = t(cMask)*seq(1, ncol(cMask)), margin ="rows")), 1)
-  if(ncol(p_c) < ncol(cMask))
-    p_c = cbind(p_c, matrix(0, nrow(p_c), ncol(cMask)-ncol(p_c)))
+  p_c = table(seq(1, ncol(tmpMask_c)), removeEmpty(target=scat, margin ="rows", select=t(cMask)), ncol(tmpMask_c), ncol(cMask))
 
   Mask_c = tmpMask_c %*% p_c 
   inverseMask_c = Mask_c == 0
@@ -131,14 +136,13 @@ return(Frame[String] dataset, Frame[String] singleSet)
   dXMask = matrix(0, 1, ncol(dX))
   index = 1
   for(k in 1:col) {
-    if(as.scalar(dcDistincts[1,k]) != 0) {
-      for(l in 1:as.scalar(dcDistincts[1,k])){
-        dXMask[1,index] = 1
-        index = index +1
-      }
+    nDistk = as.scalar(dcDistincts[1,k]);
+    if(nDistk != 0) {
+      dXMask[1,index:(index+nDistk-1)] = matrix(1,1,nDistk)
+      index += nDistk;
     }
     else
-      index = index +1
+      index += 1
   }
   
   #multiple imputations
@@ -149,7 +153,6 @@ return(Frame[String] dataset, Frame[String] singleSet)
     in_n = 1; in_c = 1; i=1; j=1; # varibales for index selection
     while(i <= ncol(dX))
     {
-      
       if(as.scalar(dXMask[1,i]) == 0)
       {
         # construct column selector
@@ -174,8 +177,8 @@ return(Frame[String] dataset, Frame[String] singleSet)
         in_n = in_n + 1;
       }
      
-      if((as.scalar(dXMask[1,i]) == 1) & (sum(Mask_c[, in_c]) != 0))
-      {  
+      if( (as.scalar(dXMask[1,i]) == 1) & (sum(Mask_c[, in_c]) != 0) )
+      {
         j = (i + as.scalar(dist[1,in_c])) - 1
 
         # construct column selector
@@ -194,8 +197,8 @@ return(Frame[String] dataset, Frame[String] singleSet)
         test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
         test_Y = slice2a[,in_c]
        
-        # train clasification model  
-        beta = multiLogReg(X=train_X,  Y=train_Y, icpt = 1, tol = 0.00000001, reg = 0.001, maxi = 100, maxii=0, verbose=FALSE)
+        # train clasification model
+        beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00000001, reg = 0.001, maxi = 100, maxii=0, verbose=FALSE)
         # predicting missing values 
         [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
@@ -205,11 +208,11 @@ return(Frame[String] dataset, Frame[String] singleSet)
           Mask_Filled_c[,in_c] = table(R, 1, pred, n, 1);
         i = as.integer(j)
       }
-      
-      in_c = in_c + 1
+      if(in_c < col)
+        in_c = in_c + 1
       i = i+1;
     }
-      
+
     nM = ((Mask_Filled_n) %*% p_n) + Mask_Filled_c
     Result = rbind(Result, nM+XO)
     Mask_Result = rbind(Mask_Result, nM)
@@ -220,7 +223,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
   Result = Result[2: n*iter+1, ]
   Mask_Result = Mask_Result[2: n*iter+1, ]
   index = (((complete*n)-n)+1)
-  #voting for aggregation of categorical imputations
+  # voting for aggregation of categorical imputations
   agg = cAggregate(Mask_Result*cMask, iter, n)
   
   # aggregating the results
@@ -235,11 +238,11 @@ return(Frame[String] dataset, Frame[String] singleSet)
   dataset =   XO + Agg_Matrix
   singleSet = Result[index:row, ]
    
-  # # decoding nominal columns 
+  # decoding nominal columns 
   dataset = transformdecode(target=dataset, spec=jspecR, meta=M);
   singleSet = transformdecode(target=singleSet, spec=jspecR, meta=M);
   
-  # # removing extra categorical column
+  # removing extra categorical column
   dataset = dataset[,1:col-1]
   singleSet = singleSet[,1:col-1]
  }
@@ -266,7 +269,7 @@ return (Matrix[Double] agg)
         if(sum(u1 != s ) == 0)
           uCount = uCount + 1
         if(sum(v1 != s) == 0)
-          vCount = vCount + 1   
+          vCount = vCount + 1
       }
       # copy the results of u in v
       if(uCount > vCount)

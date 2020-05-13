@@ -30,7 +30,7 @@ limitations under the License.
 Requirements for running SystemDS are a bash shell and OpenJDK 8 or a Spark 2 cluster installation (to run distributed jobs). 
 These requirements should be available via standard system packages in all major Linux distributions 
 (make sure to have the right JDK version enabled, if you have multiple versions in your system).
-For Windows, a bash comes with [git for windows](http://git-scm.com) and OpenJDK builds can be optained at http://adoptopenjdk.net
+For Windows, a bash comes with [git for windows](http://git-scm.com) and OpenJDK builds can be obtained at http://adoptopenjdk.net
 (tested version [jdk8u232-b09](https://adoptopenjdk.net/archive.html))  
 
 To start out with an example after having installed the requirements mentioned above, create a text file  
@@ -53,7 +53,7 @@ of sparsity. As you can see, DML can access these parameters by specifying $1, $
 #### Running a script locally 
 
 ```shell script
-$ ./systemds.sh hello.dml -args 10 10 1.0
+$ ./systemds hello.dml -args 10 10 1.0
 ```
 
 #### Running a script locally, providing your own SystemDS.jar file
@@ -61,24 +61,24 @@ $ ./systemds.sh hello.dml -args 10 10 1.0
 If you compiled SystemDS from source, you can of course use the created JAR file with the run script. 
 
 ```shell script
-$ ./systemds.sh path/to/the/SystemDS.jar hello.dml -args 10 10 1.0
+$ ./systemds path/to/the/SystemDS.jar hello.dml -args 10 10 1.0
 ```
 
 #### Running a script locally, in your SystemDS source environment
 If you have cloned the SystemDS source repository and want to run your DML script with that, you can point the
 shell script to the source directory by setting the `SYSTEMDS_ROOT` environment variable.
 ```shell script
-$ SYSTEMDS_ROOT=../../code/my-systemds/source  ./systemds.sh hello.dml -args 10 10 1.0
+$ SYSTEMDS_ROOT=../../code/my-systemds/source  ./systemds hello.dml -args 10 10 1.0
 ```
 
 #### Running a script distributed on a Spark cluster 
 For running on a Spark cluster, the env variable SYSDS_DISTRIBUTED needs to be set (to something other than 0).
 Per default, SystemDS will run in hybrid mode, pushing some instructions to the cluster and running others locally.
-To force cluster mode in this little test, we will increase the matrix size to give the woker nodes in the cluster 
-something to do and force SystemDS to only generate Spark instructions by adding -exec spark to the command line 
+To force cluster mode in this little test, we will increase the matrix size to give the worker nodes in the cluster
+something to do and force SystemDS to only generate Spark instructions by adding -exec spark to the command line
 parameters:
 ```shell script
-$ SYSDS_DISTRIBUTED=1 ./systemds.sh hello.dml -args 10000 10000 1.0 -exec spark
+$ SYSDS_DISTRIBUTED=1 ./systemds hello.dml -args 10000 10000 1.0 -exec spark
 ```
 
 The output should read something similar to this (the warning can be safely ignored):

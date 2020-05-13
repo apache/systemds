@@ -109,7 +109,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 						throw new DMLRuntimeException("Unsupported partition format for CP_FILE "+RightIndex.OPCODE+": "+ mo.getPartitionFormat());
 				}
 				
-				MetaDataFormat metaNew = new MetaDataFormat(mcNew,meta.getOutputInfo(),meta.getInputInfo());
+				MetaDataFormat metaNew = new MetaDataFormat(mcNew, meta.getFileFormat());
 				mobj.setMetaData(metaNew);
 				
 				//note: disable cleanup to ensure that the partitioning file is not deleted 

@@ -26,10 +26,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * 
  * considers only a subset of row indexes
  */
-public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection 
-{
+public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection {
 	protected MatrixBlock _data;
-	
+
 	private int[] _sampleIndexes;
 	private int lastIndex = -1;
 
@@ -38,9 +37,9 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDenseSample(MatrixBlock data, int[] colIndexes, int[] sampleIndexes, boolean skipZeros) 
-	{
-		super(colIndexes, -1, skipZeros);
+	public ReaderColumnSelectionDenseSample(MatrixBlock data, int[] colIndexes, int[] sampleIndexes,
+		boolean skipZeros, CompressionSettings compSettings) {
+		super(colIndexes, -1, skipZeros, compSettings);
 		_data = data;
 		_sampleIndexes = sampleIndexes;
 		reusableArr = new double[colIndexes.length];
@@ -49,23 +48,23 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection
 
 	@Override
 	public DblArray nextRow() {
-		if (_skipZeros) {
-			while ((nonZeroReturn = getNextRow()) != null
-					&& DblArray.isZero(nonZeroReturn)){}
+		if(_skipZeros) {
+			while((nonZeroReturn = getNextRow()) != null && DblArray.isZero(nonZeroReturn)) {
+			}
 			return nonZeroReturn;
-		} else {
+		}
+		else {
 			return getNextRow();
 		}
 	}
 
 	private DblArray getNextRow() {
-		if (lastIndex == _sampleIndexes.length - 1)
+		if(lastIndex == _sampleIndexes.length - 1)
 			return null;
 		lastIndex++;
-		for (int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = CompressedMatrixBlock.TRANSPOSE_INPUT ? 
-					_data.quickGetValue(_colIndexes[i], _sampleIndexes[lastIndex]) :
-					_data.quickGetValue(_sampleIndexes[lastIndex], _colIndexes[i]);
+		for(int i = 0; i < _colIndexes.length; i++) {
+			reusableArr[i] = _compSettings.transposeInput ? _data.quickGetValue(_colIndexes[i],
+				_sampleIndexes[lastIndex]) : _data.quickGetValue(_sampleIndexes[lastIndex], _colIndexes[i]);
 		}
 		return reusableReturn;
 	}
@@ -74,7 +73,7 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection
 	public int getCurrentRowIndex() {
 		return _sampleIndexes[lastIndex];
 	}
-	
+
 	@Override
 	public void reset() {
 		lastIndex = -1;

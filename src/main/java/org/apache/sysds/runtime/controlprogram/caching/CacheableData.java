@@ -26,11 +26,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -40,12 +43,11 @@ import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Statistics;
@@ -161,6 +163,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * must get the OutputInfo that matches with InputInfo stored inside _mtd.
 	 */
 	protected MetaData _metaData = null;
+
+	/**
+	 * Object holding all privacy constraints associated with the cacheable data. 
+	 */
+	protected PrivacyConstraint _privacyConstraint = null;
+	
+	protected Map<FederatedRange, FederatedData> _fedMapping = null;
+	
 	
 	/** The name of HDFS file in which the data is backed up. */
 	protected String _hdfsFileName = null; // file name and path
@@ -305,6 +315,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public void removeMetaData() {
 		_metaData = null;
 	}
+
+	public void setPrivacyConstraints(PrivacyConstraint pc) {
+		_privacyConstraint = pc;
+	}
+
+	public PrivacyConstraint getPrivacyConstraint() {
+		return _privacyConstraint;
+	}
 	
 	public DataCharacteristics getDataCharacteristics() {
 		return _metaData.getDataCharacteristics();
@@ -312,6 +330,30 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	public abstract void refreshMetaData();
 
+	/**
+	 * Check if object is federated.
+	 * @return true if federated else false
+	 */
+	public boolean isFederated() {
+		return _fedMapping != null;
+	}
+	
+	/**
+	 * Gets the mapping of indices ranges to federated objects.
+	 * @return fedMapping mapping
+	 */
+	public Map<FederatedRange, FederatedData> getFedMapping() {
+		return _fedMapping;
+	}
+	
+	/**
+	 * Sets the mapping of indices ranges to federated objects.
+	 * @param fedMapping mapping
+	 */
+	public void setFedMapping(Map<FederatedRange, FederatedData> fedMapping) {
+		_fedMapping = fedMapping;
+	}
+	
 	public RDDObject getRDDHandle() {
 		return _rddHandle;
 	}
@@ -913,53 +955,39 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			throw new DMLRuntimeException("Unexpected error while writing mtd file (" + filePathAndName + ") -- metadata is null.");
 			
 		// Write the matrix to HDFS in requested format
-		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) 
-			: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
-		
-		if ( oinfo != OutputInfo.MatrixMarketOutputInfo ) {
+		FileFormat fmt = (outputFormat != null) ? FileFormat.safeValueOf(outputFormat) : iimd.getFileFormat();
+		if ( fmt != FileFormat.MM ) {
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics dc = iimd.getDataCharacteristics();
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
-			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE &&
-				dc.getBlocksize() != ConfigurationManager.getBlocksize() )
+			if ( fmt == FileFormat.BINARY && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
+				&& dc.getBlocksize() != ConfigurationManager.getBlocksize() )
 			{
 				dc = new MatrixCharacteristics(dc.getRows(), dc.getCols(), ConfigurationManager.getBlocksize(), dc.getNonZeros());
 			}
 			
 			//write the actual meta data file
 			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
-				getSchema(), dataType, dc, oinfo, formatProperties);
+				getSchema(), dataType, dc, fmt, formatProperties, _privacyConstraint);
 		}
 	}
 
-	protected boolean isEqualOutputFormat( String outputFormat )
-	{
-		boolean ret = true;
+	protected boolean isEqualOutputFormat(String outputFormat) {
 		if( outputFormat != null ) {
-			try {
-				MetaDataFormat iimd = (MetaDataFormat) _metaData;
-				OutputInfo oi1 = InputInfo.getMatchingOutputInfo( iimd.getInputInfo() );
-				OutputInfo oi2 = OutputInfo.stringToOutputInfo( outputFormat );
-				if( oi1 != oi2 )
-					ret = false;
-			}
-			catch(Exception ex) {
-				ret = false;
-			}
+			MetaDataFormat iimd = (MetaDataFormat) _metaData;
+			return iimd.getFileFormat().toString().equals(outputFormat);
 		}
-		
-		return ret;
+		return true;
 	}
 	
-	
-	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------	
+	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------
 	
 	protected String getCacheFilePathAndName () {
 		if( _cacheFileName==null ) {
 			StringBuilder sb = new StringBuilder();
-			sb.append(CacheableData.cacheEvictionLocalFilePath); 
+			sb.append(CacheableData.cacheEvictionLocalFilePath);
 			sb.append(CacheableData.cacheEvictionLocalFilePrefix);
 			sb.append(String.format ("%09d", _uniqueID));
 			sb.append(CacheableData.CACHING_EVICTION_FILEEXTENSION);
@@ -1307,13 +1335,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			if (md != null) {
 				DataCharacteristics dc = _metaData.getDataCharacteristics();
 				str.append(dc.toString());
-
-				InputInfo ii = md.getInputInfo();
-				if (ii == null)
+				if (md.getFileFormat() == null)
 					str.append("null");
 				else {
 					str.append(", ");
-					str.append(InputInfo.inputInfoToString(ii));
+					str.append(md.getFileFormat().toString());
 				}
 			} else {
 				str.append("null, null");

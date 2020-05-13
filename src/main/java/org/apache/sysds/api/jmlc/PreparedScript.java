@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.ConfigurableAPI;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
@@ -47,9 +48,7 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -297,7 +296,7 @@ public class PreparedScript implements ConfigurableAPI
 		
 		//create new matrix object
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(), blocksize, blocksize);
-		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
+		MetaDataFormat meta = new MetaDataFormat(mc, FileFormat.BINARY);
 		MatrixObject mo = new MatrixObject(ValueType.FP64, OptimizerUtils.getUniqueTempFileName(), meta);
 		mo.acquireModify(matrix); 
 		mo.release();
@@ -395,7 +394,7 @@ public class PreparedScript implements ConfigurableAPI
 		
 		//create new frame object
 		MatrixCharacteristics mc = new MatrixCharacteristics(frame.getNumRows(), frame.getNumColumns(), -1, -1);
-		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
+		MetaDataFormat meta = new MetaDataFormat(mc, FileFormat.BINARY);
 		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), meta);
 		fo.acquireModify(frame);
 		fo.release();
@@ -476,8 +475,11 @@ public class PreparedScript implements ConfigurableAPI
 
 	/**
 	 * Capture lineage of the DML/PyDML program and view result as a string.
-	 * 
+	 *
+	 * @param var the output variable name on which lineage trace is sought
+	 *
 	 * @return string results of lineage trace
+	 *
 	 */
 	public String getLineageTrace(String var) {
 		return _outVarLineage.get(var);

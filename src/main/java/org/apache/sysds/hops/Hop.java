@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
@@ -72,6 +73,7 @@ public abstract class Hop implements ParseInfo
 	protected ValueType _valueType;
 	protected boolean _visited = false;
 	protected DataCharacteristics _dc = new MatrixCharacteristics();
+	protected PrivacyConstraint _privacyConstraint = new PrivacyConstraint();
 	protected UpdateType _updateType = UpdateType.COPY;
 
 	protected ArrayList<Hop> _parent = new ArrayList<>();
@@ -307,8 +309,7 @@ public abstract class Hop implements ParseInfo
 					reblock = new CSVReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), et);
 				}
-				else //TEXT / MM / BINARYBLOCK / BINARYCELL
-				{
+				else { //ALL OTHER
 					reblock = new ReBlock( input, getBlocksize(), 
 						getDataType(), getValueType(), _outputEmptyBlocks, et);
 				}
@@ -317,9 +318,10 @@ public abstract class Hop implements ParseInfo
 				throw new HopsException(ex);
 			}
 		
-			setOutputDimensions( reblock );
-			setLineNumbers( reblock );
-			setLops( reblock );
+			setOutputDimensions(reblock);
+			setLineNumbers(reblock);
+			setPrivacy(reblock);
+			setLops(reblock);
 		}
 	}
 
@@ -762,6 +764,14 @@ public abstract class Hop implements ParseInfo
 	
 	public long getNnz(){
 		return _dc.getNonZeros();
+	}
+
+	public void setPrivacy(PrivacyConstraint privacy){
+		_privacyConstraint = privacy;
+	}
+
+	public PrivacyConstraint getPrivacy(){
+		return _privacyConstraint;
 	}
 
 	public void setUpdateType(UpdateType update){
@@ -1384,6 +1394,10 @@ public abstract class Hop implements ParseInfo
 	 */
 	protected void setLineNumbers(Lop lop) {
 		lop.setAllPositions(getFilename(), getBeginLine(), getBeginColumn(), getEndLine(), getEndColumn());
+	}
+	
+	protected void setPrivacy(Lop lop) {
+		lop.setPrivacyConstraint(getPrivacy());
 	}
 
 	/**

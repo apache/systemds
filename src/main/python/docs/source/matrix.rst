@@ -98,3 +98,4 @@ the recommended way is to use the methods defined on ``SystemDSContext``.
 
 .. autofunction:: systemds.matrix.seq
 
+.. autofunction:: systemds.matrix.rand

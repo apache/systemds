@@ -19,7 +19,7 @@ long SpoofCudaContext::initialize_cuda(uint32_t device_id) {
   std::cout << "initializing cuda device " << device_id << std::endl;
 
   SpoofCudaContext *ctx = new SpoofCudaContext();
-  return reinterpret_cast<long>(ctx);
+  return *reinterpret_cast<long*>(ctx);
 }
 
 void SpoofCudaContext::destroy_cuda(SpoofCudaContext *ctx, uint32_t device_id) {

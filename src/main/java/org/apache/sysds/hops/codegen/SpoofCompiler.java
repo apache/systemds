@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-import com.sun.tools.javah.Gen;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -201,9 +200,15 @@ public class SpoofCompiler
 
 		if(configured_generator == GeneratorAPI.CUDA) {
 			String arch = SystemUtils.OS_ARCH;
+			String os = SystemUtils.OS_NAME;
+			String ver = SystemUtils.OS_VERSION;
+
 			if(SystemUtils.IS_OS_LINUX && SystemUtils.OS_ARCH.equalsIgnoreCase("amd64"))
 				arch = "x86_64";
-			String libName = "libsystemds_spoof_native_cuda-" + SystemUtils.OS_NAME + "-" + arch;
+			if(SystemUtils.IS_OS_WINDOWS)
+				os = "Windows";
+
+			String libName = "libsystemds_spoof_native_cuda-" + os + "-" + arch;
 
 			boolean isLoaded = NativeHelper.loadLibraryHelper(libName);
 			if(!isLoaded)

@@ -21,18 +21,18 @@
 
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
-
-if (WIN32)
-    set(CMAKE_SHARED_LIBRARY_PREFIX lib)
-    set(CMAKE_IMPORT_LIBRARY_PREFIX lib)
-else()
-    set(CMAKE_CUDA_HOST_COMPILER g++-8)
-    set(CMAKE_BUILD_WITH_INSTALL_RPATH True)
-endif ()
+project (systemds_spoof_native LANGUAGES CUDA CXX)
 
 set(CMAKE_BUILD_TYPE Release)
 
-project (systemds_spoof_native LANGUAGES CUDA CXX)
+if (WIN32)
+    set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
+    set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
+else()
+    set(CMAKE_CUDA_HOST_COMPILER g++-8)
+endif()
+
+set(CMAKE_BUILD_WITH_INSTALL_RPATH True)
 
 set(HEADERS spoof_native_jni.h spoof_native_cuda.h)
 set(SOURCES spoof_native_jni.cpp spoof_native_cuda.cpp)
@@ -44,11 +44,25 @@ find_package(CUDAToolkit REQUIRED)
 target_link_libraries(spoof_native_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)
 target_compile_features(spoof_native_cuda PUBLIC cxx_std_11)
 set_target_properties(spoof_native_cuda PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 set_target_properties(spoof_native_cuda PROPERTIES OUTPUT_NAME "systemds_spoof_native_cuda-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+set(prop OUTPUT_NAME)
+set(tgt spoof_native_cuda)
+
+#message ("Checking ${prop}")
+#get_property(propval TARGET ${tgt} PROPERTY ${prop} SET)
+#if (propval)
+#    get_target_property(propval ${tgt} ${prop})
+#    message ("${tgt} ${prop} = ${propval}")
+#endif()
+
+#message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 
 # sets the installation path to src/main/cpp/lib
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX ".." CACHE PATH "sets the installation path to src/main/cpp/lib" FORCE)
+  #message(STATUS "setting install prefix")
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/.." CACHE PATH "sets the installation path to src/main/cpp/lib" FORCE)
 endif()
 
 install(TARGETS spoof_native_cuda LIBRARY DESTINATION lib)

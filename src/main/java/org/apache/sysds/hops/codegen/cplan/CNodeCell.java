@@ -28,9 +28,6 @@ import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import sun.reflect.Reflection;
-
-import static org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI.CUDA;
 
 public class CNodeCell extends CNodeTpl 
 {

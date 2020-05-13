@@ -43,7 +43,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
   double **sides = reinterpret_cast<double **>(GET_ARRAY(env, side_ptrs));
   double *scalars = reinterpret_cast<double *>(GET_ARRAY(env, scalars_));
 
-  std::cout << "inputs[0]=" << reinterpret_cast<long>(inputs_[0]) << std::endl;
+  std::cout << "inputs[0]=" << inputs_[0] << std::endl;
 
   return ctx_->execute_kernel(
       //      name_, reinterpret_cast<double **>(in_ptrs),

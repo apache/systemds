@@ -23,7 +23,7 @@ from systemds.onnx_systemds.util import resolve_systemds_root
 
 def invoke_systemds(input_file: str, args: [str] = None) -> int:
     """
-    Runs systemds by running the script in $SYSTEMDS_ROOT_PATH/bin/systemds.sh with the provided input_file,
+    Runs systemds by running the script in $SYSTEMDS_ROOT_PATH/bin/systemds with the provided input_file,
     will fail if environment variable SYSTEMDS_ROOT_PATH is not set.
 
     :param input_file: the dml script to run
@@ -36,8 +36,8 @@ def invoke_systemds(input_file: str, args: [str] = None) -> int:
     systemds_root_path = resolve_systemds_root()
 
     try:
-        abspath_input = os.path.abspath(input_file)
-        res = subprocess.run([systemds_root_path + "/bin/systemds.sh", abspath_input] + args,
+        realpath_input = os.path.relpath(input_file, os.getcwd())
+        res = subprocess.run([systemds_root_path + "/bin/systemds", realpath_input] + args,
                              check=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
@@ -55,7 +55,6 @@ def invoke_systemds(input_file: str, args: [str] = None) -> int:
     if len(stderr) != 0:
         print("No exception but stderr was not empty:")
         print(stderr)
-        return -1
 
     return res.returncode
 

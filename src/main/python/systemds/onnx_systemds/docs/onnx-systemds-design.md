@@ -131,7 +131,7 @@ ONNX provides a convenient way for [creating models](https://github.com/onnx/onn
 
 ### Creating a Testcase
 
-The current test-system takes a model, converts it to dml using the converter and then runs a `dml_wrapper` which calls the model-function using the script `$SYSTEMDS_ROOT/bin/systemds.sh`. Finally, the output (stored by the dml-wrapper) is compared to a reference output. 
+The current test-system takes a model, converts it to dml using the converter and then runs a `dml_wrapper` which calls the model-function using the script `$SYSTEMDS_ROOT/bin/systemds`. Finally, the output (stored by the dml-wrapper) is compared to a reference output. 
 
 When creating files stick to the naming conventions of other files in the same folder.
 

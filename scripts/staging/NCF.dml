@@ -145,8 +145,8 @@ train = function( matrix[double] users_train,
         # params: (predictions, targets)
         dout = l2_loss::backward(out_FA, y_batch);  # TODO: really correct error function?
 
-        # Compute loss & accuracy for training & validation data every 100 iterations.
-        if (i %% 100 == 0) {
+        # Compute loss & accuracy for training & validation data in the last iteration
+        if (i == iters) {
           # Compute training loss & accuracy
           [loss, accuracy] = eval(out_FA, y_batch);
           # ignore regularization for now..

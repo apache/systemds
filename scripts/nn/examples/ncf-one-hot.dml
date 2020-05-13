@@ -25,7 +25,7 @@ to_one_hot = function(matrix[double] X, integer num_classes)
 
     Y = matrix(0, rows=nrow(X), cols=num_classes);
 
-    parfor(i in 1:nrow(X)) {
+    for(i in 1:nrow(X)) {
         Y[i, as.scalar(X[i])] = 1;
     }
     

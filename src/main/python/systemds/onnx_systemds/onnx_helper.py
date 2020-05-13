@@ -12,8 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from functools import reduce
+import functools
 
 import onnx
 import onnx.version_converter
@@ -148,24 +147,25 @@ class PreparedValue:
     """ Class for preparing onnx value structures for writing them to the dml script """
     def __init__(self, value_info: onnx.ValueInfoProto, initializer: onnx.TensorProto = None):
 
-        supported_types = ["int", "boolean", "double"]
+        systemds_supported_types = ["integer", "boolean", "double", "string"]
 
         # TODO: these type translations are not correct double -> float
+        # Translating onnx types to systemds types
         type_translation = {
             1: "double",  # float
-            2: "int",  # uint8_t
-            3: "int",  # int8_t
-            4: "int",  # uint16_t
-            5: "int",  # int16_t
-            6: "int",  # int32_t
-            7: "int",  # int64_t
+            2: "unsigned integer",  # uint8_t
+            3: "integer",  # int8_t
+            4: "unsigned integer",  # uint16_t
+            5: "integer",  # int16_t
+            6: "integer",  # int32_t
+            7: "long",  # int64_t
             8: "string",
             9: "boolean",  # bool
 
             10: "double",  # float16,
             11: "double",
-            12: "int",  # uint32
-            13: "int",  # uint64
+            12: "unsigned integer",  # uint32
+            13: "unsigned long",  # uint64
 
             14: "COMPLEX64",
             15: "COMPLEX128",
@@ -178,7 +178,7 @@ class PreparedValue:
         # TODO: add support for other data types
 
         self.value_type = type_translation[value_info.type.tensor_type.elem_type]
-        if self.value_type not in supported_types:
+        if self.value_type not in systemds_supported_types:
             raise NotImplementedError("The type " + self.value_type + " is currently not supported")
 
         self.shape = []
@@ -189,6 +189,8 @@ class PreparedValue:
             self.shape = [1]
         else:
             self.data_type = "matrix"
+            if self.value_type != "double":
+                raise NotImplementedError("A matrix can only have the type double")
             shape_dimensions = value_info.type.tensor_type.shape.dim
             for dim in shape_dimensions:
                 # TODO: shapes with no value but instead name -> support?
@@ -200,7 +202,7 @@ class PreparedValue:
                 # TODO: not sure this is the solution for every instance of this problem
                 # Multiply all shapes right
                 rows = self.shape[0]
-                cols = reduce(lambda s0, s1: s0 * s1, self.shape[1:])
+                cols = functools.reduce(lambda s0, s1: s0 * s1, self.shape[1:])
                 self.shape = [rows, cols]
 
         self.identifier_name = value_info.name

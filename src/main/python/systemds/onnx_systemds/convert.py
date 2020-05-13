@@ -15,7 +15,6 @@
 
 import argparse
 import os.path
-import ntpath
 import systemds.onnx_systemds.onnx_helper as onnx_helper
 from systemds.onnx_systemds import render
 
@@ -40,7 +39,7 @@ def onnx2systemds(input_onnx_file: str, output_dml_file: str = None) -> None:
         raise Exception("Invalid input-file: " + str(input_onnx_file))
 
     if not output_dml_file:
-        output_dml_file = os.path.splitext(ntpath.basename(input_onnx_file))[0] + ".dml"
+        output_dml_file = os.path.splitext(os.path.basename(input_onnx_file))[0] + ".dml"
 
     model = onnx_helper.load_model(input_onnx_file)
     render.gen_script(model, output_dml_file)

@@ -1,45 +1,0 @@
-"onnx-systemds test-graph generator:ò
-¾
-condEA simple if graph"If*Œ
-else_branch2ù
-2
-AE"Relu2$Call of Relu function in else branchThe Else branch graphZ8
-A
-
-
-#This is a description of variable Ab8
-E
-
-
-#This is a description of variable Ej8
-A
-
-
-#This is a description of variable A *Œ
-then_branch2ù
-2
-AE"Tanh2$Call of Tanh function in then branchThe Then branch graphZ8
-A
-
-
-#This is a description of variable Ab8
-E
-
-
-#This is a description of variable Ej8
-A
-
-
-#This is a description of variable A A simple if graphZ8
-A
-
-
-#This is a description of variable AZ(
-cond
-
-	
-Condition for the ifb8
-E
-
-
-#This is a description of variable EB

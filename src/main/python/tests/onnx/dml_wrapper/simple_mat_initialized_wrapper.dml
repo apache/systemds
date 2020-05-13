@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("dml_output/simple_mat_initialized.dml") as simple_mat_initialized
+source("tests/onnx/dml_output/simple_mat_initialized.dml") as simple_mat_initialized
 
 O = simple_mat_initialized::gen_simple_mat_initialized_graph()
 
-write(O, "output_test/simple_mat_initialized.out")
+write(O, "tests/onnx/output_test/simple_mat_initialized.out")
 

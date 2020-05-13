@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("dml_output/simple_relu_tanh_sigmoid_softmax.dml") as simple_relu_tanh
+source("tests/onnx/dml_output/simple_relu_tanh_sigmoid_softmax.dml") as simple_relu_tanh
 
 A = matrix("0.2 2 12 20", rows=2, cols=2)
 B = matrix("0.2 2 12 20", rows=2, cols=2)
@@ -24,4 +24,4 @@ out = append(toString(O), toString(U))
 out = append(out, toString(I))
 out = append(out, toString(J))
 
-write(out, "output_test/simple_relu_tanh_sigmoid_softmax.out")
+write(out, "tests/onnx/output_test/simple_relu_tanh_sigmoid_softmax.out")

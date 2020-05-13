@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 
 import onnx
 from onnx import helper
@@ -19,7 +20,7 @@ from onnx import helper
 
 def save_graph(graph_def, name):
     model_def = helper.make_model(graph_def, producer_name="onnx-systemds test-graph generator")
-    onnx.save_model(model_def, name)
+    onnx.save_model(model_def, os.path.realpath(__file__) + name)
 
 
 def generate_simple_add_graph():

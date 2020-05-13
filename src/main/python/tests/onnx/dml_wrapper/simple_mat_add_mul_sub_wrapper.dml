@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("dml_output/simple_mat_add_mul_sub.dml") as simple_mat_add_mul_sub
+source("tests/onnx/dml_output/simple_mat_add_mul_sub.dml") as simple_mat_add_mul_sub
 
 A = matrix("3 8 9 10", rows=2, cols=2)
 B = matrix("2 5 7 8", rows=2, cols=2)
@@ -21,4 +21,4 @@ C = matrix("1 2 3 4", rows=2, cols=2)
 O = matrix(0, rows=2, cols=2)
 O = simple_mat_add_mul_sub::gen_a_simple_matrix_addition_multiplication_and_substraction_test_graph(A, B, C)
 
-write(O, "output_test/simple_mat_add_mul_sub.out")
+write(O, "tests/onnx/output_test/simple_mat_add_mul_sub.out")

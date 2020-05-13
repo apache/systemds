@@ -1,31 +1,0 @@
-"onnx-systemds test-graph generator:П
- 
-xy"Dropout*
-ratioмлл=═
-&
-yzmask"Dropout*
-ratioмлл=═Simple dropout graphR,This graph tests a simple dropout layer callZ8
-x
-
-
-#This is a description of variable xb8
-z
-
-
-#This is a description of variable zb>
-mask
-	
-
-&This is a description of variable maskj8
-x
-
-
-#This is a description of variable xj8
-y
-
-
-#This is a description of variable yj8
-z
-
-
-#This is a description of variable zB

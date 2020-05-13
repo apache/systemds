@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("dml_output/simple_if_graph.dml") as simple_if_graph
+source("tests/onnx/dml_output/simple_if_graph.dml") as simple_if_graph
 
 A = matrix("3 8 9 10", rows=2, cols=2)
 cond = TRUE
@@ -22,6 +22,6 @@ cond = FALSE
 O_false = simple_if_graph::gen_a_simple_if_graph(A, cond)
 
 out = append(toString(O_true), toString(O_false))
-write(out, "output_test/simple_if_graph.out")
+write(out, "tests/onnx/output_test/simple_if_graph.out")
 
 

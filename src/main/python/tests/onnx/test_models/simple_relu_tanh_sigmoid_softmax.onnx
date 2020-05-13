@@ -1,69 +1,0 @@
-"onnx-systemds test-graph generator:Ö
-#
-AE"Relu2Call of Relu function
-#
-BF"Tanh2Call of Tanh function
-)
-CG"Sigmoid2Call of Sigmoid function
-)
-DH"Softmax2Call of Softmax function&Simple relu tanh sigmoid softmax graphR&This graph tests simple nn layer callsZ8
-A
-
-
-#This is a description of variable AZ8
-B
-
-
-#This is a description of variable BZ8
-C
-
-
-#This is a description of variable CZ8
-D
-
-
-#This is a description of variable Db8
-E
-
-
-#This is a description of variable Eb8
-F
-
-
-#This is a description of variable Fb8
-G
-
-
-#This is a description of variable Gb8
-H
-
-
-#This is a description of variable Hj8
-A
-
-
-#This is a description of variable Aj8
-B
-
-
-#This is a description of variable Bj8
-D
-
-
-#This is a description of variable Dj8
-E
-
-
-#This is a description of variable Ej8
-F
-
-
-#This is a description of variable Fj8
-G
-
-
-#This is a description of variable Gj8
-H
-
-
-#This is a description of variable HB

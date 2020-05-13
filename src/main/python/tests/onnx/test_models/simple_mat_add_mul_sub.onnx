@@ -1,34 +1,0 @@
-"onnx-systemds test-graph generator:þ
-H
-A
-BCAddNodeName"Add2+This is a description of this Add operation
-K
-C
-DEMulNodeName"MatMul2+This is a description of this mul operation
-
-A
-EFMulNodeName"SubDA simple matrix addition, multiplication and substraction test graphR&Doc string with additional informationZ8
-A
-
-
-#This is a description of variable AZ8
-B
-
-
-#This is a description of variable BZ8
-D
-
-
-#This is a description of variable Db8
-F
-
-
-#This is a description of variable Fj8
-C
-
-
-#This is a description of variable Cj8
-E
-
-
-#This is a description of variable EB

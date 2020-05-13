@@ -1,37 +1,0 @@
-"onnx-systemds test-graph generator:„
-
-AD"Relu
-
-BE"TanhSimple relu tanh graphZ8
-A
-
-
-#This is a description of variable AZ8
-B
-
-
-#This is a description of variable Bb8
-D
-
-
-#This is a description of variable Db8
-E
-
-
-#This is a description of variable Ej8
-A
-
-
-#This is a description of variable Aj8
-B
-
-
-#This is a description of variable Bj8
-D
-
-
-#This is a description of variable Dj8
-E
-
-
-#This is a description of variable EB

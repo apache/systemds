@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("dml_output/simple_dropout_layer.dml") as simple_dropout
+source("tests/onnx/dml_output/simple_dropout_layer.dml") as simple_dropout
 
 A = matrix("3 8 9 10", rows=2, cols=2)
 [O, mask] = simple_dropout::gen_simple_dropout_graph(A)
 out = append(toString(O), toString(mask))
 
-write(out, "output_test/simple_dropout_layer.out")
+write(out, "tests/onnx/output_test/simple_dropout_layer.out")

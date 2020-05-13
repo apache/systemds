@@ -4,8 +4,6 @@ A tool for importing/exporting [ONNX](https://github.com/onnx/onnx/blob/master/d
 
 For a more detailed description of this converter refer to the [description of the converter design](docs/onnx-systemds-design.md)
 
-
-
 ## Prerequisites
 
 to run onnx-systemds you need [onnx](https://github.com/onnx/onnx)
@@ -14,24 +12,28 @@ to run onnx-systemds you need [onnx](https://github.com/onnx/onnx)
 * The conda install seems to work best 
 * the environment variable `SYSTEMDS_ROOT` needs to be set to the root of the repository
 
-
-
 ## Usage
 
 An example call from the `src/main/python` directory of systemds:
 
 ```bash
- python3 -m onnx_systemds.convert onnx_systemds/tests/test_models/simple_mat_add.onnx
+python -m systemds.onnx_systemds.convert tests/onnx/test_models/simple_mat_add.onnx
 ```
 
-
+This will generate the dml script `simple_mat_add.dml` in your current directory. 
 
 ### Run Tests
 
-Form within the `onnx_systemds/tests` directory call:
+Form the `src/main/python` directory of systemds:
+
+At first generate the test models:
 
 ```bash
-export PYTHONPATH="../.."
-python3 test_simple.py
+python tests/onnx/test_models/model_generate.py
 ```
 
+Then you can run the tests:
+
+```bash
+python -m unittest tests/onnx/test_simple.py
+```

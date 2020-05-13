@@ -16,8 +16,8 @@ from random import randint
 
 import jinja2
 import onnx
-import onnx_systemds.onnx_helper as onnx_helper
-from onnx_systemds import util
+import systemds.onnx_systemds.onnx_helper as onnx_helper
+from systemds.onnx_systemds import util
 
 
 class GeneratedScriptPart:

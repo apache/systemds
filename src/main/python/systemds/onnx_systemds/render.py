@@ -15,11 +15,10 @@
 
 import os
 
-import onnx_systemds.util as util
+from systemds.onnx_systemds import util, operator_gen
 import onnx
-import onnx_systemds.onnx_helper as onnx_helper
+import systemds.onnx_systemds.onnx_helper as onnx_helper
 import jinja2
-import onnx_systemds.operator_gen as operator_gen
 
 # Each operator listed shall be supported by this converter
 operator_generators = {

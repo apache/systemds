@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import unittest
-import onnx_systemds.tests.util as util
+import tests.onnx.util as util
 
 
 class TestSimpleOperators(unittest.TestCase):

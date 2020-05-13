@@ -17,8 +17,8 @@ import os
 import subprocess
 import unittest
 
-from onnx_systemds.convert import onnx2systemds
-from onnx_systemds.util import resolve_systemds_root
+from systemds.onnx_systemds.convert import onnx2systemds
+from systemds.onnx_systemds.util import resolve_systemds_root
 
 
 def invoke_systemds(input_file: str, args: [str] = None) -> int:

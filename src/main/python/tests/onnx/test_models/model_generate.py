@@ -20,7 +20,7 @@ from onnx import helper
 
 def save_graph(graph_def, name):
     model_def = helper.make_model(graph_def, producer_name="onnx-systemds test-graph generator")
-    onnx.save_model(model_def, os.path.realpath(__file__) + name)
+    onnx.save_model(model_def, os.path.dirname(os.path.realpath(__file__)) + "/" + name)
 
 
 def generate_simple_add_graph():

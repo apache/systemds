@@ -72,9 +72,12 @@ jobs:
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
         restore-keys: |
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+    - name: Install protobuf
+      tun: sudo apt-get install protobuf-compiler libprotoc-dev 
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel scipy sklearn
+      run: pip install numpy py4j wheel scipy sklearn jinja2 onnx
 
     - name: Build Python Package
       run: |
@@ -96,4 +99,16 @@ jobs:
         export SYSDS_QUIET=1
         cd src/main/python
         python -m unittest tests/lineage/*.py
+        echo "Exit Status: " $?
+
+    - name: Run onnx-systemds python tests
+      run: |
+        export SYSTEMDS_ROOT=$(pwd)
+        export PATH=$SYSTEMDS_ROOT/bin:$PATH
+        cd src/main/python
+        echo "Creating models"
+        python tests/onnx/test_models/model_generate.py
+        ls tests/onnx/test_models/*.onnx
+        echo "Beginning tests"
+        python -m unittest tests/onnx/*.py
         echo "Exit Status: " $?

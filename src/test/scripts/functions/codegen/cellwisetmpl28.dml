@@ -22,21 +22,17 @@
 #-------------------------------------------------------------
 
 
-#X= matrix( seq(1,4000000), rows=2000, cols=2000)
-#Y= matrix( 2, rows=2000, cols=1)
-
-#X= matrix( seq(1,256*256), rows=256, cols=256)
-#Y= matrix( 2, rows=256, cols=1)
-
-c=32
-X= matrix( seq(1,c*c), rows=c, cols=c)
-Y= matrix( 2, rows=c, cols=1)
+r=4096
+c=4096
+print("Data Size=" + r*c*8/(1024*1024) + " MB")
+X= matrix( seq(1,r*c), rows=r, cols=c)
+Y= matrix( 2, rows=r, cols=1)
 
 lamda = sum(Y)
 #print("lamda " + lamda)
 S=round(abs(X+lamda))+5
-print("X\n" + toString(X[1:5, 1:10]))
-print("t(Y)\n" + toString(t(Y[1:10,])))
-print("S\n" + toString(S[1:5, 1:10]))
-print("sum(S) " + sum(S))
+#print("X\n" + toString(X[1:5, 1:10]))
+#print("t(Y)\n" + toString(t(Y[1:10,])))
+#print("S\n" + toString(S[1:5, 1:10]))
+#print("sum(S) " + sum(S))
 write(S,$1)

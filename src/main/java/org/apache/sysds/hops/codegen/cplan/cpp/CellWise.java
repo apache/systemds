@@ -15,8 +15,8 @@ public class CellWise implements CodeTemplate {
                     + "template<typename T>\n"
                     + "	__global__\n"
                     + " 	void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix, int rix, int cix) {\n"
-                    + "		int tid = threadIdx.y * blockDim.x + threadIdx.x;\n" // ToDo: correct indexing!
-                    + "		if(threadIdx.x < m && threadIdx.y < n) {\n"
+                    + "		int tid = blockIdx.x * blockDim.x + threadIdx.x;\n" // ToDo: correct indexing!
+                    + "		if(tid < m*n) {\n"
 //                    + "  		if(tid == 1)\n"
 //					+ " 		    printf(\"MxN=%dx%d, a[0]=%f, scalars[0]=%f, b[0]=%f\\n\",m, n, a[0], scalars[0], b[0]);\n"
 //                    + " 		    printf(\"MxN=%dx%d, a[0][%d]=%f\\n\",m, n, tid, a[0][tid]);\n"

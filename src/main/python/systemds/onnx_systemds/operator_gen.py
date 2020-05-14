@@ -185,6 +185,29 @@ def gen_dropout_call(env: jinja2.environment.Environment, graph: onnx.GraphProto
     return GeneratedScriptPart(imports=[import_render], dml_script=node_render)
 
 
+def __compute_pad(auto_pad: str, Hf: int, Wf: int, strides: [int], pads: [int], Hin: int, Win: int):
+    strideh = strides[0]
+    stridew = strides[1]
+
+    if auto_pad == "NOTSET":
+        padh = pads[0]
+        padw = pads[1]
+        if pads[0] != pads[2] or pads[1] != pads[3]:
+            raise Exception("Only support symmetric pads")
+    elif auto_pad == "SAME_UPPER" or "SAME_LOWER":
+        # pad such that output size matches input
+        padh = (Hin * (strideh - 1) + Hf - strideh) / 2
+        padw = (Win * (stridew - 1) + Wf - stridew) / 2
+    elif auto_pad == "VALID":
+        # no padding
+        padh = 0
+        padw = 0
+    else:
+        raise Exception("Invalid auto_pad value")
+
+    return padh, padw
+
+
 def gen_maxpool_call(env: jinja2.environment.Environment, graph: onnx.GraphProto,
                      node: onnx.NodeProto) -> GeneratedScriptPart:
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
@@ -265,24 +288,7 @@ def gen_maxpool_call(env: jinja2.environment.Environment, graph: onnx.GraphProto
     Wf = kernel_shape[1]
     strideh = strides[0]
     stridew = strides[1]
-
-    padh = 0
-    padw = 0
-    if auto_pad == "NOTSET":
-        padh = pads[0]
-        padw = pads[1]
-        if pads[0] != pads[2] or pads[1] != pads[3]:
-            raise Exception("Only support symmetric pads")
-    elif auto_pad == "SAME_UPPER" or "SAME_LOWER":
-        # pad such that output size matches input
-        padh = (Hin * (strideh - 1) + Hf - strideh) / 2
-        padw = (Win * (stridew - 1) + Wf - stridew) / 2
-    elif auto_pad == "VALID":
-        # no padding
-        padh = 0
-        padw = 0
-    else:
-        raise Exception("Invalid auto_pad value")
+    padh, padw = __compute_pad(auto_pad, Hf, Wf, strides, pads, Hin, Win)
 
     # Create render
     node_render = operator_template.render(
@@ -399,24 +405,7 @@ def gen_conv_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, n
 
     strideh = strides[0]
     stridew = strides[1]
-
-    padh = 0
-    padw = 0
-    if auto_pad == "NOTSET":
-        padh = pads[0]
-        padw = pads[1]
-        if pads[0] != pads[2] or pads[1] != pads[3]:
-            raise Exception("Only support symmetric pads")
-    elif auto_pad == "SAME_UPPER" or "SAME_LOWER":
-        # pad such that output size matches input
-        padh = (Hin * (strideh - 1) + Hf - strideh) / 2
-        padw = (Win * (stridew - 1) + Wf - stridew) / 2
-    elif auto_pad == "VALID":
-        # no padding
-        padh = 0
-        padw = 0
-    else:
-        raise Exception("Invalid auto_pad value")
+    padh, padw = __compute_pad(auto_pad, Hf, Wf, strides, pads, Hin, Win)
 
     node_render = operator_template.render(
         function_namespace=function_namespace,

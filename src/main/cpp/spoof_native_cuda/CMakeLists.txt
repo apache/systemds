@@ -21,6 +21,11 @@
 
 cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 
+# need to set this before project() in Linux
+if (UNIX)
+    set(CMAKE_CUDA_HOST_COMPILER g++-8 CACHE INTERNAL "")
+endif()
+
 project (systemds_spoof_native LANGUAGES CUDA CXX)
 
 set(CMAKE_BUILD_TYPE Release)
@@ -28,8 +33,6 @@ set(CMAKE_BUILD_TYPE Release)
 if (WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
     set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
-else()
-    set(CMAKE_CUDA_HOST_COMPILER g++-8)
 endif()
 
 set(CMAKE_BUILD_WITH_INSTALL_RPATH True)

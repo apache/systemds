@@ -34,5 +34,5 @@ S=round(abs(X+lamda))+5
 #print("X\n" + toString(X[1:5, 1:10]))
 #print("t(Y)\n" + toString(t(Y[1:10,])))
 #print("S\n" + toString(S[1:5, 1:10]))
-#print("sum(S) " + sum(S))
+print("sum(S) " + sum(S))
 write(S,$1)

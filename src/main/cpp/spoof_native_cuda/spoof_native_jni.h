@@ -36,13 +36,23 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
 
 /*
  * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofGPUInstruction
- * Method:    execute
+ * Method:    execute_d
  * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
  */
 JNIEXPORT jdouble JNICALL
 Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
     JNIEnv *, jobject, jlong, jstring, jlongArray, jlong, jlongArray, jlong,
     jlong, jdoubleArray, jlong, jlong, jlong, jlong);
+
+/*
+ * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofGPUInstruction
+ * Method:    execute_f
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jfloat JNICALL
+Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1f(
+    JNIEnv *, jobject, jlong, jstring, jlongArray, jlong, jlongArray, jlong,
+    jlong, jfloatArray, jlong, jlong, jlong, jlong);
 
 #ifdef __cplusplus
 }

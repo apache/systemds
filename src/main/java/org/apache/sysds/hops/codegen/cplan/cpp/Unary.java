@@ -16,8 +16,8 @@ public class Unary implements CodeTemplate {
             case ROW_MEANS:
             case ROW_COUNTNNZS: {
                 String vectName = StringUtils.capitalize(type.name().substring(4, type.name().length()-1).toLowerCase());
-                return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
-                        "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
+                return sparse ? "    T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
+                        "    T %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
             }
 
             case VECT_EXP:
@@ -45,64 +45,64 @@ public class Unary implements CodeTemplate {
             case VECT_SPROP:
             case VECT_SIGMOID: {
                 String vectName = type.getVectorPrimitiveName();
-                return sparse ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
-                        "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
+                return sparse ? "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
+                        "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
             }
 
             case EXP:
-                return "    double %TMP% = FastMath.exp(%IN1%);\n";
+                return "    T %TMP% = FastMath.exp(%IN1%);\n";
             case LOOKUP_R:
                 return sparse ?
-                        "    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
-                        "    double %TMP% = getValue(%IN1%, rix);\n";
+                        "    T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
+                        "    T %TMP% = getValue(%IN1%, rix);\n";
             case LOOKUP_C:
-                return "    double %TMP% = getValue(%IN1%, n, 0, cix);\n";
+                return "    T %TMP% = getValue(%IN1%, n, 0, cix);\n";
             case LOOKUP_RC:
-                return "    double %TMP% = getValue(%IN1%, n, rix, cix);\n";
+                return "    T %TMP% = getValue(%IN1%, n, rix, cix);\n";
             case LOOKUP0:
-                return "    double %TMP% = %IN1%[0];\n";
+                return "    T %TMP% = %IN1%[0];\n";
             case POW2:
-                return "    double %TMP% = %IN1% * %IN1%;\n";
+                return "    T %TMP% = %IN1% * %IN1%;\n";
             case MULT2:
-                return "    double %TMP% = %IN1% + %IN1%;\n";
+                return "    T %TMP% = %IN1% + %IN1%;\n";
             case ABS:
-                return "    double %TMP% = max(-%IN1%, %IN1%);\n";
+                return "    T %TMP% = max(-%IN1%, %IN1%);\n";
             case SIN:
-                return "    double %TMP% = FastMath.sin(%IN1%);\n";
+                return "    T %TMP% = FastMath.sin(%IN1%);\n";
             case COS:
-                return "    double %TMP% = FastMath.cos(%IN1%);\n";
+                return "    T %TMP% = FastMath.cos(%IN1%);\n";
             case TAN:
-                return "    double %TMP% = FastMath.tan(%IN1%);\n";
+                return "    T %TMP% = FastMath.tan(%IN1%);\n";
             case ASIN:
-                return "    double %TMP% = FastMath.asin(%IN1%);\n";
+                return "    T %TMP% = FastMath.asin(%IN1%);\n";
             case ACOS:
-                return "    double %TMP% = FastMath.acos(%IN1%);\n";
+                return "    T %TMP% = FastMath.acos(%IN1%);\n";
             case ATAN:
-                return "    double %TMP% = Math.atan(%IN1%);\n";
+                return "    T %TMP% = Math.atan(%IN1%);\n";
             case SINH:
-                return "    double %TMP% = FastMath.sinh(%IN1%);\n";
+                return "    T %TMP% = FastMath.sinh(%IN1%);\n";
             case COSH:
-                return "    double %TMP% = FastMath.cosh(%IN1%);\n";
+                return "    T %TMP% = FastMath.cosh(%IN1%);\n";
             case TANH:
-                return "    double %TMP% = FastMath.tanh(%IN1%);\n";
+                return "    T %TMP% = FastMath.tanh(%IN1%);\n";
             case SIGN:
-                return "    double %TMP% = FastMath.signum(%IN1%);\n";
+                return "    T %TMP% = FastMath.signum(%IN1%);\n";
             case SQRT:
-                return "    double %TMP% = Math.sqrt(%IN1%);\n";
+                return "    T %TMP% = Math.sqrt(%IN1%);\n";
             case LOG:
-                return "    double %TMP% = Math.log(%IN1%);\n";
+                return "    T %TMP% = Math.log(%IN1%);\n";
             case ROUND:
-                return "    double %TMP% = round(%IN1%);\n";
+                return "    T %TMP% = round(%IN1%);\n";
             case CEIL:
-                return "    double %TMP% = FastMath.ceil(%IN1%);\n";
+                return "    T %TMP% = FastMath.ceil(%IN1%);\n";
             case FLOOR:
-                return "    double %TMP% = FastMath.floor(%IN1%);\n";
+                return "    T %TMP% = FastMath.floor(%IN1%);\n";
             case SPROP:
-                return "    double %TMP% = %IN1% * (1 - %IN1%);\n";
+                return "    T %TMP% = %IN1% * (1 - %IN1%);\n";
             case SIGMOID:
-                return "    double %TMP% = 1 / (1 + FastMath.exp(-%IN1%));\n";
+                return "    T %TMP% = 1 / (1 + FastMath.exp(-%IN1%));\n";
             case LOG_NZ:
-                return "    double %TMP% = (%IN1%==0) ? 0 : Math.log(%IN1%);\n";
+                return "    T %TMP% = (%IN1%==0) ? 0 : Math.log(%IN1%);\n";
 
             default:
                 throw new RuntimeException("Invalid unary type: "+this.toString());

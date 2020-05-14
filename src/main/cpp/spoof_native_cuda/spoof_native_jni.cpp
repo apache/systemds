@@ -53,3 +53,29 @@ Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
       name_, inputs, num_inputs, sides, num_sides,
       reinterpret_cast<double *>(out_ptr), scalars, num_scalars, m, n, grix);
 }
+
+JNIEXPORT jfloat JNICALL
+Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1f(
+    JNIEnv *env, jobject jobj, jlong ctx, jstring name, jlongArray in_ptrs,
+    jlong num_inputs, jlongArray side_ptrs, jlong num_sides, jlong out_ptr,
+    jfloatArray scalars_, jlong num_scalars, jlong m, jlong n, jlong grix) {
+
+  SpoofCudaContext *ctx_ = reinterpret_cast<SpoofCudaContext *>(ctx);
+
+  std::string name_(env->GetStringUTFChars(name, NULL));
+
+  long *inputs_ = reinterpret_cast<long *>(GET_ARRAY(env, in_ptrs));
+  float **inputs = reinterpret_cast<float **>(&inputs_[0]);
+  float **sides = reinterpret_cast<float **>(GET_ARRAY(env, side_ptrs));
+  float *scalars = reinterpret_cast<float *>(GET_ARRAY(env, scalars_));
+
+  std::cout << "inputs[0]=" << inputs_[0] << std::endl;
+
+  return ctx_->execute_kernel(
+      //      name_, reinterpret_cast<double **>(in_ptrs),
+      //      num_inputs, reinterpret_cast<double **>(side_ptrs),
+      //      num_sides, reinterpret_cast<double **>(out_ptr), da,
+      //      num_scalars, m, n, grix);
+      name_, inputs, num_inputs, sides, num_sides,
+      reinterpret_cast<float *>(out_ptr), scalars, num_scalars, m, n, grix);
+}

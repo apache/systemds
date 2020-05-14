@@ -20,11 +20,11 @@ public class Binary implements CodeTemplate {
 
         switch (type) {
             case DOT_PRODUCT:
-                return sparseLhs ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
-                        "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+                return sparseLhs ? "    T %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
+                        "    T %TMP% = LibSpoofPrimitives.dotProduct(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
             case VECT_MATRIXMULT:
-                return sparseLhs ? "    double[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, len);\n" :
-                        "    double[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+                return sparseLhs ? "    T[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, len);\n" :
+                        "    T[] %TMP% = LibSpoofPrimitives.vectMatrixMult(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
             case VECT_OUTERMULT_ADD:
                 return  sparseLhs ? "    LibSpoofPrimitives.vectOuterMultAdd(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POS2%, %POSOUT%, alen, %LEN1%, %LEN2%);\n" :
                         sparseRhs ? "    LibSpoofPrimitives.vectOuterMultAdd(%IN1%, %IN2v%, %OUT%, %POS1%, %IN2i%, %POS2%, %POSOUT%, alen, %LEN1%, %LEN2%);\n" :
@@ -73,20 +73,20 @@ public class Binary implements CodeTemplate {
             case VECT_GREATEREQUAL_SCALAR: {
                 String vectName = type.getVectorPrimitiveName();
                 if( scalarVector )
-                    return sparseRhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" :
-                            "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS2%, %LEN%);\n";
+                    return sparseRhs ? "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" :
+                            "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS2%, %LEN%);\n";
                 else
-                    return sparseLhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" :
-                            "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+                    return sparseLhs ? "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" :
+                            "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
             }
 
             case VECT_CBIND:
                 if( scalarInput )
-                    return  "    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%);\n";
+                    return  "    T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%);\n";
                 else
                     return sparseLhs ?
-                            "    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" :
-                            "    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+                            "    T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" :
+                            "    T[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 
                 //vector-vector operations
             case VECT_MULT:
@@ -107,59 +107,59 @@ public class Binary implements CodeTemplate {
             case VECT_GREATEREQUAL: {
                 String vectName = type.getVectorPrimitiveName();
                 return sparseLhs ?
-                        "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" :
+                        "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" :
                         sparseRhs ?
-                                "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" :
-                                "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+                                "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" :
+                                "    T[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
             }
 
             //scalar-scalar operations
             case MULT:
-                return "    double %TMP% = %IN1% * %IN2%;\n";
+                return "    T %TMP% = %IN1% * %IN2%;\n";
 
             case DIV:
-                return "    double %TMP% = %IN1% / %IN2%;\n";
+                return "    T %TMP% = %IN1% / %IN2%;\n";
             case PLUS:
-                return "    double %TMP% = %IN1% + %IN2%;\n";
+                return "    T %TMP% = %IN1% + %IN2%;\n";
             case MINUS:
-                return "    double %TMP% = %IN1% - %IN2%;\n";
+                return "    T %TMP% = %IN1% - %IN2%;\n";
             case MODULUS:
-                return "    double %TMP% = LibSpoofPrimitives.mod(%IN1%, %IN2%);\n";
+                return "    T %TMP% = LibSpoofPrimitives.mod(%IN1%, %IN2%);\n";
             case INTDIV:
-                return "    double %TMP% = LibSpoofPrimitives.intDiv(%IN1%, %IN2%);\n";
+                return "    T %TMP% = LibSpoofPrimitives.intDiv(%IN1%, %IN2%);\n";
             case LESS:
-                return "    double %TMP% = (%IN1% < %IN2%) ? 1 : 0;\n";
+                return "    T %TMP% = (%IN1% < %IN2%) ? 1 : 0;\n";
             case LESSEQUAL:
-                return "    double %TMP% = (%IN1% <= %IN2%) ? 1 : 0;\n";
+                return "    T %TMP% = (%IN1% <= %IN2%) ? 1 : 0;\n";
             case GREATER:
-                return "    double %TMP% = (%IN1% > %IN2%) ? 1 : 0;\n";
+                return "    T %TMP% = (%IN1% > %IN2%) ? 1 : 0;\n";
             case GREATEREQUAL:
-                return "    double %TMP% = (%IN1% >= %IN2%) ? 1 : 0;\n";
+                return "    T %TMP% = (%IN1% >= %IN2%) ? 1 : 0;\n";
             case EQUAL:
-                return "    double %TMP% = (%IN1% == %IN2%) ? 1 : 0;\n";
+                return "    T %TMP% = (%IN1% == %IN2%) ? 1 : 0;\n";
             case NOTEQUAL:
-                return "    double %TMP% = (%IN1% != %IN2%) ? 1 : 0;\n";
+                return "    T %TMP% = (%IN1% != %IN2%) ? 1 : 0;\n";
 
             case MIN:
-                return "    double %TMP% = Math.min(%IN1%, %IN2%);\n";
+                return "    T %TMP% = Math.min(%IN1%, %IN2%);\n";
             case MAX:
-                return "    double %TMP% = Math.max(%IN1%, %IN2%);\n";
+                return "    T %TMP% = Math.max(%IN1%, %IN2%);\n";
             case LOG:
-                return "    double %TMP% = Math.log(%IN1%)/Math.log(%IN2%);\n";
+                return "    T %TMP% = Math.log(%IN1%)/Math.log(%IN2%);\n";
             case LOG_NZ:
-                return "    double %TMP% = (%IN1% == 0) ? 0 : Math.log(%IN1%)/Math.log(%IN2%);\n";
+                return "    T %TMP% = (%IN1% == 0) ? 0 : Math.log(%IN1%)/Math.log(%IN2%);\n";
             case POW:
-                return "    double %TMP% = Math.pow(%IN1%, %IN2%);\n";
+                return "    T %TMP% = Math.pow(%IN1%, %IN2%);\n";
             case MINUS1_MULT:
-                return "    double %TMP% = 1 - %IN1% * %IN2%;\n";
+                return "    T %TMP% = 1 - %IN1% * %IN2%;\n";
             case MINUS_NZ:
-                return "    double %TMP% = (%IN1% != 0) ? %IN1% - %IN2% : 0;\n";
+                return "    T %TMP% = (%IN1% != 0) ? %IN1% - %IN2% : 0;\n";
             case XOR:
-                return "    double %TMP% = ( (%IN1% != 0) != (%IN2% != 0) ) ? 1 : 0;\n";
+                return "    T %TMP% = ( (%IN1% != 0) != (%IN2% != 0) ) ? 1 : 0;\n";
             case BITWAND:
-                return "    double %TMP% = LibSpoofPrimitives.bwAnd(%IN1%, %IN2%);\n";
+                return "    T %TMP% = LibSpoofPrimitives.bwAnd(%IN1%, %IN2%);\n";
             case SEQ_RIX:
-                return "    double %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
+                return "    T %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
 
             default:
                 throw new RuntimeException("Invalid binary type: "+this.toString());

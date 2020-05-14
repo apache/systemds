@@ -26,4 +26,6 @@
    <sysds.codegen.api>cuda</sysds.codegen.api>
    <sysds.codegen.plancache>true</sysds.codegen.plancache>
    <sysds.codegen.literals>1</sysds.codegen.literals>
+   <!-- the floating point precision. supported values are double, single -->
+   <sysds.floating.point.precision>single</sysds.floating.point.precision>
 </root>

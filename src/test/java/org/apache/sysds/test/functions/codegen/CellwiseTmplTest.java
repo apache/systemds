@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
@@ -493,6 +494,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			TEST_CONF = TEST_CONF8;
 			TEST_GPU = true;
 			DEBUG = true;
+			//ToDo: proper precision handling in testcase setup
+			DMLScript.FLOATING_POINT_PRECISION = "single";
 		}
 
 		try

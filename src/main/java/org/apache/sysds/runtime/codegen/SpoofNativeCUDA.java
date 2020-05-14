@@ -1,5 +1,6 @@
 package org.apache.sysds.runtime.codegen;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
@@ -68,17 +69,18 @@ public class SpoofNativeCUDA extends SpoofOperator {
         for(int i = offset; i < inputs.size(); ++i)
             side_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
 
-        double[] scalars = prepInputScalars(scalarObjects);
+        if(DMLScript.FLOATING_POINT_PRECISION.equalsIgnoreCase("single")) {
+            float[] scalars = prepInputScalarsFloat(scalarObjects);
 
-        if(LibMatrixNative.isSinglePrecision() ) {
             // ToDo: handle float
-//            FloatBuffer fin1 = LibMatrixNative.toFloatBuffer(m1.getDenseBlockValues(), inBuff, true);
-//            FloatBuffer fin2 = LibMatrixNative.toFloatBuffer(m2.getDenseBlockValues(), filterBuff, true);
-//            FloatBuffer fout = LibMatrixNative.toFloatBuffer(ret.getDenseBlockValues(), outBuff, false);
-//            ret = execute_f();
-//            LibMatrixNative.fromFloatBuffer(outBuff.get(), ret.getDenseBlockValues());
+           ret = execute_f(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
+                    in_ptrs, in_ptrs.length, side_ptrs, side_ptrs.length, out_ptr, scalars,
+                    scalars.length, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+
         }
         else {
+            double[] scalars = prepInputScalars(scalarObjects);
+
             ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
                     in_ptrs, in_ptrs.length, side_ptrs, side_ptrs.length, out_ptr, scalars,
                     scalars.length, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);

@@ -521,9 +521,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
 				// check if unique filename needs to be generated
-				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = fname + '_' + _uniqueVarID.getNextID();
-				}
+				if( Boolean.parseBoolean(getInput3().getName()) )
+					fname = getUniqueFileName(fname);
 				MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
@@ -544,9 +543,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
 				// check if unique filename needs to be generated
-				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = fname + '_' + _uniqueVarID.getNextID();
-				}
+				if( Boolean.parseBoolean(getInput3().getName()) )
+					fname = getUniqueFileName(fname);
 				CacheableData<?> obj = new TensorObject(getInput1().getValueType(), fname);
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
@@ -560,6 +558,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 			else if( getInput1().getDataType() == DataType.FRAME ) {
 				String fname = getInput2().getName();
+				if( Boolean.parseBoolean(getInput3().getName()) )
+					fname = getUniqueFileName(fname);
 				FrameObject fobj = new FrameObject(fname);
 				fobj.setMetaData((MetaData)metadata.clone());
 				fobj.setFileFormatProperties(_formatProperties);
@@ -1256,5 +1256,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			|| opcode == VariableOperationCode.CastAsIntegerVariable
 			|| opcode == VariableOperationCode.CastAsDoubleVariable
 			|| opcode == VariableOperationCode.CastAsBooleanVariable;
+	}
+	
+	public static String getUniqueFileName(String fname) {
+		return InstructionUtils.concatStrings(fname, "_", String.valueOf(_uniqueVarID.getNextID()));
 	}
 }

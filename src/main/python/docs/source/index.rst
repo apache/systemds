@@ -59,3 +59,11 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
    :caption: Central Classes
 
    matrix.rst
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: onnx-systemds
+
+   onnx_systemds.rst
+   onnx_systemds_design.rst

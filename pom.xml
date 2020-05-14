@@ -508,6 +508,7 @@
 								<exclude>**/*.libsvm</exclude>
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>
+								<exclude>**/*.out</exclude>
 								<exclude>**/part-*</exclude>
 								<exclude>**/*.keep</exclude>
 								<exclude>**/target/**</exclude>

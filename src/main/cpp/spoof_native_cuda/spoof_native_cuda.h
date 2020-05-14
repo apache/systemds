@@ -18,7 +18,7 @@ class SpoofCudaContext {
   std::map<const std::string, SpoofOperator> ops;
 
 public:
-  static long initialize_cuda(uint32_t device_id);
+  static size_t initialize_cuda(uint32_t device_id);
 
   static void destroy_cuda(SpoofCudaContext *ctx, uint32_t device_id);
 

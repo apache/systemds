@@ -22,6 +22,9 @@ package org.apache.sysds.test.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -465,6 +468,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testCodegenCellwise28() {
+		testCodegenIntegration( TEST_NAME28, false, ExecType.CP );
+	}
+
+	@Test
 	public void testCodegenCellwiseRewrite28() {
 		testCodegenIntegration( TEST_NAME28, true, ExecType.CP );
 	}
@@ -474,12 +482,14 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		String oldTestConf = TEST_CONF;
 		ExecMode platformOld = setExecMode(instType);
-		
+
+		Integer test_num = Integer.parseInt(testname.substring(testname.length()-2));
+
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
 
 		// ToDo: remove when done with testing
-		if( testname.equals(TEST_NAME28) ) {
+		if(test_num > 27) {
 			TEST_CONF = TEST_CONF8;
 			TEST_GPU = true;
 			DEBUG = true;
@@ -499,43 +509,59 @@ public class CellwiseTmplTest extends AutomatedTestBase
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
-			runTest(true, false, null, -1); 
-			runRScript(true); 
-			
-			if(testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7) 
-				|| testname.equals(TEST_NAME9) || testname.equals(TEST_NAME10)) {
-				//compare scalars 
-				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
-				HashMap<CellIndex, Double> rfile  = readRScalarFromFS("S");
-				TestUtils.compareScalars((Double) dmlfile.values().toArray()[0], (Double) rfile.values().toArray()[0],0);
+			runTest(true, false, null, -1);
+
+			if(test_num < 27) {
+				runRScript(true);
+
+				if (testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7)
+						|| testname.equals(TEST_NAME9) || testname.equals(TEST_NAME10)) {
+					//compare scalars
+					HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
+					HashMap<CellIndex, Double> rfile = readRScalarFromFS("S");
+					TestUtils.compareScalars((Double) dmlfile.values().toArray()[0], (Double) rfile.values().toArray()[0], 0);
+				} else {
+					//compare matrices
+					HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
+					HashMap<CellIndex, Double> rfile = readRMatrixFromFS("S");
+					TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+				}
+
+				if (!(rewrites && (testname.equals(TEST_NAME2)
+						|| testname.equals(TEST_NAME19))))
+					Assert.assertTrue(heavyHittersContainsSubString(
+							"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
+				if (testname.equals(TEST_NAME7)) //ensure matrix mult is fused
+					Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
+				else if (testname.equals(TEST_NAME10)) //ensure min/max is fused
+					Assert.assertTrue(!heavyHittersContainsSubString("uamin", "uamax"));
+				else if (testname.equals(TEST_NAME11)) //ensure replace is fused
+					Assert.assertTrue(!heavyHittersContainsSubString("replace"));
+				else if (testname.equals(TEST_NAME15))
+					Assert.assertTrue(!heavyHittersContainsSubString("uacmin"));
+				else if (testname.equals(TEST_NAME16))
+					Assert.assertTrue(!heavyHittersContainsSubString("uack+"));
+				else if (testname.equals(TEST_NAME17))
+					Assert.assertTrue(!heavyHittersContainsSubString("xor"));
+				else if (testname.equals(TEST_NAME22))
+					Assert.assertTrue(!heavyHittersContainsSubString("seq"));
+				else if (testname.equals(TEST_NAME23) || testname.equals(TEST_NAME24))
+					Assert.assertTrue(!heavyHittersContainsSubString("min", "nmin"));
 			}
 			else {
-				//compare matrices 
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
-				HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
-				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
+				Assert.assertTrue(heavyHittersContainsSubString("SpoofNativeCUDA"));
+				TEST_GPU = false;
+				DEBUG = false;
+				programArgs = new String[]{"-explain", "-stats", "-args", output("S1") };
+				SpoofCompiler.API = SpoofCompiler.GeneratorAPI.JAVA;
+
+				runTest(true, false, null, -1);
+
+				//compare matrices
+				HashMap<CellIndex, Double> dmlfile_cuda = readDMLMatrixFromHDFS("S");
+				HashMap<CellIndex, Double> dmlfile_java = readDMLMatrixFromHDFS("S1");
+				TestUtils.compareMatrices(dmlfile_cuda, dmlfile_java, eps, "Stat-CUDA", "Stat-JAVA");
 			}
-			
-			if( !(rewrites && (testname.equals(TEST_NAME2)
-				|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
-				Assert.assertTrue(heavyHittersContainsSubString(
-						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "SpoofNativeCUDA"));
-			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
-				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
-			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused
-				Assert.assertTrue(!heavyHittersContainsSubString("uamin","uamax"));
-			else if( testname.equals(TEST_NAME11) ) //ensure replace is fused
-				Assert.assertTrue(!heavyHittersContainsSubString("replace"));
-			else if( testname.equals(TEST_NAME15) )
-				Assert.assertTrue(!heavyHittersContainsSubString("uacmin"));
-			else if( testname.equals(TEST_NAME16) )
-				Assert.assertTrue(!heavyHittersContainsSubString("uack+"));
-			else if( testname.equals(TEST_NAME17) )
-				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
-			else if( testname.equals(TEST_NAME22) )
-				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
-			else if( testname.equals(TEST_NAME23) || testname.equals(TEST_NAME24) )
-				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin"));
 		}
 		finally {
 			resetExecMode(platformOld);

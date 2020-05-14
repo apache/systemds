@@ -103,21 +103,20 @@ import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.utils.Statistics;
 
-public class SpoofCompiler
-{
+public class SpoofCompiler {
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
-	
+
 	//internal configuration flags
-	public static final boolean LDEBUG                 = false;
-	public static CompilerType JAVA_COMPILER           = CompilerType.JANINO;
-	public static PlanSelector PLAN_SEL_POLICY         = PlanSelector.FUSE_COST_BASED_V2; 
-	public static final IntegrationType INTEGRATION    = IntegrationType.RUNTIME;
-	public static final boolean RECOMPILE_CODEGEN      = true;
-	public static final boolean PRUNE_REDUNDANT_PLANS  = true;
-	public static PlanCachePolicy PLAN_CACHE_POLICY    = PlanCachePolicy.CSLH;
-	public static final int PLAN_CACHE_SIZE            = 1024; //max 1K classes
+	public static final boolean LDEBUG = false;
+	public static CompilerType JAVA_COMPILER = CompilerType.JANINO;
+	public static PlanSelector PLAN_SEL_POLICY = PlanSelector.FUSE_COST_BASED_V2;
+	public static final IntegrationType INTEGRATION = IntegrationType.RUNTIME;
+	public static final boolean RECOMPILE_CODEGEN = true;
+	public static final boolean PRUNE_REDUNDANT_PLANS = true;
+	public static PlanCachePolicy PLAN_CACHE_POLICY = PlanCachePolicy.CSLH;
+	public static final int PLAN_CACHE_SIZE = 1024; //max 1K classes
 	public static final RegisterAlloc REG_ALLOC_POLICY = RegisterAlloc.EXACT_STATIC_BUFF;
-	public static GeneratorAPI API 					   = GeneratorAPI.JAVA;
+	public static GeneratorAPI API = GeneratorAPI.JAVA;
 	public static HashMap<GeneratorAPI, Long> native_contexts;
 
 	public enum CompilerType {
@@ -146,20 +145,22 @@ public class SpoofCompiler
 		HOPS,
 		RUNTIME,
 	}
-	
+
 	public enum PlanSelector {
 		FUSE_ALL,             //maximal fusion, possible w/ redundant compute
 		FUSE_NO_REDUNDANCY,   //fusion without redundant compute 
 		FUSE_COST_BASED,      //cost-based decision on materialization points
 		FUSE_COST_BASED_V2;   //cost-based decisions on materialization points per consumer, multi aggregates,
-		                      //sparsity exploitation, template types, local/distributed operations, constraints
+
+		//sparsity exploitation, template types, local/distributed operations, constraints
 		public boolean isHeuristic() {
 			return this == FUSE_ALL
-				|| this == FUSE_NO_REDUNDANCY;
+					|| this == FUSE_NO_REDUNDANCY;
 		}
+
 		public boolean isCostBased() {
 			return this == FUSE_COST_BASED_V2
-				|| this == FUSE_COST_BASED;
+					|| this == FUSE_COST_BASED;
 		}
 	}
 
@@ -167,23 +168,23 @@ public class SpoofCompiler
 		CONSTANT, //plan cache, with always compile literals
 		CSLH,     //plan cache, with context-sensitive literal replacement heuristic
 		NONE;     //no plan cache
-		
+
 		public static PlanCachePolicy get(boolean planCache, boolean compileLiterals) {
 			return !planCache ? NONE : compileLiterals ? CONSTANT : CSLH;
 		}
 	}
-	
+
 	public enum RegisterAlloc {
 		HEURISTIC,           //max vector intermediates, special handling pipelines (always safe)
 		EXACT_DYNAMIC_BUFF,  //min number of live vector intermediates, assuming dynamic pooling
 		EXACT_STATIC_BUFF,   //min number of live vector intermediates, assuming static array ring buffer
 	}
-	
+
 	static {
 		// for internal debugging only
-		if( LDEBUG ) {
+		if (LDEBUG) {
 			Logger.getLogger("org.apache.sysds.hops.codegen")
-				.setLevel(Level.TRACE);
+					.setLevel(Level.TRACE);
 		}
 
 
@@ -192,16 +193,19 @@ public class SpoofCompiler
 				.getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
 
 		// loading cuda codegen (the only supported API atm)
-		if(configured_generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
+		if (configured_generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
 			configured_generator = GeneratorAPI.CUDA;
 
-		if(configured_generator != GeneratorAPI.JAVA)
+		if (configured_generator != GeneratorAPI.JAVA)
 			native_contexts = new HashMap<>();
 
-		if(configured_generator == GeneratorAPI.CUDA) {
+		loadNativeCodeGenerator(configured_generator);
+	}
+
+	public static void loadNativeCodeGenerator(GeneratorAPI genertator) {
+		if(genertator == GeneratorAPI.CUDA) {
 			String arch = SystemUtils.OS_ARCH;
 			String os = SystemUtils.OS_NAME;
-			String ver = SystemUtils.OS_VERSION;
 
 			if(SystemUtils.IS_OS_LINUX && SystemUtils.OS_ARCH.equalsIgnoreCase("amd64"))
 				arch = "x86_64";
@@ -232,6 +236,7 @@ public class SpoofCompiler
 				LOG.error("Loading of spoof native cuda failed. Falling back to java codegen\n");
 			}
 		}
+
 	}
 
 	protected void finalize() {

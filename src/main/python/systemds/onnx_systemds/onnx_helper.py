@@ -72,7 +72,7 @@ def load_model(onnx_file: str) -> onnx.ModelProto:
     :param onnx_file:
     :return: the loaded onnx-model
     """
-    TARGET_VERSION = 11
+    TARGET_VERSION = 12
     model = onnx.load(onnx_file)
     onnx.checker.check_model(model)
     if len(list(model.opset_import)) == 1 and list(model.opset_import)[0].version == TARGET_VERSION:

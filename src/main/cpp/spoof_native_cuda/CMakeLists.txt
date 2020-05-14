@@ -30,12 +30,7 @@ project (systemds_spoof_native LANGUAGES CUDA CXX)
 
 set(CMAKE_BUILD_TYPE Release)
 
-if (WIN32)
-    set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
-    set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
-endif()
-
-set(CMAKE_BUILD_WITH_INSTALL_RPATH True)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH True CACHE INTERNAL "")
 
 set(HEADERS spoof_native_jni.h spoof_native_cuda.h)
 set(SOURCES spoof_native_jni.cpp spoof_native_cuda.cpp)
@@ -43,15 +38,20 @@ set(SOURCES spoof_native_jni.cpp spoof_native_cuda.cpp)
 # Build a shared libraray
 add_library(spoof_native_cuda SHARED ${SOURCES} ${HEADERS} )
 
+if (WIN32)
+    set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
+    set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
+    target_link_libraries(spoof_native_cuda DbgHelp.lib)
+endif()
+
 find_package(CUDAToolkit REQUIRED)
 target_link_libraries(spoof_native_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)
 target_compile_features(spoof_native_cuda PUBLIC cxx_std_11)
 set_target_properties(spoof_native_cuda PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
 set_target_properties(spoof_native_cuda PROPERTIES OUTPUT_NAME "systemds_spoof_native_cuda-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 
-set(prop OUTPUT_NAME)
-set(tgt spoof_native_cuda)
+#set(prop OUTPUT_NAME)
+#set(tgt spoof_native_cuda)
 
 #message ("Checking ${prop}")
 #get_property(propval TARGET ${tgt} PROPERTY ${prop} SET)

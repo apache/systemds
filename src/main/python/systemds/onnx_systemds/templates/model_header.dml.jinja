@@ -1,0 +1,36 @@
+{#
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ #}
+# -------------------------------------------------------------
+# Model
+{% for key, value in header_components.items() -%}
+{%- if value != "" -%}
+#  {{ key }}: {{ value }} {%- if not loop.last -%} {{ "\n" }} {%- endif -%}
+{%- endif %}
+{%- endfor -%}
+# opset_import:
+{%- for opset_domain in opset_import %}
+#  - domain/opset = {{ opset_domain }}
+{%- endfor %}
+{%- if metadata_props | length > 0 -%}
+{%- for key, value in metadata_props %}
+{% if loop.first %}
+# metadata_props:
+{% endif %}
+#  - {{ key }}: {{ value }}
+{%- endfor %}
+{% endif %}
+# -------------------------------------------------------------

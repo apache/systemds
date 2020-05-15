@@ -19,16 +19,15 @@
 #
 #-------------------------------------------------------------
 
-# Builtin function Implements Multiple Imputation using Chained Equations (MICE) for nominal data
+# Built-in function Implements Multiple Imputation using Chained Equations (MICE) 
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# F               String    ---        Data Frame
-# cMask           Double    ---        A 0/1 row vector for identifying numeric (0) adn categorical features (1)
+# X               String    ---        Data Matrix (Recoded Matrix for categorical features)
+# cMask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
 # iter            Integer    3         Number of iteration for multiple imputations 
-# complete        Integer    3         A complete dataset generated though a specific iteration
 # ---------------------------------------------------------------------------------------------
  
 
@@ -36,249 +35,160 @@
 # ---------------------------------------------------------------------------------------------
 # NAME                  TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# dataset               Double   ---        imputed dataset
-# singleSet             Double   ---        A complete dataset generated though a specific iteration
+# output               Double   ---        imputed dataset
 
-# Assumption missing value are represented with empty string i.e ",," in csv file  
-# variables with suffix n are storing continuous/numeric data and variables with suffix c are storing categorical data
-s_mice= function(Frame[String] F, Matrix[Double] cMask, Integer iter = 3, Integer complete = 3, Boolean verbose = FALSE)
-return(Frame[String] dataset, Frame[String] singleSet)
+
+# Assumption missing value are represented with empty string i.e ",," in CSV file  
+# variables with suffix n are storing continuos/numeric data and variables with suffix c are storing categorical data
+m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boolean verbose = FALSE)
+return(Matrix[Double] output)
 {
 
-  if(ncol(F) == 1)
-    stop("invalid argument: can not apply mice on single column")
-    
-  if(complete > iter)
-    complete = iter
-
-
-  # adding a temporary  feature (in-case all attributes are of same type)
-  F = cbind(F,  as.frame(matrix(1,nrow(F), 1)))
-  cMask = cbind(cMask, matrix(1,1,1))
-
-  n = nrow(F)
-  row = n*complete;
-  col = ncol(F) 
-  Result = matrix(0, rows=1, cols = col)
-  Mask_Result = matrix(0, rows=1, cols=col)
-  scat = seq(1, ncol(cMask))
-  cat = removeEmpty(target=scat, margin="rows", select=t(cMask))
-
-  if(nrow(cat) == ncol(F))
-    cMask[1,ncol(cMask)] = 0
-  
-  s=""
-  for(i in 1: nrow(cat), check =0)
-    s = s+as.integer(as.scalar(cat[i, 1]))+",";
-  
-  
-  # encoding categorical columns using recode transformation
-  jspecR = "{ids:true, recode:["+s+"]}";
-  [X, M] = transformencode(target=F, spec=jspecR);
-  
-  XO = replace(target=X, pattern=NaN, replacement=0);
-
-  # remove categorical features and impute continuous features with mean
-  eX_n = removeEmpty(target=X, margin="cols", select=(cMask==0))
-  col_n = ncol(eX_n);
-  # storing the mask/address of missing values
-  Mask_n = is.na(eX_n);
-  inverseMask_n = 1 - Mask_n;
-  # replacing the empty cells in encoded data with 0 
-  eX_n = replace(target=eX_n, pattern=NaN, replacement=0);
-  # filling the missing data with their means
-  X2_n = eX_n+(Mask_n*colMeans(eX_n))
-  # matrices for computing actul data
-  p_n = table(seq(1, ncol(eX_n)), removeEmpty(target=scat, margin="rows", select=t(cMask==0)))
-  if(ncol(p_n) < ncol(cMask))
-    p_n = cbind(p_n, matrix(0, nrow(p_n), ncol(cMask)-ncol(p_n)))
-  q = XO * cMask
-  
-  # Taking out the categorical features for initial imputation by mode
-  eX_c = removeEmpty(target = q, margin = "cols")
-  col_c = ncol(eX_c);
-  eX_c2 = removeEmpty(target = eX_c, margin = "rows", select = (rowSums(eX_c != 0)==col_c))
-  colMod = matrix(0, 1, ncol(eX_c))
-  # compute columnwise mode
-  parfor(i in 1: col_c) {
-    f = eX_c2[, i] # adding one in data for dealing with zero category
-    cat_counts = table(f, 1, n, 1);  # counts for each category
-    mode = as.scalar(rowIndexMax(t(cat_counts)));
-    colMod[1,i] = mode
-  }
-  
-  # find the mask of missing values 
-  tmpMask_c = (eX_c==0) * colMod # fill missing values with mode
-  
-  # Generate a matrix of actual length
-  p_c = table(seq(1, ncol(tmpMask_c)), removeEmpty(target=scat, margin ="rows", select=t(cMask)), ncol(tmpMask_c), ncol(cMask))
-
-  Mask_c = tmpMask_c %*% p_c 
-  inverseMask_c = Mask_c == 0
-  r = X2_n %*% p_n
-  qr = q + r
-  X2_c = qr + Mask_c
-  Mask_c = Mask_c != 0
-
-
-  # one-hot encoding of categorical features
-  jspecDC = "{ids:true, dummycode:["+s+"]}";
-  [dX, dM] = transformencode(target=as.frame(X2_c), spec=jspecDC);
-  
-  # recoding of metadata of OHE features to get the number of distinct elements
-  [metaTransform, metaTransformMeta] = transformencode(target=dM, spec=jspecR);
-  metaTransform = replace(target=metaTransform, pattern=NaN, replacement=0)
-  # counting distinct elements in each categorical feature
-  dcDistincts = colMaxs(metaTransform)
-  dist = dcDistincts + (1-cMask) 
-
-  # creating a mask matrix of OHE features
-  dXMask = matrix(0, 1, ncol(dX))
-  index = 1
-  for(k in 1:col) {
-    nDistk = as.scalar(dcDistincts[1,k]);
-    if(nDistk != 0) {
-      dXMask[1,index:(index+nDistk-1)] = matrix(1,1,nDistk)
-      index += nDistk;
-    }
-    else
-      index += 1
-  }
-  
-  #multiple imputations
-  for(k in 1:iter)
+  lastIndex = ncol(X)
+  if(sum(cMask) == 0) # if all features are numeric add a categorical features
   {
-    Mask_Filled_n = Mask_n;
-    Mask_Filled_c = Mask_c
-    in_n = 1; in_c = 1; i=1; j=1; # variables for index selection
-    while(i <= ncol(dX))
+    X = cbind(X, matrix(1, nrow(X), 1))
+    cMask = cbind(cMask, matrix(1, 1, 1))
+  }
+  else if(sum(cMask) == ncol(cMask)) # if all features are categorical add a numeric features
+  {
+    X = cbind(X, matrix(1, nrow(X), 1))
+    cMask = cbind(cMask, matrix(0, 1, 1))
+  } 
+
+  # separate categorical and continuous features
+  nX = removeEmpty(target=X, margin="cols", select=(cMask==0))
+  cX = removeEmpty(target=X, margin="cols", select= cMask)
+  
+  # store the mask of numeric missing values 
+  Mask_n = is.na(nX);  
+  nX = replace(target=nX, pattern=NaN, replacement=0);
+  # initial mean imputation
+  X_n = nX+(Mask_n*colMeans(nX))
+    
+  # store the mask of categorical missing values 
+  Mask_c = is.na(cX);
+  cX = replace(target=cX, pattern=NaN, replacement=0);
+  colMode = colMode(cX)
+  # initial mode imputation
+  X_c = cX+(Mask_c*colMode)
+  
+  # reconstruct original matrix using sparse matrices p and q 
+  p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(cMask)), margin="rows", select=t(cMask==0)), ncol(nX), ncol(X))
+  q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(cMask)), margin="rows", select=t(cMask)), ncol(cX), ncol(X))
+  X1 = (X_n %*% p) + (X_c %*% q)
+  Mask1 =  is.na(X)
+  
+  X = replace(target=X, pattern=NaN, replacement=0);
+  d = ncol(X1)
+  n = nrow(X1)
+  
+  # compute index of categorical features
+  encodeIndex = removeEmpty(target=t(seq(1, ncol(X1))), margin="cols", select=cMask) 
+
+  s=""
+  if(ncol(encodeIndex) == 1)
+    s = as.integer(as.scalar(encodeIndex[1, 1]))
+  else{
+    for(i in 1: ncol(encodeIndex)-1)
+     s = s+as.integer(as.scalar(encodeIndex[1, i]))+",";
+     s = s+as.integer(as.scalar(encodeIndex[1, ncol(encodeIndex)]))
+    }
+
+  # specifications for one-hot encoding of categorical features
+  jspecDC = "{ids:true, dummycode:["+s+"]}";
+  
+  for(k in 1:iter) # start iterative imputation
+  {
+    Mask_Filled = Mask1
+    inverseMask = Mask1 == 0
+    # OHE of categorical features
+    [dX, dM] = transformencode(target=as.frame(X1), spec=jspecDC);
+    dist = (colMaxs(X1) * cMask) + (cMask == 0) # number of distinct items in categorical features
+    i=1; j=1; in_c=1;
+
+    while(i < ncol(dX))
     {
-      if(as.scalar(dXMask[1,i]) == 0)
+      j = (i + as.scalar(dist[1,in_c])) - 1 # index value for iterating OHE columns
+      if(sum(Mask1[, in_c]) > 0 & as.scalar(cMask[, in_c]) == 0) # impute numeric features
       {
-        # construct column selector
-        sel = cbind(matrix(1,1,i-1), as.matrix(0), matrix(1,1,ncol(dX)-i));
-        # prepare train data set X and Y
-        slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask_n[,in_n])
-        train_X = removeEmpty(target = slice1, margin = "cols", select = sel);
-        train_Y = slice1[,i]
-        # prepare score data set X and Y for imputing Y
-        slice2 = removeEmpty(target = dX, margin = "rows", select = Mask_n[,in_n])
-        test_X =  removeEmpty(target = slice2, margin = "cols", select = sel);
-        test_Y = slice2[,i]
-        # learning a regression line 
-        beta = lm(X=train_X, y=train_Y, verbose=FALSE, icpt=1, reg = 1e-7, tol = 1e-7);
-        # predicting missing values 
-        pred = lmpredict(X=test_X, w=beta, icpt=1)
-        # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
-        R = removeEmpty(target=Mask_Filled_n[,in_n] * seq(1,n), margin="rows");
-        #TODO modify removeEmpty to return zero row and n columns
-        if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0)))
-          Mask_Filled_n[,in_n] = table(R, 1, pred, n, 1);
-        in_n = in_n + 1;
-      }
-     
-      if( (as.scalar(dXMask[1,i]) == 1) & (sum(Mask_c[, in_c]) != 0) )
-      {
-        j = (i + as.scalar(dist[1,in_c])) - 1
 
         # construct column selector
         selX = matrix(1,1,ncol(dX))
         selX[1,i:j] = matrix(0,1,as.scalar(dist[1,in_c]))
-        selY = cbind(matrix(1,1,in_c-1), as.matrix(0), matrix(1,1,col-in_c));
+        selY = cbind(matrix(1,1,in_c-1), as.matrix(0), matrix(1,1,d-in_c));
         # prepare train data set X and Y
-        slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask_c[,in_c])
-        slice1a = removeEmpty(target = X2_c, margin = "rows", select = inverseMask_c[,in_c])
+        slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask[,in_c])
+        slice1a = removeEmpty(target = X1, margin = "rows", select = inverseMask[,in_c])
         train_X = removeEmpty(target = slice1, margin = "cols", select = selX);
         train_Y = slice1a[,in_c]
-        
+
         # prepare score data set X and Y for imputing Y
-        slice2 = removeEmpty(target = dX, margin = "rows", select = Mask_c[,in_c])
-        slice2a = removeEmpty(target = X2_c, margin = "rows", select = Mask_c[,in_c])
+        slice2 = removeEmpty(target = dX, margin = "rows", select = Mask1[,in_c])
+        slice2a = removeEmpty(target = X1, margin = "rows", select = Mask1[,in_c])
         test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
         test_Y = slice2a[,in_c]
-       
+     
+        # learn a regression line
+        beta = lm(X=train_X, y=train_Y, verbose=FALSE, icpt=1, reg = 1e-7, tol = 1e-7);
+        # predicting missing values 
+        pred = lmpredict(X=test_X, w=beta, icpt=1)
+        # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
+        R = removeEmpty(target=Mask_Filled[, in_c] * seq(1,nrow(X1)), margin="rows");
+        # TODO modify removeEmpty to return zero row and n columns
+        if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0)))
+          Mask_Filled[,in_c] = table(R, 1, pred, nrow(X1), 1);
+      }
+      else if (sum(Mask1[, in_c]) > 0 & as.scalar(cMask[, in_c]) != 0) # impute categorical features
+      {
+        
+        # construct column selector
+        selX = matrix(1,1,ncol(dX))
+        selX[1,i:j] = matrix(0,1,as.scalar(dist[1,in_c]))
+        selY = cbind(matrix(1,1,in_c-1), as.matrix(0), matrix(1,1,d-in_c));
+        # prepare train data set X and Y
+        slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask[,in_c])
+        slice1a = removeEmpty(target = X1, margin = "rows", select = inverseMask[,in_c])
+        train_X = removeEmpty(target = slice1, margin = "cols", select = selX);
+        train_Y = slice1a[,in_c]
+
+        # prepare score data set X and Y for imputing Y
+        slice2 = removeEmpty(target = dX, margin = "rows", select = Mask1[,in_c])
+        slice2a = removeEmpty(target = X1, margin = "rows", select = Mask1[,in_c])
+        test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
+        test_Y = slice2a[,in_c]
+        
         # train classification model
         beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00000001, reg = 0.001, maxi = 100, maxii=0, verbose=FALSE)
         # predicting missing values 
         [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
-        R = removeEmpty(target=Mask_Filled_c[,in_c] * seq(1,n), margin="rows");
+        R = removeEmpty(target=Mask_Filled[,in_c] * seq(1,n), margin="rows");
         #TODO modify removeEmpty to return zero row and n columns
         if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0)))
-          Mask_Filled_c[,in_c] = table(R, 1, pred, n, 1);
-        i = as.integer(j)
+          Mask_Filled[,in_c] = table(R, 1, pred, n, 1);
+        
       }
-      if(in_c < col)
-        in_c = in_c + 1
-      i = i+1;
+      i = as.integer(j)+1
+      in_c = in_c + 1
     }
-
-    nM = ((Mask_Filled_n) %*% p_n) + Mask_Filled_c
-    Result = rbind(Result, nM+XO)
-    Mask_Result = rbind(Mask_Result, nM)
-    [dX, dM] = transformencode(target=as.frame(nM+XO), spec=jspecDC);
+    X1 = X + Mask_Filled
   }
-  
-  # compute output indices
-  Result = Result[2: n*iter+1, ]
-  Mask_Result = Mask_Result[2: n*iter+1, ]
-  index = (((complete*n)-n)+1)
-  # voting for aggregation of categorical imputations
-  agg = cAggregate(Mask_Result*cMask, iter, n)
-  
-  # aggregating the results
-  Agg_Matrix = matrix(0,n, col)
-  for(d in 1:iter)
-    Agg_Matrix = Agg_Matrix + Mask_Result[(((d-1)*n)+1):(n*d),]
-  Agg_Matrix = (Agg_Matrix/iter)
-  
-  Agg_Matrix = Agg_Matrix * (cMask == 0)
-  Agg_Matrix = Agg_Matrix + agg 
+  output = X1[,1:lastIndex] 
+}
 
-  dataset =   XO + Agg_Matrix
-  singleSet = Result[index:row, ]
-   
-  # decoding nominal columns 
-  dataset = transformdecode(target=dataset, spec=jspecR, meta=M);
-  singleSet = transformdecode(target=singleSet, spec=jspecR, meta=M);
-  
-  # removing extra categorical column
-  dataset = dataset[,1:col-1]
-  singleSet = singleSet[,1:col-1]
- }
-
-
-cAggregate = function(Matrix[Double] Mask_Result, Integer iter, Integer n)
-return (Matrix[Double] agg)
+colMode = function (Matrix[Double] X)
+return (Matrix[Double] colMode)
 {
-  conflict = matrix(0, n, ncol(Mask_Result))
-  uCount = 0
-  vCount = 0
-  for(d in seq(1,(iter-1), 1))
-  {
-    u =  Mask_Result[(((d-1)*n)+1):(n*d),]
-    v =  Mask_Result[(((d)*n)+1):(n*(d+1)),]
-    if(sum(u != v) > 0) {
-      conflict = u != v
-      u1 = conflict * u;
-      v1 = conflict * v;
-      for(i in 1: iter)
-      {
-        s = Mask_Result[(((i-1)*n)+1):(n*i),]
-        s = s * conflict
-        if(sum(u1 != s ) == 0)
-          uCount = uCount + 1
-        if(sum(v1 != s) == 0)
-          vCount = vCount + 1
-      }
-      # copy the results of u in v
-      if(uCount > vCount)
-        Mask_Result[(((d)*n)+1):(n*(d+1)),] = Mask_Result[(((d-1)*n)+1):(n*d),] 
-      # copy the results of v in u
-      else
-        Mask_Result[(((d-1)*n)+1):(n*d),] = Mask_Result[(((d)*n)+1):(n*(d+1)),] 
-      d = 1
-    }
+  d = ncol(X)
+  n = nrow(X)
+  colMode = matrix(0, 1, ncol(X))
+  # compute column wise mode
+  parfor(i in 1: d) {
+    X_c = removeEmpty(target=X, margin = "rows", select=(rowSums(X != 0)==d))
+    f = X_c[, i]
+    cat_counts = table(f, 1, n, 1);  # counts for each category
+    mode = as.scalar(rowIndexMax(t(cat_counts)));
+    colMode[1,i] = mode
   }
-  agg = Mask_Result[1:n,]
 }

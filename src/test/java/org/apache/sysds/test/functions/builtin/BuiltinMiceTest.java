@@ -36,7 +36,7 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinMiceTest.class.getSimpleName() + "/";
 
 	private final static String DATASET = SCRIPT_DIR +"functions/transform/input/ChickWeight.csv";
-	private final static double eps = 0.2;
+	private final static double eps = 0.16;
 	private final static int iter = 3;
 	private final static int com = 2;
 
@@ -50,21 +50,35 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 		runMiceNominalTest(mask, 1, LopProperties.ExecType.CP);
 	}
 
+//	@Test
+//	public void testMiceMixSpark() {
+//		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
+//		runMiceNominalTest(mask, 1, LopProperties.ExecType.SPARK);
+//	}
+
 	@Test
 	public void testMiceNumberCP() {
 		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
 		runMiceNominalTest(mask, 2, LopProperties.ExecType.CP);
 	}
 
+//	@Test
+//	public void testMiceNumberSpark() {
+//		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
+//		runMiceNominalTest(mask, 2, LopProperties.ExecType.SPARK);
+//	}
+
 	@Test
 	public void testMiceCategoricalCP() {
 		double[][] mask = {{ 1.0, 1.0, 1.0, 1.0, 1.0}};
 		runMiceNominalTest(mask, 3, LopProperties.ExecType.CP);
 	}
-	//	@Test
-	//	public void testMiceSpark() {
-	//		runMiceNominalTest( LopProperties.ExecType.SPARK);
-	//	}
+
+//	@Test
+//	public void testMiceCategoricalSpark() {
+//		double[][] mask = {{ 1.0, 1.0, 1.0, 1.0, 1.0}};
+//		runMiceNominalTest(mask, 3, LopProperties.ExecType.SPARK);
+//	}
 
 	private void runMiceNominalTest(double[][] mask, int testType, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
@@ -72,11 +86,11 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"), "iteration=" + iter,  "com=" + com, "dataN=" + output("N"), "dataC=" + output("C")};
+			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"), "iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
 			writeInputMatrixWithMTD("M", mask, true);
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " +DATASET+ " " +inputDir() + " "  + expectedDir();
+			rCmd = getRCmd(DATASET, inputDir(), expectedDir());
 
 			runTest(true, false, null, -1);
 			runRScript(true);

@@ -28,7 +28,7 @@ from systemds.onnx_systemds import util
 
 
 class GeneratedScriptPart:
-    def __init__(self, dml_script: str, imports: [str] = None, sub_graphs: ["onnx.GraphProto"] = None):
+    def __init__(self, dml_script: str, imports: [str] = None, sub_graphs: [onnx.GraphProto] = None):
         if sub_graphs is None:
             sub_graphs = []
         if imports is None:
@@ -38,8 +38,8 @@ class GeneratedScriptPart:
         self.sub_graphs = sub_graphs
 
 
-def gen_simple_function_call(env: jinja2.environment.Environment, graph: "onnx.GraphProto",
-                             node: "onnx.NodeProto") -> GeneratedScriptPart:
+def gen_simple_function_call(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                             node: onnx.NodeProto) -> GeneratedScriptPart:
     """
     Generates a simple function call by directly providing the node inputs as arguments
     and node outputs as outputs to a function call. Additionally adds the required imports.
@@ -87,8 +87,8 @@ def gen_simple_function_call(env: jinja2.environment.Environment, graph: "onnx.G
     return GeneratedScriptPart(imports=[import_render], dml_script=node_render)
 
 
-def gen_2input_1output_operator(env: jinja2.environment.Environment, graph: "onnx.GraphProto",
-                                node: "onnx.NodeProto") -> GeneratedScriptPart:
+def gen_2input_1output_operator(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                                node: onnx.NodeProto) -> GeneratedScriptPart:
     """
     Generates simple operator calls like 'z = x + y' which have two inputs (left and right) and one output.
     :param env: Jinja environment to load the template files
@@ -121,8 +121,8 @@ def gen_2input_1output_operator(env: jinja2.environment.Environment, graph: "onn
     return GeneratedScriptPart(node_render)
 
 
-def gen_1input_1output_mat_operator(env: jinja2.environment.Environment, graph: "onnx.GraphProto",
-                                    node: "onnx.NodeProto") -> GeneratedScriptPart:
+def gen_1input_1output_mat_operator(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                                    node: onnx.NodeProto) -> GeneratedScriptPart:
     """
     Generates simple operators like 'y = -x' which have one input and one output.
     :param env:  Jinja environment to load the template files
@@ -150,8 +150,8 @@ def gen_1input_1output_mat_operator(env: jinja2.environment.Environment, graph: 
     return GeneratedScriptPart(dml_script=node_render)
 
 
-def gen_dropout_call(env: jinja2.environment.Environment, graph: "onnx.GraphProto",
-                     node: "onnx.NodeProto") -> GeneratedScriptPart:
+def gen_dropout_call(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                     node: onnx.NodeProto) -> GeneratedScriptPart:
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
     import_template = env.get_template("module_import.dml.jinja")
 
@@ -215,8 +215,8 @@ def __compute_pad(auto_pad: str, Hf: int, Wf: int, strides: [int], pads: [int], 
     return padh, padw
 
 
-def gen_maxpool_call(env: jinja2.environment.Environment, graph: "onnx.GraphProto",
-                     node: "onnx.NodeProto") -> GeneratedScriptPart:
+def gen_maxpool_call(env: jinja2.environment.Environment, graph: onnx.GraphProto,
+                     node: onnx.NodeProto) -> GeneratedScriptPart:
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
     import_template = env.get_template("module_import.dml.jinja")
 
@@ -314,7 +314,7 @@ def gen_maxpool_call(env: jinja2.environment.Environment, graph: "onnx.GraphProt
     return GeneratedScriptPart(imports=[import_render], dml_script=node_render)
 
 
-def gen_conv_call(env: jinja2.environment.Environment, graph: "onnx.GraphProto", node: "onnx.NodeProto") \
+def gen_conv_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) \
         -> GeneratedScriptPart:
     operator_template = env.get_template("operators/" + "function_call.dml.jinja")
     import_template = env.get_template("module_import.dml.jinja")
@@ -430,7 +430,7 @@ def gen_conv_call(env: jinja2.environment.Environment, graph: "onnx.GraphProto",
     return GeneratedScriptPart(imports=[import_render], dml_script=bias_initializer_render + "\n" + node_render)
 
 
-def gen_if_call(env: jinja2.environment.Environment, graph: "onnx.GraphProto", node: "onnx.NodeProto") \
+def gen_if_call(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) \
         -> GeneratedScriptPart:
     operator_template = env.get_template("operators/if_operator.dml.jinja")
     function_call_template = env.get_template("operators/function_call.dml.jinja")

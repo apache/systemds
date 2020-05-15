@@ -26,7 +26,7 @@ def invoke_systemds(input_file: str, args: [str] = None) -> int:
     Runs systemds by running the script in $SYSTEMDS_ROOT/bin/systemds with the provided input_file,
     will fail if environment variable SYSTEMDS_ROOT is not set.
 
-    Furthermore this if the script is sucessfull this method will print elements from Log4J if they are:
+    Furthermore this if the script is successfully this method will print lines from Log4J if they are:
     WARN or ERROR.
 
     :param input_file: the dml script to run

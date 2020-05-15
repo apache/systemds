@@ -21,10 +21,10 @@
 
 import os
 
-from systemds.onnx_systemds import util, operator_gen
+import jinja2
 import onnx
 import systemds.onnx_systemds.onnx_helper as onnx_helper
-import jinja2
+from systemds.onnx_systemds import operator_gen, util
 
 # Each operator listed shall be supported by this converter
 operator_generators = {
@@ -46,7 +46,7 @@ operator_generators = {
 }
 
 
-def gen_node_script(env: jinja2.environment.Environment, graph: "onnx.GraphProto", node: "onnx.NodeProto") \
+def gen_node_script(env: jinja2.environment.Environment, graph: onnx.GraphProto, node: onnx.NodeProto) \
         -> operator_gen.GeneratedScriptPart:
     """
     Generates a dml script snippet, the required imports and sub-graphs for the given `node`
@@ -63,7 +63,7 @@ def gen_node_script(env: jinja2.environment.Environment, graph: "onnx.GraphProto
         raise error
 
 
-def gen_graph_functions(env: jinja2.environment.Environment, main_graph: "onnx.GraphProto") -> ([str], str, [str]):
+def gen_graph_functions(env: jinja2.environment.Environment, main_graph: onnx.GraphProto) -> ([str], str, [str]):
     """
     Traverses the node tree of the onnx-graph structure and generates a script string for each node,
     as well as a string for the required imports together with all functions of sub-graphs.
@@ -117,7 +117,7 @@ def gen_graph_functions(env: jinja2.environment.Environment, main_graph: "onnx.G
     return list(generated_imports), main_graph_function, sub_graph_functions
 
 
-def render_function(env: jinja2.environment.Environment, graph: "onnx.GraphProto",
+def render_function(env: jinja2.environment.Environment, graph: onnx.GraphProto,
                     generated_node_scripts: [str]) -> str:
     """
     Generates the dml function for the given `graph` and inserts the 'generated_node_scripts' in
@@ -151,7 +151,7 @@ def render_function(env: jinja2.environment.Environment, graph: "onnx.GraphProto
     return graph_function_render
 
 
-def gen_model_header(env: jinja2.environment.Environment, model: "onnx.ModelProto") -> str:
+def gen_model_header(env: jinja2.environment.Environment, model: onnx.ModelProto) -> str:
     """
     Generates the header of the script for the given `model`
 
@@ -183,7 +183,7 @@ def gen_model_header(env: jinja2.environment.Environment, model: "onnx.ModelProt
     return model_header_render
 
 
-def gen_script(model: "onnx.ModelProto", output_file: str = None) -> str:
+def gen_script(model: onnx.ModelProto, output_file: str = None) -> str:
     """
     Generate the dml script for the given `model` and return it.
     If an `output_file` is given, the script is also written to a file.

@@ -20,12 +20,12 @@
 # -------------------------------------------------------------
 
 import functools
+
 import onnx
-from onnx import *
 
 
 class TreeNode:
-    def __init__(self, node: "onnx.NodeProto"):
+    def __init__(self, node: onnx.NodeProto):
         self.node = node
         self.parent_nodes = list()
         self.child_nodes = list()
@@ -34,7 +34,7 @@ class TreeNode:
 class NodeTree:
     """ A simple class for representing a tree structure of nodes """
 
-    def __init__(self, nodes: ["onnx.NodeProto"]):
+    def __init__(self, nodes: [onnx.NodeProto]):
         self.nodes = [TreeNode(node) for node in nodes]
         self.root_nodes = []  # nodes that have no parents
         self.end_nodes = []  # nodes that have no children
@@ -71,7 +71,7 @@ class NodeTree:
         node.parent_nodes = []
 
 
-def load_model(onnx_file: str) -> "onnx.ModelProto":
+def load_model(onnx_file: str) -> onnx.ModelProto:
     """
     Loads the onnx file, checks the model and converts it to a common version if necessary.
 
@@ -87,7 +87,7 @@ def load_model(onnx_file: str) -> "onnx.ModelProto":
         return onnx.version_converter.convert_version(model, TARGET_VERSION)
 
 
-def get_value_info(graph: "onnx.GraphProto", name: str) -> "onnx.ValueInfoProto":
+def get_value_info(graph: onnx.GraphProto, name: str) -> onnx.ValueInfoProto:
     """
     Searches the `graph` for the given `name` and returns the associated ValueInfo,
     if the name is not found None is returned.
@@ -111,7 +111,7 @@ def get_value_info(graph: "onnx.GraphProto", name: str) -> "onnx.ValueInfoProto"
     return None
 
 
-def get_graph_inputs_without_initializers(graph: "onnx.GraphProto") -> ["onnx.ValueInfoProto"]:
+def get_graph_inputs_without_initializers(graph: onnx.GraphProto) -> [onnx.ValueInfoProto]:
     """
     Returns all inputs of the `graph` that have no associated initializer values.
 
@@ -132,7 +132,7 @@ def get_graph_inputs_without_initializers(graph: "onnx.GraphProto") -> ["onnx.Va
     return inputs_without_initializers
 
 
-def get_graph_inputs_with_initializers(graph: "onnx.GraphProto") -> [("onnx.ValueInfoProto", "onnx.TensorProto")]:
+def get_graph_inputs_with_initializers(graph: onnx.GraphProto) -> [(onnx.ValueInfoProto, onnx.TensorProto)]:
     """
     Returns all initialized inputs of the `graph` with their corresponding initializer.
 
@@ -151,7 +151,7 @@ def get_graph_inputs_with_initializers(graph: "onnx.GraphProto") -> [("onnx.Valu
 
 class PreparedValue:
     """ Class for preparing onnx value structures for writing them to the dml script """
-    def __init__(self, value_info: "onnx.ValueInfoProto", initializer: "onnx.TensorProto" = None):
+    def __init__(self, value_info: onnx.ValueInfoProto, initializer: onnx.TensorProto = None):
 
         systemds_supported_types = ["integer", "boolean", "double", "string"]
 
@@ -219,6 +219,5 @@ class PreparedValue:
             self.initializer_values = list(initializer.float_data)
 
 
-def get_valueinfo_dimensions(value_info: "onnx.ValueInfoProto") -> [int]:
+def get_valueinfo_dimensions(value_info: onnx.ValueInfoProto) -> [int]:
     return [dim.dim_value for dim in value_info.type.tensor_type.shape.dim]
-

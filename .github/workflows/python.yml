@@ -53,9 +53,19 @@ jobs:
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-  
+    
+    - name: Cache Pip Dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
+
+    - name: Cache Deb Dependencies
+      uses: actions/cache@v1
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
+
     - name: Maven clean & package
       run: mvn clean package -P distribution
 
@@ -65,15 +75,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
 
-    - name: Cache Pip Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}-
-
-    - name: Install protobuf
+    - name: Install Protobuf
       run: sudo apt-get install protobuf-compiler libprotoc-dev 
   
     - name: Install pip Dependencies

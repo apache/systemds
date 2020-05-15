@@ -90,7 +90,7 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
         cd src/main/python
-        python tests/onnx/test_models/model_generate.py
+        python tests/onnx_systemds/test_models/model_generate.py
         python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
 

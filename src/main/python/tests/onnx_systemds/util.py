@@ -23,8 +23,11 @@ from systemds.onnx_systemds.util import resolve_systemds_root
 
 def invoke_systemds(input_file: str, args: [str] = None) -> int:
     """
-    Runs systemds by running the script in $SYSTEMDS_ROOT_PATH/bin/systemds with the provided input_file,
-    will fail if environment variable SYSTEMDS_ROOT_PATH is not set.
+    Runs systemds by running the script in $SYSTEMDS_ROOT/bin/systemds with the provided input_file,
+    will fail if environment variable SYSTEMDS_ROOT is not set.
+
+    Furthermore this if the script is sucessfull this method will print elements from Log4J if they are:
+    WARN or ERROR.
 
     :param input_file: the dml script to run
     :param args: additional arguments if needed
@@ -53,8 +56,10 @@ def invoke_systemds(input_file: str, args: [str] = None) -> int:
 
     stderr = res.stderr.decode("utf-8")
     if len(stderr) != 0:
-        print("No exception but stderr was not empty:")
-        print(stderr)
+        lines = [l for l in stderr.split("\n") if ("WARN" in l or "ERROR" in l)]
+        if len(lines) != 0:
+            print("No exception but output but warnings and errors:")
+            [print(l) for l in lines]
 
     return res.returncode
 

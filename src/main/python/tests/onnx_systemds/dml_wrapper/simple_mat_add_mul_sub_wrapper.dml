@@ -13,15 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("tests/onnx/dml_output/simple_relu_tanh_sigmoid_softmax.dml") as simple_relu_tanh
+source("tests/onnx_systemds/dml_output/simple_mat_add_mul_sub.dml") as simple_mat_add_mul_sub
 
-A = matrix("0.2 2 12 20", rows=2, cols=2)
-B = matrix("0.2 2 12 20", rows=2, cols=2)
-C = matrix("0.2 2 12 20", rows=2, cols=2)
-D = matrix("0.2 2 12 20", rows=2, cols=2)
-[O, U, I, J] = simple_relu_tanh::gen_simple_relu_tanh_sigmoid_softmax_graph(A, B, C, D)
-out = append(toString(O), toString(U))
-out = append(out, toString(I))
-out = append(out, toString(J))
+A = matrix("3 8 9 10", rows=2, cols=2)
+B = matrix("2 5 7 8", rows=2, cols=2)
+C = matrix("1 2 3 4", rows=2, cols=2)
+O = matrix(0, rows=2, cols=2)
+O = simple_mat_add_mul_sub::gen_a_simple_matrix_addition_multiplication_and_substraction_test_graph(A, B, C)
 
-write(out, "tests/onnx/output_test/simple_relu_tanh_sigmoid_softmax.out")
+write(O, "tests/onnx_systemds/output_test/simple_mat_add_mul_sub.out")

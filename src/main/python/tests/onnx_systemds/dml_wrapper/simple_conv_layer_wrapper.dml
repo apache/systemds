@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("tests/onnx/dml_output/simple_mat_add.dml") as simple_mat_add
+source("tests/onnx_systemds/dml_output/simple_conv_layer.dml") as simple_conv
 
-A = matrix("3 8 9 10", rows=2, cols=2)
-B = matrix("2 5 7 8", rows=2, cols=2)
-C = matrix("1 2 3 4", rows=2, cols=2)
-O = matrix(0, rows=2, cols=2)
-O = simple_mat_add::gen_a_simple_matrix_addition_test_graph(A, B, C)
 
-write(O, "tests/onnx/output_test/simple_mat_add.out")
+x = matrix("0. 1. 2. 3. 4. 5. 6. 7. 8. 9. 10. 11. 12. 13. 14. 15. 16. 17. 18. 19. 20. 21. 22. 23. 24.", rows=1, cols=25)
+W = matrix("1. 1. 1. 1. 1. 1. 1. 1. 1.", rows=1, cols=9)
+
+out = simple_conv::gen_a_simple_convolution_graph(x, W)
+
+write(out, "tests/onnx_systemds/output_test/simple_conv_layer.out")
+

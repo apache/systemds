@@ -90,17 +90,7 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
         cd src/main/python
+        python tests/onnx/test_models/model_generate.py
         python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
 
-    - name: Run onnx-systemds python tests
-      run: |
-        export SYSTEMDS_ROOT=$(pwd)
-        export PATH=$SYSTEMDS_ROOT/bin:$PATH
-        cd src/main/python
-        echo "Creating models"
-        python tests/onnx/test_models/model_generate.py
-        ls tests/onnx/test_models/*.onnx
-        echo "Beginning tests"
-        python -m unittest tests/onnx/*.py
-        echo "Exit Status: " $?

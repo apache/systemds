@@ -13,10 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("tests/onnx/dml_output/simple_maxpool_layer.dml") as simple_maxpool
+source("tests/onnx_systemds/dml_output/simple_relu_tanh_sigmoid_softmax.dml") as simple_relu_tanh
 
-x = matrix("1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25", rows=1, cols=25)
-out = simple_maxpool::gen_a_simple_maxpool_graph(x)
+A = matrix("0.2 2 12 20", rows=2, cols=2)
+B = matrix("0.2 2 12 20", rows=2, cols=2)
+C = matrix("0.2 2 12 20", rows=2, cols=2)
+D = matrix("0.2 2 12 20", rows=2, cols=2)
+[O, U, I, J] = simple_relu_tanh::gen_simple_relu_tanh_sigmoid_softmax_graph(A, B, C, D)
+out = append(toString(O), toString(U))
+out = append(out, toString(I))
+out = append(out, toString(J))
 
-write(out, "tests/onnx/output_test/simple_maxpool_layer.out")
-
+write(out, "tests/onnx_systemds/output_test/simple_relu_tanh_sigmoid_softmax.out")

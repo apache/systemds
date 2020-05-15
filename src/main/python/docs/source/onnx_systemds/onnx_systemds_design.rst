@@ -106,7 +106,7 @@ Therefore the first node to insert would be ``Sub``. After inserting ``Sub`` its
 therefore all outputs of ``MatMul`` become available. Finally, after removing ``MatMul`` from the graph all outputs
 to ``Add`` are available, and it can be removed from the graph as well.
 
-.. image:: assets/sample_graph.png
+.. image:: /assets/sample_graph.png
     :width: 200px
     :align: center
     :alt: sample graph

@@ -19,8 +19,9 @@
 ..
 .. -------------------------------------------------------------
 
-QuickStart
-=============
+QuickStart Onnx
+===============
+
 onnx-systemds is a tool for importing/exporting onnx graphs into/from SystemDS DML scripts.
 
 Prerequisites

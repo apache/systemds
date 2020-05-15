@@ -23,6 +23,30 @@
 # Guassian Mixture Model
 # ------------------------------------------
 
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double   ---       Matrix X  
+# components      Integer  3         Number of components in the Gaussian mixture model
+# iterations      Integer  10        number of iterations
+# model           String   "V"       Univariate mixture     "V": unequal variance
+#                                                           "E": equal variance
+#                                    Multivariate mixture  "VVI": spherical, unequal volume 
+#                                                          "EEI": spherical, equal volume
+# eps            Double    0.000001  value for convergence 
+# ---------------------------------------------------------------------------------------------
+
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# weight          Double   ---       A matrix whose [i,k]th entry is the probability that observation i in the test data belongs to the kth class
+
+
+
+
 m_gmm = function(Matrix[Double] X, Integer components = 3, Integer iter = 10, String model = "V", Double eps = 0.000001, Boolean verbose = FALSE )
 return (Matrix[Double] weights)
 {
@@ -38,7 +62,6 @@ return (Matrix[Double] weights)
   for(i in 1:components)
     sigma = append(sigma, diag(matrix(1, ncol(X), 1))) #covMatrix(X, matrix(1, nrow(X), 1))
 
-  
   loglikNew = sum(log(rowSums(weights*phi)))
   loglikPre = 0
   loglikDiff = 0
@@ -76,8 +99,6 @@ return (Matrix[Double] weights)
 
 }
 
-
-
 covMatrix = function(Matrix[Double] X, Matrix[Double] w)
 return (Matrix[Double] covM) 
 { 
@@ -89,7 +110,6 @@ return (Matrix[Double] covM)
     for(j in 1:ncol(X))
       covM[i, j] = cov(X[,i], X[,j], w)
 }
-
 
 predict_prob = function(Matrix[Double] X, Integer components, Matrix[Double] mu, List[Unknown] sigma, Matrix[Double] phi)
   return (Matrix[Double] weights)
@@ -103,7 +123,6 @@ predict_prob = function(Matrix[Double] X, Integer components, Matrix[Double] mu,
   denom = rowSums(numer)
   weights = numer/denom
 }
-
 
 mvpdf = function(Matrix[Double] X, Matrix[Double] mu, Matrix[Double] sigma) 
 return (Matrix[Double] pdf)

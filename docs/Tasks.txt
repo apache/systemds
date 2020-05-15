@@ -161,6 +161,7 @@ SYSTEMDS-190 New Builtin Functions III
  * 197 Builtin function for functional dependency discovery           OK
  * 198 Extended slice finding (classification)                        OK
  * 199 Builtin function Multinominal Logistic Regression Predict      OK
+ * 200 Builtin function Gaussian Mixture Model
 
 SYSTEMDS-200 Various Fixes
  * 201 Fix spark append instruction zero columns                      OK
@@ -282,6 +283,9 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
 
 SYSTEMDS-350 Data Cleaning Framework
  * 351 New builtin function for error correction by schema            OK
+ * 352 New builtin function for error correction by data type
+ * 353 Initial pipeline structure with brute force enumeration
+ * 354 Pipeline structure with Grid Search
 
 SYSTEMDS-360 Privacy/Data Exchange Constraints
  * 361 Initial privacy meta data (compiler/runtime)                   OK

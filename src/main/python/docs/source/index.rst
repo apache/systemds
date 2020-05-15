@@ -59,8 +59,8 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
    :hidden:
    :caption: Onnx SystemDS
 
-   onnx_systemds.rst
-   onnx_systemds_design.rst
+   onnx_systemds/onnx_systemds.rst
+   onnx_systemds/onnx_systemds_design.rst
 
 .. toctree::
    :maxdepth: 1

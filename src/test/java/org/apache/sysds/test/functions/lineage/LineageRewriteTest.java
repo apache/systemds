@@ -124,13 +124,13 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			fullDMLScriptName = getScript();
 			double[][] X = getRandomMatrix(numRecords, numFeatures, 0, 1, 0.8, -1);
 			double[][] Y = !elementwise ? getRandomMatrix(numFeatures, numRecords, 0, 1, 0.8, -1)
-									: getRandomMatrix(numRecords, numFeatures, 0, 1, 0.8, -1);
+				: getRandomMatrix(numRecords, numFeatures, 0, 1, 0.8, -1);
 			if (classes > 0) {
 				 Y = getRandomMatrix(numRecords, 1, 0, 1, 1, -1);
 				 for(int i=0; i<numRecords; i++){
 					 Y[i][0] = (int)(Y[i][0]*classes) + 1;
 					 Y[i][0] = (Y[i][0] > classes) ? classes : Y[i][0];
-				}	
+				}
 			}
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);

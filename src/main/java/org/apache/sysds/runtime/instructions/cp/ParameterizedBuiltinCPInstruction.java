@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
@@ -397,7 +398,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	}
 
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String opcode = getOpcode();
 		if (opcode.equalsIgnoreCase("groupedagg")) {
 			CPOperand target = new CPOperand(params.get(Statement.GAGG_TARGET), ValueType.FP64, DataType.MATRIX);
@@ -407,21 +408,20 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			CPOperand fn = new CPOperand(params.get(Statement.GAGG_FN), ValueType.STRING, DataType.SCALAR, true);
 			String ng = params.containsKey(Statement.GAGG_NUM_GROUPS) ? params.get(Statement.GAGG_NUM_GROUPS) : String.valueOf(-1);
 			CPOperand ngroups = new CPOperand(ng , ValueType.INT64, DataType.SCALAR, true);
-			return new LineageItem[]{new LineageItem(output.getName(),
-				getOpcode(), LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups))};
+			return Pair.of(output.getName(), new LineageItem(getOpcode(),
+				LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups)));
 		}
 		else if (opcode.equalsIgnoreCase("rmempty")) {
 			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
 			CPOperand margin = new CPOperand(params.get("margin"), ValueType.STRING, DataType.SCALAR, true);
 			String sl = params.containsKey("select") ? params.get("select") : String.valueOf(-1);
 			CPOperand select = new CPOperand(sl, ValueType.FP64, DataType.MATRIX); 
-			return new LineageItem[]{new LineageItem(output.getName(),
-				getOpcode(), LineageItemUtils.getLineage(ec, target, margin, select))};
+			return Pair.of(output.getName(), new LineageItem(getOpcode(),
+				LineageItemUtils.getLineage(ec, target, margin, select)));
 		}
 		//TODO: generic interface to support all the ops
 		else
-			return new LineageItem[]{new LineageItem(output.getName(),
-					getOpcode(), LineageItemUtils.getLineage(ec, input1,input2,input3))};
-			
+			return Pair.of(output.getName(), new LineageItem(getOpcode(),
+				LineageItemUtils.getLineage(ec, input1,input2,input3)));
 	}
 }

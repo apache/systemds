@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -107,13 +108,10 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 			throw new DMLRuntimeException("Opcode (" + getOpcode() 
 				+ ") not recognized in ScalarBuiltinMultipleCPInstruction");
 		}
-
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
-		return new LineageItem[]{new LineageItem(output.getName(),
-			instString, getOpcode())};
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(output.getName(), new LineageItem(instString, getOpcode()));
 	}
-
 }

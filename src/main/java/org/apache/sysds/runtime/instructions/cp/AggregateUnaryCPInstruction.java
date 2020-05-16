@@ -147,12 +147,9 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 					throw new DMLRuntimeException("Lineage trace "
 						+ "for variable "+input1.getName()+" unavailable.");
 				
-				LineageItem li = DMLScript.LINEAGE_DEDUP ?
-						LineageItemUtils.rDecompress(ec.getLineageItem(input1)) :
-						ec.getLineageItem(input1);
-				
-				ec.setScalarOutput(output_name, new StringObject(
-						Explain.explain(li)));
+				LineageItem li = !DMLScript.LINEAGE_DEDUP ? ec.getLineageItem(input1):
+					LineageItemUtils.rDecompress(ec.getLineageItem(input1));
+				ec.setScalarOutput(output_name, new StringObject(Explain.explain(li)));
 				break;
 			}
 			default: {

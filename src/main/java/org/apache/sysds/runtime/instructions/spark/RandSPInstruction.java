@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.fs.FileSystem;
@@ -999,7 +1000,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String tmpInstStr = instString;
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
 			//generate pseudo-random seed (because not specified)
@@ -1011,6 +1012,6 @@ public class RandSPInstruction extends UnarySPInstruction {
 			tmpInstStr = InstructionUtils.replaceOperand(
 				tmpInstStr, position, String.valueOf(runtimeSeed));
 		}
-		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
+		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
 	}
 }

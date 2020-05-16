@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -1184,7 +1185,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String,LineageItem> getLineageItem(ExecutionContext ec) {
+		String varname = null;
 		LineageItem li = null;
 		switch (getVariableOpcode()) {
 			case CreateVariable:
@@ -1192,19 +1194,21 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					break; //otherwise fall through
 			
 			case Read: {
-				li = new LineageItem(getInput1().getName(), toString(), getOpcode());
+				varname = getInput1().getName();
+				li = new LineageItem(toString().replace(getInput1().getName(),
+					org.apache.sysds.lops.Data.PREAD_PREFIX+"xxx"), getOpcode());
 				break;
 			}
 			case AssignVariable: {
-				li = new LineageItem(getInput2().getName(), getOpcode(),
-						new LineageItem[]{ec.getLineage().getOrCreate(getInput1())});
+				varname = getInput2().getName();
+				li = new LineageItem(getOpcode(), new LineageItem[]{ec.getLineage().getOrCreate(getInput1())});
 				break;
 			}
 			case CopyVariable: {
 				if (!ec.getLineage().contains(getInput1()))
 					throw new DMLRuntimeException("Could not find LineageItem for " + getInput1().getName());
-				li = new LineageItem(getInput2().getName(), getOpcode(),
-						new LineageItem[]{ec.getLineage().get(getInput1())});
+				varname = getInput2().getName();
+				li = new LineageItem(getOpcode(), new LineageItem[]{ec.getLineage().get(getInput1())});
 				break;
 			}
 			case Write: {
@@ -1214,21 +1218,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						lineages.add(ec.getLineage().getOrCreate(input));
 				if (_formatProperties != null && _formatProperties.getDescription() != null && !_formatProperties.getDescription().isEmpty())
 					lineages.add(new LineageItem(_formatProperties.getDescription()));
-				li = new LineageItem(getInput1().getName(),
-						getOpcode(), lineages.toArray(new LineageItem[0]));
-				break;
-			}
-			case MoveVariable: {
-				ArrayList<LineageItem> lineages = new ArrayList<>();
-				if (ec.getLineage().contains(getInput1()))
-					lineages.add(ec.getLineageItem(getInput1()));
-				else {
-					lineages.add(ec.getLineage().getOrCreate(getInput1()));
-					if (getInput3() != null)
-						lineages.add(ec.getLineage().getOrCreate(getInput3()));
-				}
-				li = new LineageItem(getInput2().getName(),
-					getOpcode(), lineages.toArray(new LineageItem[0]));
+				varname = getInput1().getName();
+				li = new LineageItem(getOpcode(), lineages.toArray(new LineageItem[0]));
 				break;
 			}
 			case CastAsBooleanVariable:
@@ -1237,16 +1228,16 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case CastAsScalarVariable:
 			case CastAsMatrixVariable:
 			case CastAsFrameVariable:{
-				li = new LineageItem(getOutputVariableName(), 
-					getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
+				varname = getOutputVariableName();
+				li = new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
 				break;
 			}
 			case RemoveVariable:
+			case MoveVariable:
 			default:
 		}
 		
-		return (li == null) ? null :
-			new LineageItem[]{li};
+		return (li == null) ? null : Pair.of(varname, li);
 	}
 	
 	public boolean isVariableCastInstruction() {

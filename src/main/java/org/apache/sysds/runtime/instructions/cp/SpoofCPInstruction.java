@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
@@ -97,17 +98,13 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) 
-	{
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		//read and deepcopy the corresponding lineage DAG (pre-codegen)
 		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(getOperatorClass().getName()).deepCopy();
 		
 		//replace the placeholders with original instruction inputs. 
 		LineageItemUtils.replaceDagLeaves(ec, LIroot, _in);
 
-		//replace the placeholder name with original output's name
-		LIroot.setName(output.getName());
-
-		return new LineageItem[] {LIroot};
+		return Pair.of(output.getName(), LIroot);
 	}
 }

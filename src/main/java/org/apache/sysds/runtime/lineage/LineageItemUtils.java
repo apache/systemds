@@ -85,6 +85,7 @@ import java.util.stream.Collectors;
 public class LineageItemUtils {
 	
 	private static final String LVARPREFIX = "lvar";
+	private static final String LPLACEHOLDER = "IN#";
 	
 	public static LineageItemType getType(String str) {
 		if (str.length() == 1) {
@@ -404,7 +405,8 @@ public class LineageItemUtils {
 		if (ArrayUtils.contains(inputs, root) || spoof) {
 			Hop tmp = spoof ? spoofmap.get(root.getHopID()) : root;
 			int pos = ArrayUtils.indexOf(inputs, tmp);
-			LineageItem li = new LineageItem(String.valueOf(pos), "InputPlaceholder", "Create"+String.valueOf(root.getHopID()));
+			LineageItem li = new LineageItem(LPLACEHOLDER+pos,
+				"Create"+String.valueOf(root.getHopID()));
 			operands.put(tmp.getHopID(), li);
 			return;
 		}
@@ -453,7 +455,7 @@ public class LineageItemUtils {
 			sb.append(root.getValueType().toString());
 			sb.append(Instruction.VALUETYPE_PREFIX);
 			sb.append(true); //isLiteral = true
-			li = new LineageItem(root.getName(), sb.toString());
+			li = new LineageItem(sb.toString());
 		}
 		else
 			throw new DMLRuntimeException("Unsupported hop: "+root.getOpString());
@@ -492,22 +494,22 @@ public class LineageItemUtils {
 			for (LineageItem li : item.getInputs()[1].getInputs())
 				inputs.add(rDecompress(li));
 			
-			LineageItem li = new LineageItem(item.getInputs()[1].getName(),
-				item.getInputs()[1].getData(),
+			LineageItem li = new LineageItem(item.getInputs()[1].getData(),
 				item.getInputs()[1].getOpcode(), inputs.toArray(new LineageItem[0]));
 			
 			li.resetVisitStatus();
-			rSetDedupInputOntoOutput(item.getName(), li, dedupInput);
+			rSetDedupInputOntoOutput(item.getData(), li, dedupInput);
 			li.resetVisitStatus();
 			return li;
-		} else {
+		}
+		else {
 			ArrayList<LineageItem> inputs = new ArrayList<>();
 			if (item.getInputs() != null) {
 				for (LineageItem li : item.getInputs())
 					inputs.add(rDecompress(li));
 			}
-			return new LineageItem(item.getName(), item.getData(),
-				item.getOpcode(), inputs.toArray(new LineageItem[0]));
+			return new LineageItem(
+				item.getData(), item.getOpcode(), inputs.toArray(new LineageItem[0]));
 		}
 	}
 	
@@ -532,9 +534,13 @@ public class LineageItemUtils {
 		if (item.getInputs() != null)
 			for (int i = 0; i < item.getInputs().length; i++) {
 				LineageItem li = item.getInputs()[i];
-				
-				if (li.getName().equals(name))
-					item.getInputs()[i] = dedupInput;
+				//replace CPOperand literals (placeholders)
+				//TODO should use the same placeholder meta data as codegen
+				if( li.getType() == LineageItemType.Literal ) {
+					CPOperand tmp = new CPOperand(li.getData());
+					if( !tmp.isLiteral() && tmp.getName().equals(name) )
+						item.getInputs()[i] = dedupInput;
+				}
 				
 				rSetDedupInputOntoOutput(name, li, dedupInput);
 			}
@@ -553,7 +559,7 @@ public class LineageItemUtils {
 		if( current.isVisited() || current.getInputs() == null )
 			return;
 		if( liNew == null )
-			throw new DMLRuntimeException("Invalid null lineage item for "+liOld.getName());
+			throw new DMLRuntimeException("Invalid null lineage item for "+liOld.getId());
 		//process children until old item found, then replace
 		for(int i=0; i<current.getInputs().length; i++) {
 			LineageItem tmp = current.getInputs()[i];
@@ -578,9 +584,10 @@ public class LineageItemUtils {
 		
 		for (int i=0; i<root.getInputs().length; i++) {
 			LineageItem li = root.getInputs()[i];
-			if (li.isLeaf() && li.getType() != LineageItemType.Literal)
-				//order-preserving replacement. Name represents relative position.
-				root.getInputs()[i] = newleaves[Integer.parseInt(li.getName())];
+			if (li.isLeaf() && li.getType() != LineageItemType.Literal
+				&& li.getData().startsWith(LPLACEHOLDER))
+				//order-preserving replacement. IN#<xxx> represents relative position xxx
+				root.getInputs()[i] = newleaves[Integer.parseInt(li.getData().substring(3))];
 			else
 				rReplaceDagLeaves(li, newleaves);
 		}

@@ -19,8 +19,36 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 
-public interface LineageTraceable {
-	public LineageItem[] getLineageItems(ExecutionContext ec);
+public interface LineageTraceable
+{
+	/**
+	 * Obtain meta data on number of outputs and thus, number of lineage items.
+	 * 
+	 * @return true iff instruction has a single output
+	 */
+	public default boolean hasSingleLineage() {
+		return true;
+	}
+	
+	/**
+	 * Obtain lineage trace of an instruction with a single output.
+	 * 
+	 * @param ec execution context w/ live variables
+	 * @return pair of (output variable name, output lineage item)
+	 */
+	public Pair<String,LineageItem> getLineageItem(ExecutionContext ec);
+	
+	/**
+	 * Obtain lineage trace of an instruction with multiple outputs.
+	 * 
+	 * @param ec execution context w/ live variables
+	 * @return pairs of (output variable name, output lineage item)
+	 */
+	public default Pair<String,LineageItem>[] getLineageItems(ExecutionContext ec) {
+		throw new DMLRuntimeException("Unsupported call for instruction with single output.");
+	}
 }

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
@@ -202,8 +203,8 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
-		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
-			LineageItemUtils.getLineage(ec, inputs))};
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, inputs)));
 	}
 }

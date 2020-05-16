@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.RightIndex;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -96,8 +97,8 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in ListIndexingCPInstruction.");
 	}
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
-		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
-			LineageItemUtils.getLineage(ec, input1,input2,input3,rowLower,rowUpper))};
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, input1,input2,input3,rowLower,rowUpper)));
 	}
 }

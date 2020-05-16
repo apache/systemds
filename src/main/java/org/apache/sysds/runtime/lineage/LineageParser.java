@@ -20,12 +20,12 @@
 package org.apache.sysds.runtime.lineage;
 
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
-import org.apache.sysds.runtime.instructions.cp.CPOperand;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,18 +65,15 @@ public class LineageParser
 					Instruction inst = InstructionParser.parseSingleInstruction(representation);
 					if (!(inst instanceof LineageTraceable))
 						throw new ParseException("Invalid Instruction (" + inst.getOpcode() + ") traced");
-					
-					LineageItem[] items = ((LineageTraceable) inst).getLineageItems(ec);
-					if (items == null)
+					Pair<String,LineageItem> item = ((LineageTraceable) inst).getLineageItem(ec);
+					if (item == null)
 						throw new ParseException("Instruction without output (" + inst.getOpcode() + ") not supported");
-					if (items.length != 1)
-						throw new ParseException("Instruction with multiple outputs (" + inst.getOpcode() + ") not supported");
 					
-					li = new LineageItem(id, items[0]);
+					li = new LineageItem(id, item.getValue());
 					break;
 				
 				case Literal:
-					li = new LineageItem(id, new CPOperand(representation).getName(), representation);
+					li = new LineageItem(id, representation);
 					break;
 				
 				case Instruction:
@@ -105,6 +102,6 @@ public class LineageParser
 			} else
 				throw new ParseException("Invalid format for LineageItem reference");
 		}
-		return new LineageItem(id, name, opcode, inputs.toArray(new LineageItem[0]));
+		return new LineageItem(id, "", opcode, inputs.toArray(new LineageItem[0]));
 	}
 }

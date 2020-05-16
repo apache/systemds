@@ -20,13 +20,13 @@
 package org.apache.sysds.hops.rewrite;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -121,7 +121,7 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 							DataCharacteristics dc = meta.getDataCharacteristics();
 							boolean matchingBlksz = dc.getBlocksize() == dop.getBlocksize();
 							//binary matrix w/ matching dims and frames do not require reblock
-							if( meta.getInputInfo() == InputInfo.BinaryBlockInputInfo 
+							if( meta.getFileFormat() == FileFormat.BINARY 
 								&& (matchingBlksz || dop.getDataType() == DataType.FRAME))
 							{
 								dop.setRequiresReblock(false);

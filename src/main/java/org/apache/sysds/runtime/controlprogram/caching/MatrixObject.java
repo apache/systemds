@@ -20,11 +20,11 @@
 package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -32,15 +32,11 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -51,11 +47,10 @@ import org.apache.sysds.runtime.util.IndexRange;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Future;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
 
 /**
  * Represents a matrix in control program. This class contains method to read
@@ -91,8 +86,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
-	
-	private Map<FederatedRange, FederatedData> _fedMapping = null; // mapping for federated matrixobject
 	
 	/**
 	 * Constructor that takes the value type and the HDFS filename.
@@ -130,9 +123,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		super(mo);
 
 		MetaDataFormat metaOld = (MetaDataFormat)mo.getMetaData();
-		_metaData = new MetaDataFormat(new MatrixCharacteristics(metaOld.getDataCharacteristics()),
-				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
-		
+		_metaData = new MetaDataFormat(
+			new MatrixCharacteristics(metaOld.getDataCharacteristics()), metaOld.getFileFormat());
 		_updateType = mo._updateType;
 		_diag = mo._diag;
 		_partitioned = mo._partitioned;
@@ -140,66 +132,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		_partitionSize = mo._partitionSize;
 		_partitionCacheName = mo._partitionCacheName;
 		_markForLinCache = mo._markForLinCache;
-	}
-	
-	public boolean isFederated() {
-		return _fedMapping != null;
-	}
-	
-	public Map<FederatedRange, FederatedData> getFedMapping() {
-		return _fedMapping;
-	}
-	
-	public void setFedMapping(Map<FederatedRange, FederatedData> fedMapping) {
-		_fedMapping = fedMapping;
-	}
-	
-	@Override
-	public MatrixBlock acquireRead() {
-		// forward call for non-federated objects
-		if( !isFederated() )
-			return super.acquireRead();
-		
-		long[] dims = getDataCharacteristics().getDims();
-		// TODO sparse optimization
-		MatrixBlock result = new MatrixBlock((int) dims[0], (int) dims[1], false);
-		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
-		for (Map.Entry<FederatedRange, FederatedData> entry : _fedMapping.entrySet()) {
-			FederatedRange range = entry.getKey();
-			FederatedData fd = entry.getValue();
-			
-			if( fd.isInitialized() ) {
-				FederatedRequest request = new FederatedRequest(FederatedRequest.FedMethod.TRANSFER);
-				Future<FederatedResponse> readResponse = fd.executeFederatedOperation(request, true);
-				readResponses.add(new ImmutablePair<>(range, readResponse));
-			}
-			else {
-				throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");
-			}
-		}
-		try {
-			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
-				FederatedRange range = readResponse.getLeft();
-				FederatedResponse response = readResponse.getRight().get();
-				// add result
-				int[] beginDimsInt = range.getBeginDimsInt();
-				int[] endDimsInt = range.getEndDimsInt();
-				if( !response.isSuccessful() )
-					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
-				MatrixBlock multRes = (MatrixBlock) response.getData();
-				result.copy(beginDimsInt[0], endDimsInt[0] - 1,
-					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
-				result.setNonZeros(result.getNonZeros() + multRes.getNonZeros());
-			}
-		}
-		catch (Exception e) {
-			throw new DMLRuntimeException("Federated matrix read failed.", e);
-		}
-		
-		//keep returned object for future use 
-		acquireModify(result);
-		
-		return result;
 	}
 	
 	public void setUpdateType(UpdateType flag) {
@@ -472,8 +404,41 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		return sb.toString();
 	}
 	
+	@Override
+	public MatrixBlock acquireRead() {
+		// forward call for non-federated objects
+		if( !isFederated() )
+			return super.acquireRead();
+		
+		long[] dims = getDataCharacteristics().getDims();
+		// TODO sparse optimization
+		MatrixBlock result = new MatrixBlock((int) dims[0], (int) dims[1], false);
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = requestFederatedData(_fedMapping);
+		try {
+			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+				FederatedRange range = readResponse.getLeft();
+				FederatedResponse response = readResponse.getRight().get();
+				// add result
+				int[] beginDimsInt = range.getBeginDimsInt();
+				int[] endDimsInt = range.getEndDimsInt();
+				if( !response.isSuccessful() )
+					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
+				MatrixBlock multRes = (MatrixBlock) response.getData()[0];
+				result.copy(beginDimsInt[0], endDimsInt[0] - 1,
+					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
+				result.setNonZeros(result.getNonZeros() + multRes.getNonZeros());
+			}
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Federated matrix read failed.", e);
+		}
+		
+		//keep returned object for future use 
+		acquireModify(result);
+		
+		return result;
+	}
 	
-
 	// *********************************************
 	// ***                                       ***
 	// ***      LOW-LEVEL PROTECTED METHODS      ***
@@ -512,7 +477,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		//read matrix and maintain meta data
 		MatrixBlock newData = isFederated() ? acquireReadAndRelease() :
-			DataConverter.readMatrixFromHDFS(fname, iimd.getInputInfo(), rlen,
+			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(), rlen,
 			clen, mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
 		
 		setHDFSFileExists(true);
@@ -540,7 +505,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics mc = iimd.getDataCharacteristics();
-		InputInfo ii = iimd.getInputInfo();
+		FileFormat fmt = iimd.getFileFormat();
 		MatrixBlock mb = null;
 		try 
 		{
@@ -556,12 +521,12 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
-			if( ii == InputInfo.BinaryBlockInputInfo && //guarded collect not for binary cell
+			if( fmt == FileFormat.BINARY && //guarded collect not for binary cell
 				!OptimizerUtils.checkSparkCollectMemoryBudget(mc, getPinnedSize()+getBroadcastSize(), true) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
 				if( !HDFSTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
-					long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
+					long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(lrdd, _hdfsFileName, iimd.getFileFormat());
 					_metaData.getDataCharacteristics().setNonZeros(newnnz);
 					rdd.setPending(false); //mark rdd as non-pending (for export)
 					rdd.setHDFSFile(true); //mark rdd as hdfs file (for restore)
@@ -570,10 +535,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 					//reference to the input not to an rdd of the hdfs file but the resulting behavior is correct
 				}
 				mb = readBlobFromHDFS(_hdfsFileName);
-			}
-			else if( ii == InputInfo.BinaryCellInputInfo ) {
-				//collect matrix block from binary block RDD
-				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, nnz);
 			}
 			else {
 				//collect matrix block from binary cell RDD
@@ -612,19 +573,18 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics mc = iimd.getDataCharacteristics();
 			// Write the matrix to HDFS in requested format
-			OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt) : 
-					InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+			FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
-			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
+			if ( fmt == FileFormat.BINARY && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
 				&& mc.getBlocksize() != ConfigurationManager.getBlocksize() )
 			{
-				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
+				DataConverter.writeMatrixToHDFS(_data, fname, fmt, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
 					ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
 			}
 			else {
-				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, mc, rep, fprop, _diag);
+				DataConverter.writeMatrixToHDFS(_data, fname, fmt, mc, rep, fprop, _diag);
 			}
 
 			if( LOG.isTraceEnabled() )
@@ -640,16 +600,15 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	
 	@Override
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String outputFormat) 
-	    throws IOException, DMLRuntimeException
+		throws IOException, DMLRuntimeException
 	{
 		//prepare output info
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		OutputInfo oinfo = (outputFormat != null ? OutputInfo.stringToOutputInfo (outputFormat) : 
-			InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
+		FileFormat fmt = (outputFormat != null ? FileFormat.safeValueOf(outputFormat) : iimd.getFileFormat());
 		
 		//note: the write of an RDD to HDFS might trigger
-		//lazy evaluation of pending transformations.				
-		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);
+		//lazy evaluation of pending transformations.
+		long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(rdd, fname, fmt);
 		_metaData.getDataCharacteristics().setNonZeros(newnnz);
 	}
 }

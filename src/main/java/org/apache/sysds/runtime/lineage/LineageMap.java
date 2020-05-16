@@ -19,12 +19,14 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
@@ -51,26 +53,31 @@ public class LineageMap {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
-		if( inst instanceof FunctionCallCPInstruction )
+		if( inst instanceof FunctionCallCPInstruction || inst instanceof EvalNaryCPInstruction)
 			return; // no need for lineage tracing
 		if (!(inst instanceof LineageTraceable))
 			throw new DMLRuntimeException("Unknown Instruction (" + inst.getOpcode() + ") traced.");
 		
-		LineageItem[] items = ((LineageTraceable) inst).getLineageItems(ec);
-		if (items == null || items.length < 1)
-			trace(inst, ec, null);
+		if( ((LineageTraceable) inst).hasSingleLineage() ) {
+			trace(inst, ec, ((LineageTraceable) inst).getLineageItem(ec));
+		}
 		else {
-			for (LineageItem li : items)
-				trace(inst, ec, cleanupInputLiterals(li, ec));
+			Pair<String, LineageItem>[] items = ((LineageTraceable) inst).getLineageItems(ec);
+			if (items == null || items.length < 1)
+				trace(inst, ec, null);
+			else {
+				for (Pair<String, LineageItem> li : items)
+					trace(inst, ec, cleanupInputLiterals(li, ec));
+			}
 		}
 	}
 	
 	public void processDedupItem(LineageMap lm, Long path) {
 		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
 			if (_traces.containsKey(entry.getKey())) {
-				addLineageItem(new LineageItem(entry.getKey(),
-					path.toString(), LineageItem.dedupItemOpcode,
-					new LineageItem[]{_traces.get(entry.getKey()), entry.getValue()}));
+				addLineageItem(Pair.of(entry.getKey(),
+					new LineageItem(entry.getKey(), LineageItem.dedupItemOpcode,
+					new LineageItem[]{_traces.get(entry.getKey()), entry.getValue()})));
 			}
 		}
 	}
@@ -83,14 +90,13 @@ public class LineageMap {
 		if (variable.isLiteral()) {
 			LineageItem ret = _literals.get(varname);
 			if (ret == null)
-				_literals.put(varname, ret = new LineageItem(
-					varname, variable.getLineageLiteral()));
+				_literals.put(varname, ret = new LineageItem(variable.getLineageLiteral()));
 			return ret;
 		}
 		//handle variables
 		LineageItem ret = _traces.get(variable.getName());
 		return (ret != null) ? ret :
-			new LineageItem(varname, variable.getLineageLiteral());
+			new LineageItem(variable.getLineageLiteral());
 	}
 	
 	public LineageItem get(String varName) {
@@ -132,7 +138,7 @@ public class LineageMap {
 		return _literals;
 	}
 	
-	private void trace(Instruction inst, ExecutionContext ec, LineageItem li) {
+	private void trace(Instruction inst, ExecutionContext ec, Pair<String, LineageItem> li) {
 		if (inst instanceof VariableCPInstruction) {
 			VariableCPInstruction vcp_inst = ((VariableCPInstruction) inst);
 			
@@ -158,7 +164,7 @@ public class LineageMap {
 					break;
 				}
 				case MoveVariable: {
-					processMoveLI(li);
+					moveLineageItem(vcp_inst.getInput1().getName(), vcp_inst.getInput2().getName());
 					break;
 				}
 				case CastAsBooleanVariable:
@@ -182,12 +188,13 @@ public class LineageMap {
 		
 	}
 	
-	private LineageItem cleanupInputLiterals(LineageItem li, ExecutionContext ec) {
-		if( li.getInputs() == null )
+	private Pair<String, LineageItem> cleanupInputLiterals(Pair<String, LineageItem> li, ExecutionContext ec) {
+		LineageItem item = li.getValue();
+		if( item.getInputs() == null )
 			return li;
 		// fix literals referring to variables (e.g., for/parfor loop variable)
-		for(int i=0; i<li.getInputs().length; i++) {
-			LineageItem tmp = li.getInputs()[i];
+		for(int i=0; i<item.getInputs().length; i++) {
+			LineageItem tmp = item.getInputs()[i];
 			if( tmp.getType() != LineageItemType.Literal)
 				continue;
 			//check if CPOperand is not a literal, w/o parsing
@@ -195,28 +202,34 @@ public class LineageMap {
 				CPOperand cp = new CPOperand(tmp.getData());
 				if( cp.getDataType().isScalar() ) {
 					cp.setLiteral(ec.getScalarInput(cp));
-					li.getInputs()[i] = getOrCreate(cp);
+					item.getInputs()[i] = getOrCreate(cp);
 				}
 			}
 		}
 		return li;
 	}
 	
-	private void processCopyLI(LineageItem li) {
-		if (li.getInputs().length != 1)
+	private void processCopyLI(Pair<String, LineageItem> li) {
+		if (li.getValue().getInputs().length != 1)
 			throw new DMLRuntimeException("AssignVariable and CopyVariable must have one input lineage item!");
 		//add item or overwrite existing item
-		_traces.put(li.getName(), li.getInputs()[0]);
+		_traces.put(li.getKey(), li.getValue().getInputs()[0]);
 	}
 	
-	private void removeLineageItem(String key) {
+	private void moveLineageItem(String keyFrom, String keyTo) {
+		LineageItem input = removeLineageItem(keyFrom);
+		if (!keyTo.equals("__pred"))
+			_traces.put(keyTo, input);
+	}
+	
+	private LineageItem removeLineageItem(String key) {
 		//remove item if present
-		_traces.remove(key);
+		return _traces.remove(key);
 	}
 	
-	private void addLineageItem(LineageItem li) {
+	private void addLineageItem(Pair<String, LineageItem> li) {
 		//add item or overwrite existing item
-		_traces.put(li.getName(), li);
+		_traces.put(li.getKey(), li.getValue());
 	}
 	
 	private void processWriteLI(CPOperand input1, CPOperand input2, ExecutionContext ec) {
@@ -228,14 +241,5 @@ public class LineageMap {
 			li = LineageItemUtils.rDecompress(li);
 		}
 		LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage");
-	}
-	
-	private void processMoveLI(LineageItem li) {
-		if (li.getName().equals("__pred"))
-			removeLineageItem(li.getInputs()[0].getName());
-		else {
-			//remove from old and move to new key
-			_traces.put(li.getName(), li.getInputs()[0]);
-		}
 	}
 }

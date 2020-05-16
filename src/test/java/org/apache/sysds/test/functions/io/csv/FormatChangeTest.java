@@ -37,7 +37,6 @@ import org.apache.sysds.test.TestUtils;
 @net.jcip.annotations.NotThreadSafe
 public class FormatChangeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "csv_test";
 	private final static String TEST_DIR = "functions/io/csv/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FormatChangeTest.class.getSimpleName() + "/";
@@ -144,7 +143,7 @@ public class FormatChangeTest extends AutomatedTestBase
 		programArgs[3] = binFile;
 		programArgs[4] = "binary";
 		runTest(true, false, null, -1);
-
+		
 		// Test TextCell -> CSV conversion
 		System.out.println("TextCell -> CSV");
 		programArgs[2] = "text";

@@ -23,11 +23,11 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -86,19 +86,19 @@ public class CSVReadInFunctionTest extends AutomatedTestBase {
 			//write csv matrix without size information (no mtd file)
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 1.0d, 7);
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A);
-			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo);
+			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.CSV);
 			writer.writeMatrixToHDFS(mbA, input("A"), rows, cols, -1, mbA.getNonZeros());
 			
 			double[][] B = getRandomMatrix(rows, 1, -1, 1, 1.0d, 7);
 			MatrixBlock mbB = DataConverter.convertToMatrixBlock(B);
-			MatrixWriter writer2 = MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo);
+			MatrixWriter writer2 = MatrixWriterFactory.createMatrixWriter(FileFormat.CSV);
 			writer2.writeMatrixToHDFS(mbB, input("B"), rows, 1, -1, mbB.getNonZeros());
 			
 			if( withMtD ) {
 				HDFSTool.writeMetaDataFile(input("A")+".mtd", ValueType.FP64,
-					mbA.getDataCharacteristics(), OutputInfo.CSVOutputInfo);
+					mbA.getDataCharacteristics(), FileFormat.CSV);
 				HDFSTool.writeMetaDataFile(input("B")+".mtd", ValueType.FP64,
-					mbB.getDataCharacteristics(), OutputInfo.CSVOutputInfo);
+					mbB.getDataCharacteristics(), FileFormat.CSV);
 			}
 			
 			runTest(true, false, null, -1);

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.controlprogram;
 import org.apache.log4j.Level;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -81,7 +82,6 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -921,10 +921,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS(ec, _colocatedDPMatrix);
 		
 		// Step 4) submit MR job (wait for finished work)
-		//TODO runtime support for binary cell partitioning 
-		OutputInfo inputOI = OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(_ID, _iterPredVar, _colocatedDPMatrix, program,
-			clsMap, resultFile, inputMatrix, ec, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads );
+		RemoteParForJobReturn ret = RemoteDPParForSpark.runJob(
+			_ID, _iterPredVar, _colocatedDPMatrix, program, clsMap, resultFile, inputMatrix,
+			ec, inputDPF, FileFormat.BINARY, _tSparseCol, _enableCPCaching, _numThreads);
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
@@ -1352,7 +1351,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			LineageItem current = lineages[0].get(var._name);
 			for( int i=1; i<lineages.length; i++ ) {
 				LineageItem next = lineages[i].get(var._name);
-				current = LineageItemUtils.replace(next, retIn, current);
+				if( next != null ) //robustness for cond. control flow
+					current = LineageItemUtils.replace(next, retIn, current);
 			}
 			ec.getLineage().set(var._name, current);
 		}

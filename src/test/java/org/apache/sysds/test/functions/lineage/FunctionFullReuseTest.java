@@ -74,11 +74,6 @@ public class FunctionFullReuseTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testStepLM() {
-		testLineageTrace(TEST_NAME+"5");
-	}
-	
-	@Test
 	public void testParforIssue1() {
 		testLineageTrace(TEST_NAME+"6");
 	}

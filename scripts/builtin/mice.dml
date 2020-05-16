@@ -26,6 +26,7 @@
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # F               String    ---        Data Frame
+# cMask           Double    ---        A 0/1 row vector for identifying numeric (0) adn categorical features (1)
 # iter            Integer    3         Number of iteration for multiple imputations 
 # complete        Integer    3         A complete dataset generated though a specific iteration
 # ---------------------------------------------------------------------------------------------
@@ -40,17 +41,21 @@
 
 # Assumption missing value are represented with empty string i.e ",," in csv file  
 # variables with suffix n are storing continous/numeric data and variables with suffix c are storing categorical data
-s_mice= function(Frame[String] F, Matrix[Double] cMask, Integer iter = 3, Integer complete = 3)
+s_mice= function(Frame[String] F, Matrix[Double] cMask, Integer iter = 3, Integer complete = 3, Boolean verbose = FALSE)
 return(Frame[String] dataset, Frame[String] singleSet)
 {
 
   if(ncol(F) == 1)
     stop("invalid aregument: can not apply mice on single column")
+    
+  if(complete > iter)
+    complete = iter
 
-  # adding a temporary categorical feature (in-case all attributes are continous)
+
+  # adding a temporary  feature (in-case all attributes are of same type)
   F = cbind(F,  as.frame(matrix(1,nrow(F), 1)))
   cMask = cbind(cMask, matrix(1,1,1))
-  
+
   n = nrow(F)
   row = n*complete;
   col = ncol(F) 
@@ -58,6 +63,10 @@ return(Frame[String] dataset, Frame[String] singleSet)
   Mask_Result = matrix(0, rows=1, cols=col)
   scat = seq(1, ncol(cMask))
   cat = removeEmpty(target=scat, margin="rows", select=t(cMask))
+
+  if(nrow(cat) == ncol(F))
+    cMask[1,ncol(cMask)] = 0
+  
   s=""
   for(i in 1: nrow(cat), check =0)
     s = s+as.integer(as.scalar(cat[i, 1]))+",";
@@ -168,7 +177,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
         in_n = in_n + 1;
       }
      
-      if((as.scalar(dXMask[1,i]) == 1) & (sum(Mask_c[, in_c]) != 0))
+      if( (as.scalar(dXMask[1,i]) == 1) & (sum(Mask_c[, in_c]) != 0) )
       {
         j = (i + as.scalar(dist[1,in_c])) - 1
 
@@ -199,8 +208,8 @@ return(Frame[String] dataset, Frame[String] singleSet)
           Mask_Filled_c[,in_c] = table(R, 1, pred, n, 1);
         i = as.integer(j)
       }
-      
-      in_c = in_c + 1
+      if(in_c < col)
+        in_c = in_c + 1
       i = i+1;
     }
 
@@ -214,7 +223,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
   Result = Result[2: n*iter+1, ]
   Mask_Result = Mask_Result[2: n*iter+1, ]
   index = (((complete*n)-n)+1)
-  #voting for aggregation of categorical imputations
+  # voting for aggregation of categorical imputations
   agg = cAggregate(Mask_Result*cMask, iter, n)
   
   # aggregating the results
@@ -229,11 +238,11 @@ return(Frame[String] dataset, Frame[String] singleSet)
   dataset =   XO + Agg_Matrix
   singleSet = Result[index:row, ]
    
-  # # decoding nominal columns 
+  # decoding nominal columns 
   dataset = transformdecode(target=dataset, spec=jspecR, meta=M);
   singleSet = transformdecode(target=singleSet, spec=jspecR, meta=M);
   
-  # # removing extra categorical column
+  # removing extra categorical column
   dataset = dataset[,1:col-1]
   singleSet = singleSet[,1:col-1]
  }

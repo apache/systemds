@@ -50,7 +50,7 @@ public class LineageReadTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(TEST_NAME);
 			
 			String lineage =
-				"(0) (C) CP°createvar°pREADX°target/testTemp/functions/lineage/LineageTraceTest/in/X°false°MATRIX°textcell°10°5°-1°-1°copy\n" +
+				"(0) (C) CP°createvar°pREADxxx°target/testTemp/functions/lineage/LineageTraceTest/in/X°false°MATRIX°text°10°5°-1°-1°copy\n" +
 				"(2) (I) rblk (0)\n" +
 				"(4) (L) 3·SCALAR·INT64·true\n" +
 				"(5) (I) * (2) (4)\n" +

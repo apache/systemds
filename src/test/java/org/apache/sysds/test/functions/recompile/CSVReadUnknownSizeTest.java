@@ -23,10 +23,10 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -112,9 +112,9 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, 1000, 1000);
 			FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();			
-			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.CSVOutputInfo, mc, -1, fprop);
+			DataConverter.writeMatrixToHDFS(mb, input("X"), FileFormat.CSV, mc, -1, fprop);
 			mc.set(-1, -1, -1, -1);
-			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.FP64, mc, OutputInfo.CSVOutputInfo, fprop);
+			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.FP64, mc, FileFormat.CSV, fprop);
 			
 			runTest(true, false, null, -1); 
 			

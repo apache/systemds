@@ -24,6 +24,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 
 import java.util.ArrayList;
 
@@ -77,6 +78,14 @@ public class LineageCacheConfig {
 			return this == CACHED || this == RELOADED;
 		}
 	 }
+	 
+	 public enum LineageCachePolicy {
+		 LRU,
+		 WEIGHTED;
+		 public boolean isLRUcache() {
+			 return this == LRU;
+		 }
+	 }
 	
 	public ArrayList<String> _MMult = new ArrayList<>();
 	public static boolean _allowSpill = true;
@@ -94,16 +103,21 @@ public class LineageCacheConfig {
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
+	private static LineageCachePolicy _cachepolicy = null;
 	private static boolean _compilerAssistedRW = true;
+
 	static {
 		//setup static configuration parameters
 		setSpill(true); //enable/disable disk spilling.
+		setCachePolicy(LineageCachePolicy.WEIGHTED);
 	}
 	
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
-		return inst instanceof ComputationCPInstruction
-			&& (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-				|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
+		boolean insttype = inst instanceof ComputationCPInstruction 
+			&& !(inst instanceof ListIndexingCPInstruction);
+		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
+			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
+		return insttype && rightop;
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {
@@ -149,8 +163,16 @@ public class LineageCacheConfig {
 		_allowSpill = toSpill;
 	}
 	
+	public static void setCachePolicy(LineageCachePolicy policy) {
+		_cachepolicy = policy;
+	}
+	
 	public static boolean isSetSpill() {
 		return _allowSpill;
+	}
+	
+	public static LineageCachePolicy getCachePolicy() {
+		return _cachepolicy;
 	}
 
 	public static ReuseCacheType getCacheType() {
@@ -173,4 +195,5 @@ public class LineageCacheConfig {
 	public static boolean getCompAssRW() {
 		return _compilerAssistedRW;
 	}
+
 }

@@ -24,11 +24,11 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONException;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 
@@ -47,7 +47,7 @@ public class FrameWriterJSONLParallel extends FrameWriterJSONL {
 	{
 		//estimate output size and number of output blocks (min 1)
 		int numPartFiles = Math.max((int)(OptimizerUtils.estimateSizeTextOutput(rlen, clen, rlen*clen,
-				OutputInfo.stringToOutputInfo("JSONL"))  / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
+				FileFormat.JSONL)  / InfrastructureAnalyzer.getHDFSBlockSize()), 1);
 
 		//determine degree of parallelism
 		int numThreads = OptimizerUtils.getParallelTextWriteParallelism();

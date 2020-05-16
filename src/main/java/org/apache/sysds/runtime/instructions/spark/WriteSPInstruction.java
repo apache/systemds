@@ -20,12 +20,14 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -44,7 +46,6 @@ import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 
@@ -81,7 +82,6 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		
-		//SPARK°write°_mVar2·MATRIX·DOUBLE°./src/test/scripts/functions/data/out/B·SCALAR·STRING·true°matrixmarket·SCALAR·STRING·true
 		// _mVar2·MATRIX·DOUBLE
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
@@ -142,14 +142,13 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			HDFSTool.deleteFileIfExistOnHDFS( fname );
 
 			//prepare output info according to meta data
-			String outFmt = input3.getName();
-			OutputInfo oi = OutputInfo.stringToOutputInfo(outFmt);
-				
+			FileFormat fmt = FileFormat.safeValueOf(input3.getName());
+			
 			//core matrix/frame write
 			if( input1.getDataType()==DataType.MATRIX )
-				processMatrixWriteInstruction(sec, fname, oi);
+				processMatrixWriteInstruction(sec, fname, fmt);
 			else
-				processFrameWriteInstruction(sec, fname, oi, schema);
+				processFrameWriteInstruction(sec, fname, fmt, schema);
 		}
 		catch(IOException ex)
 		{
@@ -157,15 +156,14 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 	}
 
-	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi) 
+	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt) 
 		throws IOException
 	{
 		//get input rdd
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		
-		if(    oi == OutputInfo.MatrixMarketOutputInfo
-			|| oi == OutputInfo.TextCellOutputInfo     ) 
+		if( fmt == FileFormat.MM || fmt == FileFormat.TEXT )
 		{
 			//piggyback nnz maintenance on write
 			LongAccumulator aNnz = null;
@@ -175,7 +173,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			}
 			
 			JavaRDD<String> header = null;
-			if( oi == OutputInfo.MatrixMarketOutputInfo  ) {
+			if( fmt == FileFormat.MM ) {
 				ArrayList<String> headerContainer = new ArrayList<>(1);
 				// First output MM header
 				String headerStr = "%%MatrixMarket matrix coordinate real general\n" +
@@ -194,7 +192,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			if( !mc.nnzKnown() )
 				mc.setNonZeros( aNnz.value() );
 		}
-		else if( oi == OutputInfo.CSVOutputInfo ) 
+		else if( fmt == FileFormat.CSV )
 		{
 			if( mc.getRows() == 0 || mc.getCols() == 0 ) {
 				throw new IOException("Write of matrices with zero rows or columns"
@@ -207,7 +205,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			if( !mc.nnzKnown() ) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
-			}	
+			}
 			
 			JavaRDD<String> out = RDDConverterUtils.binaryBlockToCsv(
 				in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
@@ -217,7 +215,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			if( !mc.nnzKnown() )
 				mc.setNonZeros(aNnz.value().longValue());
 		}
-		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
+		else if( fmt == FileFormat.BINARY ) {
 			//piggyback nnz computation on actual write
 			LongAccumulator aNnz = null;
 			if( !mc.nnzKnown() ) {
@@ -233,14 +231,14 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 		else {
 			//unsupported formats: binarycell (not externalized)
-			throw new DMLRuntimeException("Unexpected data format: " + OutputInfo.outputInfoToString(oi));
+			throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
 		}
 		
 		// write meta data file
-		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.FP64, mc, oi, formatProperties);
+		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.FP64, mc, fmt, formatProperties);
 	}
 
-	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 
+	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt, ValueType[] schema) 
 		throws IOException
 	{
 		//get input rdd
@@ -248,26 +246,29 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		
-		if( oi == OutputInfo.TextCellOutputInfo ) {
-			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);
-			customSaveTextFile(out, fname, false);
-		}
-		else if( oi == OutputInfo.CSVOutputInfo ) {
-			FileFormatPropertiesCSV props = (formatProperties!=null) ?(FileFormatPropertiesCSV) formatProperties : null;
-			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
-			customSaveTextFile(out, fname, false);
-		}
-		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
-			JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
-			out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
-		}
-		else {
-			//unsupported formats: binarycell (not externalized)
-			throw new DMLRuntimeException("Unexpected data format: " + OutputInfo.outputInfoToString(oi));
+		switch(fmt) {
+			case TEXT: {
+				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);
+				customSaveTextFile(out, fname, false);
+				break;
+			}
+			case CSV: {
+				FileFormatPropertiesCSV props = (formatProperties!=null) ?(FileFormatPropertiesCSV) formatProperties : null;
+				JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
+				customSaveTextFile(out, fname, false);
+				break;
+			}
+			case BINARY: {
+				JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
+				out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
+				break;
+			}
+			default:
+				throw new DMLRuntimeException("Unexpected data format: " + fmt.toString());
 		}
 		
 		// write meta data file
-		HDFSTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, oi, formatProperties);	
+		HDFSTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, fmt, formatProperties);
 	}
 
 	private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) {
@@ -302,10 +303,10 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 	}
 
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		LineageItem[] ret = LineageItemUtils.getLineage(ec, input1, input2, input3, input4);
 		if (formatProperties != null && formatProperties.getDescription() != null && !formatProperties.getDescription().isEmpty())
 			ret = (LineageItem[])ArrayUtils.add(ret, new LineageItem(formatProperties.getDescription()));
-		return new LineageItem[]{new LineageItem(input1.getName(), getOpcode(), ret)};
+		return Pair.of(input1.getName(), new LineageItem(getOpcode(), ret));
 	}
 }

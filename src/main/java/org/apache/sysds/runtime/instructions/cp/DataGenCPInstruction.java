@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ValueType;
@@ -37,6 +38,7 @@ import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
 
 public class DataGenCPInstruction extends UnaryCPInstruction {
 
@@ -163,6 +165,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	
 	public long getSeed() {
 		return seed;
+	}
+	
+	public boolean isOnesCol() {
+		return minValue == maxValue && minValue == 1 && sparsity == 1 && getCols() == 1;
 	}
 
 	public static DataGenCPInstruction parseInstruction(String str)
@@ -365,7 +371,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	}
 
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String tmpInstStr = instString;
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
 			//generate pseudo-random seed (because not specified)
@@ -377,6 +383,6 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
 							tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
 		}
-		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
+		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
 	}
 }

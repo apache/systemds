@@ -1008,4 +1008,12 @@ public class InstructionUtils
 		sb.append(inputs[inputs.length-1]);
 		return sb.toString();
 	}
+	
+	public static String concatStrings(String... inputs) {
+		StringBuilder sb = _strBuilders.get();
+		sb.setLength(0); //reuse allocated space
+		for( int i=0; i<inputs.length; i++ )
+			sb.append(inputs[i]);
+		return sb.toString();
+	}
 }

@@ -32,7 +32,7 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.util.concurrent.Promise;
-
+import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
@@ -41,6 +41,7 @@ import java.util.concurrent.Future;
 
 
 public class FederatedData {
+	private Types.DataType _dataType;
 	private InetSocketAddress _address;
 	private String _filepath;
 	/**
@@ -50,7 +51,8 @@ public class FederatedData {
 	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
 
 
-	public FederatedData(InetSocketAddress address, String filepath) {
+	public FederatedData(Types.DataType dataType, InetSocketAddress address, String filepath) {
+		_dataType = dataType;
 		_address = address;
 		_filepath = filepath;
 	}
@@ -61,7 +63,7 @@ public class FederatedData {
 	 * @param varID the varID of the variable we refer to
 	 */
 	public FederatedData(FederatedData other, long varID) {
-		this(other._address, other._filepath);
+		this(other._dataType, other._address, other._filepath);
 		_varID = varID;
 	}
 	
@@ -82,12 +84,22 @@ public class FederatedData {
 	}
 	
 	public synchronized Future<FederatedResponse> initFederatedData() {
-		if( isInitialized() )
+		if(isInitialized())
 			throw new DMLRuntimeException("Tried to init already initialized data");
-		FederatedRequest request = new FederatedRequest(FederatedRequest.FedMethod.READ);
+		FederatedRequest.FedMethod fedMethod;
+		switch(_dataType) {
+			case MATRIX:
+				fedMethod = FederatedRequest.FedMethod.READ_MATRIX;
+				break;
+			case FRAME:
+				fedMethod = FederatedRequest.FedMethod.READ_FRAME;
+				break;
+			default:
+				throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
+		}
+		FederatedRequest request = new FederatedRequest(fedMethod);
 		request.appendParam(_filepath);
 		return executeFederatedOperation(request);
-		
 	}
 	
 	/**

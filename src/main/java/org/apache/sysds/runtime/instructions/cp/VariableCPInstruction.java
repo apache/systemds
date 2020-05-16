@@ -20,11 +20,13 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -50,9 +52,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -355,8 +355,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
-			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
-			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 
 			MetaDataFormat iimd = null;
 			if (dt == DataType.MATRIX || dt == DataType.FRAME) {
@@ -373,7 +371,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 				}
-				iimd = new MetaDataFormat(mc, oi, ii);
+				iimd = new MetaDataFormat(mc, FileFormat.safeValueOf(fmt));
 			}
 			else if (dt == DataType.TENSOR) {
 				TensorCharacteristics tc = new TensorCharacteristics(new long[]{1, 1}, 0);
@@ -389,7 +387,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 				}
-				iimd = new MetaDataFormat(tc, oi, ii);
+				iimd = new MetaDataFormat(tc, FileFormat.safeValueOf(fmt));
 			}
 			UpdateType updateType = UpdateType.COPY;
 			if ( parts.length >= 11 )
@@ -524,9 +522,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
 				// check if unique filename needs to be generated
-				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = fname + '_' + _uniqueVarID.getNextID();
-				}
+				if( Boolean.parseBoolean(getInput3().getName()) )
+					fname = getUniqueFileName(fname);
 				MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
@@ -547,9 +544,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
 				// check if unique filename needs to be generated
-				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = fname + '_' + _uniqueVarID.getNextID();
-				}
+				if( Boolean.parseBoolean(getInput3().getName()) )
+					fname = getUniqueFileName(fname);
 				CacheableData<?> obj = new TensorObject(getInput1().getValueType(), fname);
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
@@ -563,6 +559,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 			else if( getInput1().getDataType() == DataType.FRAME ) {
 				String fname = getInput2().getName();
+				if( Boolean.parseBoolean(getInput3().getName()) )
+					fname = getUniqueFileName(fname);
 				FrameObject fobj = new FrameObject(fname);
 				fobj.setMetaData((MetaData)metadata.clone());
 				fobj.setFileFormatProperties(_formatProperties);
@@ -882,8 +880,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void processWriteInstruction(ExecutionContext ec) {
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
-		if (!getInput3().getName().equalsIgnoreCase("libsvm"))
-		{
+		String fmtStr = getInput3().getName();
+		FileFormat fmt = FileFormat.safeValueOf(fmtStr);
+		if( fmt != FileFormat.LIBSVM ) {
 			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
 			_formatProperties.setDescription(desc);
 		}
@@ -892,28 +891,25 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			writeScalarToHDFS(ec, fname);
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
-			String outFmt = getInput3().getName();
-			if (outFmt.equalsIgnoreCase("matrixmarket"))
+			if( fmt == FileFormat.MM )
 				writeMMFile(ec, fname);
-			else if (outFmt.equalsIgnoreCase("csv") )
+			else if( fmt == FileFormat.CSV )
 				writeCSVFile(ec, fname);
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 				mo.setPrivacyConstraints(getPrivacyConstraint());
-				mo.exportData(fname, outFmt, _formatProperties);
+				mo.exportData(fname, fmtStr, _formatProperties);
 			}
 		}
 		else if( getInput1().getDataType() == DataType.FRAME ) {
-			String outFmt = getInput3().getName();
 			FrameObject mo = ec.getFrameObject(getInput1().getName());
-			mo.exportData(fname, outFmt, _formatProperties);
+			mo.exportData(fname, fmtStr, _formatProperties);
 		}
 		else if( getInput1().getDataType() == DataType.TENSOR ) {
 			// TODO write tensor
-			String outFmt = getInput3().getName();
 			TensorObject to = ec.getTensorObject(getInput1().getName());
-			to.exportData(fname, outFmt, _formatProperties);
+			to.exportData(fname, fmtStr, _formatProperties);
 		}
 	}
 	
@@ -949,9 +945,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			try {
-				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				FileFormat fmt = ((MetaDataFormat)mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
-				if( oi == OutputInfo.CSVOutputInfo 
+				if( fmt == FileFormat.CSV 
 					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
 				{
 					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)_formatProperties);
@@ -960,7 +956,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					mo.exportData(fname, outFmt, _formatProperties);
 				}
-				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, OutputInfo.CSVOutputInfo, _formatProperties);
+				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, FileFormat.CSV, _formatProperties);
 			}
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);
@@ -976,7 +972,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 */
 	private void writeMMFile(ExecutionContext ec, String fname) {
 		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-		String outFmt = "matrixmarket";
+		String outFmt = FileFormat.MM.toString();
 		if(mo.isDirty()) {
 			// there exist data computed in CP that is not backed up on HDFS
 			// i.e., it is either in-memory or in evicted space
@@ -984,9 +980,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			try {
-				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
+				FileFormat fmt = ((MetaDataFormat)mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = mo.getDataCharacteristics();
-				if( oi == OutputInfo.TextCellOutputInfo 
+				if( fmt == FileFormat.TEXT 
 					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
 				{
 					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(),
@@ -1189,7 +1185,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String,LineageItem> getLineageItem(ExecutionContext ec) {
+		String varname = null;
 		LineageItem li = null;
 		switch (getVariableOpcode()) {
 			case CreateVariable:
@@ -1197,19 +1194,21 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					break; //otherwise fall through
 			
 			case Read: {
-				li = new LineageItem(getInput1().getName(), toString(), getOpcode());
+				varname = getInput1().getName();
+				li = new LineageItem(toString().replace(getInput1().getName(),
+					org.apache.sysds.lops.Data.PREAD_PREFIX+"xxx"), getOpcode());
 				break;
 			}
 			case AssignVariable: {
-				li = new LineageItem(getInput2().getName(), getOpcode(),
-						new LineageItem[]{ec.getLineage().getOrCreate(getInput1())});
+				varname = getInput2().getName();
+				li = new LineageItem(getOpcode(), new LineageItem[]{ec.getLineage().getOrCreate(getInput1())});
 				break;
 			}
 			case CopyVariable: {
 				if (!ec.getLineage().contains(getInput1()))
 					throw new DMLRuntimeException("Could not find LineageItem for " + getInput1().getName());
-				li = new LineageItem(getInput2().getName(), getOpcode(),
-						new LineageItem[]{ec.getLineage().get(getInput1())});
+				varname = getInput2().getName();
+				li = new LineageItem(getOpcode(), new LineageItem[]{ec.getLineage().get(getInput1())});
 				break;
 			}
 			case Write: {
@@ -1219,21 +1218,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						lineages.add(ec.getLineage().getOrCreate(input));
 				if (_formatProperties != null && _formatProperties.getDescription() != null && !_formatProperties.getDescription().isEmpty())
 					lineages.add(new LineageItem(_formatProperties.getDescription()));
-				li = new LineageItem(getInput1().getName(),
-						getOpcode(), lineages.toArray(new LineageItem[0]));
-				break;
-			}
-			case MoveVariable: {
-				ArrayList<LineageItem> lineages = new ArrayList<>();
-				if (ec.getLineage().contains(getInput1()))
-					lineages.add(ec.getLineageItem(getInput1()));
-				else {
-					lineages.add(ec.getLineage().getOrCreate(getInput1()));
-					if (getInput3() != null)
-						lineages.add(ec.getLineage().getOrCreate(getInput3()));
-				}
-				li = new LineageItem(getInput2().getName(),
-					getOpcode(), lineages.toArray(new LineageItem[0]));
+				varname = getInput1().getName();
+				li = new LineageItem(getOpcode(), lineages.toArray(new LineageItem[0]));
 				break;
 			}
 			case CastAsBooleanVariable:
@@ -1242,16 +1228,16 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case CastAsScalarVariable:
 			case CastAsMatrixVariable:
 			case CastAsFrameVariable:{
-				li = new LineageItem(getOutputVariableName(), 
-					getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
+				varname = getOutputVariableName();
+				li = new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, getInput1()));
 				break;
 			}
 			case RemoveVariable:
+			case MoveVariable:
 			default:
 		}
 		
-		return (li == null) ? null :
-			new LineageItem[]{li};
+		return (li == null) ? null : Pair.of(varname, li);
 	}
 	
 	public boolean isVariableCastInstruction() {
@@ -1261,5 +1247,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			|| opcode == VariableOperationCode.CastAsIntegerVariable
 			|| opcode == VariableOperationCode.CastAsDoubleVariable
 			|| opcode == VariableOperationCode.CastAsBooleanVariable;
+	}
+	
+	public static String getUniqueFileName(String fname) {
+		return InstructionUtils.concatStrings(fname, "_", String.valueOf(_uniqueVarID.getNextID()));
 	}
 }

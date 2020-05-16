@@ -22,13 +22,12 @@ package org.apache.sysds.test.functions.frame;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -99,7 +98,7 @@ public class FrameFunctionTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.9, 8362);
 			FrameBlock fA = DataConverter.convertToFrameBlock(
 				DataConverter.convertToMatrixBlock(A));
-			FrameWriterFactory.createFrameWriter(OutputInfo.CSVOutputInfo)
+			FrameWriterFactory.createFrameWriter(FileFormat.CSV)
 				.writeFrameToHDFS(fA, input("F"), rows, cols);
 			
 			//run test
@@ -107,7 +106,7 @@ public class FrameFunctionTest extends AutomatedTestBase
 			
 			//read input/output and compare
 			FrameBlock fB = FrameReaderFactory
-					.createFrameReader(InputInfo.CSVInputInfo)
+					.createFrameReader(FileFormat.CSV)
 					.readFrameFromHDFS(output("F2"), rows, cols);
 			String[][] R1 = DataConverter.convertToStringFrame(fA);
 			String[][] R2 = DataConverter.convertToStringFrame(fB);

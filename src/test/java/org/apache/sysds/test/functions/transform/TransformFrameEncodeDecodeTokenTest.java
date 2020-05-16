@@ -23,11 +23,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -95,13 +95,13 @@ public class TransformFrameEncodeDecodeTokenTest extends AutomatedTestBase
 				"TFDATA=" + output("tfout"), "SEP= ",
 				"OFMT=" + ofmt, "OSEP= " };
 	
-			runTest(true, false, null, -1); 
+			runTest(true, false, null, -1);
 			
 			//read input/output and compare
-			FrameReader reader1 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo, 
+			FrameReader reader1 = FrameReaderFactory.createFrameReader(FileFormat.CSV, 
 					new FileFormatPropertiesCSV(false, " ", false));
 			FrameBlock fb1 = reader1.readFrameFromHDFS(HOME + "input/" + DATASET1, -1L, -1L);
-			FrameReader reader2 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo,
+			FrameReader reader2 = FrameReaderFactory.createFrameReader(FileFormat.CSV,
 					new FileFormatPropertiesCSV(false, " ", false));
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("tfout"), -1L, -1L);
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);

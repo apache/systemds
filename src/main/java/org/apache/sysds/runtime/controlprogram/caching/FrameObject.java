@@ -22,20 +22,21 @@ package org.apache.sysds.runtime.controlprogram.caching;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -43,13 +44,17 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Future;
+
+import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
 	private static final long serialVersionUID = 1755082174281927785L;
 
 	private ValueType[] _schema = null;
-
+	
 	protected FrameObject() {
 		super(DataType.FRAME, ValueType.STRING);
 	}
@@ -97,7 +102,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		return (_schema!=null && _schema.length>cu) ? Arrays.copyOfRange(_schema, cl, cu+1) :
 			UtilFunctions.nCopies(cu-cl+1, ValueType.STRING);
 	}
-
+	
 	/**
 	 * Creates a new collection which contains the schema of the current
 	 * frame object concatenated with the schema of the passed frame object.
@@ -156,13 +161,50 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 	
 	@Override
+	public FrameBlock acquireRead() {
+		// forward call for non-federated objects
+		if( !isFederated() )
+			return super.acquireRead();
+		
+		FrameBlock result = new FrameBlock(_schema);
+		// provide long support?
+		result.ensureAllocatedColumns((int) _metaData.getDataCharacteristics().getRows());
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = requestFederatedData(_fedMapping);
+		try {
+			for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+				FederatedRange range = readResponse.getLeft();
+				FederatedResponse response = readResponse.getRight().get();
+				// add result
+				if(!response.isSuccessful())
+					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
+				FrameBlock multRes = (FrameBlock) response.getData()[0];
+				for (int r = 0; r < multRes.getNumRows(); r++) {
+					for (int c = 0; c < multRes.getNumColumns(); c++) {
+						int destRow = range.getBeginDimsInt()[0] + r;
+						int destCol = range.getBeginDimsInt()[1] + c;
+						result.set(destRow, destCol, multRes.get(r, c));
+					}
+				}
+			}
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Federated Frame read failed.", e);
+		}
+		
+		//keep returned object for future use 
+		acquireModify(result);
+		
+		return result;
+	}
+	
+	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
 		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
 	}
 
 	@Override
 	protected FrameBlock readBlobFromHDFS(String fname, long[] dims)
-		throws IOException 
+		throws IOException
 	{
 		long clen = dims[1];
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
@@ -175,17 +217,18 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//read the frame block
 		FrameBlock data = null;
 		try {
-			FrameReader reader = FrameReaderFactory.createFrameReader(iimd.getInputInfo(), getFileFormatProperties());
-			data = reader.readFrameFromHDFS(fname, lschema, dc.getRows(), dc.getCols());
+			data = isFederated() ? acquireReadAndRelease() :
+				FrameReaderFactory.createFrameReader(iimd.getFileFormat(), getFileFormatProperties())
+					.readFrameFromHDFS(fname, lschema, dc.getRows(), dc.getCols());
 		}
 		catch( DMLRuntimeException ex ) {
 			throw new IOException(ex);
 		}
-			
+		
 		//sanity check correct output
 		if( data == null )
 			throw new IOException("Unable to load frame from file: "+fname);
-						
+		
 		return data;
 	}
 
@@ -231,26 +274,24 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
-	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop) 
+	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)
 		throws IOException, DMLRuntimeException 
 	{
-		OutputInfo oinfo = OutputInfo.stringToOutputInfo(ofmt);
-		FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo, fprop);
+		FileFormat fmt = FileFormat.safeValueOf(ofmt);
+		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
 		writer.writeFrameToHDFS(_data, fname,  getNumRows(), getNumColumns());
 	}
 
 	@Override
-	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt) 
+	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt)
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare output info
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt ) 
-				: InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
-	    
+
 		//note: the write of an RDD to HDFS might trigger
-		//lazy evaluation of pending transformations.				
-		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, oinfo);	
+		//lazy evaluation of pending transformations.
+		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, iimd.getFileFormat());
 	}
 
 }

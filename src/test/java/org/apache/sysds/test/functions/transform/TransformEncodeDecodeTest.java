@@ -25,14 +25,13 @@ import java.util.Iterator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.InputInfo;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -99,14 +98,10 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 		{
 			getAndLoadTestConfiguration(TEST_NAME1);
 			
-			//get input/output info
-			InputInfo iinfo = InputInfo.fromExternalString(fmt);
-			OutputInfo oinfo = InputInfo.getMatchingOutputInfo(iinfo);
-			
 			//generate and write input data
 			double[][] A = TestUtils.round(getRandomMatrix(rows, cols, 1, 15, sparse ? sparsity2 : sparsity1, 7)); 
 			FrameBlock FA = DataConverter.convertToFrameBlock(DataConverter.convertToMatrixBlock(A));  
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(oinfo);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.safeValueOf(fmt));
 			writer.writeFrameToHDFS(FA, input("F"), rows, cols);
 			
 			fullDMLScriptName = SCRIPT_DIR+TEST_DIR+TEST_NAME1 + ".dml";
@@ -118,7 +113,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare matrices (values recoded to identical codes)
-			FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
+			FrameReader reader = FrameReaderFactory.createFrameReader(FileFormat.safeValueOf(fmt));
 			FrameBlock FO = reader.readFrameFromHDFS(output("FO"), 16, 2);
 			HashMap<String,Long> cFA = getCounts(FA, 1);
 			Iterator<String[]> iterFO = FO.getStringRowIterator();

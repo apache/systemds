@@ -262,7 +262,7 @@
 					<forkCount>1C</forkCount>
 					<argLine>-Xms4g -Xmx4g</argLine>
 					<reuseForks>false</reuseForks>
-					<reportFormat>plain</reportFormat>
+					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
 				</configuration>
 			</plugin>
@@ -508,6 +508,8 @@
 								<exclude>**/*.libsvm</exclude>
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>
+								<exclude>**/*.out</exclude>
+								<exclude>**/__pycache__/**</exclude>
 								<exclude>**/part-*</exclude>
 								<exclude>**/*.keep</exclude>
 								<exclude>**/target/**</exclude>

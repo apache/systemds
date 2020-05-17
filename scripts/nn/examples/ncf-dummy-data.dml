@@ -26,8 +26,8 @@ source("scripts/nn/examples/ncf-one-hot.dml") as ncf_util
 K_train = 1000; # number of training samples
 K_val = 100; # number of validation samples
 
-N = 1000; # number items
-M = 100; # number users
+N = 50; # number items
+M = 60; # number users
 
 # targets
 targets_train = round(rand(rows=K_train, cols=1));

@@ -23,10 +23,10 @@ to_one_hot = function(matrix[double] X, integer num_classes)
         return (matrix[double] Y) {
     assert(num_classes >= max(X));
 
-    Y = matrix(0, rows=nrow(X), cols=num_classes);
+    Y = table(seq(1, nrow(X)), X);
 
-    for(i in 1:nrow(X)) {
-        Y[i, as.scalar(X[i])] = 1;
+    if(ncol(Y) < num_classes) {
+        pad = matrix(0, rows=nrow(X), cols=num_classes - ncol(Y));
+        Y = cbind(Y, pad);
     }
-    
 }

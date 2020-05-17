@@ -94,6 +94,7 @@ public class InterProceduralAnalysis
 	protected static final int     INLINING_MAX_NUM_OPS           = 10;   //inline single-statement functions w/ #ops <= threshold, other than dataops and literals
 	protected static final boolean ELIMINATE_DEAD_CODE            = true; //remove dead code (e.g., assigments) not used later on
 	protected static final boolean FORWARD_SIMPLE_FUN_CALLS       = true; //replace a call to a simple forwarding function with the function itself
+	protected static final boolean FLAG_NONDETERMINISM            = true; //flag functions which directly or transitively contain non-deterministic calls
 	
 	static {
 		// for internal debugging only
@@ -136,6 +137,7 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassPropagateReplaceLiterals());
 		_passes.add(new IPAPassInlineFunctions());
 		_passes.add(new IPAPassEliminateDeadCode());
+		_passes.add(new IPAPassFlagNonDeterminism());
 		//note: apply rewrites last because statement block rewrites
 		//might merge relevant statement blocks in special cases, which 
 		//would require an update of the function call graph

@@ -54,8 +54,39 @@ train = function( matrix[double] users_train,
   #  *  - weights: list o weights
   #  *
   #  * Network Architecture:
-  #  * TODO: update
-  #  * X --> [model] --> out --> l2_loss::backward(out, y) --> dout
+  #
+  # +----------------------+    +----------------------+
+  # |User Embedding [users]|    |Item Embedding [items]|
+  # +----------+-----------+    +---------+------------+
+  #           |                          |
+  #           |                          |
+  #           |       +-----------+      |
+  #           +------>+Concatenate+<-----+
+  #                   +-----+-----+
+  #                         |
+  #                         v
+  #                     +----+----+
+  #                     | Dense 1 |
+  #                     | (ReLU)  |
+  #                     +----+----+
+  #                         |
+  #                         v
+  #                     +----+----+
+  #                     | Dense 2 |
+  #                     | (ReLU)  |
+  #                     +----+----+
+  #                         |
+  #                         v
+  #                     +----+----+
+  #                     | Dense 3 |
+  #                     | (ReLU)  |
+  #                     +----+----+
+  #                         |
+  #                         v
+  #                   +-----+-----+
+  #                   |Prediction |
+  #                   |(Sigmoid)  |
+  #                   +-----------+
   #  *
   #  */
 

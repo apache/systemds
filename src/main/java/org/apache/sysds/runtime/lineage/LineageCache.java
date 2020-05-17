@@ -43,9 +43,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -257,11 +255,7 @@ public class LineageCache
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
 			if (boundLI != null)
 				boundLI.resetVisitStatus();
-			if (boundLI == null 
-				|| !LineageCache.probe(li)
-				//TODO remove this brittle constraint (if the placeholder is removed
-				//it might crash threads that are already waiting for its results)
-				|| LineageItemUtils.containsRandDataGen(new HashSet<>(Arrays.asList(liInputs)), boundLI)) {
+			if (boundLI == null || !LineageCache.probe(li)) {
 				AllOutputsCacheable = false;
 			}
 			FuncLIMap.put(li, boundLI);

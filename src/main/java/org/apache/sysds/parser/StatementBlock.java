@@ -62,6 +62,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private ArrayList<String> _updateInPlaceVars = null;
 	private boolean _requiresRecompile = false;
 	private boolean _splitDag = false;
+	private boolean _nondeterministic = false;
 
 	public StatementBlock() {
 		_ID = getNextSBID();
@@ -83,6 +84,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		this();
 		setParseInfo(sb);
 		_dmlProg = sb._dmlProg;
+		_nondeterministic = sb.isNondeterministic();
 	}
 
 	public void setDMLProg(DMLProgram dmlProg){
@@ -1332,5 +1334,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	public void setUpdateInPlaceVars( ArrayList<String> vars ) {
 		_updateInPlaceVars = vars;
+	}
+	
+	public void setNondeterministic(boolean flag) {
+		_nondeterministic = flag;
+	}
+	
+	public boolean isNondeterministic() {
+		return _nondeterministic;
 	}
 }

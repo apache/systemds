@@ -444,6 +444,7 @@ public class DMLTranslator
 				FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, config);
 				rtprog.addFunctionProgramBlock(namespace, fname, rtpb);
 				rtpb.setRecompileOnce( fsb.isRecompileOnce() );
+				rtpb.setNondeterministic(fsb.isNondeterministic());
 			}
 		}
 		

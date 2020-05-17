@@ -277,7 +277,7 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations
  * 342 Mark functions as last-use to enable early eviction
  * 343 Identify equal last level HOPs to ensure SB-level reuse
- * 344 Unmark functions/SBs containing non-determinism for caching
+ * 344 Unmark functions/SBs containing non-determinism for caching    OK
  * 345 Compiler assisted cache configuration
 
 SYSTEMDS-350 Data Cleaning Framework

@@ -109,7 +109,7 @@ public class BasicProgramBlock extends ProgramBlock
 		//statement-block-level, lineage-based reuse
 		LineageItem[] liInputs = null;
 		long t0 = 0;
-		if (_sb != null && LineageCacheConfig.isMultiLevelReuse()) {
+		if (_sb != null && LineageCacheConfig.isMultiLevelReuse() && !_sb.isNondeterministic()) {
 			liInputs = LineageItemUtils.getLineageItemInputstoSB(_sb.getInputstoSB(), ec);
 			List<String> outNames = _sb.getOutputNamesofSB();
 			if(liInputs != null && LineageCache.reuse(outNames, _sb.getOutputsofSB(), 
@@ -125,7 +125,7 @@ public class BasicProgramBlock extends ProgramBlock
 		executeInstructions(tmp, ec);
 		
 		//statement-block-level, lineage-based caching
-		if (_sb != null && liInputs != null)
+		if (_sb != null && liInputs != null && !_sb.isNondeterministic())
 			LineageCache.putValue(_sb.getOutputsofSB(),
 				liInputs, _sb.getName(), ec, System.nanoTime()-t0);
 	}

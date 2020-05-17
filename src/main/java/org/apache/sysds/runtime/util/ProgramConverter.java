@@ -503,6 +503,7 @@ public class ProgramConverter
 					Recompiler.updateFunctionNames( hops, pid );
 				ret.setHops( hops );
 				ret.updateRecompilationFlag();
+				ret.setNondeterministic(sb.isNondeterministic());
 			}
 			else {
 				ret = sb;
@@ -541,6 +542,7 @@ public class ProgramConverter
 				Hop hops = Recompiler.deepCopyHopsDag( sb.getPredicateHops() );
 				ret.setPredicateHops( hops );
 				ret.updatePredicateRecompilationFlag();
+				ret.setNondeterministic(sb.isNondeterministic());
 			}
 			else {
 				ret = sb;
@@ -580,6 +582,7 @@ public class ProgramConverter
 				Hop hops = Recompiler.deepCopyHopsDag( sb.getPredicateHops() );
 				ret.setPredicateHops( hops );
 				ret.updatePredicateRecompilationFlag();
+				ret.setNondeterministic(sb.isNondeterministic());
 			}
 			else {
 				ret = sb;
@@ -633,6 +636,7 @@ public class ProgramConverter
 					ret.setIncrementHops( hops );
 				}
 				ret.updatePredicateRecompilationFlags();
+				ret.setNondeterministic(sb.isNondeterministic());
 			}
 			else {
 				ret = sb;

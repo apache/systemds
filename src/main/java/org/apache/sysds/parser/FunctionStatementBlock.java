@@ -31,6 +31,7 @@ public class FunctionStatementBlock extends StatementBlock
 {
 		
 	private boolean _recompileOnce = false;
+	private boolean _nondeterministic = false;
 	
 	/**
 	 *  TODO: DRB:  This needs to be changed to reflect:
@@ -240,5 +241,13 @@ public class FunctionStatementBlock extends StatementBlock
 	
 	public boolean isRecompileOnce() {
 		return _recompileOnce;
+	}
+	
+	public void setNondeterministic(boolean flag) {
+		_nondeterministic = flag;
+	}
+	
+	public boolean isNondeterministic() {
+		return _nondeterministic;
 	}
 }

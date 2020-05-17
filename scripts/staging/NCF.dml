@@ -28,7 +28,7 @@ source("nn/optim/adam.dml") as adam
 source("nn/layers/relu.dml") as relu
 source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/affine.dml") as affine
-source("nn/layers/l2_loss.dml") as l2_loss
+source("nn/layers/log_loss.dml") as log_loss
 source("nn/layers/l2_reg.dml") as l2_reg
 
 train = function( matrix[double] users_train, 
@@ -143,7 +143,7 @@ train = function( matrix[double] users_train,
 
         # 4.compute final error gradients 
         # params: (predictions, targets)
-        dout = l2_loss::backward(out_FA, y_batch);  # TODO: really correct error function?
+        dout = log_loss::backward(out_FA, y_batch);
 
         # Compute loss & accuracy for training & validation data in the last iteration
         if (i == iters) {
@@ -194,7 +194,7 @@ train = function( matrix[double] users_train,
         [b_F, mb_F, vb_F] = adam::update(b_F, db_F, lr, beta1, beta2, epsilon, t, mb_F, vb_F);
         [W_F, mW_F, vW_F] = adam::update(W_F, dW_F, lr, beta1, beta2, epsilon, t, mW_F, vW_F);
 
-        # 8. Update lists, TODO: find out if necessary
+        # 8. Update lists
         biases = list(b_U, b_I, b_D1, b_F);
         weights = list(W_U, W_I, W_D1, W_F);
       }
@@ -253,11 +253,9 @@ eval = function(matrix[double] probs, matrix[double] y)
     */
 
     # compute the log loss
-    loss = l2_loss::forward(probs, y);
-    # TODO: this probably needs to be adapted
+    loss = log_loss::forward(probs, y);
 
     # compute accuracy
-    sqr_mean = mean( (probs - y)^2 )
-    accuracy = (sqr_mean)^0.5
-
+    Z = probs >= 0.5;
+    accuracy = 1 - sum(abs(Z - y)) / nrow(y);
 }

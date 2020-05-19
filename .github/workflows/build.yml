@@ -49,8 +49,6 @@ jobs:
     - name: Build
       run: mvn package -P rat
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{runner.os}}-rat-log.txt
-        path: target/rat.txt
+    - name: Print Rat Log
+      if: ${{ failure() }}
+      run: cat target/rat.txt

@@ -19,15 +19,14 @@
 
 package org.apache.sysds.lops;
 
-import org.apache.sysds.hops.HopsException;
-import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
- 
-import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.lops.LopProperties.ExecType;
 
 
 /**
@@ -77,7 +76,7 @@ public class PartialAggregate extends Lop
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
 	}
-	
+
 	/**
 	 * This method computes the location of "correction" terms in the output
 	 * produced by PartialAgg instruction.
@@ -124,7 +123,6 @@ public class PartialAggregate extends Lop
 										+ "Unknown aggregate direction: " + direction);
 			}
 			break;
-
 		case MEAN:
 			// Computation of stable mean requires each mapper to output both
 			// the running mean as well as the count
@@ -143,7 +141,6 @@ public class PartialAggregate extends Lop
 							+ "Unknown aggregate direction: " + direction);
 			}
 			break;
-
 		case VAR:
 			// Computation of stable variance requires each mapper to
 			// output the running variance, the running mean, the
@@ -171,12 +168,10 @@ public class PartialAggregate extends Lop
 							+ "Unknown aggregate direction: " + direction);
 			}
 			break;
-
 		case MAXINDEX:
 		case MININDEX:
 			loc = CorrectionLocationType.LASTCOLUMN;
 			break;
-			
 		default:
 			loc = CorrectionLocationType.NONE;
 		}
@@ -338,6 +333,12 @@ public class PartialAggregate extends Lop
 			case TRACE: {
 				if( dir == Direction.RowCol )
 					return "uaktrace";
+				break;
+			}
+
+			case UNIQUE_LENGTH: {
+				if(dir == Direction.RowCol )
+					return "unique_length";
 				break;
 			}
 		}

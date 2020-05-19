@@ -456,6 +456,23 @@ public class DataConverter
 		return mb;
 	}
 
+
+	/**
+	 * Converts an Integer matrix to an MatrixBlock (FP32)
+	 * 
+	 * @param data Int matrix input that is converted to double MatrixBlock
+	 * @return The matrixBlock constructed.
+	 */
+	public static MatrixBlock convertToMatrixBlock(int[][] data){
+		double[][] input = new double[data.length][];
+		int index = 0;
+		for(int[] x: data){
+			input[index] = Arrays.stream(x).asDoubleStream().toArray();
+			index++;
+		}
+		return convertToMatrixBlock(input);
+	}
+
 	/**
 	 * Creates a dense Matrix Block and copies the given double vector into it.
 	 * 

@@ -51,7 +51,7 @@ public class AggUnaryOp extends MultiThreadedHop
 	private AggUnaryOp() {
 		//default constructor for clone
 	}
-	
+
 	public AggUnaryOp(String l, DataType dt, ValueType vt, AggOp o, Direction idx, Hop inp) 
 	{
 		super(l, dt, vt);
@@ -102,7 +102,9 @@ public class AggUnaryOp extends MultiThreadedHop
 					 || (_op == AggOp.MIN    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 					 || (_op == AggOp.MEAN   && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 					 || (_op == AggOp.VAR    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
-					 || (_op == AggOp.PROD   && (_direction == Direction.RowCol))){
+					 || (_op == AggOp.PROD   && (_direction == Direction.RowCol))
+					 || (_op == AggOp.UNIQUE_LENGTH && (_direction == Direction.RowCol))
+					 ){
 				return true;
 			}
 		} catch (HopsException e) {
@@ -148,8 +150,10 @@ public class AggUnaryOp extends MultiThreadedHop
 				}
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+
 					agg1 = new PartialAggregate(input.constructLops(),
 							_op, _direction, getDataType(),getValueType(), et, k);
+					
 				}
 				
 				setOutputDimensions(agg1);

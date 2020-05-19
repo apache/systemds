@@ -178,6 +178,7 @@ public enum Builtins {
 	TRACE("trace", false),
 	TO_ONE_HOT("toOneHot", true),
 	TYPEOF("typeOf", false),
+	UNIQUE_LENGTH("unique_length",false),
 	VAR("var", false),
 	XOR("xor", false),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val

@@ -31,9 +31,11 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.matrix.data.LibMatrixEstimator;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.EstimatorOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -42,7 +44,7 @@ import org.apache.sysds.utils.Explain;
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 {
 	public enum AUType {
-		NROW, NCOL, LENGTH, EXISTS, LINEAGE,
+		NROW, NCOL, LENGTH, EXISTS, LINEAGE, UNIQUE_LENGTH,
 		DEFAULT;
 		public boolean isMeta() {
 			return this != DEFAULT;
@@ -69,7 +71,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		
 		if(opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") 
 			|| opcode.equalsIgnoreCase("length") || opcode.equalsIgnoreCase("exists")
-			|| opcode.equalsIgnoreCase("lineage")){
+			|| opcode.equalsIgnoreCase("lineage") || opcode.equalsIgnoreCase("unique_length")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		}
@@ -150,6 +152,21 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				LineageItem li = !DMLScript.LINEAGE_DEDUP ? ec.getLineageItem(input1):
 					LineageItemUtils.rDecompress(ec.getLineageItem(input1));
 				ec.setScalarOutput(output_name, new StringObject(Explain.explain(li)));
+				break;
+			}
+			case UNIQUE_LENGTH: {
+				System.out.print(ec.getVariables().keySet());
+				if( !ec.getVariables().keySet().contains(input1.getName()) )
+					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
+
+				MatrixBlock input = ec.getMatrixInput(input1.getName());
+				
+				EstimatorOperator op = new EstimatorOperator(LibMatrixEstimator.EstimatorType.NUM_DISTINCT_COUNT);
+				int res = LibMatrixEstimator.estimateDistinctValues(input, op);
+				if (res == 0)
+					throw new DMLRuntimeException("Imposible estimate of distinct values");
+				ec.releaseMatrixInput(input1.getName());
+				ec.setScalarOutput(output_name, new IntObject(res));
 				break;
 			}
 			default: {

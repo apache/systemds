@@ -175,7 +175,8 @@ public class Types
 		PROD, SUM_PROD,
 		MIN, MAX,
 		TRACE, MEAN, VAR,
-		MAXINDEX, MININDEX;
+		MAXINDEX, MININDEX,
+		UNIQUE_LENGTH;
 		
 		@Override
 		public String toString() {

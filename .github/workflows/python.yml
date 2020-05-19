@@ -21,13 +21,14 @@
 
 name: Python Test
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
+# on:
+#   push:
+#     branches:
+#       - master
+#   pull_request:
+#     branches:
+#       - master
 
 jobs:
   applicationsTests:
@@ -48,32 +49,35 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-    
-    - name: Cache Pip Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
-
-    - name: Cache Deb Dependencies
-      uses: actions/cache@v1
-      with:
-        path: /var/cache/apt/archives
-        key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
-
-    - name: Maven clean & package
-      run: mvn clean package -P distribution
-
     - name: Setup Python
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
+
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
+        restore-keys: ${{ runner.os }}-maven-
+    
+    - name: Cache Pip Dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}-${{date +%Y-%m}}
+        restore-keys: ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+    - name: Cache apt Dependencies
+      uses: actions/cache@v1
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/python.yml') }}-${{date +%Y-%m}}
+        restore-keys: ${{ runner.os }}-apt-
+
+    - name: Maven clean & package
+      run: mvn clean package -P distribution
 
     - name: Install Protobuf
       run: sudo apt-get install protobuf-compiler libprotoc-dev 

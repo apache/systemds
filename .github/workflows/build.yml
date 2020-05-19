@@ -43,9 +43,14 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
+        restore-keys: ${{ runner.os }}-maven-
 
     - name: Build
       run: mvn package -P rat
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{runner.os}}-rat-log.txt
+        path: target/rat.txt

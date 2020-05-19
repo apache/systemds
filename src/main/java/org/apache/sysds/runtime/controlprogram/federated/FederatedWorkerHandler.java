@@ -32,6 +32,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.DMLPrivacyException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -51,6 +52,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONObject;
 
@@ -149,6 +152,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 						return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
+					if ( mtd.containsKey(DataExpression.PRIVACY) ) {
+						String privacyLevel = mtd.getString(DataExpression.PRIVACY);
+						if ( privacyLevel != null )
+							cd.setPrivacyConstraints(new PrivacyConstraint(PrivacyLevel.valueOf(privacyLevel)));
+						}
 					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 				}
 			}
@@ -199,6 +207,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse getVariableData(long varID) {
 		Data dataObject = _vars.get(varID);
+		dataObject = handlePrivacy(dataObject);
 		switch (dataObject.getDataType()) {
 			case TENSOR:
 				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
@@ -218,6 +227,26 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
+	private Data handlePrivacy(Data dataObject){
+		if ( dataObject instanceof CacheableData<?> ){
+			PrivacyConstraint privacyConstraint = ((CacheableData<?>)dataObject).getPrivacyConstraint();
+			if (privacyConstraint != null){
+				PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+				switch(privacyLevel){
+					case None:
+						((CacheableData<?>)dataObject).setPrivacyConstraints(null);
+						break;
+					case Private:
+					case PrivateAggregation: 
+						throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
+					default:
+						throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
+				}
+			}
+		}
+		return dataObject;
+	}
+
 	private FederatedResponse executeAggregation(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 2);
 		AggregateUnaryOperator operator = (AggregateUnaryOperator) request.getParam(0);
@@ -233,6 +262,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					+ dataObject.getDataType().name());
 		}
 		MatrixObject matrixObject = (MatrixObject) dataObject;
+		matrixObject = handlePrivacy(matrixObject);
 		MatrixBlock matrixBlock = matrixObject.acquireRead();
 		// create matrix for calculation with correction
 		MatrixCharacteristics mc = new MatrixCharacteristics();
@@ -259,6 +289,25 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// result block without correction
 		ret.dropLastRowsOrColumns(operator.aggOp.correction);
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, ret);
+	}
+
+	private MatrixObject handlePrivacy(MatrixObject matrixObject){
+		PrivacyConstraint privacyConstraint = matrixObject.getPrivacyConstraint();
+		if (privacyConstraint != null){
+			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+			switch(privacyLevel){
+				case None:
+					matrixObject.setPrivacyConstraints(null);
+					break;
+				case Private:
+					throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
+				case PrivateAggregation:
+					break; 
+				default:
+					throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
+			}
+		}
+		return matrixObject;
 	}
 
 	private FederatedResponse executeScalarOperation(FederatedRequest request) {

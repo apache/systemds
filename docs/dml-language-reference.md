@@ -699,7 +699,7 @@ cummin() | Column prefix-min (For row-prefix min, use cummin(t(X)) | Input: matr
 cummax() | Column prefix-max (For row-prefix min, use cummax(t(X)) | Input: matrix <br/> Output: matrix of the same dimensions | A = matrix("3 4 1 6 5 2", rows=3, cols=2) <br/> B = cummax(A) <br/> The output matrix B = [[3, 4], [3, 6], [5, 6]]
 sample(range, size, replacement, seed) | Sample returns a column vector of length size, containing uniform random numbers from [1, range] | Input: <br/> range: integer <br/> size: integer <br/> replacement: boolean (Optional, default: FALSE) <br/> seed: integer (Optional) <br/> Output: Matrix dimensions are size x 1 | sample(100, 5) <br/> sample(100, 5, TRUE) <br/> sample(100, 120, TRUE) <br/> sample(100, 5, 1234) # 1234 is the seed <br/> sample(100, 5, TRUE, 1234)
 outer(vector1, vector2, "op") | Applies element wise binary operation "op" (for example: "&lt;", "==", "&gt;=", "*", "min") on the all combination of vector. <br/> Note: Using "*", we get outer product of two vectors. | Input: vectors of same size d, string <br/> Output: matrix of size d X d | A = matrix("1 4", rows = 2, cols = 1) <br/> B = matrix("3 6", rows = 1, cols = 2) <br/> C = outer(A, B, "&lt;") <br/> D = outer(A, B, "*") <br/> The output matrix C = [[1, 1], [0, 1]] <br/> The output matrix D = [[3, 6], [12, 24]]<br/>
-
+to_one_hot(X, num_classes)| Converts a vector containing integers to a one-hot-encoded matrix | Input: vector with N integer entries between 1 and num_classes, number of columns (must be >= largest value in X)<br />Output: one-hot-encoded matrix with shape (N, num_classes) | X = round(rand(rows=10, cols=1, min=2, max=10)); <br />num_classes = ​12; <br />Y = to_one_hot(X, num_classes); 
 
 #### Alternative forms of table()
 

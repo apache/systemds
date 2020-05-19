@@ -173,6 +173,7 @@ public enum Builtins {
 	TAN("tan", false),
 	TANH("tanh", false),
 	TRACE("trace", false),
+	TO_ONE_HOT("to_one_hot", true),
 	TYPEOF("typeOf", false),
 	VAR("var", false),
 	XOR("xor", false),

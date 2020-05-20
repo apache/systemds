@@ -56,8 +56,8 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{ date +%Y-%m }}
-    #     restore-keys: ${{ runner.os }}-maven-
+        key: ${{ runner.os }}-maven-${{ date +%Y-%m }}-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-maven-
 
     # - name: Cache R Packages
     #   uses: actions/cache@v1

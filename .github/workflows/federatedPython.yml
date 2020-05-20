@@ -21,7 +21,13 @@
 
 name: Federated Python Test
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   applicationsTests:

@@ -36,8 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         tests: [A]
-         # ,C,G,H,I,L,M,N,O,P,S,U
-        #  ,W]
+        # [A,C,G,H,I,L,M,N,O,P,S,U,W]
         os: [ubuntu-latest]
         java: [ 1.8 ]
     name:  Ap Test ${{ matrix.tests }} 

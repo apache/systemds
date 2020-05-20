@@ -50,7 +50,7 @@ jobs:
         java-version: ${{ matrix.java }}
 
     - name: Setup R-scripts
-      uses: r-lib/actions/setup-r@v1
+      uses: r-lib/actions/setup-r@master
 
     - name: Cache Maven Dependencies
       uses: actions/cache@v1
@@ -63,7 +63,7 @@ jobs:
       uses: actions/cache@v1
       id: cache-r-packages
       with:
-        path: ~/.local/share/renv
+        path: /home/runner/work/_temp/Library
         key: ${{ runner.os }}-renv-${{ hashFiles('src/test/scripts/installDependencies.R') }}
         restore-keys: ${{ runner.os }}-renv-
 

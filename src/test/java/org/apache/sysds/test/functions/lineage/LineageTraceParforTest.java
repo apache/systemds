@@ -44,6 +44,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 	protected static final String TEST_NAME1 = "LineageTraceParfor1"; //rand - matrix result - local parfor
 	protected static final String TEST_NAME2 = "LineageTraceParfor2"; //rand - matrix result - remote spark parfor
 	protected static final String TEST_NAME3 = "LineageTraceParfor3"; //rand - matrix result - remote spark parfor
+	protected static final String TEST_NAME4 = "LineageTraceParfor4"; //rand - steplm (stackoverflow error)
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceParforTest.class.getSimpleName() + "/";
 	
@@ -59,6 +60,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}) );
 	}
 	
 	@Test
@@ -98,7 +100,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 	
 	@Test
 	public void testLineageTraceParFor2_32() {
-		testLineageTraceParFor(8, TEST_NAME2);
+		testLineageTraceParFor(32, TEST_NAME2);
 	}
 	
 	@Test
@@ -108,8 +110,19 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 	
 	@Test
 	public void testLineageTraceParFor3_32() {
-		testLineageTraceParFor(8, TEST_NAME3);
+		testLineageTraceParFor(32, TEST_NAME3);
 	}
+	
+// TODO additional fixes needed for steplm
+//	@Test
+//	public void testLineageTraceParFor4_8() {
+//		testLineageTraceParFor(8, TEST_NAME4);
+//	}
+//	
+//	@Test
+//	public void testLineageTraceParFor4_32() {
+//		testLineageTraceParFor(32, TEST_NAME4);
+//	}
 	
 	private void testLineageTraceParFor(int ncol, String testname) {
 		try {
@@ -121,7 +134,6 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 			proArgs.add("-explain");
 			proArgs.add("-lineage");
 			proArgs.add("-args");
-			proArgs.add(input("X"));
 			proArgs.add(output("R"));
 			proArgs.add(String.valueOf(numRecords));
 			proArgs.add(String.valueOf(ncol));
@@ -134,6 +146,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 			
 			//get lineage and generate program
 			String Rtrace = readDMLLineageFromHDFS("R");
+			System.out.println(Rtrace);
 			LineageItem R = LineageParser.parseLineageTrace(Rtrace);
 			Data ret = LineageItemUtils.computeByLineage(R);
 

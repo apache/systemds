@@ -359,7 +359,7 @@ public class Types
 				case "cm": return OpOp3.MOMENT;
 				case "+*": return OpOp3.PLUS_MULT;
 				case "-*": return OpOp3.MINUS_MULT;
-				default:   return OpOp3.valueOf(code);
+				default:   return OpOp3.valueOf(code.toUpperCase());
 			}
 		}
 	}

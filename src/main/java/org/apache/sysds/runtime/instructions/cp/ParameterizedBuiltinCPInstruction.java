@@ -221,8 +221,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if ( opcode.equalsIgnoreCase("replace") ) {
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			double pattern = Double.parseDouble( params.get("pattern") );
-			double replacement = Double.parseDouble( params.get("replacement") );
+			double pattern = Double.parseDouble(params.get("pattern"));
+			double replacement = Double.parseDouble(params.get("replacement"));
 			MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
@@ -241,7 +241,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
 			
 			// compute the result
-			double maxVal = Double.parseDouble( params.get("max") );
+			double maxVal = Double.parseDouble(params.get("max"));
 			boolean dirVal = params.get("dir").equals("rows");
 			boolean cast = Boolean.parseBoolean(params.get("cast"));
 			boolean ignore = Boolean.parseBoolean(params.get("ignore"));
@@ -401,27 +401,64 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String opcode = getOpcode();
 		if (opcode.equalsIgnoreCase("groupedagg")) {
-			CPOperand target = new CPOperand(params.get(Statement.GAGG_TARGET), ValueType.FP64, DataType.MATRIX);
+			CPOperand target = getTargetOperand();
 			CPOperand groups = new CPOperand(params.get(Statement.GAGG_GROUPS), ValueType.FP64, DataType.MATRIX);
 			String wt = params.containsKey(Statement.GAGG_WEIGHTS) ? params.get(Statement.GAGG_WEIGHTS) : String.valueOf(-1);
 			CPOperand weights = new CPOperand(wt, ValueType.FP64, DataType.MATRIX);
-			CPOperand fn = new CPOperand(params.get(Statement.GAGG_FN), ValueType.STRING, DataType.SCALAR, true);
+			CPOperand fn = getStringLiteral(Statement.GAGG_FN);
 			String ng = params.containsKey(Statement.GAGG_NUM_GROUPS) ? params.get(Statement.GAGG_NUM_GROUPS) : String.valueOf(-1);
 			CPOperand ngroups = new CPOperand(ng , ValueType.INT64, DataType.SCALAR, true);
 			return Pair.of(output.getName(), new LineageItem(getOpcode(),
 				LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups)));
 		}
 		else if (opcode.equalsIgnoreCase("rmempty")) {
-			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
-			CPOperand margin = new CPOperand(params.get("margin"), ValueType.STRING, DataType.SCALAR, true);
+			CPOperand target = getTargetOperand();
+			CPOperand margin = getStringLiteral("margin");
 			String sl = params.containsKey("select") ? params.get("select") : String.valueOf(-1);
 			CPOperand select = new CPOperand(sl, ValueType.FP64, DataType.MATRIX); 
 			return Pair.of(output.getName(), new LineageItem(getOpcode(),
 				LineageItemUtils.getLineage(ec, target, margin, select)));
 		}
-		//TODO: generic interface to support all the ops
-		else
+		else if(opcode.equalsIgnoreCase("replace")) {
+			CPOperand target = getTargetOperand();
+			CPOperand pattern = getFP64Literal("pattern");
+			CPOperand replace = getFP64Literal("replacement");
 			return Pair.of(output.getName(), new LineageItem(getOpcode(),
-				LineageItemUtils.getLineage(ec, input1,input2,input3)));
+				LineageItemUtils.getLineage(ec, target, pattern, replace)));
+		}
+		else if(opcode.equalsIgnoreCase("rexpand")) {
+			CPOperand target = getTargetOperand();
+			CPOperand max = getFP64Literal("max");
+			CPOperand dir = getStringLiteral("dir");
+			CPOperand cast = getBoolLiteral("cast");
+			CPOperand ignore = getBoolLiteral("ignore");
+			return Pair.of(output.getName(), new LineageItem(getOpcode(),
+				LineageItemUtils.getLineage(ec, target, max, dir, cast, ignore)));
+		}
+		else {
+			//NOTE: for now, we cannot have a generic fall through path, because the 
+			//data and value types of parmeters are not compiled into the instruction
+			throw new DMLRuntimeException("Unsupported lineage tracing for: "+opcode);
+		}
+	}
+	
+	private CPOperand getTargetOperand() {
+		return new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
+	}
+	
+	private CPOperand getFP64Literal(String name) {
+		return getLiteral(name, ValueType.FP64);
+	}
+	
+	private CPOperand getStringLiteral(String name) {
+		return getLiteral(name, ValueType.STRING);
+	}
+	
+	private CPOperand getBoolLiteral(String name) {
+		return getLiteral(name, ValueType.BOOLEAN);
+	}
+	
+	private CPOperand getLiteral(String name, ValueType vt) {
+		return new CPOperand(params.get(name), vt, DataType.SCALAR, true);
 	}
 }

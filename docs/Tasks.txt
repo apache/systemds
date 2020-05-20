@@ -272,6 +272,7 @@ SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 336 Better use of cache status to handle multithreading
  * 337 Adjust disk I/O speed by recording actual time taken           OK
  * 338 Extended lineage tracing (rmEmpty, lists), partial rewrites    OK
+ * 339 Lineage tracing robustness (indexed updates, algorithms)
  
 SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations

@@ -52,11 +52,11 @@ jobs:
     # - name: Setup R-scripts
     #   uses: r-lib/actions/setup-r@v1
 
-    # - name: Cache Maven Dependencies
-    #   uses: actions/cache@v1
-    #   with:
-    #     path: ~/.m2/repository
-    #     key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{ date +%Y-%m }}
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{ date +%Y-%m }}
     #     restore-keys: ${{ runner.os }}-maven-
 
     # - name: Cache R Packages

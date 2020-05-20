@@ -48,9 +48,8 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
 
-    # https://github.com/r-lib/actions/tree/master/examples#standard-ci-workflow
     - name: Setup R-scripts
-      uses: r-lib/actions/setup-r@master
+      uses: r-lib/actions/setup-r@v1
 
     - name: Cache Maven Dependencies
       uses: actions/cache@v1

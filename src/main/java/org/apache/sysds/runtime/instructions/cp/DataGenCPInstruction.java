@@ -170,6 +170,18 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public boolean isOnesCol() {
 		return minValue == maxValue && minValue == 1 && sparsity == 1 && getCols() == 1;
 	}
+	
+	public long getFrom() {
+		return seq_from.isLiteral() ? Long.parseLong(seq_from.getName()) : -1;
+	}
+	
+	public long getTo() {
+		return seq_to.isLiteral() ? Long.parseLong(seq_to.getName()) : -1;
+	}
+	
+	public long getIncr() {
+		return seq_incr.isLiteral() ? Long.parseLong(seq_incr.getName()) : -1;
+	}
 
 	public static DataGenCPInstruction parseInstruction(String str)
 	{

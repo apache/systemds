@@ -779,8 +779,13 @@ public class HopRewriteUtils
 	}
 	
 	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
-		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, mleft, smid, mright);
-		ternOp.setBlocksize(mleft.getBlocksize());
+		//NOTe: for ifelse it's sufficient to check mright as smid==mright
+		System.out.println(mleft.getDataType()+" "+smid.getDataType()+" "+mright.getDataType());
+		DataType dt = (op == OpOp3.IFELSE) ? mright.getDataType() : DataType.MATRIX;
+		ValueType vt = (op == OpOp3.IFELSE) ? mright.getValueType() : ValueType.FP64;
+		TernaryOp ternOp = new TernaryOp("tmp", dt, vt, op, mleft, smid, mright);
+		if( dt == DataType.MATRIX )
+			ternOp.setBlocksize(mleft.getBlocksize());
 		copyLineNumbers(mleft, ternOp);
 		ternOp.refreshSizeInformation();
 		return ternOp;

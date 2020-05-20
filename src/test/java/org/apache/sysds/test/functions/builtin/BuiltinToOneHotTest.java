@@ -27,8 +27,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 
 import static org.junit.Assert.fail;
@@ -70,12 +68,7 @@ public class BuiltinToOneHotTest extends AutomatedTestBase {
             double[][] doubles = getRandomMatrix(rows, cols, 1, numClasses, 1, 7);
 
             // round them
-            double[][] A = new double[rows][cols];
-            for(int i = 0; i < rows; i++) {
-                for(int j = 0; j < cols; j++) {
-                    A[i][j] = Math.round(doubles[i][j]);
-                }
-            }
+            double[][] A = TestUtils.round(doubles);
 
             int max = -1;
 
@@ -99,13 +92,7 @@ public class BuiltinToOneHotTest extends AutomatedTestBase {
             runTest(true, false, null, -1);
 
             if(!shouldFail) {
-                HashMap<MatrixValue.CellIndex, Double> expected = new HashMap<MatrixValue.CellIndex, Double>();
-                for(int i = 0; i < A.length; i++) {
-                    for(int j = 0; j < A[i].length; j++) {
-                        // indices start with 1 here
-                        expected.put(new MatrixValue.CellIndex(i + 1, (int) A[i][j]), 1.0);
-                    }
-                }
+                HashMap<MatrixValue.CellIndex, Double> expected = computeExpectedResult(A);
 
                 //compare matrices
                 HashMap<MatrixValue.CellIndex, Double> result = readDMLMatrixFromHDFS("B");
@@ -122,5 +109,16 @@ public class BuiltinToOneHotTest extends AutomatedTestBase {
         finally {
             rtplatform = platformOld;
         }
+    }
+
+    private HashMap<MatrixValue.CellIndex, Double> computeExpectedResult(double[][] a) {
+        HashMap<MatrixValue.CellIndex, Double> expected = new HashMap<>();
+        for(int i = 0; i < a.length; i++) {
+            for(int j = 0; j < a[i].length; j++) {
+                // indices start with 1 here
+                expected.put(new MatrixValue.CellIndex(i + 1, (int) a[i][j]), 1.0);
+            }
+        }
+        return expected;
     }
 }

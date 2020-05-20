@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
@@ -29,6 +30,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -104,8 +106,8 @@ public class SpoofGPUInstruction extends GPUInstruction implements LineageTracea
     }
 
     @Override
-    public LineageItem[] getLineageItems(ExecutionContext ec) {
-        return new LineageItem[]{new LineageItem(_out.getName(),
-                getOpcode(), LineageItemUtils.getLineage(ec, _in))};
+    public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+        return Pair.of(_out.getName(),
+                new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, _in)));
     }
 }

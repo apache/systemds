@@ -78,5 +78,5 @@ jobs:
         Rscript ./src/test/scripts/installDependencies.R
         # fi
     
-    # - name: Run all tests starting with "${{ matrix.tests }}"
-    #   run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.applications.${{ matrix.tests }}**
+    - name: Run all tests starting with "${{ matrix.tests }}"
+      run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.applications.${{ matrix.tests }}**

@@ -19,70 +19,70 @@
 #
 #-------------------------------------------------------------
 
-name: Function Test
+# name: Function Test
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+# on:
+#   push:
+#     branches:
+#       - master
+#   pull_request:
+#     branches:
+#       - master
 
-jobs:
-  applicationsTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        tests: [
-          aggregate,
-          append,
-          binary.matrix,
-          binary.matrix_full_cellwise,
-          binary.matrix_full_other,
-          binary.scalar,
-          binary.tensor,
-          blocks,
-          builtin,
-          caching,
-          codegen,
-          codegenalg.partone,
-          codegenalg.parttwo,
-          data.misc,
-          data.rand,
-          data.tensor,
-          dnn,
-          federated,
-          frame,
-          indexing,
-          io,
-          jmlc,
-          lineage,
-          misc,
-          mlcontext,
-          nary,
-          paramserv,
-          parfor,
-          quaternary,
-          recompile,
-          reorg,
-          ternary,
-          transform,
-          unary.matrix,
-          unary.scalar,
-          updateinplace,
-          vect
-          ]
-        os: [ubuntu-latest]
-    name:  Func Test ${{ matrix.tests }} 
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+# jobs:
+#   applicationsTests:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         tests: [
+#           aggregate,
+#           append,
+#           binary.matrix,
+#           binary.matrix_full_cellwise,
+#           binary.matrix_full_other,
+#           binary.scalar,
+#           binary.tensor,
+#           blocks,
+#           builtin,
+#           caching,
+#           codegen,
+#           codegenalg.partone,
+#           codegenalg.parttwo,
+#           data.misc,
+#           data.rand,
+#           data.tensor,
+#           dnn,
+#           federated,
+#           frame,
+#           indexing,
+#           io,
+#           jmlc,
+#           lineage,
+#           misc,
+#           mlcontext,
+#           nary,
+#           paramserv,
+#           parfor,
+#           quaternary,
+#           recompile,
+#           reorg,
+#           ternary,
+#           transform,
+#           unary.matrix,
+#           unary.scalar,
+#           updateinplace,
+#           vect
+#           ]
+#         os: [ubuntu-latest]
+#     name:  Func Test ${{ matrix.tests }} 
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v2
 
-    - name: Run all tests starting with "${{ matrix.tests }}"
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: org.apache.sysds.test.functions.${{ matrix.tests }}.**
+#     - name: Run all tests starting with "${{ matrix.tests }}"
+#       uses: ./.github/action/
+#       id: test
+#       with:
+#         test-to-run: org.apache.sysds.test.functions.${{ matrix.tests }}.**
 

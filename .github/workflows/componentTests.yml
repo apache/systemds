@@ -19,36 +19,36 @@
 #
 #-------------------------------------------------------------
 
-name: Component Test
+# name: Component Test
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
-jobs:
-  componentTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-    name: Component Tests ${{ matrix.os }}
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+# jobs:
+#   componentTests:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ubuntu-latest]
+#     name: Component Tests ${{ matrix.os }}
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v2
 
-    - name: Setup Java 1.8
-      uses: actions/setup-java@v1
-      with:
-        java-version: 1.8
+#     - name: Setup Java 1.8
+#       uses: actions/setup-java@v1
+#       with:
+#         java-version: 1.8
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
-        restore-keys: ${{ runner.os }}-maven-
+#     - name: Cache Maven Dependencies
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.m2/repository
+#         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
+#         restore-keys: ${{ runner.os }}-maven-
 
-    - name: Maven clean compile & test-compile
-      run: mvn clean compile test-compile
+#     - name: Maven clean compile & test-compile
+#       run: mvn clean compile test-compile
 
-    - name: Component Tests
-      run: mvn surefire:test -DskipTests=false -Dtest=org.apache.sysds.test.component.*.**
+#     - name: Component Tests
+#       run: mvn surefire:test -DskipTests=false -Dtest=org.apache.sysds.test.component.*.**

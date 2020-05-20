@@ -19,102 +19,102 @@
 #
 #-------------------------------------------------------------
 
-name: Python Test
+# name: Python Test
 
-on: [push, pull_request]
-# on:
-#   push:
-#     branches:
-#       - master
-#   pull_request:
-#     branches:
-#       - master
+# on: [push, pull_request]
+# # on:
+# #   push:
+# #     branches:
+# #       - master
+# #   pull_request:
+# #     branches:
+# #       - master
 
-jobs:
-  applicationsTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.6, 3.7, 3.8]
-        os: [ubuntu-latest]
-        java: [ 1.8 ]
-    name:  Python Test
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+# jobs:
+#   applicationsTests:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         python-version: [3.6, 3.7, 3.8]
+#         os: [ubuntu-latest]
+#         java: [ 1.8 ]
+#     name:  Python Test
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v2
 
-    - name: Setup Java
-      uses: actions/setup-java@v1
-      with:
-        java-version: ${{ matrix.java }}
+#     - name: Setup Java
+#       uses: actions/setup-java@v1
+#       with:
+#         java-version: ${{ matrix.java }}
 
-    - name: Setup Python
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: 'x64'
+#     - name: Setup Python
+#       uses: actions/setup-python@v1
+#       with:
+#         python-version: ${{ matrix.python-version }}
+#         architecture: 'x64'
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
-        restore-keys: ${{ runner.os }}-maven-
+#     - name: Cache Maven Dependencies
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.m2/repository
+#         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
+#         restore-keys: ${{ runner.os }}-maven-
     
-    - name: Cache Pip Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}-${{date +%Y-%m}}
-        restore-keys: ${{ runner.os }}-pip-${{ matrix.python-version }}-
+#     - name: Cache Pip Dependencies
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.cache/pip
+#         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}-${{date +%Y-%m}}
+#         restore-keys: ${{ runner.os }}-pip-${{ matrix.python-version }}-
 
-    - name: Cache apt Dependencies
-      uses: actions/cache@v1
-      with:
-        path: /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/python.yml') }}-${{date +%Y-%m}}
-        restore-keys: ${{ runner.os }}-apt-
+#     - name: Cache apt Dependencies
+#       uses: actions/cache@v1
+#       with:
+#         path: /var/cache/apt/archives
+#         key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/python.yml') }}-${{date +%Y-%m}}
+#         restore-keys: ${{ runner.os }}-apt-
 
-    - name: Maven clean & package
-      run: mvn clean package -P distribution
+#     - name: Maven clean & package
+#       run: mvn clean package -P distribution
 
-    - name: Install Protobuf
-      run: sudo apt-get install protobuf-compiler libprotoc-dev 
+#     - name: Install Protobuf
+#       run: sudo apt-get install protobuf-compiler libprotoc-dev 
   
-    - name: Install pip Dependencies
-      run: pip install numpy py4j wheel scipy sklearn jinja2 onnx
+#     - name: Install pip Dependencies
+#       run: pip install numpy py4j wheel scipy sklearn jinja2 onnx
 
-    - name: Build Python Package
-      run: |
-        cd src/main/python
-        python create_python_dist.py
+#     - name: Build Python Package
+#       run: |
+#         cd src/main/python
+#         python create_python_dist.py
 
-    - name: Run all python tests
-      run: |
-        cd src/main/python
-        ls tests/
-        echo "Beginning tests"
-        python -m unittest tests/*.py
-        echo "Exit Status: " $?
+#     - name: Run all python tests
+#       run: |
+#         cd src/main/python
+#         ls tests/
+#         echo "Beginning tests"
+#         python -m unittest tests/*.py
+#         echo "Exit Status: " $?
 
-    - name: Run all lineage python tests
-      run: |
-        export SYSTEMDS_ROOT=$(pwd)
-        export PATH=$SYSTEMDS_ROOT/bin:$PATH
-        export SYSDS_QUIET=1
-        cd src/main/python
-        python -m unittest tests/lineage/*.py
-        echo "Exit Status: " $?
+#     - name: Run all lineage python tests
+#       run: |
+#         export SYSTEMDS_ROOT=$(pwd)
+#         export PATH=$SYSTEMDS_ROOT/bin:$PATH
+#         export SYSDS_QUIET=1
+#         cd src/main/python
+#         python -m unittest tests/lineage/*.py
+#         echo "Exit Status: " $?
 
-    - name: Run onnx-systemds python tests
-      run: |
-        export SYSTEMDS_ROOT=$(pwd)
-        export PATH=$SYSTEMDS_ROOT/bin:$PATH
-        cd src/main/python
-        echo "Creating models"
-        python tests/onnx/test_models/model_generate.py
-        ls tests/onnx/test_models/*.onnx
-        echo "Beginning tests"
-        python -m unittest tests/onnx/*.py
-        echo "Exit Status: " $?
+#     - name: Run onnx-systemds python tests
+#       run: |
+#         export SYSTEMDS_ROOT=$(pwd)
+#         export PATH=$SYSTEMDS_ROOT/bin:$PATH
+#         cd src/main/python
+#         echo "Creating models"
+#         python tests/onnx/test_models/model_generate.py
+#         ls tests/onnx/test_models/*.onnx
+#         echo "Beginning tests"
+#         python -m unittest tests/onnx/*.py
+#         echo "Exit Status: " $?

@@ -19,36 +19,36 @@
 #
 #-------------------------------------------------------------
 
-name: Build
+# name: Build
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
-jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+# jobs:
+#   build:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ubuntu-latest, windows-latest]
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v2
 
-    - name: Setup Java 1.8
-      uses: actions/setup-java@v1
-      with:
-        java-version: 1.8
+#     - name: Setup Java 1.8
+#       uses: actions/setup-java@v1
+#       with:
+#         java-version: 1.8
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
-        restore-keys: ${{ runner.os }}-maven-
+#     - name: Cache Maven Dependencies
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.m2/repository
+#         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
+#         restore-keys: ${{ runner.os }}-maven-
 
-    - name: Build
-      run: mvn package -P rat
+#     - name: Build
+#       run: mvn package -P rat
 
-    - name: Print Rat Log
-      if: ${{ failure() }}
-      run: cat target/rat.txt
+#     - name: Print Rat Log
+#       if: ${{ failure() }}
+#       run: cat target/rat.txt

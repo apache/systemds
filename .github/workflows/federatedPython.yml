@@ -19,71 +19,71 @@
 #
 #-------------------------------------------------------------
 
-name: Federated Python Test
+# name: Federated Python Test
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+# on:
+#   push:
+#     branches:
+#       - master
+#   pull_request:
+#     branches:
+#       - master
 
-jobs:
-  applicationsTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.6]
-        os: [ubuntu-latest]
-        java: [ 1.8 ]
-    name:  Python Test
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+# jobs:
+#   applicationsTests:
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         python-version: [3.6]
+#         os: [ubuntu-latest]
+#         java: [ 1.8 ]
+#     name:  Python Test
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v2
 
-    - name: Setup Java
-      uses: actions/setup-java@v1
-      with:
-        java-version: ${{ matrix.java }}
+#     - name: Setup Java
+#       uses: actions/setup-java@v1
+#       with:
+#         java-version: ${{ matrix.java }}
 
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
-        restore-keys: ${{ runner.os }}-maven-
+#     - name: Cache Maven Dependencies
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.m2/repository
+#         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{date +%Y-%m}}
+#         restore-keys: ${{ runner.os }}-maven-
   
-    - name: Maven clean & package
-      run: mvn clean package -P distribution
+#     - name: Maven clean & package
+#       run: mvn clean package -P distribution
 
-    - name: Setup Python
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: 'x64'
+#     - name: Setup Python
+#       uses: actions/setup-python@v1
+#       with:
+#         python-version: ${{ matrix.python-version }}
+#         architecture: 'x64'
 
-    - name: Cache Pip Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}-${{date +%Y-%m}}
-        restore-keys: ${{ runner.os }}-pip-${{ matrix.python-version }}-
+#     - name: Cache Pip Dependencies
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.cache/pip
+#         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}-${{date +%Y-%m}}
+#         restore-keys: ${{ runner.os }}-pip-${{ matrix.python-version }}-
   
-    - name: Install pip Dependencies
-      run: pip install numpy py4j wheel
+#     - name: Install pip Dependencies
+#       run: pip install numpy py4j wheel
 
-    - name: Build Python Package
-      run: |
-        cd src/main/python
-        python create_python_dist.py
+#     - name: Build Python Package
+#       run: |
+#         cd src/main/python
+#         python create_python_dist.py
 
-    - name: Run Federated Python Tests
-      run: |
-        export SYSTEMDS_ROOT=$(pwd)
-        export PATH=$SYSTEMDS_ROOT/bin:$PATH
-        cd src/main/python
-        ./tests/federated/runFedTest.sh tests/federated/test_federated_aggregations.py
-        sleep 3
-        ./tests/federated/runFedTest.sh tests/federated/test_federated_basic.py
+#     - name: Run Federated Python Tests
+#       run: |
+#         export SYSTEMDS_ROOT=$(pwd)
+#         export PATH=$SYSTEMDS_ROOT/bin:$PATH
+#         cd src/main/python
+#         ./tests/federated/runFedTest.sh tests/federated/test_federated_aggregations.py
+#         sleep 3
+#         ./tests/federated/runFedTest.sh tests/federated/test_federated_basic.py

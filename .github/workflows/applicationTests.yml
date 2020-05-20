@@ -37,13 +37,53 @@ jobs:
       matrix:
         tests: [A,B,C,G,H,I,L,M,N,O,P,S,U,W]
         os: [ubuntu-latest]
+        java: [ 1.8 ]
     name:  Ap Test ${{ matrix.tests }} 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Run all tests starting with "${{ matrix.tests }}"
-      uses: ./.github/action/
-      id: test
+    - name: Setup Java
+      uses: actions/setup-java@v1
       with:
-        test-to-run: org.apache.sysds.test.applications.${{ matrix.tests }}**
+        java-version: ${{ matrix.java }}
+
+    # https://github.com/r-lib/actions/tree/master/examples#standard-ci-workflow
+    - name: Setup R-scripts
+      uses: r-lib/actions/setup-r@master
+
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}-${{ date +%Y-%m }}
+        restore-keys: ${{ runner.os }}-maven-
+
+    - name: Cache R Packages
+      uses: actions/cache@v1
+      id: cache-r-packages
+      with:
+        path: ~/.local/share/renv
+        key: ${{ runner.os }}-renv-${{ hashFiles('src/test/scripts/installDependencies.R') }}-${{ date +%Y-%m }}
+        restore-keys: ${{ runner.os }}-renv-
+
+    - name: Maven clean, compile & test-compile
+      run: mvn clean compile test-compile
+
+    - name: install R
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install r-base
+
+    - name: install R Dependencies
+      env:
+        CACHE_HIT:${{steps.cache-r-packages.outputs.cache-hit}}
+      run: |
+        if [[ "$CACHE_HIT" == 'true' ]]; then
+          echo "Using Cached packages"
+        else 
+          Rscript ./src/test/scripts/installDependencies.R "~/Rpackages/"
+        fi
+    
+    - name: Run all tests starting with "${{ matrix.tests }}"
+      run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.applications.${{ matrix.tests }}**

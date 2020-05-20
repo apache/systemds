@@ -35,10 +35,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tests: [A]
+        tests: [A,C,G,H,I,L,M,N,O,P,S,U,W]
         os: [ubuntu-latest]
         java: [ 1.8 ]
-        # [A,C,G,H,I,L,M,N,O,P,S,U,W]
+        R: [ '4.0.0' ]
     name:  Ap Test ${{ matrix.tests }} 
     steps:
     - name: Checkout Repository
@@ -49,8 +49,10 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
 
-    - name: Setup R-scripts
+    - name: Setup R
       uses: r-lib/actions/setup-r@master
+      with:
+        r-version: ${{ matrix.R }}
 
     - name: Cache Maven Dependencies
       uses: actions/cache@v1
@@ -59,24 +61,18 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-maven-
 
-    - name: Cache R Packages
+    - name: Cache R Dependencies
       uses: actions/cache@v1
-      id: cache-r-packages
       with:
         path: /home/runner/work/_temp/Library
-        key: ${{ runner.os }}-renv-${{ hashFiles('src/test/scripts/installDependencies.R') }}
+        key: ${{ runner.os }}-renv-1-${{ hashFiles('src/test/scripts/installDependencies.R') }}
         restore-keys: ${{ runner.os }}-renv-
 
     - name: Maven clean, compile & test-compile
       run: mvn clean compile test-compile
 
     - name: install R Dependencies
-      run: |
-        # if [[ "$CACHE_HIT" == 'true' ]]; then
-          # echo "Using Cached packages"
-        # else 
-        Rscript ./src/test/scripts/installDependencies.R
-        # fi
+      run: Rscript ./src/test/scripts/installDependencies.R
     
     - name: Run all tests starting with "${{ matrix.tests }}"
       run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.applications.${{ matrix.tests }}**

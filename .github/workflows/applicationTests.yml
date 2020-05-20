@@ -71,12 +71,11 @@ jobs:
       run: mvn clean compile test-compile
 
     - name: install R Dependencies
-
       run: |
         # if [[ "$CACHE_HIT" == 'true' ]]; then
           # echo "Using Cached packages"
         # else 
-          Rscript ./src/test/scripts/installDependencies.R "~/Rpackages/"
+        Rscript ./src/test/scripts/installDependencies.R
         # fi
     
     # - name: Run all tests starting with "${{ matrix.tests }}"

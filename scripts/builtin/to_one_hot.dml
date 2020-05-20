@@ -37,6 +37,7 @@
 
 m_to_one_hot = function(matrix[double] X, integer num_classes)
         return (matrix[double] Y) {
-    assert(num_classes >= max(X));
+    if(num_classes < max(X))
+      stop("num_classes must be >= largest value in X to prevent cropping");
     Y = table(seq(1, nrow(X)), X, nrow(X), num_classes);
 }

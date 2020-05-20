@@ -36,9 +36,9 @@ jobs:
       fail-fast: false
       matrix:
         tests: [A]
-        # [A,C,G,H,I,L,M,N,O,P,S,U,W]
         os: [ubuntu-latest]
         java: [ 1.8 ]
+        # [A,C,G,H,I,L,M,N,O,P,S,U,W]
     name:  Ap Test ${{ matrix.tests }} 
     steps:
     - name: Checkout Repository

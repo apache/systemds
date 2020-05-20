@@ -71,14 +71,13 @@ jobs:
       run: mvn clean compile test-compile
 
     - name: install R Dependencies
-      env:
-        CACHE_HIT:${{steps.cache-r-packages.outputs.cache-hit}}
+
       run: |
-        if [[ "$CACHE_HIT" == 'true' ]]; then
-          echo "Using Cached packages"
-        else 
+        # if [[ "$CACHE_HIT" == 'true' ]]; then
+          # echo "Using Cached packages"
+        # else 
           Rscript ./src/test/scripts/installDependencies.R "~/Rpackages/"
-        fi
+        # fi
     
     # - name: Run all tests starting with "${{ matrix.tests }}"
     #   run: mvn surefire:test -DskipTests=false -Dtest=org.tugraz.sysds.test.applications.${{ matrix.tests }}**

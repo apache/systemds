@@ -26,6 +26,7 @@ import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -66,7 +67,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		Object[][] data = new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}};
+		Object[][] data = new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {10, 2000}, {2000, 10}};
 		return Arrays.asList(data);
 	}
 
@@ -355,9 +356,6 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			if ( !(exception1 || exception2) ) {
 				// compare via files
 				compareResults(1e-9);
-
-				String actualPrivacyValue = readDMLMetaDataValue("Z", OUTPUT_DIR, DataExpression.PRIVACY);
-				assertEquals(expectedPrivacyLevel.name(), actualPrivacyValue);
 			} 
 		} finally {
 			TestUtils.shutdownThreads(t1, t2);

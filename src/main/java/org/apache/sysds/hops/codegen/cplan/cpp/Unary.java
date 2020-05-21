@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
 public class Unary implements CodeTemplate {
     @Override
@@ -50,7 +51,9 @@ public class Unary implements CodeTemplate {
             }
 
             case EXP:
-                return "    T %TMP% = FastMath.exp(%IN1%);\n";
+                return isSinglePrecision()
+                    ? "    T %TMP% = expf(%IN1%);\n"
+                    : "    T %TMP% = exp(%IN1%);\n";
             case LOOKUP_R:
                 return sparse ?
                         "    T %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, 0);\n" :
@@ -66,7 +69,9 @@ public class Unary implements CodeTemplate {
             case MULT2:
                 return "    T %TMP% = %IN1% + %IN1%;\n";
             case ABS:
-                return "    T %TMP% = max(-%IN1%, %IN1%);\n";
+                return isSinglePrecision()
+                        ? "    T %TMP% = fabsf(%IN1%);\n"
+                        : "    T %TMP% = fabs(%IN1%);\n";
             case SIN:
                 return "    T %TMP% = FastMath.sin(%IN1%);\n";
             case COS:

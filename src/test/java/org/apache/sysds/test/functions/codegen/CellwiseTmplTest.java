@@ -484,7 +484,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		String oldTestConf = TEST_CONF;
 		ExecMode platformOld = setExecMode(instType);
 
-		Integer test_num = Integer.parseInt(testname.substring(testname.length()-2));
+		Integer test_num = 0;
+		try {
+			test_num = Integer.parseInt(testname.substring(testname.length() - 2));
+		}
+		catch(NumberFormatException e) { /* ToDo: remove temporary hack */ }
 
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;

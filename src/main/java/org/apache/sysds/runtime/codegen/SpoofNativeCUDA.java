@@ -1,6 +1,7 @@
 package org.apache.sysds.runtime.codegen;
 
-import org.apache.sysds.api.DMLScript;
+import java.util.ArrayList;
+
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeMultiAgg;
@@ -10,12 +11,9 @@ import org.apache.sysds.hops.codegen.cplan.CNodeTpl;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.utils.NativeHelper;
 
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
 public class SpoofNativeCUDA extends SpoofOperator {
 
@@ -69,7 +67,7 @@ public class SpoofNativeCUDA extends SpoofOperator {
         for(int i = offset; i < inputs.size(); ++i)
             side_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
 
-        if(DMLScript.FLOATING_POINT_PRECISION.equalsIgnoreCase("single")) {
+        if(isSinglePrecision()) {
             float[] scalars = prepInputScalarsFloat(scalarObjects);
 
             // ToDo: handle float

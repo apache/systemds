@@ -1,0 +1,6 @@
+Y = read($Y)
+P = read($P)
+
+[conf_p, conf_a] = confusionMatrix(Y=Y, P=P)
+
+write(conf_a, $out_file)

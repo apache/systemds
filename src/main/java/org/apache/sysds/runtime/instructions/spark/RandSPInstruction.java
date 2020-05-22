@@ -164,11 +164,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 	}
 
 	public long getRows() {
-		return rows.isLiteral() ? Long.parseLong(rows.getName()) : -1;
+		return rows.isLiteral() ? UtilFunctions.parseToLong(rows.getName()) : -1;
 	}
 
 	public long getCols() {
-		return cols.isLiteral() ? Long.parseLong(cols.getName()) : -1;
+		return cols.isLiteral() ? UtilFunctions.parseToLong(cols.getName()) : -1;
 	}
 
 	public int getBlocksize() {
@@ -1011,6 +1011,12 @@ public class RandSPInstruction extends UnarySPInstruction {
 				(_method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(
 				tmpInstStr, position, String.valueOf(runtimeSeed));
+			if( !rows.isLiteral() )
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 2,
+					new CPOperand(ec.getScalarInput(rows)).getLineageLiteral());
+			if( !cols.isLiteral() )
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 3,
+					new CPOperand(ec.getScalarInput(cols)).getLineageLiteral());
 		}
 		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
 	}

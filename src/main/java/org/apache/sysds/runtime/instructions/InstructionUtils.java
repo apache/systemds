@@ -24,14 +24,7 @@ import java.util.StringTokenizer;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.lops.AppendM;
-import org.apache.sysds.lops.BinaryM;
-import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.MapMult;
-import org.apache.sysds.lops.MapMultChain;
-import org.apache.sysds.lops.PMMJ;
-import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.WeightedCrossEntropy;
 import org.apache.sysds.lops.WeightedCrossEntropyR;
 import org.apache.sysds.lops.WeightedDivMM;
@@ -239,36 +232,12 @@ public class InstructionUtils
 		Builtin.BuiltinCode bfc = Builtin.String2BuiltinCode.get(opcode);
 		return (bfc != null);
 	}
-
-	/**
-	 * Evaluates if at least one instruction of the given instruction set
-	 * used the distributed cache; this call can also be used for individual
-	 * instructions. 
-	 * 
-	 * @param str instruction set
-	 * @return true if at least one instruction uses distributed cache
-	 */
-	public static boolean isDistributedCacheUsed(String str) 
-	{	
-		String[] parts = str.split(Instruction.INSTRUCTION_DELIM);
-		for(String inst : parts) 
-		{
-			String opcode = getOpCode(inst);
-			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)  
-			   || opcode.equalsIgnoreCase(MapMult.OPCODE)
-			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE)
-			   || opcode.equalsIgnoreCase(PMMJ.OPCODE)
-			   || opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)
-			   || opcode.equalsIgnoreCase(GroupedAggregateM.OPCODE)
-			   || isDistQuaternaryOpcode( opcode ) //multiple quaternary opcodes
-			   || BinaryM.isOpcode( opcode ) ) //multiple binary opcodes	
-			{
-				return true;
-			}
-		}
-		return false;
+	
+	public static boolean isUnaryMetadata(String opcode) {
+		return opcode != null 
+			&& (opcode.equals("nrow") || opcode.equals("ncol"));
 	}
-
+	
 	public static AggregateUnaryOperator parseBasicAggregateUnaryOperator(String opcode) {
 		return parseBasicAggregateUnaryOperator(opcode, 1);
 	}

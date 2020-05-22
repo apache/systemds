@@ -31,6 +31,9 @@ import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.OpOpN;
@@ -267,7 +270,9 @@ public class LineageItemUtils {
 					switch (ctype) {
 						case AggregateUnary: {
 							Hop input = operands.get(item.getInputs()[0].getId());
-							Hop aggunary = HopRewriteUtils.createAggUnaryOp(input, item.getOpcode());
+							Hop aggunary = InstructionUtils.isUnaryMetadata(item.getOpcode()) ?
+								HopRewriteUtils.createUnary(input, OpOp1.valueOfByOpcode(item.getOpcode())) :
+								HopRewriteUtils.createAggUnaryOp(input, item.getOpcode());
 							operands.put(item.getId(), aggunary);
 							break;
 						}
@@ -279,9 +284,15 @@ public class LineageItemUtils {
 							break;
 						}
 						case Reorg: {
-							Hop input = operands.get(item.getInputs()[0].getId());
-							Hop reorg = HopRewriteUtils.createReorg(input, ReOrgOp.TRANS);
-							operands.put(item.getId(), reorg);
+							operands.put(item.getId(), HopRewriteUtils.createReorg(
+								operands.get(item.getInputs()[0].getId()), item.getOpcode()));
+							break;
+						}
+						case Reshape: {
+							ArrayList<Hop> inputs = new ArrayList<>();
+							for(int i=0; i<5; i++)
+								inputs.add(operands.get(item.getInputs()[i].getId()));
+							operands.put(item.getId(), HopRewriteUtils.createReorg(inputs, ReOrgOp.RESHAPE));
 							break;
 						}
 						case Binary: {
@@ -303,10 +314,25 @@ public class LineageItemUtils {
 							break;
 						}
 						case Ternary: {
-							operands.put(item.getId(), HopRewriteUtils.createTernaryOp(
+							operands.put(item.getId(), HopRewriteUtils.createTernary(
 								operands.get(item.getInputs()[0].getId()), 
 								operands.get(item.getInputs()[1].getId()), 
 								operands.get(item.getInputs()[2].getId()), item.getOpcode()));
+							break;
+						}
+						case Ctable: { //e.g., ctable 
+							if( item.getInputs().length==3 )
+								operands.put(item.getId(), HopRewriteUtils.createTernary(
+									operands.get(item.getInputs()[0].getId()),
+									operands.get(item.getInputs()[1].getId()),
+									operands.get(item.getInputs()[2].getId()), OpOp3.CTABLE));
+							else if( item.getInputs().length==5 )
+								operands.put(item.getId(), HopRewriteUtils.createTernary(
+									operands.get(item.getInputs()[0].getId()),
+									operands.get(item.getInputs()[1].getId()),
+									operands.get(item.getInputs()[2].getId()),
+									operands.get(item.getInputs()[3].getId()),
+									operands.get(item.getInputs()[4].getId()), OpOp3.CTABLE));
 							break;
 						}
 						case BuiltinNary: {
@@ -331,8 +357,13 @@ public class LineageItemUtils {
 							operands.put(item.getId(), aggunary);
 							break;
 						}
-						case Variable: { //cpvar, write
-							operands.put(item.getId(), operands.get(item.getInputs()[0].getId()));
+						case Variable: {
+							if( item.getOpcode().startsWith("cast") )
+								operands.put(item.getId(), HopRewriteUtils.createUnary(
+									operands.get(item.getInputs()[0].getId()),
+									OpOp1.valueOfByOpcode(item.getOpcode())));
+							else //cpvar, write
+								operands.put(item.getId(), operands.get(item.getInputs()[0].getId()));
 							break;
 						}
 						default:
@@ -356,6 +387,12 @@ public class LineageItemUtils {
 						}
 						case MatrixIndexing: {
 							operands.put(item.getId(), constructIndexingOp(item, operands));
+							break;
+						}
+						case GAppend: {
+							operands.put(item.getId(), HopRewriteUtils.createBinary(
+								operands.get(item.getInputs()[0].getId()),
+								operands.get(item.getInputs()[1].getId()), OpOp2.CBIND));
 							break;
 						}
 						default:
@@ -482,18 +519,16 @@ public class LineageItemUtils {
 	}
 	
 	private static Hop constructIndexingOp(LineageItem item, Map<Long, Hop> operands) {
-		//TODO fix 
+		Hop input = operands.get(item.getInputs()[0].getId());
 		if( "rightIndex".equals(item.getOpcode()) )
-			return HopRewriteUtils.createIndexingOp(
-				operands.get(item.getInputs()[0].getId()), //input
+			return HopRewriteUtils.createIndexingOp(input,
 				operands.get(item.getInputs()[1].getId()), //rl
 				operands.get(item.getInputs()[2].getId()), //ru
 				operands.get(item.getInputs()[3].getId()), //cl
 				operands.get(item.getInputs()[4].getId())); //cu
 		else if( "leftIndex".equals(item.getOpcode()) 
 				|| "mapLeftIndex".equals(item.getOpcode()) )
-			return HopRewriteUtils.createLeftIndexingOp(
-				operands.get(item.getInputs()[0].getId()), //input
+			return HopRewriteUtils.createLeftIndexingOp(input,
 				operands.get(item.getInputs()[1].getId()), //rhs
 				operands.get(item.getInputs()[2].getId()), //rl
 				operands.get(item.getInputs()[3].getId()), //ru

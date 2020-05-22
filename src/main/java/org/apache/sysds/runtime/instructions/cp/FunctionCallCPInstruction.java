@@ -155,8 +155,11 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			functionVariables.put(currFormalParam.getName(), value);
 			
 			//map lineage to function arguments
-			if( lineage != null )
-				lineage.set(currFormalParam.getName(), ec.getLineageItem(input));
+			if( lineage != null ) {
+				LineageItem litem = ec.getLineageItem(input);
+				lineage.set(currFormalParam.getName(), (litem!=null) ? 
+					litem : ec.getLineage().getOrCreate(input));
+			}
 		}
 		
 		// Pin the input variables so that they do not get deleted 

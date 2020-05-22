@@ -80,7 +80,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     
   # If column_id is -1 then we assume that the fundamental algorithm is MSVM, 
   # Therefore don't print message.
-  if(verbose & column_id == -1)
+  if(verbose & columnId == -1)
     print('Running L2-SVM ')
 
   num_samples = nrow(X)
@@ -132,7 +132,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     g_new = t(X) %*% (out * Y) - lambda * w
 
     if(verbose) {
-      colstr = ifelse(column_id!=-1, ", Col:"+column_id + " ,", " ,")
+      colstr = ifelse(columnId!=-1, ", Col:"+columnId + " ,", " ,")
       print("Iter:" + toString(iter) + colstr + " Obj:" + obj)
     }
 

@@ -60,8 +60,8 @@ public class CountDistinct extends AutomatedTestBase {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		for(String type : esT) {
 			tests.add(new Object[] {1, 1, 1, ex, type});
-			tests.add(new Object[] {100, 100, 100, ex, type});
-			tests.add(new Object[] {1000, 1000, 1000, ex, type});
+			// tests.add(new Object[] {100, 100, 100, ex, type});
+			// tests.add(new Object[] {1000, 1000, 1000, ex, type});
 		}
 		return tests;
 	}

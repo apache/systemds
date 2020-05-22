@@ -74,9 +74,21 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		
 		if(opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") 
 			|| opcode.equalsIgnoreCase("length") || opcode.equalsIgnoreCase("exists")
-			|| opcode.equalsIgnoreCase("lineage") || opcode.equalsIgnoreCase("unique_length")){
+			|| opcode.equalsIgnoreCase("lineage")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
+		} 
+		else if(opcode.equalsIgnoreCase("countDistinct")){
+			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
+			in1, out, AUType.COUNT_DISTINCT, opcode, str);
+		}
+		else if(opcode.equalsIgnoreCase("countDistinctEstimateKMV")){
+			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
+			in1, out, AUType.COUNT_DISTINCT_ESTIMATE_KMV, opcode, str);
+		}
+		else if(opcode.equalsIgnoreCase("countDistinctEstimateHYPERLOGLOG")){
+			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
+			in1, out, AUType.COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG, opcode, str);
 		}
 		else { //DEFAULT BEHAVIOR
 			AggregateUnaryOperator aggun = InstructionUtils

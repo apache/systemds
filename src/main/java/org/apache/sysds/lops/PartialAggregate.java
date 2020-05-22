@@ -341,12 +341,12 @@ public class PartialAggregate extends Lop
 
 			case COUNT_DISTINCT: {
 				if(dir == Direction.RowCol )
-					return "distinctCount";
+					return "countDistinct";
 				break;
 			}
 			case COUNT_DISTINCT_ESTIMATE_KMV: {
 				if(dir == Direction.RowCol )
-					return "distinctCountEstimateKMV";
+					return "countDistinctEstimateKMV";
 				break;
 			}
 		}

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.aggregate;
+package org.apache.sysds.test.functions.distinctCount;
 
 import static org.junit.Assert.assertTrue;
 
@@ -38,7 +38,7 @@ import org.junit.runners.Parameterized.Parameters;
 public class UniqueLength extends AutomatedTestBase {
 
 	private final static String TEST_NAME = "unique_length";
-	private final static String TEST_DIR = "functions/aggregate/";
+	private final static String TEST_DIR = "functions/distinctCount/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + UniqueLength.class.getSimpleName() + "/";
 
 	private static String[] esT = new String[] {
@@ -60,8 +60,8 @@ public class UniqueLength extends AutomatedTestBase {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		for(String type : esT) {
 			tests.add(new Object[] {1, 1, 1, ex, type});
-			// tests.add(new Object[] {100, 100, 100, ex, type});
-			// tests.add(new Object[] {1000, 1000, 1000, ex, type});
+			tests.add(new Object[] {100, 100, 100, ex, type});
+			tests.add(new Object[] {1000, 1000, 1000, ex, type});
 		}
 		return tests;
 	}

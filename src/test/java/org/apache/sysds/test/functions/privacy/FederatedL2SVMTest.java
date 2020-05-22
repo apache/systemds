@@ -20,12 +20,9 @@
 package org.apache.sysds.test.functions.privacy;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -35,14 +32,9 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.wink.json4j.JSONException;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedL2SVMTest extends AutomatedTestBase {
 
@@ -51,24 +43,13 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedL2SVMTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
-	private int rows, cols;
-
-	public FederatedL2SVMTest(int rows, int cols) {
-		this.rows = rows;
-		this.cols = cols;
-	}
+	private int rows = 100;
+	private int cols = 10;
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
-	}
-
-	@Parameterized.Parameters
-	public static Collection<Object[]> data() {
-		// rows have to be even and > 1
-		Object[][] data = new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {10, 2000}, {2000, 10}};
-		return Arrays.asList(data);
 	}
 
 	// PrivateAggregation Single Input
@@ -277,6 +258,44 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
 		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+	}
+
+	// Require Federated Workers to return matrix
+
+	@Test
+	public void federatedL2SVMCPPrivateAggregationX1Exception() throws JSONException {
+		this.rows = 1000;
+		this.cols = 1;
+		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
+		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation, false, null, true, DMLException.class);
+	}
+
+	@Test
+	public void federatedL2SVMCPPrivateAggregationX2Exception() throws JSONException {
+		this.rows = 1000;
+		this.cols = 1;
+		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
+		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation, false, null, true, DMLException.class);
+	}
+
+	@Test
+	public void federatedL2SVMCPPrivateX1Exception() throws JSONException {
+		this.rows = 1000;
+		this.cols = 1;
+		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
+		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
+	}
+
+	@Test
+	public void federatedL2SVMCPPrivateX2Exception() throws JSONException {
+		this.rows = 1000;
+		this.cols = 1;
+		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
+		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	private void federatedL2SVMNoException(Types.ExecMode execMode, Map<String, PrivacyConstraint> privacyConstraintsFederated, Map<String, PrivacyConstraint> privacyConstraintsMatrix,

@@ -21,4 +21,18 @@
 
 X = read($1)
 prob = gmm(X=X, components = $2, iter = $3,  model = $4, eps = $5, verbose=TRUE)
+maxi = (prob == rowMaxs(prob))
+print("this is X "+toString(X))
+print("this is maxi "+toString(maxi))
+cluster = colSums(maxi)
+clusMean = matrix(0, ncol(prob), ncol(X))
+for(i in 1:ncol(prob))
+{
+  iPoints = colSums(X * maxi[,i])
+  clusMean[i,] = iPoints/cluster[1,i]
+}
+
+
+print("this is cluster "+toString(cluster))
+print("this is mean "+toString(clusMean))
 write(prob, $6)

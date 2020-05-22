@@ -24,7 +24,9 @@ library("Matrix")
 library(mclust, quietly = TRUE)
 
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
+X
 fit =  Mclust(X, modelType = args[2], G=args[3])
 summary(fit)
 C = fit$z
+fit$z
 writeMM(as(C, "CsparseMatrix"), paste(args[4], "B", sep=""))

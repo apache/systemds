@@ -60,8 +60,8 @@ m_kmeans = function(Matrix[Double] X, Integer k = 0, Integer runs = 10, Integer 
 
   print ("Taking data samples for initialization...");
 
-  [sample_maps, samples_vs_runs_map, sample_block_size] =
-  get_sample_maps (num_records, num_runs, num_centroids * avg_sample_size_per_centroid);
+  [sample_maps, samples_vs_runs_map, sample_block_size] = get_sample_maps(
+    num_records, num_runs, num_centroids * avg_sample_size_per_centroid);
 
   is_row_in_samples = rowSums (sample_maps);
   X_samples = sample_maps %*% X;
@@ -230,7 +230,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
     # Replace all sample record ids over "num_records" (i.e. out of range) by "num_records + 1":
     is_sample_rec_id_within_range = (sample_rec_ids <= num_records);
     sample_rec_ids = sample_rec_ids * is_sample_rec_id_within_range
-    + (num_records + 1) * (1 - is_sample_rec_id_within_range);
+      + (num_records + 1) * (1 - is_sample_rec_id_within_range);
 
     # Rearrange all samples (and their out-of-range indicators) into one column-vector:
     sample_rec_ids = matrix (sample_rec_ids, rows = num_rows, cols = 1, byrow = FALSE);

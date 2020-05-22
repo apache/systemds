@@ -25,19 +25,19 @@
 # --------------------------------------------------------------------------------------------
 # NAME          TYPE    DEFAULT   MEANING
 # --------------------------------------------------------------------------------------------
-# X             matrix  ---       vector with N integer entries between 1 and num_classes
-# num_classes   int     ---       number of columns, must be >= largest value in X
+# X             matrix  ---       vector with N integer entries between 1 and numClasses
+# numclasses    int     ---       number of columns, must be >= largest value in X
 
 # Output: 
 # --------------------------------------------------------------------------------------------
 # NAME          TYPE     MEANING
 # -------------------------------------------------------------------------------------------
-# Y             matrix   one-hot-encoded matrix with shape (N, num_classes)
+# Y             matrix   one-hot-encoded matrix with shape (N, numClasses)
 # -------------------------------------------------------------------------------------------
 
-m_to_one_hot = function(matrix[double] X, integer num_classes)
+m_toOneHot = function(matrix[double] X, integer numClasses)
         return (matrix[double] Y) {
-    if(num_classes < max(X))
-      stop("num_classes must be >= largest value in X to prevent cropping");
-    Y = table(seq(1, nrow(X)), X, nrow(X), num_classes);
+    if(numClasses < max(X))
+      stop("numClasses must be >= largest value in X to prevent cropping");
+    Y = table(seq(1, nrow(X)), X, nrow(X), numClasses);
 }

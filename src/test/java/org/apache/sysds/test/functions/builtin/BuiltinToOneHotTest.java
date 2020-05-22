@@ -32,7 +32,7 @@ import java.util.HashMap;
 import static org.junit.Assert.fail;
 
 public class BuiltinToOneHotTest extends AutomatedTestBase {
-    private final static String TEST_NAME = "to_one_hot";
+    private final static String TEST_NAME = "toOneHot";
     private final static String TEST_DIR = "functions/builtin/";
     private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinToOneHotTest.class.getSimpleName() + "/";
 

@@ -21,5 +21,5 @@
 
 X = read($1);
 num_classes = $2;
-Y = to_one_hot(X, num_classes);
+Y = toOneHot(X, num_classes);
 write(Y, $3);

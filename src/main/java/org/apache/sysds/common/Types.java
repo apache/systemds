@@ -176,7 +176,8 @@ public class Types
 		MIN, MAX,
 		TRACE, MEAN, VAR,
 		MAXINDEX, MININDEX,
-		UNIQUE_LENGTH;
+		COUNT_DISTINCT,
+		COUNT_DISTINCT_ESTIMATE_KMV;
 		
 		@Override
 		public String toString() {

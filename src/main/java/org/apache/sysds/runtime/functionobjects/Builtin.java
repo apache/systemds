@@ -50,7 +50,7 @@ public class Builtin extends ValueFunction
 	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
 		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
-		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID, UNIQUE_LENGTH}
+		TYPEOF, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID, COUNT_DISTINCT, COUNT_DISTINCT_ESTIMATE_KMV}
 		
 	public BuiltinCode bFunc;
 	
@@ -104,7 +104,8 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "isnan", BuiltinCode.ISNAN);
 		String2BuiltinCode.put( "isinf", BuiltinCode.ISINF);
 		String2BuiltinCode.put( "dropInvalid", BuiltinCode.DROP_INVALID);
-		String2BuiltinCode.put( "unique_length", BuiltinCode.UNIQUE_LENGTH);
+		String2BuiltinCode.put( "countDistinct", BuiltinCode.COUNT_DISTINCT);
+		String2BuiltinCode.put( "countDistinctEstimateKMV", BuiltinCode.COUNT_DISTINCT_ESTIMATE_KMV);
 	}
 	
 	private Builtin(BuiltinCode bf) {

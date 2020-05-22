@@ -24,8 +24,8 @@ import java.util.Collection;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.runtime.matrix.data.LibMatrixEstimator;
-import org.apache.sysds.runtime.matrix.data.LibMatrixEstimator.EstimatorType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.EstimatorOperator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -42,9 +42,9 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class MatrixEstimatorTest {
 
-	private static EstimatorType[] esT = new EstimatorType[] {
+	private static AUType[] esT = new AUType[] {
 		// The different types of Estimators
-		EstimatorType.NUM_DISTINCT_COUNT,
+		AUType.COUNT_DISTINCT,
 		// EstimatorType.NUM_DISTINCT_KMV,
 		// EstimatorType.NUM_DISTINCT_HYPER_LOG_LOG
 	};
@@ -52,7 +52,6 @@ public class MatrixEstimatorTest {
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
-
 		ArrayList<MatrixBlock> inputs = new ArrayList<>();
 		ArrayList<Long> actualUnique = new ArrayList<>();
 
@@ -99,20 +98,21 @@ public class MatrixEstimatorTest {
 		// 7)));
 		// actualUnique.add(1000000L);
 
-		for(EstimatorType et : esT) {
+		for(AUType et : esT) {
 			for(HashType ht : HashType.values()) {
-				if(ht == HashType.ExpHash && et == EstimatorType.NUM_DISTINCT_KMV) {
+				if(ht == HashType.ExpHash && et == AUType.COUNT_DISTINCT_ESTIMATE_KMV) {
+
 					String errorMessage = "Invalid hashing configuration using " + HashType.ExpHash + " and "
-						+ EstimatorType.NUM_DISTINCT_KMV;
+						+ AUType.COUNT_DISTINCT_ESTIMATE_KMV;
 					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, DMLException.class,
 						errorMessage, 0.0});
 				}
-				else if(et == EstimatorType.NUM_DISTINCT_HYPER_LOG_LOG) {
+				else if(et == AUType.COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG) {
 					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, NotImplementedException.class,
 						"HyperLogLog not implemented", 0.0});
 				}
 				else {
-					if(et == EstimatorType.NUM_DISTINCT_COUNT) {
+					if(et == AUType.COUNT_DISTINCT) {
 
 						for(int i = 0; i < inputs.size(); i++) {
 							tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), ht, null, null, 0.0001});
@@ -133,7 +133,7 @@ public class MatrixEstimatorTest {
 	}
 
 	@Parameterized.Parameter
-	public EstimatorType et;
+	public AUType et;
 	@Parameterized.Parameter(1)
 	public MatrixBlock in;
 	@Parameterized.Parameter(2)
@@ -169,6 +169,7 @@ public class MatrixEstimatorTest {
 			out = LibMatrixEstimator.estimateDistinctValues(in, op);
 		}
 		catch(DMLException e) {
+			System.out.println(e.getMessage());
 			throw e;
 		}
 		catch(NotImplementedException e) {

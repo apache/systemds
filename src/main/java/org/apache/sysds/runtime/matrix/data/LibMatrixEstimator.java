@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.runtime.matrix.operators.EstimatorOperator;
 import org.apache.sysds.utils.Hash;
 import org.apache.sysds.utils.Hash.HashType;
@@ -56,11 +57,11 @@ public class LibMatrixEstimator {
 	}
 	// ------------------------------
 
-	public enum EstimatorType {
-		NUM_DISTINCT_COUNT, // Baseline naive implementation, iterate though, add to hashMap.
-		NUM_DISTINCT_KMV, // K-Minimum Values algorithm.
-		NUM_DISTINCT_HYPER_LOG_LOG // HyperLogLog algorithm.
-	}
+	// public enum EstimatorType {
+	// 	NUM_DISTINCT_COUNT, // Baseline naive implementation, iterate though, add to hashMap.
+	// 	NUM_DISTINCT_KMV, // K-Minimum Values algorithm.
+	// 	NUM_DISTINCT_HYPER_LOG_LOG // HyperLogLog algorithm.
+	// }
 
 	static public int minimumSize = 64000;
 
@@ -83,12 +84,12 @@ public class LibMatrixEstimator {
 		
 		// TODO: If the MatrixBlock type is CompressedMatrix, simply read the vaules from the ColGroups.
 
-		if(op.hashType == HashType.ExpHash && op.operatorType == EstimatorType.NUM_DISTINCT_KMV) {
+		if(op.hashType == HashType.ExpHash && op.operatorType == AUType.COUNT_DISTINCT_ESTIMATE_KMV) {
 			throw new DMLException(
-				"Invalid hashing configuration using " + HashType.ExpHash + " and " + EstimatorType.NUM_DISTINCT_KMV);
+				"Invalid hashing configuration using " + HashType.ExpHash + " and " + AUType.COUNT_DISTINCT_ESTIMATE_KMV);
 		}
 
-		if(op.operatorType == EstimatorType.NUM_DISTINCT_HYPER_LOG_LOG)
+		if(op.operatorType == AUType.COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG)
 			throw new NotImplementedException("HyperLogLog not implemented");
 
 		// Just use naive implementation if the size is small.
@@ -97,11 +98,11 @@ public class LibMatrixEstimator {
 		}
 
 		switch(op.operatorType) {
-			case NUM_DISTINCT_COUNT:
+			case COUNT_DISTINCT:
 				return CountDistinctValuesNaive(in);
-			case NUM_DISTINCT_KMV:
+			case COUNT_DISTINCT_ESTIMATE_KMV:
 				return CountDistinctValuesKVM(in, op);
-			case NUM_DISTINCT_HYPER_LOG_LOG:
+			case COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG:
 				return CountDistinctHyperLogLog(in);
 			default:
 				throw new DMLException("Invalid or not implemented Estimator Type");

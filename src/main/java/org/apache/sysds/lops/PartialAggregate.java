@@ -123,6 +123,7 @@ public class PartialAggregate extends Lop
 										+ "Unknown aggregate direction: " + direction);
 			}
 			break;
+
 		case MEAN:
 			// Computation of stable mean requires each mapper to output both
 			// the running mean as well as the count
@@ -141,6 +142,7 @@ public class PartialAggregate extends Lop
 							+ "Unknown aggregate direction: " + direction);
 			}
 			break;
+
 		case VAR:
 			// Computation of stable variance requires each mapper to
 			// output the running variance, the running mean, the
@@ -172,6 +174,7 @@ public class PartialAggregate extends Lop
 		case MININDEX:
 			loc = CorrectionLocationType.LASTCOLUMN;
 			break;
+
 		default:
 			loc = CorrectionLocationType.NONE;
 		}
@@ -336,9 +339,14 @@ public class PartialAggregate extends Lop
 				break;
 			}
 
-			case UNIQUE_LENGTH: {
+			case COUNT_DISTINCT: {
 				if(dir == Direction.RowCol )
-					return "unique_length";
+					return "distinctCount";
+				break;
+			}
+			case COUNT_DISTINCT_ESTIMATE_KMV: {
+				if(dir == Direction.RowCol )
+					return "distinctCountEstimateKMV";
 				break;
 			}
 		}

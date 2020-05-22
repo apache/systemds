@@ -19,22 +19,22 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
-import org.apache.sysds.runtime.matrix.data.LibMatrixEstimator.EstimatorType;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.utils.Hash.HashType;
 
 public class EstimatorOperator extends Operator {
 	private static final long serialVersionUID = 7615123453265129670L;
 
-	public final EstimatorType operatorType;
+	public final AUType operatorType;
 	public final HashType hashType;
 
-	public EstimatorOperator(EstimatorType operatorType) {
+	public EstimatorOperator(AUType operatorType) {
 		super(true);
 		this.operatorType = operatorType;
 		this.hashType = HashType.StandardJava;
 	}
 
-	public EstimatorOperator(EstimatorType operatorType, HashType hashType) {
+	public EstimatorOperator(AUType operatorType, HashType hashType) {
 		super(true);
 		this.operatorType = operatorType;
 		this.hashType = hashType;

@@ -52,6 +52,7 @@ jobs:
           data.misc,
           data.rand,
           data.tensor,
+          countDistinct,
           dnn,
           federated,
           frame,

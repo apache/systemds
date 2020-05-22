@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.distinctCount;
+package org.apache.sysds.test.functions.countDistinct;
 
 import static org.junit.Assert.assertTrue;
 
@@ -35,11 +35,11 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
-public class UniqueLength extends AutomatedTestBase {
+public class CountDistinct extends AutomatedTestBase {
 
-	private final static String TEST_NAME = "unique_length";
-	private final static String TEST_DIR = "functions/distinctCount/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + UniqueLength.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "countDistinct";
+	private final static String TEST_DIR = "functions/countDistinct/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + CountDistinct.class.getSimpleName() + "/";
 
 	private static String[] esT = new String[] {
 		// The different types of Estimators

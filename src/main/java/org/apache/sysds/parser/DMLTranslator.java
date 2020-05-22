@@ -2022,7 +2022,7 @@ public class DMLTranslator
 						target.getValueType(), ParamBuiltinOp.TOSTRING, paramHops) :
 					HopRewriteUtils.createBinary(paramHops.get("target"), new LiteralOp(""), OpOp2.PLUS);
 				break;
-
+			
 			case LISTNV:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.LIST, paramHops);
@@ -2313,7 +2313,8 @@ public class DMLTranslator
 		case SUM:
 		case PROD:
 		case VAR:
-		case UNIQUE_LENGTH:
+		case COUNT_DISTINCT:
+		case COUNT_DISTINCT_ESTIMATE_KMV:
 			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(),
 				AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr);
 			break;

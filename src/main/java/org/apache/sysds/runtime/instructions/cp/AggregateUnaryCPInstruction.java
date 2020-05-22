@@ -44,7 +44,10 @@ import org.apache.sysds.utils.Explain;
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 {
 	public enum AUType {
-		NROW, NCOL, LENGTH, EXISTS, LINEAGE, UNIQUE_LENGTH,
+		NROW, NCOL, LENGTH, EXISTS, LINEAGE, 
+		COUNT_DISTINCT, 
+		COUNT_DISTINCT_ESTIMATE_KMV, 
+		COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG,
 		DEFAULT;
 		public boolean isMeta() {
 			return this != DEFAULT;
@@ -154,14 +157,16 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				ec.setScalarOutput(output_name, new StringObject(Explain.explain(li)));
 				break;
 			}
-			case UNIQUE_LENGTH: {
+			case COUNT_DISTINCT:
+			case COUNT_DISTINCT_ESTIMATE_KMV:
+			case COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG: {
 				System.out.print(ec.getVariables().keySet());
 				if( !ec.getVariables().keySet().contains(input1.getName()) )
 					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
 
 				MatrixBlock input = ec.getMatrixInput(input1.getName());
 				
-				EstimatorOperator op = new EstimatorOperator(LibMatrixEstimator.EstimatorType.NUM_DISTINCT_COUNT);
+				EstimatorOperator op = new EstimatorOperator(_type);
 				int res = LibMatrixEstimator.estimateDistinctValues(input, op);
 				if (res == 0)
 					throw new DMLRuntimeException("Imposible estimate of distinct values");

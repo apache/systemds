@@ -912,7 +912,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case NROW:
 		case NCOL:
 		case LENGTH:
-		case UNIQUE_LENGTH:
+		case COUNT_DISTINCT:
+		case COUNT_DISTINCT_ESTIMATE_KMV:
 			checkNumParameters(1);
 			checkDataTypeParam(getFirstExpr(),
 				DataType.MATRIX, DataType.FRAME, DataType.LIST);
@@ -921,7 +922,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize(0);
 			output.setValueType(ValueType.INT64);
 			break;
-			
+		
 		case LINEAGE:
 			checkNumParameters(1);
 			checkDataTypeParam(getFirstExpr(),

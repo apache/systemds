@@ -47,8 +47,8 @@
 
 
 m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
-    Double epsilon = 0.001, Double lambda = 1, Integer max_iterations = 100, 
-    Boolean verbose = FALSE, Integer column_id = -1)
+    Double epsilon = 0.001, Double lambda = 1, Integer maxIterations = 100, 
+    Boolean verbose = FALSE, Integer columnId = -1)
   return(Matrix[Double] model)
 {
   #check input parameter assertions
@@ -58,7 +58,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     stop("L2SVM: Stopping due to invalid argument: Tolerance (tol) must be non-negative")
   if(lambda < 0)
     stop("L2SVM: Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
-  if(max_iterations < 1)
+  if(maxIterations < 1)
     stop("L2SVM: Stopping due to invalid argument: Maximum iterations should be a positive integer")
   if(ncol(Y) < 1)
     stop("L2SVM: Stopping due to invalid multiple label columns, maybe use MSVM instead?")
@@ -103,7 +103,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
 
   iter = 0
   continue = TRUE
-  while(continue & iter < max_iterations)  {
+  while(continue & iter < maxIterations)  {
     # minimizing primal obj along direction s
     step_sz = 0
     Xd = X %*% s

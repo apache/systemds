@@ -21,6 +21,6 @@
 
 X = read($X)
 W = read($W)
-[Y_hat, Y] = msvmPredict(X=X,  W=W)
-write(Y_hat, $Y_hat)
+[YRaw, Y] = msvmPredict(X=X,  W=W)
+write(YRaw, $YRaw)
 write(Y, $Y)

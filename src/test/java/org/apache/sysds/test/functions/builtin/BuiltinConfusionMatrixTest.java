@@ -141,7 +141,7 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 		}
 	}
 
-	// TODO Future, does it make sense to save an empty matrix, since we have ways on making empty an empty matrix?
+	// TODO Future, does it make sense to save an empty matrix, since we have ways to make an empty matrix?
 	// @Test
 	// public void test_invalid_01(){
 	// // Test if the script fails with input containing no values.

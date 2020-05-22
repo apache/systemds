@@ -37,16 +37,17 @@
 # Y               Double  ---         Classification Labels Maxed to ones and zeros.
 
 m_msvmPredict = function(Matrix[Double] X, Matrix[Double] W)
-  return(Matrix[Double] Y_hat, Matrix[Double] Y)
+  return(Matrix[Double] YRaw, Matrix[Double] Y)
 {
   if(ncol(X) != nrow(W)){
     if(ncol(X) + 1 != nrow(W)){
       stop("MSVM Predict: Invalid shape of W ["+ncol(W)+","+nrow(W)+"] or X ["+ncol(X)+","+nrow(X)+"]")
     }
-    Y_hat = X %*% W[1:ncol(X),] + W[ncol(X)+1,]
-    Y = rowIndexMax(Y_hat)
+    YRaw = X %*% W[1:ncol(X),] + W[ncol(X)+1,]
+    Y = rowIndexMax(YRaw)
   }
-  else
-    Y_hat = X %*% W
-    Y = rowIndexMax(Y_hat)
+  else{
+    YRaw = X %*% W
+    Y = rowIndexMax(YRaw)
+  }
 }

@@ -345,7 +345,7 @@ public abstract class AutomatedTestBase {
 	 * @param seed     seed
 	 * @return two dimensional array containing random matrix
 	 */
-	protected static double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
+	protected double[][] getRandomMatrix(int rows, int cols, double min, double max, double sparsity, long seed) {
 		return TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed);
 	}
 

@@ -51,7 +51,7 @@ fmt = ifdef($fmt, "text")
 intercept = ifdef($icpt, FALSE)
 epsilon = ifdef($tol, 0.001)
 lambda = ifdef($reg, 1.0)
-max_iterations = ifdef($maxiter, 100)
+maxIterations = ifdef($maxiter, 100)
 verbose = ifdef($verbose, FALSE)
 
 X = read($X)
@@ -59,7 +59,7 @@ Y = read($Y)
 
 w = l2svm(X=X, Y=Y, intercept=intercept, 
   epsilon=epsilon, lambda=labmda, 
-  max_iterations=max_iterations,
+  maxIterations=maxIterations,
   verbose=verbose)
 
 extra_model_params = matrix(0, 4, 1)

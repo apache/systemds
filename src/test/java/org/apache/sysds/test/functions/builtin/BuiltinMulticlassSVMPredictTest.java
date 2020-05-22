@@ -41,7 +41,7 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Y_hat", "Y"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"YRaw", "Y"}));
 	}
 
 	public double eps = 0.00001;
@@ -56,13 +56,13 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 		res_Y.put(new CellIndex(1, 1), 1.0);
 		res_Y.put(new CellIndex(2, 1), 2.0);
 
-		HashMap<MatrixValue.CellIndex, Double> res_Y_hat = new HashMap<>();
-		res_Y_hat.put(new CellIndex(1, 1), 0.4);
-		res_Y_hat.put(new CellIndex(2, 2), 0.2);
+		HashMap<MatrixValue.CellIndex, Double> res_YRaw = new HashMap<>();
+		res_YRaw.put(new CellIndex(1, 1), 0.4);
+		res_YRaw.put(new CellIndex(2, 2), 0.2);
 
 		for(LopProperties.ExecType ex : new ExecType[] {LopProperties.ExecType.CP, LopProperties.ExecType.SPARK}) {
 
-			runMSVMPredict(x, w, res_Y_hat, res_Y, ex);
+			runMSVMPredict(x, w, res_YRaw, res_Y, ex);
 		}
 	}
 
@@ -75,17 +75,37 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 		HashMap<MatrixValue.CellIndex, Double> res_Y = new HashMap<>();
 		res_Y.put(new CellIndex(1, 1), 1.0);
 
-		HashMap<MatrixValue.CellIndex, Double> res_Y_hat = new HashMap<>();
-		res_Y_hat.put(new CellIndex(1, 1), 0.42);
-		res_Y_hat.put(new CellIndex(1, 2), 0.3);
+		HashMap<MatrixValue.CellIndex, Double> res_YRaw = new HashMap<>();
+		res_YRaw.put(new CellIndex(1, 1), 0.42);
+		res_YRaw.put(new CellIndex(1, 2), 0.3);
 
 		for(LopProperties.ExecType ex : new ExecType[] {LopProperties.ExecType.CP, LopProperties.ExecType.SPARK}) {
 
-			runMSVMPredict(x, w, res_Y_hat, res_Y, ex);
+			runMSVMPredict(x, w, res_YRaw, res_Y, ex);
 		}
 	}
 
-	private void runMSVMPredict(double[][] x, double[][] w, HashMap<MatrixValue.CellIndex, Double> Y_hat,
+	@Test
+	public void test_03() {
+		// Add bios column
+		double[][] x = new double[][] {{0.4, 0.1}};
+		double[][] w = new double[][] {{1.0, 0.5}, {0.2, 1.0}, {1.0,0.5}};
+
+		HashMap<MatrixValue.CellIndex, Double> res_Y = new HashMap<>();
+		res_Y.put(new CellIndex(1, 1), 1.0);
+
+		HashMap<MatrixValue.CellIndex, Double> res_YRaw = new HashMap<>();
+		res_YRaw.put(new CellIndex(1, 1), 1.42);
+		res_YRaw.put(new CellIndex(1, 2), 0.8);
+
+
+		for(LopProperties.ExecType ex : new ExecType[] {LopProperties.ExecType.CP, LopProperties.ExecType.SPARK}) {
+
+			runMSVMPredict(x, w, res_YRaw, res_Y, ex);
+		}
+	}
+
+	private void runMSVMPredict(double[][] x, double[][] w, HashMap<MatrixValue.CellIndex, Double> YRaw,
 		HashMap<MatrixValue.CellIndex, Double> Y, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 
@@ -95,16 +115,16 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "X=" + input("X"), "W=" + input("W"), "Y_hat=" + output("Y_hat"),
+			programArgs = new String[] {"-nvargs", "X=" + input("X"), "W=" + input("W"), "YRaw=" + output("YRaw"),
 				"Y=" + output("Y")};
 			writeInputMatrixWithMTD("X", x, false);
 			writeInputMatrixWithMTD("W", w, false);
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> Y_hat_res = readDMLMatrixFromHDFS("Y_hat");
+			HashMap<MatrixValue.CellIndex, Double> YRaw_res = readDMLMatrixFromHDFS("YRaw");
 			HashMap<MatrixValue.CellIndex, Double> Y_res = readDMLMatrixFromHDFS("Y");
 
-			TestUtils.compareMatrices(Y_hat_res, Y_hat, eps, "DML_Result", "Expected");
+			TestUtils.compareMatrices(YRaw_res, YRaw, eps, "DML_Result", "Expected");
 			TestUtils.compareMatrices(Y_res, Y, eps, "DML_Result", "Expected");
 		}
 		finally {
@@ -122,9 +142,17 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 
 	@Test
 	public void test_invalid_02() {
-		// Test if the script fails with input contain incorrect number of columns
+		// Test if the script fails with input contain incorrect number of rows vs columns
 		double[][] x = new double[][] {{1, 2, 3}};
-		double[][] w = new double[][] {{1, -1, 1, 3}, {-1, 1, 1, 2}};
+		double[][] w = new double[][] {{1, -1, 1, 3 ,3}, {-1, 1, 1, 1 ,12}};
+		runMSVMPredictionExceptionTest(x, w);
+	}
+
+	@Test
+	public void test_invalid_03() {
+		// Add one column more than the bios column.
+		double[][] x = new double[][] {{1, 2, 3}};
+		double[][] w = new double[][] {{1.0, 0.5}, {0.2, 1.0}, {1.0,0.5},{1.0,0.5},{1.0,0.5}};
 		runMSVMPredictionExceptionTest(x, w);
 	}
 
@@ -136,7 +164,7 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "X=" + input("X"), "W=" + input("W"), "Y_hat=" + output("Y_hat"),
+			programArgs = new String[] {"-nvargs", "X=" + input("X"), "W=" + input("W"), "YRaw=" + output("YRaw"),
 				"Y=" + output("Y")};
 			writeInputMatrixWithMTD("X", x, false);
 			writeInputMatrixWithMTD("W", w, false);
@@ -149,7 +177,7 @@ public class BuiltinMulticlassSVMPredictTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			try {
-				readDMLMatrixFromHDFS("Y_hat");
+				readDMLMatrixFromHDFS("YRaw");
 				fail("File should not have been written");
 			}
 			catch(AssertionError e) {

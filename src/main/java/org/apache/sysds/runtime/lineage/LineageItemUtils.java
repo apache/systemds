@@ -34,6 +34,7 @@ import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -56,6 +57,7 @@ import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
@@ -79,6 +81,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -197,19 +200,27 @@ public class LineageItemUtils {
 				if (inst instanceof DataGenCPInstruction) {
 					DataGenCPInstruction rand = (DataGenCPInstruction) inst;
 					HashMap<String, Hop> params = new HashMap<>();
-					if( rand.output.getDataType() == DataType.TENSOR)
-						params.put(DataExpression.RAND_DIMS, new LiteralOp(rand.getDims()));
-					else {
-						params.put(DataExpression.RAND_ROWS, new LiteralOp(rand.getRows()));
-						params.put(DataExpression.RAND_COLS, new LiteralOp(rand.getCols()));
+					if( rand.getOpcode().equals("rand") ) {
+						if( rand.output.getDataType() == DataType.TENSOR)
+							params.put(DataExpression.RAND_DIMS, new LiteralOp(rand.getDims()));
+						else {
+							params.put(DataExpression.RAND_ROWS, new LiteralOp(rand.getRows()));
+							params.put(DataExpression.RAND_COLS, new LiteralOp(rand.getCols()));
+						}
+						params.put(DataExpression.RAND_MIN, new LiteralOp(rand.getMinValue()));
+						params.put(DataExpression.RAND_MAX, new LiteralOp(rand.getMaxValue()));
+						params.put(DataExpression.RAND_PDF, new LiteralOp(rand.getPdf()));
+						params.put(DataExpression.RAND_LAMBDA, new LiteralOp(rand.getPdfParams()));
+						params.put(DataExpression.RAND_SPARSITY, new LiteralOp(rand.getSparsity()));
+						params.put(DataExpression.RAND_SEED, new LiteralOp(rand.getSeed()));
 					}
-					params.put(DataExpression.RAND_MIN, new LiteralOp(rand.getMinValue()));
-					params.put(DataExpression.RAND_MAX, new LiteralOp(rand.getMaxValue()));
-					params.put(DataExpression.RAND_PDF, new LiteralOp(rand.getPdf()));
-					params.put(DataExpression.RAND_LAMBDA, new LiteralOp(rand.getPdfParams()));
-					params.put(DataExpression.RAND_SPARSITY, new LiteralOp(rand.getSparsity()));
-					params.put(DataExpression.RAND_SEED, new LiteralOp(rand.getSeed()));
-					Hop datagen = new DataGenOp(OpOpDG.RAND, new DataIdentifier("tmp"), params);
+					else if( rand.getOpcode().equals("seq") ) {
+						params.put(Statement.SEQ_FROM, new LiteralOp(rand.getFrom()));
+						params.put(Statement.SEQ_TO, new LiteralOp(rand.getTo()));
+						params.put(Statement.SEQ_INCR, new LiteralOp(rand.getIncr()));
+					}
+					Hop datagen = new DataGenOp(OpOpDG.valueOf(rand.getOpcode().toUpperCase()),
+						new DataIdentifier("tmp"), params);
 					datagen.setBlocksize(rand.getBlocksize());
 					operands.put(item.getId(), datagen);
 				} else if (inst instanceof VariableCPInstruction
@@ -260,7 +271,8 @@ public class LineageItemUtils {
 							operands.put(item.getId(), aggunary);
 							break;
 						}
-						case Unary: {
+						case Unary:
+						case Builtin: {
 							Hop input = operands.get(item.getInputs()[0].getId());
 							Hop unary = HopRewriteUtils.createUnary(input, item.getOpcode());
 							operands.put(item.getId(), unary);
@@ -301,6 +313,10 @@ public class LineageItemUtils {
 							String opcode = item.getOpcode().equals("n+") ? "plus" : item.getOpcode();
 							operands.put(item.getId(), HopRewriteUtils.createNary(
 								OpOpN.valueOf(opcode.toUpperCase()), createNaryInputs(item, operands)));
+							break;
+						}
+						case ParameterizedBuiltin: {
+							operands.put(item.getId(), constructParameterizedBuiltinOp(item, operands));
 							break;
 						}
 						case MatrixIndexing: {
@@ -484,6 +500,39 @@ public class LineageItemUtils {
 				operands.get(item.getInputs()[4].getId()), //cl
 				operands.get(item.getInputs()[5].getId())); //cu
 		throw new DMLRuntimeException("Unsupported opcode: "+item.getOpcode());
+	}
+	
+	private static Hop constructParameterizedBuiltinOp(LineageItem item, Map<Long, Hop> operands) {
+		String opcode = item.getOpcode();
+		Hop target = operands.get(item.getInputs()[0].getId());
+		LinkedHashMap<String,Hop> args = new LinkedHashMap<>();
+		if( opcode.equals("groupedagg") ) {
+			args.put("target", target);
+			args.put(Statement.GAGG_GROUPS, operands.get(item.getInputs()[1].getId()));
+			args.put(Statement.GAGG_WEIGHTS, operands.get(item.getInputs()[2].getId()));
+			args.put(Statement.GAGG_FN, operands.get(item.getInputs()[3].getId()));
+			args.put(Statement.GAGG_NUM_GROUPS, operands.get(item.getInputs()[4].getId()));
+		}
+		else if (opcode.equalsIgnoreCase("rmempty")) {
+			args.put("target", target);
+			args.put("margin", operands.get(item.getInputs()[1].getId()));
+			args.put("select", operands.get(item.getInputs()[2].getId()));
+		}
+		else if(opcode.equalsIgnoreCase("replace")) {
+			args.put("target", target);
+			args.put("pattern", operands.get(item.getInputs()[1].getId()));
+			args.put("replacement", operands.get(item.getInputs()[2].getId()));
+		}
+		else if(opcode.equalsIgnoreCase("rexpand")) {
+			args.put("target", target);
+			args.put("max", operands.get(item.getInputs()[1].getId()));
+			args.put("dir", operands.get(item.getInputs()[2].getId()));
+			args.put("cast", operands.get(item.getInputs()[3].getId()));
+			args.put("ignore", operands.get(item.getInputs()[4].getId()));
+		}
+		
+		return HopRewriteUtils.createParameterizedBuiltinOp(
+			target, args, ParamBuiltinOp.valueOf(opcode.toUpperCase()));
 	}
 	
 	public static LineageItem rDecompress(LineageItem item) {

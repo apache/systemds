@@ -25,9 +25,7 @@ l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (
 
 randColSet = function(Matrix[Double] X, Integer seed, Double sample) return (Matrix[Double] Xi) {
   temp = rand(rows=ncol(X), cols=1, min = 0, max = 1, sparsity=1, seed=seed) <= sample
-  sel = diag(temp)
-  sel = removeEmpty(target = sel, margin = "cols")
-  Xi = X %*% sel
+  Xi = removeEmpty(target = X, margin = "cols", select = temp);
 }
 
 X = rand(rows=100, cols=100, sparsity=1.0, seed=1);

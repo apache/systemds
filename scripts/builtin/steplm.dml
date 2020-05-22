@@ -126,6 +126,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     while (continue) {
       # Subsequent passes over the features
       beta_out_all_2 = matrix(0, boa_ncol, m_orig * 1);
+      AICs = matrix(0, 1, m_orig); # full overwrite
       parfor (i in 1:m_orig, check = 0) {
         if (as.scalar(columns_fixed[1, i]) == 0) {
           # Construct the feature matrix

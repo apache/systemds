@@ -955,24 +955,25 @@ public class InstructionUtils
 		if( operand >= parts.length )
 			throw new DMLRuntimeException("Operand position "
 				+ operand + " exceeds the length of the instruction.");
-		
 		//replace and reconstruct string
 		parts[operand] = newValue;
-		StringBuilder sb = new StringBuilder(instStr.length());
-		sb.append(parts[0]);
-		for( int i=1; i<parts.length; i++ ) {
-			sb.append(Lop.OPERAND_DELIMITOR);
-			sb.append(parts[i]);
-		}
-		return sb.toString();
+		return concatOperands(parts);
 	}
 	
 	public static String concatOperands(String... inputs) {
+		return concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+	}
+	
+	public static String concatOperandParts(String... inputs) {
+		return concatOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
+	}
+	
+	private static String concatOperandsWithDelim(String delim, String... inputs) {
 		StringBuilder sb = _strBuilders.get();
 		sb.setLength(0); //reuse allocated space
 		for( int i=0; i<inputs.length-1; i++ ) {
 			sb.append(inputs[i]);
-			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(delim);
 		}
 		sb.append(inputs[inputs.length-1]);
 		return sb.toString();

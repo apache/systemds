@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 
 public class CPOperand 
@@ -161,24 +162,14 @@ public class CPOperand
 	}
 
 	public String getLineageLiteral() {
-		StringBuilder sb = new StringBuilder(getName());
-		sb.append(Instruction.VALUETYPE_PREFIX);
-		sb.append(getDataType().toString());
-		sb.append(Instruction.VALUETYPE_PREFIX);
-		sb.append(getValueType().toString());
-		sb.append(Instruction.VALUETYPE_PREFIX);
-		sb.append(isLiteral());
-		return sb.toString();
+		return InstructionUtils.concatOperandParts(
+			getName(), getDataType().name(),
+			getValueType().name(),  String.valueOf(isLiteral()));
 	}
 	
 	public String getLineageLiteral(ScalarObject so) {
-		StringBuilder sb = new StringBuilder(so.toString());
-		sb.append(Instruction.VALUETYPE_PREFIX);
-		sb.append(getDataType().toString());
-		sb.append(Instruction.VALUETYPE_PREFIX);
-		sb.append(getValueType().toString());
-		sb.append(Instruction.VALUETYPE_PREFIX);
-		sb.append(isLiteral());
-		return sb.toString();
+		return InstructionUtils.concatOperandParts(
+			so.toString(), getDataType().name(),
+			getValueType().name(), String.valueOf(isLiteral()));
 	}
 }

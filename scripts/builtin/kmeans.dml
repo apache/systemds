@@ -23,21 +23,23 @@
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
+# NAME                              TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# X                                 String   ---    Location to read matrix X with the input data records
-# k                                 Int      ---    Number of centroids
-# runs                              Int       10    Number of runs (with different initial centroids)
-# max_iter                          Int     1000    Maximum number of iterations per run
-# eps                               Double 0.000001 Tolerance (epsilon) for WCSS change ratio
-# is_verbose                        Boolean FALSE   do not print per-iteration stats
-# avg_sample_size_per_centroid      Int       50    Average number of records per centroid in data samples
+# X                                 Double    ---      The input Matrix to do KMeans on.
+# k                                 Int       ---      Number of centroids
+# runs                              Int       10       Number of runs (with different initial centroids)
+# max_iter                          Int       1000     Maximum number of iterations per run
+# eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio
+# is_verbose                        Boolean   FALSE    do not print per-iteration stats
+# avg_sample_size_per_centroid      Int       50       Average number of records per centroid in data samples
 #
 #
 # RETURN VALUES
 # ----------------------------------------------------------------------------
-# Y     String  "Y.mtx" Location to store the mapping of records to centroids
-# C     String  "C.mtx" Location to store the output matrix with the centroids
+# NAME     TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# Y        String    "Y.mtx"  The mapping of records to centroids
+# C        String    "C.mtx"  The output matrix with the centroids
 # ----------------------------------------------------------------------------
 
 

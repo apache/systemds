@@ -24,7 +24,7 @@
 
 cd /github/workspace
 
-build="$(mvn -T 2 clean compile test-compile surefire:test | grep 'BUILD')"
+build="$(mvn -T 2 clean compile test-compile | grep 'BUILD')"
 
 if [[ $build == *"SUCCESS"* ]]; then
   echo "Successfull build"

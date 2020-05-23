@@ -55,6 +55,7 @@ custom_install("caret");
 custom_install("sigmoid");
 custom_install("DescTools");
 custom_install("mice");
+custom_install("mclust");
 
 print("Installation Done")
 

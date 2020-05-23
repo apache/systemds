@@ -47,17 +47,17 @@ return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)
   if(min(Y) <= 0)
     stop("class labels should be greater than zero")
     
-  num_records  = nrow (X);
-  num_features = ncol (X);
-  beta =  B [1 : ncol (X),  ];
-  intercept = B [nrow(B),  ];
+  num_records = nrow(X);
+  num_features = ncol(X);
+  beta = B[1:ncol(X), ];
+  intercept = B[nrow(B), ];
 
-  if (nrow (B) == ncol (X))
+  if (nrow(B) == ncol(X))
     intercept = 0.0 * intercept; 
   else
     num_features = num_features + 1;
 
-  ones_rec = matrix (1, rows = num_records, cols = 1);
+  ones_rec = matrix(1, rows = num_records, cols = 1);
   linear_terms = X %*% beta + ones_rec %*% intercept;
 
   M = probabilities(linear_terms); # compute the probablitites on unknown data
@@ -67,10 +67,7 @@ return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)
     accuracy = sum((predicted_Y - Y) == 0) / num_records * 100;
   
   if(verbose)
-  {
-  acc_str = "Accuracy (%): " + accuracy
-  print(acc_str)
-  }
+    print("Accuracy (%): " + accuracy);
 }
 
 probabilities = function (Matrix[double] linear_terms)

@@ -1,0 +1,62 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# P               Double  ---         vector of Predictions
+# Y               Double  ---         vector of Golden standard One Hot Encoded
+# ---------------------------------------------------------------------------------------------
+# OUTPUT:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# ConfusionSum    Double  ---         The Confusion Matrix Sums of classifications
+# ConfusionAvg    Double  ---         The Confusion Matrix averages of each true class
+
+# Output is like:
+#                   True Labels
+#                     1    2
+#                 1   TP | FP
+#   Predictions      ----+----
+#                 2   FN | TN
+# 
+# TP = True Positives
+# FP = False Positives
+# FN = False Negatives
+# TN = True Negatives
+
+m_confusionMatrix = function(Matrix[Double] P, Matrix[Double] Y)
+  return(Matrix[Double] confusionSum, Matrix[Double] confusionAvg)
+{
+  if(ncol(P) > 1  | ncol(Y) > 1)
+    stop("CONFUSION MATRIX: Invalid input number of cols should be 1 in both P ["+ncol(P)+"] and Y ["+ncol(Y)+"]")
+  if(nrow(P) != nrow(Y))
+    stop("CONFUSION MATRIX: The number of rows have to be equal in both P ["+nrow(P)+"] and Y ["+nrow(Y)+"]")
+  if(min(P) < 1 | min(Y) < 1)
+    stop("CONFUSION MATRIX: All Values in P and Y should be abore or equal to 1, min(P):" + min(P) + " min(Y):" + min(Y) )
+
+  dim = max(max(Y),max(P))
+  confusionSum = table(P, Y,  dim, dim)
+  # max to avoid devision by 0, in case a colum contain no entries.
+  confusionAvg = confusionSum / max(1,colSums(confusionSum))
+}

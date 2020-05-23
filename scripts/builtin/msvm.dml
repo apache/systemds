@@ -33,7 +33,8 @@
 # epsilon         Double  0.001       Procedure terminates early if the reduction in objective function 
 #                                     value is less than epsilon (tolerance) times the initial objective function value.
 # lambda          Double  1.0         Regularization parameter (lambda) for L2 regularization
-# maxiterations   Int     100         Maximum number of conjugate gradient iterations
+# maxIterations   Int     100         Maximum number of conjugate gradient iterations
+# verbose         Boolean False       Set to true to print while training.
 # ---------------------------------------------------------------------------------------------
  
 #Output(s)
@@ -42,34 +43,33 @@
 # ---------------------------------------------------------------------------------------------
 # model           Double   ---        model matrix
 
-m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE, Integer num_classes =10,
-                  Double epsilon = 0.001, Double lambda = 1.0, Integer max_iterations = 100, Boolean verbose = FALSE)
+m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
+    Double epsilon = 0.001, Double lambda = 1.0, Integer maxIterations = 100, Boolean verbose = FALSE)
   return(Matrix[Double] model)
 {
+  if(min(Y) < 0)
+    stop("MSVM: Invalid Y input, containing negative values")
+
   if(verbose)
-    print("Built-in Multiclass-SVM started")
+    print("Running Multiclass-SVM")
 
-  num_samples = nrow(X)
-  num_features = ncol(X)
-
-  num_rows_in_w = num_features
+  num_rows_in_w = ncol(X)
   if(intercept) {
     num_rows_in_w = num_rows_in_w + 1
   }
-  
-  w = matrix(0, rows=num_rows_in_w, cols=num_classes)
 
-  parfor(iter_class in 1:num_classes) {
-    Y_local = 2 * (Y == iter_class) - 1
-    if(verbose) {
-      print("iter class: " + iter_class)
-      print("y local: " + toString(Y_local))
-    }
-    w[,iter_class] = l2svm(X=X, Y=Y_local, intercept=intercept,
-      epsilon=epsilon, lambda=lambda, maxiterations=max_iterations)
+  if(ncol(Y) > 1) 
+    Y = rowMaxs(Y * t(seq(1,ncol(Y))))
+
+  # Assuming number of classes to be max contained in Y
+  w = matrix(0, rows=num_rows_in_w, cols=max(Y))
+
+  parfor(class in 1:max(Y)) {
+    Y_local = 2 * (Y == class) - 1
+    w[,class] = l2svm(X=X, Y=Y_local, intercept=intercept,
+        epsilon=epsilon, lambda=lambda, maxIterations=maxIterations, 
+        verbose= verbose, columnId=class)
   }
-
+  
   model = w
-  if (verbose)
-    print("model["+iter_class+"]: " + toString(model))
 }

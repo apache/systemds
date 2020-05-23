@@ -301,6 +301,7 @@ SYSTEMDS-380 Memory Footprint
 SYSTEMDS-390 New Builtin Functions IV
  * 391 New GLM builtin function (from algorithms)                     OK
  * 392 Builtin function for missing value imputation via FDs          OK
+ * 393 Builtin to find Connected Components of a graph                OK
 
 Others:
  * Break append instruction to cbind and rbind 

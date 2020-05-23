@@ -68,6 +68,7 @@ public enum Builtins {
 	COLSD("colSds", false),
 	COLSUM("colSums", false),
 	COLVAR("colVars", false),
+	COMPONENTS("components", true),
 	CONV2D("conv2d", false),
 	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", false),
 	CONV2D_BACKWARD_DATA("conv2d_backward_data", false),

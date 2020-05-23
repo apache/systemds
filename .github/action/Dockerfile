@@ -19,4 +19,4 @@
 #
 #-------------------------------------------------------------
 
-FROM sebaba/testingsysds:0.2
+FROM sebaba/testingsysds:2.0

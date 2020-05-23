@@ -65,25 +65,16 @@ class SparkNode:
         print(mask)
         if loss_type == 0:
             self.calc_l2(mask)
-        if loss_type == 1:
+        elif loss_type == 1:
             self.calc_class(mask)
 
     def calc_class(self, mask):
         self.e_max = 1
-        size = 0
-        mistakes = 0
-        for row in self.preds:
-            flag = True
-            for attr in mask:
-                if attr not in row[0].indices:
-                    flag = False
-            if flag:
-                size = size + 1
-                if row[1] == 0:
-                    mistakes += 1
-        self.size = size
-        if size != 0:
-            self.loss = mistakes / size
+        filtered = self.filter_by_mask(mask)
+        self.size = len(filtered)
+        mistakes = len(list(filter(lambda row: row[1] == 0, filtered)))
+        if self.size != 0:
+            self.loss = mistakes / self.size
         else:
             self.loss = 0
         self.e_upper = self.loss
@@ -92,25 +83,22 @@ class SparkNode:
         max_tuple_error = 0
         sum_error = 0
         size = 0
-        for row in self.preds:
-            flag = True
-            for attr in mask:
-                if attr not in row[0].indices:
-                    flag = False
-            if flag:
-                size = size + 1
-                if row[1] > max_tuple_error:
-                    max_tuple_error = row[1]
-                sum_error = sum_error + row[1]
+        filtered = self.filter_by_mask(mask)
+        self.size = len(filtered)
+        for row in filtered:
+            if row[1] > max_tuple_error:
+                max_tuple_error = row[1]
+            sum_error += row[1]
         self.e_max = max_tuple_error
         self.e_upper = max_tuple_error
         self.e_max_upper = max_tuple_error
-        if size != 0:
-            self.loss = sum_error/size
+        if self.size != 0:
+            self.loss = sum_error/self.size
         else:
             self.loss = 0
-        self.size = size
-        self.s_upper = size
+
+    def filter_by_mask(self, mask):
+        return list(filter(lambda row: all(attr in row[0].indices for attr in mask), self.preds))
 
     def calc_s_upper(self, cur_lvl):
         cur_min = self.parents[0].size
@@ -167,30 +155,6 @@ class SparkNode:
 
     def check_bounds(self, top_k, x_size, alpha):
         return self.s_upper >= x_size / alpha and self.c_upper >= top_k.min_score
-
-    def update_bounds(self, s_upper, s_lower, e_upper, e_max_upper, w):
-        try:
-            minimized = min(s_upper, self.s_upper)
-            self.s_upper = minimized
-            minimized = min(s_lower, self.s_lower)
-            self.s_lower = minimized
-            minimized = min(e_upper, self.e_upper)
-            self.e_upper = minimized
-            minimized = min(e_max_upper, self.e_max_upper)
-            self.e_max_upper = minimized
-            c_upper = self.calc_c_upper(w)
-            minimized = min(c_upper, self.c_upper)
-            self.c_upper = minimized
-        except AttributeError:
-            # initial bounds calculation
-            self.s_upper = s_upper
-            self.s_lower = s_lower
-            self.e_upper = e_upper
-            self.e_max_upper = e_max_upper
-            c_upper = self.calc_c_upper(w)
-            self.c_upper = c_upper
-        minimized = min(c_upper, self.c_upper)
-        self.c_upper = minimized
 
     def print_debug(self, topk, level):
         print("new node has been created: " + self.make_name() + "\n")

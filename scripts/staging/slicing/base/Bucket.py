@@ -45,6 +45,8 @@ class Bucket:
         self.parents = []
         self.sum_error = 0
         self.size = 0
+        self.s_upper = 0
+        self.s_lower = 0
         self.score = 0
         self.error = 0
         self.max_tuple_error = 0

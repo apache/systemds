@@ -71,7 +71,8 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   # start from one feature and iteratively add features until AIC improves
   thr = 0.001;
 
-  print("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
+	if(verbose)
+    print("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
   X_orig = X;
   n = nrow(X_orig);
   m_orig = ncol(X_orig);
@@ -90,7 +91,8 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     beta = 0.0;
     AIC_best_orig = n * log(sum(y ^ 2) / n);
   }
-  print("Best AIC without any features: " + AIC_best_orig);
+  if(verbose)
+	  print("Best AIC without any features: " + AIC_best_orig);
   boa_ncol = ncol(X_orig) + as.integer(icpt!=0);
   beta_out_all = matrix(0, boa_ncol, m_orig);
 
@@ -108,15 +110,16 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   # beta best so far
   beta_best = beta_out_all[, column_best];
   if (column_best == 0) {
-    print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
+    if(verbose)
+		  print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
     B = matrix(0, m_orig, 1);
     if (icpt != 0)
       B = rbind(B, as.matrix(beta));
     S = matrix(0, 1, 1);
   }
   else {
-
-    print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+		if(verbose)
+      print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
 
     columns_fixed[1, column_best] = 1;
     columns_fixed_ordered[1, 1] = column_best;
@@ -152,7 +155,8 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
       # Append best found features (i.e., columns) to X_global
       if (as.scalar(columns_fixed[1, column_best]) == 0) {
         # new best feature found
-        print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+        if(verbose)
+				  print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
         columns_fixed[1, column_best] = 1;
         columns_fixed_ordered = cbind(columns_fixed_ordered, as.matrix(column_best));
         if (ncol(columns_fixed_ordered) == m_orig) {
@@ -167,7 +171,8 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
       }
     }
     # run linear regression with selected set of features
-    print("Running linear regression with selected features...");
+    if( verbose )
+		  print("Running linear regression with selected features...");
     [AIC, beta_out] = linear_regression(X_global, y, icpt, reg, tol, maxi, verbose);
     S = columns_fixed_ordered;
     if (icpt != 0)

@@ -49,7 +49,7 @@ findIcpt = function(Matrix[double] X, Matrix[double] y)
 }
 
 
-X = rand(rows=1000, cols=100, sparsity=1.0, seed=42);
+X = rand(rows=1000, cols=1000, sparsity=1.0, seed=42);
 y = rand(rows=1000, cols=1, min=0, max=6, sparsity=1.0, seed=42);
 y = floor(y);
 

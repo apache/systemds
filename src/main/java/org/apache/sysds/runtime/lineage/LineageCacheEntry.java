@@ -33,8 +33,6 @@ public class LineageCacheEntry {
 	protected long _computeTime;
 	protected long _timestamp = 0;
 	protected LineageCacheStatus _status;
-	protected LineageCacheEntry _prev;
-	protected LineageCacheEntry _next;
 	protected LineageItem _origItem;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {

@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.lineage;
 
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -41,19 +40,7 @@ public class LineageCacheEviction
 	protected static final HashSet<LineageItem> _removelist = new HashSet<>();
 	private static final Map<LineageItem, SpilledItem> _spillList = new HashMap<>();
 	private static String _outdir = null;
-	
-	private static Comparator<LineageCacheEntry> execTime2SizeComparator = (e1, e2) -> {
-		// Gather the weights for scoring components
-		double w1 = LineageCacheConfig.WEIGHTS[0];
-		double w2 = LineageCacheConfig.WEIGHTS[1];
-		// Generate scores
-		double score1 = w1*(((double)e1._computeTime)/e1.getSize()) + w2*e1.getTimestamp();
-		double score2 = w1*((double)e2._computeTime)/e2.getSize() + w2*e1.getTimestamp();
-		// Generate order. If scores are same, order by LineageItem ID.
-		return score1 == score2 ? Long.compare(e1._key.getId(), e2._key.getId()) : score1 < score2 ? -1 : 1;
-	};
-	
-	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(execTime2SizeComparator);
+	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
 	
 	protected static void resetEviction() {
 		// reset cache size, otherwise the cache clear leads to unusable 
@@ -93,6 +80,9 @@ public class LineageCacheEviction
 	
 	protected static void getEntry(LineageCacheEntry entry) {
 		// Reset the timestamp to maintain the LRU component of the scoring function
+		if (!LineageCacheConfig.isLRU()) 
+			return;
+		
 		if (weightedQueue.remove(entry)) {
 			entry.setTimestamp();
 			weightedQueue.add(entry);
@@ -123,7 +113,7 @@ public class LineageCacheEviction
 		CACHE_LIMIT = limit;
 	}
 
-	protected static long getCacheLimit() {
+	public static long getCacheLimit() {
 		return CACHE_LIMIT;
 	}
 	
@@ -140,7 +130,6 @@ public class LineageCacheEviction
 
 	protected static void makeSpace(Map<LineageItem, LineageCacheEntry> cache, long spaceNeeded) {
 		//Cost based eviction
-		boolean isLRU = LineageCacheConfig.getCachePolicy().isLRUcache();
 		LineageCacheEntry e = weightedQueue.pollFirst();
 		while (e != null)
 		{
@@ -152,15 +141,15 @@ public class LineageCacheEviction
 				// If eviction is disabled, just delete the entries.
 				if (cache.remove(e._key) != null)
 					removeEntry(cache, e);
-				e = isLRU ? e._prev : weightedQueue.pollFirst();
+				e = weightedQueue.pollFirst();
 				continue;
 			}
 
-			if (!e.getCacheStatus().canEvict() && isLRU) {
-				// Note: no action needed for weightedQueue as these entries 
-				//       are not part of weightedQueue.
-				e = e._prev;
+			if (!e.getCacheStatus().canEvict()) {
+				// Note: Execution should never reach here, as these 
+				//       entries are not part of the weightedQueue.
 				continue;
+				//TODO: Graceful handling of status.
 			}
 
 			double exectime = ((double) e._computeTime) / 1000000; // in milliseconds
@@ -170,7 +159,7 @@ public class LineageCacheEviction
 				// Note: scalar entries with higher computation time are pinned.
 				if (cache.remove(e._key) != null)
 					removeEntry(cache, e);
-				e = isLRU ? e._prev : weightedQueue.pollFirst();
+				e = weightedQueue.pollFirst();
 				continue;
 			}
 
@@ -202,7 +191,7 @@ public class LineageCacheEviction
 			// Remove the entry from cache.
 			if (cache.remove(e._key) != null)
 				removeEntry(cache, e);
-			e = isLRU ? e._prev : weightedQueue.pollFirst();
+			e = weightedQueue.pollFirst();
 		}
 	}
 

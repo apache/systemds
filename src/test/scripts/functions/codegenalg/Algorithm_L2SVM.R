@@ -24,7 +24,7 @@ library("Matrix")
 
 X = readMM(paste(args[1], "X.mtx", sep=""));
 Y = readMM(paste(args[1], "Y.mtx", sep=""));
-intercept = as.integer(args[2]);
+intercept = as.logical(args[2]);
 epsilon = as.double(args[3]);
 lambda = 0.001;
 maxiterations = as.integer(args[4]);
@@ -42,7 +42,7 @@ if(num_min + num_max != nrow(Y)){
 
 dimensions = ncol(X)
 
-if (intercept == 1) {
+if (intercept) {
 	ones  = matrix(1, rows=num_samples, cols=1)
 	X = cbind(X, ones);
 }
@@ -100,9 +100,9 @@ while(continue && iter < maxiterations){
 extra_model_params = matrix(0, 4, 1)
 extra_model_params[1,1] = positive_label
 extra_model_params[2,1] = negative_label
-extra_model_params[3,1] = intercept
+extra_model_params[3,1] = as.numeric(intercept)
 extra_model_params[4,1] = dimensions
 
-w = t(cbind(t(w), t(extra_model_params)))
+w = rbind(w, extra_model_params)
 
 writeMM(as(w,"CsparseMatrix"), paste(args[5], "w", sep=""));

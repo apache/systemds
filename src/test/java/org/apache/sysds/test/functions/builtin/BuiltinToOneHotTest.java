@@ -76,7 +76,7 @@ public class BuiltinToOneHotTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"),
+			programArgs = new String[]{"-args", input("A"),
 				String.format("%d", numClassesPassed), output("B") };
 
 			runTest(true, false, null, -1);

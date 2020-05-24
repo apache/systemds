@@ -21,6 +21,8 @@ package org.apache.sysds.test.functions.builtin;
 
 import java.util.HashMap;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
@@ -44,6 +46,23 @@ public class BuiltinScaleTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
+	
+		if (TEST_CACHE_ENABLED) {
+			setOutAndExpectedDeletionDisabled(true);
+		}
+	}
+	
+	@BeforeClass
+	public static void init() {
+		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+	}
+
+	
+	@AfterClass
+	public static void cleanUp() {
+		if (TEST_CACHE_ENABLED) {
+			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
+		}
 	}
 
 	@Test
@@ -132,11 +151,14 @@ public class BuiltinScaleTest extends AutomatedTestBase
 		
 		try
 		{
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-			
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+			String TEST_CACHE_DIR = TEST_CACHE_ENABLED ?
+				TEST_CACHE_DIR = sparse + "_" + center + "_" + scale + "/" : "";
+			loadTestConfiguration(config, TEST_CACHE_DIR);
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"),
+			programArgs = new String[]{"-args", input("A"),
 				String.valueOf(center).toUpperCase(), String.valueOf(scale).toUpperCase(), 
 				output("B") };
 			fullRScriptName = HOME + TEST_NAME + ".R";
@@ -160,5 +182,4 @@ public class BuiltinScaleTest extends AutomatedTestBase
 			rtplatform = platformOld;
 		}
 	}
-
 }

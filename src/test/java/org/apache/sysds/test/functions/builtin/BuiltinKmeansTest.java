@@ -143,7 +143,7 @@ public class BuiltinKmeansTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain", "-stats",
+			programArgs = new String[]{
 					"-nvargs", "X=" + input("X"), "Y=" + output("Y"), "C=" + output("C"),
 					"k=" + centroids, "runs=" + runs,
 					"eps=" + eps, "max_iter=" + max_iter};

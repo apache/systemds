@@ -54,8 +54,6 @@ public class BuiltinCVLmTest extends AutomatedTestBase
 		List<String> proArgs = new ArrayList<>();
 		
 		int k = 3;
-		proArgs.add("-explain");
-		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(input("X"));
 		proArgs.add(input("y"));

@@ -38,7 +38,6 @@ import org.apache.sysds.test.TestUtils;
 @net.jcip.annotations.NotThreadSafe
 public class MDABivariateStatsTest extends AutomatedTestBase 
 {
-
 	protected final static String TEST_DIR = "applications/mdabivar/";
 	protected final static String TEST_NAME = "MDABivariateStats";
 	protected String TEST_CLASS_DIR = TEST_DIR + MDABivariateStatsTest.class.getSimpleName() + "/";
@@ -51,15 +50,15 @@ public class MDABivariateStatsTest extends AutomatedTestBase
 		this.label_index = li;
 		this.label_measurement_level = lml;
 	}
-	
+
 	@Parameters
-	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { { 10000, 100, 1, 1 }, { 10000, 100, 100, 0}, 
-			                              { 100000, 100, 1, 1 }, { 100000, 100, 100, 0}
-			   							  };
-	   return Arrays.asList(data);
-	 }
-	 
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] {
+			{ 1000, 100, 1, 1 }, { 1000, 100, 100, 0}, 
+			{ 10000, 100, 1, 1 }, { 10000, 100, 100, 0}};
+		return Arrays.asList(data);
+	}
+
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);

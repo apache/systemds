@@ -79,7 +79,7 @@ public class BuiltinLmPredictTest extends AutomatedTestBase
 
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"), input("B"), input("C"), output("D") };
+			programArgs = new String[]{"-args", input("A"), input("B"), input("C"), output("D") };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "  + expectedDir();
 

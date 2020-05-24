@@ -130,7 +130,7 @@ public class ArimaTest extends AutomatedTestBase {
 		rCmd = getRCmd(inputDir(), Integer.toString(max_func_invoc), Integer.toString(p), Integer.toString(d), Integer.toString(q), Integer.toString(P), 
 				Integer.toString(D), Integer.toString(Q), Integer.toString(s), Integer.toString(include_mean), Integer.toString(useJacobi), expectedDir());
 		
-		int timeSeriesLength = 5000;
+		int timeSeriesLength = 3000;
 		double[][] timeSeries = getRandomMatrix(timeSeriesLength, 1, 1, 5, 0.9, System.currentTimeMillis());
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(timeSeriesLength,1,-1,-1);

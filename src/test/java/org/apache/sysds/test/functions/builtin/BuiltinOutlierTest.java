@@ -97,7 +97,7 @@ public class BuiltinOutlierTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"),
+			programArgs = new String[]{"-args", input("A"),
 				String.valueOf(opposite).toUpperCase(), output("B") };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " 

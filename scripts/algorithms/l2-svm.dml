@@ -57,15 +57,19 @@ verbose = ifdef($verbose, FALSE)
 X = read($X)
 Y = read($Y)
 
+positive_label = max(Y)
+negative_label = min(Y)
+dimensions = ncol(X)
+
 w = l2svm(X=X, Y=Y, intercept=intercept, 
-  epsilon=epsilon, lambda=labmda, 
+  epsilon=epsilon, lambda=lambda, 
   maxIterations=maxIterations,
   verbose=verbose)
 
 extra_model_params = matrix(0, 4, 1)
 extra_model_params[1,1] = positive_label
 extra_model_params[2,1] = negative_label
-extra_model_params[3,1] = intercept
+extra_model_params[3,1] = as.double(intercept)
 extra_model_params[4,1] = dimensions
 
 w = rbind(w, extra_model_params)

@@ -40,7 +40,7 @@ public class BuiltinL2SVMTest extends AutomatedTestBase {
 
 	private final static double eps = 0.001;
 	private final static int rows = 1000;
-	private final static int colsX = 500;
+	private final static int colsX = 200;
 	private final static double spSparse = 0.01;
 	private final static double spDense = 0.7;
 	private final static int max_iter = 10;
@@ -107,7 +107,7 @@ public class BuiltinL2SVMTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain", "-stats",
+			programArgs = new String[]{
 					"-nvargs", "X=" + input("X"), "Y=" + input("Y"), "model=" + output("model"),
 					"inc=" + String.valueOf(intercept).toUpperCase(),"eps=" + eps, "lam=" + lambda, "max=" + run};
 

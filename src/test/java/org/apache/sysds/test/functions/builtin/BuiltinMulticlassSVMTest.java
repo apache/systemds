@@ -38,7 +38,7 @@ public class BuiltinMulticlassSVMTest extends AutomatedTestBase {
 
 	private final static double eps = 0.001;
 	private final static int rows = 1000;
-	private final static int colsX = 500;
+	private final static int colsX = 200;
 	private final static double spSparse = 0.01;
 	private final static double spDense = 0.7;
 	private final static int max_iter = 10;

@@ -68,7 +68,7 @@ public class BuiltinComponentsTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-explain", "-stats", "-args", input("X"), output("R")};
+			programArgs = new String[]{ "-args", input("X"), output("R")};
 
 			//generate actual dataset (3 components)
 			double[][] X = new double[numVertices-3][2];

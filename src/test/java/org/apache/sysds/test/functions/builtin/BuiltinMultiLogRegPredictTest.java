@@ -69,7 +69,7 @@ public class BuiltinMultiLogRegPredictTest extends AutomatedTestBase {
 
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"), input("B"), input("C"), input("D"), output("O") };
+			programArgs = new String[]{"-args", input("A"), input("B"), input("C"), input("D"), output("O") };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "  + expectedDir();
 

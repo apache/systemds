@@ -122,35 +122,21 @@ public class PrivacyPropagator {
 			case Builtin:
 				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
 			case Ctable: 
-				return preprocessCtableInstruction((CtableCPInstruction) inst, ec);
 			case MultiReturnParameterizedBuiltin:
-				return preprocessMultiReturnParameterizedBuiltinInstruction((MultiReturnParameterizedBuiltinCPInstruction) inst, ec);
 			case MultiReturnBuiltin:  
-				return preprocessMultiReturnBuiltinInstruction((MultiReturnBuiltinCPInstruction) inst, ec);
 			case ParameterizedBuiltin:
-				return preprocessParameterizedBuiltinInstruction((ParameterizedBuiltinCPInstruction) inst, ec);
 			default:
-				throwExceptionIfPrivacyActivated(inst, ec);
-				return inst;
+				return preprocessInstructionSimple(inst, ec);
 		}
 	}
 
-	public static Instruction preprocessParameterizedBuiltinInstruction(ParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
-		throwExceptionIfPrivacyActivated(inst, ec);
-		return inst;
-	}
-
-	public static Instruction preprocessMultiReturnParameterizedBuiltinInstruction(MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
-		throwExceptionIfPrivacyActivated(inst, ec);
-		return inst;
-	}
-
-	public static Instruction preprocessMultiReturnBuiltinInstruction(MultiReturnBuiltinCPInstruction inst, ExecutionContext ec){
-		throwExceptionIfPrivacyActivated(inst, ec);
-		return inst;
-	}
-
-	public static Instruction preprocessCtableInstruction(CtableCPInstruction inst, ExecutionContext ec){
+	/**
+	 * Throw exception if privacy constraints are activated or return instruction if privacy is not activated
+	 * @param inst instruction
+	 * @param ec execution context
+	 * @return instruction
+	 */
+	public static Instruction preprocessInstructionSimple(Instruction inst, ExecutionContext ec){
 		throwExceptionIfPrivacyActivated(inst, ec);
 		return inst;
 	}
@@ -255,8 +241,7 @@ public class PrivacyPropagator {
 	 */
 	private static Instruction propagateCastAsScalarVariablePrivacy(VariableCPInstruction inst, ExecutionContext ec){
 		inst = (VariableCPInstruction) propagateFirstInputPrivacy(inst, ec); 
-		throwExceptionIfPrivacyActivated(inst, ec);
-		return inst;
+		return preprocessInstructionSimple(inst, ec);
 	}
 
 	/**

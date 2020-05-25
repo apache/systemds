@@ -92,7 +92,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse constructResponse(FederatedRequest request) {
+	public FederatedResponse constructResponse(FederatedRequest request) {
 		FederatedRequest.FedMethod method = request.getMethod();
 		try {
 			switch (method) {
@@ -189,6 +189,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeMatVecMult(long varID, MatrixBlock vector, boolean isMatVecMult) {
 		MatrixObject matTo = (MatrixObject) _vars.get(varID);
+		handlePrivacy(matTo);
 		MatrixBlock matBlock1 = matTo.acquireReadAndRelease();
 		// TODO other datatypes
 		AggregateBinaryOperator ab_op = new AggregateBinaryOperator(
@@ -319,6 +320,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeScalarOperation(long varID, ScalarOperator operator) {
 		Data dataObject = _vars.get(varID);
+		handlePrivacy(dataObject);
 		if (dataObject.getDataType() != Types.DataType.MATRIX) {
 			return new FederatedResponse(FederatedResponse.Type.ERROR,
 				"FederatedWorkerHandler: ScalarOperator dont support "

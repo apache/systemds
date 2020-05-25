@@ -23,6 +23,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
     private static final String TEST_PROG_SCALAR_ADDITION_MATRIX = "ScalarAdditionFederatedMatrix";
     private final static String AGGREGATION_TEST_NAME = "FederatedSumTest";
     private final static String TRANSFER_TEST_NAME = "FederatedRCBindTest";
+    private final static String MATVECMULT_TEST_NAME = "FederatedMultiplyTest";
     private static final String FEDERATED_WORKER_HOST = "localhost";
 	private static final int FEDERATED_WORKER_PORT = 1222;
     
@@ -37,6 +38,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
         addTestConfiguration("scalar", new TestConfiguration(TEST_CLASS_DIR_SCALAR, TEST_PROG_SCALAR_ADDITION_MATRIX, new String [] {"R"}));
         addTestConfiguration("aggregation", new TestConfiguration(TEST_CLASS_DIR, AGGREGATION_TEST_NAME, new String[] {"S.scalar", "R", "C"}));
         addTestConfiguration("transfer", new TestConfiguration(TEST_CLASS_DIR, TRANSFER_TEST_NAME, new String[] {"R", "C"}));
+        addTestConfiguration("matvecmult", new TestConfiguration(TEST_CLASS_DIR, MATVECMULT_TEST_NAME, new String[] {"Z"}));
     }
 
     @Test
@@ -237,6 +239,82 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		    compareResults(1e-11);
 
 		TestUtils.shutdownThread(t);
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+    }
+
+    @Test
+	public void matVecMultPrivateTest() {
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLException.class);
+    }
+    
+    @Test
+	public void matVecMultPrivateAggregationTest() {
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLException.class);
+    }
+    
+    @Test
+	public void matVecMultNonePrivateTest() {
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.None, null);
+	}
+
+    public void federatedMultiply(Types.ExecMode execMode, PrivacyLevel privacyLevel, Class<?> expectedException) {
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		Types.ExecMode platformOld = rtplatform;
+		rtplatform = execMode;
+		if(rtplatform == Types.ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
+
+		Thread t1, t2;
+
+		getAndLoadTestConfiguration("matvecmult");
+		String HOME = SCRIPT_DIR + TEST_DIR;
+
+		// write input matrices
+		int halfRows = rows / 2;
+		// We have two matrices handled by a single federated worker
+		double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
+		double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
+		// And another two matrices handled by a single federated worker
+		double[][] Y1 = getRandomMatrix(cols, halfRows, 0, 1, 1, 44);
+		double[][] Y2 = getRandomMatrix(cols, halfRows, 0, 1, 1, 21);
+
+		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols), new PrivacyConstraint(privacyLevel));
+		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
+		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
+		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(cols, halfRows, blocksize, halfRows * cols));
+
+		int port1 = getRandomAvailablePort();
+		int port2 = getRandomAvailablePort();
+		t1 = startLocalFedWorker(port1);
+		t2 = startLocalFedWorker(port2);
+
+		TestConfiguration config = availableTestConfigurations.get("matvecmult");
+		loadTestConfiguration(config);
+
+		// Run reference dml script with normal matrix
+		fullDMLScriptName = HOME + MATVECMULT_TEST_NAME + "Reference.dml";
+		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
+			"Y2=" + input("Y2"), "Z=" + expected("Z")};
+		runTest(true, false, null, -1);
+
+		// Run actual dml script with federated matrix
+		fullDMLScriptName = HOME + MATVECMULT_TEST_NAME + ".dml";
+		programArgs = new String[] {"-nvargs",
+			"X1=" + TestUtils.federatedAddress("localhost", port1, input("X1")),
+			"X2=" + TestUtils.federatedAddress("localhost", port2, input("X2")),
+			"Y1=" + TestUtils.federatedAddress("localhost", port1, input("Y1")),
+			"Y2=" + TestUtils.federatedAddress("localhost", port2, input("Y2")), "r=" + rows, "c=" + cols,
+			"hr=" + halfRows, "Z=" + output("Z")};
+		runTest(true, (expectedException != null), expectedException, -1);
+
+        // compare via files
+        if (expectedException == null)
+		    compareResults(1e-9);
+
+		TestUtils.shutdownThreads(t1, t2);
+
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

@@ -156,6 +156,7 @@ public class PrivacyPropagator {
 	}
 
 	public static Instruction preprocessBuiltinNary(BuiltinNaryCPInstruction inst, ExecutionContext ec){
+		if (inst.getInputs() == null) return inst;
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
 		PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
 		inst.setPrivacyConstraint(mergedPrivacyConstraint);
@@ -191,9 +192,12 @@ public class PrivacyPropagator {
 	public static Instruction preprocessBinaryCPInstruction(BinaryCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint privacyConstraint1 = getInputPrivacyConstraint(ec, inst.input1);
 		PrivacyConstraint privacyConstraint2 = getInputPrivacyConstraint(ec, inst.input2);
-		PrivacyConstraint mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
-		inst.setPrivacyConstraint(mergedPrivacyConstraint);
-		setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.output);
+		if ( privacyConstraint1 != null || privacyConstraint2 != null)
+		{
+			PrivacyConstraint mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
+			inst.setPrivacyConstraint(mergedPrivacyConstraint);
+			setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.output);
+		}
 		return inst;
 	}
 
@@ -326,6 +330,7 @@ public class PrivacyPropagator {
 			privacyConstraints[i] = getInputPrivacyConstraint(ec, inputs[i]);
 		}
 		return privacyConstraints;
+		
 	}
 
 	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, CPOperand output){

@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
@@ -124,7 +125,7 @@ public class PrivacyPropagator {
 				return preprocessCtableInstruction((CtableCPInstruction) inst, ec);
 			case MultiReturnParameterizedBuiltin:
 			case MultiReturnBuiltin:  
-				return preprocessMultiReturnParameterizedBuiltinInstruction((MultiReturnParameterizedBuiltinCPInstruction) inst, ec);
+				return preprocessMultiReturnParameterizedBuiltinInstruction((MultiReturnBuiltinCPInstruction) inst, ec);
 			case ParameterizedBuiltin:
 				return preprocessParameterizedBuiltinInstruction((ParameterizedBuiltinCPInstruction) inst, ec);
 			default:
@@ -138,7 +139,7 @@ public class PrivacyPropagator {
 		return inst;
 	}
 
-	public static Instruction preprocessMultiReturnParameterizedBuiltinInstruction(MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
+	public static Instruction preprocessMultiReturnParameterizedBuiltinInstruction(MultiReturnBuiltinCPInstruction inst, ExecutionContext ec){
 		throwExceptionIfPrivacyActivated(inst, ec);
 		return inst;
 	}

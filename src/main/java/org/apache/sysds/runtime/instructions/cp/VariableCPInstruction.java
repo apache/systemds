@@ -597,41 +597,42 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context of the instruction
 	 */
 	private void processCreateVariableInstruction(ExecutionContext ec){
-			//PRE: for robustness we cleanup existing variables, because a setVariable
-			//would  cause a buffer pool memory leak as these objects would never be removed
-			if(ec.containsVariable(getInput1()))
-				processRemoveVariableInstruction(ec, getInput1().getName());
-			
-			if ( getInput1().getDataType() == DataType.MATRIX ) {
-				String fname = createUniqueFilename();
-				MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
-        setCacheableDataFields(obj);
-				obj.setMarkForLinCache(true);
-				ec.setVariable(getInput1().getName(), obj);
-				obj.setUpdateType(_updateType);
-				if(DMLScript.STATISTICS && _updateType.isInPlace())
-					Statistics.incrementTotalUIPVar();
-			}
-			else if( getInput1().getDataType() == DataType.TENSOR ) {
-        String fname = createUniqueFilename();
-				CacheableData<?> obj = new TensorObject(getInput1().getValueType(), fname);
-				ec.setVariable(getInput1().getName(), obj);
-			}
-			else if( getInput1().getDataType() == DataType.FRAME ) {
-				String fname = createUniqueFilename();
-				FrameObject fobj = new FrameObject(fname);
-				setCacheableDataFields(fobj);
-				if( _schema != null )
-					fobj.setSchema(_schema); //after metadata
-				ec.setVariable(getInput1().getName(), fobj);
-			}
-			else if ( getInput1().getDataType() == DataType.SCALAR ){
-				//created variable not called for scalars
-				ec.setScalarOutput(getInput1().getName(), null);
-			}
-			else {
-				throw new DMLRuntimeException("Unexpected data type: " + getInput1().getDataType());
-			}
+		//PRE: for robustness we cleanup existing variables, because a setVariable
+		//would  cause a buffer pool memory leak as these objects would never be removed
+		if(ec.containsVariable(getInput1()))
+			processRemoveVariableInstruction(ec, getInput1().getName());
+		
+		if ( getInput1().getDataType() == DataType.MATRIX ) {
+			String fname = createUniqueFilename();
+			MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
+			setCacheableDataFields(obj);
+			obj.setUpdateType(_updateType);
+			obj.setMarkForLinCache(true);
+			ec.setVariable(getInput1().getName(), obj);
+			if(DMLScript.STATISTICS && _updateType.isInPlace())
+				Statistics.incrementTotalUIPVar();
+		}
+		else if( getInput1().getDataType() == DataType.TENSOR ) {
+			String fname = createUniqueFilename();
+			CacheableData<?> obj = new TensorObject(getInput1().getValueType(), fname);
+			setCacheableDataFields(obj);
+			ec.setVariable(getInput1().getName(), obj);
+		}
+		else if( getInput1().getDataType() == DataType.FRAME ) {
+			String fname = createUniqueFilename();
+			FrameObject fobj = new FrameObject(fname);
+			setCacheableDataFields(fobj);
+			if( _schema != null )
+				fobj.setSchema(_schema); //after metadata
+			ec.setVariable(getInput1().getName(), fobj);
+		}
+		else if ( getInput1().getDataType() == DataType.SCALAR ){
+			//created variable not called for scalars
+			ec.setScalarOutput(getInput1().getName(), null);
+		}
+		else {
+			throw new DMLRuntimeException("Unexpected data type: " + getInput1().getDataType());
+		}
 	}
 
 	private String createUniqueFilename(){

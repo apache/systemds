@@ -124,8 +124,9 @@ public class PrivacyPropagator {
 			case Ctable: 
 				return preprocessCtableInstruction((CtableCPInstruction) inst, ec);
 			case MultiReturnParameterizedBuiltin:
+				return preprocessMultiReturnParameterizedBuiltinInstruction((MultiReturnParameterizedBuiltinCPInstruction) inst, ec);
 			case MultiReturnBuiltin:  
-				return preprocessMultiReturnParameterizedBuiltinInstruction((MultiReturnBuiltinCPInstruction) inst, ec);
+				return preprocessMultiReturnBuiltinInstruction((MultiReturnBuiltinCPInstruction) inst, ec);
 			case ParameterizedBuiltin:
 				return preprocessParameterizedBuiltinInstruction((ParameterizedBuiltinCPInstruction) inst, ec);
 			default:
@@ -139,7 +140,12 @@ public class PrivacyPropagator {
 		return inst;
 	}
 
-	public static Instruction preprocessMultiReturnParameterizedBuiltinInstruction(MultiReturnBuiltinCPInstruction inst, ExecutionContext ec){
+	public static Instruction preprocessMultiReturnParameterizedBuiltinInstruction(MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
+		throwExceptionIfPrivacyActivated(inst, ec);
+		return inst;
+	}
+
+	public static Instruction preprocessMultiReturnBuiltinInstruction(MultiReturnBuiltinCPInstruction inst, ExecutionContext ec){
 		throwExceptionIfPrivacyActivated(inst, ec);
 		return inst;
 	}

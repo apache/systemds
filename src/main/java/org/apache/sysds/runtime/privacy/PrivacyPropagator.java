@@ -302,9 +302,11 @@ public class PrivacyPropagator {
 	}
 
 	private static PrivacyConstraint getInputPrivacyConstraint(ExecutionContext ec, CPOperand input){
-		Data dd = ec.getVariable(input.getName());
-		if ( dd != null && dd instanceof CacheableData)
-			return ((CacheableData<?>) dd).getPrivacyConstraint();
+		if ( input != null && input.getName() != null){
+			Data dd = ec.getVariable(input.getName());
+			if ( dd != null && dd instanceof CacheableData)
+				return ((CacheableData<?>) dd).getPrivacyConstraint();
+		}
 		return null;
 	}
 

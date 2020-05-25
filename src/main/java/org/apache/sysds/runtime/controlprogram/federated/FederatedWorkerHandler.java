@@ -92,7 +92,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	public FederatedResponse constructResponse(FederatedRequest request) {
+	private FederatedResponse constructResponse(FederatedRequest request) {
 		FederatedRequest.FedMethod method = request.getMethod();
 		try {
 			switch (method) {
@@ -228,26 +228,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private Data handlePrivacy(Data dataObject){
-		if ( dataObject instanceof CacheableData<?> ){
-			PrivacyConstraint privacyConstraint = ((CacheableData<?>)dataObject).getPrivacyConstraint();
-			if (privacyConstraint != null){
-				PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
-				switch(privacyLevel){
-					case None:
-						((CacheableData<?>)dataObject).setPrivacyConstraints(null);
-						break;
-					case Private:
-					case PrivateAggregation: 
-						throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
-					default:
-						throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
-				}
-			}
-		}
-		return dataObject;
-	}
-
 	private FederatedResponse executeAggregation(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 2);
 		AggregateUnaryOperator operator = (AggregateUnaryOperator) request.getParam(0);
@@ -290,25 +270,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// result block without correction
 		ret.dropLastRowsOrColumns(operator.aggOp.correction);
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, ret);
-	}
-
-	private MatrixObject handlePrivacy(MatrixObject matrixObject){
-		PrivacyConstraint privacyConstraint = matrixObject.getPrivacyConstraint();
-		if (privacyConstraint != null){
-			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
-			switch(privacyLevel){
-				case None:
-					matrixObject.setPrivacyConstraints(null);
-					break;
-				case Private:
-					throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
-				case PrivateAggregation:
-					break; 
-				default:
-					throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
-			}
-		}
-		return matrixObject;
 	}
 
 	private FederatedResponse executeScalarOperation(FederatedRequest request) {
@@ -367,4 +328,55 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			channelFuture.channel().close().sync();
 		}
 	}
+
+
+	/**
+	 * Throws DMLPrivacyException if data object is CacheableData and privacy constraint is set to private or private aggregation.
+	 * @param dataObject input data object
+	 * @return data object or data object with privacy constraint removed in case the privacy level was none. 
+	 */
+	private Data handlePrivacy(Data dataObject){
+		if ( dataObject instanceof CacheableData<?> ){
+			PrivacyConstraint privacyConstraint = ((CacheableData<?>)dataObject).getPrivacyConstraint();
+			if (privacyConstraint != null){
+				PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+				switch(privacyLevel){
+					case None:
+						((CacheableData<?>)dataObject).setPrivacyConstraints(null);
+						break;
+					case Private:
+					case PrivateAggregation: 
+						throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
+					default:
+						throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
+				}
+			}
+		}
+		return dataObject;
+	}
+
+	/**
+	 * Throws DMLPrivacyException if privacy constraint of matrix object has level privacy.
+	 * @param matrixObject input matrix object
+	 * @return matrix object or matrix object with privacy constraint removed in case the privacy level was none.
+	 */
+	private MatrixObject handlePrivacy(MatrixObject matrixObject){
+		PrivacyConstraint privacyConstraint = matrixObject.getPrivacyConstraint();
+		if (privacyConstraint != null){
+			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+			switch(privacyLevel){
+				case None:
+					matrixObject.setPrivacyConstraints(null);
+					break;
+				case Private:
+					throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
+				case PrivateAggregation:
+					break; 
+				default:
+					throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
+			}
+		}
+		return matrixObject;
+	}
+
 }

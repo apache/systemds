@@ -45,20 +45,25 @@ public class BuiltinComponentsTest extends AutomatedTestBase {
 
 	@Test
 	public void testConnectedComponents11CP() {
-		runConnectedComponentsTest(11, LopProperties.ExecType.CP);
+		runConnectedComponentsTest(11, 0, LopProperties.ExecType.CP);
 	}
 	
 	@Test
 	public void testConnectedComponents201CP() {
-		runConnectedComponentsTest(201, LopProperties.ExecType.CP);
+		runConnectedComponentsTest(201, 0, LopProperties.ExecType.CP);
 	}
 	
 	@Test
 	public void testConnectedComponents2001CP() {
-		runConnectedComponentsTest(2001, LopProperties.ExecType.CP);
+		runConnectedComponentsTest(2001, 0, LopProperties.ExecType.CP);
+	}
+	
+	@Test
+	public void testConnectedComponents11Maxi100CP() {
+		runConnectedComponentsTest(11, 100, LopProperties.ExecType.CP);
 	}
 
-	private void runConnectedComponentsTest(int numVertices, ExecType instType)
+	private void runConnectedComponentsTest(int numVertices, int maxi, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 
@@ -68,7 +73,8 @@ public class BuiltinComponentsTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-args", input("X"), output("R")};
+			programArgs = new String[]{ "-args",
+				input("X"), String.valueOf(maxi), output("R")};
 
 			//generate actual dataset (3 components)
 			double[][] X = new double[numVertices-3][2];

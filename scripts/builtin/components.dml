@@ -40,7 +40,7 @@ m_components = function(Matrix[Double] G, Integer maxi = 0, Boolean verbose = TR
   iter = 1;
 
   # iterative computation of connected components
-  while( diff > 0 & (maxi==0 | maxi<=iter) ) {
+  while( diff > 0 & (maxi==0 | iter<=maxi) ) {
     u = max(rowMaxs(G * t(c)), c);
     diff = sum(u != c)
     c = u; # update assignment

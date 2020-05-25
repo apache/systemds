@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -81,14 +80,14 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	public void federatedL2SVMCPPrivateFederatedX1() throws JSONException {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
 	public void federatedL2SVMCPPrivateFederatedX2() throws JSONException {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
@@ -125,14 +124,14 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	public void federatedL2SVMCPPrivateFederatedAndMatrixX1() throws JSONException {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, privacyConstraints, PrivacyLevel.Private, true, DMLException.class, false, null);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, privacyConstraints, PrivacyLevel.Private, true, DMLException.class, true, DMLException.class);
 	}
 
 	@Test
 	public void federatedL2SVMCPPrivateFederatedAndMatrixX2() throws JSONException {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, privacyConstraints, PrivacyLevel.Private, true, DMLException.class, false, null);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, privacyConstraints, PrivacyLevel.Private, true, DMLException.class, true, DMLException.class);
 	}
 
 	@Test
@@ -149,7 +148,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
@@ -157,7 +156,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
@@ -165,7 +164,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
@@ -174,7 +173,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.Private));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	// Privacy Level PrivateAggregation Combinations
@@ -217,7 +216,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
@@ -225,7 +224,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
@@ -233,7 +232,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("Y", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	@Test
@@ -257,7 +256,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.Private));
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private);
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.Private, false, null, true, DMLException.class);
 	}
 
 	// Require Federated Workers to return matrix

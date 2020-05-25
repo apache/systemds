@@ -189,7 +189,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeMatVecMult(long varID, MatrixBlock vector, boolean isMatVecMult) {
 		MatrixObject matTo = (MatrixObject) _vars.get(varID);
-		handlePrivacy(matTo);
+		matTo = handlePrivacy(matTo);
 		MatrixBlock matBlock1 = matTo.acquireReadAndRelease();
 		// TODO other datatypes
 		AggregateBinaryOperator ab_op = new AggregateBinaryOperator(

@@ -31,10 +31,10 @@ if(check_X == 0){
 }else{
 	Y = as.matrix(readMM(paste(args[1], "Y.mtx", sep="")))
 	intercept = as.logical(args[2])
-	num_classes = as.integer(args[3])
-	epsilon = as.double(args[4])
-	lambda = as.double(args[5])
-	max_iterations = as.integer(args[6])
+	num_classes = max(Y)
+	epsilon = as.double(args[3])
+	lambda = as.double(args[4])
+	max_iterations = as.integer(args[5])
  
 	num_samples = nrow(X)
 	num_features = ncol(X)
@@ -115,5 +115,5 @@ if(check_X == 0){
 	}
 	#print("R model "); print(w)
 	
-	writeMM(as(w, "CsparseMatrix"), paste(args[7], "model", sep=""))
+	writeMM(as(w, "CsparseMatrix"), paste(args[6], "model", sep=""))
 }

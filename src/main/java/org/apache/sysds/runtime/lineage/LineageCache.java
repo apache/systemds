@@ -43,9 +43,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -80,7 +78,7 @@ public class LineageCache
 		// will always fit in memory and hence can be pinned unconditionally
 		if (LineageCacheConfig.isReusable(inst, ec)) {
 			ComputationCPInstruction cinst = (ComputationCPInstruction) inst;
-			LineageItem item = cinst.getLineageItems(ec)[0];
+			LineageItem item = cinst.getLineageItem(ec).getValue();
 			
 			//atomic try reuse full/partial and set placeholder, without
 			//obtaining value to avoid blocking in critical section
@@ -207,7 +205,7 @@ public class LineageCache
 	//TODO why do we need both of these public put methods
 	public static void putMatrix(Instruction inst, ExecutionContext ec, long computetime) {
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
-			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];
+			LineageItem item = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 			//This method is called only to put matrix value
 			MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
 			synchronized( _cache ) {
@@ -221,7 +219,7 @@ public class LineageCache
 			return;
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
 			//if (!isMarkedForCaching(inst, ec)) return;
-			LineageItem item = ((LineageTraceable) inst).getLineageItems(ec)[0];
+			LineageItem item = ((LineageTraceable) inst).getLineageItem(ec).getValue();
 			Data data = ec.getVariable(((ComputationCPInstruction) inst).output);
 			synchronized( _cache ) {
 				if (data instanceof MatrixObject)
@@ -257,11 +255,7 @@ public class LineageCache
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
 			if (boundLI != null)
 				boundLI.resetVisitStatus();
-			if (boundLI == null 
-				|| !LineageCache.probe(li)
-				//TODO remove this brittle constraint (if the placeholder is removed
-				//it might crash threads that are already waiting for its results)
-				|| LineageItemUtils.containsRandDataGen(new HashSet<>(Arrays.asList(liInputs)), boundLI)) {
+			if (boundLI == null || !LineageCache.probe(li)) {
 				AllOutputsCacheable = false;
 			}
 			FuncLIMap.put(li, boundLI);

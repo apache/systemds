@@ -20,22 +20,23 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.lops.Ctable;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap.EntryType;
 
 public class CtableCPInstruction extends ComputationCPInstruction {
-	private final String _outDim1;
-	private final String _outDim2;
-	private final boolean _dim1Literal;
-	private final boolean _dim2Literal;
+	private final CPOperand _outDim1;
+	private final CPOperand _outDim2;
 	private final boolean _isExpand;
 	private final boolean _ignoreZeros;
 
@@ -43,10 +44,8 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
 			boolean ignoreZeros, String opcode, String istr) {
 		super(CPType.Ctable, null, in1, in2, in3, out, opcode, istr);
-		_outDim1 = outputDim1;
-		_dim1Literal = dim1Literal;
-		_outDim2 = outputDim2;
-		_dim2Literal = dim2Literal;
+		_outDim1 = new CPOperand(outputDim1, ValueType.FP64, DataType.SCALAR, dim1Literal);
+		_outDim2 = new CPOperand(outputDim2, ValueType.FP64, DataType.SCALAR, dim2Literal);
 		_isExpand = isExpand;
 		_ignoreZeros = ignoreZeros;
 	}
@@ -98,8 +97,8 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		Ctable.OperationTypes ctableOp = findCtableOperation();
 		ctableOp = _isExpand ? Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
 		
-		long outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (ec.getScalarInput(_outDim1, ValueType.FP64, false)).getLongValue());
-		long outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (ec.getScalarInput(_outDim2, ValueType.FP64, false)).getLongValue());
+		long outputDim1 = ec.getScalarInput(_outDim1).getLongValue();
+		long outputDim2 = ec.getScalarInput(_outDim2).getLongValue();
 		
 		boolean outputDimsKnown = (outputDim1 != -1 && outputDim2 != -1);
 		if ( outputDimsKnown ) {
@@ -177,5 +176,13 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		}
 		
 		ec.setMatrixOutput(output.getName(), resultBlock);
+	}
+	
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		LineageItem[] linputs = !(_outDim1.getName().equals("-1") && _outDim2.getName().equals("-1")) ?
+			LineageItemUtils.getLineage(ec, input1, input2, input3, _outDim1, _outDim2) :
+			LineageItemUtils.getLineage(ec, input1, input2, input3);
+		return Pair.of(output.getName(), new LineageItem(getOpcode(), linputs));
 	}
 }

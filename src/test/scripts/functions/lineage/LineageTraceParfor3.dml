@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=$3, cols=$4, seed=7);
+X = rand(rows=$2, cols=$3, seed=7);
 
 R = matrix(0, 1, ncol(X));
 parfor(i in 1:ncol(X), check=0, opt=None, mode=REMOTE_SPARK) {
@@ -28,4 +28,4 @@ parfor(i in 1:ncol(X), check=0, opt=None, mode=REMOTE_SPARK) {
 }
 
 print(lineage(R));
-write(R, $2);
+write(R, $1);

@@ -95,10 +95,8 @@ public class IfProgramBlock extends ProgramBlock
 			ec.getLineagePath().setBranchPredicateValue(predResult.getBooleanValue());
 			
 		//execute if statement
-		if(predResult.getBooleanValue())
-		{	
-			try 
-			{	
+		if(predResult.getBooleanValue()) {
+			try  {
 				for (int i=0 ; i < _childBlocksIfBody.size() ; i++) {
 					_childBlocksIfBody.get(i).execute(ec);
 				}
@@ -106,13 +104,11 @@ public class IfProgramBlock extends ProgramBlock
 			catch(DMLScriptException e) {
 				throw e;
 			}
-			catch(Exception e)
-			{
+			catch(Exception e) {
 				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statement body ", e);
 			}
 		}
-		else
-		{
+		else {
 			try {
 				for (int i=0 ; i < _childBlocksElseBody.size() ; i++) {
 					_childBlocksElseBody.get(i).execute(ec);

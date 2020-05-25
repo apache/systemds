@@ -1,0 +1,42 @@
+{#
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to you under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ #}
+{% macro generate_call_list(variables) -%}
+{% for input in variables -%}
+  {%- if input.data_type == "matrix" -%}
+    {{ '  ' + "matrix" }} [{{ input.value_type }}] {{ input.identifier_name }}
+  {%- elif input.data_type == "scalar" -%}
+    {{ '  ' + input.value_type }} {{ input.identifier_name }}
+  {%- endif -%}
+  {%- if not loop.last -%},
+{% endif %}
+{%- endfor %}
+{%- endmacro %}
+
+{% macro initialize_variable(variable) -%}
+{%- if variable.data_type == "matrix" -%}
+{{ variable.identifier_name }} = matrix("
+    {%- for value in variable.initializer_values -%}
+    {{ value }}
+    {%- if not loop.last %} {% endif -%}
+    {%- endfor %}",
+    rows={{ variable.shape[0] }},
+    cols={{ variable.shape[1] -}}
+)
+{%- elif variable.data_type == "scalar" -%}
+    {{ input.value_type }} {{ input.identifier_name }} = {{ input.initializer_values[0] }}
+  {%- endif -%}
+{%- endmacro %}

@@ -39,7 +39,7 @@ public class AlgorithmKMeans extends AutomatedTestBase
 
 	//private final static double eps = 1e-5;
 	
-	private final static int rows = 3972;
+	private final static int rows = 2972;
 	private final static int cols = 972;
 		
 	private final static double sparsity1 = 0.7; //dense

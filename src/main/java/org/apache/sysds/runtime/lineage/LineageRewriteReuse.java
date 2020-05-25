@@ -643,14 +643,14 @@ public class LineageRewriteReuse
 		}
 
 		// If the input to tsmm came from cbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
-			LineageItem source = items[0].getInputs()[0];
+			LineageItem source = item.getInputs()[0];
 			if (source.getOpcode().equalsIgnoreCase("cbind")) {
 				//for (LineageItem input : source.getInputs()) {
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input1});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
@@ -669,9 +669,9 @@ public class LineageRewriteReuse
 		}
 
 		// If the input to tsmm came from cbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
-			LineageItem source = items[0].getInputs()[0];
+			LineageItem source = item.getInputs()[0];
 			if (source.getOpcode().equalsIgnoreCase("cbind")) {
 				// check if the appended column is a matrix of 1s
 				LineageItem input2 = source.getInputs()[1];
@@ -682,7 +682,7 @@ public class LineageRewriteReuse
 					return false;
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input1});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 			}
@@ -697,13 +697,13 @@ public class LineageRewriteReuse
 			return false;
 
 		// If the input to tsmm came from rbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
-			LineageItem source = items[0].getInputs()[0];
+			LineageItem source = item.getInputs()[0];
 			if (source.getOpcode().equalsIgnoreCase("rbind")) {
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {input1});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
@@ -722,16 +722,16 @@ public class LineageRewriteReuse
 
 		//TODO: support nary cbind
 		// If the input to tsmm came from cbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		// look for two consecutive cbinds
 		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
-			LineageItem source = items[0].getInputs()[0];
+			LineageItem source = item.getInputs()[0];
 			if (source.getOpcode().equalsIgnoreCase("cbind")) {
 				LineageItem input = source.getInputs()[0];
 				if (input.getOpcode().equalsIgnoreCase("cbind")) {
 					LineageItem L2appin1 = input.getInputs()[0]; 
-					LineageItem tmp = new LineageItem("comb", "cbind", new LineageItem[] {L2appin1, source.getInputs()[1]});
-					LineageItem toProbe = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {tmp});
+					LineageItem tmp = new LineageItem("cbind", new LineageItem[] {L2appin1, source.getInputs()[1]});
+					LineageItem toProbe = new LineageItem(curr.getOpcode(), new LineageItem[] {tmp});
 					if (LineageCache.probe(toProbe)) 
 						inCache.put("lastMatrix", LineageCache.getMatrix(toProbe));
 					// look for the appended column in cache
@@ -750,14 +750,14 @@ public class LineageRewriteReuse
 			return false;
 
 		// If the left input to ba+* came from rbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("ba+*")) {
-			LineageItem left= items[0].getInputs()[0];
-			LineageItem right = items[0].getInputs()[1];
+			LineageItem left= item.getInputs()[0];
+			LineageItem right = item.getInputs()[1];
 			if (left.getOpcode().equalsIgnoreCase("rbind")){
 				LineageItem leftSource = left.getInputs()[0]; //left inpur of rbind = X
 				// create ba+* lineage on top of the input of last append
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {leftSource, right});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {leftSource, right});
 				if (LineageCache.probe(tmp))
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
@@ -775,14 +775,14 @@ public class LineageRewriteReuse
 			return false;
 
 		// If the right input to ba+* came from cbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("ba+*")) {
-			LineageItem left = items[0].getInputs()[0];
-			LineageItem right = items[0].getInputs()[1];
+			LineageItem left = item.getInputs()[0];
+			LineageItem right = item.getInputs()[1];
 			if (right.getOpcode().equalsIgnoreCase("cbind")) {
 				LineageItem rightSource = right.getInputs()[0]; //left inpur of rbind = X
 				// create ba+* lineage on top of the input of last append
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {left, rightSource});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {left, rightSource});
 				if (LineageCache.probe(tmp))
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
@@ -799,10 +799,10 @@ public class LineageRewriteReuse
 			return false;
 
 		// If the right input to ba+* came from cbind of a matrix and ones.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("ba+*")) {
-			LineageItem left = items[0].getInputs()[0];
-			LineageItem right = items[0].getInputs()[1];
+			LineageItem left = item.getInputs()[0];
+			LineageItem right = item.getInputs()[1];
 			if (right.getOpcode().equalsIgnoreCase("cbind")) {
 				LineageItem rightSource1 = right.getInputs()[0]; //left input of cbind is X
 				LineageItem rightSource2 = right.getInputs()[1]; 
@@ -813,7 +813,7 @@ public class LineageRewriteReuse
 				if (!((DataGenCPInstruction)ins).isOnesCol())
 					return false;
 				// create ba+* lineage on top of the input of last append
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {left, rightSource1});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {left, rightSource1});
 				if (LineageCache.probe(tmp))
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 			}
@@ -827,15 +827,15 @@ public class LineageRewriteReuse
 			return false;
 
 		// If the inputs to * came from rbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("*")) {
-			LineageItem left= items[0].getInputs()[0];
-			LineageItem right = items[0].getInputs()[1];
+			LineageItem left= item.getInputs()[0];
+			LineageItem right = item.getInputs()[1];
 			if (left.getOpcode().equalsIgnoreCase("rbind") && right.getOpcode().equalsIgnoreCase("rbind")){
 				LineageItem leftSource = left.getInputs()[0]; //left inpur of rbind = X
 				LineageItem rightSource = right.getInputs()[0]; //right inpur of rbind = Y 
 				// create * lineage on top of the input of last append
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
 				if (LineageCache.probe(tmp))
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended rows in cache
@@ -854,15 +854,15 @@ public class LineageRewriteReuse
 			return false;
 
 		// If the inputs to * came from cbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("*")) {
-			LineageItem left= items[0].getInputs()[0];
-			LineageItem right = items[0].getInputs()[1];
+			LineageItem left= item.getInputs()[0];
+			LineageItem right = item.getInputs()[1];
 			if (left.getOpcode().equalsIgnoreCase("cbind") && right.getOpcode().equalsIgnoreCase("cbind")){
 				LineageItem leftSource = left.getInputs()[0]; //left inpur of cbind = X
 				LineageItem rightSource = right.getInputs()[0]; //right inpur of cbind = Y 
 				// create * lineage on top of the input of last append
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
+				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {leftSource, rightSource});
 				if (LineageCache.probe(tmp))
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended columns in cache
@@ -882,17 +882,17 @@ public class LineageRewriteReuse
 		}
 
 		// If the input to groupedagg came from cbind, look for both the inputs in cache.
-		LineageItem[] items = ((ComputationCPInstruction) curr).getLineageItems(ec);
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
 		if (curr.getOpcode().equalsIgnoreCase("groupedagg")) {
-			LineageItem target = items[0].getInputs()[0];
-			LineageItem groups = items[0].getInputs()[1];
-			LineageItem weights = items[0].getInputs()[2];
-			LineageItem fn = items[0].getInputs()[3];
-			LineageItem ngroups = items[0].getInputs()[4];
+			LineageItem target = item.getInputs()[0];
+			LineageItem groups = item.getInputs()[1];
+			LineageItem weights = item.getInputs()[2];
+			LineageItem fn = item.getInputs()[3];
+			LineageItem ngroups = item.getInputs()[4];
 			if (target.getOpcode().equalsIgnoreCase("cbind")) {
 				// create groupedagg lineage on top of the input of last append
 				LineageItem input1 = target.getInputs()[0];
-				LineageItem tmp = new LineageItem("toProbe", curr.getOpcode(), 
+				LineageItem tmp = new LineageItem(curr.getOpcode(), 
 						new LineageItem[] {input1, groups, weights, fn, ngroups});
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));

@@ -119,7 +119,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		// check if function outputs can be reused from cache
 		LineageItem[] liInputs = DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ?
 			LineageItemUtils.getLineage(ec, _boundInputs) : null;
-		if( reuseFunctionOutputs(liInputs, fpb, ec) )
+		if (!fpb.isNondeterministic() && reuseFunctionOutputs(liInputs, fpb, ec))
 			return; //only if all the outputs are found in cache
 		
 		// create bindings to formal parameters for given function call
@@ -155,8 +155,11 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			functionVariables.put(currFormalParam.getName(), value);
 			
 			//map lineage to function arguments
-			if( lineage != null )
-				lineage.set(currFormalParam.getName(), ec.getLineageItem(input));
+			if( lineage != null ) {
+				LineageItem litem = ec.getLineageItem(input);
+				lineage.set(currFormalParam.getName(), (litem!=null) ? 
+					litem : ec.getLineage().getOrCreate(input));
+			}
 		}
 		
 		// Pin the input variables so that they do not get deleted 
@@ -228,9 +231,9 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 
 		//update lineage cache with the functions outputs
-		if( DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() ) {
+		if (DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() && !fpb.isNondeterministic()) {
 			LineageCache.putValue(fpb.getOutputParams(), liInputs, 
-					getCacheFunctionName(_functionName, fpb), ec, t1-t0);
+					getCacheFunctionName(_functionName, fpb), fn_ec, t1-t0);
 			//FIXME: send _boundOutputNames instead of fpb.getOutputParams as 
 			//those are already replaced by boundoutput names in the lineage map.
 		}

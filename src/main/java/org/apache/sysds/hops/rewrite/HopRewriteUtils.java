@@ -524,6 +524,13 @@ public class HopRewriteUtils
 			&& ((DataGenOp)hop).hasConstantValue(value);
 	}
 	
+	public static boolean isDataGenOpWithNonDeterminism(Hop hop) {
+		if (!isDataGenOp(hop, OpOpDG.RAND, OpOpDG.SAMPLE))
+			return false;
+		return isDataGenOp(hop, OpOpDG.SAMPLE) || (isDataGenOp(hop, OpOpDG.RAND) 
+			&& !((DataGenOp)hop).hasConstantValue() && ((DataGenOp)hop).hasUnspecifiedSeed());
+	}
+	
 	public static Hop getDataGenOpConstantValue(Hop hop) {
 		return ((DataGenOp) hop).getConstantValue();
 	}
@@ -576,6 +583,10 @@ public class HopRewriteUtils
 		return createReorg(input, ReOrgOp.TRANS);
 	}
 	
+	public static ReorgOp createReorg(Hop input, String rop) {
+		return createReorg(input, ReOrgOp.valueOfByOpcode(rop));
+	}
+	
 	public static ReorgOp createReorg(Hop input, ReOrgOp rop) {
 		ReorgOp reorg = new ReorgOp(input.getName(), input.getDataType(), input.getValueType(), rop, input);
 		reorg.setBlocksize(input.getBlocksize());
@@ -597,22 +608,19 @@ public class HopRewriteUtils
 		return createUnary(input, OpOp1.valueOfByOpcode(type));
 	}
 	
-	public static UnaryOp createUnary(Hop input, OpOp1 type) 
-	{
-		DataType dt = (type==OpOp1.CAST_AS_SCALAR) ? DataType.SCALAR : 
+	public static UnaryOp createUnary(Hop input, OpOp1 type)  {
+		DataType dt = type.isScalarOutput() ? DataType.SCALAR :
 			(type==OpOp1.CAST_AS_MATRIX) ? DataType.MATRIX : input.getDataType();
 		ValueType vt = (type==OpOp1.CAST_AS_MATRIX) ? ValueType.FP64 : input.getValueType();
 		UnaryOp unary = new UnaryOp(input.getName(), dt, vt, type, input);
 		unary.setBlocksize(input.getBlocksize());
-		if( type == OpOp1.CAST_AS_SCALAR || type == OpOp1.CAST_AS_MATRIX ) {
-			int dim = (type==OpOp1.CAST_AS_SCALAR) ? 0 : 1;
+		if( type.isScalarOutput() || type == OpOp1.CAST_AS_MATRIX ) {
+			int dim = type.isScalarOutput() ? 0 : 1;
 			int blksz = (type==OpOp1.CAST_AS_SCALAR) ? 0 : ConfigurationManager.getBlocksize();
 			setOutputParameters(unary, dim, dim, blksz, -1);
 		}
-		
 		copyLineNumbers(input, unary);
-		unary.refreshSizeInformation();	
-		
+		unary.refreshSizeInformation();
 		return unary;
 	}
 	
@@ -674,7 +682,6 @@ public class HopRewriteUtils
 		mmult.setBlocksize(left.getBlocksize());
 		copyLineNumbers(left, mmult);
 		mmult.refreshSizeInformation();
-		
 		return mmult;
 	}
 	
@@ -683,7 +690,6 @@ public class HopRewriteUtils
 		pbop.setBlocksize(input.getBlocksize());
 		copyLineNumbers(input, pbop);
 		pbop.refreshSizeInformation();
-		
 		return pbop;
 	}
 	
@@ -767,14 +773,25 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
-	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, String opcode) {
-		return createTernaryOp(mleft, smid, mright, OpOp3.valueOfCode(opcode));
+	public static TernaryOp createTernary(Hop mleft, Hop smid, Hop mright, String opcode) {
+		return createTernary(mleft, smid, mright, OpOp3.valueOfByOpcode(opcode));
 	}
 	
-	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
-		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, mleft, smid, mright);
-		ternOp.setBlocksize(mleft.getBlocksize());
+	public static TernaryOp createTernary(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
+		//NOTe: for ifelse it's sufficient to check mright as smid==mright
+		DataType dt = (op == OpOp3.IFELSE) ? mright.getDataType() : DataType.MATRIX;
+		ValueType vt = (op == OpOp3.IFELSE) ? mright.getValueType() : ValueType.FP64;
+		TernaryOp ternOp = new TernaryOp("tmp", dt, vt, op, mleft, smid, mright);
+		ternOp.setBlocksize(Math.max(mleft.getBlocksize(), mright.getBlocksize()));
 		copyLineNumbers(mleft, ternOp);
+		ternOp.refreshSizeInformation();
+		return ternOp;
+	}
+	
+	public static TernaryOp createTernary(Hop in1, Hop in2, Hop in3, Hop in4, Hop in5, OpOp3 op) {
+		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, in1, in2, in3, in4, in5);
+		ternOp.setBlocksize(Math.max(in1.getBlocksize(), in2.getBlocksize()));
+		copyLineNumbers(in1, ternOp);
 		ternOp.refreshSizeInformation();
 		return ternOp;
 	}

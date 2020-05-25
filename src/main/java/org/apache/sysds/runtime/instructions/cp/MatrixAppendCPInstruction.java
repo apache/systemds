@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -56,10 +57,10 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction impleme
 	}
 
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		//TODO: break append to cbind and rbind for full compilation chain
 		String opcode = _type.toString().toLowerCase();
-		return new LineageItem[]{new LineageItem(output.getName(),
-			opcode, LineageItemUtils.getLineage(ec, input1, input2))};
+		return Pair.of(output.getName(),
+			new LineageItem(opcode, LineageItemUtils.getLineage(ec, input1, input2)));
 	}
 }

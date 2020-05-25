@@ -209,11 +209,13 @@ SYSTEMDS-250 Extended Slice Finding
  * 251 Alternative slice enumeration approach                         OK
  * 252 Initial data slicing implementation Python                     OK
  * 253 Distributed slicing algorithms (task/data parallel)            OK
+ * 254 Consolidation and fixes distributed slice finding              OK
 
 SYSTEMDS-260 Misc Tools
  * 261 Stable marriage algorithm                                      OK
  * 262 Data augmentation tool for data cleaning                       OK
- * 263 ONNX graph importer/exporter
+ * 263 ONNX graph importer (Python API, docs, tests)                  OK
+ * 264 ONNX graph exporter
 
 SYSTEMDS-270 Compressed Matrix Blocks
  * 271 Reintroduce compressed matrix blocks from SystemML             OK
@@ -271,12 +273,13 @@ SYSTEMDS-330 Lineage Tracing, Reuse and Integration
  * 336 Better use of cache status to handle multithreading
  * 337 Adjust disk I/O speed by recording actual time taken           OK
  * 338 Extended lineage tracing (rmEmpty, lists), partial rewrites    OK
+ * 339 Lineage tracing robustness (indexed updates, algorithms)
  
 SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
  * 341 Finalize unmarking of loop dependent operations
  * 342 Mark functions as last-use to enable early eviction
  * 343 Identify equal last level HOPs to ensure SB-level reuse
- * 344 Unmark functions/SBs containing non-determinism for caching
+ * 344 Unmark functions/SBs containing non-determinism for caching    OK
  * 345 Compiler assisted cache configuration
 
 SYSTEMDS-350 Data Cleaning Framework
@@ -299,6 +302,9 @@ SYSTEMDS-380 Memory Footprint
 SYSTEMDS-390 New Builtin Functions IV
  * 391 New GLM builtin function (from algorithms)                     OK
  * 392 Builtin function for missing value imputation via FDs          OK
+ * 393 Builtin to find Connected Components of a graph                OK
+ * 394 Builtin for one-hot encoding of matrix (not frame), see table  OK
+ * 395 SVM rework and utils (confusionMatrix, msvmPredict)            OK
 
 Others:
  * Break append instruction to cbind and rbind 

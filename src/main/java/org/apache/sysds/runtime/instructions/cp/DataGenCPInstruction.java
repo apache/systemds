@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ValueType;
@@ -37,6 +38,7 @@ import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
 
 public class DataGenCPInstruction extends UnaryCPInstruction {
 
@@ -128,14 +130,16 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	}
 
 	public long getRows() {
-		return rows.isLiteral() ? Long.parseLong(rows.getName()) : -1;
+		return rows.isLiteral() ? UtilFunctions.parseToLong(rows.getName()) : -1;
 	}
 
 	public long getCols() {
-		return cols.isLiteral() ? Long.parseLong(cols.getName()) : -1;
+		return cols.isLiteral() ? UtilFunctions.parseToLong(cols.getName()) : -1;
 	}
 
-	public String getDims() { return dims.getName(); }
+	public String getDims() { 
+		return dims.getName();
+	}
 	
 	public int getBlocksize() {
 		return blocksize;
@@ -167,6 +171,18 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	
 	public boolean isOnesCol() {
 		return minValue == maxValue && minValue == 1 && sparsity == 1 && getCols() == 1;
+	}
+	
+	public long getFrom() {
+		return seq_from.isLiteral() ? UtilFunctions.parseToLong(seq_from.getName()) : -1;
+	}
+	
+	public long getTo() {
+		return seq_to.isLiteral() ? UtilFunctions.parseToLong(seq_to.getName()) : -1;
+	}
+	
+	public long getIncr() {
+		return seq_incr.isLiteral() ? UtilFunctions.parseToLong(seq_incr.getName()) : -1;
 	}
 
 	public static DataGenCPInstruction parseInstruction(String str)
@@ -369,18 +385,42 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	}
 
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String tmpInstStr = instString;
-		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
-			//generate pseudo-random seed (because not specified)
-			if (runtimeSeed == null)
-				runtimeSeed = (minValue == maxValue && sparsity == 1) ? 
-					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
-			int position = (method == OpOpDG.RAND) ? SEED_POSITION_RAND :
-					(method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
-			tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
-							tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
+		
+		switch(method) {
+			case RAND:
+			case SAMPLE: {
+				if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
+					//generate pseudo-random seed (because not specified)
+					if (runtimeSeed == null)
+						runtimeSeed = (minValue == maxValue && sparsity == 1) ? 
+							DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
+					int position = (method == OpOpDG.RAND) ? SEED_POSITION_RAND :
+						(method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
+					tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
+						tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
+				}
+				tmpInstStr = replaceNonLiteral(tmpInstStr, rows, 2, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, cols, 3, ec);
+				break;
+			}
+			case SEQ: {
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_from, 5, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_to, 6, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_incr, 7, ec);
+				break;
+			}
+			default:
+				throw new DMLRuntimeException("Unsupported datagen op: "+method);
 		}
-		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
+		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
+	}
+	
+	private static String replaceNonLiteral(String inst, CPOperand op, int pos, ExecutionContext ec) {
+		if( !op.isLiteral() )
+			inst = InstructionUtils.replaceOperand(inst, pos,
+				new CPOperand(ec.getScalarInput(op)).getLineageLiteral());
+		return inst;
 	}
 }

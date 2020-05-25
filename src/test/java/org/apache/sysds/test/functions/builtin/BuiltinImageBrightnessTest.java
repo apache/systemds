@@ -73,7 +73,7 @@ public class BuiltinImageBrightnessTest extends AutomatedTestBase
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-stats", "-nvargs",
+			programArgs = new String[]{"-nvargs",
 					"in_file=" + input("A"),
 					"out_file=" + output("B"),
 			};

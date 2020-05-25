@@ -23,21 +23,23 @@
 #
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
+# NAME                              TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# X                                 String   ---    Location to read matrix X with the input data records
-# k                                 Int      ---    Number of centroids
-# runs                              Int       10    Number of runs (with different initial centroids)
-# max_iter                          Int     1000    Maximum number of iterations per run
-# eps                               Double 0.000001 Tolerance (epsilon) for WCSS change ratio
-# is_verbose                        Boolean FALSE   do not print per-iteration stats
-# avg_sample_size_per_centroid      Int       50    Average number of records per centroid in data samples
+# X                                 Double    ---      The input Matrix to do KMeans on.
+# k                                 Int       ---      Number of centroids
+# runs                              Int       10       Number of runs (with different initial centroids)
+# max_iter                          Int       1000     Maximum number of iterations per run
+# eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio
+# is_verbose                        Boolean   FALSE    do not print per-iteration stats
+# avg_sample_size_per_centroid      Int       50       Average number of records per centroid in data samples
 #
 #
 # RETURN VALUES
 # ----------------------------------------------------------------------------
-# Y     String  "Y.mtx" Location to store the mapping of records to centroids
-# C     String  "C.mtx" Location to store the output matrix with the centroids
+# NAME     TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# Y        String    "Y.mtx"  The mapping of records to centroids
+# C        String    "C.mtx"  The output matrix with the centroids
 # ----------------------------------------------------------------------------
 
 
@@ -60,8 +62,8 @@ m_kmeans = function(Matrix[Double] X, Integer k = 0, Integer runs = 10, Integer 
 
   print ("Taking data samples for initialization...");
 
-  [sample_maps, samples_vs_runs_map, sample_block_size] =
-  get_sample_maps (num_records, num_runs, num_centroids * avg_sample_size_per_centroid);
+  [sample_maps, samples_vs_runs_map, sample_block_size] = get_sample_maps(
+    num_records, num_runs, num_centroids * avg_sample_size_per_centroid);
 
   is_row_in_samples = rowSums (sample_maps);
   X_samples = sample_maps %*% X;
@@ -230,7 +232,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
     # Replace all sample record ids over "num_records" (i.e. out of range) by "num_records + 1":
     is_sample_rec_id_within_range = (sample_rec_ids <= num_records);
     sample_rec_ids = sample_rec_ids * is_sample_rec_id_within_range
-    + (num_records + 1) * (1 - is_sample_rec_id_within_range);
+      + (num_records + 1) * (1 - is_sample_rec_id_within_range);
 
     # Rearrange all samples (and their out-of-range indicators) into one column-vector:
     sample_rec_ids = matrix (sample_rec_ids, rows = num_rows, cols = 1, byrow = FALSE);

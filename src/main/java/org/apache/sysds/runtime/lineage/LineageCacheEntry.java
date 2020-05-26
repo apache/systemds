@@ -33,6 +33,8 @@ public class LineageCacheEntry {
 	protected long _computeTime;
 	protected long _timestamp = 0;
 	protected LineageCacheStatus _status;
+	protected LineageCacheEntry _prevEntry;
+	protected LineageCacheEntry _nextEntry;
 	protected LineageItem _origItem;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
@@ -42,6 +44,8 @@ public class LineageCacheEntry {
 		_SOval = Sval;
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		_prevEntry = null;
+		_nextEntry = null;
 		_origItem = null;
 	}
 	

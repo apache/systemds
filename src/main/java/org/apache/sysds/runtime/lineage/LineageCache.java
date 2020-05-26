@@ -336,14 +336,23 @@ public class LineageCache
 			else
 				e.setValue(oe.getSOValue(), computetime);
 			e._origItem = probeItem; 
+			// Add the SB/func entry to the end of the list of items pointing to the same data.
+			// No cache size update is necessary.
+			LineageCacheEntry tmp = oe;
+			while (tmp._nextEntry != null)
+				tmp = tmp._nextEntry;
+			tmp._nextEntry = e;
+			e._prevEntry = tmp;
+			if (e._nextEntry != null )
+				System.out.println("next = prev");
 			
 			//maintain order for eviction
 			LineageCacheEviction.addEntry(e);
 
-			long size = oe.getSize();
+			/*long size = oe.getSize();
 			if(!LineageCacheEviction.isBelowThreshold(size)) 
 				LineageCacheEviction.makeSpace(_cache, size);
-			LineageCacheEviction.updateSize(size, true);
+			LineageCacheEviction.updateSize(size, true);*/
 		}
 		else
 			_cache.remove(item);    //remove the placeholder

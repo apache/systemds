@@ -109,7 +109,10 @@ public class LineageCacheStatistics {
 		// Number of deletions from cache (including spilling).
 		_numMemDel.increment();
 	}
-
+	
+	public static long getMemDeletes() {
+		return _numMemDel.longValue();
+	}
 
 	public static void incrementFSReadTime(long delta) {
 		// Total time spent on reading from FS.

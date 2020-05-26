@@ -393,10 +393,9 @@ public class LibMatrixBincell
 						int alen = a.size(i);
 						int[] aix = a.indexes(i);
 						double[] avals = a.values(i);
-						for( int j=apos; j<apos+alen; j++ )
-						{
+						for( int j=apos; j<apos+alen; j++ ) {
 							//empty left
-							for( int k = lastIx+1; k<aix[j]; k++ ){
+							for( int k = lastIx+1; !skipEmpty&&k<aix[j]; k++ ){
 								double v = op.fn.execute( 0, v2 );
 								ret.appendValue(i, k, v);
 							}
@@ -408,7 +407,7 @@ public class LibMatrixBincell
 					}
 					
 					//empty left
-					for( int k = lastIx+1; k<clen; k++ ){
+					for( int k = lastIx+1; !skipEmpty&&k<clen; k++ ){
 						double v = op.fn.execute( 0, v2 );
 						ret.appendValue(i, k, v);
 					}
@@ -429,8 +428,7 @@ public class LibMatrixBincell
 					int alen = a.size(i);
 					int[] aix = a.indexes(i);
 					double[] avals = a.values(i);
-					for( int j=apos; j<apos+alen; j++ )
-					{
+					for( int j=apos; j<apos+alen; j++ ) {
 						//empty left
 						for( int k=lastIx+1; !skipEmpty&&k<aix[j]; k++ ){
 							double v2 = m2.quickGetValue(0, k);
@@ -440,7 +438,7 @@ public class LibMatrixBincell
 						//actual value
 						double v2 = m2.quickGetValue(0, aix[j]);
 						double v = op.fn.execute( avals[j], v2 );
-						ret.appendValue(i, aix[j], v);	
+						ret.appendValue(i, aix[j], v);
 						lastIx = aix[j];
 					}
 				}

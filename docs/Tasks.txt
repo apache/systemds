@@ -257,8 +257,12 @@ SYSTEMDS-310 Python Bindings
  * 312 Python 3.6 compatibility                                       OK
  * 313 Python Documentation upload via Github Actions                 OK
  * 314 Python SystemDS context manager                                OK
+ * 314a Change py4j interaction using py4j for termination not stdin
  * 315 Python Federated Matrices Tests                                OK
  * 316 Extended Python API (rand, lm, mm)                             OK
+ * 317 Python Rerun with different inputs without recompilation
+ * 318 Python Multiple outputs
+ * 319 Python Caching of intermediates
 
 SYSTEMDS-320 Merge SystemDS into Apache SystemML                      OK
  * 321 Merge histories of SystemDS and SystemML                       OK

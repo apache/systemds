@@ -50,9 +50,9 @@ src/main/python/NOTICE
 src/main/python/dist
 src/main/python/docs/build
 src/main/python/docs/source/_build
-src/main/python/tests/onnx/output_test
-src/main/python/tests/onnx/dml_output
-src/main/python/tests/onnx/test_models/*.onnx
+src/main/python/tests/onnx_systemds/output_test
+src/main/python/tests/onnx_systemds/dml_output
+src/main/python/tests/onnx_systemds/test_models/*.onnx
 
 # User configuration files
 conf/SystemDS-config.xml

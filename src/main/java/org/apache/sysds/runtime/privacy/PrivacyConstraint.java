@@ -25,25 +25,25 @@ package org.apache.sysds.runtime.privacy;
 public class PrivacyConstraint
 {
 
-    public enum PrivacyLevel {
-        None,               // No data exchange constraints. Data can be shared with anyone.
-        Private,            // Data cannot leave the origin.
-        PrivateAggregation  // Only aggregations of the data can leave the origin.
-    }
+	public enum PrivacyLevel {
+		None,				// No data exchange constraints. Data can be shared with anyone.
+		Private,			// Data cannot leave the origin.
+		PrivateAggregation	// Only aggregations of the data can leave the origin.
+	}
 
-    protected PrivacyLevel privacyLevel = PrivacyLevel.None;
+	protected PrivacyLevel privacyLevel = PrivacyLevel.None;
 
-    public PrivacyConstraint(){}
+	public PrivacyConstraint(){}
 
-    public PrivacyConstraint(PrivacyLevel privacyLevel) {
-        setPrivacyLevel(privacyLevel);
-    }
+	public PrivacyConstraint(PrivacyLevel privacyLevel) {
+		setPrivacyLevel(privacyLevel);
+	}
 
-    public void setPrivacyLevel(PrivacyLevel privacyLevel){
-        this.privacyLevel = privacyLevel;
-    }
+	public void setPrivacyLevel(PrivacyLevel privacyLevel){
+		this.privacyLevel = privacyLevel;
+	}
 
-    public PrivacyLevel getPrivacyLevel(){
-        return privacyLevel;
-    }
+	public PrivacyLevel getPrivacyLevel(){
+		return privacyLevel;
+	}
 }

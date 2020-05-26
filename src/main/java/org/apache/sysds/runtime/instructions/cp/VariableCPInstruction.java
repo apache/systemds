@@ -1031,7 +1031,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				else {
 					mo.exportData(fname, outFmt, _formatProperties);
 				}
-				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc,  FileFormat.CSV, _formatProperties, mo.getPrivacyConstraint());
+				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, FileFormat.CSV, _formatProperties, mo.getPrivacyConstraint());
 			}
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);

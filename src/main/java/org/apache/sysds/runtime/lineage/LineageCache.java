@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -255,7 +256,7 @@ public class LineageCache
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
 			if (boundLI != null)
 				boundLI.resetVisitStatus();
-			if (boundLI == null || !LineageCache.probe(li)) {
+			if (boundLI == null || !LineageCache.probe(li) || !LineageCache.probe(boundLI)) {
 				AllOutputsCacheable = false;
 			}
 			FuncLIMap.put(li, boundLI);
@@ -300,7 +301,7 @@ public class LineageCache
 			LineageCacheEviction.updateSize(size, true);
 		}
 		
-		// Place the entry at head position.
+		// Place the entry in the weighted queue.
 		LineageCacheEviction.addEntry(newItem);
 		
 		_cache.put(key, newItem);
@@ -310,8 +311,7 @@ public class LineageCache
 	
 	private static LineageCacheEntry getIntern(LineageItem key) {
 		// This method is called only when entry is present either in cache or in local FS.
-		if (_cache.containsKey(key)) {
-			// Read and put the entry at head.
+		if (_cache.containsKey(key) && _cache.get(key).getCacheStatus() != LineageCacheStatus.SPILLED) {
 			LineageCacheEntry e = _cache.get(key);
 			// Maintain order for eviction
 			LineageCacheEviction.getEntry(e);
@@ -336,14 +336,16 @@ public class LineageCache
 			else
 				e.setValue(oe.getSOValue(), computetime);
 			e._origItem = probeItem; 
+			// Add the SB/func entry to the end of the list of items pointing to the same data.
+			// No cache size update is necessary.
+			LineageCacheEntry tmp = oe;
+			// Maintain _origItem as head.
+			while (tmp._nextEntry != null)
+				tmp = tmp._nextEntry;
+			tmp._nextEntry = e;
 			
 			//maintain order for eviction
 			LineageCacheEviction.addEntry(e);
-
-			long size = oe.getSize();
-			if(!LineageCacheEviction.isBelowThreshold(size)) 
-				LineageCacheEviction.makeSpace(_cache, size);
-			LineageCacheEviction.updateSize(size, true);
 		}
 		else
 			_cache.remove(item);    //remove the placeholder

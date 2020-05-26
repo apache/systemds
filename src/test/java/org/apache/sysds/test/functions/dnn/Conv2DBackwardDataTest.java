@@ -32,7 +32,6 @@ import org.apache.sysds.test.TestUtils;
 
 public class Conv2DBackwardDataTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_NAME = "Conv2DBackwardDataTest";
 	private final static String TEST_DIR = "functions/tensor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + Conv2DBackwardDataTest.class.getSimpleName() + "/";
@@ -158,7 +157,7 @@ public class Conv2DBackwardDataTest extends AutomatedTestBase
 			String sparseVal2 = (""+sparse2).toUpperCase();
 			
 			long P = DnnUtils.getP(imgSize, filterSize, stride, pad);
-			programArgs = new String[]{"-explain", "-args",  "" + imgSize, "" + numImg, 
+			programArgs = new String[]{"-args",  "" + imgSize, "" + numImg, 
 					"" + numChannels, "" + numFilters, 
 					"" + filterSize, "" + stride, "" + pad,
 					"" + P, "" + P, 

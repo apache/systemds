@@ -20,11 +20,11 @@
 #
 #-------------------------------------------------------------
 
-if [ "$#" -ne 1 ]; then
-	echo "Usage:   "$0" <federatedTest>"
-	echo "Example: "$0" ./tests/federated/test_federated_basic.py"
-	exit
-fi
+# if [ "$#" -ne 0 ]; then
+# 	echo "Usage:   "$0" <federatedTest>"
+# 	echo "Example: "$0" tests/federated/test_federated_basic.py"
+# 	exit
+# fi
 
 # FIELDS
 workerdir="tests/federated/worker/"
@@ -44,7 +44,7 @@ Fed2=$!
 echo "Starting workers" && sleep 3 && echo "Starting tests"
 
 # Run test
-python $1 >$log 2>&1
+python -m unittest discover -s tests/federated -p 'test_*.py' $1 >$log 2>&1
 pkill -P $Fed1
 pkill -P $Fed2
 

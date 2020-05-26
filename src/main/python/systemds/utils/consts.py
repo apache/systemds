@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -16,7 +16,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
+# -------------------------------------------------------------
+
 from typing import Union
 
 MODULE_NAME = 'systemds'
@@ -24,4 +25,3 @@ VALID_INPUT_TYPES = Union['DAGNode', str, int, float, bool]
 BINARY_OPERATIONS = ['+', '-', '/', '//', '*', '<', '<=', '>', '>=', '==', '!=', '%*%']
 # TODO add numpy array and implement for numpy array
 VALID_ARITHMETIC_TYPES = Union['DAGNode', int, float]
-

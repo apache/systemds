@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,10 +17,10 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
-from .matrix import *
-from .operation_node import *
+from systemds.matrix.matrix import Matrix
+from systemds.matrix.federated import Federated
+from systemds.matrix import data_gen
 
-__all__ = matrix.__all__
-__all__ += operation_node.__all__
+__all__ = [Matrix, Federated, data_gen]

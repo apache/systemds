@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 from typing import Any, Collection, KeysView, Tuple, Union, Optional, Dict, TYPE_CHECKING
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 class DMLScript:
-    """DMLScript is the class used to describe our intended behaviour in DML. This script can be then executed to
+    """DMLScript is the class used to describe our intended behavior in DML. This script can be then executed to
     get the results.
 
     TODO caching
@@ -85,11 +85,13 @@ class DMLScript:
         if self.prepared_script is None:
             input_names = self.inputs.keys()
             connection = entry_point.getConnection()
-            self.prepared_script = connection.prepareScript(self.dml_script,
-                                                            _list_to_java_array(gateway, input_names),
-                                                            _list_to_java_array(gateway, [self.out_var_name]))
+            self.prepared_script = connection.prepareScript(
+                self.dml_script,
+                _list_to_java_array(gateway, input_names),
+                _list_to_java_array(gateway, [self.out_var_name]))
             for (name, input_node) in self.inputs.items():
-                input_node.pass_python_data_to_prepared_script(gateway.jvm, name, self.prepared_script)
+                input_node.pass_python_data_to_prepared_script(
+                    gateway.jvm, name, self.prepared_script)
 
             if lineage:
                 connection.setLineage(True)
@@ -106,11 +108,13 @@ class DMLScript:
         if self.prepared_script is None:
             input_names = self.inputs.keys()
             connection = entry_point.getConnection()
-            self.prepared_script = connection.prepareScript(self.dml_script,
-                                                            _list_to_java_array(gateway, input_names),
-                                                            _list_to_java_array(gateway, [self.out_var_name]))
+            self.prepared_script = connection.prepareScript(
+                self.dml_script,
+                _list_to_java_array(gateway, input_names),
+                _list_to_java_array(gateway, [self.out_var_name]))
             for (name, input_node) in self.inputs.items():
-                input_node.pass_python_data_to_prepared_script(gateway.jvm, name, self.prepared_script)
+                input_node.pass_python_data_to_prepared_script(
+                    gateway.jvm, name, self.prepared_script)
 
             connection.setLineage(True)
 
@@ -138,14 +142,16 @@ class DMLScript:
             return str(dag_node)
         # for each node do the dfs operation and save the variable names in `input_var_names`
         # get variable names of unnamed parameters
-        unnamed_input_vars = [self._dfs_dag_nodes(input_node) for input_node in dag_node.unnamed_input_nodes]
+        unnamed_input_vars = [self._dfs_dag_nodes(
+            input_node) for input_node in dag_node.unnamed_input_nodes]
         # get variable names of named parameters
         named_input_vars = {name: self._dfs_dag_nodes(input_node) for name, input_node in
                             dag_node.named_input_nodes.items()}
         curr_var_name = self._next_unique_var()
         if dag_node.is_python_local_data:
             self.add_input_from_python(curr_var_name, dag_node)
-        code_line = dag_node.code_line(curr_var_name, unnamed_input_vars, named_input_vars)
+        code_line = dag_node.code_line(
+            curr_var_name, unnamed_input_vars, named_input_vars)
         self.add_code(code_line)
         return curr_var_name
 

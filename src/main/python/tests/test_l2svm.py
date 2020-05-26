@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,64 +17,50 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
-import warnings
 import unittest
 
-import os
-import sys
-from typing import Tuple
-
 import numpy as np
-
-path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
-sys.path.insert(0, path)
-
 from systemds.context import SystemDSContext
 from systemds.matrix import Matrix
+from systemds.operator.algorithm import l2svm
 
-sds = SystemDSContext()
 
 class TestL2svm(unittest.TestCase):
 
-    def setUp(self):
-        warnings.filterwarnings(action="ignore",
-                                message="unclosed",
-                                category=ResourceWarning)
+    sds: SystemDSContext = None
 
-    def tearDown(self):
-        warnings.filterwarnings(action="ignore",
-                                message="unclosed",
-                                category=ResourceWarning)
+    @classmethod
+    def setUpClass(cls):
+        cls.sds = SystemDSContext()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sds.close()
 
     def test_10x10(self):
-        features, labels = generate_matrices_for_l2svm(10, seed=1304)
-        # TODO calculate reference
-        model = features.l2svm(labels).compute()
-        self.assertTrue(np.allclose(model, np.array([[-0.03277166],
-                                                     [-0.00820981],
-                                                     [0.00657115],
-                                                     [0.03228764],
-                                                     [-0.01685067],
-                                                     [0.00892918],
-                                                     [0.00945636],
-                                                     [0.01514383],
-                                                     [0.0713272],
-                                                     [-0.05113976]])))
+        features, labels = self.generate_matrices_for_l2svm(10, seed=1304)
+        model = l2svm(features, labels).compute()
+        # TODO make better verification.
+        self.assertTrue(np.allclose(
+            model,
+            np.array([[-0.03277166], [-0.00820981], [0.00657115],
+                      [0.03228764], [-0.01685067], [0.00892918],
+                      [0.00945636], [0.01514383], [0.0713272],
+                      [-0.05113976]])))
 
-
-def generate_matrices_for_l2svm(dims: int, seed: int = 1234) -> Tuple[Matrix, Matrix]:
-    np.random.seed(seed)
-    m1 = np.array(np.random.randint(100, size=dims * dims) + 1.01, dtype=np.double)
-    m1.shape = (dims, dims)
-    m2 = np.zeros((dims, 1))
-    for i in range(dims):
-        if np.random.random() > 0.5:
-            m2[i][0] = 1
-    return sds.matrix(m1), sds.matrix(m2)
+    def generate_matrices_for_l2svm(self, dims: int, seed: int = 1234):
+        np.random.seed(seed)
+        m1 = np.array(np.random.randint(
+            100, size=dims * dims) + 1.01, dtype=np.double)
+        m1.shape = (dims, dims)
+        m2 = np.zeros((dims, 1))
+        for i in range(dims):
+            if np.random.random() > 0.5:
+                m2[i][0] = 1
+        return Matrix(self.sds, m1), Matrix(self.sds, m2)
 
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    sds.close()

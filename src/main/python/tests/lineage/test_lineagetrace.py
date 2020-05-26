@@ -19,42 +19,45 @@
 #
 # -------------------------------------------------------------
 
-import warnings
-import unittest
 import os
 import shutil
 import sys
-import re
+import unittest
 
-path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../")
-sys.path.insert(0, path)
 from systemds.context import SystemDSContext
+from systemds.matrix.data_gen import full
 
-sds = SystemDSContext()
+os.environ['SYSDS_QUIET'] = "1"
 
 test_dir = os.path.join("tests", "lineage")
 temp_dir = os.path.join(test_dir, "temp")
 
+
 class TestLineageTrace(unittest.TestCase):
-    def setUp(self):
-        warnings.filterwarnings(
-            action="ignore", message="unclosed", category=ResourceWarning
-        )
+
+    sds: SystemDSContext = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sds = SystemDSContext()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sds.close()
 
     def tearDown(self):
-        warnings.filterwarnings(
-            action="ignore", message="unclosed", category=ResourceWarning
-        )
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_compare_trace1(self):  # test getLineageTrace() on an intermediate
-        m = sds.full((10, 10), 1)
+        m = full(self.sds, (10, 10), 1)
         m_res = m + m
 
-        python_trace = [x.strip().split("°") for x in m_res.get_lineage_trace().split("\n")]
+        python_trace = [x.strip().split("°")
+                        for x in m_res.get_lineage_trace().split("\n")]
 
         dml_script = (
-            "x = matrix(1, rows=10, cols=10);\n" 
-            "y = x + x;\n" 
+            "x = matrix(1, rows=10, cols=10);\n"
+            "y = x + x;\n"
             "print(lineage(y));\n"
         )
 
@@ -68,6 +71,7 @@ class TestLineageTrace(unittest.TestCase):
 
 # TODO add more tests cases.
 
+
 def create_execute_and_trace_dml(script: str, name: str):
     script_file_name = temp_dir + "/" + name + ".dml"
 
@@ -79,9 +83,10 @@ def create_execute_and_trace_dml(script: str, name: str):
 
     # Call SYSDS!
     result_file_name = temp_dir + "/" + name + ".txt"
-    os.system("systemds " + script_file_name + " > " + result_file_name)
+    os.system("systemds " + script_file_name + " > " + result_file_name + " 2> /dev/null")
 
     return parse_trace(result_file_name)
+
 
 def parse_trace(path: str):
     pointer = 0
@@ -96,8 +101,6 @@ def parse_trace(path: str):
     # Remove the last 3 lines of the System output because they are after lintrace.
     return data[:-3]
 
+
 if __name__ == "__main__":
     unittest.main(exit=False)
-    shutil.rmtree(temp_dir, ignore_errors=True)
-    print("Done")
-    # sds.close()

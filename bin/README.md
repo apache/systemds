@@ -35,7 +35,8 @@ export SYSTEMDS_ROOT=$(pwd)
 export PATH=$SYSTEMDS_ROOT/bin:$PATH
 ```
 
-It can be beneficial to enter these into your `~/.profile` for linux
+It can be beneficial to enter these into your `~/.profile` for linux,
+(but remember to change `$(pwd` to the full folder path)
 or your environment variables in windows to enable reuse between terminals and restarts.
 
 ## Hello World example

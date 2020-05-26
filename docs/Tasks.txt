@@ -171,6 +171,7 @@ SYSTEMDS-200 Various Fixes
  * 206 Fix codegen outer template compilation (tsmm)                  OK
  * 207 Fix builtin function call hoisting from expressions            OK
  * 208 Fix bufferpool leak (live var analysis and createvar)          OK
+ * 209 Fix performance sparse M-CV elementwise multiply               OK
 
 SYSTEMDS-210 Extended lists Operations
  * 211 Cbind and Rbind over lists of matrices                         OK

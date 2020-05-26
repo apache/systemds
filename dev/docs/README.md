@@ -22,11 +22,11 @@ limitations under the License.
 Various forms of documentation for SystemDS are available.
 In this directory you'll find
 
-* a [DML language reference](./dml-language-reference.md)
-* a description of [builtin functions (WIP)](./builtins-reference.md)
-* [coding style settings](./CodeStyle_eclipse.xml) for Eclipse (compatible with various other IDEs)
+* a [DML language reference](dml-language-reference.md)
+* a description of [builtin functions (WIP)](builtins-reference.md)
+* [coding style settings](CodeStyle_eclipse.xml) for Eclipse (compatible with various other IDEs)
   * More information inside our [CONTRIBUTING.md](/CONTRIBUTING.md)
-* an enumerated list of open and completed [tasks](./Tasks.txt)
+* an enumerated list of open and completed [tasks](Tasks.txt)
 
 ## Pointers to more documentation
 

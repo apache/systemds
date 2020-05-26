@@ -21,7 +21,6 @@
 
 # Imports
 source("staging/NCF.dml") as NCF
-source("scripts/nn/examples/ncf-one-hot.dml") as ncf_util
 
 K_train = 1000; # number of training samples
 K_val = 100; # number of validation samples
@@ -40,10 +39,10 @@ items_val_int_encoded = round(rand(rows=K_val, cols=1, min=1, max=N));
 users_val_int_encoded = round(rand(rows=K_val, cols=1, min=1, max=M));
 
 # user/items matrices by applying one-hot-encoding
-items_train = ncf_util::to_one_hot(items_train_int_encoded, N);
-items_val = ncf_util::to_one_hot(items_val_int_encoded, N);
-users_train = ncf_util::to_one_hot(users_train_int_encoded, M);
-users_val = ncf_util::to_one_hot(users_val_int_encoded, M);
+items_train = toOneHot(items_train_int_encoded, N);
+items_val = toOneHot(items_val_int_encoded, N);
+users_train = toOneHot(users_train_int_encoded, M);
+users_val = toOneHot(users_val_int_encoded, M);
 
 # Train
 [biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val);

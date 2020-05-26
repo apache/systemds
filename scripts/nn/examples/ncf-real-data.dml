@@ -21,7 +21,6 @@
 
 # Imports
 source("staging/NCF.dml") as NCF
-source("scripts/nn/examples/ncf-one-hot.dml") as ncf_util
 
 # read input data
 # items_train = read("scratch_space/tiny/items_one_hot_train.csv", format="csv", header=FALSE, sep=",");
@@ -49,10 +48,10 @@ M = max(max(users_train_int_encoded), max(users_val_int_encoded)); # number user
 print("Done reading.");
 
 # user/items matrices by applying one-hot-encoding
-items_train = ncf_util::to_one_hot(items_train_int_encoded, N);
-items_val = ncf_util::to_one_hot(items_val_int_encoded, N);
-users_train = ncf_util::to_one_hot(users_train_int_encoded, M);
-users_val = ncf_util::to_one_hot(users_val_int_encoded, M);
+items_train = toOneHot(items_train_int_encoded, N);
+items_val = toOneHot(items_val_int_encoded, N);
+users_train = toOneHot(users_train_int_encoded, M);
+users_val = toOneHot(users_val_int_encoded, M);
 
 print("Done encoding.");
 

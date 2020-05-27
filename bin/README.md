@@ -93,4 +93,4 @@ the option `sysds.native.blas` in `SystemDS-config.xml`.
 
 ## Further reading
 
-More documentation is available in the [docs directory of our github repository](/docs/README.md)
+More documentation is available in the [docs directory of our github repository](/dev/docs/README.md)

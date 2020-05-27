@@ -24,7 +24,6 @@ package org.apache.sysds.runtime.privacy;
  */
 public class PrivacyConstraint
 {
-
 	public enum PrivacyLevel {
 		None,				// No data exchange constraints. Data can be shared with anyone.
 		Private,			// Data cannot leave the origin.

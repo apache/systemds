@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.runtime.matrix.data.OutputInfo;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -130,7 +129,7 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 			FrameBlock frame1 = new FrameBlock(schemaStrings);
 			double[][] A = getRandomMatrix(rows, cols, 10, 100, 1, 2373);
 			initFrameDataString(frame1,A, schemaStrings); // initialize a frame with one column
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(OutputInfo.CSVOutputInfo);
+			FrameWriter writer = FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV);
 
 			ArrayList<Integer> badIndex = getBadIndexes(rows/4);
 			int expected = 0;

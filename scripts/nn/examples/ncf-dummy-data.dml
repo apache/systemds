@@ -45,23 +45,13 @@ users_train = toOneHot(users_train_int_encoded, M);
 users_val = toOneHot(users_val_int_encoded, M);
 
 # Train
-[biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val);
+epochs = 10;
+batch_size = 16;
 
-b1 = as.matrix(biases[1]);
+# layer dimensions
+E = 8; # embedding
+D1 = 64; # dense layer 1
+D2 = 32; # dense layer 2
+D3 = 16; # dense layer 3
 
-print(toString(b1));
-
-# Write model out
-#write(w0, out_dir+"/w0");
-#write(W, out_dir+"/W");
-#write(V, out_dir+"/V");
-
-# Evaluate
-# probs = NCF::predict(X, w0, W, V);
-# [loss, accuracy] = NCF::eval(probs, y);
-
-# Output results
-# print("Test Accuracy: " + accuracy)
-#write(accuracy, out_dir+"/accuracy")
-
-print("done ncf-ing.")
+[biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val, epochs, batch_size, E, D1, D2, D3);

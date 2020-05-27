@@ -22,17 +22,9 @@
 # Imports
 source("staging/NCF.dml") as NCF
 
-# read input data
-# items_train = read("scratch_space/tiny/items_one_hot_train.csv", format="csv", header=FALSE, sep=",");
-# items_val = read("scratch_space/tiny/items_one_hot_test.csv", format="csv", header=FALSE, sep=",");
+# prepare input data
 
-# users_train = read("scratch_space/tiny/users_one_hot_train.csv", format="csv", header=FALSE, sep=",");
-# users_val = read("scratch_space/tiny/users_one_hot_test.csv", format="csv", header=FALSE, sep=",");
-
-# targets_train = read("scratch_space/tiny/targets_train.csv", format="csv", header=FALSE, sep=",");
-# targets_val = read("scratch_space/tiny/targets_test.csv", format="csv", header=FALSE, sep=",");
-
-# user/items integer-encoded vectors
+# - read user/items integer-encoded vectors
 items_train_int_encoded = read("scratch_space/small/items_train.csv", format="csv", header=FALSE, sep=",");
 users_train_int_encoded = read("scratch_space/small/users_train.csv", format="csv", header=FALSE, sep=",");
 
@@ -47,7 +39,7 @@ M = max(max(users_train_int_encoded), max(users_val_int_encoded)); # number user
 
 print("Done reading.");
 
-# user/items matrices by applying one-hot-encoding
+# - create user/items matrices by applying one-hot-encoding
 items_train = toOneHot(items_train_int_encoded, N);
 items_val = toOneHot(items_val_int_encoded, N);
 users_train = toOneHot(users_train_int_encoded, M);
@@ -56,8 +48,14 @@ users_val = toOneHot(users_val_int_encoded, M);
 print("Done encoding.");
 
 # Train
-[biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val);
 
-b1 = as.matrix(biases[1]);
+epochs = 10;
+batch_size = 16;
 
-print(toString(b1));
+# layer dimensions
+E = 8; # embedding
+D1 = 64; # dense layer 1
+D2 = 32; # dense layer 2
+D3 = 16; # dense layer 3
+
+[biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val, epochs, batch_size, E, D1, D2, D3);

@@ -59,19 +59,24 @@ return (Matrix[Double] weights)
   [C, Y] = kmeans(X,  components, 10, 10, eps, FALSE, 25)
   mu = C
   sigma = list()
+  
   for(i in 1:components)
-    sigma = append(sigma, diag(matrix(1, ncol(X), 1))) #covMatrix(X, matrix(1, nrow(X), 1))
+    sigma = append(sigma, covMatrix(X, matrix(1, nrow(X), 1)) ) #diag(matrix(1, ncol(X), 1))
 
-  loglikNew = sum(log(rowSums(weights*phi)))
-  loglikPre = 0
-  loglikDiff = 0
+  loglikPre = sum(log(rowSums(weights*phi)))
+  loglikDiff = 1
   i = 1
   bic = matrix(0, iter, 1)
-  while(i <= iter & loglikDiff < eps){
+  df = (ncol(X)*ncol(X) - ncol(X))/2 + (2*ncol(X) + 1)
+  df = components * df -1
+  print("df "+df)
+  while(i <= iter & loglikDiff >= eps ){
+    print("iteration ----------------------------------"+i)
+     # 
     # Estimation Step
-    weights = predict_prob(X, components, mu, sigma, phi)
+    [weights, loglikNew] = predict_prob(X, components, mu, sigma, phi)
     phi = colMeans(weights)
-  
+    print("phi "+toString(phi))
     # Maximization Step - Update parameter
   
     for(j in 1:components)
@@ -80,17 +85,18 @@ return (Matrix[Double] weights)
       sum_wk = sum(wk)
       mu[j, ] = colSums(X*wk)/sum_wk
       sigma[j] = covMatrix(X, (wk/sum_wk)) # A covariance matrix instead of single covariance value
+      print("mu m "+toString(mu[j, ]))
+      print("sigma m "+toString(as.matrix(sigma[j])))
     }
-    loglikPre = loglikNew
-    loglikNew = sum(log(rowSums(weights*phi)))
-    loglikDiff = loglikNew - loglikPre
-    bic[i,1] = -2 * loglikNew + 14 * log(nrow(X))
+    loglikDiff = abs(loglikNew - loglikPre)
+    bic[i,1] = -2 * loglikNew + df * log(nrow(X))
     i = i+1
   }
   
   # predict 
   predict = rowIndexMax(weights)
   if(verbose) {
+    print("logliklihood diff "+loglikDiff)
     print("logliklihood "+loglikNew)
     print("BIC for each iteration "+toString(bic))
     print("predictions \n"+toString(predict))
@@ -106,31 +112,46 @@ return (Matrix[Double] covM)
   if(ncol(X) < 2 )
     covM[1,1] = var(X)
 
-  for(i in 1:ncol(X))
-    for(j in 1:ncol(X))
-      covM[i, j] = cov(X[,i], X[,j], w)
+  wmu = colSums(X*w)/sum(w)
+  Xc = X - wmu
+  # R = (t(Xc) %*% Xc)/(nrow(X)-1)/ (t(colSds(X)) %*% colSds(X)); #cov(X)
+  # print("this is wsigma "+toString(R));
+  sig = 1/(sum(w)) * (t(Xc * w) %*% Xc) 
+    
+  covM = sig  
+  # print("this is wsigma "+toString(sig))
+  # for(i in 1:ncol(X))
+    # for(j in 1:ncol(X))
+      # covM[i, j] = cov(X[,i], X[,j], w)
 }
 
 predict_prob = function(Matrix[Double] X, Integer components, Matrix[Double] mu, List[Unknown] sigma, Matrix[Double] phi)
-  return (Matrix[Double] weights)
+  return (Matrix[Double] weights, Double loglik)
 {
   likelihood = matrix(0, nrow(X), components )
   for(i in 1:components)
   {
+
     likelihood[, i] = mvpdf(X, mu[i,], as.matrix(sigma[i]))
   }
   numer = likelihood * phi
   denom = rowSums(numer)
+  loglik = sum(log(denom)) 
+ 
   weights = numer/denom
+
 }
 
 mvpdf = function(Matrix[Double] X, Matrix[Double] mu, Matrix[Double] sigma) 
 return (Matrix[Double] pdf)
 {
   pdf = matrix(0, nrow(X), 1)
-  [eva, evec] = eigen(sigma)
-  det = colProds(eva)
-  det = as.scalar(det)
+  # [eva, evec] = eigen(sigma)
+  # det = colProds(eva)
+  # det = as.scalar(det)
+  # print("this is eval "+det)
+  det = determinant(sigma, nrow(sigma))
+    print("det "+det)
   if (det == 0) {
     stop("Determinant is equal to 0.")
   }
@@ -143,4 +164,94 @@ return (Matrix[Double] pdf)
     p3 = p1 * exp(p2)
     pdf[i,1] += as.scalar(p1 * exp(p2))
   }
+  # print("pdf "+toString(pdf))
+}
+
+determinant = function(Matrix[Double] X, Double n)
+  return (Double det)
+{      
+ 
+  # temporary array for storing row  
+  # int []temp = new int[n + 1];  
+  num1=0; num2=0; detr = 1;index=0;total = 1;
+  temp = matrix(0, n+1, 1)        
+  # loop for traversing the diagonal elements  
+  for(i in 1:n)  
+  {  
+    index = i; # initialize the index  
+              
+    # finding the index which has non zero value  
+    while(as.scalar(X[index, i]) == 0 & index < n) 
+    {  
+      index =  index + 1;      
+                  
+    }  
+    if(index == n)# if there is non zero element  
+    {  
+    # the determinat of matrix as zero  
+                  
+    }  
+    if(index != i)  
+    {  
+      # loop for swaping the diagonal element row and index row  
+      for(j in 1:n)  
+      {  
+        swap(X, index, j, i, j); 
+        print("after swap "+toString(X))
+      }  
+      # determinant sign changes when we shift rows  
+      # go through determinant properties  
+        detr = as.integer(detr* (-1)^(index-i));  
+    }  
+          
+    # storing the values of diagonal row elements  
+    for(j in 1:n)  
+    {  
+      temp[j,1] = X[i,j];  
+                  
+    }  
+      
+    # traversing every row below the diagonal element 
+    j = i+1
+    while(j<=n)  
+    {  
+      num1 = as.scalar(temp[i,1]);  # value of diagonal element  
+      num2 = as.scalar(X[j, i]); # value of next row element  
+                  
+      # traversing every column of row  
+      # and multiplying to every row  
+      for(k in 1:n)  
+      {  
+                  
+        # multiplying to make the diagonal  
+        # element and next row element equal  
+        X[j, k] = (num1 * X[j, k]) - (num2 * temp[k, 1]);  
+                      
+      }  
+      total = total * num1; # Det(kA)=kDet(A);
+      j = j+1
+    }  
+              
+  }  
+      
+    # mulitplying the diagonal elements to get determinant  
+  for(i in 1:n)  
+  {  
+    detr = detr * as.scalar(X[i, i]);  
+              
+  }  
+  det = (detr/total); # Det(kA)/k=Det(A);  
+} 
+ 
+  
+swap =  function(Matrix[Double] X, Integer i1, Integer j1, Integer i2, Integer j2) 
+  # return (Matrix[Double] X1)
+{ 
+  print("before swap "+toString(X))
+  temp = as.scalar(X[i1, j1])
+    # int temp = arr[i1][j1];
+  X[i1, j1] = as.scalar(X[i2, j2]); 
+  X[i1, j1] = as.scalar(X[i2, j2])
+  X[i2, j2] = temp; 
+  # X1 = X
 }

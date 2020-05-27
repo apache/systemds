@@ -21,9 +21,9 @@
 
 X = read($1)
 prob = gmm(X=X, components = $2, iter = $3,  model = $4, eps = $5, verbose=TRUE)
+out = (rowMaxs(prob) < 0.7)
+print("outlier"+toString(sum(out)))
 maxi = (prob == rowMaxs(prob))
-print("this is X "+toString(X))
-print("this is maxi "+toString(maxi))
 cluster = colSums(maxi)
 clusMean = matrix(0, ncol(prob), ncol(X))
 for(i in 1:ncol(prob))

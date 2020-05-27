@@ -22,11 +22,17 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 library(mclust, quietly = TRUE)
+library("matrixStats") 
 
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-X
 fit =  Mclust(X, modelType = args[2], G=args[3])
 summary(fit)
 C = fit$z
 fit$z
+print("this is max")
+o = rowMaxs(fit$z)
+o
+out = o < 0.7
+out
+fit$df
 writeMM(as(C, "CsparseMatrix"), paste(args[4], "B", sep=""))

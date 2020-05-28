@@ -43,13 +43,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
   double **sides = reinterpret_cast<double **>(GET_ARRAY(env, side_ptrs));
   double *scalars = reinterpret_cast<double *>(GET_ARRAY(env, scalars_));
 
-  std::cout << "inputs[0]=" << inputs_[0] << std::endl;
-
   return ctx_->execute_kernel(
-      //      name_, reinterpret_cast<double **>(in_ptrs),
-      //      num_inputs, reinterpret_cast<double **>(side_ptrs),
-      //      num_sides, reinterpret_cast<double **>(out_ptr), da,
-      //      num_scalars, m, n, grix);
       name_, inputs, num_inputs, sides, num_sides,
       reinterpret_cast<double *>(out_ptr), scalars, num_scalars, m, n, grix);
 }
@@ -69,13 +63,7 @@ Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1f(
   float **sides = reinterpret_cast<float **>(GET_ARRAY(env, side_ptrs));
   float *scalars = reinterpret_cast<float *>(GET_ARRAY(env, scalars_));
 
-  std::cout << "inputs[0]=" << inputs_[0] << std::endl;
-
   return ctx_->execute_kernel(
-      //      name_, reinterpret_cast<double **>(in_ptrs),
-      //      num_inputs, reinterpret_cast<double **>(side_ptrs),
-      //      num_sides, reinterpret_cast<double **>(out_ptr), da,
-      //      num_scalars, m, n, grix);
       name_, inputs, num_inputs, sides, num_sides,
       reinterpret_cast<float *>(out_ptr), scalars, num_scalars, m, n, grix);
 }

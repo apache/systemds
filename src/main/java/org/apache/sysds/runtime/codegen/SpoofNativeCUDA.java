@@ -65,7 +65,7 @@ public class SpoofNativeCUDA extends SpoofOperator {
 
         long[] side_ptrs = new long[inputs.size() - offset];
         for(int i = offset; i < inputs.size(); ++i)
-            side_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
+            side_ptrs[i - offset] = ec.getGPUPointerAddress(inputs.get(i));
 
         if(isSinglePrecision()) {
             float[] scalars = prepInputScalarsFloat(scalarObjects);

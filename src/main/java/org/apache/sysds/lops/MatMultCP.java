@@ -75,7 +75,7 @@ public class MatMultCP extends Lop
 				getExecType().name(), "ba+*",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
-				prepOutputOperand(output), String.valueOf(numThreads),
+				prepOutputOperand(output), /* String.valueOf(numThreads), */
 				String.valueOf(isLeftTransposed),
 				String.valueOf(isRightTransposed));
 		}

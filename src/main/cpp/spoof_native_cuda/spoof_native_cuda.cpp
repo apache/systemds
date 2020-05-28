@@ -7,13 +7,16 @@ size_t SpoofCudaContext::initialize_cuda(uint32_t device_id) {
   std::cout << "initializing cuda device " << device_id << std::endl;
 
   SpoofCudaContext *ctx = new SpoofCudaContext();
+  cudaSetDevice(device_id);
 
   return reinterpret_cast<size_t>(ctx);
 }
 
 void SpoofCudaContext::destroy_cuda(SpoofCudaContext *ctx, uint32_t device_id) {
-  std::cout << "destroying cuda context " << ctx << " of device " << device_id
-            << std::endl;
+    std::cout << "destroying cuda context " << ctx << " of device " << device_id << std::endl;
+    delete ctx;
+    ctx = nullptr;
+    cudaDeviceReset();
 }
 
 bool SpoofCudaContext::compile_cuda(const std::string &src,

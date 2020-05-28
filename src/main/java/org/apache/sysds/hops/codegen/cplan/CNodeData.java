@@ -19,11 +19,14 @@
 
 package org.apache.sysds.hops.codegen.cplan;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorLang;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
 public class CNodeData extends CNode 
 {
@@ -63,7 +66,12 @@ public class CNodeData extends CNode
 		else if( "-Infinity".equals(_name) )
 			return "Double.NEGATIVE_INFINITY";
 		else if( "true".equals(_name) || "false".equals(_name) )
-			return "true".equals(_name) ? "1d" : "0d";
+			if(SpoofCompiler.API == GeneratorAPI.JAVA)
+				return "true".equals(_name) ? "1d" : "0d";
+			else
+				return "true".equals(_name) ? "1" : "0";
+		else if (StringUtils.isNumeric(_name) && (SpoofCompiler.API != GeneratorAPI.JAVA))
+			return isSinglePrecision() ? _name + ".0f" :  _name + ".0";
 		else
 			return _name;
 	}

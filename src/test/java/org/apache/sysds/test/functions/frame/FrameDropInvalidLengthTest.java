@@ -179,8 +179,8 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 		}
 	}
 
-	private ArrayList getBadIndexes(int length) {
-		ArrayList list = new ArrayList();
+	private ArrayList<Integer> getBadIndexes(int length) {
+		ArrayList<Integer> list = new ArrayList<Integer>();
 		for(int i =0; i<length; i++)
 		{
 			int r = ThreadLocalRandom.current().nextInt(0, rows);

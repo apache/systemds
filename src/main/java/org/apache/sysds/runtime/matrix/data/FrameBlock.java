@@ -1870,7 +1870,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		if data value in any column is greater than specific threshold
 		output vector will store a 1 for that column position.
 		@param input MatrixBlock of valid lengths
-		@param output 0/1 MatrixBlock for valid/invalid features
+		@param output a boolean FrameBlock for valid/invalid features
 	 */
 	public FrameBlock invalidByLength(MatrixBlock feaLen) {
 		//sanity checks

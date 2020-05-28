@@ -186,65 +186,64 @@ public class SpoofCompiler {
 			Logger.getLogger("org.apache.sysds.hops.codegen")
 					.setLevel(Level.TRACE);
 		}
+		native_contexts = new HashMap<>();
 
-
-//		 ToDo: clean up spoof native loading
-		GeneratorAPI configured_generator = GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig()
-				.getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+		GeneratorAPI configured_generator = GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
 
 		// loading cuda codegen (the only supported API atm)
-		if (configured_generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
+		if(configured_generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
 			configured_generator = GeneratorAPI.CUDA;
 
 		if(configured_generator == GeneratorAPI.CUDA && !DMLScript.USE_ACCELERATOR)
 			configured_generator = GeneratorAPI.JAVA;
 
-		if (configured_generator != GeneratorAPI.JAVA)
-			native_contexts = new HashMap<>();
-
-		loadNativeCodeGenerator(configured_generator);
+		if(configured_generator != GeneratorAPI.JAVA)
+			loadNativeCodeGenerator(GeneratorAPI.CUDA);
 	}
 
 	public static void loadNativeCodeGenerator(GeneratorAPI generator) {
-		if(generator == GeneratorAPI.CUDA) {
-			String arch = SystemUtils.OS_ARCH;
-			String os = SystemUtils.OS_NAME;
 
-			if(SystemUtils.IS_OS_LINUX && SystemUtils.OS_ARCH.equalsIgnoreCase("amd64"))
-				arch = "x86_64";
-			if(SystemUtils.IS_OS_WINDOWS)
-				os = "Windows";
+		if(!native_contexts.containsKey(generator)) {
+			if(generator == GeneratorAPI.CUDA) {
+				String arch = SystemUtils.OS_ARCH;
+				String os = SystemUtils.OS_NAME;
 
-			String libName = "libsystemds_spoof_native_cuda-" + os + "-" + arch;
+				if(SystemUtils.IS_OS_LINUX && SystemUtils.OS_ARCH.equalsIgnoreCase("amd64"))
+					arch = "x86_64";
+				if(SystemUtils.IS_OS_WINDOWS)
+					os = "Windows";
 
-			boolean isLoaded = NativeHelper.loadLibraryHelper(libName);
-			if(!isLoaded)
-				isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir") + "/src/main/cpp/lib", libName ,"");
-			if(!isLoaded)
-				isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir") + "/target/classes/lib",libName ,"");
-			if(!isLoaded)
-				isLoaded = NativeHelper.loadBLAS(null,libName ,"");
+				String libName = "libsystemds_spoof_native_cuda-" + os + "-" + arch;
 
-			if(isLoaded)
-			{
-				long ctx_ptr = initialize_cuda_context(0);
-				if(ctx_ptr != 0) {
-					native_contexts.put(GeneratorAPI.CUDA, ctx_ptr);
+				boolean isLoaded = NativeHelper.loadLibraryHelper(libName);
+				if(!isLoaded)
+					isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir") + "/src/main/cpp/lib", libName, "");
+				if(!isLoaded)
+					isLoaded = NativeHelper.loadBLAS(System.getProperty("user.dir") + "/target/classes/lib", libName, "");
+				if(!isLoaded)
+					isLoaded = NativeHelper.loadBLAS(null, libName, "");
+
+				if(isLoaded) {
+					long ctx_ptr = initialize_cuda_context(0);
+					if(ctx_ptr != 0) {
+						native_contexts.put(GeneratorAPI.CUDA, ctx_ptr);
+					}
+					API = GeneratorAPI.CUDA;
+					LOG.info("Successfully loaded spoof native cuda library");
 				}
-				API = GeneratorAPI.CUDA;
-				LOG.info("Successfully loaded spoof native cuda library");
-			}
-			else {
-				API = GeneratorAPI.JAVA;
-				LOG.error("Loading of spoof native cuda failed. Falling back to java codegen\n");
+				else {
+					API = GeneratorAPI.JAVA;
+					LOG.error("Loading of spoof native cuda failed. Falling back to java codegen\n");
+				}
 			}
 		}
-
 	}
 
 	public static void unloadNativeCodeGenerator(GeneratorAPI generator) {
-		if(native_contexts.size() > 0)
+		if(native_contexts.containsKey(generator)) {
 			destroy_cuda_context(native_contexts.get(generator), 0);
+			native_contexts.remove(generator);
+		}
 	}
 
 	private static boolean compile_cuda(String name, String src) {

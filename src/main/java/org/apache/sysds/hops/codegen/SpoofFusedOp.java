@@ -87,7 +87,10 @@ public class SpoofFusedOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		return true;
+		if(SpoofCompiler.API == GeneratorAPI.CUDA)
+			return true;
+		else
+			return false;
 	}
 	
 	@Override

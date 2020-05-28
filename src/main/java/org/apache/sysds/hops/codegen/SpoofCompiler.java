@@ -196,14 +196,17 @@ public class SpoofCompiler {
 		if (configured_generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
 			configured_generator = GeneratorAPI.CUDA;
 
+		if(configured_generator == GeneratorAPI.CUDA && !DMLScript.USE_ACCELERATOR)
+			configured_generator = GeneratorAPI.JAVA;
+
 		if (configured_generator != GeneratorAPI.JAVA)
 			native_contexts = new HashMap<>();
 
 		loadNativeCodeGenerator(configured_generator);
 	}
 
-	public static void loadNativeCodeGenerator(GeneratorAPI genertator) {
-		if(genertator == GeneratorAPI.CUDA) {
+	public static void loadNativeCodeGenerator(GeneratorAPI generator) {
+		if(generator == GeneratorAPI.CUDA) {
 			String arch = SystemUtils.OS_ARCH;
 			String os = SystemUtils.OS_NAME;
 
@@ -239,9 +242,9 @@ public class SpoofCompiler {
 
 	}
 
-	protected void finalize() {
+	public static void unloadNativeCodeGenerator(GeneratorAPI generator) {
 		if(native_contexts.size() > 0)
-			destroy_cuda_context(native_contexts.get(GeneratorAPI.CUDA), 0);
+			destroy_cuda_context(native_contexts.get(generator), 0);
 	}
 
 	private static boolean compile_cuda(String name, String src) {

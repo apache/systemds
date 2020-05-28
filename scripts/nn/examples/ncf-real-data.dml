@@ -24,15 +24,19 @@ source("staging/NCF.dml") as NCF
 
 # prepare input data
 
+data_loc = "scripts/nn/examples/data/ml-latest-small/ml-latest-small/"
+
 # - read user/items integer-encoded vectors
-items_train_int_encoded = read("scratch_space/small/items_train.csv", format="csv", header=FALSE, sep=",");
-users_train_int_encoded = read("scratch_space/small/users_train.csv", format="csv", header=FALSE, sep=",");
+train = read(data_loc + "sampled-train.csv", format="csv", header=FALSE, sep=",");
+val = read(data_loc + "sampled-test.csv", format="csv", header=FALSE, sep=",");
 
-items_val_int_encoded = read("scratch_space/small/items_test.csv", format="csv", header=FALSE, sep=",");
-users_val_int_encoded = read("scratch_space/small/users_test.csv", format="csv", header=FALSE, sep=",");
+users_train_int_encoded = train[, 1];
+items_train_int_encoded = train[, 2];
+targets_train = train[, 3];
 
-targets_train = read("scratch_space/small/targets_train.csv", format="csv", header=FALSE, sep=",");
-targets_val = read("scratch_space/small/targets_test.csv", format="csv", header=FALSE, sep=",");
+users_val_int_encoded = val[, 1];
+items_val_int_encoded = val[, 2];
+targets_val = val[, 3];
 
 N = max(max(items_train_int_encoded), max(items_val_int_encoded)); # number items
 M = max(max(users_train_int_encoded), max(users_val_int_encoded)); # number users
@@ -49,7 +53,7 @@ print("Done encoding.");
 
 # Train
 
-epochs = 10;
+epochs = 20;
 batch_size = 16;
 
 # layer dimensions

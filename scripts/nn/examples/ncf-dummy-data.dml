@@ -45,7 +45,7 @@ users_train = toOneHot(users_train_int_encoded, M);
 users_val = toOneHot(users_val_int_encoded, M);
 
 # Train
-epochs = 10;
+epochs = 50;
 batch_size = 16;
 
 # layer dimensions

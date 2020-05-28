@@ -36,7 +36,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class CellwiseTmplTest extends AutomatedTestBase 
+public class CellwiseTmplTest extends AutomatedTestBase
 {
 	private static final String TEST_NAME = "cellwisetmpl";
 	private static final String TEST_NAME1 = TEST_NAME+1;
@@ -488,18 +488,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		try {
 			test_num = Integer.parseInt(testname.substring(testname.length() - 2));
 		}
-		catch(NumberFormatException e) { /* ToDo: remove temporary hack */ }
+		catch(NumberFormatException e) {
+			test_num = Integer.parseInt(testname.substring(testname.length() - 1));
+			/* ToDo: remove temporary hack */ }
 
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
 
 		// ToDo: remove when done with testing
-		if(test_num > 27) {
+		if(test_num > 27)
+		{
 			TEST_CONF = TEST_CONF8;
 			TEST_GPU = true;
 			DEBUG = true;
 			//ToDo: proper precision handling in testcase setup
-			DMLScript.FLOATING_POINT_PRECISION = "single";
+//			DMLScript.FLOATING_POINT_PRECISION = "single";
 		}
 
 		try
@@ -537,7 +540,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				if (!(rewrites && (testname.equals(TEST_NAME2)
 						|| testname.equals(TEST_NAME19))))
 					Assert.assertTrue(heavyHittersContainsSubString(
-							"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
+							"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "SpoofNativeCUDA"));
 				if (testname.equals(TEST_NAME7)) //ensure matrix mult is fused
 					Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
 				else if (testname.equals(TEST_NAME10)) //ensure min/max is fused
@@ -556,23 +559,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 					Assert.assertTrue(!heavyHittersContainsSubString("min", "nmin"));
 			}
 			else {
-				Assert.assertTrue(heavyHittersContainsSubString("SpoofNativeCUDA"));
-
+				Assert.assertTrue(heavyHittersContainsSubString("SpoofNativeCUDA", "gpu_ba+*"));
 				// ToDo: better compare (too slow with files of significant size, maybe use GPU here too :-) )
-/*
-				TEST_GPU = false;
-				DEBUG = false;
-				programArgs = new String[]{"-explain", "-stats", "-args", output("S1") };
-				SpoofCompiler.API = SpoofCompiler.GeneratorAPI.JAVA;
-
-				runTest(true, false, null, -1);
-
-				//compare matrices
-				HashMap<CellIndex, Double> dmlfile_cuda = readDMLMatrixFromHDFS("S");
-				HashMap<CellIndex, Double> dmlfile_java = readDMLMatrixFromHDFS("S1");
-				TestUtils.compareMatrices(dmlfile_cuda, dmlfile_java, eps, "Stat-CUDA", "Stat-JAVA");
-*/
-
 			}
 		}
 		finally {
@@ -581,6 +569,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 			TEST_CONF = oldTestConf;
+			SpoofCompiler.unloadNativeCodeGenerator(SpoofCompiler.GeneratorAPI.CUDA);
 		}
 	}
 

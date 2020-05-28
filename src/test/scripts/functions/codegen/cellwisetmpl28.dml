@@ -24,15 +24,38 @@
 
 r=4096
 c=4096
-print("Data Size=" + r*c*8/(1024*1024) + " MB")
-X= matrix( seq(1,r*c), rows=r, cols=c)
-Y= matrix( 2, rows=r, cols=1)
+q=8192
 
-lamda = sum(Y)
-#print("lamda " + lamda)
-S=round(abs(X+lamda))+5
-#print("X\n" + toString(X[1:5, 1:10]))
-#print("t(Y)\n" + toString(t(Y[1:10,])))
-#print("S\n" + toString(S[1:5, 1:10]))
+
+
+print("Data Size=" + c*q*8/(1024*1024) + " MB")
+X= matrix( seq(1,r*c), rows=r, cols=c)
+#Y= matrix( 2, rows=r, cols=1)
+#Z= matrix( seq(2,c*q), rows=c, cols=q)
+
+# precision error with c*q (==33554432)
+Z= matrix( seq(2,33554433), rows=c, cols=q)
+
+
+S = X %*% Z
 print("sum(S) " + sum(S))
 write(S,$1)
+
+
+
+
+
+
+
+#print("Data Size=" + r*c*8/(1024*1024) + " MB")
+#X= matrix( seq(1,r*c), rows=r, cols=c)
+#Y= matrix( 2, rows=r, cols=1)
+#
+#lamda = sum(Y)
+##print("lamda " + lamda)
+#S=round(abs(X+lamda))+5
+##print("X\n" + toString(X[1:5, 1:10]))
+##print("t(Y)\n" + toString(t(Y[1:10,])))
+##print("S\n" + toString(S[1:5, 1:10]))
+#print("sum(S) " + sum(S))
+#write(S,$1)

@@ -19,10 +19,9 @@
 #
 #-------------------------------------------------------------
 
-
-A=read($1)
-B=diag(A)
-C=matrix(1, rows=nrow(B), cols=ncol(B));
-D=B%*%C
-C=B+D
-write(C, $2, format="text")
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+A = readMM(paste(args[1], "A.mtx", sep=""))
+C = diag(A)
+writeMM(as(C,"CsparseMatrix"), paste(args[2], "C", sep=""))

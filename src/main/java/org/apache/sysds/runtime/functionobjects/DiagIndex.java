@@ -26,25 +26,24 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 public class DiagIndex extends IndexFunction
 {
-
 	private static final long serialVersionUID = -5294771266108903886L;
-
-	private static DiagIndex singleObj = null;
+	private final boolean diagV2M;
 	
-	private DiagIndex() {
-		// nothing to do here
+	private DiagIndex(boolean v2m) {
+		diagV2M = v2m;
 	}
 	
 	public static DiagIndex getDiagIndexFnObject() {
-		if ( singleObj == null )
-			singleObj = new DiagIndex();
-		return singleObj;
+		return getDiagIndexFnObject(true);
+	}
+	
+	public static DiagIndex getDiagIndexFnObject(boolean v2m) {
+		return new DiagIndex(v2m);
 	}
 	
 	@Override
 	public void execute(MatrixIndexes in, MatrixIndexes out) {
-		//only used for V2M
-		out.setIndexes(in.getRowIndex(), in.getRowIndex());
+		out.setIndexes(in.getRowIndex(), diagV2M ? in.getRowIndex() : 1);
 	}
 
 	@Override

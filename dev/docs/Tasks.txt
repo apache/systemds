@@ -311,5 +311,8 @@ SYSTEMDS-390 New Builtin Functions IV
  * 394 Builtin for one-hot encoding of matrix (not frame), see table  OK
  * 395 SVM rework and utils (confusionMatrix, msvmPredict)            OK
 
+SYSTEMDS-400 Spark Backend Improvements
+ * 401 Fix output block indexes of rdiag (diagM2V)                    OK
+
 Others:
  * Break append instruction to cbind and rbind 

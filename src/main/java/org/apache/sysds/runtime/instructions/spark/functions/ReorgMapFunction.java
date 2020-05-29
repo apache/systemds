@@ -32,7 +32,6 @@ import scala.Tuple2;
 
 public class ReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
 {
-	
 	private static final long serialVersionUID = 31065772250744103L;
 	
 	private ReorgOperator _reorgOp = null;
@@ -42,8 +41,8 @@ public class ReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, Matr
 		if(opcode.equalsIgnoreCase("r'")) {
 			_indexFnObject = SwapIndex.getSwapIndexFnObject();
 		}
-		else if(opcode.equalsIgnoreCase("rdiag")) {
-			_indexFnObject = DiagIndex.getDiagIndexFnObject();
+		else if(opcode.equalsIgnoreCase("rdiag")) { //diagM2V
+			_indexFnObject = DiagIndex.getDiagIndexFnObject(false);
 		}
 		else {
 			throw new DMLRuntimeException("Incorrect opcode for RDDReorgMapFunction:" + opcode);
@@ -65,6 +64,5 @@ public class ReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, Matr
 		//output new tuple
 		return new Tuple2<>(ixOut,blkOut);
 	}
-	
 }
 

@@ -19,10 +19,6 @@
 #
 #-------------------------------------------------------------
 
-
-A=read($1)
-B=diag(A)
-C=matrix(1, rows=nrow(B), cols=ncol(B));
-D=B%*%C
-C=B+D
+A = read($1)
+C = diag(A)
 write(C, $2, format="text")

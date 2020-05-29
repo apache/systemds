@@ -27,11 +27,10 @@
 m_components = function(Matrix[Double] G, Integer maxi = 0, Boolean verbose = TRUE) 
   return (Matrix[Double] C) 
 {
-  # ensure there are no self-edges in the graph
-  if( trace(G) != 0 ) {
-    G = G - diag(diag(G));
-    if(verbose)
-      print("Connected Components: warning - removed self-edges from input graph");
+  # best effort check for symmetry (not exact but fast)
+  if( sum(rowSums(G) != t(colSums(G))) > 0 ) {
+    stop("Connected Components: input graph needs to be "
+       + "symmetric but rowSums and colSums don't match up.");
   }
 
   # initialize state with vertex ids

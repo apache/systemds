@@ -403,8 +403,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 		if(!mcOut.dimsKnown(true)) {
 			//note: we cannot compute the nnz from sparsity because this would not reflect the
 			//actual number of non-zeros, except for extreme values of sparsity equals 0 or 1.
+			//However, in all cases we keep this information for more coarse-grained decisions.
 			long lnnz = (sparsity==0 || sparsity==1) ? (long) (sparsity*lrows*lcols) : -1;
 			mcOut.set(lrows, lcols, blocksize, lnnz);
+			if( !mcOut.nnzKnown() )
+				mcOut.setNonZerosBound((long) (sparsity*lrows*lcols));
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}

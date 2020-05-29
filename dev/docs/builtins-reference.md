@@ -149,7 +149,7 @@ The *icpt-argument* can be set to 3 modes:
 ### Example
 ```r
 X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
+y = X %*% rand(rows = ncol(X), cols = 1)
 lm(X = X, y = y)
 ```
 
@@ -179,7 +179,7 @@ lmDS(X, y, icpt = 0, reg = 1e-7, verbose = TRUE)
 ### Example
 ```r
 X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
+y = X %*% rand(rows = ncol(X), cols = 1)
 lmDS(X = X, y = y)
 ```
 
@@ -211,7 +211,7 @@ lmCG(X, y, icpt = 0, reg = 1e-7, tol = 1e-7, maxi = 0, verbose = TRUE)
 ### Example
 ```r
 X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
+y = X %*% rand(rows = ncol(X), cols = 1)
 lmCG(X = X, y = y, maxi = 10)
 ```
 
@@ -239,7 +239,7 @@ lmpredict(X, w)
 ### Example
 ```r
 X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
+y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 yp = lmpredict(X, w)
 ```
@@ -287,7 +287,7 @@ If the best AIC is achieved without any features the matrix of *selected* featur
 ### Example
 ```r
 X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
+y = X %*% rand(rows = ncol(X), cols = 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
 ```
 
@@ -318,7 +318,7 @@ slicefinder(X,W, y, k, paq, S);
 ### Usage
 ```r
 X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
+y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```

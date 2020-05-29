@@ -459,7 +459,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		}
 		
 		if( checkAligned ) {
-			if( mc1.getCols() % mc1.getBlocksize() != 0 )
+			if( (cbind ? mc1.getCols() : mc1.getRows()) % mc1.getBlocksize() != 0 )
 				throw new DMLRuntimeException("Input matrices are not aligned to blocksize boundaries. Wrong append selected");
 		}
 	}

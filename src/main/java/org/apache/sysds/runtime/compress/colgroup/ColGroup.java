@@ -248,13 +248,6 @@ public abstract class ColGroup implements Serializable {
 	public abstract double get(int r, int c);
 
 	/**
-	 * Get the number of values. contained inside the ColGroup.
-	 * 
-	 * @return value at the row/column position
-	 */
-	public abstract long getValuesSize();
-
-	/**
 	 * Multiply the slice of the matrix that this column group represents by a vector on the right.
 	 * 
 	 * @param vector vector to multiply by (tall vector)

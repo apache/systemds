@@ -168,12 +168,13 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	protected final void postScaling(double[] vals, double[] c) {
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
+		double[] values = getValues();
 
 		for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol) {
 			double aval = vals[k];
 			for(int j = 0; j < ncol; j++) {
 				int colIx = _colIndexes[j];
-				c[colIx] += aval * _values[valOff + j];
+				c[colIx] += aval * values[valOff + j];
 			}
 		}
 	}
@@ -275,8 +276,9 @@ public abstract class ColGroupDDC extends ColGroupValue {
 			// copy entire value tuple to output row
 			final int clen = getNumCols();
 			final int off = getCode(rowIx) * clen;
+			final double[] values = getValues();
 			for(int j = 0; j < clen; j++)
-				buff[_colIndexes[j]] = _values[off + j];
+				buff[_colIndexes[j]] = values[off + j];
 		}
 	}
 
@@ -286,5 +288,4 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		sb.append(super.toString());
 		return sb.toString();
 	}
-
 }

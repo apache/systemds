@@ -50,7 +50,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public static final int WRITE_CACHE_BLKSZ = 2 * BitmapEncoder.BITMAP_BLOCK_SZ;
 	public static boolean ALLOW_CACHE_CONSCIOUS_ROWSUMS = true;
 
-	/** Bitmaps, one per uncompressed value in {@link #_values}. */
+	/** Bitmaps, one per uncompressed value tuple in {@link #_dict}. */
 	protected int[] _ptr; // bitmap offsets per value
 	protected char[] _data; // linearized bitmaps (variable length)
 

@@ -38,7 +38,7 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinGMMTest.class.getSimpleName() + "/";
 
-	private final static double eps = 1;
+	private final static double eps = 0.5;
 	private final static int rows = 100;
 	private final static double spDense = 0.99;
 	private final static String Dataset = "D:/GMM/data.csv";

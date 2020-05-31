@@ -130,7 +130,7 @@ public class LineageCacheConfig
 	static {
 		//setup static configuration parameters
 		setSpill(true); 
-		setCachePolicy(LineageCachePolicy.WEIGHTED);
+		//setCachePolicy(LineageCachePolicy.WEIGHTED);
 		setCompAssRW(true);
 	}
 

@@ -255,13 +255,14 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		if(!isCompressed() || isEmptyBlock())
 			return super.cmOperations(op);
 		ColGroup grp = _colGroups.get(0);
-		if(grp instanceof ColGroupUncompressed)
-			return ((ColGroupUncompressed) grp).getData().cmOperations(op);
 
-		ColGroupValue grpVal = (ColGroupValue) grp;
-		MatrixBlock vals = grpVal.getValuesAsBlock();
-		MatrixBlock counts = ColGroupValue.getCountsAsBlock(grpVal.getCounts(true));
-		return vals.cmOperations(op, counts);
+		MatrixBlock vals = grp.getValuesAsBlock();
+		if(grp.getIfCountsType()){
+			MatrixBlock counts = ColGroupValue.getCountsAsBlock(grp.getCounts(true));
+			return vals.cmOperations(op, counts);
+		}else{
+			return vals.cmOperations(op);
+		}
 	}
 
 	@Override
@@ -300,13 +301,12 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		if(!isCompressed())
 			return super.sortOperations(right, result);
 		ColGroup grp = _colGroups.get(0);
-		if(grp instanceof ColGroupUncompressed)
-			return ((ColGroupUncompressed) grp).getData().sortOperations(right, result);
+		if(grp.getIfCountsType() != true)
+			return grp.getValuesAsBlock().sortOperations(right, result);
 
 		if(right == null) {
-			ColGroupValue grpVal = (ColGroupValue) grp;
-			MatrixBlock vals = grpVal.getValuesAsBlock();
-			int[] counts = grpVal.getCounts(true);
+			MatrixBlock vals = grp.getValuesAsBlock();
+			int[] counts = grp.getCounts(true);
 			double[] data = (vals.getDenseBlock() != null) ? vals.getDenseBlockValues() : null;
 			SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
 			MatrixBlock counts2 = ColGroupValue.getCountsAsBlock(counts);

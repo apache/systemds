@@ -320,8 +320,8 @@ SYSTEMDS-360 Privacy/Data Exchange Constraints
  * 365 Extended privacy/data exchange constraints                     OK
 
 SYSTEMDS-370 Lossy Compression Blocks
- * 371 ColGroup Quantization
- * 372 ColGroup Base Data change (from Double to ??)
+ * 371 ColGroup Quantization                                          OK (Naive Q8)
+ * 321 ColGroup Base Data change (from Double to ??)
 
 SYSTEMDS-380 Memory Footprint
  * 381 Matrix Block Memory footprint update

@@ -29,8 +29,6 @@ import org.apache.sysds.lops.PMapMult;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBlock;
@@ -40,7 +38,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
@@ -68,14 +65,12 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
-			
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+			AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
 			return new PMapmmSPInstruction(aggbin, in1, in2, out, opcode, str);
 		} 
 		else {
 			throw new DMLRuntimeException("PMapmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}		
+		}
 	}
 	
 	@Override
@@ -162,14 +157,10 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 		private Broadcast<PartitionedBlock<MatrixBlock>> _pbc = null;
 		private long _offset = -1;
 		
-		public PMapMMFunction( Broadcast<PartitionedBlock<MatrixBlock>> binput, long offset )
-		{
+		public PMapMMFunction( Broadcast<PartitionedBlock<MatrixBlock>> binput, long offset ) {
 			_pbc = binput;
 			_offset = offset;
-			
-			//created operator for reuse
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+			_op = InstructionUtils.getMatMultOperator(1);
 		}
 
 		@Override

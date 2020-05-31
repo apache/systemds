@@ -59,8 +59,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
 			boolean tRewrite = Boolean.parseBoolean(parts[4]);
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+			AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
 			
 			return new ZipmmSPInstruction(aggbin, in1, in2, out, tRewrite, opcode, str);
 		} 

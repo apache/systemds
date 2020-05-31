@@ -85,7 +85,7 @@ public class PrivacyMonitor
 	 * @param input variable for which the privacy constraint is checked
 	 */
 	public static void handlePrivacyScalarOutput(CPOperand input, ExecutionContext ec) {
-		Data data = ec.getCacheableData(input);
+		Data data = ec.getVariable(input);
 		if ( data != null && (data instanceof CacheableData<?>)){
 			PrivacyConstraint privacyConstraintIn = ((CacheableData<?>) data).getPrivacyConstraint();
 			if ( privacyConstraintIn != null && (privacyConstraintIn.getPrivacyLevel() == PrivacyLevel.Private) ){

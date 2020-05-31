@@ -19,17 +19,12 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
@@ -39,10 +34,6 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 	}
 
 	public static AggregateBinaryCPInstruction parseInstruction( String str ) {
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
@@ -50,15 +41,13 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
 		
-		InstructionUtils.checkNumFields( parts, 4 );
-		in1.split(parts[1]);
-		in2.split(parts[2]);
-		out.split(parts[3]);
+		InstructionUtils.checkNumFields(parts, 4);
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand out = new CPOperand(parts[3]);
 		int k = Integer.parseInt(parts[4]);
-		
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
-		return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);	
+		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(k);
+		return new AggregateBinaryCPInstruction(aggbin, in1, in2, out, opcode, str);
 	}
 	
 	@Override

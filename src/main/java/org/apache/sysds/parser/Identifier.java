@@ -26,6 +26,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public abstract class Identifier extends Expression
 {
@@ -104,8 +105,8 @@ public abstract class Identifier extends Expression
 		_nnz = nnzs;
 	}
 
-	public void setPrivacy(boolean privacy){
-		_privacy = new PrivacyConstraint(privacy);
+	public void setPrivacy(PrivacyLevel privacyLevel){
+		_privacy = new PrivacyConstraint(privacyLevel);
 	}
 
 	public void setPrivacy(PrivacyConstraint privacyConstraint){

@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.JSONHelper;
@@ -1097,10 +1098,8 @@ public class DataExpression extends DataIdentifier
 				
 				// set privacy
 				Expression eprivacy = getVarParam("privacy");
-				boolean privacy = false;
-				if ( eprivacy != null ) {
-					privacy = Boolean.valueOf(eprivacy.toString());
-					getOutput().setPrivacy(privacy);
+				if ( eprivacy != null ){
+					getOutput().setPrivacy(PrivacyLevel.valueOf(eprivacy.toString()));
 				}
 
 				// Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
@@ -2074,7 +2073,6 @@ public class DataExpression extends DataIdentifier
 						if ( key.toString().equalsIgnoreCase(DELIM_HAS_HEADER_ROW) 
 								|| key.toString().equalsIgnoreCase(DELIM_FILL)
 								|| key.toString().equalsIgnoreCase(DELIM_SPARSE)
-								|| key.toString().equalsIgnoreCase(PRIVACY)
 								) {
 							// parse these parameters as boolean values
 							BooleanIdentifier boolId = null; 
@@ -2096,7 +2094,8 @@ public class DataExpression extends DataIdentifier
 							removeVarParam(key.toString());
 							addVarParam(key.toString(), doubleId);
 						}
-						else if (key.toString().equalsIgnoreCase(DELIM_NA_STRINGS)) {
+						else if (key.toString().equalsIgnoreCase(DELIM_NA_STRINGS) 
+								|| key.toString().equalsIgnoreCase(PRIVACY)) {
 							String naStrings = null;
 							if ( val instanceof String) {
 								naStrings = val.toString();

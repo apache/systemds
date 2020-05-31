@@ -146,7 +146,7 @@ public class BinaryExpression extends Expression
 		}
 
 		// Set privacy of output
-		output.setPrivacy(PrivacyPropagator.MergeBinary(
+		output.setPrivacy(PrivacyPropagator.mergeBinary(
 			getLeft().getOutput().getPrivacy(), getRight().getOutput().getPrivacy()));
 
 		this.setOutput(output);

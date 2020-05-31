@@ -88,7 +88,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		mcOut.set(mc.getRows(), mc.getCols(), blen, mc.getNonZeros());
 		
-		//get the source format form the meta data
+		//get the source format from the meta data
 		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
 		if(iimd == null)
 			throw new DMLRuntimeException("Error: Metadata not found");

@@ -19,30 +19,30 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
+
 /**
- * PrivacyConstraint holds all privacy constraints for data in the system at compile time and runtime. 
+ * This exception should be thrown to flag DML runtime errors related to the violation of privacy constraints.
  */
-public class PrivacyConstraint
+public class DMLPrivacyException extends DMLRuntimeException 
 {
-	public enum PrivacyLevel {
-		None,               // No data exchange constraints. Data can be shared with anyone.
-		Private,            // Data cannot leave the origin.
-		PrivateAggregation  // Only aggregations of the data can leave the origin.
+	private static final long serialVersionUID = 1L;
+
+	//prevent string concatenation of classname w/ stop message
+	private DMLPrivacyException(Exception e) {
+		super(e);
 	}
 
-	protected PrivacyLevel privacyLevel = PrivacyLevel.None;
-
-	public PrivacyConstraint(){}
-
-	public PrivacyConstraint(PrivacyLevel privacyLevel) {
-		setPrivacyLevel(privacyLevel);
+	private DMLPrivacyException(String string, Exception ex){
+		super(string,ex);
 	}
-
-	public void setPrivacyLevel(PrivacyLevel privacyLevel){
-		this.privacyLevel = privacyLevel;
-	}
-
-	public PrivacyLevel getPrivacyLevel(){
-		return privacyLevel;
+	
+	/**
+	 * This is the only valid constructor for DMLPrivacyException.
+	 * 
+	 * @param msg message
+	 */
+	public DMLPrivacyException(String msg) {
+		super(msg);
 	}
 }

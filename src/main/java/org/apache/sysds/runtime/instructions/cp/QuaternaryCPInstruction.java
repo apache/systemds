@@ -96,6 +96,9 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 		throw new DMLRuntimeException("Unexpected opcode in QuaternaryCPInstruction: " + inst);
 	}
 
+	public CPOperand getInput4() {
+		return input4;
+	}
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {

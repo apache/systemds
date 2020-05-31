@@ -138,6 +138,10 @@ public abstract class Instruction
 		privacyConstraint = lop.getPrivacyConstraint();
 	}
 
+	public void setPrivacyConstraint(PrivacyConstraint pc){
+		privacyConstraint = pc;
+	}
+
 	public PrivacyConstraint getPrivacyConstraint(){
 		return privacyConstraint;
 	}

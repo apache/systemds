@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.util.Arrays;
 import java.util.Iterator;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
@@ -82,11 +83,12 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int colpos) {
-		int nrow = getNumRows();
-		for(int i = 0; i < nrow; i++) {
-			double cellVal = getData(i, colpos);
-			target.quickSetValue(i, 0, cellVal);
-		}
+		throw new NotImplementedException("Old Function Not In use");
+		// int nrow = getNumRows();
+		// for(int i = 0; i < nrow; i++) {
+		// 	double cellVal = getData(i, colpos);
+		// 	target.quickSetValue(i, 0, cellVal);
+		// }
 	}
 
 	@Override

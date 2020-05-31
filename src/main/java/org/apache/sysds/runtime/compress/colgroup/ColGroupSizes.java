@@ -130,4 +130,11 @@ public class ColGroupSizes {
 		size += MatrixBlock.estimateSizeInMemory(nrRows, nrColumns, sparsity);
 		return size;
 	}
+
+	public static long estimateInMemorySizeQuan(int nrRows, int nrColumns){
+		long size = estimateInMemorySizeGroup(nrColumns);
+		size += 8; // scale value
+		size += MemoryEstimates.byteArrayCost(nrRows*nrColumns);
+		return size;
+	}
 }

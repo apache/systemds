@@ -73,8 +73,11 @@ public class ColGroupIO {
 				case DDC2:
 					grp = new ColGroupDDC2();
 					break;
+				case QUAN8S:
+					grp = new ColGroupQuan();
+					break;
 				default:
-					throw new DMLRuntimeException("Unsupported ColGroup Type used");
+					throw new DMLRuntimeException("Unsupported ColGroup Type used:  "  + ctype);
 			}
 
 			// Deserialize and add column group (flag for shared dictionary passed
@@ -113,7 +116,7 @@ public class ColGroupIO {
 		for(ColGroup grp : _colGroups) {
 			// TODO save DDC Dict sharing smarter.
 			boolean shared = (grp instanceof ColGroupDDC1 && _sharedDDC1Dict && grp.getNumCols() == 1);
-			out.writeByte(grp.getCompType().ordinal());
+			out.writeByte(grp.getColGroupType().ordinal());
 			grp.write(out, skipDict & shared); 
 			skipDict |= shared;
 		}

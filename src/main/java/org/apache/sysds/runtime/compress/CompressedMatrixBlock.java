@@ -830,7 +830,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		// note: UC group never passed into this function
 		for(ColGroup grp : groups)
 			if(!(grp instanceof ColGroupUncompressed) && !(cacheDDC1 && grp instanceof ColGroupDDC1))
-				((ColGroupValue) grp).unaryAggregateOperations(op, ret, rl, ru);
+				((ColGroup) grp).unaryAggregateOperations(op, ret, rl, ru);
 	}
 
 	@Override
@@ -1058,7 +1058,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		result.reset();
 		// delegate matrix-vector operation to each column group
 		for(ColGroup grp : colGroups)
-			((ColGroupValue) grp).leftMultByRowVector(vector, result);
+			grp.leftMultByRowVector(vector, result);
 		// post-processing
 		result.recomputeNonZeros();
 	}

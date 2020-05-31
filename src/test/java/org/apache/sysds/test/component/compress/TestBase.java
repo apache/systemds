@@ -53,7 +53,7 @@ public class TestBase extends AutomatedTestBase {
 	protected MatrixBlock mb;
 
 	public TestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
-		CompressionSettings compressionSettings, MatrixTypology MatrixTypology) {
+			CompressionSettings compressionSettings, MatrixTypology MatrixTypology) {
 
 		this.sparsity = TestConstants.getSparsityValue(sparType);
 		this.rows = TestConstants.getNumberOfRows(MatrixTypology);
@@ -63,7 +63,7 @@ public class TestBase extends AutomatedTestBase {
 		this.min = TestConstants.getMinRangeValue(valueRange);
 
 		try {
-			switch(valType) {
+			switch (valType) {
 				case CONST:
 					this.min = this.max;
 					// Do not Break, utilize the RAND afterwards.
@@ -74,25 +74,26 @@ public class TestBase extends AutomatedTestBase {
 					this.input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7));
 					break;
 				case OLE_COMPRESSIBLE:
-					// Note the Compressible Input generator, generates an already Transposed input normally, therefore last
+					// Note the Compressible Input generator, generates an already Transposed input
+					// normally, therefore last
 					// argument is true, to build a "normal" matrix.
-					this.input = CompressibleInputGenerator
-						.getInputDoubleMatrix(rows, cols, CompressionType.OLE, (max - min) / 10, sparsity, 7, true);
+					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
+							(max - min) / 10, max, min, sparsity, 7, true);
 					break;
 				case RLE_COMPRESSIBLE:
-					this.input = CompressibleInputGenerator
-						.getInputDoubleMatrix(rows, cols, CompressionType.RLE, (max - min) / 10, sparsity, 7, true);
+					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
+							(max - min) / 10, max, min, sparsity, 7, true);
 					break;
 				default:
 					throw new NotImplementedException("Not Implemented Test Value type input generator");
 			}
-		
+
 		} catch (Exception e) {
 			e.printStackTrace();
-			assertTrue("Error in construction of input Test Base",false);
-			//TODO: handle exception
+			assertTrue("Error in construction of input Test Base", false);
+			// TODO: handle exception
 		}
-		
+
 		this.valRange = valueRange;
 		this.valType = valType;
 		this.compressionSettings = compressionSettings;

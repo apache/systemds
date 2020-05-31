@@ -129,6 +129,7 @@ public abstract class ColGroupValue extends ColGroup {
 		_dict = dict;
 	}
 
+	@Override
 	public MatrixBlock getValuesAsBlock() {
 		boolean containsZeros = (this instanceof ColGroupOffset) ? ((ColGroupOffset) this)._zeros : false;
 		final double[] values = getValues();
@@ -150,6 +151,10 @@ public abstract class ColGroupValue extends ColGroup {
 	public final int[] getCounts(int rl, int ru) {
 		int[] tmp = new int[getNumValues()];
 		return getCounts(rl, ru, tmp);
+	}
+
+	public boolean getIfCountsType(){
+		return true;
 	}
 
 	public abstract int[] getCounts(int rl, int ru, int[] out);
@@ -208,6 +213,7 @@ public abstract class ColGroupValue extends ColGroup {
 
 		return ret;
 	}
+
 
 	protected final double sumValues(int valIx, double[] b) {
 		final int numCols = getNumCols();
@@ -280,9 +286,6 @@ public abstract class ColGroupValue extends ColGroup {
 			result.quickSetValue(0, _colIndexes[j], vals[j]);
 	}
 
-	// additional vector-matrix multiplication to avoid DDC uncompression
-	public abstract void leftMultByRowVector(ColGroupDDC vector, MatrixBlock result);
-
 	/**
 	 * Method for use by subclasses. Applies a scalar operation to the value metadata stored in the superclass.
 	 * 
@@ -308,13 +311,7 @@ public abstract class ColGroupValue extends ColGroup {
 		unaryAggregateOperations(op, result, 0, getNumRows());
 	}
 
-	/**
-	 * 
-	 * @param op     aggregation operator
-	 * @param result output matrix block
-	 * @param rl     row lower index, inclusive
-	 * @param ru     row upper index, exclusive
-	 */
+	@Override
 	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
 		// sum and sumsq (reduceall/reducerow over tuples and counts)
 		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq) {

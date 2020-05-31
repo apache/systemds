@@ -41,6 +41,7 @@ public class CompressionSettingsBuilder {
 		validCompressions.add(CompressionType.OLE);
 		validCompressions.add(CompressionType.RLE);
 		validCompressions.add(CompressionType.UNCOMPRESSED);
+		validCompressions.add(CompressionType.QUAN);
 	}
 	
 	public CompressionSettingsBuilder copySettings(CompressionSettings that){

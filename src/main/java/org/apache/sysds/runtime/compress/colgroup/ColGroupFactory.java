@@ -234,6 +234,8 @@ public class ColGroupFactory {
 				return new ColGroupOLE(colIndexes, rlen, ubm);
 			case UNCOMPRESSED:
 				return new ColGroupUncompressed(colIndexes, rawMatrixBlock, compSettings);
+			case QUAN:
+				return new ColGroupQuan(colIndexes, rlen, ubm);
 			default:
 				throw new DMLCompressionException("Not implemented ColGroup Type compressed in factory.");
 		}

@@ -141,26 +141,21 @@ public class JolEstimateRLETest extends JolEstimateTest {
 		mb = CompressibleInputGenerator.getInput(1000000, 1, CompressionType.RLE, 1, 1.0, 132);
 		tests.add(new Object[] {mb, 1, 32, 0});
 
-
 		// Multi Column
 		// two identical columns 
 		mb = CompressibleInputGenerator.getInput(10, 2, CompressionType.RLE, 2, 1.0, 132);
 		tests.add(new Object[] {mb, 3, 6, 0});
 
 		mb = CompressibleInputGenerator.getInput(10, 6, CompressionType.RLE, 2, 1.0, 132);
-		// System.out.println(mb);
 		tests.add(new Object[] {mb, 5, 10, 0});
 
 		mb = CompressibleInputGenerator.getInput(10, 100, CompressionType.RLE, 2, 1.0, 132);
-		// System.out.println(mb);
 		tests.add(new Object[] {mb, 10, 20, 0});
 
 		mb = CompressibleInputGenerator.getInput(101, 17, CompressionType.RLE, 2, 1.0, 132);
-		// System.out.println(mb);
 		tests.add(new Object[] {mb, 15, 15*2, 0});
 
 		mb = CompressibleInputGenerator.getInput(101, 17, CompressionType.RLE, 3, 1.0, 132);
-		// System.out.println(mb);
 		tests.add(new Object[] {mb, 31, 62, 0});
 
 		return tests;

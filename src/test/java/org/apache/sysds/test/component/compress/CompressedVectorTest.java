@@ -83,11 +83,15 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 			// quantile compressed
 			double ret2 = cmb.cmOperations(cm).getRequiredResult(opType);
-			// compare result with input allowing 1 bit difference in least significant location
-			TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
 
+			if (compressionSettings.lossy) {
+				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
+			} else {
+				TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
+			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new Exception(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -103,10 +107,14 @@ public class CompressedVectorTest extends CompressedTestBase {
 			MatrixBlock tmp2 = cmb.sortOperations(null, new MatrixBlock());
 			double ret2 = tmp2.pickValue(0.95);
 
-			// compare result with input
-			TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
+			if (compressionSettings.lossy) {
+				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
+			} else {
+				TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
+			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}

@@ -99,9 +99,12 @@ public abstract class CompressedSizeEstimator {
 			double compRatio = uncompSize / minCompressedSize;
 
 			if(compRatio > 1000) {
-
-				LOG.warn("\n\tVery good CompressionRatio: " + compRatio + "\n\tUncompressedSize: " + uncompSize
-					+ "\tCompressedSize: " + minCompressedSize + "\tType: " + sizeInfos[col].getBestCompressionType());
+				StringBuilder sb = new StringBuilder();
+				sb.append("Very good CompressionRatio: " +String.format("%10.1f", compRatio));
+				sb.append(" UncompressedSize: " + String.format("%14.0f",uncompSize));
+				sb.append(" tCompressedSize: " + String.format("%14.0f",minCompressedSize));
+				sb.append(" type: " + sizeInfos[col].getBestCompressionType());
+				LOG.warn(sb.toString());
 			}
 
 			if(compRatio > 1) {

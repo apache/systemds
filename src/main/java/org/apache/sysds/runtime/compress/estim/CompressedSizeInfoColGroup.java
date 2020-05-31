@@ -121,6 +121,9 @@ public class CompressedSizeInfoColGroup {
 					fact.numCols,
 					((double) fact.numVals / (fact.numRows * fact.numCols)));
 				break;
+			case QUAN:
+				size = ColGroupSizes.estimateInMemorySizeQuan(fact.numRows, fact.numCols); 
+				break;
 			default:
 				throw new NotImplementedException("The col compression Type is not yet supported");
 		}

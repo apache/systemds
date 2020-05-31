@@ -270,7 +270,7 @@ sigmoid(X)
 X = rand (rows = 20, cols = 10)
 Y = sigmoid(X)
 print(toString(Y))
-
+```
 
 ## `steplm`-Function
 

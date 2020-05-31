@@ -30,6 +30,7 @@ limitations under the License.
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
     
+    
 # Introduction
 
 The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level functions
@@ -322,3 +323,28 @@ y = X %*% rand(rows=ncol(X), 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
+## `sigmoid` -Function
+
+The Sigmoid function is a type of activation function, and also defined as a squashing function  which limit the output to a range between 0 and 1,which will make these functions useful in the prediction of probabilities.
+
+### Usage
+```r
+sigmoid(X)
+```
+
+### Arguments
+| Name  | Type           | Default  | Description |
+| :---- | :------------- | -------- | :---------- |
+| X     | Matrix[Double] | required |Matrix of feature vectors.|
+
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | 1-column matrix of weights. |
+
+### Example
+```r
+X = rand (rows = 20, cols = 10)
+Y = sigmoid(X)
+print(toString(Y))

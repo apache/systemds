@@ -119,6 +119,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
+			final double[] values = getValues();
 
 			// cache blocking config and position array
 			int[] apos = skipScan(numVals, rl);
@@ -135,8 +136,8 @@ public class ColGroupOLE extends ColGroupOffset {
 					int pos = boff + bix + 1;
 					for(int i = pos; i < pos + len; i++)
 						for(int j = 0, rix = bi + _data[i]; j < numCols; j++)
-							if(_values[off + j] != 0)
-								target.appendValue(rix, _colIndexes[j], _values[off + j]);
+							if(values[off + j] != 0)
+								target.appendValue(rix, _colIndexes[j], values[off + j]);
 					apos[k] += len + 1;
 				}
 			}
@@ -154,6 +155,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
 			final int n = getNumRows();
+			final double[] values = getValues();
 
 			// cache blocking config and position array
 			int[] apos = new int[numVals];
@@ -175,8 +177,8 @@ public class ColGroupOLE extends ColGroupOffset {
 					int pos = boff + bix + 1;
 					for(int i = pos; i < pos + len; i++)
 						for(int j = 0, rix = bi + _data[i]; j < numCols; j++)
-							if(_values[off + j] != 0)
-								target.appendValue(rix, cix[j], _values[off + j]);
+							if(values[off + j] != 0)
+								target.appendValue(rix, cix[j], values[off + j]);
 					apos[k] += len + 1;
 				}
 			}
@@ -194,6 +196,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int numVals = getNumValues();
 		final int n = getNumRows();
 		double[] c = target.getDenseBlockValues();
+		final double[] values = getValues();
 
 		// cache blocking config and position array
 		int[] apos = allocIVector(numVals, true);
@@ -211,7 +214,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				int len = _data[boff + bix];
 				int pos = boff + bix + 1;
 				for(int i = pos; i < pos + len; i++) {
-					c[bi + _data[i]] = _values[off + colpos];
+					c[bi + _data[i]] = values[off + colpos];
 					nnz++;
 				}
 				apos[k] += len + 1;
@@ -258,7 +261,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		// LOG.debug(this.toString());
 		// Note 0 is because the size can be calculated based on the given values,
 		// And because the fourth argument is only needed in estimation, not when an OLE ColGroup is created.
-		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(), _values.length, _data.length, 0);
+		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(), getValues().length, _data.length, 0);
 	}
 
 	@Override
@@ -381,6 +384,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
+		final double[] values = getValues();
 
 		if( numVals > 1 && _numRows > blksz) {
 			// cache blocking config (see matrix-vector mult for explanation)
@@ -421,7 +425,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			// step 3: scale partial results by values and write to global output
 			for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols)
 				for(int j = 0; j < numCols; j++)
-					c[_colIndexes[j]] += cvals[k] * _values[valOff + j];
+					c[_colIndexes[j]] += cvals[k] * values[valOff + j];
 		}
 		else {
 			// iterate over all values and their bitmaps
@@ -436,7 +440,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 				// scale partial results by values and write results
 				for(int j = 0; j < numCols; j++)
-					c[_colIndexes[j]] += vsum * _values[valOff + j];
+					c[_colIndexes[j]] += vsum * values[valOff + j];
 			}
 		}
 	}
@@ -447,6 +451,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 
 		// iterate over all values and their bitmaps
 		for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols) {
@@ -459,7 +464,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 			// scale partial results by values and write results
 			for(int j = 0; j < numCols; j++)
-				c[_colIndexes[j]] += vsum * _values[valOff + j];
+				c[_colIndexes[j]] += vsum * values[valOff + j];
 		}
 	}
 
@@ -470,6 +475,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		// iterate over all values and their bitmaps
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
+		final double[] values = getValues();
 
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
@@ -483,7 +489,7 @@ public class ColGroupOLE extends ColGroupOffset {
 
 			// scale counts by all values
 			for(int j = 0; j < numCols; j++)
-				kplus.execute3(kbuff, _values[valOff + j], count);
+				kplus.execute3(kbuff, values[valOff + j], count);
 		}
 
 		result.quickSetValue(0, 0, kbuff._sum);
@@ -575,6 +581,8 @@ public class ColGroupOLE extends ColGroupOffset {
 		// iterate over all values and their bitmaps
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
+		final double[] values = getValues();
+
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
@@ -588,7 +596,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			// scale counts by all values
 			for(int j = 0; j < numCols; j++) {
 				kbuff.set(result.quickGetValue(0, _colIndexes[j]), result.quickGetValue(1, _colIndexes[j]));
-				kplus.execute3(kbuff, _values[valOff + j], count);
+				kplus.execute3(kbuff, values[valOff + j], count);
 				result.quickSetValue(0, _colIndexes[j], kbuff._sum);
 				result.quickSetValue(1, _colIndexes[j], kbuff._correction);
 			}
@@ -849,8 +857,9 @@ public class ColGroupOLE extends ColGroupOffset {
 			final int vcode = _vcodes[segIx];
 			if(vcode >= 0) {
 				// copy entire value tuple if necessary
+				final double[] values = getValues();
 				for(int j = 0, off = vcode * clen; j < clen; j++)
-					buff[_colIndexes[j]] = _values[off + j];
+					buff[_colIndexes[j]] = values[off + j];
 				// reset vcode to avoid scan on next segment
 				_vcodes[segIx] = -1;
 			}

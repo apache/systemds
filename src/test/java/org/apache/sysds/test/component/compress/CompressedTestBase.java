@@ -67,11 +67,8 @@ public class CompressedTestBase extends TestBase {
 	protected static CompressionSettings[] usedCompressionSettings = new CompressionSettings[] {
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(false)
 			.setSeed(compressionSeed).setValidCompressions(DDCOnly).setInvestigateEstimate(true).create(),
-		// TODO: DDC1 sharring does not work correctly in Aggregare Col Max.
-		// The other tests passes fine.
-		// new
-		// CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(true).setSeed(compressionSeed).setValidCompressions(DDCOnly)
-		// .create(),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(true)
+			.setSeed(compressionSeed).setValidCompressions(DDCOnly).setInvestigateEstimate(true).create(),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(OLEOnly)
 			.setInvestigateEstimate(true).create(),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(RLEOnly)

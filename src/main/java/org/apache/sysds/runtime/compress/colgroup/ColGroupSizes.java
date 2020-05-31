@@ -83,7 +83,8 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeGroupValue(int nrColumns, long nrValues) {
 		long size = estimateInMemorySizeGroup(nrColumns);
-		size += MemoryEstimates.doubleArrayCost(nrValues);
+		size += 24 //dictionary object
+			+ MemoryEstimates.doubleArrayCost(nrValues);
 		return size;
 	}
 

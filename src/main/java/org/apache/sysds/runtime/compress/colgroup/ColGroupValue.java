@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.utils.MemoryEstimates;
 
 /**
  * Base class for column groups encoded with value dictionary.
@@ -55,7 +56,7 @@ public abstract class ColGroupValue extends ColGroup {
 	};
 
 	/** Distinct values associated with individual bitmaps. */
-	protected double[] _values; // linearized <numcol vals> <numcol vals>
+	protected Dictionary _dict;
 
 	public ColGroupValue() {
 		super();
@@ -77,7 +78,7 @@ public abstract class ColGroupValue extends ColGroup {
 		}
 
 		// extract and store distinct values (bitmaps handled by subclasses)
-		_values = ubm.getValues();
+		_dict = new Dictionary(ubm.getValues());
 	}
 
 	/**
@@ -89,16 +90,18 @@ public abstract class ColGroupValue extends ColGroup {
 	 */
 	protected ColGroupValue(int[] colIndices, int numRows, double[] values) {
 		super(colIndices, numRows);
-		_values = values;
+		_dict = new Dictionary(values);
 	}
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getValuesSize());
+		return ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues());
 	}
 
-	public long getValuesSize() {
-		return (_values != null) ? 32 + _values.length * 8 : 0;
+	public long getDictionarySize() {
+		//NOTE: this estimate needs to be consistent with the estimate above,
+		//so for now we use the (incorrect) double array size, not the dictionary size
+		return (_dict != null) ? MemoryEstimates.doubleArrayCost(_dict.getValues().length) : 0;
 	}
 
 	/**
@@ -107,27 +110,33 @@ public abstract class ColGroupValue extends ColGroup {
 	 * @return the number of distinct sets of values associated with the bitmaps in this column group
 	 */
 	public int getNumValues() {
-		return _values.length / _colIndexes.length;
+		return _dict.getValues().length / _colIndexes.length;
 	}
 
 	public double[] getValues() {
-		return _values;
+		return _dict.getValues();
 	}
 
 	public void setValues(double[] values) {
-		_values = values;
+		_dict = new Dictionary(values);
 	}
 
 	public double getValue(int k, int col) {
-		return _values[k * getNumCols() + col];
+		return _dict.getValues()[k * getNumCols() + col];
+	}
+	
+	public void setDictionary(Dictionary dict) {
+		_dict = dict;
 	}
 
 	public MatrixBlock getValuesAsBlock() {
 		boolean containsZeros = (this instanceof ColGroupOffset) ? ((ColGroupOffset) this)._zeros : false;
-		int rlen = containsZeros ? _values.length + 1 : _values.length;
+		final double[] values = getValues();
+		int vlen = values.length;
+		int rlen = containsZeros ? vlen + 1 : vlen;
 		MatrixBlock ret = new MatrixBlock(rlen, 1, false);
-		for(int i = 0; i < _values.length; i++)
-			ret.quickSetValue(i, 0, _values[i]);
+		for(int i = 0; i < vlen; i++)
+			ret.quickSetValue(i, 0, values[i]);
 		return ret;
 	}
 
@@ -169,50 +178,27 @@ public abstract class ColGroupValue extends ColGroup {
 	}
 
 	protected int containsAllZeroValue() {
-		int numVals = getNumValues();
-		int numCols = getNumCols();
-		for(int i = 0, off = 0; i < numVals; i++, off += numCols) {
-			boolean allZeros = true;
-			for(int j = 0; j < numCols; j++)
-				allZeros &= (_values[off + j] == 0);
-			if(allZeros)
-				return i;
-		}
-		return -1;
-	}
-
-	public final double sumValues(int valIx) {
-		final int numCols = getNumCols();
-		final int valOff = valIx * numCols;
-		double val = 0.0;
-		for(int i = 0; i < numCols; i++) {
-			val += _values[valOff + i];
-		}
-
-		return val;
-	}
-
-	public final double sumValues(int valIx, KahanFunction kplus) {
-		return sumValues(valIx, kplus, new KahanObject(0, 0));
-	}
-
-	public final double sumValues(int valIx, KahanFunction kplus, KahanObject kbuff) {
-		final int numCols = getNumCols();
-		final int valOff = valIx * numCols;
-		kbuff.set(0, 0);
-		for(int i = 0; i < numCols; i++)
-			kplus.execute2(kbuff, _values[valOff + i]);
-		return kbuff._sum;
+		return _dict.hasZeroTuple(getNumCols());
 	}
 
 	protected final double[] sumAllValues(KahanFunction kplus, KahanObject kbuff) {
 		return sumAllValues(kplus, kbuff, true);
 	}
 
+	public final double sumValues(int valIx, KahanFunction kplus, KahanObject kbuff) {
+		final int numCols = getNumCols();
+		final int valOff = valIx * numCols;
+		final double[] values = _dict.getValues();
+		kbuff.set(0, 0);
+		for(int i = 0; i < numCols; i++)
+			kplus.execute2(kbuff, values[valOff + i]);
+		return kbuff._sum;
+	}
+
 	protected final double[] sumAllValues(KahanFunction kplus, KahanObject kbuff, boolean allocNew) {
 		// quick path: sum
 		if(getNumCols() == 1 && kplus instanceof KahanPlus)
-			return _values; // shallow copy of values
+			return _dict.getValues(); // shallow copy of values
 
 		// pre-aggregate value tuple
 		final int numVals = getNumValues();
@@ -226,11 +212,10 @@ public abstract class ColGroupValue extends ColGroup {
 	protected final double sumValues(int valIx, double[] b) {
 		final int numCols = getNumCols();
 		final int valOff = valIx * numCols;
+		final double[] values = _dict.getValues();
 		double val = 0;
-		for(int i = 0; i < numCols; i++) {
-			val += _values[valOff + i] * b[i];
-		}
-
+		for(int i = 0; i < numCols; i++)
+			val += values[valOff + i] * b[i];
 		return val;
 	}
 
@@ -255,18 +240,14 @@ public abstract class ColGroupValue extends ColGroup {
 	 */
 	protected void computeMxx(MatrixBlock result, Builtin builtin, boolean zeros) {
 		// init and 0-value handling
-		double val = (builtin
-			.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+		double val = (builtin.getBuiltinCode() == BuiltinCode.MAX) ?
+			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		if(zeros)
 			val = builtin.execute(val, 0);
 
 		// iterate over all values only
-		final int numVals = getNumValues();
-		final int numCols = getNumCols();
-		for(int k = 0; k < numVals; k++)
-			for(int j = 0, valOff = k * numCols; j < numCols; j++)
-				val = builtin.execute(val, _values[valOff + j]);
-
+		val = _dict.aggregate(val, builtin);
+		
 		// compute new partial aggregate
 		val = builtin.execute(val, result.quickGetValue(0, 0));
 		result.quickSetValue(0, 0, val);
@@ -280,23 +261,20 @@ public abstract class ColGroupValue extends ColGroup {
 	 * @param zeros   indicator if column group contains zero values
 	 */
 	protected void computeColMxx(MatrixBlock result, Builtin builtin, boolean zeros) {
-		final int numVals = getNumValues();
 		final int numCols = getNumCols();
 
 		// init and 0-value handling
 		double[] vals = new double[numCols];
-		Arrays.fill(vals,
-			(builtin.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
+		Arrays.fill(vals, (builtin.getBuiltinCode() == BuiltinCode.MAX) ?
+			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
 		if(zeros) {
 			for(int j = 0; j < numCols; j++)
 				vals[j] = builtin.execute(vals[j], 0);
 		}
 
 		// iterate over all values only
-		for(int k = 0; k < numVals; k++)
-			for(int j = 0, valOff = k * numCols; j < numCols; j++)
-				vals[j] = builtin.execute(vals[j], _values[valOff + j]);
-
+		vals = _dict.aggregateCols(vals, builtin, _colIndexes);
+		
 		// copy results to output
 		for(int j = 0; j < numCols; j++)
 			result.quickSetValue(0, _colIndexes[j], vals[j]);
@@ -312,24 +290,16 @@ public abstract class ColGroupValue extends ColGroup {
 	 * @return transformed copy of value metadata for this column group
 	 */
 	protected double[] applyScalarOp(ScalarOperator op) {
-		// scan over linearized values
-		double[] ret = new double[_values.length];
-		for(int i = 0; i < _values.length; i++) {
-			ret[i] = op.executeScalar(_values[i]);
-		}
-		return ret;
+		return _dict.clone().apply(op).getValues();
 	}
 
 	protected double[] applyScalarOp(ScalarOperator op, double newVal, int numCols) {
-		// scan over linearized values
-		double[] ret = new double[_values.length + numCols];
-		for(int i = 0; i < _values.length; i++) {
-			ret[i] = op.executeScalar(_values[i]);
-		}
+		double[] values = _dict.getValues(); //allocate new array just once
+		Dictionary tmp = new Dictionary(Arrays.copyOf(values, values.length+numCols));
+		double[] ret = tmp.apply(op).getValues();
 
 		// add new value to the end
-		Arrays.fill(ret, _values.length, _values.length + numCols, newVal);
-
+		Arrays.fill(ret, values.length, values.length+numCols, newVal);
 		return ret;
 	}
 
@@ -429,10 +399,10 @@ public abstract class ColGroupValue extends ColGroup {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s%5d ", "Columns:", this._colIndexes.length));
-		sb.append(Arrays.toString(this._colIndexes));
-		sb.append(String.format("\n%15s%5d ", "Values:", this._values.length));
-		sb.append(Arrays.toString(this._values));
+		sb.append(String.format("\n%15s%5d ", "Columns:", _colIndexes.length));
+		sb.append(Arrays.toString(_colIndexes));
+		sb.append(String.format("\n%15s%5d ", "Values:", _dict.getValues().length));
+		sb.append(Arrays.toString(_dict.getValues()));
 		return sb.toString();
 	}
 }

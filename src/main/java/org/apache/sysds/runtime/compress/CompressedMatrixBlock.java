@@ -243,9 +243,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		if(_sharedDDC1Dict) {
 			boolean seenDDC1 = false;
 			for(ColGroup grp : _colGroups)
-				if(grp.getNumCols() == 1 && grp.getCompType() == CompressionType.DDC) {
+				if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
+					ColGroupDDC1 grpDDC = (ColGroupDDC1) grp;
 					if(seenDDC1)
-						total -= grp.getValuesSize();
+						total -= grpDDC.getDictionarySize();
 					seenDDC1 = true;
 				}
 		}

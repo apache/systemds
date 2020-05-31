@@ -223,7 +223,7 @@ SYSTEMDS-270 Compressed Matrix Blocks
  * 272 Simplify and speedup compression tests                         OK
  * 273 Refactor compressed Matrix Block to simplify responsibilities  OK
  * 273a Redesign allocation of ColGroups in ColGroupFactory
- * 274 Make the DDC Compression dictionary share correctly
+ * 274 Make the DDC Compression dictionary share correctly            OK
  * 275 Include compressionSettings in DMLConfiguration
  * 276 Allow Uncompressed Columns to be in sparse formats
  * 277 Sampling based estimators fix

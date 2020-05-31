@@ -361,6 +361,11 @@ public class HDFSTool
 		throws IOException {
 		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, fmt, formatProperties);
 	}
+
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties, PrivacyConstraint privacyConstraint)
+		throws IOException {
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, fmt, formatProperties, privacyConstraint);
+	}
 	
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
 			FileFormat fmt, FileFormatProperties formatProperties) 
@@ -452,7 +457,7 @@ public class HDFSTool
 
 		//add privacy constraints
 		if ( privacyConstraint != null ){
-			mtd.put(DataExpression.PRIVACY, privacyConstraint.getPrivacy());
+			mtd.put(DataExpression.PRIVACY, privacyConstraint.getPrivacyLevel().name());
 		}
 
 		//add username and time

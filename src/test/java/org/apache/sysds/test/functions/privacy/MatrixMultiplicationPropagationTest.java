@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -46,26 +47,36 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMatrixMultiplicationPropagation() throws JSONException {
-		matrixMultiplicationPropagation(true, true);
+	public void testMatrixMultiplicationPropagationPrivate() throws JSONException {
+		matrixMultiplicationPropagation(PrivacyLevel.Private, true);
 	}
 
 	@Test
-	public void testMatrixMultiplicationPropagationFalse() throws JSONException {
-		matrixMultiplicationPropagation(false, true);
+	public void testMatrixMultiplicationPropagationNone() throws JSONException {
+		matrixMultiplicationPropagation(PrivacyLevel.None, true);
 	}
 
 	@Test
-	public void testMatrixMultiplicationPropagationSecondOperand() throws JSONException {
-		matrixMultiplicationPropagation(true, false);
+	public void testMatrixMultiplicationPropagationPrivateAggregation() throws JSONException {
+		matrixMultiplicationPropagation(PrivacyLevel.PrivateAggregation, true);
 	}
 
 	@Test
-	public void testMatrixMultiplicationPropagationSecondOperandFalse() throws JSONException {
-		matrixMultiplicationPropagation(false, false);
+	public void testMatrixMultiplicationPropagationSecondOperandPrivate() throws JSONException {
+		matrixMultiplicationPropagation(PrivacyLevel.Private, false);
 	}
 
-	private void matrixMultiplicationPropagation(boolean privacy, boolean privateFirstOperand) throws JSONException {
+	@Test
+	public void testMatrixMultiplicationPropagationSecondOperandNone() throws JSONException {
+		matrixMultiplicationPropagation(PrivacyLevel.None, false);
+	}
+
+	@Test
+	public void testMatrixMultiplicationPropagationSecondOperandPrivateAggregation() throws JSONException {
+		matrixMultiplicationPropagation(PrivacyLevel.PrivateAggregation, false);
+	}
+
+	private void matrixMultiplicationPropagation(PrivacyLevel privacyLevel, boolean privateFirstOperand) throws JSONException {
 
 		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationPropagationTest");
 		loadTestConfiguration(config);
@@ -78,7 +89,7 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		double[][] b = getRandomMatrix(n, k, -1, 1, 1, -1);
 		double[][] c = TestUtils.performMatrixMultiplication(a, b);
 		
-		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacy);
+		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacyLevel);
 		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
 
 		if ( privateFirstOperand ) {
@@ -99,7 +110,7 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 
 		// Check that the output metadata is correct
 		String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-		assertEquals(String.valueOf(privacy), actualPrivacyValue);
+		assertEquals(String.valueOf(privacyLevel), actualPrivacyValue);
 	}
 
 	@Test
@@ -144,28 +155,32 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMatrixMultiplicationPrivacyInputTrue() throws JSONException {
-		testMatrixMultiplicationPrivacyInput(true);
+	public void testMatrixMultiplicationPrivacyInputPrivate() throws JSONException {
+		testMatrixMultiplicationPrivacyInput(PrivacyLevel.Private);
 	}
 
 	@Test
-	public void testMatrixMultiplicationPrivacyInputFalse() throws JSONException {
-		testMatrixMultiplicationPrivacyInput(false);
+	public void testMatrixMultiplicationPrivacyInputNone() throws JSONException {
+		testMatrixMultiplicationPrivacyInput(PrivacyLevel.None);
 	}
 
-	private void testMatrixMultiplicationPrivacyInput(boolean privacy) throws JSONException {
+	@Test
+	public void testMatrixMultiplicationPrivacyInputPrivateAggregation() throws JSONException {
+		testMatrixMultiplicationPrivacyInput(PrivacyLevel.PrivateAggregation);
+	}
+
+	private void testMatrixMultiplicationPrivacyInput(PrivacyLevel privacyLevel) throws JSONException {
 		TestConfiguration config = availableTestConfigurations.get("MatrixMultiplicationPropagationTest");
 		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(m, n, -1, 1, 1, -1);
 		
-		PrivacyConstraint privacyConstraint = new PrivacyConstraint();
-		privacyConstraint.setPrivacy(privacy);
+		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacyLevel);
 		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
 		
 		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
 
 		String actualPrivacyValue = readDMLMetaDataValue("a", INPUT_DIR, DataExpression.PRIVACY);
-		assertEquals(String.valueOf(privacy), actualPrivacyValue);
+		assertEquals(String.valueOf(privacyLevel), actualPrivacyValue);
 	}
 }

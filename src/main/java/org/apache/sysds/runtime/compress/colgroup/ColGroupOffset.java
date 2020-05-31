@@ -50,7 +50,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public static final int WRITE_CACHE_BLKSZ = 2 * BitmapEncoder.BITMAP_BLOCK_SZ;
 	public static boolean ALLOW_CACHE_CONSCIOUS_ROWSUMS = true;
 
-	/** Bitmaps, one per uncompressed value in {@link #_values}. */
+	/** Bitmaps, one per uncompressed value tuple in {@link #_dict}. */
 	protected int[] _ptr; // bitmap offsets per value
 	protected char[] _data; // linearized bitmaps (variable length)
 
@@ -107,7 +107,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _colIndexes.length, 0, 0);
 		}
 		else {
-			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _values.length, _ptr.length, _data.length);
+			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), getValues().length, _ptr.length, _data.length);
 		}
 	}
 
@@ -117,6 +117,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		int[] colIndices = getColIndices();
+		final double[] values = getValues();
 
 		// Run through the bitmaps for this column group
 		for(int i = 0; i < numVals; i++) {
@@ -131,7 +132,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 					break;
 
 				for(int colIx = 0; colIx < numCols; colIx++)
-					target.appendValue(row, colIndices[colIx], _values[valOff + colIx]);
+					target.appendValue(row, colIndices[colIx], values[valOff + colIx]);
 			}
 		}
 	}
@@ -141,6 +142,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 
 		// Run through the bitmaps for this column group
 		for(int i = 0; i < numVals; i++) {
@@ -152,7 +154,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 				for(int colIx = 0; colIx < numCols; colIx++) {
 					int origMatrixColIx = getColIndex(colIx);
 					int targetColIx = colIndexTargets[origMatrixColIx];
-					target.quickSetValue(row, targetColIx, _values[valOff + colIx]);
+					target.quickSetValue(row, targetColIx, values[valOff + colIx]);
 				}
 			}
 		}
@@ -163,6 +165,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public void decompressToBlock(MatrixBlock target, int colpos) {
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 
 		// Run through the bitmaps for this column group
 		for(int i = 0; i < numVals; i++) {
@@ -171,7 +174,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 
 			while(decoder.hasNext()) {
 				int row = decoder.next();
-				target.quickSetValue(row, 0, _values[valOff + colpos]);
+				target.quickSetValue(row, 0, values[valOff + colpos]);
 			}
 		}
 	}
@@ -188,13 +191,14 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		// find row index in value offset lists via scan
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 		for(int i = 0; i < numVals; i++) {
 			Iterator<Integer> decoder = getIterator(i);
 			int valOff = i * numCols;
 			while(decoder.hasNext()) {
 				int row = decoder.next();
 				if(row == r)
-					return _values[valOff + ix];
+					return values[valOff + ix];
 				else if(row > r)
 					break; // current value
 			}
@@ -205,20 +209,22 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	protected final void sumAllValues(double[] b, double[] c) {
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
+		final double[] values = getValues();
 
 		// vectMultiplyAdd over cols instead of dotProduct over vals because
 		// usually more values than columns
 		for(int i = 0, off = 0; i < numCols; i++, off += numVals)
-			LinearAlgebraUtils.vectMultiplyAdd(b[i], _values, c, off, 0, numVals);
+			LinearAlgebraUtils.vectMultiplyAdd(b[i], values, c, off, 0, numVals);
 	}
 
 	protected final double mxxValues(int bitmapIx, Builtin builtin) {
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
-		double val = (builtin
-			.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+		final double[] values = getValues();
+		double val = (builtin.getBuiltinCode() == BuiltinCode.MAX) ?
+			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		for(int i = 0; i < numCols; i++)
-			val = builtin.execute(val, _values[valOff + i]);
+			val = builtin.execute(val, values[valOff + i]);
 
 		return val;
 	}
@@ -267,10 +273,11 @@ public abstract class ColGroupOffset extends ColGroupValue {
 			_colIndexes[i] = in.readInt();
 
 		// read distinct values
-		_values = new double[numVals * numCols];
+		double[] values = new double[numVals * numCols];
 		for(int i = 0; i < numVals * numCols; i++)
-			_values[i] = in.readDouble();
-
+			values[i] = in.readDouble();
+		_dict = new Dictionary(values);
+		
 		// read bitmaps
 		int totalLen = in.readInt();
 		_ptr = new int[numVals + 1];
@@ -299,8 +306,9 @@ public abstract class ColGroupOffset extends ColGroupValue {
 			out.writeInt(_colIndexes[i]);
 
 		// write distinct values
-		for(int i = 0; i < _values.length; i++)
-			out.writeDouble(_values[i]);
+		double[] values = getValues();
+		for(int i = 0; i < numCols * numVals; i++)
+			out.writeDouble(values[i]);
 
 		// write bitmaps (lens and data, offset later recreated)
 		int totalLen = 0;
@@ -322,7 +330,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		// col indices
 		ret += 4 * _colIndexes.length;
 		// distinct values (groups of values)
-		ret += 8 * _values.length;
+		ret += 8 * getValues().length;
 		// actual bitmaps
 		ret += 4; // total length
 		for(int i = 0; i < getNumValues(); i++)
@@ -405,7 +413,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		public IJV next() {
 			if(!hasNext())
 				throw new RuntimeException("No more offset entries.");
-			_buff.set(_rpos, _colIndexes[_cpos], (_vpos >= getNumValues()) ? 0 : _values[_vpos * getNumCols() + _cpos]);
+			_buff.set(_rpos, _colIndexes[_cpos],
+				(_vpos >= getNumValues()) ? 0 : _dict.getValue(_vpos * getNumCols() + _cpos));
 			getNextValue();
 			return _buff;
 		}

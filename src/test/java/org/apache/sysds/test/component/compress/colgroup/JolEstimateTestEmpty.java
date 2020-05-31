@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
+import org.apache.sysds.runtime.compress.colgroup.Dictionary;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
@@ -114,8 +115,11 @@ public class JolEstimateTestEmpty {
 				size += 20;
 				size += 4;
 			}
-			if(fl.typeClass() == "org.apache.sysds.runtime.matrix.data.MatrixBlock") {
+			if(fl.typeClass().equals(MatrixBlock.class.getName())) {
 				size += MatrixBlock.estimateSizeDenseInMemory(0, 0);
+			}
+			else if(fl.typeClass().equals(Dictionary.class.getName())) {
+				size += getWorstCaseMemory(Dictionary.class);
 			}
 		}
 

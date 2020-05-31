@@ -41,46 +41,57 @@ import org.junit.runners.Parameterized.Parameters;
 public class CompressedTestBase extends TestBase {
 
 	protected static SparsityType[] usedSparsityTypes = new SparsityType[] { // Sparsity 0.9, 0.1, 0.01 and 0.0
-		// SparsityType.DENSE,
-		SparsityType.SPARSE, SparsityType.ULTRA_SPARSE, SparsityType.EMPTY
+		SparsityType.DENSE,
+		// SparsityType.SPARSE,
+		// SparsityType.ULTRA_SPARSE,
+		// SparsityType.EMPTY
 	};
 	protected static ValueType[] usedValueTypes = new ValueType[] {
-		// ValueType.RAND,
-		ValueType.CONST, ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE, ValueType.RLE_COMPRESSIBLE,};
+		ValueType.RAND, 
+		ValueType.CONST,
+		ValueType.RAND_ROUND, 
+		ValueType.OLE_COMPRESSIBLE, 
+		ValueType.RLE_COMPRESSIBLE,
+	};
 
-	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL,
-		// ValueRange.LARGE,
+	protected static ValueRange[] usedValueRanges = new ValueRange[] {
+		// ValueRange.SMALL,
+		ValueRange.LARGE,
 	};
 
 	private static List<CompressionType> DDCOnly = new ArrayList<>();
 	private static List<CompressionType> OLEOnly = new ArrayList<>();
 	private static List<CompressionType> RLEOnly = new ArrayList<>();
+	private static List<CompressionType> QuanOnly = new ArrayList<>();
 
 	static {
 		DDCOnly.add(CompressionType.DDC);
 		OLEOnly.add(CompressionType.OLE);
 		RLEOnly.add(CompressionType.RLE);
+		QuanOnly.add(CompressionType.QUAN);
 	}
 
 	private static final int compressionSeed = 7;
 
 	protected static CompressionSettings[] usedCompressionSettings = new CompressionSettings[] {
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(false)
-			.setSeed(compressionSeed).setValidCompressions(DDCOnly).setInvestigateEstimate(true).create(),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(true)
-			.setSeed(compressionSeed).setValidCompressions(DDCOnly).setInvestigateEstimate(true).create(),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(OLEOnly)
-			.setInvestigateEstimate(true).create(),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(RLEOnly)
-			.setInvestigateEstimate(true).create(),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(false)
+		// 	.setSeed(compressionSeed).setValidCompressions(DDCOnly).setInvestigateEstimate(true).create(),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(true)
+		// 	.setSeed(compressionSeed).setValidCompressions(DDCOnly).setInvestigateEstimate(true).create(),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(OLEOnly)
+		// 	.setInvestigateEstimate(true).create(),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setValidCompressions(RLEOnly)
+		// 	.setInvestigateEstimate(true).create(),
 		new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
-			.create()};
+			.create(),
+		new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setValidCompressions(QuanOnly)
+			.setInvestigateEstimate(true).create()
+		};
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
-		MatrixTypology.SMALL,
-		// MatrixTypology.FEW_COL,
-		MatrixTypology.FEW_ROW,
-		// MatrixTypology.LARGE,
+		MatrixTypology.SMALL, MatrixTypology.FEW_COL,
+		// MatrixTypology.FEW_ROW,
+		MatrixTypology.LARGE,
 		// MatrixTypology.SINGLE_COL,
 		// MatrixTypology.SINGLE_ROW,
 		MatrixTypology.L_ROWS,
@@ -99,12 +110,15 @@ public class CompressedTestBase extends TestBase {
 
 	protected int sampleTolerance = 1024;
 
+	protected double lossyTolerance;
+
 	public CompressedTestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
 		CompressionSettings compSettings, MatrixTypology MatrixTypology) {
 		super(sparType, valType, valueRange, compSettings, MatrixTypology);
-		// System.out.println("HERE !");
-		try {
 
+		try {
+			if(compSettings.lossy)
+				setLossyTolerance(valueRange);
 			cmb = CompressedMatrixBlockFactory.compress(mb, k, compressionSettings);
 
 			if(cmb instanceof CompressedMatrixBlock) {
@@ -122,10 +136,18 @@ public class CompressedTestBase extends TestBase {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			// throw new RuntimeException(
-			// "CompressionTest Init failed with settings: " + this.toString() + "\n" + e.getMessage(), e);
 			assertTrue("\nCompressionTest Init failed with settings: " + this.toString(), false);
 		}
+
+	}
+
+	private void setLossyTolerance(ValueRange valueRange) {
+		/**
+		 * Tolerance for encoding values is the maximum value in dataset divided by number distinct values available in
+		 * a single Byte (since we encode our quntization in Byte)
+		 */
+		lossyTolerance = (double) Math.max(TestConstants.getMaxRangeValue(valueRange),
+			Math.abs(TestConstants.getMinRangeValue(valueRange))) / 127.0;
 
 	}
 
@@ -138,7 +160,7 @@ public class CompressedTestBase extends TestBase {
 				for(ValueRange vr : usedValueRanges) {
 					for(CompressionSettings cs : usedCompressionSettings) {
 						for(MatrixTypology mt : usedMatrixTypology) {
-							tests.add(new Object[] {st, vt, vr, cs, mt,});
+							tests.add(new Object[] {st, vt, vr, cs, mt});
 
 						}
 					}

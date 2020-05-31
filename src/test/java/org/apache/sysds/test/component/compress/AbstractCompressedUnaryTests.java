@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertTrue;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -149,13 +151,37 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			int dim1 = (aggType == AggType.ROWSUMS || aggType == AggType.ROWSUMSSQ || aggType == AggType.ROWMINS ||
+			int dim1 = (aggType == AggType.ROWSUMS || aggType == AggType.ROWSUMSSQ || aggType == AggType.ROWMAXS ||
 				aggType == AggType.ROWMINS) ? rows : 1;
 			int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
 				aggType == AggType.COLMINS) ? cols : 1;
 
-			TestUtils.compareMatricesBitAvgDistance(d1, d2, dim1, dim2, 2048, 20, compressionSettings.toString());
+			assertTrue("dim 1 is equal in non compressed res", d1.length == dim1);
+			assertTrue("dim 1 is equal in compressed res", d2.length == dim1);
+			assertTrue("dim 2 is equal in non compressed res", d1[0].length == dim2);
+			assertTrue("dim 2 is equal in compressed res", d2[0].length == dim2);
 
+			if(compressionSettings.lossy) {
+				if(aggType == AggType.COLSUMS) {
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * 30 * dim2);
+				}
+				else 
+				if(aggType == AggType.ROWSUMS) {
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * dim1);
+				}
+				else {
+					boolean ignoreZero = true;
+					TestUtils.compareMatricesPercentageDistance(d1,
+						d2,
+						0.1,
+						0.9,
+						compressionSettings.toString(),
+						ignoreZero);
+				}
+			}
+			else {
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 20, compressionSettings.toString());
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();

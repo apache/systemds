@@ -52,6 +52,8 @@ public class CompressionSettings {
 	// Investigate the estimate.
 	public final boolean investigateEstimate;
 
+	public final boolean lossy;
+
 	// Removed the option of LOW_LEVEL_OPT, (only effecting OLE and RLE.)
 	// public final boolean LOW_LEVEL_OPT;
 
@@ -67,9 +69,8 @@ public class CompressionSettings {
 		this.seed = seed;
 		this.investigateEstimate = investigateEstimate;
 		this.validCompressions = validCompressions;
+		this.lossy = validCompressions.contains(CompressionType.QUAN);
 	}
-
-
 
 	@Override
 	public String toString() {

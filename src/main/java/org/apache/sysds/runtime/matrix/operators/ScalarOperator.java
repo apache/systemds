@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.BitwShiftL;
 import org.apache.sysds.runtime.functionobjects.BitwShiftR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.MinusNz;
@@ -31,7 +32,6 @@ import org.apache.sysds.runtime.functionobjects.Multiply2;
 import org.apache.sysds.runtime.functionobjects.NotEquals;
 import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
 
 /**

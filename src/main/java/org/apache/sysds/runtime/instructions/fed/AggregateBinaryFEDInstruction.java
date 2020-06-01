@@ -210,20 +210,24 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 	private static void combinePartialMVResults(FederatedRange range,
 		FederatedResponse federatedResponse, MatrixBlock resultBlock, boolean matrixVectorOp)
 	{
-		int[] beginDims = range.getBeginDimsInt();
-		MatrixBlock mb = (MatrixBlock) federatedResponse.getData()[0];
-		// TODO performance optimizations
-		// TODO Improve Vector Matrix multiplication accuracy: An idea would be to make use of kahan plus here,
-		//  this should improve accuracy a bit, although we still lose out on the small error lost on the worker
-		//  without having to return twice the amount of data (value + sum error)
-		// Add worker response to resultBlock
-		for (int r = 0; r < mb.getNumRows(); r++)
-			for (int c = 0; c < mb.getNumColumns(); c++) {
-				int resultRow = r + (!matrixVectorOp ? 0 : beginDims[0]);
-				int resultColumn = c + (!matrixVectorOp ? beginDims[1] : 0);
-				resultBlock.quickSetValue(resultRow, resultColumn,
-					resultBlock.quickGetValue(resultRow, resultColumn) + mb.quickGetValue(r, c));
-			}
+		try {
+			int[] beginDims = range.getBeginDimsInt();
+			MatrixBlock mb = (MatrixBlock) federatedResponse.getData()[0];
+			// TODO performance optimizations
+			// TODO Improve Vector Matrix multiplication accuracy: An idea would be to make use of kahan plus here,
+			//  this should improve accuracy a bit, although we still lose out on the small error lost on the worker
+			//  without having to return twice the amount of data (value + sum error)
+			// Add worker response to resultBlock
+			for (int r = 0; r < mb.getNumRows(); r++)
+				for (int c = 0; c < mb.getNumColumns(); c++) {
+					int resultRow = r + (!matrixVectorOp ? 0 : beginDims[0]);
+					int resultColumn = c + (!matrixVectorOp ? beginDims[1] : 0);
+					resultBlock.quickSetValue(resultRow, resultColumn,
+						resultBlock.quickGetValue(resultRow, resultColumn) + mb.quickGetValue(r, c));
+				}
+		} catch (Exception e){
+			throw new DMLRuntimeException("Combine partial results from federated matrix failed.", e);
+		}
 	}
 	
 	private static Future<FederatedResponse> executeMVMultiply(FederatedRange range,
@@ -323,12 +327,12 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				// TODO experiment if sending multiple requests at the same time to the same worker increases
 				//  performance (remove get and do multithreaded?)
 				FederatedResponse response = executeMVMultiply(_range, _data, vec, _distributeCols).get();
-				if(response.isSuccessful()) {
+				try{
 					result.copy(r, r, 0, endDims[1] - beginDims[1] - 1, (MatrixBlock) response.getData()[0], true);
-				}
-				else
+				} catch (Exception e) {
 					throw new DMLRuntimeException(
-						"Federated Matrix-Matrix Multiplication failed: " + response.getErrorMessage());
+						"Federated Matrix-Matrix Multiplication failed: ", e);
+				}		
 			}
 			_result.setRight(result);
 		}
@@ -366,12 +370,13 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				// TODO experiment if sending multiple requests at the same time to the same worker increases
 				//  performance
 				FederatedResponse response = executeMVMultiply(_range, _data, vec, _distributeCols).get();
-				if(response.isSuccessful()) {
+				try {
 					result.copy(0, endDims[0] - beginDims[0] - 1, c, c, (MatrixBlock) response.getData()[0], true);
-				}
-				else
+				} catch (Exception e){
 					throw new DMLRuntimeException(
-							"Federated Matrix-Matrix Multiplication failed: " + response.getErrorMessage());
+						"Federated Matrix-Matrix Multiplication failed: ", e);
+				}
+				
 			}
 			_result.setRight(result);
 		}

@@ -66,8 +66,6 @@ public class LibFederatedAgg
 				FederatedRange range = idResponsePair.getLeft();
 				FederatedResponse federatedResponse = idResponsePair.getRight().get();
 				int[] beginDims = range.getBeginDimsInt();
-				if (!federatedResponse.isSuccessful())
-					throw new DMLRuntimeException("Federated aggregation failed: " + federatedResponse.getErrorMessage());
 				MatrixBlock mb = (MatrixBlock) federatedResponse.getData()[0];
 				// TODO performance optimizations
 				MatrixValue.CellIndex cellIndex = new MatrixValue.CellIndex(0, 0);

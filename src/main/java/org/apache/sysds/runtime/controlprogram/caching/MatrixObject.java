@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -421,8 +422,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				// add result
 				int[] beginDimsInt = range.getBeginDimsInt();
 				int[] endDimsInt = range.getEndDimsInt();
-				if( !response.isSuccessful() )
-					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
 				MatrixBlock multRes = (MatrixBlock) response.getData()[0];
 				result.copy(beginDimsInt[0], endDimsInt[0] - 1,
 					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);

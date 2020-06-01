@@ -23,7 +23,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -80,13 +79,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw new DMLRuntimeException("FederatedWorkerHandler: Received object no instance of `FederatedRequest`.");
 		FederatedRequest.FedMethod method = request.getMethod();
 		log.debug("Received command: " + method.name());
+		PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
+		PrivacyMonitor.clearCheckedConstraints();
 
 		synchronized (_seq) {
 			FederatedResponse response = constructResponse(request);
+			conditionalAddCheckedConstraints(request, response);
 			if (!response.isSuccessful())
 				log.error("Method " + method + " failed: " + response.getErrorMessage());
 			ctx.writeAndFlush(response).addListener(new CloseListener());
 		}
+	}
+
+	private void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response){
+		if ( request.checkPrivacy() )
+			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
 	}
 
 	private FederatedResponse constructResponse(FederatedRequest request) {
@@ -111,7 +118,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 		}
 		catch (Exception exception) {
-			return new FederatedResponse(FederatedResponse.Type.ERROR, ExceptionUtils.getFullStackTrace(exception));
+			return new FederatedResponse(FederatedResponse.Type.ERROR, exception);
 		}
 	}
 
@@ -318,6 +325,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		public void operationComplete(ChannelFuture channelFuture) throws InterruptedException, DMLRuntimeException {
 			if (!channelFuture.isSuccess())
 				throw new DMLRuntimeException("Federated Worker Write failed");
+			PrivacyMonitor.clearCheckedConstraints();
 			channelFuture.channel().close().sync();
 		}
 	}

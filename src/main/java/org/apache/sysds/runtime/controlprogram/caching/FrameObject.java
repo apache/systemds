@@ -175,8 +175,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 				FederatedRange range = readResponse.getLeft();
 				FederatedResponse response = readResponse.getRight().get();
 				// add result
-				if(!response.isSuccessful())
-					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
 				FrameBlock multRes = (FrameBlock) response.getData()[0];
 				for (int r = 0; r < multRes.getNumRows(); r++) {
 					for (int c = 0; c < multRes.getNumColumns(); c++) {

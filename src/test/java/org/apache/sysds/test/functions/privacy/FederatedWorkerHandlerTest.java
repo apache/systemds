@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.apache.sysds.common.Types;
 import static java.lang.Thread.sleep;
 
+@net.jcip.annotations.NotThreadSafe
 public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/federated/";
@@ -92,11 +93,11 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if (expectedException == null)
 			writeExpectedMatrix("R", r);
 
-		runGenericScalarTest(TEST_PROG_SCALAR_ADDITION_MATRIX, s, expectedException);
+		runGenericScalarTest(TEST_PROG_SCALAR_ADDITION_MATRIX, s, expectedException, privacyLevel);
 	}
 
 
-	private void runGenericScalarTest(String dmlFile, int s, Class<?> expectedException)
+	private void runGenericScalarTest(String dmlFile, int s, Class<?> expectedException, PrivacyLevel privacyLevel)
 	{
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
@@ -113,7 +114,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			t.start();
 			sleep(FED_WORKER_WAIT);
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR_SCALAR + dmlFile + ".dml";
-			programArgs = new String[]{"-args",
+			programArgs = new String[]{"-checkPrivacy", "-args",
 					TestUtils.federatedAddress(FEDERATED_WORKER_HOST, FEDERATED_WORKER_PORT, input("M")),
 					Integer.toString(rows), Integer.toString(cols),
 					Integer.toString(s),
@@ -127,6 +128,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			e.printStackTrace();
 			assert (false);
 		} finally {
+			assert(checkedPrivacyConstraintsContains(privacyLevel));
 			rtplatform = platformOld;
 			TestUtils.shutdownThread(t);
 			rtplatform = platformOld;
@@ -188,7 +190,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("aggregation");
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + AGGREGATION_TEST_NAME + ".dml";
-		programArgs = new String[] {"-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
+		programArgs = new String[] {"-checkPrivacy", "-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
 			Integer.toString(cols), Integer.toString(rows * 2), output("S"), output("R"), output("C")};
 
 		runTest(true, (expectedException != null), expectedException, -1);
@@ -196,6 +198,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		// compare all sums via files
 		if ( expectedException == null )
 			compareResults(1e-11);
+
+		assert(checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;
@@ -236,7 +240,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		rtplatform = Types.ExecMode.SINGLE_NODE;
 		// Run reference dml script with normal matrix for Row/Col sum
 		fullDMLScriptName = HOME + TRANSFER_TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("A"), expected("R"), expected("C")};
+		programArgs = new String[] {"-checkPrivacy", "-args", input("A"), expected("R"), expected("C")};
 		runTest(true, false, null, -1);
 
 		// reference file should not be written to hdfs, so we set platform here
@@ -247,7 +251,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("transfer");
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TRANSFER_TEST_NAME + ".dml";
-		programArgs = new String[] {"-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
+		programArgs = new String[] {"-checkPrivacy", "-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
 			Integer.toString(cols), output("R"), output("C")};
 
 		runTest(true, (expectedException != null), expectedException, -1);
@@ -255,6 +259,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		// compare all sums via files
 		if ( expectedException == null )
 			compareResults(1e-11);
+		
+		assert(checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;
@@ -319,7 +325,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + MATVECMULT_TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs",
+		programArgs = new String[] {"-checkPrivacy", 
+			"-nvargs",
 			"X1=" + TestUtils.federatedAddress("localhost", port1, input("X1")),
 			"X2=" + TestUtils.federatedAddress("localhost", port2, input("X2")),
 			"Y1=" + TestUtils.federatedAddress("localhost", port1, input("Y1")),
@@ -330,6 +337,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		// compare via files
 		if (expectedException == null)
 			compareResults(1e-9);
+
+		assert(checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThreads(t1, t2);
 

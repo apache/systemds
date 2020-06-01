@@ -47,7 +47,9 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.ParameterBuilder;
@@ -61,6 +63,7 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1787,6 +1790,21 @@ public abstract class AutomatedTestBase {
 		for( String opcode : Statistics.getCPHeavyHitterOpCodes())
 			count += opcode.contains(str) ? 1 : 0;
 		return (count >= minCount);
+	}
+
+	protected boolean checkedPrivacyConstraintsContains(PrivacyLevel... levels){
+		for ( PrivacyLevel level : levels)
+			if (!(CheckedConstraintsLog.getCheckedConstraints().containsKey(level)))
+				return false;
+		return true;
+	}
+
+	protected boolean checkedPrivacyConstraintsAbove(Map<PrivacyLevel,Long> levelCounts){
+		for ( Map.Entry<PrivacyLevel,Long> levelCount : levelCounts.entrySet()){
+			if (!(CheckedConstraintsLog.getCheckedConstraints().get(levelCount.getKey()).longValue() >= levelCount.getValue()))
+				return false;
+		}
+		return true;
 	}
 
 	/**

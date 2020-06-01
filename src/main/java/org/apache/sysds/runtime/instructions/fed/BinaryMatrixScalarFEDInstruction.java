@@ -76,8 +76,6 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 				FederatedRange range = idResponsePair.getLeft();
 				//wait for fed workers finishing their work
 				FederatedResponse federatedResponse = idResponsePair.getRight().get();
-				if (!federatedResponse.isSuccessful())
-					throw new DMLRuntimeException("Federated binary operation failed: " + federatedResponse.getErrorMessage());
 
 				MatrixBlock shard = (MatrixBlock) federatedResponse.getData()[0];
 				ret.copy(range.getBeginDimsInt()[0], range.getEndDimsInt()[0]-1,

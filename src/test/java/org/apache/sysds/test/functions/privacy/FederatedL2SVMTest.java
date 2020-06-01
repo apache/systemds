@@ -366,7 +366,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 
 			// Run actual dml script with federated matrix
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", "\"localhost:" + port1 + "/" + input("X1") + "\"",
+			programArgs = new String[] {"-checkPrivacy", "-args", "\"localhost:" + port1 + "/" + input("X1") + "\"",
 				"\"localhost:" + port2 + "/" + input("X2") + "\"", Integer.toString(rows), Integer.toString(cols),
 				Integer.toString(halfRows), input("Y"), output("Z")};
 			runTest(true, exception2, expectedException2, -1);
@@ -374,6 +374,9 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			if ( !(exception1 || exception2) ) {
 				compareResults(1e-9);
 			}
+
+			if ( expectedPrivacyLevel != null)
+				assert(checkedPrivacyConstraintsContains(expectedPrivacyLevel));
 		}
 		finally {
 			TestUtils.shutdownThreads(t1, t2);

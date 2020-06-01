@@ -40,32 +40,31 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName(), new String[] { "A.scalar" }));
 	}
 
-	@Test
-	public void testSimple1by1() {
-		// test simple 1 by 1.
-		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		countDistinctTest(1, 1, 1, ex);
-	}
+	protected double percentTolerance = 0.0;
+	protected double baseTolerance = 0.0001;
 
 	@Test
 	public void testSmall() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		countDistinctTest(50, 50, 50, ex);
+		double tolerance = baseTolerance  + 50 *  percentTolerance;
+		countDistinctTest(50, 50, 50, ex,tolerance);
 	}
 
 	@Test
 	public void testLarge() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		countDistinctTest(800, 1000, 1000, ex);
+		double tolerance = baseTolerance + 800 *  percentTolerance;
+		countDistinctTest(800, 1000, 1000, ex,tolerance);
 	}
 
 	@Test
 	public void testXLarge() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		countDistinctTest(1723, 5000, 5000, ex);
+		double tolerance = baseTolerance + 1723 *  percentTolerance;
+		countDistinctTest(1723, 5000, 5000, ex,tolerance);
 	}
 
-	private void countDistinctTest(int numberDistinct, int cols, int rows, LopProperties.ExecType instType) {
+	public void countDistinctTest(int numberDistinct, int cols, int rows, LopProperties.ExecType instType, double tolerance) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(getTestName()));
@@ -78,7 +77,7 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 
 			runTest(true, false, null, -1);
 			writeExpectedScalar("A", numberDistinct);
-			compareResults(0.001);
+			compareResults(tolerance);
 		} catch (Exception e) {
 			e.printStackTrace();
 			assertTrue("Exception in execution: " + e.getMessage(), false);

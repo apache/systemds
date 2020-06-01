@@ -19,6 +19,9 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
+import org.apache.sysds.lops.LopProperties;
+import org.junit.Test;
+
 public class CountDistinct extends CountDistinctBase {
 
 	public String TEST_NAME = "countDistinct";
@@ -35,5 +38,12 @@ public class CountDistinct extends CountDistinctBase {
 
 	protected String getTestDir() {
 		return TEST_DIR;
+	}
+
+	@Test
+	public void testSimple1by1() {
+		// test simple 1 by 1.
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		countDistinctTest(1, 1, 1, ex, 0.00001);
 	}
 }

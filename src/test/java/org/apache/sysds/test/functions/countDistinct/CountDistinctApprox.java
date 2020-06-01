@@ -19,11 +19,25 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
+import org.apache.sysds.lops.LopProperties;
+import org.junit.Test;
+
 public class CountDistinctApprox extends CountDistinctBase {
 
 	private final static String TEST_NAME = "countDistinctApprox";
 	private final static String TEST_DIR = "functions/countDistinct/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApprox.class.getSimpleName() + "/";
+
+	public CountDistinctApprox(){
+		percentTolerance = 0.1;
+	}
+
+	@Test
+	public void testXXLarge() {
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		double tolerance = 9000 * percentTolerance;
+		countDistinctTest(9000, 10000, 5000, ex, tolerance);
+	}
 
 	@Override
 	protected String getTestClassDir() {

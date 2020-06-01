@@ -182,7 +182,7 @@ public class LibMatrixCountDistinct {
 		 * 
 		 * k value must be within range: D >> k >> 0
 		 */
-		int k = 1024;
+		int k = 128;
 		SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
 
 		if (in.isInSparseFormat()) {
@@ -206,6 +206,7 @@ public class LibMatrixCountDistinct {
 
 		LOG.debug("M: " + M);
 		LOG.debug("smallest hash:" + spq.peek());
+		LOG.debug("spq: " + spq.toString());
 
 		if (spq.size() < k) {
 			return spq.size();
@@ -230,13 +231,17 @@ public class LibMatrixCountDistinct {
 		private HashSet<Integer> containedSet = new HashSet<>();
 		private PriorityQueue<Integer> smallestHashes;
 		private int k;
+
 		public SmallestPriorityQueue(int k) {
 			smallestHashes = new PriorityQueue<>(k, Collections.reverseOrder());
 			this.k = k;
 		}
 
 		public void add(int v) {
-			if (!containedSet.contains(v)) {
+			// Slightly modified the check such that it is not allowed to contain a hash
+			// that has a lower value than k. This makes it so that we do not estimate
+			// extreme values, altho it is a modification compared to the original algorithm.
+			if (!containedSet.contains(v) && v > k) {
 				if (smallestHashes.size() < k) {
 					smallestHashes.add(v);
 					containedSet.add(v);
@@ -247,18 +252,22 @@ public class LibMatrixCountDistinct {
 			}
 		}
 
-		public int size(){
+		public int size() {
 			return smallestHashes.size();
 		}
 
-		public int peek(){
+		public int peek() {
 			return smallestHashes.peek();
 		}
 
-		public int poll(){
+		public int poll() {
 			return smallestHashes.poll();
 		}
 
+		@Override
+		public String toString() {
+			return smallestHashes.toString();
+		}
 	}
 
 	// private static int CountDistinctHyperLogLog(MatrixBlock in) {

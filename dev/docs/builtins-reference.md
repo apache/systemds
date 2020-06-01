@@ -27,8 +27,10 @@ limitations under the License.
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
+    * [`sigmoid`-Function](#sigmoid-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
+    
     
 # Introduction
 
@@ -242,6 +244,33 @@ X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 yp = lmpredict(X, w)
+```
+
+## `sigmoid`-Function
+
+The Sigmoid function is a type of activation function, and also defined as a squashing function which limit the output 
+to a range between 0 and 1, which will make these functions useful in the prediction of probabilities.
+
+### Usage
+```r
+sigmoid(X)
+```
+
+### Arguments
+| Name  | Type           | Default  | Description |
+| :---- | :------------- | -------- | :---------- |
+| X     | Matrix[Double] | required | Matrix of feature vectors. |
+
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | 1-column matrix of weights. |
+
+### Example
+```r
+X = rand (rows = 20, cols = 10)
+Y = sigmoid(X)
 ```
 
 ## `steplm`-Function

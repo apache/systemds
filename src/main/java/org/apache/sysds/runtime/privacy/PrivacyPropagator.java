@@ -19,8 +19,10 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import java.util.List;
 import java.util.function.Function;
 
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -31,6 +33,7 @@ import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
@@ -130,6 +133,8 @@ public class PrivacyPropagator
 			case BuiltinNary:
 			case Builtin:
 				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
+			case External:
+				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
 			case Ctable: 
 			case MultiReturnParameterizedBuiltin:
 			case MultiReturnBuiltin:  
@@ -147,6 +152,21 @@ public class PrivacyPropagator
 	 */
 	public static Instruction preprocessInstructionSimple(Instruction inst, ExecutionContext ec){
 		throwExceptionIfPrivacyActivated(inst, ec);
+		return inst;
+	}
+
+
+	public static Instruction preprocessExternal(FunctionCallCPInstruction inst, ExecutionContext ec){
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getBoundOutputParamNames());
+	}
+
+	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, List<String> outputNames){
+		if (inputs == null) return inst;
+		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
+		PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
+		inst.setPrivacyConstraint(mergedPrivacyConstraint);
+		for (String outputName : outputNames)
+			setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, outputName);
 		return inst;
 	}
 
@@ -331,13 +351,18 @@ public class PrivacyPropagator
 	}
 
 	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, CPOperand output){
-		Data dd = ec.getVariable(output.getName());
-		if ( dd != null ){
+		setOutputPrivacyConstraint(ec, privacyConstraint, output.getName());
+	}
+
+	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, String outputName){
+		Data dd = ec.getVariable(outputName);
+		if ( dd != null && privacyConstraint != null ){
 			if ( dd instanceof CacheableData ){
 				((CacheableData<?>) dd).setPrivacyConstraints(privacyConstraint);
-				ec.setVariable(output.getName(), dd);
-			}
-			else throw new DMLPrivacyException("Privacy constraint of " + output + " cannot be set since it is not an instance of CacheableData");
+				ec.setVariable(outputName, dd);
+			} else if ( privacyConstraint.privacyLevel.equals(PrivacyLevel.Private) || !(dd.getDataType().equals(DataType.SCALAR)) )
+				throw new DMLPrivacyException("Privacy constraint of " + outputName + " cannot be set since it is not an instance of CacheableData and it is not a scalar with privacy level " + PrivacyLevel.PrivateAggregation.name() );
+			// if privacy level is PrivateAggregation and data is scalar, the call should pass without propagating any constraints
 		}
 	}
 }

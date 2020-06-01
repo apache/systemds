@@ -30,11 +30,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
-@RunWith(value = Parameterized.class)
 public class CountDistinct extends AutomatedTestBase {
 
 	private final static String TEST_NAME = "countDistinct";
@@ -42,43 +38,45 @@ public class CountDistinct extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + CountDistinct.class.getSimpleName() + "/";
 
 	private static String[] esT = new String[] {
-		// The different types of Estimators
-		"count", // EstimatorType.NUM_DISTINCT_COUNT,
-		// EstimatorType.NUM_DISTINCT_KMV,
-		// EstimatorType.NUM_DISTINCT_HYPER_LOG_LOG
+			// The different types of Estimators
+			"count", // EstimatorType.NUM_DISTINCT_COUNT,
+			// EstimatorType.NUM_DISTINCT_KMV,
+			// EstimatorType.NUM_DISTINCT_HYPER_LOG_LOG
 	};
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"A.scalar"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "A.scalar" }));
 	}
-
-	@Parameters
-	public static Collection<Object[]> data() {
-		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		ArrayList<Object[]> tests = new ArrayList<>();
-		for(String type : esT) {
-			tests.add(new Object[] {1, 1, 1, ex, type});
-			// tests.add(new Object[] {100, 100, 100, ex, type});
-			// tests.add(new Object[] {1000, 1000, 1000, ex, type});
-		}
-		return tests;
-	}
-
-	@Parameterized.Parameter
-	public int numberDistinct;
-	@Parameterized.Parameter(1)
-	public int cols;
-	@Parameterized.Parameter(2)
-	public int rows;
-	@Parameterized.Parameter(3)
-	public LopProperties.ExecType instType;
-	@Parameterized.Parameter(4)
-	public String type;
 
 	@Test
-	public void run_unique_length_test() {
+	public void testSimple1by1() {
+		// test simple 1 by 1.
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		for (String type : esT) {
+			countDistinctTest(1, 1, 1, ex, type);
+		}
+	}
+
+	@Test
+	public void testSmall() {
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		for (String type : esT) {
+			countDistinctTest(50, 50, 50, ex, type);
+		}
+	}
+
+	@Test
+	public void testLarge() {
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		for (String type : esT) {
+			countDistinctTest(1000, 1000, 1000, ex, type);
+		}
+	}
+
+	private void countDistinctTest(int numberDistinct, int cols, int rows, LopProperties.ExecType instType,
+			String type) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -86,18 +84,16 @@ public class CountDistinct extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			String out = output("A");
 			System.out.println(out);
-			programArgs = new String[] {"-args", String.valueOf(numberDistinct), String.valueOf(rows),
-				String.valueOf(cols), out, type};
+			programArgs = new String[] { "-args", String.valueOf(numberDistinct), String.valueOf(rows),
+					String.valueOf(cols), out, type };
 
 			runTest(true, false, null, -1);
 			writeExpectedScalar("A", numberDistinct);
 			compareResults(0.001);
-		}
-		catch(Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			assertTrue("Exception in execution: " + e.getMessage(), false);
-		}
-		finally {
+		} finally {
 			rtplatform = platformOld;
 		}
 	}

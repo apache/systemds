@@ -86,8 +86,10 @@ public class LibMatrixCountDistinct {
 			throw new DMLException("Invalid hashing configuration using " + HashType.ExpHash + " and " + CountDistinctTypes.KMV);
 		}
 
-		if (op.operatorType == CountDistinctTypes.HLL)
-			throw new NotImplementedException("HyperLogLog not implemented");
+		// shortcut in simplest case.
+		if(in.getNumColumns() == 1 && in.getNumRows() == 1){
+			return 1;
+		}
 
 		// Just use naive implementation if the size is small.
 		if (in.getNumRows() * in.getNumColumns() < minimumSize) {
@@ -101,8 +103,9 @@ public class LibMatrixCountDistinct {
 					res = CountDistinctValuesKVM(in, op);
 					break;
 				case HLL:
-					res = CountDistinctHyperLogLog(in);
-					break;
+					throw new NotImplementedException("HyperLogLog not implemented");
+					// res = CountDistinctHyperLogLog(in);
+					// break;
 				default:
 					throw new DMLException("Invalid or not implemented Estimator Type");
 			}
@@ -122,13 +125,16 @@ public class LibMatrixCountDistinct {
 	 */
 	private static int CountDistinctValuesNaive(MatrixBlock in) {
 		Set<Double> distinct = new HashSet<Double>();
-		if(in.sparse){
+		if(in.isInSparseFormat()){
 			Iterator<IJV> it = in.getSparseBlockIterator();
 			while(it.hasNext()){
 				distinct.add(it.next().getV());
 			}
 		} else{
 			double[] data = in.getDenseBlockValues();
+			if (data == null){
+				throw new DMLRuntimeException("Not valid execution");
+			}
 			for (double v : data){
 				distinct.add(v);
 			}

@@ -270,6 +270,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 		return sb.substring( 0, sb.length()-Lop.OPERAND_DELIMITOR.length() );
 	}
+
+	public CPOperand[] getInputs(){
+		return _boundInputs;
+	}
 	
 	private boolean reuseFunctionOutputs(LineageItem[] liInputs, FunctionProgramBlock fpb, ExecutionContext ec) {
 		//prepare lineage cache probing

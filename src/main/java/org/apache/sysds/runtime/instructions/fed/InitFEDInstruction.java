@@ -223,10 +223,7 @@ public class InitFEDInstruction extends FEDInstruction {
 		try {
 			for (Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses) {
 				FederatedResponse response = idResponse.getRight().get();
-				if (response.isSuccessful())
-					idResponse.getLeft().setVarID((Long) response.getData()[0]);
-				else
-					throw new DMLRuntimeException(response.getErrorMessage());
+				idResponse.getLeft().setVarID((Long) response.getData()[0]);
 			}
 		}
 		catch (Exception e) {
@@ -279,11 +276,12 @@ public class InitFEDInstruction extends FEDInstruction {
 	
 	private static void handleFedFrameResponse(Types.ValueType[] schema, FederatedData federatedData,
 		FederatedResponse response, int startColumn) {
-		if(response.isSuccessful()) {
+		try {
 			// Index 0 is the varID, Index 1 is the schema of the frame
-			federatedData.setVarID((Long) response.getData()[0]);
+			Object[] data = response.getData();
+			federatedData.setVarID((Long) data[0]);
 			// copy the
-			Types.ValueType[] range_schema = (Types.ValueType[]) response.getData()[1];
+			Types.ValueType[] range_schema = (Types.ValueType[]) data[1];
 			for(int i = 0; i < range_schema.length; i++) {
 				Types.ValueType vType = range_schema[i];
 				int schema_index = startColumn + i;
@@ -292,8 +290,8 @@ public class InitFEDInstruction extends FEDInstruction {
 				else
 					schema[schema_index] = vType;
 			}
+		} catch (Exception e){
+			throw new DMLRuntimeException("Exception in frame response from federated worker.", e);
 		}
-		else
-			throw new DMLRuntimeException(response.getErrorMessage());
 	}
 }

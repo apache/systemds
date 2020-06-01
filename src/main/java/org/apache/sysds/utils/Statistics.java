@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 
 /**
  * This class captures all statistics.
@@ -996,6 +997,9 @@ public class Statistics
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
 		}
+
+		if (DMLScript.CHECK_PRIVACY)
+			sb.append("Checked Privacy Constraints:\n" + CheckedConstraintsLog.display());
 
 		return sb.toString();
 	}

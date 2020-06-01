@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.concurrent.atomic.LongAdder;
+
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -27,10 +31,39 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class PrivacyMonitor 
-{
-	//TODO maybe maintain a log of checked constaints for transfers
-	// in order to provide 'privacy explanations' similar to our stats 
-	
+{ 
+	private static EnumMap<PrivacyLevel,LongAdder> checkedConstraints;
+
+	static {
+		checkedConstraints = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
+		for ( PrivacyLevel level : PrivacyLevel.values() ){
+			checkedConstraints.put(level, new LongAdder());
+		}
+	}
+
+	private static boolean checkPrivacy = false;
+
+	public static EnumMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
+		return checkedConstraints;
+	}
+
+	private static void incrementCheckedConstraints(PrivacyLevel privacyLevel){
+		if ( checkPrivacy ){
+			if ( privacyLevel == null )
+				throw new NullPointerException("Cannot increment checked constraints log: Privacy level is null.");
+			checkedConstraints.get(privacyLevel).increment();
+		}
+			
+	}
+
+	public static void clearCheckedConstraints(){
+		checkedConstraints.replaceAll((k,v)->new LongAdder());
+	}
+
+	public static void setCheckPrivacy(boolean checkPrivacyParam){
+		checkPrivacy = checkPrivacyParam;
+	}
+
 	/**
 	 * Throws DMLPrivacyException if data object is CacheableData and privacy constraint is set to private or private aggregation.
 	 * @param dataObject input data object
@@ -41,12 +74,13 @@ public class PrivacyMonitor
 			PrivacyConstraint privacyConstraint = ((CacheableData<?>)dataObject).getPrivacyConstraint();
 			if (privacyConstraint != null){
 				PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+				incrementCheckedConstraints(privacyLevel);
 				switch(privacyLevel){
 					case None:
 						((CacheableData<?>)dataObject).setPrivacyConstraints(null);
 						break;
 					case Private:
-					case PrivateAggregation: 
+					case PrivateAggregation:
 						throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
 					default:
 						throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
@@ -65,6 +99,7 @@ public class PrivacyMonitor
 		PrivacyConstraint privacyConstraint = matrixObject.getPrivacyConstraint();
 		if (privacyConstraint != null){
 			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+			incrementCheckedConstraints(privacyLevel);
 			switch(privacyLevel){
 				case None:
 					matrixObject.setPrivacyConstraints(null);
@@ -88,8 +123,11 @@ public class PrivacyMonitor
 		Data data = ec.getVariable(input);
 		if ( data != null && (data instanceof CacheableData<?>)){
 			PrivacyConstraint privacyConstraintIn = ((CacheableData<?>) data).getPrivacyConstraint();
-			if ( privacyConstraintIn != null && (privacyConstraintIn.getPrivacyLevel() == PrivacyLevel.Private) ){
-				throw new DMLPrivacyException("Privacy constraint cannot be propagated to scalar for input " + input.getName());
+			if ( privacyConstraintIn != null ) {
+				incrementCheckedConstraints(privacyConstraintIn.getPrivacyLevel());
+				if ( privacyConstraintIn.getPrivacyLevel() == PrivacyLevel.Private ){
+					throw new DMLPrivacyException("Privacy constraint cannot be propagated to scalar for input " + input.getName());
+				}
 			}
 		}
 	}

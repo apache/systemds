@@ -68,9 +68,15 @@ public class CountDistinctTest {
 		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1024,
 		// 1024, 0.0, 100.0, 1, 7)));
 		// actualUnique.add(1024L * 1024L);
-
-		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(5000, 5000, 1, 100, 1, 8)));
-		actualUnique.add(99L);
+		try {
+			
+			inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(5000, 5000, 1, 100, 1, 8)));
+			actualUnique.add(99L);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+			//TODO: handle exception
+		}
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10240, 1, 100, 1, 7)));
 		actualUnique.add(99L);
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 1024, 1, 100, 1, 7)));

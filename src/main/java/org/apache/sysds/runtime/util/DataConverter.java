@@ -464,15 +464,16 @@ public class DataConverter
 	 * @return The matrixBlock constructed.
 	 */
 	public static MatrixBlock convertToMatrixBlock(int[][] data){
-		MatrixBlock res = new MatrixBlock();
-		throw new NotImplementedException("WORKING HERE");
-		double[][] input = new double[data.length][];
-
-		for(int index = 0; index< input.length; index++){
-			final int curIndex = index;
-			Arrays.setAll(input[index], i -> data[curIndex][i]);
+		int rows = data.length;
+		int cols = (rows > 0)? data[0].length : 0;
+		MatrixBlock res = new MatrixBlock(rows, cols, false);
+		for(int index = 0; index< data.length; index++){
+			int row = index%cols;
+			int col = index/rows + index%cols ;
+			double v = data[col][row];
+			res.appendValue(row, col, v);
 		}
-		return convertToMatrixBlock(input);
+		return res;
 	}
 
 	/**

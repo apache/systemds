@@ -913,7 +913,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case NCOL:
 		case LENGTH:
 		case COUNT_DISTINCT:
-		case COUNT_DISTINCT_ESTIMATE_KMV:
+		case COUNT_DISTINCT_APPROX:
 			checkNumParameters(1);
 			checkDataTypeParam(getFirstExpr(),
 				DataType.MATRIX, DataType.FRAME, DataType.LIST);

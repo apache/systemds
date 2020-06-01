@@ -19,22 +19,43 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
 import org.apache.sysds.utils.Hash.HashType;
 
-public class EstimatorOperator extends Operator {
+public class CountDistinctOperator extends Operator {
 	private static final long serialVersionUID = 7615123453265129670L;
 
-	public final AUType operatorType;
+	public final CountDistinctTypes operatorType;
 	public final HashType hashType;
 
-	public EstimatorOperator(AUType operatorType) {
+	public enum CountDistinctTypes { // The different supported types of counting.
+		COUNT, // Baseline naive implementation, iterate though, add to hashMap.
+		KMV, // K-Minimum Values algorithm.
+		HLL // HyperLogLog algorithm.
+	}
+
+	public CountDistinctOperator(AUType opType) {
+		super(true);
+		switch (opType) {
+			case COUNT_DISTINCT:
+				this.operatorType = CountDistinctTypes.COUNT;
+				break;
+			case COUNT_DISTINCT_APPROX:
+				this.operatorType = CountDistinctTypes.KMV;
+			default:
+				throw new DMLRuntimeException(opType + " not supported for CountDistinct Operator");
+		}
+		this.hashType = HashType.StandardJava;
+	}
+
+	public CountDistinctOperator(CountDistinctTypes operatorType) {
 		super(true);
 		this.operatorType = operatorType;
 		this.hashType = HashType.StandardJava;
 	}
 
-	public EstimatorOperator(AUType operatorType, HashType hashType) {
+	public CountDistinctOperator(CountDistinctTypes operatorType, HashType hashType) {
 		super(true);
 		this.operatorType = operatorType;
 		this.hashType = hashType;

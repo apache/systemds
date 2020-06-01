@@ -31,11 +31,11 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.matrix.data.LibMatrixEstimator;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.EstimatorOperator;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -45,9 +45,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 {
 	public enum AUType {
 		NROW, NCOL, LENGTH, EXISTS, LINEAGE, 
-		COUNT_DISTINCT, 
-		COUNT_DISTINCT_ESTIMATE_KMV, 
-		COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG,
+		COUNT_DISTINCT, COUNT_DISTINCT_APPROX,
 		DEFAULT;
 		public boolean isMeta() {
 			return this != DEFAULT;
@@ -78,17 +76,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		} 
-		else if(opcode.equalsIgnoreCase("countDistinct")){
+		else if(opcode.equalsIgnoreCase("uacd")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 			in1, out, AUType.COUNT_DISTINCT, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase("countDistinctEstimateKMV")){
+		else if(opcode.equalsIgnoreCase("uacdap")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
-			in1, out, AUType.COUNT_DISTINCT_ESTIMATE_KMV, opcode, str);
-		}
-		else if(opcode.equalsIgnoreCase("countDistinctEstimateHYPERLOGLOG")){
-			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
-			in1, out, AUType.COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG, opcode, str);
+			in1, out, AUType.COUNT_DISTINCT_APPROX, opcode, str);
 		}
 		else { //DEFAULT BEHAVIOR
 			AggregateUnaryOperator aggun = InstructionUtils
@@ -170,18 +164,12 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				break;
 			}
 			case COUNT_DISTINCT:
-			case COUNT_DISTINCT_ESTIMATE_KMV:
-			case COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG: {
-				System.out.print(ec.getVariables().keySet());
+			case COUNT_DISTINCT_APPROX: {
 				if( !ec.getVariables().keySet().contains(input1.getName()) )
 					throw new DMLRuntimeException("Variable '" + input1.getName() + "' does not exist.");
-
 				MatrixBlock input = ec.getMatrixInput(input1.getName());
-				
-				EstimatorOperator op = new EstimatorOperator(_type);
-				int res = LibMatrixEstimator.estimateDistinctValues(input, op);
-				if (res == 0)
-					throw new DMLRuntimeException("Imposible estimate of distinct values");
+				CountDistinctOperator op = new CountDistinctOperator(_type);
+				int res = LibMatrixCountDistinct.estimateDistinctValues(input, op);
 				ec.releaseMatrixInput(input1.getName());
 				ec.setScalarOutput(output_name, new IntObject(res));
 				break;

@@ -102,10 +102,7 @@ public class AggUnaryOp extends MultiThreadedHop
 					 || (_op == AggOp.MIN    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 					 || (_op == AggOp.MEAN   && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 					 || (_op == AggOp.VAR    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
-					 || (_op == AggOp.PROD   && (_direction == Direction.RowCol))
-					 || (_op == AggOp.COUNT_DISTINCT && (_direction == Direction.RowCol))
-					 || (_op == AggOp.COUNT_DISTINCT_ESTIMATE_KMV && (_direction == Direction.RowCol))
-					 ){
+					 || (_op == AggOp.PROD   && (_direction == Direction.RowCol))){
 				return true;
 			}
 		} catch (HopsException e) {

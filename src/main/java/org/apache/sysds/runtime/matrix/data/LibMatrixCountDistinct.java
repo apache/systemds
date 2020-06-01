@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.matrix.data;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Set;
 
@@ -30,15 +31,16 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLException;
-import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction.AUType;
-import org.apache.sysds.runtime.matrix.operators.EstimatorOperator;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
 import org.apache.sysds.utils.Hash;
 import org.apache.sysds.utils.Hash.HashType;
 
 /**
  * This class contains estimation operations for matrix block.
  */
-public class LibMatrixEstimator {
+public class LibMatrixCountDistinct {
 
 	// ------------------------------
 	// Logging parameters:
@@ -47,104 +49,104 @@ public class LibMatrixEstimator {
 	// DEBUG/TRACE for details
 	private static final Level LOCAL_DEBUG_LEVEL = Level.DEBUG;
 
-	private static final Log LOG = LogFactory.getLog(LibMatrixEstimator.class.getName());
+	private static final Log LOG = LogFactory.getLog(LibMatrixCountDistinct.class.getName());
 
 	static {
 		// for internal debugging only
-		if(LOCAL_DEBUG) {
+		if (LOCAL_DEBUG) {
 			Logger.getLogger("org.apache.sysds.runtime.matrix.data").setLevel(LOCAL_DEBUG_LEVEL);
 		}
 	}
 	// ------------------------------
 
-	// public enum EstimatorType {
-	// 	NUM_DISTINCT_COUNT, // Baseline naive implementation, iterate though, add to hashMap.
-	// 	NUM_DISTINCT_KMV, // K-Minimum Values algorithm.
-	// 	NUM_DISTINCT_HYPER_LOG_LOG // HyperLogLog algorithm.
-	// }
-
 	static public int minimumSize = 64000;
 
-	private LibMatrixEstimator() {
+	private LibMatrixCountDistinct() {
 		// Prevent instantiation via private constructor.
 	}
 
 	/**
-	 * Public method to count the number of distinct values inside a matrix. Depending on which EstimatorOperator
-	 * selected it either gets the absolute number or a estimated value.
+	 * Public method to count the number of distinct values inside a matrix.
+	 * Depending on which CountDistinctOperator selected it either gets the absolute
+	 * number or a estimated value.
 	 * 
 	 * TODO: support counting num distinct in rows, or columns axis.
 	 * 
-	 * @param in  the input matrix to count number distinct values in
-	 * @param op  the selected operator to use
+	 * TODO: If the MatrixBlock type is CompressedMatrix, simply read the vaules from the ColGroups.
+	 * 
+	 * @param in the input matrix to count number distinct values in
+	 * @param op the selected operator to use
 	 * @return the distinct count
 	 */
-	public static int estimateDistinctValues(MatrixBlock in, EstimatorOperator op) {
+	public static int estimateDistinctValues(MatrixBlock in, CountDistinctOperator op) {
 		// set output to correct size.
-		
-		// TODO: If the MatrixBlock type is CompressedMatrix, simply read the vaules from the ColGroups.
 
-		if(op.hashType == HashType.ExpHash && op.operatorType == AUType.COUNT_DISTINCT_ESTIMATE_KMV) {
-			throw new DMLException(
-				"Invalid hashing configuration using " + HashType.ExpHash + " and " + AUType.COUNT_DISTINCT_ESTIMATE_KMV);
+		int res = 0;
+		if (op.hashType == HashType.ExpHash && op.operatorType == CountDistinctTypes.KMV) {
+			throw new DMLException("Invalid hashing configuration using " + HashType.ExpHash + " and " + CountDistinctTypes.KMV);
 		}
 
-		if(op.operatorType == AUType.COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG)
+		if (op.operatorType == CountDistinctTypes.HLL)
 			throw new NotImplementedException("HyperLogLog not implemented");
 
 		// Just use naive implementation if the size is small.
-		if(in.getNumRows() * in.getNumColumns() < minimumSize) {
-			return CountDistinctValuesNaive(in);
-		}
-
-		switch(op.operatorType) {
-			case COUNT_DISTINCT:
-				return CountDistinctValuesNaive(in);
-			case COUNT_DISTINCT_ESTIMATE_KMV:
-				return CountDistinctValuesKVM(in, op);
-			case COUNT_DISTINCT_ESTIMATE_HYPER_LOG_LOG:
-				return CountDistinctHyperLogLog(in);
-			default:
-				throw new DMLException("Invalid or not implemented Estimator Type");
-		}
-	}
-
-	/**
-	 * Naive implementation of counting Distinct values. Benefit Precise, but Uses memory, on the scale of input.
-	 * 
-	 * @param in  the input matrix to count number distinct values in
-	 * @return the distinct count
-	 */
-	private static int CountDistinctValuesNaive(MatrixBlock in) {
-		// Make a hash set to contain all the distinct.
-		// Memory usage scale linear with number of distinct values.
-
-		Set<Double> distinct = new HashSet<Double>();
-
-		for(int c = 0; c < in.getNumColumns(); c++) {
-			for(int r = 0; r < in.getNumRows(); r++) {
-				distinct.add(in.getValue(r, c));
+		if (in.getNumRows() * in.getNumColumns() < minimumSize) {
+			res = CountDistinctValuesNaive(in);
+		} else {
+			switch (op.operatorType) {
+				case COUNT:
+					res = CountDistinctValuesNaive(in);
+					break;
+				case KMV:
+					res = CountDistinctValuesKVM(in, op);
+					break;
+				case HLL:
+					res = CountDistinctHyperLogLog(in);
+					break;
+				default:
+					throw new DMLException("Invalid or not implemented Estimator Type");
 			}
 		}
 
+		if (res == 0)
+			throw new DMLRuntimeException("Imposible estimate of distinct values");
+		return res;
+	}
+
+	/**
+	 * Naive implementation of counting Distinct values. Benefit Precise, but Uses
+	 * memory, on the scale of input.
+	 * 
+	 * @param in the input matrix to count number distinct values in
+	 * @return the distinct count
+	 */
+	private static int CountDistinctValuesNaive(MatrixBlock in) {
+		Set<Double> distinct = new HashSet<Double>();
+		if(in.sparse){
+			Iterator<IJV> it = in.getSparseBlockIterator();
+			while(it.hasNext()){
+				distinct.add(it.next().getV());
+			}
+		} else{
+			double[] data = in.getDenseBlockValues();
+			for (double v : data){
+				distinct.add(v);
+			}
+		}
 		return distinct.size();
-
-		// debugging
-		// LOG.debug("Distinct actual array: " + Arrays.toString(distinct.toArray()));
-		// LOG.debug("Number destinct: " + out);
-
 	}
 
 	/**
 	 * KMV synopsis(for k minimum values) Distinct-Value Estimation
 	 * 
-	 * Kevin S. Beyer, Peter J. Haas, Berthold Reinwald, Yannis Sismanis, Rainer Gemulla: On synopses for distinct‐value
-	 * estimation under multiset operations. SIGMOD 2007
+	 * Kevin S. Beyer, Peter J. Haas, Berthold Reinwald, Yannis Sismanis, Rainer
+	 * Gemulla: On synopses for distinct‐value estimation under multiset operations.
+	 * SIGMOD 2007
 	 * 
 	 * @param in
 	 * @return the distinct count
 	 */
-	private static int CountDistinctValuesKVM(MatrixBlock in, EstimatorOperator op) {
+	private static int CountDistinctValuesKVM(MatrixBlock in, CountDistinctOperator op) {
 
 		// D is the number of possible distinct values in the MatrixBlock.
 		// As a default we set this number to numRows * numCols
@@ -170,18 +172,18 @@ public class LibMatrixEstimator {
 
 		// int gccCount = 0;
 
-		for(int c = 0; c < in.getNumColumns(); c++) {
-			for(int r = 0; r < in.getNumRows(); r++) {
+		for (int c = 0; c < in.getNumColumns(); c++) {
+			for (int r = 0; r < in.getNumRows(); r++) {
 				double input = in.getValue(r, c);
-				// >>>1 removes the signing bit from the has value, such that the value no longer is negative.
+				// >>>1 removes the signing bit from the has value, such that the value no
+				// longer is negative.
 				int v = (Math.abs(Hash.hash(new Double(input), op.hashType))) % (M - 1) + 1;
 
-				if(!cache.contains(v)) {
-					if(smallestHashes.size() < k) {
+				if (!cache.contains(v)) {
+					if (smallestHashes.size() < k) {
 						smallestHashes.add(v);
 						cache.add(v);
-					}
-					else if(v < smallestHashes.peek()) {
+					} else if (v < smallestHashes.peek()) {
 						smallestHashes.add(v);
 						cache.remove(smallestHashes.poll());
 					}
@@ -193,10 +195,9 @@ public class LibMatrixEstimator {
 		LOG.debug("M: " + M);
 		LOG.debug("smallest hash:" + smallestHashes.peek());
 
-		if(smallestHashes.size() < k) {
+		if (smallestHashes.size() < k) {
 			return smallestHashes.size();
-		}
-		else {
+		} else {
 			// LOG.debug("Priority Q: ");
 			// LOG.debug(Arrays.toString(smallestHashes.toArray()));
 			double U_k = (double) smallestHashes.poll() / (double) M;
@@ -206,7 +207,7 @@ public class LibMatrixEstimator {
 			double ceilEstimate = Math.min(estimate, (double) D);
 			LOG.debug("ceil worst case: " + ceilEstimate);
 			// Bounded by maximum number of cells D.
-			return (int)ceilEstimate;
+			return (int) ceilEstimate;
 		}
 	}
 

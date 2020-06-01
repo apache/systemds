@@ -40,12 +40,12 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
-public class MatrixEstimatorTest {
+public class CountDistinctTest {
 
 	private static CountDistinctTypes[] esT = new CountDistinctTypes[] {
 			// The different types of Estimators
 			CountDistinctTypes.COUNT,
-			// CountDistinctTypes.KMV,
+			CountDistinctTypes.KMV,
 			// CountDistinctTypes.HLL
 	};
 
@@ -129,9 +129,7 @@ public class MatrixEstimatorTest {
 					}
 				}
 			}
-
 		}
-
 		return tests;
 	}
 
@@ -185,6 +183,5 @@ public class MatrixEstimatorTest {
 		boolean success = Math.abs(nrUnique - count) <= nrUnique * epsilon;
 		Assert.assertTrue(et + " estimated " + count + " unique values, actual:" + nrUnique + " with eps of " + epsilon
 				+ " , hashing: " + ht + " & input size:" + in.getNumRows() + "," + in.getNumColumns(), success);
-
 	}
 }

@@ -114,8 +114,6 @@ public class LibMatrixCountDistinct {
 					break;
 				case HLL:
 					throw new NotImplementedException("HyperLogLog not implemented");
-				// res = CountDistinctHyperLogLog(in);
-				// break;
 				default:
 					throw new DMLException("Invalid or not implemented Estimator Type");
 			}
@@ -275,40 +273,4 @@ public class LibMatrixCountDistinct {
 			return smallestHashes.toString();
 		}
 	}
-
-	// private static int CountDistinctHyperLogLog(MatrixBlock in) {
-	// return 0;
-	// int logm = 2;
-	// int m = 1 << logm; // 2 ^ logm
-	// byte[] M = new byte[m];
-
-	// for(int c = 0; c < in.getNumColumns(); c++) {
-	// for(int r = 0; r < in.getNumRows(); r++) {
-	// int xh = new Double(in.getValue(r, c)).hashCode();
-
-	// int i = Hash.linearHash(xh, logm);
-	// byte val = (byte) Hash.expHash(xh);
-
-	// if(val > M[i])
-	// M[i] = val;
-
-	// }
-	// }
-
-	// double wsum = 0;
-	// int zerosum = 0;
-	// for(int j = 0; j < m; j++) {
-	// wsum += Math.pow(2.0, -M[j]);
-	// if(M[j] == 0)
-	// zerosum++;
-	// }
-	// double Z = 1 / wsum;
-	// double estimate = m * m * Z * 0.7213 / (1 + 1.079 / m);
-	// if((estimate < 2.5 * m) && (zerosum > 0))
-	// estimate = m * Math.log((double) m / zerosum);
-
-	// LOG.debug("Estimate: " + estimate);
-	// // Bounded by maximum number of cells D.
-	// out.quickSetValue(0, 0, estimate);
-	// }
 }

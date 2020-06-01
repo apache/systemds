@@ -51,7 +51,7 @@ public class AggUnaryOp extends MultiThreadedHop
 	private AggUnaryOp() {
 		//default constructor for clone
 	}
-
+	
 	public AggUnaryOp(String l, DataType dt, ValueType vt, AggOp o, Direction idx, Hop inp) 
 	{
 		super(l, dt, vt);

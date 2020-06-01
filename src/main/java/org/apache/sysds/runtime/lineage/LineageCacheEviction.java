@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
@@ -89,22 +88,68 @@ public class LineageCacheEviction
 		}
 	}
 
-	protected static void removeEntry(Map<LineageItem, LineageCacheEntry> cache, LineageItem key) {
-		if (!cache.containsKey(key))
-			return;
-		weightedQueue.remove(cache.get(key));
-		cache.remove(key);
-	}
-
 	private static void removeEntry(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry e) {
-		if (DMLScript.STATISTICS)
+		if (cache.remove(e._key) != null)
+			_cachesize -= e.getSize();
+
+		if (DMLScript.STATISTICS) {
 			_removelist.add(e._key);
-
-		_cachesize -= e.getSize();
-		// NOTE: The caller of this method maintains the cache and the eviction queue.
-
-		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementMemDeletes();
+		}
+		// NOTE: The caller of this method maintains the eviction queue.
+	}
+	private static void removeOrSpillEntry(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry e, boolean spill) {
+		if (e._origItem == null) {
+			// Single entry. Remove or spill.
+			if (spill)
+				spillToLocalFS(cache, e);
+			else
+				removeEntry(cache, e);
+			return;
+		}
+		
+		// Defer the eviction till all the entries with the same matrix are evicted.
+		e.setCacheStatus(spill ? LineageCacheStatus.TOSPILL : LineageCacheStatus.TODELETE);
+
+		// If all the entries with the same data are evicted, check if deferred spilling 
+		// is set for any of those. If so, spill the matrix to disk and set null in the 
+		// cache entries. Keeping the spilled entries removes the need to use another 
+		// data structure and also maintains the connections between items pointing to the 
+		// same data. Delete all the entries if all are set to be deleted.
+		boolean write = false;
+		LineageCacheEntry tmp = cache.get(e._origItem); //head
+		while (tmp != null) {
+			if (tmp.getCacheStatus() != LineageCacheStatus.TOSPILL
+				&& tmp.getCacheStatus() != LineageCacheStatus.TODELETE)
+				return; //do nothing
+
+			write |= (tmp.getCacheStatus() == LineageCacheStatus.TOSPILL);
+			tmp = tmp._nextEntry;
+		}
+		if (write) {
+			// Spill to disk if at least one entry has status TOSPILL. 
+			spillToLocalFS(cache, cache.get(e._origItem));
+			LineageCacheEntry h = cache.get(e._origItem);
+			while (h != null) {
+				// Set values to null for all the entries.
+				h.setNullValues();
+				// Set status to spilled for all the entries.
+				h.setCacheStatus(LineageCacheStatus.SPILLED);
+				h = h._nextEntry;
+			}
+			// Keep them in cache.
+			return;
+		}
+		// All are set to be deleted.
+		else {
+			// Remove all the entries from cache.
+			LineageCacheEntry h = cache.get(e._origItem);
+			while (h != null) {
+				removeEntry(cache, h);
+				h = h._nextEntry;
+			}
+		}
+		// NOTE: The callers of this method maintain the eviction queue.
 	}
 
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------//
@@ -113,6 +158,7 @@ public class LineageCacheEviction
 		CACHE_LIMIT = limit;
 	}
 
+	//Note: public for spilling tests
 	public static long getCacheLimit() {
 		return CACHE_LIMIT;
 	}
@@ -139,8 +185,7 @@ public class LineageCacheEviction
 
 			if (!LineageCacheConfig.isSetSpill()) {
 				// If eviction is disabled, just delete the entries.
-				if (cache.remove(e._key) != null)
-					removeEntry(cache, e);
+				removeOrSpillEntry(cache, e, false);
 				e = weightedQueue.pollFirst();
 				continue;
 			}
@@ -157,8 +202,7 @@ public class LineageCacheEviction
 			if (!e.isMatrixValue()) {
 				// No spilling for scalar entries. Just delete those.
 				// Note: scalar entries with higher computation time are pinned.
-				if (cache.remove(e._key) != null)
-					removeEntry(cache, e);
+				removeOrSpillEntry(cache, e, false);
 				e = weightedQueue.pollFirst();
 				continue;
 			}
@@ -180,17 +224,21 @@ public class LineageCacheEviction
 				// Can't trust the estimate if less than 100ms.
 				// Spill if it takes longer to recompute.
 				if (exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE)
-					spillToLocalFS(e);
+					//spillToLocalFS(e);
+					removeOrSpillEntry(cache, e, true);  //spill
+				else
+					removeOrSpillEntry(cache, e, false); //delete
 			}
 			else {
 				// Spill if it takes longer to recompute than spilling.
 				if (exectime > spilltime)
-					spillToLocalFS(e);
+					//spillToLocalFS(e);
+					removeOrSpillEntry(cache, e, true);  //spill
+				else
+					removeOrSpillEntry(cache, e, false); //delete
 			}
 
 			// Remove the entry from cache.
-			if (cache.remove(e._key) != null)
-				removeEntry(cache, e);
 			e = weightedQueue.pollFirst();
 		}
 	}
@@ -259,7 +307,7 @@ public class LineageCacheEviction
 
 	// ---------------- I/O METHODS TO LOCAL FS -----------------
 	
-	private static void spillToLocalFS(LineageCacheEntry entry) {
+	private static void spillToLocalFS(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry entry) {
 		if (!entry.isMatrixValue())
 			throw new DMLRuntimeException ("Spilling scalar objects to disk is not allowd. Key: "+entry._key);
 		if (entry.isNullVal())
@@ -280,15 +328,28 @@ public class LineageCacheEviction
 		// Adjust disk writing speed
 		adjustReadWriteSpeed(entry, ((double)(t1-t0))/1000000000, false);
 		
+		// Add all the entries associated with this matrix to spillList.
+		if (entry._origItem == null) {
+			_spillList.put(entry._key, new SpilledItem(outfile));
+		}
+		else {
+			LineageCacheEntry h = cache.get(entry._origItem); //head
+			while (h != null) {
+				_spillList.put(h._key, new SpilledItem(outfile));
+				h = h._nextEntry;
+			}
+		}
+
 		if (DMLScript.STATISTICS) {
 			LineageCacheStatistics.incrementFSWriteTime(t1-t0);
 			LineageCacheStatistics.incrementFSWrites();
 		}
-
-		_spillList.put(entry._key, new SpilledItem(outfile, entry._computeTime));
 	}
 
 	protected static LineageCacheEntry readFromLocalFS(Map<LineageItem, LineageCacheEntry> cache, LineageItem key) {
+		if (cache.get(key) == null)
+			throw new DMLRuntimeException ("Spilled item should present in cache. Key: "+key);
+
 		long t0 = System.nanoTime();
 		MatrixBlock mb = null;
 		// Read from local FS
@@ -297,12 +358,23 @@ public class LineageCacheEviction
 		} catch (IOException e) {
 			throw new DMLRuntimeException ("Read from " + _spillList.get(key)._outfile + " failed.", e);
 		}
-		// Restore to cache
 		LocalFileUtils.deleteFileIfExists(_spillList.get(key)._outfile, true);
 		long t1 = System.nanoTime();
-		LineageCache.putIntern(key, DataType.MATRIX, mb, null, _spillList.get(key)._computeTime);
+
+		// Restore to cache
+		LineageCacheEntry e = cache.get(key);
+		e.setValue(mb);
+		if (e._origItem != null) {
+			// Restore to all the entries having the same data.
+			LineageCacheEntry h = cache.get(e._origItem); //head
+			while (h != null) {
+				h.setValue(mb);
+				h = h._nextEntry;
+			}
+		}
+
 		// Adjust disk reading speed
-		adjustReadWriteSpeed(cache.get(key), ((double)(t1-t0))/1000000000, true);
+		adjustReadWriteSpeed(e, ((double)(t1-t0))/1000000000, true);
 		// TODO: set cache status as RELOADED for this entry
 		_spillList.remove(key);
 		if (DMLScript.STATISTICS) {
@@ -318,13 +390,16 @@ public class LineageCacheEviction
 
 	// ---------------- INTERNAL DATA STRUCTURES FOR EVICTION -----------------
 
+	// TODO: Remove this class, and add outfile to LineageCacheEntry.
 	private static class SpilledItem {
 		String _outfile;
-		long _computeTime;
+		//long _computeTime;
+		//protected LineageItem _origItem;
 
-		public SpilledItem(String outfile, long computetime) {
+		public SpilledItem(String outfile) {
 			_outfile = outfile;
-			_computeTime = computetime;
+			//_computeTime = computetime;
+			//_origItem = origItem;
 		}
 	}
 }

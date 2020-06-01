@@ -314,5 +314,8 @@ SYSTEMDS-390 New Builtin Functions IV
 SYSTEMDS-400 Spark Backend Improvements
  * 401 Fix output block indexes of rdiag (diagM2V)                    OK
 
+SYSTEMDS-410 Lineage Tracing, Reuse and Integration II
+ * 411 Improved handling of multi-level cache duplicates              OK 
+
 Others:
  * Break append instruction to cbind and rbind 

@@ -33,6 +33,7 @@ public class LineageCacheEntry {
 	protected long _computeTime;
 	protected long _timestamp = 0;
 	protected LineageCacheStatus _status;
+	protected LineageCacheEntry _nextEntry;
 	protected LineageItem _origItem;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
@@ -42,6 +43,7 @@ public class LineageCacheEntry {
 		_SOval = Sval;
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
+		_nextEntry = null;
 		_origItem = null;
 	}
 	
@@ -100,6 +102,10 @@ public class LineageCacheEntry {
 		//resume all threads waiting for val
 		notifyAll();
 	}
+	
+	public synchronized void setValue(MatrixBlock val) {
+		setValue(val, _computeTime);
+	}
 
 	public synchronized void setValue(ScalarObject val, long computetime) {
 		_SOval = val;
@@ -107,6 +113,12 @@ public class LineageCacheEntry {
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
 		notifyAll();
+	}
+	
+	protected synchronized void setNullValues() {
+		_MBval = null;
+		_SOval = null;
+		_status = LineageCacheStatus.EMPTY;
 	}
 	
 	protected synchronized void setTimestamp() {

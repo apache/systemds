@@ -59,7 +59,7 @@ public class LibMatrixCountDistinct {
 	}
 	// ------------------------------
 
-	static public int minimumSize = 64000;
+	public static int minimumSize = 64000;
 
 	private LibMatrixCountDistinct() {
 		// Prevent instantiation via private constructor.

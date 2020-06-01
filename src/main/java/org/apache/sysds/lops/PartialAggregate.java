@@ -170,11 +170,12 @@ public class PartialAggregate extends Lop
 							+ "Unknown aggregate direction: " + direction);
 			}
 			break;
+
 		case MAXINDEX:
 		case MININDEX:
 			loc = CorrectionLocationType.LASTCOLUMN;
 			break;
-
+			
 		default:
 			loc = CorrectionLocationType.NONE;
 		}

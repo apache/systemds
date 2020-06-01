@@ -50,6 +50,15 @@ public class Hash {
 		}
 	}
 
+	static public int hash(double o, HashType ht){
+		switch(ht) {
+			case StandardJava:
+				return new Double(o).hashCode();
+			default:
+				throw new NotImplementedException("Not Implemented hashing combination for double value");
+		}
+	}
+
 	// 32 random int values.
 	// generated values:
 	public static void main(String[] args) {

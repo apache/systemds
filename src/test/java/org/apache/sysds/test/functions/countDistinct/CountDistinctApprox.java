@@ -19,20 +19,23 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
-public class CountDistinct extends CountDistinctBase {
+public class CountDistinctApprox extends CountDistinctBase {
 
-	public String TEST_NAME = "countDistinct";
-	public String TEST_DIR = "functions/countDistinct/";
-	public String TEST_CLASS_DIR = TEST_DIR + CountDistinct.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "countDistinctApprox";
+	private final static String TEST_DIR = "functions/countDistinct/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApprox.class.getSimpleName() + "/";
 
+	@Override
 	protected String getTestClassDir() {
 		return TEST_CLASS_DIR;
 	}
 
+	@Override
 	protected String getTestName() {
 		return TEST_NAME;
 	}
 
+	@Override
 	protected String getTestDir() {
 		return TEST_DIR;
 	}

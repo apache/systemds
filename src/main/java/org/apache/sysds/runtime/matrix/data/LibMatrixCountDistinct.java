@@ -59,7 +59,11 @@ public class LibMatrixCountDistinct {
 	}
 	// ------------------------------
 
-	public static int minimumSize = 64000;
+	/**
+	 * The minimum number of cells in the input before using approximate techniques
+	 * for counting number of distinct values. Is using NonZero Count as threshold.
+	 */
+	public static int minimumSize = 1024;
 
 	private LibMatrixCountDistinct() {
 		// Prevent instantiation via private constructor.
@@ -70,9 +74,12 @@ public class LibMatrixCountDistinct {
 	 * Depending on which CountDistinctOperator selected it either gets the absolute
 	 * number or a estimated value.
 	 * 
-	 * TODO: support counting num distinct in rows, or columns axis.
+	 * TODO: Support counting num distinct in rows, or columns axis.
 	 * 
-	 * TODO: If the MatrixBlock type is CompressedMatrix, simply read the vaules from the ColGroups.
+	 * TODO: Add support for distributed spark operations
+	 * 
+	 * TODO: If the MatrixBlock type is CompressedMatrix, simply read the vaules
+	 * from the ColGroups.
 	 * 
 	 * @param in the input matrix to count number distinct values in
 	 * @param op the selected operator to use
@@ -83,16 +90,17 @@ public class LibMatrixCountDistinct {
 
 		int res = 0;
 		if (op.hashType == HashType.ExpHash && op.operatorType == CountDistinctTypes.KMV) {
-			throw new DMLException("Invalid hashing configuration using " + HashType.ExpHash + " and " + CountDistinctTypes.KMV);
+			throw new DMLException(
+					"Invalid hashing configuration using " + HashType.ExpHash + " and " + CountDistinctTypes.KMV);
 		}
 
 		// shortcut in simplest case.
-		if(in.getNumColumns() == 1 && in.getNumRows() == 1){
+		if (in.getNumColumns() == 1 && in.getNumRows() == 1) {
 			return 1;
 		}
 
 		// Just use naive implementation if the size is small.
-		if (in.getNumRows() * in.getNumColumns() < minimumSize) {
+		if (in.getNonZeros() < minimumSize) {
 			res = CountDistinctValuesNaive(in);
 		} else {
 			switch (op.operatorType) {
@@ -104,8 +112,8 @@ public class LibMatrixCountDistinct {
 					break;
 				case HLL:
 					throw new NotImplementedException("HyperLogLog not implemented");
-					// res = CountDistinctHyperLogLog(in);
-					// break;
+				// res = CountDistinctHyperLogLog(in);
+				// break;
 				default:
 					throw new DMLException("Invalid or not implemented Estimator Type");
 			}
@@ -118,24 +126,26 @@ public class LibMatrixCountDistinct {
 
 	/**
 	 * Naive implementation of counting Distinct values. Benefit Precise, but Uses
-	 * memory, on the scale of input.
+	 * memory, on the scale of inputs number of distinct values.
 	 * 
 	 * @param in the input matrix to count number distinct values in
 	 * @return the distinct count
 	 */
 	private static int CountDistinctValuesNaive(MatrixBlock in) {
 		Set<Double> distinct = new HashSet<Double>();
-		if(in.isInSparseFormat()){
+
+		// double[] data = DataConverter.convertToDoubleVector(in);
+		if (in.isInSparseFormat()) {
 			Iterator<IJV> it = in.getSparseBlockIterator();
-			while(it.hasNext()){
+			while (it.hasNext()) {
 				distinct.add(it.next().getV());
 			}
-		} else{
+		} else {
 			double[] data = in.getDenseBlockValues();
-			if (data == null){
+			if (data == null) {
 				throw new DMLRuntimeException("Not valid execution");
 			}
-			for (double v : data){
+			for (double v : data) {
 				distinct.add(v);
 			}
 		}
@@ -165,48 +175,44 @@ public class LibMatrixCountDistinct {
 		LOG.debug("M not forced to int size: " + tmp);
 		int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
 
-		// the estimator is asymptotically unbiased as k becomes large
-		// memory scales with k.
-		// D >> k >> 0
+		/**
+		 * The estimator is asymptotically unbiased as k becomes large.
+		 * 
+		 * memory scales with k.
+		 * 
+		 * k value must be within range: D >> k >> 0
+		 */
 		int k = 1024;
+		SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
 
-		PriorityQueue<Integer> smallestHashes = new PriorityQueue<>(k, Collections.reverseOrder());
-
-		// cache for common elements.
-		Set<Integer> cache = new HashSet<>();
-		// int maxCache = 512;
-
-		// int gccCount = 0;
-
-		for (int c = 0; c < in.getNumColumns(); c++) {
-			for (int r = 0; r < in.getNumRows(); r++) {
-				double input = in.getValue(r, c);
-				// >>>1 removes the signing bit from the has value, such that the value no
-				// longer is negative.
-				int v = (Math.abs(Hash.hash(new Double(input), op.hashType))) % (M - 1) + 1;
-
-				if (!cache.contains(v)) {
-					if (smallestHashes.size() < k) {
-						smallestHashes.add(v);
-						cache.add(v);
-					} else if (v < smallestHashes.peek()) {
-						smallestHashes.add(v);
-						cache.remove(smallestHashes.poll());
-					}
-				}
-
+		if (in.isInSparseFormat()) {
+			Iterator<IJV> it = in.getSparseBlockIterator();
+			while (it.hasNext()) {
+				double fullValue = it.next().getV();
+				int hash = Hash.hash(fullValue, op.hashType);
+				// Since Java does not have unsigned integer, the hash value is abs.
+				int v = (Math.abs(hash)) % (M - 1) + 1;
+				spq.add(v);
+			}
+		} else {
+			double[] data = in.getDenseBlockValues();
+			for (double fullValue : data) {
+				int hash = Hash.hash(fullValue, op.hashType);
+				// Since Java does not have unsigned integer, the hash value is abs.
+				int v = (Math.abs(hash)) % (M - 1) + 1;
+				spq.add(v);
 			}
 		}
 
 		LOG.debug("M: " + M);
-		LOG.debug("smallest hash:" + smallestHashes.peek());
+		LOG.debug("smallest hash:" + spq.peek());
 
-		if (smallestHashes.size() < k) {
-			return smallestHashes.size();
+		if (spq.size() < k) {
+			return spq.size();
 		} else {
 			// LOG.debug("Priority Q: ");
 			// LOG.debug(Arrays.toString(smallestHashes.toArray()));
-			double U_k = (double) smallestHashes.poll() / (double) M;
+			double U_k = (double) spq.poll() / (double) M;
 			LOG.debug("U_k : " + U_k);
 			double estimate = (double) (k - 1) / U_k;
 			LOG.debug("Estimate: " + estimate);
@@ -217,39 +223,77 @@ public class LibMatrixCountDistinct {
 		}
 	}
 
+	/**
+	 * deceiving name, but is used to contain the k smallest values inserted.
+	 */
+	private static class SmallestPriorityQueue {
+		private HashSet<Integer> containedSet = new HashSet<>();
+		private PriorityQueue<Integer> smallestHashes;
+		private int k;
+		public SmallestPriorityQueue(int k) {
+			smallestHashes = new PriorityQueue<>(k, Collections.reverseOrder());
+			this.k = k;
+		}
+
+		public void add(int v) {
+			if (!containedSet.contains(v)) {
+				if (smallestHashes.size() < k) {
+					smallestHashes.add(v);
+					containedSet.add(v);
+				} else if (v < smallestHashes.peek()) {
+					smallestHashes.add(v);
+					containedSet.remove(smallestHashes.poll());
+				}
+			}
+		}
+
+		public int size(){
+			return smallestHashes.size();
+		}
+
+		public int peek(){
+			return smallestHashes.peek();
+		}
+
+		public int poll(){
+			return smallestHashes.poll();
+		}
+
+	}
+
 	// private static int CountDistinctHyperLogLog(MatrixBlock in) {
-	// 	return 0;
-		// int logm = 2;
-		// int m = 1 << logm; // 2 ^ logm
-		// byte[] M = new byte[m];
+	// return 0;
+	// int logm = 2;
+	// int m = 1 << logm; // 2 ^ logm
+	// byte[] M = new byte[m];
 
-		// for(int c = 0; c < in.getNumColumns(); c++) {
-		// for(int r = 0; r < in.getNumRows(); r++) {
-		// int xh = new Double(in.getValue(r, c)).hashCode();
+	// for(int c = 0; c < in.getNumColumns(); c++) {
+	// for(int r = 0; r < in.getNumRows(); r++) {
+	// int xh = new Double(in.getValue(r, c)).hashCode();
 
-		// int i = Hash.linearHash(xh, logm);
-		// byte val = (byte) Hash.expHash(xh);
+	// int i = Hash.linearHash(xh, logm);
+	// byte val = (byte) Hash.expHash(xh);
 
-		// if(val > M[i])
-		// M[i] = val;
+	// if(val > M[i])
+	// M[i] = val;
 
-		// }
-		// }
+	// }
+	// }
 
-		// double wsum = 0;
-		// int zerosum = 0;
-		// for(int j = 0; j < m; j++) {
-		// wsum += Math.pow(2.0, -M[j]);
-		// if(M[j] == 0)
-		// zerosum++;
-		// }
-		// double Z = 1 / wsum;
-		// double estimate = m * m * Z * 0.7213 / (1 + 1.079 / m);
-		// if((estimate < 2.5 * m) && (zerosum > 0))
-		// estimate = m * Math.log((double) m / zerosum);
+	// double wsum = 0;
+	// int zerosum = 0;
+	// for(int j = 0; j < m; j++) {
+	// wsum += Math.pow(2.0, -M[j]);
+	// if(M[j] == 0)
+	// zerosum++;
+	// }
+	// double Z = 1 / wsum;
+	// double estimate = m * m * Z * 0.7213 / (1 + 1.079 / m);
+	// if((estimate < 2.5 * m) && (zerosum > 0))
+	// estimate = m * Math.log((double) m / zerosum);
 
-		// LOG.debug("Estimate: " + estimate);
-		// // Bounded by maximum number of cells D.
-		// out.quickSetValue(0, 0, estimate);
+	// LOG.debug("Estimate: " + estimate);
+	// // Bounded by maximum number of cells D.
+	// out.quickSetValue(0, 0, estimate);
 	// }
 }

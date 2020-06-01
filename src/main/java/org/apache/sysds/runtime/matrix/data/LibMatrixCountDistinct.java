@@ -97,11 +97,11 @@ public class LibMatrixCountDistinct {
 			return 1;
 		}
 		long nonZeros = in.getNonZeros();
-		// Just use naive implementation if the size is small.
-		if(in.getNonZeros() == 0) {
+		if(nonZeros == 0) {
 			res = 1;
 		}
-		else if(in.getNonZeros() < minimumSize) {
+		else if(nonZeros < minimumSize) {
+			// Just use naive implementation if the number of noZero values size is small.
 			res = CountDistinctValuesNaive(in);
 		}
 		else {
@@ -161,30 +161,30 @@ public class LibMatrixCountDistinct {
 	 * Kevin S. Beyer, Peter J. Haas, Berthold Reinwald, Yannis Sismanis, Rainer Gemulla: On synopses for distinct‐value
 	 * estimation under multiset operations. SIGMOD 2007
 	 * 
-	 * @param in
-	 * @return the distinct count
+	 * TODO: add multithreaded version
+	 * 
+	 * @param in The Matrix Block to estimate values
+	 * @return The distinct count estimate
 	 */
 	private static int CountDistinctValuesKVM(MatrixBlock in, CountDistinctOperator op) {
 
 		// D is the number of possible distinct values in the MatrixBlock.
-		// As a default we set this number to numRows * numCols
-		int D = in.getNumRows() * in.getNumColumns();
+		// plus 1 to take account of 0 input.
+		long D = in.getNonZeros() + 1;
 
-		// To ensure that the likelihood to hash to the same value we need O(D^2) bits
-		// to hash to assign.
-		// This is handled by our custom bit array class.
-		long tmp = (long) D * (long) D;
-		LOG.debug("M not forced to int size: " + tmp);
+		/**
+		 * To ensure that the likelihood to hash to the same value we need O(D^2) positions to hash to assign. If the
+		 * value is higher than int (which is the area we hash to) then use Integer Max value as largest hashing space.
+		 */
+		long tmp = D * D;
 		int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
+		LOG.debug("M not forced to int size: " + tmp);
 		LOG.debug("M: " + M);
 		/**
-		 * The estimator is asymptotically unbiased as k becomes large.
-		 * 
-		 * memory scales with k.
-		 * 
+		 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore
 		 * k value must be within range: D >> k >> 0
 		 */
-		int k = 64;
+		int k = D > 64 ? 64 : (int) D;
 		SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
 
 		if(in.isInSparseFormat()) {
@@ -217,21 +217,20 @@ public class LibMatrixCountDistinct {
 			return spq.size();
 		}
 		else {
-			// LOG.debug("Priority Q: ");
-			// LOG.debug(Arrays.toString(smallestHashes.toArray()));
 			double U_k = (double) spq.poll() / (double) M;
 			LOG.debug("U_k : " + U_k);
 			double estimate = (double) (k - 1) / U_k;
 			LOG.debug("Estimate: " + estimate);
 			double ceilEstimate = Math.min(estimate, (double) D);
-			LOG.debug("ceil worst case: " + ceilEstimate);
-			// Bounded by maximum number of cells D.
+			LOG.debug("Ceil worst case: " + ceilEstimate);
 			return (int) ceilEstimate;
 		}
 	}
 
 	/**
 	 * deceiving name, but is used to contain the k smallest values inserted.
+	 * 
+	 * TODO: add utility method to join two partitions
 	 */
 	private static class SmallestPriorityQueue {
 		private Set<Integer> containedSet;

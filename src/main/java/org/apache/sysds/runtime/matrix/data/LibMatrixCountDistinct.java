@@ -45,7 +45,7 @@ public class LibMatrixCountDistinct {
 	// ------------------------------
 	// Logging parameters:
 	// local debug flag
-	private static final boolean LOCAL_DEBUG = true;
+	private static final boolean LOCAL_DEBUG = false;
 	// DEBUG/TRACE for details
 	private static final Level LOCAL_DEBUG_LEVEL = Level.DEBUG;
 
@@ -53,15 +53,15 @@ public class LibMatrixCountDistinct {
 
 	static {
 		// for internal debugging only
-		if (LOCAL_DEBUG) {
+		if(LOCAL_DEBUG) {
 			Logger.getLogger("org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct").setLevel(LOCAL_DEBUG_LEVEL);
 		}
 	}
 	// ------------------------------
 
 	/**
-	 * The minimum number of cells in the input before using approximate techniques
-	 * for counting number of distinct values. Is using NonZero Count as threshold.
+	 * The minimum number of cells in the input before using approximate techniques for counting number of distinct
+	 * values. Is using NonZero Count as threshold.
 	 */
 	public static int minimumSize = 1024;
 
@@ -70,16 +70,14 @@ public class LibMatrixCountDistinct {
 	}
 
 	/**
-	 * Public method to count the number of distinct values inside a matrix.
-	 * Depending on which CountDistinctOperator selected it either gets the absolute
-	 * number or a estimated value.
+	 * Public method to count the number of distinct values inside a matrix. Depending on which CountDistinctOperator
+	 * selected it either gets the absolute number or a estimated value.
 	 * 
 	 * TODO: Support counting num distinct in rows, or columns axis.
 	 * 
 	 * TODO: Add support for distributed spark operations
 	 * 
-	 * TODO: If the MatrixBlock type is CompressedMatrix, simply read the vaules
-	 * from the ColGroups.
+	 * TODO: If the MatrixBlock type is CompressedMatrix, simply read the vaules from the ColGroups.
 	 * 
 	 * @param in the input matrix to count number distinct values in
 	 * @param op the selected operator to use
@@ -89,21 +87,25 @@ public class LibMatrixCountDistinct {
 		// set output to correct size.
 
 		int res = 0;
-		if (op.hashType == HashType.ExpHash && op.operatorType == CountDistinctTypes.KMV) {
+		if(op.hashType == HashType.ExpHash && op.operatorType == CountDistinctTypes.KMV) {
 			throw new DMLException(
-					"Invalid hashing configuration using " + HashType.ExpHash + " and " + CountDistinctTypes.KMV);
+				"Invalid hashing configuration using " + HashType.ExpHash + " and " + CountDistinctTypes.KMV);
 		}
 
 		// shortcut in simplest case.
-		if (in.getNumColumns() == 1 && in.getNumRows() == 1) {
+		if(in.getNumColumns() == 1 && in.getNumRows() == 1) {
 			return 1;
 		}
-
+		long nonZeros = in.getNonZeros();
 		// Just use naive implementation if the size is small.
-		if (in.getNonZeros() < minimumSize) {
+		if(in.getNonZeros() == 0) {
+			res = 1;
+		}
+		else if(in.getNonZeros() < minimumSize) {
 			res = CountDistinctValuesNaive(in);
-		} else {
-			switch (op.operatorType) {
+		}
+		else {
+			switch(op.operatorType) {
 				case COUNT:
 					res = CountDistinctValuesNaive(in);
 					break;
@@ -119,14 +121,14 @@ public class LibMatrixCountDistinct {
 			}
 		}
 
-		if (res == 0)
+		if(res == 0)
 			throw new DMLRuntimeException("Imposible estimate of distinct values");
 		return res;
 	}
 
 	/**
-	 * Naive implementation of counting Distinct values. Benefit Precise, but Uses
-	 * memory, on the scale of inputs number of distinct values.
+	 * Naive implementation of counting Distinct values. Benefit Precise, but Uses memory, on the scale of inputs number
+	 * of distinct values.
 	 * 
 	 * @param in the input matrix to count number distinct values in
 	 * @return the distinct count
@@ -135,17 +137,18 @@ public class LibMatrixCountDistinct {
 		Set<Double> distinct = new HashSet<Double>();
 
 		// double[] data = DataConverter.convertToDoubleVector(in);
-		if (in.isInSparseFormat()) {
+		if(in.isInSparseFormat()) {
 			Iterator<IJV> it = in.getSparseBlockIterator();
-			while (it.hasNext()) {
+			while(it.hasNext()) {
 				distinct.add(it.next().getV());
 			}
-		} else {
+		}
+		else {
 			double[] data = in.getDenseBlockValues();
-			if (data == null) {
+			if(data == null) {
 				throw new DMLRuntimeException("Not valid execution");
 			}
-			for (double v : data) {
+			for(double v : data) {
 				distinct.add(v);
 			}
 		}
@@ -155,9 +158,8 @@ public class LibMatrixCountDistinct {
 	/**
 	 * KMV synopsis(for k minimum values) Distinct-Value Estimation
 	 * 
-	 * Kevin S. Beyer, Peter J. Haas, Berthold Reinwald, Yannis Sismanis, Rainer
-	 * Gemulla: On synopses for distinct‐value estimation under multiset operations.
-	 * SIGMOD 2007
+	 * Kevin S. Beyer, Peter J. Haas, Berthold Reinwald, Yannis Sismanis, Rainer Gemulla: On synopses for distinct‐value
+	 * estimation under multiset operations. SIGMOD 2007
 	 * 
 	 * @param in
 	 * @return the distinct count
@@ -174,7 +176,7 @@ public class LibMatrixCountDistinct {
 		long tmp = (long) D * (long) D;
 		LOG.debug("M not forced to int size: " + tmp);
 		int M = (tmp > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) tmp;
-
+		LOG.debug("M: " + M);
 		/**
 		 * The estimator is asymptotically unbiased as k becomes large.
 		 * 
@@ -182,22 +184,25 @@ public class LibMatrixCountDistinct {
 		 * 
 		 * k value must be within range: D >> k >> 0
 		 */
-		int k = 128;
+		int k = 64;
 		SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
 
-		if (in.isInSparseFormat()) {
+		if(in.isInSparseFormat()) {
 			Iterator<IJV> it = in.getSparseBlockIterator();
-			while (it.hasNext()) {
+			while(it.hasNext()) {
 				double fullValue = it.next().getV();
 				int hash = Hash.hash(fullValue, op.hashType);
+				// LOG.debug(hash);
 				// Since Java does not have unsigned integer, the hash value is abs.
 				int v = (Math.abs(hash)) % (M - 1) + 1;
 				spq.add(v);
 			}
-		} else {
+		}
+		else {
 			double[] data = in.getDenseBlockValues();
-			for (double fullValue : data) {
+			for(double fullValue : data) {
 				int hash = Hash.hash(fullValue, op.hashType);
+				// LOG.debug(hash);
 				// Since Java does not have unsigned integer, the hash value is abs.
 				int v = (Math.abs(hash)) % (M - 1) + 1;
 				spq.add(v);
@@ -208,9 +213,10 @@ public class LibMatrixCountDistinct {
 		LOG.debug("smallest hash:" + spq.peek());
 		LOG.debug("spq: " + spq.toString());
 
-		if (spq.size() < k) {
+		if(spq.size() < k) {
 			return spq.size();
-		} else {
+		}
+		else {
 			// LOG.debug("Priority Q: ");
 			// LOG.debug(Arrays.toString(smallestHashes.toArray()));
 			double U_k = (double) spq.poll() / (double) M;
@@ -228,25 +234,26 @@ public class LibMatrixCountDistinct {
 	 * deceiving name, but is used to contain the k smallest values inserted.
 	 */
 	private static class SmallestPriorityQueue {
-		private HashSet<Integer> containedSet = new HashSet<>();
+		private Set<Integer> containedSet;
 		private PriorityQueue<Integer> smallestHashes;
 		private int k;
 
 		public SmallestPriorityQueue(int k) {
 			smallestHashes = new PriorityQueue<>(k, Collections.reverseOrder());
+			containedSet = new HashSet<>(1);
 			this.k = k;
 		}
 
 		public void add(int v) {
-			// Slightly modified the check such that it is not allowed to contain a hash
-			// that has a lower value than k. This makes it so that we do not estimate
-			// extreme values, altho it is a modification compared to the original algorithm.
-			if (!containedSet.contains(v) && v > k) {
-				if (smallestHashes.size() < k) {
+			if(!containedSet.contains(v)) {
+				if(smallestHashes.size() < k) {
 					smallestHashes.add(v);
 					containedSet.add(v);
-				} else if (v < smallestHashes.peek()) {
+				}
+				else if(v < smallestHashes.peek()) {
+					LOG.trace(smallestHashes.peek() + " -- " + v);
 					smallestHashes.add(v);
+					containedSet.add(v);
 					containedSet.remove(smallestHashes.poll());
 				}
 			}

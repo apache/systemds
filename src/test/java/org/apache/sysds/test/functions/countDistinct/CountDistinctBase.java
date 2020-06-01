@@ -61,7 +61,28 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 	public void testXLarge() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
 		double tolerance = baseTolerance + 1723 *  percentTolerance;
-		countDistinctTest(1723, 5000, 5000, ex,tolerance);
+		countDistinctTest(1723, 5000, 2000, ex,tolerance);
+	}
+
+	@Test
+	public void test1Unique() {
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		double tolerance = 0.00001;
+		countDistinctTest(1, 100, 1000, ex,tolerance);
+	}
+
+	@Test
+	public void test2Unique() {
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		double tolerance = 0.00001;
+		countDistinctTest(2, 100, 1000, ex,tolerance);
+	}
+
+	@Test
+	public void test120Unique() {
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		double tolerance = 0.00001 + 120 *  percentTolerance;
+		countDistinctTest(120, 100, 1000, ex,tolerance);
 	}
 
 	public void countDistinctTest(int numberDistinct, int cols, int rows, LopProperties.ExecType instType, double tolerance) {

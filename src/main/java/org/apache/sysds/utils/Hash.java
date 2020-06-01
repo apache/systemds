@@ -29,31 +29,47 @@ import org.apache.commons.lang.NotImplementedException;
 public class Hash {
 
 	public enum HashType {
-		StandardJava, LinearHash, ExpHash
+		StandardJava, 
+		LinearHash, 
+		ExpHash
 	}
 
+	// Random Array used for Linear and ExpHashing.
+	private static int[] a = {0xFFFFFFFF, 0x32435171, 0xac3338cf, 0xea97b40c, 0x0e504b22, 0x9ff9a4ef, 0x111d014d,
+		0x934f3787, 0x6cd079bf, 0x69db5c31, 0xdf3c28ed, 0x40daf2ad, 0x82a5891c, 0x4659c7b0, 0x73dc0ca8, 0xdad3aca2,
+		0x00c74c7e, 0x9a2521e2, 0xf38eb6aa, 0x64711ab6, 0x5823150a, 0xd13a3a9a, 0x30a5aa04, 0x0fb9a1da, 0xef785119,
+		0xc9f0b067, 0x1e7dde42, 0xdda4a7b2, 0x1a1c2640, 0x297c0633, 0x744edb48, 0x19adce93};
+
+	/**
+	 * Generic hashing of java objects, not ideal for specific values so use the specific methods for specific types.
+	 * @param o The Object to hash.
+	 * @param ht The HashType to use.
+	 * @return
+	 */
 	static public int hash(Object o, HashType ht) {
 		int hashcode = o.hashCode();
-		if(hashcode == 0) {
-			// Special case handling if 0 input.
-			hashcode = Integer.hashCode(13241);
-		}
 		switch(ht) {
 			case StandardJava:
 				return hashcode;
-			case LinearHash:
-				return linearHash(hashcode);
-			case ExpHash:
-				return expHash(hashcode);
+			// case LinearHash:
+			// 	return linearHash(hashcode);
+			// case ExpHash:
+			// 	return expHash(hashcode);
 			default:
 				throw new NotImplementedException("Not Implemented hashing combination");
 		}
 	}
 
 	static public int hash(double o, HashType ht){
+		long v = Double.doubleToLongBits(o);
 		switch(ht) {
 			case StandardJava:
-				return new Double(o).hashCode();
+				// Here just for reference
+				// return new Double(o).hashCode();
+				// case StandardJavaCopy:
+				return (int)(v^(v>>>32));
+			case LinearHash:
+				return linearHash((int)(v^(v>>>32)));
 			default:
 				throw new NotImplementedException("Not Implemented hashing combination for double value");
 		}
@@ -67,11 +83,6 @@ public class Hash {
 			System.out.println(String.format("0x%08X,", r.nextInt()));
 		}
 	}
-
-	private static int[] a = {0x21ae4036, 0x32435171, 0xac3338cf, 0xea97b40c, 0x0e504b22, 0x9ff9a4ef, 0x111d014d,
-		0x934f3787, 0x6cd079bf, 0x69db5c31, 0xdf3c28ed, 0x40daf2ad, 0x82a5891c, 0x4659c7b0, 0x73dc0ca8, 0xdad3aca2,
-		0x00c74c7e, 0x9a2521e2, 0xf38eb6aa, 0x64711ab6, 0x5823150a, 0xd13a3a9a, 0x30a5aa04, 0x0fb9a1da, 0xef785119,
-		0xc9f0b067, 0x1e7dde42, 0xdda4a7b2, 0x1a1c2640, 0x297c0633, 0x744edb48, 0x19adce93};
 
 	/**
 	 * Compute linear hash function (32-bit signed integers to 32-bit signed integers)

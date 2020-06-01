@@ -33,8 +33,9 @@ public class LineageCacheConfig
 	//-------------CACHING LOGIC RELATED CONFIGURATIONS--------------//
 
 	private static final String[] REUSE_OPCODES = new String[] {
-		"tsmm", "ba+*", "*", "/", "+", "nrow", "ncol", "round", "exp", "log",
+		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof"
+		//TODO: Reuse everything. 
 	};
 	
 	public enum ReuseCacheType {
@@ -97,9 +98,11 @@ public class LineageCacheConfig
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
 		CACHED,    //General cached data. Can be evicted.
-		EVICTED,   //Data is in disk. Empty value. Cannot be evicted.
+		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
-		PINNED;    //Pinned to memory. Cannot be evicted.
+		PINNED,    //Pinned to memory. Cannot be evicted.
+		TOSPILL,   //To be spilled lazily 
+		TODELETE;  //TO be removed lazily
 		public boolean canEvict() {
 			return this == CACHED || this == RELOADED;
 		}

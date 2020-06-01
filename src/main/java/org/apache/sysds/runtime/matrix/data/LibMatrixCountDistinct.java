@@ -54,7 +54,7 @@ public class LibMatrixCountDistinct {
 	static {
 		// for internal debugging only
 		if (LOCAL_DEBUG) {
-			Logger.getLogger("org.apache.sysds.runtime.matrix.data").setLevel(LOCAL_DEBUG_LEVEL);
+			Logger.getLogger("org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct").setLevel(LOCAL_DEBUG_LEVEL);
 		}
 	}
 	// ------------------------------
@@ -217,8 +217,8 @@ public class LibMatrixCountDistinct {
 		}
 	}
 
-	private static int CountDistinctHyperLogLog(MatrixBlock in) {
-		return 0;
+	// private static int CountDistinctHyperLogLog(MatrixBlock in) {
+	// 	return 0;
 		// int logm = 2;
 		// int m = 1 << logm; // 2 ^ logm
 		// byte[] M = new byte[m];
@@ -251,6 +251,5 @@ public class LibMatrixCountDistinct {
 		// LOG.debug("Estimate: " + estimate);
 		// // Bounded by maximum number of cells D.
 		// out.quickSetValue(0, 0, estimate);
-
-	}
+	// }
 }

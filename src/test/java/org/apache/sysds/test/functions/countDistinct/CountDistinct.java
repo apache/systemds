@@ -21,9 +21,6 @@ package org.apache.sysds.test.functions.countDistinct;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.test.AutomatedTestBase;

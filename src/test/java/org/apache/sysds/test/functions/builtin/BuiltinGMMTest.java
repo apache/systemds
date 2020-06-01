@@ -38,10 +38,10 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinGMMTest.class.getSimpleName() + "/";
 
-	private final static double eps = 0.5;
+	private final static double eps = 0.1;
 	private final static int rows = 100;
 	private final static double spDense = 0.99;
-	private final static String Dataset = "D:/GMM/data.csv";
+	private final static String Dataset = "D:/GMM/iris.csv";
 
 	@Override
 	public void setUp() {
@@ -54,11 +54,19 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testGMMManual() {
-		runGMMTest(3,30,"VVI",2, LopProperties.ExecType.CP);
+	public void testGMMManual1() {
+		runGMMTest(1,200,"VVI",2, LopProperties.ExecType.CP);
 	}
 
+	@Test
+	public void testGMMManual2() {
+		runGMMTest(2,200,"VVI",2, LopProperties.ExecType.CP);
+	}
 
+	@Test
+	public void testGMMManual3() {
+		runGMMTest(3,200,"VVI",2, LopProperties.ExecType.CP);
+	}
 	private void runGMMTest(int G_mixtures, int iter, String model, int test,  LopProperties.ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
@@ -68,10 +76,10 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-args", input("A"), String.valueOf(G_mixtures), String.valueOf(iter), model, String.valueOf("0.00000001"),output("B") };
+			programArgs = new String[]{ "-args", Dataset, String.valueOf(G_mixtures), String.valueOf(iter), model, String.valueOf("0.00000001"),output("B"), output("O") };
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + model + " "  +String.valueOf(G_mixtures)+ " "+ expectedDir();
+			rCmd = "Rscript" + " " + fullRScriptName + " " + Dataset + " " + model + " "  +String.valueOf(G_mixtures)+ " "+ expectedDir();
 
 			if(test ==1 ) {
 				//generate actual dataset
@@ -117,8 +125,9 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 			runRScript(true);
 
 			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
-			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromFS("B");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("O");
+			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromFS("O");
+			System.out.println(dmlfile.values().iterator().next().doubleValue());
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {

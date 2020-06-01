@@ -63,12 +63,15 @@ return (Matrix[Double] weights)
   for(i in 1:components)
     sigma = append(sigma, covMatrix(X, matrix(1, nrow(X), 1)) ) #diag(matrix(1, ncol(X), 1))
 
-  loglikPre = sum(log(rowSums(weights*phi)))
+  loglikPre = mean(log(rowSums(weights*phi)))
   loglikDiff = 1
   i = 1
   bic = matrix(0, iter, 1)
-  df = (ncol(X)*ncol(X) - ncol(X))/2 + (2*ncol(X) + 1)
-  df = components * df -1
+  a = components * ncol(X) * (ncol(X) + 1) / 2
+  b = ncol(X) * components
+  df = a + b + components -1
+  # df = (ncol(X)*ncol(X) - ncol(X))/2 + (2*ncol(X) + 1)
+  # df = components * df -1
   print("df "+df)
   while(i <= iter & loglikDiff >= eps ){
     print("iteration ----------------------------------"+i)
@@ -89,7 +92,8 @@ return (Matrix[Double] weights)
       print("sigma m "+toString(as.matrix(sigma[j])))
     }
     loglikDiff = abs(loglikNew - loglikPre)
-    bic[i,1] = -2 * loglikNew + df * log(nrow(X))
+    loglikPre = loglikNew
+    bic[i,1] = (-2 * loglikNew * nrow(X) + df * log(nrow(X)))
     i = i+1
   }
   
@@ -136,7 +140,7 @@ predict_prob = function(Matrix[Double] X, Integer components, Matrix[Double] mu,
   }
   numer = likelihood * phi
   denom = rowSums(numer)
-  loglik = sum(log(denom)) 
+  loglik = mean(log(denom)) 
  
   weights = numer/denom
 

@@ -65,9 +65,8 @@ public class Hash {
 		switch(ht) {
 			case StandardJava:
 				// Here just for reference
-				// return new Double(o).hashCode();
-				// case StandardJavaCopy:
-				return (int)(v^(v>>>32));
+				return new Double(o).hashCode();
+				// return (int)(v^(v>>>32));
 			case LinearHash:
 				return linearHash((int)(v^(v>>>32)));
 			default:

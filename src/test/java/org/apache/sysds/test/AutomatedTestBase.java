@@ -137,10 +137,8 @@ public abstract class AutomatedTestBase {
 	 * use -Dsystemds.testTemp.root.dir=<new location>. This is necessary if any parent directories are
 	 * public-protected.
 	 */
-	private static final String LOCAL_TEMP_ROOT_DIR =  System.getProperty("systemds.testTemp.root.dir",
+	private static final String LOCAL_TEMP_ROOT_DIR = System.getProperty("systemds.testTemp.root.dir",
 		"target/testTemp");
-
-		
 	private static final File LOCAL_TEMP_ROOT = new File(LOCAL_TEMP_ROOT_DIR);
 
 	/** Base directory for generated IN, OUT, EXPECTED test data artifacts instead of SCRIPT_DIR. */
@@ -1827,5 +1825,4 @@ public abstract class AutomatedTestBase {
 		String current_path = System.getProperty("java.library.path");
 		System.setProperty("java.library.path", current_path + File.pathSeparator + additional_path);
 	}
-
 }

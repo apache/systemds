@@ -137,6 +137,8 @@ public class LineageCacheEviction
 				h.setCacheStatus(LineageCacheStatus.SPILLED);
 				h = h._nextEntry;
 			}
+			// Reduce cachesize once for all the entries.
+			updateSize(e.getSize(), false);
 			// Keep them in cache.
 			return;
 		}
@@ -371,6 +373,8 @@ public class LineageCacheEviction
 				h.setValue(mb);
 				h = h._nextEntry;
 			}
+			// Increase cachesize once for all the entries.
+			updateSize(e.getSize(), true);
 		}
 
 		// Adjust disk reading speed

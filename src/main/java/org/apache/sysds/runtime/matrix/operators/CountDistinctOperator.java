@@ -43,6 +43,7 @@ public class CountDistinctOperator extends Operator {
 				break;
 			case COUNT_DISTINCT_APPROX:
 				this.operatorType = CountDistinctTypes.KMV;
+				break;
 			default:
 				throw new DMLRuntimeException(opType + " not supported for CountDistinct Operator");
 		}

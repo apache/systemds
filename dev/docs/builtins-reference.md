@@ -31,6 +31,8 @@ limitations under the License.
     * [`sigmoid`-Function](#sigmoid-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
+    * [`normalize`-Function](#normalize-function)
+
     
     
 # Introduction
@@ -381,4 +383,35 @@ X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
+```
+## `normalize`-Function
+
+The `normalize`-function normalises the values of a matrix by changing the dataset to use a common scale.
+This is done while preserving differences in the ranges of values. 
+The output is a matrix of values in range [0,1].
+
+### Usage
+```r
+normalize(X); 
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of feature vectors. |
+
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | 1-column matrix of normalized values. |
+
+
+
+### Example
+```r
+X = rand(rows = 50, cols = 10)
+y = X %*% rand(rows=ncol(X), cols=1)
+y = normalize(X = X)
+
 ```

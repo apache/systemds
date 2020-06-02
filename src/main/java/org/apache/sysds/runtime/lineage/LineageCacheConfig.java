@@ -34,7 +34,9 @@ public class LineageCacheConfig
 
 	private static final String[] OPCODES = new String[] {
 		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
-		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof"
+		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
+		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
+		"^", "uamax", "uark+"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};

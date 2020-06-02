@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Imports
+source("staging/NCF.dml") as NCF
+
+K_train = 1000; # number of training samples
+K_val = 100; # number of validation samples
+
+N = 50; # number items
+M = 60; # number users
+
+# targets
+targets_train = round(rand(rows=K_train, cols=1));
+targets_val = round(rand(rows=K_val, cols=1));
+
+# user/items integer-encoded vectors
+items_train_int_encoded = round(rand(rows=K_train, cols=1, min=1, max=N));
+users_train_int_encoded = round(rand(rows=K_train, cols=1, min=1, max=M));
+items_val_int_encoded = round(rand(rows=K_val, cols=1, min=1, max=N));
+users_val_int_encoded = round(rand(rows=K_val, cols=1, min=1, max=M));
+
+# user/items matrices by applying one-hot-encoding
+items_train = toOneHot(items_train_int_encoded, N);
+items_val = toOneHot(items_val_int_encoded, N);
+users_train = toOneHot(users_train_int_encoded, M);
+users_val = toOneHot(users_val_int_encoded, M);
+
+# Train
+epochs = 50;
+batch_size = 16;
+
+# layer dimensions
+E = 8; # embedding
+D1 = 64; # dense layer 1
+D2 = 32; # dense layer 2
+D3 = 16; # dense layer 3
+
+[biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val, epochs, batch_size, E, D1, D2, D3);

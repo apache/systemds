@@ -1,0 +1,330 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# Neural Collaborative Filtering
+#
+
+# Imports
+source("nn/optim/adam.dml") as adam
+source("nn/layers/relu.dml") as relu
+source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/affine.dml") as affine
+source("nn/layers/log_loss.dml") as log_loss
+source("nn/layers/l2_reg.dml") as l2_reg
+
+train = function( matrix[double] users_train, 
+                  matrix[double] items_train, 
+                  matrix[double] targets_train, 
+                  matrix[double] users_val, 
+                  matrix[double] items_val, 
+                  matrix[double] targets_val,
+                  integer epochs,
+                  integer batch_size,
+                  integer E,
+                  integer D1,
+                  integer D2,
+                  integer D3)
+    return (List[unknown] biases, List[unknown] weights) {
+  # /*
+  #  * Train NCF model
+  #  *
+  #  * Inputs:
+  #  *  - users_train: matrix of shape K_train × M with K_train samples of one-hot encoded users
+  #  *  - items_train: matrix of shape K_train × N with K_train samples of one-hot encoded items
+  #  *  - targets_train: vector with K_train entries containing either 0 or 1 indicating whether the user interacted with the item
+  #  *  - users_val: matrix of shape K_val × M with K_val samples of one-hot encoded users
+  #  *  - items_val: matrix of shape K_val × N with K_val samples of one-hot encoded items
+  #  *  - targets_val: vector with K_val entries containing either 0 or 1 indicating whether the user interacted with the item
+  #  *  - epochs: number of training epochs
+  #  *  - batch_size: size of the training batches
+  #  *  - E:  dimension of embedding layers
+  #  *  - D1: dimension of dense layer 1
+  #  *  - D2: dimension of dense layer 2
+  #  *  - D3: dimension of dense layer 3
+  #  *
+  #  * Outputs:
+  #  *  - biases: list of biases
+  #  *  - weights: list o weights
+  #  *
+  #  * Network Architecture:
+  #
+  # +----------------------+    +----------------------+
+  # |User Embedding [users]|    |Item Embedding [items]|
+  # +----------+-----------+    +---------+------------+
+  #           |                          |
+  #           |                          |
+  #           |       +-----------+      |
+  #           +------>+Concatenate+<-----+
+  #                   +-----+-----+
+  #                         |
+  #                         v
+  #                     +----+----+
+  #                     | Dense 1 |
+  #                     | (ReLU)  |
+  #                     +----+----+
+  #                         |
+  #                         v
+  #                     +----+----+
+  #                     | Dense 2 |
+  #                     | (ReLU)  |
+  #                     +----+----+
+  #                         |
+  #                         v
+  #                     +----+----+
+  #                     | Dense 3 |
+  #                     | (ReLU)  |
+  #                     +----+----+
+  #                         |
+  #                         v
+  #                   +-----+-----+
+  #                   |Prediction |
+  #                   |(Sigmoid)  |
+  #                   +-----------+
+  #  *
+  #  */
+
+  # sanity checks
+  assert(nrow(items_train) == nrow(users_train));
+  assert(nrow(users_train) == nrow(targets_train));
+  assert(nrow(items_val) == nrow(users_val));
+  assert(nrow(users_val) == nrow(targets_val));
+  assert(ncol(items_val) == ncol(items_train));
+  assert(ncol(users_val) == ncol(users_train));
+  
+  assert(ncol(targets_val) == ncol(targets_train));
+  assert(ncol(targets_train) == 1);
+
+  K_train = nrow(targets_train); # number of training samples
+  K_val = nrow(targets_val); # number of validation samples
+
+  N = ncol(items_train); # number items
+  M = ncol(users_train); # number users
+
+  print("NCF training starting with " 
+          + K_train + " training samples, " 
+          + K_val + " validation samples, " 
+          + N + " items and "
+          + M + " users...");
+
+  # 1.initialize layers
+  [W_U,  b_U] = affine::init(M, E); # user embedding
+  [W_I,  b_I] = affine::init(N, E); # item embedding
+
+  [W_D1, b_D1] = affine::init(2 * E, D1); # dense layer 1
+  [W_D2, b_D2] = affine::init(D1, D2);    # dense layer 2
+  [W_D3, b_D3] = affine::init(D2, D3);    # dense layer 3
+
+  [W_F,  b_F] = affine::init(D3, 1); # final prediction
+
+  # initialize bias and weight lists
+  biases = list(b_U, b_I, b_D1, b_D2, b_D3, b_F);
+  weights = list(W_U, W_I, W_D1, W_D2, W_D3, W_F);
+
+  # 2.initialize adam optimizer
+  ## Default values for some parameters
+  lr      = 0.001;
+  beta1   = 0.9;       # [0, 1)
+  beta2   = 0.999;     # [0, 1)
+  epsilon = 0.0000001;
+  t       = 0;
+
+  # (1) user embedding
+  [mW_U, vW_U] = adam::init(W_U);
+  [mb_U, vb_U] = adam::init(b_U);
+
+  # (1) item embedding
+  [mW_I, vW_I] = adam::init(W_I);
+  [mb_I, vb_I] = adam::init(b_I);
+
+  # (2) Dense 1
+  [mW_D1, vW_D1] = adam::init(W_D1);
+  [mb_D1, vb_D1] = adam::init(b_D1);
+
+  # (3) Dense 2
+  [mW_D2, vW_D2] = adam::init(W_D2);
+  [mb_D2, vb_D2] = adam::init(b_D2);
+
+  # (3) Dense 3
+  [mW_D3, vW_D3] = adam::init(W_D3);
+  [mb_D3, vb_D3] = adam::init(b_D3);
+
+  # (N) final prediction
+  [mW_F, vW_F] = adam::init(W_F);
+  [mb_F, vb_F] = adam::init(b_F);
+
+  # Optimize 
+  N = K_train;
+  iters = ceil(N / batch_size);
+
+  for (e in 1:epochs) {
+    for (i in 1:iters) {
+      # Get the next batch
+      beg = ((i-1) * batch_size) %% N + 1;
+      end = min(N, beg + batch_size - 1);
+      
+      items_batch = items_train[beg:end,];
+      users_batch = users_train[beg:end,];
+      y_batch = targets_train[beg:end,];
+
+      # 3.Send inputs through layers and get activations
+      [out_FA, out_F, out_D1A, out_D1, out_D2A, out_D2, out_D3A, out_D3, out_concat, out_U, out_I] = 
+        predict(users_batch, items_batch, biases, weights);
+
+      # 4.compute final error gradients 
+      # params: (predictions, targets)
+      dout = log_loss::backward(out_FA, y_batch);
+
+      # Compute loss & accuracy for training & validation data in the last iteration
+      if (i %% 100 == 1) {
+        # Compute training loss & accuracy
+        [loss, accuracy] = eval(out_FA, y_batch);
+
+        # Compute validation loss & accuracy
+        out_FA_val = predict(users_val, items_val, biases, weights);
+        [loss_val, accuracy_val] = eval(out_FA_val, targets_val);
+
+        # Output results
+        print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
+                + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+      }
+
+      # 5.Backpropagation
+      # params: (gradient from upstream, activation, weights, biases) 
+      dout_FA = sigmoid::backward(dout, out_F);
+      [dout_F, dW_F, db_F] = affine::backward(dout_FA, out_D3A, W_F, b_F);
+
+      dout_D3A = relu::backward(dout_F, out_D3);
+      [dout_D3, dW_D3, db_D3] = affine::backward(dout_D3A, out_D2A, W_D3, b_D3); 
+
+      dout_D2A = relu::backward(dout_D3, out_D2);
+      [dout_D2, dW_D2, db_D2] = affine::backward(dout_D2A, out_D1A, W_D2, b_D2); 
+
+      dout_D1A = relu::backward(dout_D2, out_D1);
+      [dout_D1, dW_D1, db_D1] = affine::backward(dout_D1A, out_concat, W_D1, b_D1); 
+
+      # backprop concatenation: split the gradients up
+      dout_U = dout_D1[,1:E];
+      dout_I = dout_D1[,E+1:2*E];
+
+      [dUsers, dW_U, db_U] = affine::backward(dout_U, users_batch, W_U, b_U); 
+      [dItems, dW_I, db_I] = affine::backward(dout_I, items_batch, W_I, b_I); 
+
+      # 6.update timestep
+      t = e * i - 1;
+
+      # 7.Call adam::update for all parameters
+      [b_U, mb_U, vb_U] = adam::update(b_U, db_U, lr, beta1, beta2, epsilon, t, mb_U, vb_U);
+      [W_U, mW_U, vW_U] = adam::update(W_U, dW_U, lr, beta1, beta2, epsilon, t, mW_U, vW_U);
+
+      [b_I, mb_I, vb_I] = adam::update(b_I, db_I, lr, beta1, beta2, epsilon, t, mb_I, vb_I);
+      [W_I, mW_I, vW_I] = adam::update(W_I, dW_I, lr, beta1, beta2, epsilon, t, mW_I, vW_I);
+
+      [b_D1, mb_D1, vb_D1] = adam::update(b_D1, db_D1, lr, beta1, beta2, epsilon, t, mb_D1, vb_D1);
+      [W_D1, mW_D1, vW_D1] = adam::update(W_D1, dW_D1, lr, beta1, beta2, epsilon, t, mW_D1, vW_D1);
+      
+      [b_D2, mb_D2, vb_D2] = adam::update(b_D2, db_D2, lr, beta1, beta2, epsilon, t, mb_D2, vb_D2);
+      [W_D2, mW_D2, vW_D2] = adam::update(W_D2, dW_D2, lr, beta1, beta2, epsilon, t, mW_D2, vW_D2);
+      
+      [b_D3, mb_D3, vb_D3] = adam::update(b_D3, db_D3, lr, beta1, beta2, epsilon, t, mb_D3, vb_D3);
+      [W_D3, mW_D3, vW_D3] = adam::update(W_D3, dW_D3, lr, beta1, beta2, epsilon, t, mW_D3, vW_D3);
+      
+      [b_F, mb_F, vb_F] = adam::update(b_F, db_F, lr, beta1, beta2, epsilon, t, mb_F, vb_F);
+      [W_F, mW_F, vW_F] = adam::update(W_F, dW_F, lr, beta1, beta2, epsilon, t, mW_F, vW_F);
+
+      # 8. Update lists
+      biases = list(b_U, b_I, b_D1, b_D2, b_D3, b_F);
+      weights = list(W_U, W_I, W_D1, W_D2, W_D3, W_F);
+    }
+  }
+
+  print("NCF training completed after " + epochs + " epochs")
+}
+
+predict = function(matrix[double] users, matrix[double] items, List[unknown] biases, List[unknown] weights)
+    return (matrix[double] out_FA, matrix[double] out_F, 
+            matrix[double] out_D1A, matrix[double] out_D1, 
+            matrix[double] out_D2A, matrix[double] out_D2, 
+            matrix[double] out_D3A, matrix[double] out_D3, 
+            matrix[double] out_concat, matrix[double] out_U, matrix[double] out_I) {
+  #
+  # Computes the predictions for the given inputs.
+  #
+  # Inputs:
+  #  - users : K user examples with E features, of shape (K, E).
+  #  - items : K item examples with E features, of shape (K, E).
+  #  - biases, weights : list of trained model parameters
+  #
+  # Outputs:
+  #  - out : target vector, y.
+  #
+
+  # parse parameters
+  b_U = as.matrix(biases[1]);
+  b_I = as.matrix(biases[2]);
+  b_D1 = as.matrix(biases[3]);
+  b_D2 = as.matrix(biases[4]);
+  b_D3 = as.matrix(biases[5]);
+  b_F = as.matrix(biases[6]);
+
+  W_U = as.matrix(weights[1]);
+  W_I = as.matrix(weights[2]);
+  W_D1 = as.matrix(weights[3]);
+  W_D2 = as.matrix(weights[4]);
+  W_D3 = as.matrix(weights[5]);
+  W_F = as.matrix(weights[6]);
+
+  # send inputs through layers
+
+  # (1) User and item embeddings + concatenation
+  out_U = affine::forward(users, W_U, b_U);
+  out_I = affine::forward(items, W_I, b_I);
+
+  out_concat = cbind(out_U, out_I); 
+
+  # (2) Dense layers
+  out_D1 = affine::forward(out_concat, W_D1, b_D1);
+  out_D1A = relu::forward(out_D1); # separate "activation" for ReLU activation function
+
+  out_D2 = affine::forward(out_D1A, W_D2, b_D2);
+  out_D2A = relu::forward(out_D2); # separate "activation" for ReLU activation function
+
+  out_D3 = affine::forward(out_D2A, W_D3, b_D3);
+  out_D3A = relu::forward(out_D3); # separate "activation" for ReLU activation function
+
+  # (N) final prediction
+  out_F = affine::forward(out_D3A, W_F, b_F);
+  out_FA = sigmoid::forward(out_F);
+}
+
+eval = function(matrix[double] probs, matrix[double] y)
+    return (double loss, double accuracy) {
+   /*
+    * Computes loss and accuracy.
+    */
+
+    # compute the log loss
+    loss = log_loss::forward(probs, y);
+
+    # compute accuracy
+    Z = probs >= 0.5;
+    accuracy = 1 - sum(abs(Z - y)) / nrow(y);
+}

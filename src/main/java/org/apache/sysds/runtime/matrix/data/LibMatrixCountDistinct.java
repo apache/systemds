@@ -38,7 +38,7 @@ import org.apache.sysds.utils.Hash;
 import org.apache.sysds.utils.Hash.HashType;
 
 /**
- * This class contains estimation operations for matrix block.
+ * This class contains various methods for counting the number of distinct values inside a MatrixBlock
  */
 public class LibMatrixCountDistinct {
 
@@ -60,8 +60,8 @@ public class LibMatrixCountDistinct {
 	// ------------------------------
 
 	/**
-	 * The minimum number of cells in the input before using approximate techniques for counting number of distinct
-	 * values. Is using NonZero Count as threshold.
+	 * The minimum number NonZero of cells in the input before using approximate techniques for counting number of
+	 * distinct values.
 	 */
 	public static int minimumSize = 1024;
 
@@ -84,14 +84,11 @@ public class LibMatrixCountDistinct {
 	 * @return the distinct count
 	 */
 	public static int estimateDistinctValues(MatrixBlock in, CountDistinctOperator op) {
-		// set output to correct size.
-
 		int res = 0;
-		if((op.hashType == HashType.ExpHash && op.operatorType == CountDistinctTypes.KMV) ||
-			(op.hashType == HashType.StandardJava && op.operatorType == CountDistinctTypes.KMV)) {
+		if(op.operatorType == CountDistinctTypes.KMV &&
+			(op.hashType == HashType.ExpHash || op.hashType == HashType.StandardJava)) {
 			throw new DMLException("Invalid hashing configuration using " + op.hashType + " and " + op.operatorType);
 		}
-
 		// shortcut in simplest case.
 		if(in.getNumColumns() == 1 && in.getNumRows() == 1) {
 			return 1;
@@ -101,7 +98,7 @@ public class LibMatrixCountDistinct {
 			res = 1;
 		}
 		else if(nonZeros < minimumSize) {
-			// Just use naive implementation if the number of noZero values size is small.
+			// Just use naive implementation if the number of nonZeros values size is small.
 			res = CountDistinctValuesNaive(in);
 		}
 		else {
@@ -118,18 +115,18 @@ public class LibMatrixCountDistinct {
 					throw new DMLException("Invalid or not implemented Estimator Type");
 			}
 		}
-
 		if(res == 0)
 			throw new DMLRuntimeException("Imposible estimate of distinct values");
 		return res;
 	}
 
 	/**
-	 * Naive implementation of counting Distinct values. Benefit Precise, but Uses memory, on the scale of inputs number
-	 * of distinct values.
+	 * Naive implementation of counting Distinct values.
 	 * 
-	 * @param in the input matrix to count number distinct values in
-	 * @return the distinct count
+	 * Benefit Precise, but uses memory, on the scale of inputs number of distinct values.
+	 * 
+	 * @param in The input matrix to count number distinct values in
+	 * @return The absolute distinct count
 	 */
 	private static int CountDistinctValuesNaive(MatrixBlock in) {
 		Set<Double> distinct = new HashSet<Double>();
@@ -156,12 +153,13 @@ public class LibMatrixCountDistinct {
 	/**
 	 * KMV synopsis(for k minimum values) Distinct-Value Estimation
 	 * 
-	 * Kevin S. Beyer, Peter J. Haas, Berthold Reinwald, Yannis Sismanis, Rainer Gemulla: On synopses for distinct‐value
-	 * estimation under multiset operations. SIGMOD 2007
+	 * Kevin S. Beyer, Peter J. Haas, Berthold Reinwald, Yannis Sismanis, Rainer Gemulla:
 	 * 
-	 * TODO: add multithreaded version
+	 * On synopses for distinct‐value estimation under multiset operations. SIGMOD 2007
 	 * 
-	 * @param in The Matrix Block to estimate values
+	 * TODO: Add multi-threaded version
+	 * 
+	 * @param in The Matrix Block to estimate the number of distinct values in
 	 * @return The distinct count estimate
 	 */
 	private static int CountDistinctValuesKVM(MatrixBlock in, CountDistinctOperator op) {
@@ -190,7 +188,6 @@ public class LibMatrixCountDistinct {
 			while(it.hasNext()) {
 				double fullValue = it.next().getV();
 				int hash = Hash.hash(fullValue, op.hashType);
-				// LOG.debug(hash);
 				// Since Java does not have unsigned integer, the hash value is abs.
 				int v = (Math.abs(hash)) % (M - 1) + 1;
 				spq.add(v);
@@ -200,8 +197,6 @@ public class LibMatrixCountDistinct {
 			double[] data = in.getDenseBlockValues();
 			for(double fullValue : data) {
 				int hash = Hash.hash(fullValue, op.hashType);
-				// LOG.debug(hash);
-				// Since Java does not have unsigned integer, the hash value is abs.
 				int v = (Math.abs(hash)) % (M - 1) + 1;
 				spq.add(v);
 			}
@@ -226,9 +221,11 @@ public class LibMatrixCountDistinct {
 	}
 
 	/**
-	 * deceiving name, but is used to contain the k smallest values inserted.
+	 * Deceiving name, but is used to contain the k smallest values inserted.
 	 * 
 	 * TODO: add utility method to join two partitions
+	 * 
+	 * TODO: Replace Standard Java Set and Priority Queue with optimized versions.
 	 */
 	private static class SmallestPriorityQueue {
 		private Set<Integer> containedSet;

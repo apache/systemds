@@ -27,6 +27,7 @@ limitations under the License.
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
+    * [`scale`-Function](#scale-function)
     * [`sigmoid`-Function](#sigmoid-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
@@ -110,6 +111,7 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 
+ 
 ## `lm`-Function
 
 The `lm`-function solves linear regression using either the **direct solve method** or the **conjugate gradient algorithm**
@@ -244,6 +246,35 @@ X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 yp = lmpredict(X, w)
+```
+
+## `scale`-Function
+
+The scale function is a generic function whose default method centers or scales the column of a numeric matrix.
+
+### Usage
+```r
+scale(X, center=TRUE, scale=TRUE)
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of feature vectors. |
+| center  | Boolean        | required | either a logical value or numerical value. |
+| scale   | Boolean        | required | either a logical value or numerical value. |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | 1-column matrix of weights. |
+
+### Example
+```r
+X = rand(rows = 20, cols = 10)
+center=TRUE;
+scale=TRUE;
+Y= scale(X,center,scale)
 ```
 
 ## `sigmoid`-Function

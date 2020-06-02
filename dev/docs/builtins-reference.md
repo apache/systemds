@@ -371,13 +371,14 @@ normalize(X);
 ### Returns
 | Type           | Description |
 | :------------- | :---------- |
-| Matrix[Double] | 1-column matrix of normalized value. |
+| Matrix[Double] | 1-column matrix of normalized values. |
 
 
 
 ### Example
 ```r
 X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
-normalize(X = X)
+y = X %*% rand(rows=ncol(X), cols=1)
+y=normalize(X = X)
+//print(toString(y))
 ```

@@ -456,7 +456,6 @@ public class DataConverter
 		return mb;
 	}
 
-
 	/**
 	 * Converts an Integer matrix to an MatrixBlock
 	 * 

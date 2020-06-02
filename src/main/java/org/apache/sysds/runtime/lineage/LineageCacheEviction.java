@@ -89,7 +89,6 @@ public class LineageCacheEviction
 	}
 
 	private static void removeEntry(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry e) {
-		System.out.println(e._key);
 		if (cache.remove(e._key) != null)
 			_cachesize -= e.getSize();
 

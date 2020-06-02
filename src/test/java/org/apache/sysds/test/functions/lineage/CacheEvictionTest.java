@@ -92,7 +92,6 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			// LRU based eviction
 			List<String> proArgs = new ArrayList<>();
 			proArgs.add("-stats");
-			proArgs.add("-explain");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
 			proArgs.add("-args");
@@ -126,6 +125,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_wt = LineageCacheStatistics.getInstHits();
 			long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
+			LineageCacheConfig.resetReusableOpcodes();
 			
 			// Compare results
 			Lineage.setLinReuseNone();

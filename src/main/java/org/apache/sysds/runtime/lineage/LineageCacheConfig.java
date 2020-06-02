@@ -132,12 +132,16 @@ public class LineageCacheConfig
 		//setup static configuration parameters
 		REUSE_OPCODES = OPCODES;
 		setSpill(true); 
-		setCachePolicy(LineageCachePolicy.WEIGHTED);
+		setCachePolicy(LineageCachePolicy.HYBRID);
 		setCompAssRW(true);
 	}
 
 	public static void setReusableOpcodes(String... ops) {
 		REUSE_OPCODES = ops;
+	}
+	
+	public static void resetReusableOpcodes() {
+		REUSE_OPCODES = OPCODES;
 	}
 
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {

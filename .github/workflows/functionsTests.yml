@@ -49,6 +49,7 @@ jobs:
           codegen,
           codegenalg.partone,
           codegenalg.parttwo,
+          countDistinct,
           data.misc,
           data.rand,
           data.tensor,

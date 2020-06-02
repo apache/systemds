@@ -93,7 +93,7 @@ public class LineageCacheConfig
 
 	private static LineageCachePolicy _cachepolicy = null;
 	// Weights for scoring components (computeTime/size, LRU timestamp)
-	private static double[] WEIGHTS = {0, 1};
+	public static double[] WEIGHTS = {0, 1};
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.

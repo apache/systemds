@@ -22,6 +22,8 @@ package org.apache.sysds.test.functions.lineage;
 import org.junit.Assert;
 import org.junit.Test;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
+
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -96,7 +98,9 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			LineageCacheConfig.setCachePolicy(LineageCacheConfig.LineageCachePolicy.LRU);
+			System.out.println("Current weghts" +Arrays.toString(LineageCacheConfig.WEIGHTS));
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			System.out.println("Current weghts" +Arrays.toString(LineageCacheConfig.WEIGHTS));
 			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromHDFS("R");
 			long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
 			long plusCount_lru = Statistics.getCPHeavyHitterCount("+");
@@ -113,7 +117,9 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			LineageCacheConfig.setCachePolicy(LineageCacheConfig.LineageCachePolicy.WEIGHTED);
+			System.out.println("Current weghts" +Arrays.toString(LineageCacheConfig.WEIGHTS));
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			System.out.println("Current weghts" +Arrays.toString(LineageCacheConfig.WEIGHTS));
 			HashMap<MatrixValue.CellIndex, Double> R_weighted= readDMLMatrixFromHDFS("R");
 			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
 			long plusCount_wt = Statistics.getCPHeavyHitterCount("+");

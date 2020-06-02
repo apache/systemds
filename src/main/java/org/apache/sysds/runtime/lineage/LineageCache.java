@@ -328,6 +328,7 @@ public class LineageCache
 			return;
 		// Move the value from the cache entry with key probeItem to
 		// the placeholder entry with key item.
+		System.out.println("Multilevel entry - should never reach here");
 		if (LineageCache.probe(probeItem)) {
 			LineageCacheEntry oe = getIntern(probeItem);
 			LineageCacheEntry e = _cache.get(item);

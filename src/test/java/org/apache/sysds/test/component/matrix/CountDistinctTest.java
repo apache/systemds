@@ -43,10 +43,9 @@ import org.junit.runners.Parameterized.Parameters;
 public class CountDistinctTest {
 
 	private static CountDistinctTypes[] esT = new CountDistinctTypes[] {
-			// The different types of Estimators
-			CountDistinctTypes.COUNT,
-			CountDistinctTypes.KMV,
-			// CountDistinctTypes.HLL
+		// The different types of Estimators
+		CountDistinctTypes.COUNT, CountDistinctTypes.KMV,
+		// CountDistinctTypes.HLL
 	};
 
 	@Parameters
@@ -68,14 +67,23 @@ public class CountDistinctTest {
 		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1024,
 		// 1024, 0.0, 100.0, 1, 7)));
 		// actualUnique.add(1024L * 1024L);
+
+
+		// Sparse
+		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 10, 0.0, 100.0, 0.1, 7)));
+		actualUnique.add(98L);
+
+		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 1000, 0.0, 100.0, 0.1, 7)));
+		actualUnique.add(9823L);
+
 		try {
-			
 			inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(5000, 5000, 1, 100, 1, 8)));
 			actualUnique.add(99L);
-		} catch (Exception e) {
+		}
+		catch(Exception e) {
 			e.printStackTrace();
 			throw e;
-			//TODO: handle exception
+			// TODO: handle exception
 		}
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10240, 1, 100, 1, 7)));
 		actualUnique.add(99L);
@@ -98,41 +106,47 @@ public class CountDistinctTest {
 		actualUnique.add(3000L);
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 0, 6000, 1, 7)));
 		actualUnique.add(6000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240,
-		// 10241, 0, 10000, 1,
+		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 10000, 1,
 		// 7)));
 		// actualUnique.add(10000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240,
-		// 10241, 0, 100000, 1,
+		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 100000, 1,
 		// 7)));
 		// actualUnique.add(100000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240,
-		// 10241, 0, 1000000, 1,
-		// 7)));
-		// actualUnique.add(1000000L);
 
-		for (CountDistinctTypes et : esT) {
-			for (HashType ht : HashType.values()) {
-				if (ht == HashType.ExpHash && et == CountDistinctTypes.KMV) {
 
-					String errorMessage = "Invalid hashing configuration using " + HashType.ExpHash + " and "
-							+ CountDistinctTypes.KMV;
-					tests.add(new Object[] { et, inputs.get(0), actualUnique.get(0), ht, DMLException.class,
-							errorMessage, 0.0 });
-				} else if (et == CountDistinctTypes.HLL) {
-					tests.add(new Object[] { et, inputs.get(0), actualUnique.get(0), ht, NotImplementedException.class,
-							"HyperLogLog not implemented", 0.0 });
-				} else {
-					if (et == CountDistinctTypes.COUNT) {
-						for (int i = 0; i < inputs.size(); i++) {
-							tests.add(new Object[] { et, inputs.get(i), actualUnique.get(i), ht, null, null, 0.0001 });
-						}
-					} else {
-						for (int i = 0; i < inputs.size(); i++) {
-							// allowing the estimate to be 30% off
-							tests.add(new Object[] { et, inputs.get(i), actualUnique.get(i), ht, null, null, 0.3 });
-						}
+		// Sparse Inputs
+		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 0, 3000, 0.1, 7)));
+		actualUnique.add(3000L);
+		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 5000, 0.1, 7)));
+		// actualUnique.add(5000L);
+		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 10000, 0.1, 7)));
+		// actualUnique.add(10000L);
+
+
+		for(CountDistinctTypes et : esT) {
+			for(HashType ht : HashType.values()) {
+				if((ht == HashType.ExpHash && et == CountDistinctTypes.KMV) ||
+					(ht == HashType.StandardJava && et == CountDistinctTypes.KMV)) {
+					String errorMessage = "Invalid hashing configuration using " + ht + " and " + et;
+					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, DMLException.class,
+						errorMessage, 0.0});
+				}
+				else if(et == CountDistinctTypes.HLL) {
+					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, NotImplementedException.class,
+						"HyperLogLog not implemented", 0.0});
+				}
+				else if (et != CountDistinctTypes.COUNT) {
+					
+					for(int i = 0; i < inputs.size(); i++) {
+						// allowing the estimate to be 15% off
+						tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), ht, null, null, 0.15});
 					}
+					
+				}
+			}
+			if (et == CountDistinctTypes.COUNT){
+				for(int i = 0; i < inputs.size(); i++) {
+					tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), null, null, null, 0.0001});
 				}
 			}
 		}
@@ -165,7 +179,7 @@ public class CountDistinctTest {
 	public void testEstimation() {
 
 		// setup expected exception
-		if (expectedException != null) {
+		if(expectedException != null) {
 			thrown.expect(expectedException);
 			thrown.expectMessage(expectedExceptionMsg);
 		}
@@ -174,20 +188,42 @@ public class CountDistinctTest {
 		CountDistinctOperator op = new CountDistinctOperator(et, ht);
 		try {
 			out = LibMatrixCountDistinct.estimateDistinctValues(in, op);
-		} catch (DMLException e) {
-			System.out.println(e.getMessage());
+		}
+		catch(DMLException e) {
 			throw e;
-		} catch (NotImplementedException e) {
+		}
+		catch(NotImplementedException e) {
 			throw e;
-		} catch (Exception e) {
+		}
+		catch(Exception e) {
 			e.printStackTrace();
-			Assert.assertTrue("EXCEPTION: " + e.getMessage() + " PARAMETERS: " + et + " , hashing: " + ht
-					+ " & input size:" + in.getNumRows() + "," + in.getNumColumns(), false);
+			Assert.assertTrue(this.toString(), false);
 		}
 
 		int count = out;
 		boolean success = Math.abs(nrUnique - count) <= nrUnique * epsilon;
-		Assert.assertTrue(et + " estimated " + count + " unique values, actual:" + nrUnique + " with eps of " + epsilon
-				+ " , hashing: " + ht + " & input size:" + in.getNumRows() + "," + in.getNumColumns(), success);
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.toString());
+		sb.append("\n" + count + " unique values, actual:" + nrUnique + " with eps of " + epsilon);
+		Assert.assertTrue(sb.toString(), success);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(et);
+		if(ht != null){
+			sb.append("-" + ht);
+		}
+		sb.append("  nrUnique:" + nrUnique);
+		sb.append(" & input size:" + in.getNumRows() + "," + in.getNumColumns());
+		sb.append(" sparse: " + in.isInSparseFormat());
+		if(expectedException != null) {
+
+			sb.append("\nExpected Exception: " + expectedException);
+			sb.append("\nExpected Exception Msg: " + expectedExceptionMsg);
+		}
+
+		return sb.toString();
 	}
 }

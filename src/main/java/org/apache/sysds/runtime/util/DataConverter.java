@@ -466,11 +466,11 @@ public class DataConverter
 		int rows = data.length;
 		int cols = (rows > 0)? data[0].length : 0;
 		MatrixBlock res = new MatrixBlock(rows, cols, false);
-		for(int index = 0; index< data.length; index++){
-			int row = index%cols;
-			int col = index/rows + index%cols ;
-			double v = data[col][row];
-			res.appendValue(row, col, v);
+		for(int row = 0; row< data.length; row++){
+			for(int col = 0; col < cols; col++){
+				double v = data[row][col];
+				res.appendValue(row, col, v);
+			}
 		}
 		return res;
 	}

@@ -87,9 +87,9 @@ public class LibMatrixCountDistinct {
 		// set output to correct size.
 
 		int res = 0;
-		if(op.hashType == HashType.ExpHash && op.operatorType == CountDistinctTypes.KMV) {
-			throw new DMLException(
-				"Invalid hashing configuration using " + HashType.ExpHash + " and " + CountDistinctTypes.KMV);
+		if((op.hashType == HashType.ExpHash && op.operatorType == CountDistinctTypes.KMV) ||
+			(op.hashType == HashType.StandardJava && op.operatorType == CountDistinctTypes.KMV)) {
+			throw new DMLException("Invalid hashing configuration using " + op.hashType + " and " + op.operatorType);
 		}
 
 		// shortcut in simplest case.

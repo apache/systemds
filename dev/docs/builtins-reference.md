@@ -355,7 +355,7 @@ ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
 ## `normalize`-Function
 
-The `normalize`-function is used for data preparation by normalization. Here, the values of a matrix (numeric columns) are changed in the dataset to use a common scale, while preserving differences in the ranges of values.
+The `normalize`-function normalises the values of a matrix by changing the dataset to use a common scale. This is done while preserving differences in the ranges of values. The output is a matrix of values in range [0,1].
 
 ### Usage
 ```r
@@ -377,8 +377,8 @@ normalize(X);
 
 ### Example
 ```r
-X = rand (rows = 50, cols = 10)
+X = rand(rows = 50, cols = 10)
 y = X %*% rand(rows=ncol(X), cols=1)
-y=normalize(X = X)
+y = normalize(X = X)
 
 ```

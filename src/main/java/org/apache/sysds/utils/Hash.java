@@ -28,68 +28,98 @@ import org.apache.commons.lang.NotImplementedException;
  */
 public class Hash {
 
+	/**
+	 * Available Hashing techniques
+	 */
 	public enum HashType {
-		StandardJava, 
-		LinearHash, 
-		ExpHash
+		StandardJava, LinearHash, ExpHash
 	}
 
-	// Random Array used for Linear and ExpHashing.
-	private static int[] a = {0xFFFFFFFF, 0x32435171, 0xac3338cf, 0xea97b40c, 0x0e504b22, 0x9ff9a4ef, 0x111d014d,
-		0x934f3787, 0x6cd079bf, 0x69db5c31, 0xdf3c28ed, 0x40daf2ad, 0x82a5891c, 0x4659c7b0, 0x73dc0ca8, 0xdad3aca2,
-		0x00c74c7e, 0x9a2521e2, 0xf38eb6aa, 0x64711ab6, 0x5823150a, 0xd13a3a9a, 0x30a5aa04, 0x0fb9a1da, 0xef785119,
-		0xc9f0b067, 0x1e7dde42, 0xdda4a7b2, 0x1a1c2640, 0x297c0633, 0x744edb48, 0x19adce93};
+	/**
+	 * A random Array (except first value) used for Linear and Exp hashing, to integer domain.
+	 */
+	private static final int[] a = {0xFFFFFFFF, 0xB7825CBC, 0x10FA23F2, 0xD54E1532, 0x7590E53C, 0xECE6F631, 0x8954BF60,
+		0x5BE38B88, 0xCA1D3AC0, 0xB2726F8E, 0xBADE7E7A, 0xCACD1184, 0xFB32BDAD, 0x2936C9D7, 0xB5B88D37, 0xD272D353,
+		0xE139A063, 0xDACF6B87, 0x3568D521, 0x75C619EA, 0x7C2B8CBD, 0x012C3C7F, 0x0A621C37, 0x77274A12, 0x731D379A,
+		0xE45E0D3B, 0xEAB4AE13, 0x10C440C7, 0x50CF2899, 0xD865BD46, 0xAABDF34F, 0x218FA0C3,};
+
+	/**
+	 * An main method generator for the random int values included in a.
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		Random r = new Random(1324121);
+		System.out.println(String.format("0x%08X,", -1));
+		for(int x = 0; x < 31; x++) {
+			System.out.println(String.format("0x%08X,", r.nextInt()));
+		}
+	}
 
 	/**
 	 * Generic hashing of java objects, not ideal for specific values so use the specific methods for specific types.
-	 * @param o The Object to hash.
+	 * 
+	 * To Use the locality sensitive techniques override the objects hashcode function.
+	 * 
+	 * @param o  The Object to hash.
 	 * @param ht The HashType to use.
-	 * @return
+	 * @return An int Hash value.
 	 */
 	static public int hash(Object o, HashType ht) {
 		int hashcode = o.hashCode();
 		switch(ht) {
 			case StandardJava:
 				return hashcode;
-			// case LinearHash:
-			// 	return linearHash(hashcode);
-			// case ExpHash:
-			// 	return expHash(hashcode);
+			case LinearHash:
+				return linearHash(hashcode);
+			case ExpHash:
+				return expHash(hashcode);
 			default:
 				throw new NotImplementedException("Not Implemented hashing combination");
 		}
 	}
 
-	static public int hash(double o, HashType ht){
+	/**
+	 * Hash functions for double values.
+	 * 
+	 * @param o  The double value.
+	 * @param ht The hashing function to apply.
+	 * @return An int Hash value.
+	 */
+	static public int hash(double o, HashType ht) {
 		long v = Double.doubleToLongBits(o);
 		switch(ht) {
 			case StandardJava:
 				// Here just for reference
 				return new Double(o).hashCode();
-				// return (int)(v^(v>>>32));
+			// return (int)(v^(v>>>32));
 			case LinearHash:
-				return linearHash((int)(v^(v>>>32)));
+				// Altho Linear Hashing is locality sensitive, it is not in this case
+				// since the bit positions for the double value is split in exponent and mantissa.
+				// If the locality sensitive aspect is required use linear hash on an double value rounded to integer.
+				return linearHash((int) (v ^ (v >>> 32)));
 			default:
 				throw new NotImplementedException("Not Implemented hashing combination for double value");
 		}
 	}
 
-	// 32 random int values.
-	// generated values:
-	public static void main(String[] args) {
-		Random r = new Random(1324121);
-		for(int x = 0; x < 32; x++) {
-			System.out.println(String.format("0x%08X,", r.nextInt()));
-		}
-	}
-
 	/**
-	 * Compute linear hash function (32-bit signed integers to 32-bit signed integers)
+	 * Compute the Linear hash of an int input value.
+	 * 
+	 * @param v The value to hash.
+	 * @return The int hash.
 	 */
 	public static int linearHash(int v) {
 		return linearHash(v, a.length);
 	}
 
+	/**
+	 * Compute the Linear hash of an int input value, but only use the first bits of the linear hash.
+	 * 
+	 * @param v    The value to hash.
+	 * @param bits The number of bits to use. up to maximum of 32.
+	 * @return The hashed value
+	 */
 	public static int linearHash(int v, int bits) {
 		int res = 0;
 		for(int i = 0; i < bits; i++) {
@@ -99,20 +129,21 @@ public class Hash {
 	}
 
 	/**
-	 * Compute exponentially distributed hash values (in range 0..32)
+	 * Compute exponentially distributed hash values in range 0..a.length
 	 * 
-	 * Distribution is weighted towards 0, and have less likelihood towards 32
-	 * 
-	 * (should cast result to a byte, since max value is the length of a)
+	 * eg: 50% == 0 , 25% == 1 12.5 % == 2 etc.
 	 * 
 	 * Useful because you can estimate size of a collection by only maintaining the highest value found. from this hash.
+	 * 
+	 * @param x value to hash
+	 * @return a hash value byte (only in the range of 0 to a.length)
 	 */
-	public static int expHash(int x) {
+	public static byte expHash(int x) {
 		for(int value = 0; value < a.length; value++) {
 			int dot = Long.bitCount(a[value] & x) & 1;
 			if(dot != 0)
-				return value + 1;
+				return (byte) (value + 1);
 		}
-		return a.length;
+		return (byte) a.length;
 	}
 }

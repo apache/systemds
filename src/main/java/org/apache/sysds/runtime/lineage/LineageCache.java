@@ -128,7 +128,7 @@ public class LineageCache
 		HashMap<String, LineageItem> funcLIs = new HashMap<>();
 		for (int i=0; i<numOutputs; i++) {
 			String opcode = name + String.valueOf(i+1);
-			LineageItem li = new LineageItem(outNames.get(i), opcode, liInputs);
+			LineageItem li = new LineageItem(opcode, liInputs);
 			LineageCacheEntry e = null;
 			synchronized(_cache) {
 				if (LineageCache.probe(li)) {
@@ -251,7 +251,7 @@ public class LineageCache
 		boolean AllOutputsCacheable = true;
 		for (int i=0; i<outputs.size(); i++) {
 			String opcode = name + String.valueOf(i+1);
-			LineageItem li = new LineageItem(outputs.get(i).getName(), opcode, liInputs);
+			LineageItem li = new LineageItem(opcode, liInputs);
 			String boundVarName = outputs.get(i).getName();
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
 			if (boundLI != null)
@@ -506,10 +506,6 @@ public class LineageCache
 				throw new DMLRuntimeException("Lineage Cache: unsupported instruction: "+inst.getOpcode());
 		}
 		
-		if (DMLScript.STATISTICS) {
-			long t1 = System.nanoTime();
-			LineageCacheStatistics.incrementCostingTime(t1-t0);
-		}
 		return nflops / (2L * 1024 * 1024 * 1024);
 	}
 }

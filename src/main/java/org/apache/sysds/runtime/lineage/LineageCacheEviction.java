@@ -246,15 +246,9 @@ public class LineageCacheEviction
 		if (!e.isMatrixValue() || e.isNullVal())
 			return 0;
 		// This includes sum of writing to and reading from disk
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		double size = getDiskSizeEstimate(e);
 		double loadtime = isSparse(e) ? size/LineageCacheConfig.FSREAD_SPARSE : size/LineageCacheConfig.FSREAD_DENSE;
 		double writetime = isSparse(e) ? size/LineageCacheConfig.FSWRITE_SPARSE : size/LineageCacheConfig.FSWRITE_DENSE;
-
-		//double loadtime = CostEstimatorStaticRuntime.getFSReadTime(r, c, s);
-		//double writetime = CostEstimatorStaticRuntime.getFSWriteTime(r, c, s);
-		if (DMLScript.STATISTICS) 
-			LineageCacheStatistics.incrementCostingTime(System.nanoTime() - t0);
 		return loadtime + writetime;
 	}
 
@@ -276,7 +270,6 @@ public class LineageCacheEviction
 			// Scalar or too small
 			return; 
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		double newIOSpeed = size / IOtime; // MB per second 
 		// Adjust the read/write speed taking into account the last read/write.
 		// These constants will eventually converge to the real speed.
@@ -292,8 +285,6 @@ public class LineageCacheEviction
 			else
 				LineageCacheConfig.FSWRITE_DENSE= (LineageCacheConfig.FSWRITE_DENSE+ newIOSpeed) / 2;
 		}
-		if (DMLScript.STATISTICS) 
-			LineageCacheStatistics.incrementCostingTime(System.nanoTime() - t0);
 	}
 	
 	private static boolean isSparse(LineageCacheEntry e) {

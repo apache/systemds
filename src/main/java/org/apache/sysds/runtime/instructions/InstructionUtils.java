@@ -959,6 +959,16 @@ public class InstructionUtils
 		parts[operand] = newValue;
 		return concatOperands(parts);
 	}
+
+	public static String replaceOperandName(String instStr) {
+		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
+		String oldName = parts[parts.length-1];
+		String[] Nameparts = oldName.split(Instruction.VALUETYPE_PREFIX);
+		Nameparts[0] = "xxx";
+		String newName = concatOperandParts(Nameparts);
+		parts[parts.length-1] = newName;
+		return concatOperands(parts);
+	}
 	
 	public static String concatOperands(String... inputs) {
 		return concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);

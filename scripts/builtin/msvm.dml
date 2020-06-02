@@ -19,10 +19,20 @@
 #
 #-------------------------------------------------------------
 
-# Implements builtin multiclass SVM with squared slack variables, 
-# learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
+* [`msvm`-Function](#mvsm-function)
 
-# INPUT PARAMETERS:
+## 'msvm' -Function
+
+The 'msvm' function implements builtin multiclass SVM with squared slack variables. 
+It learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
+
+
+### Usage
+---
+msvm(X,Y,icpt=False,num_class=10,epsilon=0.001,lambda=1.0,maxiter=100,verbose=False);
+---
+
+### Arguments
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
@@ -37,11 +47,14 @@
 # verbose         Boolean False       Set to true to print while training.
 # ---------------------------------------------------------------------------------------------
  
-#Output(s)
+ 
+### Returns
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # model           Double   ---        model matrix
+
+
 
 m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     Double epsilon = 0.001, Double lambda = 1.0, Integer maxIterations = 100, Boolean verbose = FALSE)

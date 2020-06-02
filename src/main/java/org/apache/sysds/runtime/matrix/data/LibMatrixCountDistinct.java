@@ -89,6 +89,9 @@ public class LibMatrixCountDistinct {
 			(op.hashType == HashType.ExpHash || op.hashType == HashType.StandardJava)) {
 			throw new DMLException("Invalid hashing configuration using " + op.hashType + " and " + op.operatorType);
 		}
+		else if(op.operatorType == CountDistinctTypes.HLL) {
+			throw new NotImplementedException("HyperLogLog not implemented");
+		}
 		// shortcut in simplest case.
 		if(in.getNumColumns() == 1 && in.getNumRows() == 1) {
 			return 1;
@@ -109,8 +112,6 @@ public class LibMatrixCountDistinct {
 				case KMV:
 					res = CountDistinctValuesKVM(in, op);
 					break;
-				case HLL:
-					throw new NotImplementedException("HyperLogLog not implemented");
 				default:
 					throw new DMLException("Invalid or not implemented Estimator Type");
 			}

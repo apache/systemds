@@ -44,8 +44,9 @@ public class CountDistinctTest {
 
 	private static CountDistinctTypes[] esT = new CountDistinctTypes[] {
 		// The different types of Estimators
-		CountDistinctTypes.COUNT, CountDistinctTypes.KMV,
-		// CountDistinctTypes.HLL
+		CountDistinctTypes.COUNT, 
+		CountDistinctTypes.KMV,
+		CountDistinctTypes.HLL
 	};
 
 	@Parameters
@@ -57,62 +58,32 @@ public class CountDistinctTest {
 		// single value matrix.
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 1, 0.0, 100.0, 1, 7)));
 		actualUnique.add(1L);
+
+		// single column or row matrix.
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0.0, 100.0, 1, 7)));
 		actualUnique.add(100L);
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 1, 0.0, 100.0, 1, 7)));
 		actualUnique.add(100L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100,
-		// 100, 0.0, 100.0, 1, 7)));
-		// actualUnique.add(10000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1024,
-		// 1024, 0.0, 100.0, 1, 7)));
-		// actualUnique.add(1024L * 1024L);
 
-
-		// Sparse
+		// Sparse Multicol random values (most likely each value is unique)
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 10, 0.0, 100.0, 0.1, 7)));
 		actualUnique.add(98L);
-
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 1000, 0.0, 100.0, 0.1, 7)));
 		actualUnique.add(9823L);
 
-		try {
-			inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(5000, 5000, 1, 100, 1, 8)));
-			actualUnique.add(99L);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw e;
-			// TODO: handle exception
-		}
+		// MultiCol Inputs (using integers)
+		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(5000, 5000, 1, 100, 1, 8)));
+		actualUnique.add(99L);
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10240, 1, 100, 1, 7)));
 		actualUnique.add(99L);
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 1024, 1, 100, 1, 7)));
 		actualUnique.add(99L);
-
-		// inputs.add(
-		// DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024,
-		// 1024, 1000001, 1000100, 1, 8)));
-		// actualUnique.add(99L);
-		// inputs.add(
-		// DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024,
-		// 10240, 1000001, 1000100, 1, 7)));
-		// actualUnique.add(99L);
-
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 1, 1500, 1, 7)));
 		actualUnique.add(1499L);
-
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 0, 3000, 1, 7)));
 		actualUnique.add(3000L);
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 0, 6000, 1, 7)));
 		actualUnique.add(6000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 10000, 1,
-		// 7)));
-		// actualUnique.add(10000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 100000, 1,
-		// 7)));
-		// actualUnique.add(100000L);
-
 
 		// Sparse Inputs
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 0, 3000, 0.1, 7)));
@@ -121,7 +92,6 @@ public class CountDistinctTest {
 		// actualUnique.add(5000L);
 		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 10000, 0.1, 7)));
 		// actualUnique.add(10000L);
-
 
 		for(CountDistinctTypes et : esT) {
 			for(HashType ht : HashType.values()) {
@@ -136,12 +106,10 @@ public class CountDistinctTest {
 						"HyperLogLog not implemented", 0.0});
 				}
 				else if (et != CountDistinctTypes.COUNT) {
-					
 					for(int i = 0; i < inputs.size(); i++) {
 						// allowing the estimate to be 15% off
 						tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), ht, null, null, 0.15});
 					}
-					
 				}
 			}
 			if (et == CountDistinctTypes.COUNT){

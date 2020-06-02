@@ -912,9 +912,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case NROW:
 		case NCOL:
 		case LENGTH:
+		case COUNT_DISTINCT:
+		case COUNT_DISTINCT_APPROX:
 			checkNumParameters(1);
-			checkDataTypeParam(getFirstExpr(),
-				DataType.MATRIX, DataType.FRAME, DataType.LIST);
+			checkDataTypeParam(getFirstExpr(), DataType.MATRIX);
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);

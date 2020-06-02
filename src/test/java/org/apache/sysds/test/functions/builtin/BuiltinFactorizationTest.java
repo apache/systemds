@@ -111,7 +111,7 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			//generate input and write incl meta data
-			double[][] Xa = TestUtils.generateTestMatrix(rows, cols, 1, 10, sparsity, 7);
+			double[][] Xa = TestUtils.generateTestMatrix(rows, cols, 1.0, 10.0, sparsity, 7);
 			writeInputMatrixWithMTD("X", Xa, true);
 			
 			//run test case

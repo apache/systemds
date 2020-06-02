@@ -19,15 +19,14 @@
 
 package org.apache.sysds.lops;
 
-import org.apache.sysds.hops.HopsException;
-import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
- 
-import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.lops.LopProperties.ExecType;
 
 
 /**
@@ -77,7 +76,7 @@ public class PartialAggregate extends Lop
 		input.addOutput(this);
 		lps.setProperties(inputs, et);
 	}
-	
+
 	/**
 	 * This method computes the location of "correction" terms in the output
 	 * produced by PartialAgg instruction.
@@ -338,6 +337,18 @@ public class PartialAggregate extends Lop
 			case TRACE: {
 				if( dir == Direction.RowCol )
 					return "uaktrace";
+				break;
+			}
+
+			case COUNT_DISTINCT: {
+				if(dir == Direction.RowCol )
+					return "uacd";
+				break;
+			}
+			
+			case COUNT_DISTINCT_APPROX: {
+				if(dir == Direction.RowCol )
+					return "uacdap";
 				break;
 			}
 		}

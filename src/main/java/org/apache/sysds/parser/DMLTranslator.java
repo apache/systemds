@@ -2313,6 +2313,8 @@ public class DMLTranslator
 		case SUM:
 		case PROD:
 		case VAR:
+		case COUNT_DISTINCT:
+		case COUNT_DISTINCT_APPROX:
 			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(),
 				AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr);
 			break;

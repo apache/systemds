@@ -380,5 +380,5 @@ normalize(X);
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows=ncol(X), cols=1)
 y=normalize(X = X)
-//print(toString(y))
+
 ```

@@ -135,50 +135,9 @@ public class GLMTest extends AutomatedTestBase
 	public static Collection<Object[]> data() {
 		// SCHEMA: 
 		// #RECORDS, #FEATURES, DISTRIBUTION_FAMILY, VARIANCE_POWER or BERNOULLI_NO, LINK_TYPE, LINK_POWER, 
-		//	 INTERCEPT, LOG_FEATURE_VARIANCE_DISBALANCE, AVG_LINEAR_FORM, ST_DEV_LINEAR_FORM, DISPERSION
-		Object[][] data = new Object[][] { 
-				
-		//	 #RECS  #FTRS DFM VPOW  LNK LPOW   ICPT  LFVD  AVGLT STDLT  DISP
-				
-		// Both DML and R work and compute close results:
-
-/*				
-		// THIS IS TO TEST "NO INTERCEPT" OPTION ("icpt=0"):
-			{ 100000,   50,  1,  0.0,  1,  0.0,  0.0,  3.0,  10.0,  2.0,  2.5 },   // Gaussian.log
-			{  10000,  100,  1,  0.0,  1,  1.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Gaussian.id
-			{  20000,  100,  1,  0.0,  1, -1.0,  0.0,  0.0,   0.2,  0.03, 2.5 },   // Gaussian.inverse
-			{  10000,  100,  1,  1.0,  1,  0.0,  0.0,  3.0,   0.0,  1.0,  2.5 },   // Poisson.log
-			{ 100000,   10,  1,  1.0,  1,  0.0,  0.0,  3.0,   0.0, 50.0,  2.5 },   // Poisson.log			 // Pr[0|x] gets near 1
-			{  20000,  100,  1,  1.0,  1,  0.5,  0.0,  3.0,  10.0,  2.0,  2.5 },   // Poisson.sqrt
-			{  20000,  100,  1,  1.0,  1,  1.0,  0.0,  3.0,  50.0, 10.0,  2.5 },   // Poisson.id
-			{ 100000,   50,  1,  2.0,  1,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Gamma.log
-			{ 100000,   50,  1,  2.0,  1, -1.0,  0.0,  1.0,   2.0,  0.4,  1.5 },   // Gamma.inverse
-			{  10000,  100,  1,  3.0,  1, -2.0,  0.0,  3.0,  50.0,  7.0,  1.7 },   // InvGaussian.1/mu^2
-			{  10000,  100,  1,  3.0,  1, -1.0,  0.0,  3.0,  10.0,  2.0,  2.5 },   // InvGaussian.inverse			
-			{ 100000,   50,  1,  3.0,  1,  0.0,  0.0,  2.0,  -2.0,  1.0,  1.7 },   // InvGaussian.log
-			{ 100000,   50,  1,  3.0,  1,  1.0,  0.0,  1.0,   0.2,  0.04, 1.7 },   // InvGaussian.id
-
-			{ 100000,   50,  2, -1.0,  1,  0.0,  0.0,  3.0,  -5.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.log	 // Note: Y is sparse
-			{ 100000,   50,  2, -1.0,  1,  1.0,  0.0,  1.0,   0.6,  0.1,  1.0 },   // Bernoulli {-1, 1}.id
-			{ 100000,   50,  2, -1.0,  1,  0.5,  0.0,  0.0,   0.4,  0.05, 1.0 },   // Bernoulli {-1, 1}.sqrt
-			{  10000,  100,  2, -1.0,  2,  0.0,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.logit
-			{  10000,  100,  2, -1.0,  2,  0.0,  0.0,  3.0,   0.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.logit   // Pr[y|x] near 0, 1
-			{  20000,  100,  2, -1.0,  3,  0.0,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.probit
-			{ 100000,   10,  2, -1.0,  3,  0.0,  0.0,  3.0,   0.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.probit  // Pr[y|x] near 0, 1
-			{  10000,  100,  2, -1.0,  4,  0.0,  0.0,  3.0,  -2.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.cloglog
-			{  50000,   20,  2, -1.0,  4,  0.0,  0.0,  3.0,  -2.0, 50.0,  1.0 },   // Bernoulli {-1, 1}.cloglog // Pr[y|x] near 0, 1
-			{  50000,  100,  2, -1.0,  5,  0.0,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.cauchit
-				
-			{ 100000,   50,  2,  1.0,  1,  0.0,  0.0,  3.0,  -5.0,  1.0,  2.5 },   // Binomial two-column.log   // Note: Y is sparse
-			{  10000,  100,  2,  1.0,  1,  1.0,  0.0,  0.0,   0.4,  0.05, 2.5 },   // Binomial two-column.id
-			{ 100000,   50,  2,  1.0,  1,  0.5,  0.0,  0.0,   0.4,  0.05, 2.5 },   // Binomial two-column.sqrt
-			{  10000,  100,  2,  1.0,  2,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.logit
-			{  20000,  100,  2,  1.0,  3,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
-			{  10000,  100,  2,  1.0,  4,  0.0,  0.0,  3.0,  -2.0,  1.0,  2.5 },   // Binomial two-column.cloglog
-			{  20000,  100,  2,  1.0,  5,  0.0,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.cauchit
-*/				
-				
-
+		//	 INTERCEPT, LOG_FEATURE_VARIANCE_DISBALANCE, AVG_LINEAR_FORM, ST_DEV_LINEAR_FORM, DISPERSION, GLMTYPE
+		Object[][] data = new Object[][] { 			
+		
 		// THIS IS TO TEST "INTERCEPT AND SHIFT/SCALE" OPTION ("icpt=2"):
 			{ 200000,   50,  1,  0.0,  1,  0.0,  0.01, 3.0,  10.0,  2.0,  2.5, GLMType.Gaussianlog },   	// Gaussian.log	 // CHECK DEVIANCE !!!
 			{  10000,  100,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Gaussianid },   		// Gaussian.id
@@ -212,23 +171,6 @@ public class GLMTest extends AutomatedTestBase
 			{  20000,  100,  2,  1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Binomialprobit },   	// Binomial two-column.probit
 			{  10000,  100,  2,  1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  2.5, GLMType.Binomialcloglog },   // Binomial two-column.cloglog
 			{  20000,  100,  2,  1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Binomialcauchit },   // Binomial two-column.cauchit
-			
-
-
-		//  DML WORKS, BUT R FAILS:
-				
-		//	{  10000,  100,  1,  1.0,  1,  1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Poisson.id
-		//	{  10000,  100,  1,  2.0,  1, -1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Gamma.inverse
-		//	{  10000,  100,  1,  2.0,  1,  1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Gamma.id			 // Tried tweaking, cannot satisfy R
-		//	{  10000,  100,  1,  3.0,  1, -2.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // InvGaussian.1/mu^2
-		//	{  10000,  100,  1,  3.0,  1,  0.0,  0.0,  0.0,   0.0,  2.0,  2.5 },   // InvGaussian.log	  // R computes nonsense!
-		//	{  10000,  100,  1,  3.0,  1,  1.0,  0.0,  0.0,   2.0,  0.2,  1.5 },   // InvGaussian.id
-				
-		//  BOTH R AND DML FAIL:
-				
-		//	{  10000,  100,  1,  0.0,  1, -1.0,  0.0,  0.0,  10.0,  2.0,  2.5 },   // Gaussian.inverse	 // R and DML compute nonsense
-		
-		
 		};
 		return Arrays.asList(data);
 	}
@@ -302,6 +244,43 @@ public class GLMTest extends AutomatedTestBase
 	public void TestGLMPrivateY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
 		Class<?> expectedException = null;
+		switch ( glmType ){
+			case Gaussianinverse:
+			case Poissonlog1:
+			case Poissonlog2:	 
+			case Poissonsqrt:
+			case Poissonid:
+			case Gammalog:
+			case Gammainverse:
+			case InvGaussian1mu:
+			case InvGaussianinverse:
+			case InvGaussianlog:
+			case InvGaussianid:
+			case Binomialid:
+			case Binomialcauchit:
+			case Gaussianlog:
+			case Gaussianid:
+			case Bernoullilog:
+			case Bernoulliid:
+			case Bernoullisqrt:
+			case Bernoullilogit1:
+			case Bernoullilogit2:
+			case Bernoulliprobit1:
+			case Bernoulliprobit2:
+			case Bernoullicloglog1:
+			case Bernoullicloglog2:
+			case Bernoullicauchit:
+			case Binomiallog:
+			case Binomialsqrt:
+			case Binomiallogit:
+			case Binomialprobit:
+			case Binomialcloglog:
+				expectedException = DMLException.class;
+				break;
+			default:
+				expectedException = null;
+				break;
+		}
 		testGLM(null, pc, expectedException);
 	}
 
@@ -317,6 +296,25 @@ public class GLMTest extends AutomatedTestBase
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.None);
 		Class<?> expectedException = null;
 		testGLM(null, pc, expectedException);
+	}
+
+	@Test
+	public void TestGLMPrivateXY(){
+		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
+		testGLM(pc, pc, DMLException.class);
+	}
+
+	@Test
+	public void TestGLMPrivateAggregationXY(){
+		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
+		Class<?> expectedException = null;
+		testGLM(pc, pc, expectedException);
+	}
+
+	@Test
+	public void TestGLMNonePrivateXY(){
+		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
+		testGLM(pc, pc, DMLException.class);
 	}
 	
 	public void testGLM(PrivacyConstraint privacyX, PrivacyConstraint privacyY, Class<?> expectedException)

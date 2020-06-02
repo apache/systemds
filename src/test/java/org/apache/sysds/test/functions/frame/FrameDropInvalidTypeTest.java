@@ -38,11 +38,11 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class FrameIsCorrectTypeTest extends AutomatedTestBase
+public class FrameDropInvalidTypeTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "DropInvalid";
+	private final static String TEST_NAME = "DropInvalidType";
 	private final static String TEST_DIR = "functions/frame/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FrameIsCorrectTypeTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FrameDropInvalidTypeTest.class.getSimpleName() + "/";
 
 	private final static int rows = 20;
 	private final static ValueType[] schemaStrings = {ValueType.FP64, ValueType.STRING};

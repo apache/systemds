@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 X = read($1, rows=$3, cols=$4, data_type="frame", format="csv");
-colLength = read($2); # column length vector -1 for exempted features and 
-                      # a valid characater length for features to be processed 
-R = dropInvalidLen(X,colLength);
-Rsum = as.matrix(sum(as.matrix(R)))
-write(Rsum, $5);
+colLength = read($2); # row vector with -1 for exempted features and 
+                      # a valid character length for features to be processed 
+R = dropInvalidLength(X, colLength);
+# print(toString(R))
+write(R, $5, format="binary");

@@ -1830,6 +1830,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return fb;
 	}
 
+	/**
+	 * Drop the cell value which does not confirms to the data type of its column
+	 * @input schema of the frame
+	 * @return original frame where invalid values are replaced with null
+	 */
 	public FrameBlock dropInvalid(FrameBlock schema) {
 		//sanity checks
 		if(this.getNumColumns() != schema.getNumColumns())
@@ -1866,32 +1871,30 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	}
 
 	/*
-		This method validate the frame data against a column length constrain
-		if data value in any column is greater than specific threshold
-		output vector will store a 1 for that column position.
-		@param input MatrixBlock of valid lengths
-		@param output a boolean FrameBlock for valid/invalid features
+		This method validates the frame data against an attribute length constrain
+		if data value in any cell is greater than the specified threshold of that attribute
+		the output frame will store a null on that cell position, thus removing the length-violating values.
+		@param input 1) row vector of valid lengths
+		@param output FrameBlock with invalid values converted into missing values (null)
 	 */
 	public FrameBlock invalidByLength(MatrixBlock feaLen) {
 		//sanity checks
 		if(this.getNumColumns() != feaLen.getNumColumns())
 			throw new DMLException("mismatch in number of columns in frame and corresponding feature-length vector");
 
-		ValueType[] outSchema = UtilFunctions.nCopies(this.getNumColumns(), ValueType.BOOLEAN);
-		String[][] outData = new String[this.getNumRows()][this.getNumColumns()];
-		FrameBlock outBlock = new FrameBlock(outSchema, outData);
-		outer: for (int i = 0; i < this.getNumColumns(); i++) {
+		FrameBlock outBlock = new FrameBlock(this);
+		for (int i = 0; i < this.getNumColumns(); i++) {
 			if(feaLen.quickGetValue(0, i) == -1)
-				continue outer;
+				continue;
 			int validLength = (int)feaLen.quickGetValue(0, i);
 			Array obj = this.getColumn(i);
-			inner: for (int j = 0; j < obj._size; j++)
+			for (int j = 0; j < obj._size; j++)
 			{
 				if(obj.get(j) == null)
-					continue inner;
+					continue;
 				String dataValue = obj.get(j).toString();
 				if(dataValue.length() > validLength)
-					outBlock.set(j, i, true);
+					outBlock.set(j, i, null);
 			}
 		}
 

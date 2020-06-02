@@ -177,8 +177,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map^"    , SPType.Binary);
 		String2SPInstructionType.put( "map+*"   , SPType.Binary);
 		String2SPInstructionType.put( "map-*"   , SPType.Binary);
-		String2SPInstructionType.put( "dropInvalid", SPType.Binary);
-		String2SPInstructionType.put( "dropInvalidLen", SPType.Binary);
+		String2SPInstructionType.put( "dropInvalidType", SPType.Binary);
+		String2SPInstructionType.put( "mapdropInvalidLength", SPType.Binary);
 		// Relational Instruction Opcodes
 		String2SPInstructionType.put( "=="   , SPType.Binary);
 		String2SPInstructionType.put( "!="   , SPType.Binary);

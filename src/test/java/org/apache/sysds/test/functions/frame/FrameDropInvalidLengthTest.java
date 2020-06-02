@@ -26,7 +26,6 @@ import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -35,7 +34,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -73,11 +71,11 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 		runDropInvalidLenTest( invalidLength,1, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testTwoBadColSP() {
-//		double[][] invalidLength =  {{-1,30,20,-1}};
-//		runDropInvalidLenTest( invalidLength,1, LopProperties.ExecType.SPARK);
-//	}
+	@Test
+	public void testTwoBadColSP() {
+		double[][] invalidLength =  {{-1,30,20,-1}};
+		runDropInvalidLenTest( invalidLength,1, LopProperties.ExecType.SPARK);
+	}
 
 	@Test
 	public void testOneBadColCP() {
@@ -85,11 +83,11 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 		runDropInvalidLenTest( invalidLength,2, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testOneBadColSP() {
-//		double[][] invalidLength =  {{-1,-1,20,-1}};
-//		runDropInvalidLenTest( invalidLength,2, LopProperties.ExecType.SPARK);
-//	}
+	@Test
+	public void testOneBadColSP() {
+		double[][] invalidLength =  {{-1,-1,20,-1}};
+		runDropInvalidLenTest( invalidLength,2, LopProperties.ExecType.SPARK);
+	}
 
 	@Test
 	public void testAllBadColCP() {
@@ -97,11 +95,11 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 		runDropInvalidLenTest( invalidLength,3, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testAllBadColSP() {
-//		double[][] invalidLength =  {{2,2,2,1}};
-//		runDropInvalidLenTest( invalidLength,3, LopProperties.ExecType.SPARK);
-//	}
+	@Test
+	public void testAllBadColSP() {
+		double[][] invalidLength =  {{2,2,2,1}};
+		runDropInvalidLenTest( invalidLength,3, LopProperties.ExecType.SPARK);
+	}
 
 	@Test
 	public void testNoneBadColCP() {
@@ -109,11 +107,11 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 		runDropInvalidLenTest( invalidLength,4, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testNoneBadColSP() {
-//		double[][] invalidLength =  {{-1,20,20,-1}};
-//		runDropInvalidLenTest( invalidLength,4, LopProperties.ExecType.SPARK);
-//	}
+	@Test
+	public void testNoneBadColSP() {
+		double[][] invalidLength =  {{-1,20,20,-1}};
+		runDropInvalidLenTest( invalidLength,4, LopProperties.ExecType.SPARK);
+	}
 
 	private void runDropInvalidLenTest(double[][] colInvalidLength, int test, LopProperties.ExecType et)
 	{
@@ -151,21 +149,30 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 					expected += rows*cols;
 					break;
 				case 4:
-					expected += 0;
+					expected += 0.0;
 					break;
 			}
 			// write data frame
 			writer.writeFrameToHDFS(
 					frame1.slice(0, rows - 1, 0, cols-1, new FrameBlock()),
 					input("A"), rows, schemaStrings.length);
-			// write expected feature length matrix
+
+			// write expected feature length vector
 			writeInputMatrixWithMTD("M", colInvalidLength, true);
 
 			runTest(true, false, null, -1);
+
 			// compare output
-			HashMap<MatrixValue.CellIndex, Double> dmlOut = readDMLMatrixFromHDFS("B");
-						MatrixValue.CellIndex index = dmlOut.keySet().iterator().next(); double d = dmlOut.get(index);
-						Assert.assertEquals(expected, d, 1e-5);
+			FrameBlock frameOut = readDMLFrameFromHDFS("B", Types.FileFormat.BINARY);
+
+			//read output data and compare results
+			ArrayList<Object> data = new ArrayList<>();
+			for (int i = 0; i < frameOut.getNumRows(); i++)
+				for(int j=0; j < frameOut.getNumColumns(); j++ )
+					data.add(frameOut.get(i, j));
+
+			int nullNum = Math.toIntExact(data.stream().filter(s -> s == null).count());
+			Assert.assertEquals(expected, nullNum, 1e-5);
 		}
 		catch (Exception ex) {
 			throw new RuntimeException(ex);
@@ -180,7 +187,7 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 	}
 
 	private ArrayList<Integer> getBadIndexes(int length) {
-		ArrayList<Integer> list = new ArrayList<Integer>();
+		ArrayList<Integer> list = new ArrayList();
 		for(int i =0; i<length; i++)
 		{
 			int r = ThreadLocalRandom.current().nextInt(0, rows);

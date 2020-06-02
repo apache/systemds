@@ -1519,7 +1519,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize(0);
 			break;
 
-		case DROP_INVALID:
+		case DROP_INVALID_TYPE:
 			checkNumParameters(2);
 			checkMatrixFrameParam(getFirstExpr());
 			checkMatrixFrameParam(getSecondExpr());
@@ -1536,7 +1536,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.FRAME);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			output.setBlocksize (id.getBlocksize());
-			output.setValueType(ValueType.BOOLEAN);
+			output.setValueType(id.getValueType());
 			break;
 			default:
 			if( isMathFunction() ) {

@@ -32,11 +32,12 @@ public class LineageCacheConfig
 {
 	//-------------CACHING LOGIC RELATED CONFIGURATIONS--------------//
 
-	private static final String[] REUSE_OPCODES = new String[] {
+	private static final String[] OPCODES = new String[] {
 		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof"
 		//TODO: Reuse everything. 
 	};
+	private static String[] REUSE_OPCODES  = new String[] {};
 	
 	public enum ReuseCacheType {
 		REUSE_FULL,
@@ -120,7 +121,7 @@ public class LineageCacheConfig
 		double w2 = LineageCacheConfig.WEIGHTS[1];
 		// Generate scores
 		double score1 = w1*(((double)e1._computeTime)/e1.getSize()) + w2*e1.getTimestamp();
-		double score2 = w1*((double)e2._computeTime)/e2.getSize() + w2*e1.getTimestamp();
+		double score2 = w1*((double)e2._computeTime)/e2.getSize() + w2*e2.getTimestamp();
 		// Generate order. If scores are same, order by LineageItem ID.
 		return score1 == score2 ? Long.compare(e1._key.getId(), e2._key.getId()) : score1 < score2 ? -1 : 1;
 	};
@@ -129,11 +130,15 @@ public class LineageCacheConfig
 
 	static {
 		//setup static configuration parameters
+		REUSE_OPCODES = OPCODES;
 		setSpill(true); 
-		//setCachePolicy(LineageCachePolicy.WEIGHTED);
+		setCachePolicy(LineageCachePolicy.WEIGHTED);
 		setCompAssRW(true);
 	}
 
+	public static void setReusableOpcodes(String... ops) {
+		REUSE_OPCODES = ops;
+	}
 
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = inst instanceof ComputationCPInstruction 

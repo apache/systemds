@@ -178,17 +178,16 @@ public class LineageCacheEviction
 
 	protected static void makeSpace(Map<LineageItem, LineageCacheEntry> cache, long spaceNeeded) {
 		//Cost based eviction
-		LineageCacheEntry e = weightedQueue.pollFirst();
-		while (e != null)
+		while ((spaceNeeded + _cachesize) > CACHE_LIMIT)
 		{
-			if ((spaceNeeded + _cachesize) <= CACHE_LIMIT)
-				// Enough space recovered.
+			LineageCacheEntry e = weightedQueue.pollFirst();
+			if (e == null)
+				// Nothing to evict.
 				break;
 
 			if (!LineageCacheConfig.isSetSpill()) {
 				// If eviction is disabled, just delete the entries.
 				removeOrSpillEntry(cache, e, false);
-				e = weightedQueue.pollFirst();
 				continue;
 			}
 
@@ -205,7 +204,6 @@ public class LineageCacheEviction
 				// No spilling for scalar entries. Just delete those.
 				// Note: scalar entries with higher computation time are pinned.
 				removeOrSpillEntry(cache, e, false);
-				e = weightedQueue.pollFirst();
 				continue;
 			}
 
@@ -239,9 +237,6 @@ public class LineageCacheEviction
 				else
 					removeOrSpillEntry(cache, e, false); //delete
 			}
-
-			// Remove the entry from cache.
-			e = weightedQueue.pollFirst();
 		}
 	}
 

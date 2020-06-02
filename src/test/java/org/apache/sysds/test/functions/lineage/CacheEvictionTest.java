@@ -85,6 +85,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			fullDMLScriptName = getScript();
 			Lineage.resetInternalState();
 			long cacheSize = LineageCacheEviction.getCacheLimit();
+			LineageCacheConfig.setReusableOpcodes("exp", "+", "round");
 			
 			// LRU based eviction
 			List<String> proArgs = new ArrayList<>();
@@ -99,7 +100,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromHDFS("R");
 			long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
-			long plusCount_lru = Statistics.getCPHeavyHitterCount("+");
+			long hitCount_lru = LineageCacheStatistics.getInstHits();
 			long evictedCount_lru = LineageCacheStatistics.getMemDeletes();
 			
 			// Weighted scheme (computationTime/Size)
@@ -116,8 +117,9 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_weighted= readDMLMatrixFromHDFS("R");
 			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
-			long plusCount_wt = Statistics.getCPHeavyHitterCount("+");
+			long hitCount_wt = LineageCacheStatistics.getInstHits();
 			long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
+			LineageCacheConfig.resetReusableOpcodes();
 			
 			// Compare results
 			Lineage.setLinReuseNone();
@@ -125,11 +127,11 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			
 			// Compare reused instructions
 			Assert.assertTrue(expCount_lru > expCount_wt);
-			Assert.assertTrue(plusCount_lru < plusCount_wt);
-
 			// Compare counts of evicted items
 			// LRU tends to evict more entries to recover equal amount of memory
 			Assert.assertTrue(evictedCount_lru > evictedCount_wt);
+			// Compare cache hits
+			Assert.assertTrue(hitCount_lru < hitCount_wt);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;

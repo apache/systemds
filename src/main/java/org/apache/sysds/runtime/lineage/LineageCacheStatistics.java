@@ -79,6 +79,10 @@ public class LineageCacheStatistics {
 		// Number of times single instruction results are reused (full and partial).
 		_numHitsInst.increment();
 	}
+	
+	public static long getInstHits() {
+		return _numHitsInst.longValue();
+	}
 
 	public static void incrementSBHits() {
 		// Number of times statementblock results are reused.

@@ -342,6 +342,7 @@ public class LineageCache
 			// Maintain _origItem as head.
 			while (tmp._nextEntry != null)
 				tmp = tmp._nextEntry;
+			// FIXME: No need add at the end; add just after head.
 			tmp._nextEntry = e;
 			
 			//maintain order for eviction

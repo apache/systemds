@@ -327,9 +327,8 @@ An outlier in a probability distribution function is a number that is more than 
 Specifically, if a number is less than Q1−1.5×IQR or greater than Q3+1.5×IQR, then it is an outlier.
 
 ### Usage
-```r
+
 outlier(X,opposite)
-```
 
 ###Arguments
 | Name    | Type           | Default  | Description |
@@ -343,7 +342,7 @@ outlier(X,opposite)
 | Matrix[Double] | 1-column matrix of weights. |
 
 ### Example
-```r
+
 X = rand (rows = 50, cols = 10)
 opposite = 1
 outlier(X=X,opposite=opposite)

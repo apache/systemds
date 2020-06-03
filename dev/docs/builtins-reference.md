@@ -350,3 +350,30 @@ Y = outlier(X = X, opposite = opposite)
 Z = outlierByIQR(X=Y,k=1.5,repairMethod=0,max_iterations=3,verbose=1)
 print("\n"+toString(Z))
 `
+###outlierBySd - function
+Builtin function for detecting and repairing outliers using standard deviation
+
+###usage
+outlierBySd(X,k,repairMethod,max_iterations,verbose)
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X         |      Double    |---       |Matrix with outlier values 
+|k            |   Double    |3        | threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
+|repairMethod|    Integer  | 1 |        values: 0 = delete rows having outliers, 1 = replace outliers as  zeros 
+                                             2 = replace outliers as missing values 
+| max_iterations|  Integer |   0  |       values: 0 = arbitrary number of iteration until all outliers are removed, 
+                                     n = any constant defined by user
+###Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | matrix with no outlier |
+
+###Example
+X = rand (rows = 20, cols = 10)
+opposite=1
+Y=outlier(X=X, opposite=opposite)
+Z=outlierBySd(X=Y, k=3,repairMethod = 1,max_iterations = 10,verbose = 1)
+print("\n"+toString(Z))
+

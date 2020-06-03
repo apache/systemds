@@ -109,10 +109,6 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 # Introduction
 
 
-The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level function
-
-
-
 ## `KMeans`-Function
 
 The kmeans() function in R requires, at a minimum, numeric data and a number of centers (or clusters). 
@@ -127,12 +123,12 @@ kmeans(x, centers, iter.max, nstart)
 
 ### Arguments
 
-| Name   | Type            | Default  | Description |
-| :----  | :-------------  | -------- | :------------------------------- |
-| x      | Matrix[Numeric] | required |The input Matrix to do KMeans on..|
-|centers | Int             | -------- |The no. of cenetrs                |
-|iter.max|Int              |10        |Max no. of iterations allowed     |
-|nstart  |Int              |10        |No. of random starting positions  |
+| Name     | Type            | Default  | Description |
+| :--      | :--             | --       | :--         |
+| x        | Matrix[Numeric] | required |The input Matrix to do KMeans on..|
+| centers  | Int             | --       |The no. of cenetrs                |
+| iter.max |Int              | `10`        |Max no. of iterations allowed     |
+| nstart   |Int              | `10`        |No. of random starting positions  |
 
 
 
@@ -143,12 +139,13 @@ kmeans(x, centers, iter.max, nstart)
 | String         |The output matrix with the centroids |
 
 
-### Example
-
-KMeans = rand(Matrix x, centers k=0,int iter.max=25,int nstart=10)
-return(Matrix[numerical] C,Matrix[numerical] Y)
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
+### Example
+
+```h2o.kmeans(x = predictors, k = 100, estimate_k = T, standardize = F,
+                             training_frame = train, validation_frame=valid, seed = 1234)```
+
 
 
 ## `lm`-Function

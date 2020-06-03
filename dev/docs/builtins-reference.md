@@ -291,46 +291,17 @@ y = X %*% rand(rows=ncol(X), 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
 ```
 
-## `slicefinder`-Function
+## `outlier-Function
 
-The `slicefinder`-function returns top-k worst performing subsets according to a model calculation.
-
-### Usage
-```r
-slicefinder(X,W, y, k, paq, S);
-```
-
-### Arguments
-| Name    | Type           | Default  | Description |
-| :------ | :------------- | -------- | :---------- |
-| X       | Matrix[Double] | required | Recoded dataset into Matrix |
-| W       | Matrix[Double] | required | Trained model |
-| y       | Matrix[Double] | required | 1-column matrix of response values. |
-| k       | Integer        | 1        | Number of subsets required |
-| paq     | Integer        | 1        | amount of values wanted for each col, if paq = 1 then its off |
-| S       | Integer        | 2        | amount of subsets to combine (for now supported only 1 and 2) |
-
-### Returns
-| Type           | Description |
-| :------------- | :---------- |
-| Matrix[Double] | Matrix containing the information of top_K slices (relative error, standart error, value0, value1, col_number(sort), rows, cols,range_row,range_cols, value00, value01,col_number2(sort), rows2, cols2,range_row2,range_cols2) |
-
-### Usage
-```r
-X = rand (rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), 1)
-w = lm(X = X, y = y)
-ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
-```
-##outlier-Function
 An outlier in a probability distribution function is a number that is more than 1.5 times the length of the data set away from either the lower or upper quartiles. 
 Specifically, if a number is less than Q1−1.5×IQR or greater than Q3+1.5×IQR, then it is an outlier.
 
 ### Usage
+```r
+outlier(X,opposite);
+```
 
-outlier(X,opposite)
-
-###Arguments
+### Arguments
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Recoded dataset into Matrix |
@@ -342,8 +313,9 @@ outlier(X,opposite)
 | Matrix[Double] | 1-column matrix of weights. |
 
 ### Example
-
+```r
 X = rand (rows = 50, cols = 10)
 opposite = 1
 outlier(X=X,opposite=opposite)
 ```
+

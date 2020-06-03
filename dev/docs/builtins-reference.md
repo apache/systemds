@@ -291,4 +291,62 @@ y = X %*% rand(rows=ncol(X), 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
 ```
 
+## `outlier-Function
 
+An outlier in a probability distribution function is a number that is more than 1.5 times the length of the data set away from either the lower or upper quartiles. 
+Specifically, if a number is less than Q1−1.5×IQR or greater than Q3+1.5×IQR, then it is an outlier.
+
+### Usage
+```r
+outlier(X,opposite);
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Recoded dataset into Matrix |
+|opposite| Boolean | required | Used for xor gate evaluation |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | 1-column matrix of weights. |
+
+### Example
+```r
+X = rand (rows = 50, cols = 10)
+opposite = 1
+outlier(X=X,opposite=opposite)
+```
+## outlierByIQR - Function
+
+Builtin function for detecting and repairing outliers using standard deviation
+
+### Usage
+```r
+outlierByIQR(X,k,repair_method,max_iterations,verbose)
+`
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Resulted matrix after executing outlier function |
+|k         |     Double 	   |  1.5         | a constant used to discern outliers k*IQR 
+ |isIterative|  Boolean | TRUE   |iterative repair or single repair 
+ |repairMethod|   Integer|  1           | values: 0 = delete rows having outliers, 
+                                                              1 = replace outliers with zeros 
+                                            		      2 = replace outliers as missing values 
+ |max_iterations|  Integer | 0      | values: 0 = arbitrary number of iteraition until all outliers are removed, 
+                                                            n = any constant defined by user
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | repaired outlier matrix. |
+
+### Example
+```r
+X = rand (rows=10,cols=10)
+opposite = 1
+Y = outlier(X = X, opposite = opposite)
+Z = outlierByIQR(X=Y,k=1.5,repairMethod=0,max_iterations=3,verbose=1)
+print("\n"+toString(Z))
+`

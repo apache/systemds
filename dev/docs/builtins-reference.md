@@ -32,6 +32,7 @@ limitations under the License.
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
+    * [`gnmf`-Function](#gnmf-function)
 
     
     
@@ -411,7 +412,38 @@ normalize(X);
 ### Example
 ```r
 X = rand(rows = 50, cols = 10)
-y = X %*% rand(rows=ncol(X), cols=1)
+y = X %*% rand(rows = ncol(X), cols = 1)
 y = normalize(X = X)
+```
+## `gnmf`-Function
 
+The `gnmf`-function does Generalized Non-Negative Matrix Factorization.
+It performs generalized non-negative matrix factorization based on Renyi Divergence
+
+### Usage
+```r
+gnmf(X, rnk, eps = 10^-8, maxi = 10)
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of feature vectors. |
+| rnk     | Integer        | required | Number of components into which matrix X is to be factored. |
+| eps     | Double         | `10^-8`  |   |
+| maxi    | Integer        | `10`     | Maximum number of conjugate gradient iterations. |
+
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | List of pattern matrices, one for each repetition. |
+| Matrix[Double] | List of amplitude matrices, one for each repetition. |
+
+### Example
+```r
+X = rand(rows = 50, cols = 10)
+W = rand(rows = nrow(X), cols = 2, min = -0.05, max = 0.05);
+H = rand(rows = 2, cols = ncol(X), min = -0.05, max = 0.05);
+gnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10)
 ```

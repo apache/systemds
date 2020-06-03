@@ -145,8 +145,9 @@ kmeans(x, centers, iter.max, nstart)
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 ```
-h2o.kmeans(x = predictors, k = 100, estimate_k = T, standardize = F,
-                             training_frame = train, validation_frame=valid, seed = 1234)
+m_kmeans = function(Matrix[Double] X, Integer k = 0, Integer runs = 10, Integer max_iter = 1000,
+    Double eps = 0.000001, Boolean is_verbose = FALSE, Integer avg_sample_size_per_centroid = 50)
+  return (Matrix[Double] C, Matrix[Double] Y)
 ```
 
 

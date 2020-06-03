@@ -111,7 +111,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 		}
 		catch (Exception exception) {
-			return new FederatedResponse(FederatedResponse.Type.ERROR, ExceptionUtils.getFullStackTrace(exception));
+			return new FederatedResponse(FederatedResponse.Type.ERROR, exception);
 		}
 	}
 

@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class FederatedResponse implements Serializable {
 	private static final long serialVersionUID = 3142180026498695091L;
@@ -56,10 +58,27 @@ public class FederatedResponse implements Serializable {
 	}
 	
 	public String getErrorMessage() {
-		return (String) _data[0];
+		return ExceptionUtils.getFullStackTrace( (Exception) _data[0] );
 	}
 	
-	public Object[] getData() {
+	public Object[] getData() throws Exception {
+		if ( !isSuccessful() )
+			throwExceptionFromResponse(); 
 		return _data;
+	}
+
+	/**
+	 * Checks the data object array for exceptions that occurred in the federated worker
+	 * during handling of request. 
+	 * @throws Exception the exception retrieved from the data object array 
+	 *  or DMLRuntimeException if no exception is provided by the federated worker.
+	 */
+	public void throwExceptionFromResponse() throws Exception {
+		for ( Object potentialException : _data){
+			if (potentialException != null && (potentialException instanceof Exception) ){
+				throw (Exception) potentialException;
+			}
+		}
+		throw new DMLRuntimeException("Unknown runtime exception in handling of federated request by federated worker.");
 	}
 }

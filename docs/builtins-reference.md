@@ -390,7 +390,7 @@ The `toOneHot`-function encodes unordered categorical vector to multiple binariz
 
 ### Usage
 ```r
-toOneHot(X,numClass)
+toOneHot(X,numClasses)
 ```
 
 ### Arguments

@@ -322,3 +322,11 @@ y = X %*% rand(rows=ncol(X), 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
+##outlier-Function
+An outlier in a probability distribution function is a number that is more than 1.5 times the length of the data set away from either the lower or upper quartiles. 
+Specifically, if a number is less than Q1−1.5×IQR or greater than Q3+1.5×IQR, then it is an outlier.
+###Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Recoded dataset into Matrix |
+|opposite| Boolean | 

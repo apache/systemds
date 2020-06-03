@@ -417,8 +417,9 @@ y = normalize(X = X)
 ```
 ## `gnmf`-Function
 
-The `gnmf`-function does Generalized Non-Negative Matrix Factorization.
-It performs generalized non-negative matrix factorization based on Renyi Divergence
+The `gnmf`-function does Gaussian Non-Negative Matrix Factorization.
+In this, a matrix X is factorized into two matrices W and H, such that all three matrices have no negative elements.
+This non-negativity makes the resulting matrices easier to inspect.
 
 ### Usage
 ```r

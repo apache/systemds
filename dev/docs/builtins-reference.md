@@ -325,8 +325,26 @@ ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ##outlier-Function
 An outlier in a probability distribution function is a number that is more than 1.5 times the length of the data set away from either the lower or upper quartiles. 
 Specifically, if a number is less than Q1−1.5×IQR or greater than Q3+1.5×IQR, then it is an outlier.
+
+### Usage
+```r
+outlier(X,opposite)
+```
+
 ###Arguments
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Recoded dataset into Matrix |
-|opposite| Boolean | 
+|opposite| Boolean | required | Used for xor gate evaluation |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | 1-column matrix of weights. |
+
+### Example
+```r
+X = rand (rows = 50, cols = 10)
+opposite = 1
+outlier(X=X,opposite=opposite)
+```

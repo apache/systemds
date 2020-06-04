@@ -435,6 +435,11 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 | String | The mapping of records to centroids |
 | String | The output matrix with the centroids |
 
+### Example
+```r
+X = rand (rows = 3972, cols = 972)
+kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50)
+```
 
 ## `lm`-Function
 

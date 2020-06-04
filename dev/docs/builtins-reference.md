@@ -23,6 +23,7 @@ limitations under the License.
   * [Built-In Construction Functions](#built-in-construction-functions)
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
+    * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
@@ -114,6 +115,32 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 
  
+## `KMeans`-Function
+
+The kmeans() implements the KMeans Clustering algorithm.
+
+### Usage
+```r
+kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50)
+```
+
+### Arguments
+| Name       | Type            | Default    | Description |
+| :--------- | :-------------- | :--------- | :---------- |
+| x          | Matrix[Double]  | required   | The input Matrix to do KMeans on. |
+| k          | Int             | `10`       | Number of centroids |
+| runs       | Int             | `10`       | Number of runs (with different initial centroids) |
+| max_iter   | Int             | `100`      |Max no. of iterations allowed |
+| eps        | Double          | `0.000001` | Tolerance (epsilon) for WCSS change ratio |
+| is_verbose | Boolean         |   FALSE    | do not print per-iteration stats |
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| String | The mapping of records to centroids |
+| String | The output matrix with the centroids |
+
+
 ## `lm`-Function
 
 The `lm`-function solves linear regression using either the **direct solve method** or the **conjugate gradient algorithm**

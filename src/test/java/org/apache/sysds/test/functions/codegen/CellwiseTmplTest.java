@@ -67,6 +67,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
 	private static final String TEST_NAME28 = TEST_NAME+28; // run TEST1 with spoof native cuda config
+	private static final String TEST_NAME29 = TEST_NAME+29; // run TEST6 with spoof native cuda config
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -81,7 +82,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=28; i++ ) {
+		for( int i=1; i<=29; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -478,6 +479,11 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME28, true, ExecType.CP );
 	}
 
+	@Test
+	public void testCodegenCellwise29() {
+		testCodegenIntegration( TEST_NAME29, false, ExecType.CP );
+	}
+
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -496,7 +502,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			TEST_CONF = TEST_CONF6;
 
 		// ToDo: remove when done with testing
-		if(test_num > 27)
+//		if(test_num > 27)
 		{
 			TEST_CONF = TEST_CONF8;
 			TEST_GPU = true;

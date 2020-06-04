@@ -117,16 +117,9 @@ public class CNodeCell extends CNodeTpl
 		renameInputs(_inputs, 1);
 	}
 
-	//		String tmpDense =
-//				  "T TMP1 = a + scalars[0];\n"
-//	//			+ "		T TMP2 = abs(TMP1);\n"
-//				+ "		T TMP2 = max(-TMP1, TMP1);\n"
-//				+ "		T TMP3 = round(TMP2);\n"
-//				+ "		T TMP4 = TMP3 + 5;\n"
-//				+ "		return TMP4;\n";
-
 	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
-		String tmp = getLanguageTemplateClass(this, api, lang).getTemplate();
+
+		String tmp = getLanguageTemplateClass(this, api, lang).getTemplate(_type);
 
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false, api, lang);
@@ -150,8 +143,6 @@ public class CNodeCell extends CNodeTpl
 
 	@Override
 	public void setOutputDims() {
-		
-		
 	}
 
 	@Override

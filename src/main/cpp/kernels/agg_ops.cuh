@@ -23,6 +23,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include <math_constants.h>
 
 /**
  * Functor op for assignment op. This is a dummy/identity op.
@@ -124,10 +125,10 @@ struct MinNeutralElement {
 };
 
 template<>
-float MinNeutralElement<float>::get() { return INFINITY; }
+float MinNeutralElement<float>::get() { return CUDART_INF_F; }
 
 template<>
-double MinNeutralElement<double>::get() { return INFINITY; }
+double MinNeutralElement<double>::get() { return CUDART_INF; }
 
 template<typename T>
 struct MaxNeutralElement {
@@ -135,9 +136,9 @@ struct MaxNeutralElement {
 };
 
 template<>
-float MaxNeutralElement<float>::get() { return -INFINITY; }
+float MaxNeutralElement<float>::get() { return -CUDART_INF_F; }
 
 template<>
-double MaxNeutralElement<double>::get() { return -INFINITY; }
+double MaxNeutralElement<double>::get() { return -CUDART_INF_F; }
 
 #endif // __AGG_OPS_H

@@ -323,6 +323,9 @@ outlier(X=X,opposite=opposite)
 Builtin function for detecting and repairing outliers using Interquartile Range.
 A commonly used rule says that a data point is an outlier if it is more than 1.5 IQR
 above the third quartile or below the first quartile.
+outlierByIQR function computes the matrix and set's a lower-bound quartile range and upper-bound quartile range 
+and the number which is less then the lower-bound or higher then the upper-bound is treated as a outlier, hence
+removed from the matrix.
 
 
 ### Usage

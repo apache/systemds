@@ -1,0 +1,26 @@
+## maven
+
+.classpath
+.project
+target/
+temp/
+dependency-reduced-pom.xml
+
+## Jekyll
+
+.jekyll-cache/
+_site/
+Gemfile.lock
+
+## VS Code
+
+.settings/
+.vscode/
+
+## IntelliJ
+
+.idea/
+
+## Improper copy when switching branch
+
+src/

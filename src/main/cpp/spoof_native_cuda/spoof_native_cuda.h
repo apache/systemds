@@ -1,4 +1,5 @@
 
+#include <cmath>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -20,13 +21,12 @@ class SpoofCudaContext {
   std::map<const std::string, SpoofOperator> ops;
 
 public:
-    // ToDo: make launch config more adaptive
-    // num threads
-    const int NT = 256;
+  // ToDo: make launch config more adaptive
+  // num threads
+  const int NT = 256;
 
-    // values / thread
-    const int VT = 4;
-
+  // values / thread
+  const int VT = 4;
 
   static size_t initialize_cuda(uint32_t device_id);
 
@@ -41,52 +41,94 @@ public:
 
     T result = 0.0;
     size_t dev_buf_size;
-    T** d_sides;
-    T* d_scalars;
+    T **d_sides;
+    T *d_scalars;
+    T *d_temp_agg_buf;
 
     auto o = ops.find(name);
     if (o != ops.end()) {
-        SpoofOperator* op = &(o->second);
+      SpoofOperator *op = &(o->second);
 
+      if (num_sides > 0) {
+        dev_buf_size = sizeof(T *) * num_sides;
+        cudaMalloc((void **)&d_sides, dev_buf_size);
+        cudaMemcpy(d_sides, side_ptrs, dev_buf_size, cudaMemcpyHostToDevice);
+      }
+
+      if (num_scalars > 0) {
+        dev_buf_size = sizeof(T) * num_scalars;
+
+        cudaMalloc((void **)&d_scalars, dev_buf_size);
+        cudaMemcpy(d_scalars, scalars_ptr, dev_buf_size,
+                   cudaMemcpyHostToDevice);
+      }
+
+      switch (op->agg_type) {
+      case SpoofOperator::FULL_AGG: {
+        // num ctas
+        int NB = std::ceil((m * n + NT * 2 - 1) / (NT * 2));
+        dim3 grid(NB, 1, 1);
+        dim3 block(NT, 1, 1);
+        unsigned int shared_mem_size = NT * sizeof(T);
+
+        dev_buf_size = sizeof(T) * NB;
+        cudaMalloc((void **)&d_temp_agg_buf, dev_buf_size);
+
+        std::cout << "launching spoof cellwise kernel " << name << " with "
+                  << NT * NB << " threads in " << NB << " blocks and "
+                  << shared_mem_size
+                  << " bytes of shared memory for full aggregation"
+                  << std::endl;
+
+        op->program.kernel(name)
+            .instantiate(type_of(result))
+            .configure(grid, block, shared_mem_size)
+            .launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix,
+                    0, 0);
+
+        // ToDo: block aggregation
+        //        while (NB > 1) {
+        //          std::cout << "launching spoof cellwise kernel " << name << "
+        //          with "
+        //                    << NT * NB << " threads in " << NB << " blocks and
+        //                    "
+        //                    << shared_mem_size
+        //                    << " bytes of shared memory for full aggregation"
+        //                    << std::endl;
+
+        //          op->program.kernel(name)
+        //              .instantiate(type_of(result))
+        //              .configure(grid, block, shared_mem_size)
+        //              .launch(d_temp_agg_buf, d_temp_agg_buf, NB);
+        //        }
+
+        cudaMemcpy(&result, d_temp_agg_buf, sizeof(T), cudaMemcpyDeviceToHost);
+
+        break;
+      }
+      case SpoofOperator::NO_AGG:
+      default: {
         // num ctas
         int NB = std::ceil((m * n + NT * VT - 1) / (NT * VT));
         dim3 grid(NB, 1, 1);
         dim3 block(NT, 1, 1);
-        std::cout << "launching spoof kernel " << name << " with " << NT * NB << " threads in " << NB << " blocks" << std::endl;
-
-        if (num_sides > 0) {
-            dev_buf_size = sizeof(T*) * num_sides;
-            cudaMalloc((void**)&d_sides, dev_buf_size);
-            cudaMemcpy(d_sides, side_ptrs, dev_buf_size, cudaMemcpyHostToDevice);
-        }
-
-
-        if (num_scalars > 0 || op->agg_type == SpoofOperator::FULL_AGG) {
-            if (op->agg_type == SpoofOperator::FULL_AGG)
-                dev_buf_size = sizeof(T) * num_scalars + 1;
-            else
-                dev_buf_size = sizeof(T) * num_scalars;
-
-            cudaMalloc((void**)&d_scalars, dev_buf_size);
-            cudaMemcpy(d_scalars, scalars_ptr, dev_buf_size, cudaMemcpyHostToDevice);
-        }
+        std::cout << "launching spoof kernel " << name << " with " << NT * NB
+                  << " threads in " << NB << " blocks" << std::endl;
 
         op->program.kernel(name)
             .instantiate(type_of(result), VT)
             .configure(grid, block)
             .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix, 0, 0);
+      }
+      }
 
-        if (op->agg_type == SpoofOperator::FULL_AGG)
-            cudaMemcpy(&result, (scalars_ptr + num_scalars * sizeof(T)), sizeof(T), cudaMemcpyDeviceToHost);
+      if (num_scalars > 0)
+        cudaFree(d_scalars);
 
-        if(num_scalars > 0)
-            cudaFree(d_scalars);
+      if (side_ptrs > 0)
+        cudaFree(d_sides);
 
-        if(side_ptrs > 0)
-            cudaFree(d_sides);
-
-    } 
-    else {
+    } else {
       std::cout << "kernel " << name << " not found." << std::endl;
       return result;
     }

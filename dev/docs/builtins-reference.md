@@ -398,24 +398,28 @@ Acording to three sigma rule if a value falls outside of three times the standar
 In this function outlierBySd a matrix of trained data sets is provided from which it computes the upper-bound and lower-bound of data
 and any value that is more then upper-bound or lower then lower-bound is treated as an outlier and then gets filtered from the data set.
 
-###usage
+###  usage
+
 outlierBySd(X,k,repairMethod,max_iterations,verbose)
 
-### Arguments
+###  Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X         |      Double    |---       |Matrix with outlier values |
 |k            |   Double    |3        | threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
 |repairMethod|    Integer  | 1 |        values: 0 = delete rows having outliers, 1 = replace outliers as  zeros 
-                                                        2 = replace outliers as missing values 
+                                                               2 = replace outliers as missing values 
 | max_iterations|  Integer |   0  |       values: 0 = arbitrary number of iteration until all outliers are removed, 
-                                                         n = any constant defined by user
-###Returns
+                                                              n = any constant defined by user
+### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | matrix with no outlier |
 
-###Example
+### Example
+
 X = rand (rows = 20, cols = 10)
 opposite=1
 Y=outlier(X=X, opposite=opposite)

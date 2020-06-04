@@ -320,7 +320,10 @@ outlier(X=X,opposite=opposite)
 ```
 ## outlierByIQR - Function
 
-Builtin function for detecting and repairing outliers using standard deviation
+Builtin function for detecting and repairing outliers using Interquartile Range.
+A commonly used rule says that a data point is an outlier if it is more than 1.5 IQR
+above the third quartile or below the first quartile.
+
 
 ### Usage
 ```r
@@ -329,7 +332,7 @@ outlierByIQR(X,k,repair_method,max_iterations,verbose)
 ### Arguments
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
-| X       | Matrix[Double] | required | Resulted matrix after executing outlier function |
+| X       | Matrix[Double] | required | matrix with outliers |
 |k         |     Double 	   |  1.5         | a constant used to discern outliers k*IQR 
  |isIterative|  Boolean | TRUE   |iterative repair or single repair 
  |repairMethod|   Integer|  1           | values: 0 = delete rows having outliers, 
@@ -340,7 +343,7 @@ outlierByIQR(X,k,repair_method,max_iterations,verbose)
 ### Returns
 | Type           | Description |
 | :------------- | :---------- |
-| Matrix[Double] | repaired outlier matrix. |
+| Matrix[Double] | matrix without any outlier. |
 
 ### Example
 ```r

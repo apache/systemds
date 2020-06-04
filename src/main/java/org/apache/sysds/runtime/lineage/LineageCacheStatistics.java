@@ -79,6 +79,10 @@ public class LineageCacheStatistics {
 		// Number of times single instruction results are reused (full and partial).
 		_numHitsInst.increment();
 	}
+	
+	public static long getInstHits() {
+		return _numHitsInst.longValue();
+	}
 
 	public static void incrementSBHits() {
 		// Number of times statementblock results are reused.
@@ -109,7 +113,10 @@ public class LineageCacheStatistics {
 		// Number of deletions from cache (including spilling).
 		_numMemDel.increment();
 	}
-
+	
+	public static long getMemDeletes() {
+		return _numMemDel.longValue();
+	}
 
 	public static void incrementFSReadTime(long delta) {
 		// Total time spent on reading from FS.

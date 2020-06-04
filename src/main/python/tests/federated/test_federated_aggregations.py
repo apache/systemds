@@ -19,22 +19,18 @@
 #
 # -------------------------------------------------------------
 
-# Make the `systemds` package importable
-import os
-import sys
-import warnings
-import unittest
-import json
 import io
+import json
 import os
 import shutil
+import sys
+import unittest
+
 import numpy as np
-
-path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../")
-sys.path.insert(0, path)
-
 from systemds.context import SystemDSContext
-from systemds.matrix import federated
+from systemds.matrix import Federated
+
+os.environ['SYSDS_QUIET'] = "1"
 
 dim = 5
 np.random.seed(132)
@@ -50,7 +46,7 @@ mtd = {"format": "csv", "header": "false", "rows": dim, "cols": dim}
 if not os.path.exists(tempdir):
     os.makedirs(tempdir)
 
-# Save data files for the federated workers.
+# Save data files for the Federated workers.
 np.savetxt(tempdir + "m1.csv", m1, delimiter=",")
 with io.open(tempdir + "m1.csv.mtd", "w", encoding="utf-8") as f:
     f.write(json.dumps(mtd, ensure_ascii=False))
@@ -63,18 +59,18 @@ with io.open(tempdir + "m2.csv.mtd", "w", encoding="utf-8") as f:
 fed1 = "localhost:8001/" + tempdir + "m1.csv"
 fed2 = "localhost:8002/" + tempdir + "m2.csv"
 
-sds = SystemDSContext()
 
 class TestFederatedAggFn(unittest.TestCase):
-    def setUp(self):
-        warnings.filterwarnings(
-            action="ignore", message="unclosed", category=ResourceWarning
-        )
 
-    def tearDown(self):
-        warnings.filterwarnings(
-            action="ignore", message="unclosed", category=ResourceWarning
-        )
+    sds: SystemDSContext = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sds = SystemDSContext()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.sds.close()
 
     def test_sum3(self):
         #   [[m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
@@ -83,7 +79,9 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]]
         f_m_a = (
-            federated(sds,[fed1, fed2], [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])])
+            Federated(self.sds,
+                [fed1, fed2],
+                [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])])
             .sum()
             .compute()
         )
@@ -91,12 +89,24 @@ class TestFederatedAggFn(unittest.TestCase):
         self.assertAlmostEqual(f_m_a, m1_m2)
 
     def test_sum1(self):
-        f_m1 = federated(sds,[fed1], [([0, 0], [dim, dim])]).sum().compute()
+        f_m1 = (
+            Federated(self.sds,
+                [fed1],
+                [([0, 0], [dim, dim])])
+            .sum()
+            .compute()
+        )
         m1_r = m1.sum()
         self.assertAlmostEqual(f_m1, m1_r)
 
     def test_sum2(self):
-        f_m2 = federated(sds,[fed2], [([0, 0], [dim, dim])]).sum().compute()
+        f_m2 = (
+            Federated(self.sds,
+                [fed2],
+                [([0, 0], [dim, dim])])
+            .sum()
+            .compute()
+        )
         m2_r = m2.sum()
         self.assertAlmostEqual(f_m2, m2_r)
 
@@ -107,7 +117,9 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
         #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]]
         f_m1_m2 = (
-            federated(sds,[fed1, fed2], [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])])
+            Federated(self.sds,
+                [fed1, fed2],
+                [([0, 0], [dim, dim]), ([0, dim], [dim, dim * 2])])
             .sum()
             .compute()
         )
@@ -128,7 +140,9 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m2,m2,m2,m2,m2]
         #    [m2,m2,m2,m2,m2]]
         f_m1_m2 = (
-            federated(sds,[fed1, fed2], [([0, 0], [dim, dim]), ([dim, 0], [dim * 2, dim])])
+            Federated(self.sds, 
+                [fed1, fed2],
+                [([0, 0], [dim, dim]), ([dim, 0], [dim * 2, dim])])
             .sum()
             .compute()
         )
@@ -136,27 +150,27 @@ class TestFederatedAggFn(unittest.TestCase):
         self.assertAlmostEqual(f_m1_m2, m1_m2)
 
     # -----------------------------------
-    # The rest of the tests are 
+    # The rest of the tests are
     # Extended functionality not working Yet
     # -----------------------------------
 
-    # def test_sum5(self):
-    #     #   [[m1,m1,m1,m1,m1, 0, 0, 0, 0, 0]
-    #     #    [m1,m1,m1,m1,m1, 0, 0, 0, 0, 0]
-    #     #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
-    #     #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
-    #     #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
-    #     #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]
-    #     #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]]
-    #     f_m_a = (
-    #         federated(sds,
-    #             [fed1, fed2], [([0, 0], [dim, dim]), ([2, dim], [dim + 2, dim * 2])]
-    #         )
-    #         .sum()
-    #         .compute()
-    #     )
-    #     m1_m2 = m1.sum() + m2.sum()
-    #     self.assertAlmostEqual(f_m_a, m1_m2)
+    def test_sum5(self):
+        #   [[m1,m1,m1,m1,m1, 0, 0, 0, 0, 0]
+        #    [m1,m1,m1,m1,m1, 0, 0, 0, 0, 0]
+        #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
+        #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
+        #    [m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
+        #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]
+        #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]]
+        f_m_a = (
+            Federated(self.sds, 
+                [fed1, fed2],
+                [([0, 0], [dim, dim]), ([2, dim], [dim + 2, dim * 2])])
+            .sum()
+            .compute()
+        )
+        m1_m2 = m1.sum() + m2.sum()
+        self.assertAlmostEqual(f_m_a, m1_m2)
 
     # def test_sum6(self):
     #     # Note it overwrites the value in the field. not sum or anything else.
@@ -168,7 +182,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
     #     f_m_a = (
-    #         federated(sds,
+    #         Federated(self.sds, 
     #             [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #         )
     #         .sum()
@@ -187,7 +201,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [m1,m1,m1,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]
     #     #    [ 0, 0, 0,m2,m2,m2,m2,m2]]
-    #     f_m_a = federated(sds,
+    #     f_m_a = Federated(self.sds, 
     #         [fed1, fed2], [([0, 0], [dim, dim]), ([2, 3], [dim + 2, dim + 3])]
     #     )
     #     f_m_a = (f_m_a + 1).sum().compute()
@@ -198,20 +212,25 @@ class TestFederatedAggFn(unittest.TestCase):
 
     #     self.assertAlmostEqual(f_m_a, m1_m2)
 
-    # def test_sum8(self):
-    #     #   [[ 0, 0, 0, 0, 0, 0, 0, 0]
-    #     #    [ 0, 0, 0, 0, 0, 0, 0, 0]
-    #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
-    #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
-    #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
-    #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
-    #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
-    #     f_m_a = federated(sds,[fed1], [([2, 3], [dim + 2, dim + 3])])
-    #     f_m_a = f_m_a.sum().compute()
+    def test_sum8(self):
+        #   [[ 0, 0, 0, 0, 0, 0, 0, 0]
+        #    [ 0, 0, 0, 0, 0, 0, 0, 0]
+        #    [ 0, 0, 0,m1,m1,m1,m1,m1]
+        #    [ 0, 0, 0,m1,m1,m1,m1,m1]
+        #    [ 0, 0, 0,m1,m1,m1,m1,m1]
+        #    [ 0, 0, 0,m1,m1,m1,m1,m1]
+        #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
+        f_m_a = (
+            Federated(self.sds, 
+                [fed1],
+                [([2, 3], [dim + 2, dim + 3])])
+            .sum()
+            .compute()
+        )
 
-    #     m = m1.sum()
+        m = m1.sum()
 
-    #     self.assertAlmostEqual(f_m_a, m)
+        self.assertAlmostEqual(f_m_a, m)
 
     # def test_sum9(self):
     #     #   [[ 0, 0, 0, 0, 0, 0, 0, 0]
@@ -221,7 +240,7 @@ class TestFederatedAggFn(unittest.TestCase):
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]
     #     #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
-    #     f_m_a = federated(sds,[fed1], [([2, 3], [dim + 2, dim + 3])])
+    #     f_m_a = Federated(self.sds, [fed1], [([2, 3], [dim + 2, dim + 3])])
     #     f_m_a = (f_m_a + 1).sum().compute()
 
     #     m = m1.sum()
@@ -232,5 +251,4 @@ class TestFederatedAggFn(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    sds.close()
     shutil.rmtree(tempdir)

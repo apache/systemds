@@ -361,7 +361,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				return;
 			CompressionStatistics cStat = ((CompressedMatrixBlock) cmb).getCompressionStatistics();
 			long colsEstimate = cStat.estimatedSizeCols;
-			// long groupsEstimate = cStat.estimatedSizeColGroups;
 			long actualSize = cStat.size;
 			long originalSize = cStat.originalSize;
 			int allowedTolerance = 0;
@@ -372,8 +371,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
-			// builder.append("\n\t"+String.format("%-40s - %12d","<= estimated ColGroup compressed
-			// size",groupsEstimate));
 			builder.append("\n\t" + String.format("%-40s - %12d with tolerance: %5d",
 				"<= estimated isolated ColGroups: ",
 				colsEstimate,
@@ -410,9 +407,10 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
 			builder.append("\n\t" + this.toString());
 
-			assertTrue(builder.toString(), actualSize == JolEstimatedSize && actualSize <= originalSize);
-			// assertTrue(builder.toString(), groupsEstimate < actualSize && colsEstimate < groupsEstimate);
-
+			//NOTE: The Jol estimate is wrong for shared dictionaries because
+			//      it treats the object hierarchy as a tree and not a graph
+			assertTrue(builder.toString(), actualSize <= originalSize 
+				&& (compressionSettings.allowSharedDDCDictionary || actualSize == JolEstimatedSize));
 		}
 		catch(Exception e) {
 			e.printStackTrace();

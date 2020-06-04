@@ -88,29 +88,11 @@ jobs:
 
     - name: Run all python tests
       run: |
-        cd src/main/python
-        ls tests/
-        echo "Beginning tests"
-        python -m unittest tests/*.py
-        echo "Exit Status: " $?
-
-    - name: Run all lineage python tests
-      run: |
         export SYSTEMDS_ROOT=$(pwd)
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
         cd src/main/python
-        python -m unittest tests/lineage/*.py
+        python tests/onnx_systemds/test_models/model_generate.py
+        python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
 
-    - name: Run onnx-systemds python tests
-      run: |
-        export SYSTEMDS_ROOT=$(pwd)
-        export PATH=$SYSTEMDS_ROOT/bin:$PATH
-        cd src/main/python
-        echo "Creating models"
-        python tests/onnx/test_models/model_generate.py
-        ls tests/onnx/test_models/*.onnx
-        echo "Beginning tests"
-        python -m unittest tests/onnx/*.py
-        echo "Exit Status: " $?

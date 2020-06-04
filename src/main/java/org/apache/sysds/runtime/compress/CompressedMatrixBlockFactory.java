@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +34,8 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC1;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.DictionaryShared;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -164,8 +167,7 @@ public class CompressedMatrixBlockFactory {
 
 		// --------------------------------------------------
 		// PHASE 4: Best-effort dictionary sharing for DDC1 single-col groups
-		// TODO FIX DDC Sharing
-		double[] dict = (!(compSettings.validCompressions.contains(CompressionType.DDC)) ||
+		Dictionary dict = (!(compSettings.validCompressions.contains(CompressionType.DDC)) ||
 			!(compSettings.allowSharedDDCDictionary)) ? null : createSharedDDC1Dictionary(colGroupList);
 		if(dict != null) {
 			applySharedDDC1Dictionary(colGroupList, dict);
@@ -215,44 +217,63 @@ public class CompressedMatrixBlockFactory {
 	/**
 	 * Dictionary sharing between DDC ColGroups.
 	 * 
-	 * FYI DOES NOT WORK FOR ALL CASES!
 	 * @param colGroups The List of all ColGroups.
 	 * @return the shared value list for the DDC ColGroups.
 	 */
-	private static double[] createSharedDDC1Dictionary(List<ColGroup> colGroups) {
+	private static Dictionary createSharedDDC1Dictionary(List<ColGroup> colGroups) {
 		// create joint dictionary
-		HashSet<Double> tmp = new HashSet<>();
-		int numQual = 0;
+		HashSet<Double> vals = new HashSet<>();
+		HashMap<Integer, Double> mins = new HashMap<>();
+		HashMap<Integer, Double> maxs = new HashMap<>();
+		int numDDC1 = 0;
 		for(final ColGroup grp : colGroups)
 			if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
 				final ColGroupDDC1 grpDDC1 = (ColGroupDDC1) grp;
-				for(final double val : grpDDC1.getValues())
-					tmp.add(val);
-				numQual++;
+				final double[] values = grpDDC1.getValues();
+				double min = Double.POSITIVE_INFINITY;
+				double max = Double.NEGATIVE_INFINITY;
+				for(int i=0; i<values.length; i++) {
+					vals.add(values[i]);
+					min = Math.min(min, values[i]);
+					max = Math.max(max, values[i]);
+				}
+				mins.put(grpDDC1.getColIndex(0), min);
+				maxs.put(grpDDC1.getColIndex(0), max);
+				numDDC1++;
 			}
 
 		// abort shared dictionary creation if empty or too large
-		int maxSize = tmp.contains(0d) ? 256 : 255;
-		if(tmp.isEmpty() || tmp.size() > maxSize || numQual < 2)
+		int maxSize = vals.contains(0d) ? 256 : 255;
+		if(numDDC1 < 2 || vals.size() > maxSize)
 			return null;
-		LOG.debug("Created shared directionary for " + numQual + " DDC1 single column groups.");
 
-		// build consolidated dictionary
-		return tmp.stream().mapToDouble(Double::doubleValue).toArray();
+		// build consolidated shared dictionary
+		double[] values = vals.stream().mapToDouble(Double::doubleValue).toArray();
+		int[] colIndexes = new int[numDDC1];
+		double[] extrema = new double[2*numDDC1];
+		int pos = 0;
+		for( Entry<Integer, Double> e : mins.entrySet() ) {
+			colIndexes[pos] = e.getKey();
+			extrema[2*pos] = e.getValue();
+			extrema[2*pos+1] = maxs.get(e.getKey());
+			pos ++;
+		}
+		return new DictionaryShared(values, colIndexes, extrema);
 	}
 
-	private static void applySharedDDC1Dictionary(List<ColGroup> colGroups, double[] dict) {
+	private static void applySharedDDC1Dictionary(List<ColGroup> colGroups, Dictionary dict) {
 		// create joint mapping table
 		HashMap<Double, Integer> map = new HashMap<>();
-		for(int i = 0; i < dict.length; i++)
-			map.put(dict[i], i);
-
+		double[] values = dict.getValues();
+		for(int i = 0; i < values.length; i++)
+			map.put(values[i], i);
+		
 		// recode data of all relevant DDC1 groups
 		for(ColGroup grp : colGroups)
 			if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
 				ColGroupDDC1 grpDDC1 = (ColGroupDDC1) grp;
 				grpDDC1.recodeData(map);
-				grpDDC1.setValues(dict);
+				grpDDC1.setDictionary(dict);
 			}
 	}
 }

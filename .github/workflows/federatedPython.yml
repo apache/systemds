@@ -21,7 +21,13 @@
 
 name: Federated Python Test
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   applicationsTests:
@@ -80,6 +86,5 @@ jobs:
         export SYSTEMDS_ROOT=$(pwd)
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
-        ./tests/federated/runFedTest.sh tests/federated/test_federated_aggregations.py
-        sleep 3
-        ./tests/federated/runFedTest.sh tests/federated/test_federated_basic.py
+        ./tests/federated/runFedTest.sh
+

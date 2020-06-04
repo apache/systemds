@@ -1,0 +1,56 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+cache_size = ceil($1/(1024*1024)); #in MB
+output_size = 8; #8MB
+X = rand(rows=1024, cols=1024, sparsity = 1.0, seed=42);
+X1 = X;
+R = matrix(0, 1024, 1024);
+R1 = R;
+k = floor((cache_size / output_size));
+
+# Fill the cache with 'exp' and '+' outputs 
+for (i in 1:k/2) {
+  R = exp(X);
+  X = X + 1;
+}
+
+# Trigger evictions. LRU evicts half of both 'exp' and '+' results,
+# where Weighted scheme evicts all the '+' results to recover
+# same amount of memory.
+for (i in 1:k/4) {
+  R = round(X);
+  X = X + 1;
+}
+
+# Try to reuse 'exp' and '+' results. LRU keeps evicting
+# the remaining half of 'exp' and '+' results from the 1st 
+# loop, and in turn fails to reuse any of the instructions, 
+# where Weighted scheme keeps evicting the '+'s (from 2nd loop) 
+# but able to reuse 'exp's.
+for (i in 1:k/4) {
+  R1 = exp(X1);
+  X1 = X1 + 1;
+}
+
+R = R+R1;
+write(R, $2, format="text");
+

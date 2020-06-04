@@ -155,7 +155,7 @@ public class PoolBackwardTest extends AutomatedTestBase
 			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args",  String.valueOf(imgSize), String.valueOf(numImg),
+			programArgs = new String[]{"-args",  String.valueOf(imgSize), String.valueOf(numImg),
 					String.valueOf(numChannels), String.valueOf(poolSize1), String.valueOf(poolSize2),
 					String.valueOf(stride), String.valueOf(pad), String.valueOf(poolMode),
 					String.valueOf(P), String.valueOf(P), output("B"), sparseVal1, sparseVal2};

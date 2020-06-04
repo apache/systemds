@@ -73,7 +73,7 @@ public abstract class Hop implements ParseInfo
 	protected ValueType _valueType;
 	protected boolean _visited = false;
 	protected DataCharacteristics _dc = new MatrixCharacteristics();
-	protected PrivacyConstraint _privacyConstraint = new PrivacyConstraint();
+	protected PrivacyConstraint _privacyConstraint = null;
 	protected UpdateType _updateType = UpdateType.COPY;
 
 	protected ArrayList<Hop> _parent = new ArrayList<>();

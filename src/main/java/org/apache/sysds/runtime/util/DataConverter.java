@@ -457,6 +457,26 @@ public class DataConverter
 	}
 
 	/**
+	 * Converts an Integer matrix to an MatrixBlock
+	 * 
+	 * @param data Int matrix input that is converted to double MatrixBlock
+	 * @return The matrixBlock constructed.
+	 */
+	public static MatrixBlock convertToMatrixBlock(int[][] data){
+		int rows = data.length;
+		int cols = (rows > 0)? data[0].length : 0;
+		MatrixBlock res = new MatrixBlock(rows, cols, false);
+		for(int row = 0; row< data.length; row++){
+			for(int col = 0; col < cols; col++){
+				double v = data[row][col];
+				if( v != 0 )
+					res.appendValue(row, col, v);
+			}
+		}
+		return res;
+	}
+
+	/**
 	 * Creates a dense Matrix Block and copies the given double vector into it.
 	 * 
 	 * @param data double array

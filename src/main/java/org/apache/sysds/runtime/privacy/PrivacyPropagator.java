@@ -161,12 +161,15 @@ public class PrivacyPropagator
 	}
 
 	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, List<String> outputNames){
-		if (inputs == null) return inst;
-		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
-		PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
-		inst.setPrivacyConstraint(mergedPrivacyConstraint);
-		for (String outputName : outputNames)
-			setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, outputName);
+		if ( inputs != null && inputs.length == 0 ){
+			PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
+			if ( privacyConstraints != null ){
+				PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
+				inst.setPrivacyConstraint(mergedPrivacyConstraint);
+				for (String outputName : outputNames)
+					setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, outputName);
+			}
+		}
 		return inst;
 	}
 
@@ -342,6 +345,7 @@ public class PrivacyPropagator
 
 
 	private static PrivacyConstraint[] getInputPrivacyConstraints(ExecutionContext ec, CPOperand[] inputs){
+		if ( inputs.length == 0 ) return null;
 		PrivacyConstraint[] privacyConstraints = new PrivacyConstraint[inputs.length];
 		for ( int i = 0; i < inputs.length; i++ ){
 			privacyConstraints[i] = getInputPrivacyConstraint(ec, inputs[i]);

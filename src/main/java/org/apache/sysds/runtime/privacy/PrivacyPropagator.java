@@ -81,14 +81,6 @@ public class PrivacyPropagator
 		return null;
 	}
 
-	public static PrivacyConstraint mergeTernary(PrivacyConstraint[] privacyConstraints){
-		return mergeBinary(mergeBinary(privacyConstraints[0], privacyConstraints[1]), privacyConstraints[2]);
-	}
-
-	public static PrivacyConstraint mergeQuaternary(PrivacyConstraint[] privacyConstraints){
-		return mergeBinary(mergeTernary(privacyConstraints), privacyConstraints[3]);
-	}
-
 	public static PrivacyConstraint mergeNary(PrivacyConstraint[] privacyConstraints){
 		PrivacyConstraint mergedPrivacyConstraint = privacyConstraints[0];
 		for ( int i = 1; i < privacyConstraints.length; i++ ){
@@ -157,55 +149,54 @@ public class PrivacyPropagator
 
 
 	public static Instruction preprocessExternal(FunctionCallCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getBoundOutputParamNames());
+		return mergePrivacyConstraintsFromInput(
+			inst, 
+			ec, 
+			inst.getInputs(), 
+			inst.getBoundOutputParamNames().toArray(new String[0])
+		);
 	}
 
-	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, List<String> outputNames){
-		if ( inputs != null && inputs.length == 0 ){
+	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, String[] outputNames){
+		if ( inputs != null && inputs.length > 0 ){
 			PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
 			if ( privacyConstraints != null ){
 				PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
 				inst.setPrivacyConstraint(mergedPrivacyConstraint);
-				for (String outputName : outputNames)
-					setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, outputName);
+				if ( outputNames != null ){
+					for (String outputName : outputNames)
+						setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, outputName);
+				}
 			}
 		}
 		return inst;
 	}
 
+	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, CPOperand output){
+		String outputName = (output != null) ? output.getName() : null;
+		return mergePrivacyConstraintsFromInput(inst, ec, inputs, new String[]{outputName});	
+	}
+
 	public static Instruction preprocessBuiltinNary(BuiltinNaryCPInstruction inst, ExecutionContext ec){
-		if (inst.getInputs() == null) return inst;
-		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
-		PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
-		inst.setPrivacyConstraint(mergedPrivacyConstraint);
-		setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.getOutput());
-		return inst;
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutput() );
 	}
 
 	public static Instruction preprocessQuaternary(QuaternaryCPInstruction inst, ExecutionContext ec){
-		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec,
-			new CPOperand[] {inst.input1,inst.input2,inst.input3,inst.getInput4()});
-		PrivacyConstraint mergedPrivacyConstraint = mergeQuaternary(privacyConstraints);
-		inst.setPrivacyConstraint(mergedPrivacyConstraint);
-		setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.output);
-		return inst;
+		return mergePrivacyConstraintsFromInput(
+			inst, 
+			ec, 
+			new CPOperand[] {inst.input1,inst.input2,inst.input3,inst.getInput4()},
+			inst.output
+		);
 	}
 
 	public static Instruction preprocessTernaryCPInstruction(ComputationCPInstruction inst, ExecutionContext ec){
-		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, new CPOperand[]{inst.input1, inst.input2, inst.input3});
-		PrivacyConstraint mergedPrivacyConstraint = mergeTernary(privacyConstraints);
-		inst.setPrivacyConstraint(mergedPrivacyConstraint);
-		setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.output);
-		return inst;
-	}
-
-	public static Instruction preprocessNaryInstruction(CPInstruction inst, ExecutionContext ec, CPOperand[] inputs, CPOperand output, Function<PrivacyConstraint[], PrivacyConstraint> mergeFunction){
-		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
-		PrivacyConstraint mergedPrivacyConstraint = mergeFunction.apply(privacyConstraints);
-		inst.setPrivacyConstraint(mergedPrivacyConstraint);
-		setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, output);
-		return inst;
-
+		return mergePrivacyConstraintsFromInput(
+			inst, 
+			ec, 
+			new CPOperand[]{inst.input1, inst.input2, inst.input3}, 
+			inst.output
+		);
 	}
 
 	public static Instruction preprocessBinaryCPInstruction(BinaryCPInstruction inst, ExecutionContext ec){
@@ -284,10 +275,12 @@ public class PrivacyPropagator
 	 * @return instruction with or without privacy constraints
 	 */
 	private static Instruction propagateAllInputPrivacy(VariableCPInstruction inst, ExecutionContext ec){
-		//TODO: Propagate the most restricting constraints instead of just the latest activated constraint
-		for ( CPOperand input : inst.getInputs() )
-			inst = (VariableCPInstruction) propagateInputPrivacy(inst, ec, input, inst.getOutput());
-		return inst;
+		return mergePrivacyConstraintsFromInput(
+			inst, 
+			ec, 
+			inst.getInputs().toArray(new CPOperand[0]), 
+			inst.getOutput()
+		);
 	}
 
 	/**
@@ -345,13 +338,18 @@ public class PrivacyPropagator
 
 
 	private static PrivacyConstraint[] getInputPrivacyConstraints(ExecutionContext ec, CPOperand[] inputs){
-		if ( inputs.length == 0 ) return null;
-		PrivacyConstraint[] privacyConstraints = new PrivacyConstraint[inputs.length];
-		for ( int i = 0; i < inputs.length; i++ ){
-			privacyConstraints[i] = getInputPrivacyConstraint(ec, inputs[i]);
+		if ( inputs != null && inputs.length > 0){
+			boolean privacyFound = false;
+			PrivacyConstraint[] privacyConstraints = new PrivacyConstraint[inputs.length];
+			for ( int i = 0; i < inputs.length; i++ ){
+				privacyConstraints[i] = getInputPrivacyConstraint(ec, inputs[i]);
+				if ( privacyConstraints[i] != null )
+					privacyFound = true;
+			}
+			if ( privacyFound )
+				return privacyConstraints;
 		}
-		return privacyConstraints;
-		
+		return null;
 	}
 
 	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, CPOperand output){

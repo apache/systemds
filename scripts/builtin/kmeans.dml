@@ -43,7 +43,7 @@
 # ----------------------------------------------------------------------------
 
 
-m_kmeans = function(Matrix[Double] X, Integer k = 0, Integer runs = 10, Integer max_iter = 1000,
+m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer max_iter = 1000,
     Double eps = 0.000001, Boolean is_verbose = FALSE, Integer avg_sample_size_per_centroid = 50)
   return (Matrix[Double] C, Matrix[Double] Y)
 {

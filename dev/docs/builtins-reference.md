@@ -446,33 +446,3 @@ msvm(X,Y, icpt=False, num_classes=10, epsilon=0.001, lamda=1.0, maxiter=100, ver
 | model   | Double         | ---      | Model matrix. |
 
 
-### Example
-```
-m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
-    Double epsilon = 0.001, Double lambda = 1.0, Integer maxIterations = 100, Boolean verbose = FALSE)
-  return(Matrix[Double] model)
-{
-  if(min(Y) < 0)
-    stop("MSVM: Invalid Y input, containing negative values")
-  if(verbose)
-    print("Running Multiclass-SVM")
-  num_rows_in_w = ncol(X)
-  if(intercept) {
-    num_rows_in_w = num_rows_in_w + 1
-  }
-  if(ncol(Y) > 1) 
-    Y = rowMaxs(Y * t(seq(1,ncol(Y))))
-  # Assuming number of classes to be max contained in Y
-  w = matrix(0, rows=num_rows_in_w, cols=max(Y))
-  parfor(class in 1:max(Y)) {
-    Y_local = 2 * (Y == class) - 1
-    w[,class] = l2svm(X=X, Y=Y_local, intercept=intercept,
-        epsilon=epsilon, lambda=lambda, maxIterations=maxIterations, 
-        verbose= verbose, columnId=class)
-  }
-  
-  model = w
-}
-```
-
-

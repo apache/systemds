@@ -364,10 +364,11 @@ removed from the matrix.
 
 
 ### Usage
-```r
+
 outlierByIQR(X,k,repair_method,max_iterations,verbose)
-`
-### Arguments
+
+###  Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | matrix with outliers |
@@ -378,19 +379,21 @@ outlierByIQR(X,k,repair_method,max_iterations,verbose)
                                             		      2 = replace outliers as missing values 
  |max_iterations|  Integer | 0      | values: 0 = arbitrary number of iteraition until all outliers are removed, 
                                                             n = any constant defined by user
-### Returns
+###  Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | matrix without any outlier. |
 
-### Example
-```r
-X = rand (rows=10,cols=10)
+###  Example
+
+`X = rand (rows=10,cols=10)
 opposite = 1
 Y = outlier(X = X, opposite = opposite)
 Z = outlierByIQR(X=Y,k=1.5,repairMethod=0,max_iterations=3,verbose=1)
 print("\n"+toString(Z))
-`
+
+
 ##outlierBySd - function
 
 Builtin function for detecting and repairing outliers using standard deviation.

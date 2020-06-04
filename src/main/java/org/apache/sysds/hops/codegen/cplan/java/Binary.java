@@ -3,6 +3,7 @@ package org.apache.sysds.hops.codegen.cplan.java;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 
 public class Binary implements CodeTemplate {
     @Override
@@ -159,6 +160,11 @@ public class Binary implements CodeTemplate {
 
     @Override
     public String getTemplate() {
+        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+    }
+
+    @Override
+    public String getTemplate(SpoofCellwise.CellType ct) {
         throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
     }
 

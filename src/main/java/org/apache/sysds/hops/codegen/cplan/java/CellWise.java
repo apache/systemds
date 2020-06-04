@@ -3,6 +3,7 @@ package org.apache.sysds.hops.codegen.cplan.java;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 
 public class CellWise implements CodeTemplate {
     public static final String TEMPLATE =
@@ -26,7 +27,19 @@ public class CellWise implements CodeTemplate {
 
     @Override
     public String getTemplate() {
-        return TEMPLATE;
+        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+    }
+
+    @Override
+    public String getTemplate(SpoofCellwise.CellType ct) {
+        switch(ct) {
+            case NO_AGG:
+            case FULL_AGG:
+            case ROW_AGG:
+            case COL_AGG:
+            default:
+                return TEMPLATE;
+        }
     }
 
     @Override

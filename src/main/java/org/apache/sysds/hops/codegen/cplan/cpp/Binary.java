@@ -3,12 +3,18 @@ package org.apache.sysds.hops.codegen.cplan.cpp;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
+import org.apache.sysds.runtime.codegen.SpoofCellwise;
 
 import static org.apache.sysds.runtime.matrix.data.LibMatrixNative.isSinglePrecision;
 
 public class Binary implements CodeTemplate {
     @Override
     public String getTemplate() {
+        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+    }
+
+    @Override
+    public String getTemplate(SpoofCellwise.CellType ct) {
         throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
     }
 

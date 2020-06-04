@@ -32,7 +32,7 @@ limitations under the License.
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
-    * [`msvm`-Function](#mvsm-function)
+    * [`msvm`-Function](#msvm-function)
     
     
 # Introduction

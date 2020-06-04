@@ -289,12 +289,46 @@ If the best AIC is achieved without any features the matrix of *selected* featur
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows=ncol(X), 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
+`
+
+## `slicefinder`-Function
+
+The `slicefinder`-function returns top-k worst performing subsets according to a model calculation.
+
+### Usage
+```r
+slicefinder(X,W, y, k, paq, S);
 ```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Recoded dataset into Matrix |
+| W       | Matrix[Double] | required | Trained model |
+| y       | Matrix[Double] | required | 1-column matrix of response values. |
+| k       | Integer        | 1        | Number of subsets required |
+| paq     | Integer        | 1        | amount of values wanted for each col, if paq = 1 then its off |
+| S       | Integer        | 2        | amount of subsets to combine (for now supported only 1 and 2) |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Matrix containing the information of top_K slices (relative error, standart error, value0, value1, col_number(sort), rows, cols,range_row,range_cols, value00, value01,col_number2(sort), rows2, cols2,range_row2,range_cols2) |
+
+### Usage
+```r
+X = rand (rows = 50, cols = 10)
+y = X %*% rand(rows = ncol(X), cols = 1)
+w = lm(X = X, y = y)
+ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
+`
 
 ## `outlier-Function
 
-An outlier in a probability distribution function is a number that is more than 1.5 times the length of the data set away from either the lower or upper quartiles. 
-Specifically, if a number is less than Q1−1.5×IQR or greater than Q3+1.5×IQR, then it is an outlier.
+An outlier is any value that is numerically distant from most of the other data points in a set of data.
+This outlier function takes a matrix  data set as input from where it determines which number or numbers  has the largest diference from mean,
+The number which has the largest diference from mean is indicated as an outlier.
+
 
 ### Usage
 ```r
@@ -304,13 +338,13 @@ outlier(X,opposite);
 ### Arguments
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
-| X       | Matrix[Double] | required | Recoded dataset into Matrix |
-|opposite| Boolean | required | Used for xor gate evaluation |
-
+| X       | Matrix[Double] | required | Matrix of Recoded dataset for outlier evaluation |
+|opposite| Boolean | required | (1)TRUE for evaluating outlier from upper quartile range |
+                                                       |(0)FALSE for evaluating outlier from lower quartile range|
 ### Returns
 | Type           | Description |
 | :------------- | :---------- |
-| Matrix[Double] | 1-column matrix of weights. |
+| Matrix[Double] | matrix indicating outlier values |
 
 ### Example
 ```r
@@ -318,6 +352,7 @@ X = rand (rows = 50, cols = 10)
 opposite = 1
 outlier(X=X,opposite=opposite)
 ```
+
 ## outlierByIQR - Function
 
 Builtin function for detecting and repairing outliers using Interquartile Range.

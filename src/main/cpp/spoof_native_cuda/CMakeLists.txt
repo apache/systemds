@@ -24,10 +24,12 @@ cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 # need to set this before project() in Linux
 if (UNIX)
     set(CMAKE_CUDA_HOST_COMPILER g++-8 CACHE INTERNAL "")
+    set(CMAKE_CUDA_COMPILER nvcc CACHE INTERNAL "")
+    set(CMAKE_CXX_COMPILER g++ CACHE INTERNAL "")
 endif()
 
 project (systemds_spoof_native LANGUAGES CUDA CXX)
-
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 
 set(CMAKE_BUILD_WITH_INSTALL_RPATH True CACHE INTERNAL "")

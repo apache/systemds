@@ -33,7 +33,7 @@ limitations under the License.
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
-
+    * [`toOneHot`-Function](#toOneHOt-function)
     
     
 # Introduction
@@ -441,4 +441,31 @@ X = rand(rows = 50, cols = 10)
 y = X %*% rand(rows=ncol(X), cols=1)
 y = normalize(X = X)
 
+```
+
+## `toOneHot`-Function
+
+The `toOneHot`-function encodes unordered categorical vector to multiple binarized vectors.
+
+### Usage
+```r
+toOneHot(X, numClasses)
+```
+
+### Arguments
+| Name       | Type           | Default  | Description |
+| :--------- | :------------- | -------- | :---------- |
+| X          | Matrix[Double] | required | vector with N integer entries between 1 and numClasses. |
+| numClasses | int            | required | number of columns, must be greater than or equal to largest value in X. |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | one-hot-encoded matrix with shape (N, numClasses). |
+
+### Example
+```r
+numClasses = 5
+X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
+y = toOneHot(X,numClasses)
 ```

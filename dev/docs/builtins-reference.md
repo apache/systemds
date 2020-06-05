@@ -463,7 +463,7 @@ m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     num_rows_in_w = num_rows_in_w + 1
   }
 
-  if(ncol(Y) > 1) 
+  if(ncol(Y) > 1)
     Y = rowMaxs(Y * t(seq(1,ncol(Y))))
 
   # Assuming number of classes to be max contained in Y
@@ -472,10 +472,11 @@ m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
   parfor(class in 1:max(Y)) {
     Y_local = 2 * (Y == class) - 1
     w[,class] = l2svm(X=X, Y=Y_local, intercept=intercept,
-        epsilon=epsilon, lambda=lambda, maxIterations=maxIterations, 
+        epsilon=epsilon, lambda=lambda, maxIterations=maxIterations,
         verbose= verbose, columnId=class)
   }
-  
+
   model = w
 }
+msvm(X=X, Y=Y)
 ```

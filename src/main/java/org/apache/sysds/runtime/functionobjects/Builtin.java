@@ -288,4 +288,9 @@ public class Builtin extends ValueFunction
 			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
+
+	@Override
+	public String toString(){
+		return "Builtin:" + bFunc;
+	}
 }

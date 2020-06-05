@@ -28,7 +28,7 @@ public class CountDistinctApprox extends CountDistinctBase {
 	private final static String TEST_DIR = "functions/countDistinct/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + CountDistinctApprox.class.getSimpleName() + "/";
 
-	public CountDistinctApprox(){
+	public CountDistinctApprox() {
 		percentTolerance = 0.1;
 	}
 
@@ -36,7 +36,14 @@ public class CountDistinctApprox extends CountDistinctBase {
 	public void testXXLarge() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
 		double tolerance = 9000 * percentTolerance;
-		countDistinctTest(9000, 10000, 5000, ex, tolerance);
+		countDistinctTest(9000, 10000, 5000, 0.1, ex, tolerance);
+	}
+
+	@Test
+	public void testSparse500Unique(){
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		double tolerance = 0.00001 + 120 * percentTolerance;
+		countDistinctTest(500, 100, 100000, 0.1, ex, tolerance);
 	}
 
 	@Override

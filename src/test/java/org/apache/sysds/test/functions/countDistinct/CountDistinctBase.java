@@ -31,13 +31,16 @@ import org.junit.Test;
 public abstract class CountDistinctBase extends AutomatedTestBase {
 
 	protected abstract String getTestClassDir();
+
 	protected abstract String getTestName();
+
 	protected abstract String getTestDir();
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName(), new String[] { "A.scalar" }));
+		addTestConfiguration(getTestName(),
+			new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"A.scalar"}));
 	}
 
 	protected double percentTolerance = 0.0;
@@ -46,46 +49,61 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 	@Test
 	public void testSmall() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		double tolerance = baseTolerance  + 50 *  percentTolerance;
-		countDistinctTest(50, 50, 50, ex,tolerance);
+		double tolerance = baseTolerance + 50 * percentTolerance;
+		countDistinctTest(50, 50, 50, 1.0, ex, tolerance);
 	}
 
 	@Test
 	public void testLarge() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		double tolerance = baseTolerance + 800 *  percentTolerance;
-		countDistinctTest(800, 1000, 1000, ex,tolerance);
+		double tolerance = baseTolerance + 800 * percentTolerance;
+		countDistinctTest(800, 1000, 1000, 1.0, ex, tolerance);
 	}
 
 	@Test
 	public void testXLarge() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		double tolerance = baseTolerance + 1723 *  percentTolerance;
-		countDistinctTest(1723, 5000, 2000, ex,tolerance);
+		double tolerance = baseTolerance + 1723 * percentTolerance;
+		countDistinctTest(1723, 5000, 2000, 1.0, ex, tolerance);
 	}
 
 	@Test
 	public void test1Unique() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
 		double tolerance = 0.00001;
-		countDistinctTest(1, 100, 1000, ex,tolerance);
+		countDistinctTest(1, 100, 1000, 1.0, ex, tolerance);
 	}
 
 	@Test
 	public void test2Unique() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
 		double tolerance = 0.00001;
-		countDistinctTest(2, 100, 1000, ex,tolerance);
+		countDistinctTest(2, 100, 1000, 1.0, ex, tolerance);
 	}
 
 	@Test
 	public void test120Unique() {
 		LopProperties.ExecType ex = LopProperties.ExecType.CP;
-		double tolerance = 0.00001 + 120 *  percentTolerance;
-		countDistinctTest(120, 100, 1000, ex,tolerance);
+		double tolerance = 0.00001 + 120 * percentTolerance;
+		countDistinctTest(120, 100, 1000, 1.0, ex, tolerance);
 	}
 
-	public void countDistinctTest(int numberDistinct, int cols, int rows, LopProperties.ExecType instType, double tolerance) {
+	@Test
+	public void testSparse500Unique() {
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		double tolerance = 0.00001 + 500 * percentTolerance;
+		countDistinctTest(500, 100, 640000, 0.1, ex, tolerance);
+	}
+
+	@Test
+	public void testSparse120Unique(){
+		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		double tolerance = 0.00001 + 120 * percentTolerance;
+		countDistinctTest(120, 100, 64000, 0.1, ex, tolerance);
+	}
+
+	public void countDistinctTest(int numberDistinct, int cols, int rows, double sparsity,
+		LopProperties.ExecType instType, double tolerance) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(getTestName()));
@@ -93,16 +111,18 @@ public abstract class CountDistinctBase extends AutomatedTestBase {
 			fullDMLScriptName = HOME + getTestName() + ".dml";
 			String out = output("A");
 			System.out.println(out);
-			programArgs = new String[] { "-args", String.valueOf(numberDistinct), String.valueOf(rows),
-					String.valueOf(cols), out};
+			programArgs = new String[] {"-args", String.valueOf(numberDistinct), String.valueOf(rows),
+				String.valueOf(cols), String.valueOf(sparsity), out};
 
 			runTest(true, false, null, -1);
 			writeExpectedScalar("A", numberDistinct);
 			compareResults(tolerance);
-		} catch (Exception e) {
+		}
+		catch(Exception e) {
 			e.printStackTrace();
 			assertTrue("Exception in execution: " + e.getMessage(), false);
-		} finally {
+		}
+		finally {
 			rtplatform = platformOld;
 		}
 	}

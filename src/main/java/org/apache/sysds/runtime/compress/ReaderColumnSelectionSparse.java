@@ -43,8 +43,8 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	private SparseRow[] sparseCols = null;
 	private int[] sparsePos = null;
 
-	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, boolean skipZeros, CompressionSettings compSettings) {
-		super(colIndexes, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), skipZeros, compSettings);
+	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, CompressionSettings compSettings) {
+		super(colIndexes, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), compSettings);
 		ZERO_DBL_ARRAY = new DblArray(new double[colIndexes.length], true);
 		reusableArr = new double[colIndexes.length];
 		reusableReturn = new DblArray(reusableArr);
@@ -62,14 +62,14 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
 	@Override
 	public DblArray nextRow() {
-		if(_skipZeros) {
+		// if(_skipZeros) {
 			while((nonZeroReturn = getNextRow()) != null && nonZeroReturn == ZERO_DBL_ARRAY) {
 			}
 			return nonZeroReturn;
-		}
-		else {
-			return getNextRow();
-		}
+		// }
+		// else {
+			// return getNextRow();
+		// }
 	}
 
 	private DblArray getNextRow() {

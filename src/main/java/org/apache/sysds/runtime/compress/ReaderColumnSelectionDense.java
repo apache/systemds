@@ -30,8 +30,8 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection {
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
-	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices, boolean skipZeros, CompressionSettings compSettings) {
-		super(colIndices, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), skipZeros, compSettings);
+	public ReaderColumnSelectionDense(MatrixBlock data, int[] colIndices, CompressionSettings compSettings) {
+		super(colIndices, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), compSettings);
 		_data = data;
 		reusableArr = new double[colIndices.length];
 		reusableReturn = new DblArray(reusableArr);
@@ -39,14 +39,14 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection {
 
 	@Override
 	public DblArray nextRow() {
-		if(_skipZeros) {
-			while((nonZeroReturn = getNextRow()) != null && DblArray.isZero(nonZeroReturn)) {
-			}
-			return nonZeroReturn;
+		// if(_skipZeros) {
+		while((nonZeroReturn = getNextRow()) != null && DblArray.isZero(nonZeroReturn)) {
 		}
-		else {
-			return getNextRow();
-		}
+		return nonZeroReturn;
+		// }
+		// else {
+		// return getNextRow();
+		// }
 	}
 
 	private DblArray getNextRow() {
@@ -54,8 +54,8 @@ public class ReaderColumnSelectionDense extends ReaderColumnSelection {
 			return null;
 		_lastRow++;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _compSettings.transposeInput ? _data.quickGetValue(_colIndexes[i],
-				_lastRow) : _data.quickGetValue(_lastRow, _colIndexes[i]);
+			reusableArr[i] = _compSettings.transposeInput ? _data.quickGetValue(_colIndexes[i], _lastRow) : _data
+				.quickGetValue(_lastRow, _colIndexes[i]);
 		}
 		return reusableReturn;
 	}

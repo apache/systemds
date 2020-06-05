@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.compress;
 
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
-import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -41,32 +40,10 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 
-	private int k = InfrastructureAnalyzer.getLocalParallelism();
 
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compressionSettings, MatrixTypology matrixTypology) {
-		super(sparType, valType, valRange, compressionSettings, matrixTypology);
-	}
-
-	@Test
-	public void testConstruction() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock)) {
-				// TODO Compress EVERYTHING!
-				return; // Input was not compressed then just pass test
-				// Assert.assertTrue("Compression Failed \n" + this.toString(), false);
-			}
-			if(compressionSettings.lossy) {
-				TestUtils.compareMatrices(input, deCompressed, lossyTolerance);
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(input, deCompressed, rows, cols, 0, 0);
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
+		super(sparType, valType, valRange, compressionSettings, matrixTypology, InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Test
@@ -95,46 +72,6 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void testMatrixMultChain() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			MatrixBlock vector1 = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 0.5, 1.5, 1.0, 3));
-
-			// ChainType ctype = ChainType.XtwXv;
-			for(ChainType ctype : new ChainType[] {ChainType.XtwXv, ChainType.XtXv,
-				// ChainType.XtXvy
-			}) {
-
-				MatrixBlock vector2 = (ctype == ChainType.XtwXv) ? DataConverter
-					.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 0.5, 1.5, 1.0, 3)) : null;
-
-				// matrix-vector uncompressed
-				MatrixBlock ret1 = mb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, k);
-
-				// matrix-vector compressed
-				MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, k);
-
-				// compare result with input
-				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-				if(compressionSettings.lossy) {
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.92, 0.95, compressionSettings.toString());
-				}
-				else {
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 32, compressionSettings.toString());
-				}
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
 	public void testTransposeSelfMatrixMult() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
@@ -144,10 +81,10 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 				// MMTSJType.RIGHT
 			}) {
 				// matrix-vector uncompressed
-				MatrixBlock ret1 = mb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, k);
+				MatrixBlock ret1 = mb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
 
 				// matrix-vector compressed
-				MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, k);
+				MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
 
 				// compare result with input
 				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
@@ -171,54 +108,6 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void testMatrixVectorMult02() {
-		testMatrixVectorMult(0.7, 1.0);
-	}
-
-	@Test
-	public void testMatrixVectorMult03() {
-		testMatrixVectorMult(-1.0, 1.0);
-	}
-
-	@Test
-	public void testMatrixVectorMult04() {
-		testMatrixVectorMult(1.0, 5.0);
-	}
-
-	public void testMatrixVectorMult(double min, double max) {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			MatrixBlock vector = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, min, max, 1.0, 3));
-
-			// matrix-vector uncompressed
-			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(k);
-			MatrixBlock ret1 = mb.aggregateBinaryOperations(mb, vector, new MatrixBlock(), abop);
-
-			// matrix-vector compressed
-			MatrixBlock ret2 = cmb.aggregateBinaryOperations(cmb, vector, new MatrixBlock(), abop);
-
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy) {
-				// TODO Make actual calculation to know the actual tolerance
-				double scaledTolerance = lossyTolerance * 30 * max;
-				TestUtils.compareMatrices(d1, d2, scaledTolerance);
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 5, compressionSettings.toString());
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
 	public void testVectorMatrixMult() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
@@ -228,7 +117,7 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 				.convertToMatrixBlock(TestUtils.generateTestMatrix(1, rows, 1, 1, 1.0, 3));
 
 			// Make Operator
-			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(k);
+			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 
 			// vector-matrix uncompressed
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(vector, mb, new MatrixBlock(), abop);
@@ -254,7 +143,7 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Override
 	public void testUnaryOperators(AggType aggType) {
-		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, k);
+		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, _k);
 		testUnaryOperators(aggType, auop);
 	}
 

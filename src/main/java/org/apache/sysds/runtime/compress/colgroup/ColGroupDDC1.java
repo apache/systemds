@@ -25,11 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -46,12 +43,12 @@ public class ColGroupDDC1 extends ColGroupDDC {
 		super();
 	}
 
-	protected ColGroupDDC1(int[] colIndices, int numRows, UncompressedBitmap ubm) {
-		super(colIndices, numRows, ubm);
+	protected ColGroupDDC1(int[] colIndices, int numRows, AbstractBitmap ubm, CompressionSettings cs) {
+		super(colIndices, numRows, ubm, cs);
 
 		int numVals = ubm.getNumValues();
 		int numCols = ubm.getNumColumns();
-		
+
 		_data = new byte[numRows];
 
 		// materialize zero values, if necessary
@@ -59,8 +56,7 @@ public class ColGroupDDC1 extends ColGroupDDC {
 			int zeroIx = containsAllZeroValue();
 			if(zeroIx < 0) {
 				zeroIx = numVals;
-				_dict = new Dictionary(Arrays.copyOf(
-					_dict.getValues(), _dict.getValues().length + numCols));
+				_dict = IDictionary.materializeZeroValue(_dict, numCols);
 			}
 			Arrays.fill(_data, (byte) zeroIx);
 		}
@@ -80,9 +76,8 @@ public class ColGroupDDC1 extends ColGroupDDC {
 		_data = data;
 	}
 
-	
 	@Override
-	protected ColGroupType getColGroupType(){
+	protected ColGroupType getColGroupType() {
 		return ColGroupType.DDC1;
 	}
 
@@ -98,13 +93,23 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	}
 
 	@Override
-	protected double getData(int r) {
-		return _dict.getValue(_data[r] & 0xFF);
+	protected int getIndex(int r) {
+		return _data[r] & 0xFF;
 	}
 
 	@Override
-	protected double getData(int r, int colIx) {
-		return _dict.getValue((_data[r] & 0xFF) * getNumCols() + colIx);
+	protected int getIndex(int r, int colIx) {
+		return _data[r] & 0xFF * getNumCols() + colIx;
+	}
+
+	@Override
+	protected double getData(int r, double[] dictionary) {
+		return dictionary[_data[r] & 0xFF];
+	}
+
+	@Override
+	protected double getData(int r, int colIx, double[] values) {
+		return values[(_data[r] & 0xFF) * getNumCols() + colIx];
 	}
 
 	@Override
@@ -132,57 +137,16 @@ public class ColGroupDDC1 extends ColGroupDDC {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		write(out, false);
-	}
-
-	@Override
-	public void write(DataOutput out, boolean skipDict) throws IOException {
-		int numCols = getNumCols();
-		int numVals = getNumValues();
-		out.writeInt(_numRows);
-		out.writeInt(numCols);
-		out.writeInt(numVals);
-
-		// write col indices
-		for(int i = 0; i < _colIndexes.length; i++)
-			out.writeInt(_colIndexes[i]);
-
-		// write distinct values
-		if(!skipDict) {
-			final double[] values = getValues();
-			for(int i = 0; i < numCols*numVals; i++)
-				out.writeDouble(values[i]);
-		}
-
+		super.write(out);
 		// write data
+		// out.writeInt(_numRows);
 		for(int i = 0; i < _numRows; i++)
 			out.writeByte(_data[i]);
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		readFields(in, false);
-	}
-
-	@Override
-	public void readFields(DataInput in, boolean skipDict) throws IOException {
-		_numRows = in.readInt();
-		int numCols = in.readInt();
-		int numVals = in.readInt();
-
-		// read col indices
-		_colIndexes = new int[numCols];
-		for(int i = 0; i < numCols; i++)
-			_colIndexes[i] = in.readInt();
-
-		// read distinct values
-		if(!skipDict || numCols != 1) {
-			double[] values = new double[numVals * numCols];
-			for(int i = 0; i < numVals * numCols; i++)
-				values[i] = in.readDouble();
-			_dict = new Dictionary(values);
-		}
-
+		super.readFields(in);
 		// read data
 		_data = new byte[_numRows];
 		for(int i = 0; i < _numRows; i++)
@@ -191,20 +155,16 @@ public class ColGroupDDC1 extends ColGroupDDC {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		long ret = 12; // header
-		// col indices
-		ret += 4 * _colIndexes.length;
-		// distinct values (groups of values)
-		ret += 8 * _dict.getValues().length;
+		long ret = super.getExactSizeOnDisk();
 		// data
-		ret += 1 * _data.length;
+		ret += _data.length;
 
 		return ret;
 	}
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeDDC1(getNumCols(), getNumValues(), _data.length);
+		return ColGroupSizes.estimateInMemorySizeDDC1(getNumCols(), getNumValues(), _data.length, isLossy());
 	}
 
 	@Override
@@ -311,117 +271,90 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
 		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
-		final int nrow = getNumRows();
+		// final int nrow = getNumRows();
 		final int numVals = getNumValues();
 
 		// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
 		// temporary array also avoids false sharing in multi-threaded environments
 		double[] vals = allocDVector(numVals, true);
-		for(int i = 0; i < nrow; i++) {
-			vals[_data[i] & 0xFF] += a[i];
+		for(int i = 0; i < _numRows; i++) {
+			int index = getIndex(i);
+			vals[index] += a[i];
 		}
 
 		// post-scaling of pre-aggregate with distinct values
 		postScaling(vals, c);
 	}
 
-	@Override
-	public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) {
-		double[] c = result.getDenseBlockValues();
-		final int nrow = getNumRows();
-		final int numVals = getNumValues();
+	// @Override
+	// public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) {
+	// 	double[] c = result.getDenseBlockValues();
+	// 	final int nrow = getNumRows();
+	// 	final int numVals = getNumValues();
+	// 	// final double[] dictionary = getValues();
 
-		// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
-		// temporary array also avoids false sharing in multi-threaded environments
-		double[] vals = allocDVector(numVals, true);
-		for(int i = 0; i < nrow; i++)
-			vals[_data[i] & 0xFF] += a.getData(i);
+	// 	// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
+	// 	// temporary array also avoids false sharing in multi-threaded environments
+	// 	double[] vals = allocDVector(numVals, true);
+	// 	double[] aDict = a.getValues();
+	// 	for(int i = 0; i < nrow; i++) {
+	// 		int rowIdA = a.getIndex(i);
+	// 		int rowIdThis = getIndex(i);
+	// 		vals[rowIdThis] += aDict[rowIdA];
+	// 	}
+	// 	// vals[_data[i] & 0xFF] += a.getData(i, dictionary);
 
-		// post-scaling of pre-aggregate with distinct values
-		postScaling(vals, c);
-	}
+	// 	// post-scaling of pre-aggregate with distinct values
+	// 	postScaling(vals, c);
+	// }
 
-	@Override
-	protected void computeSum(MatrixBlock result, KahanFunction kplus) {
-		final int ncol = getNumCols();
-		final int numVals = getNumValues();
-		final double[] values = getValues();
 
-		// iterative over codes and count per code (guaranteed <=255)
-		int[] counts = getCounts();
+	// public static void computeRowSums(ColGroupDDC1[] grps, MatrixBlock result, KahanFunction kplus, int rl, int ru) {
+	// 	// note: due to corrections the output might be a large dense block
+	// 	DenseBlock c = result.getDenseBlock();
 
-		// post-scaling of pre-aggregate with distinct values
-		KahanObject kbuff = new KahanObject(result.quickGetValue(0, 0), result.quickGetValue(0, 1));
-		for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol) {
-			int cntk = counts[k];
-			for(int j = 0; j < ncol; j++)
-				kplus.execute3(kbuff, values[valOff + j], cntk);
-		}
+	// 	if(grps[0]._dict instanceof QDictionary && !(kplus instanceof KahanPlusSq)) {
 
-		result.quickSetValue(0, 0, kbuff._sum);
-		result.quickSetValue(0, 1, kbuff._correction);
-	}
 
-	@Override
-	protected void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru) {
-		// note: due to corrections the output might be a large dense block
-		DenseBlock c = result.getDenseBlock();
-		KahanObject kbuff = new KahanObject(0, 0);
-		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
+	// 		return; // early return if needed.
+	// 	}
 
-		// pre-aggregate nnz per value tuple
-		double[] vals = sumAllValues(kplus, kbuff, false);
+	// 	KahanObject kbuff = new KahanObject(0, 0);
+	// 	KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
 
-		// scan data and add to result (use kahan plus not general KahanFunction
-		// for correctness in case of sqk+)
-		for(int i = rl; i < ru; i++) {
-			double[] cvals = c.values(i);
-			int cix = c.pos(i);
-			kbuff.set(cvals[cix], cvals[cix + 1]);
-			kplus2.execute2(kbuff, vals[_data[i] & 0xFF]);
-			cvals[cix] = kbuff._sum;
-			cvals[cix + 1] = kbuff._correction;
-		}
-	}
+	// 	// prepare distinct values once
+	// 	double[][] vals = new double[grps.length][];
+	// 	for(int i = 0; i < grps.length; i++) {
+	// 		// pre-aggregate all distinct values (guaranteed <=255)
+	// 		vals[i] = grps[i].sumAllValues(kplus, kbuff);
+	// 	}
 
-	public static void computeRowSums(ColGroupDDC1[] grps, MatrixBlock result, KahanFunction kplus, int rl, int ru) {
-		// note: due to corrections the output might be a large dense block
-		DenseBlock c = result.getDenseBlock();
-		KahanObject kbuff = new KahanObject(0, 0);
-		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
+	// 	// cache-conscious row sums operations
+	// 	// iterative over codes of all groups and add to output
+	// 	// (use kahan plus not general KahanFunction for correctness in case of sqk+)
+	// 	int blksz = 1024; // 16KB
+	// 	double[] tmpAgg = new double[blksz];
+	// 	for(int bi = rl; bi < ru; bi += blksz) {
+	// 		Arrays.fill(tmpAgg, 0);
+	// 		// aggregate all groups
+	// 		for(int j = 0; j < grps.length; j++) {
+	// 			double[] valsj = vals[j];
+	// 			byte[] dataj = grps[j]._data;
+	// 			for(int i = bi; i < Math.min(bi + blksz, ru); i++)
+	// 				tmpAgg[i - bi] += valsj[dataj[i] & 0xFF];
+	// 		}
+	// 		// add partial results of all ddc groups
+	// 		for(int i = bi; i < Math.min(bi + blksz, ru); i++) {
+	// 			double[] cvals = c.values(i);
+	// 			int cix = c.pos(i);
+	// 			kbuff.set(cvals[cix], cvals[cix + 1]);
+	// 			kplus2.execute2(kbuff, tmpAgg[i - bi]);
+	// 			cvals[cix] = kbuff._sum;
+	// 			cvals[cix + 1] = kbuff._correction;
+	// 		}
+	// 	}
 
-		// prepare distinct values once
-		double[][] vals = new double[grps.length][];
-		for(int i = 0; i < grps.length; i++) {
-			// pre-aggregate all distinct values (guaranteed <=255)
-			vals[i] = grps[i].sumAllValues(kplus, kbuff);
-		}
-
-		// cache-conscious row sums operations
-		// iterative over codes of all groups and add to output
-		// (use kahan plus not general KahanFunction for correctness in case of sqk+)
-		int blksz = 1024; // 16KB
-		double[] tmpAgg = new double[blksz];
-		for(int bi = rl; bi < ru; bi += blksz) {
-			Arrays.fill(tmpAgg, 0);
-			// aggregate all groups
-			for(int j = 0; j < grps.length; j++) {
-				double[] valsj = vals[j];
-				byte[] dataj = grps[j]._data;
-				for(int i = bi; i < Math.min(bi + blksz, ru); i++)
-					tmpAgg[i - bi] += valsj[dataj[i] & 0xFF];
-			}
-			// add partial results of all ddc groups
-			for(int i = bi; i < Math.min(bi + blksz, ru); i++) {
-				double[] cvals = c.values(i);
-				int cix = c.pos(i);
-				kbuff.set(cvals[cix], cvals[cix + 1]);
-				kplus2.execute2(kbuff, tmpAgg[i - bi]);
-				cvals[cix] = kbuff._sum;
-				cvals[cix + 1] = kbuff._correction;
-			}
-		}
-	}
+	// }
 
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {

@@ -29,7 +29,9 @@ limitations under the License.
     * [`lmpredict`-Function](#lmpredict-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
+    * [`confusionMatrix`-Function](#confusionMatrix-function)
     
+   
 # Introduction
 
 The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level functions
@@ -325,7 +327,7 @@ ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 
 ## `confusionMatrix`-Function
 
-A confusion matrix is a technique for summarizing the performance of a classification algorithm.
+A `confusionMatrix` is a technique for summarizing the performance of a classification algorithm.
 Calculating a confusion matrix can give you a better idea of what your classification model is getting right and what types of errors it is making.
 This confusionMatrix function accepts two matrices with one column each, these two matrices are vector for prediction and one-hot-encoded matrix respectively.
 Then it computes the max value of each vector and compare them, after whichit calculates and returns the sum of classifications and the average of each true class.

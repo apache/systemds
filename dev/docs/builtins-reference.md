@@ -424,6 +424,6 @@ outlierBySd(X,k,repairMethod,max_iterations,verbose)
 ### Example
 
 X = rand (rows = 20, cols = 10)
-Z=outlierBySd(X=Y, k=3,repairMethod = 1,max_iterations = 10,verbose = 1)
+Z=outlierBySd(X=X, k=3,repairMethod = 1,max_iterations = 10,verbose = 1)
 print("\n"+toString(Z))
 

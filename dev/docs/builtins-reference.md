@@ -339,20 +339,19 @@ confusionMatrix(P,Y)
 
 ### Arguments
 
-| Name    | Type                        | Default  | Description |
-| :------ | :-------------                    | -------- | :---------- |
-| P         |      Matrix[Double]    |---       |vector of prediction |
-| Y         |      Matrix[Double]    |---       | vector of Golden standard One Hot Encoded|
+| Name    | Type                   | Default  | Description |
+| :------ | :-------------         |  :---    | :---------- |
+| P       |      Matrix[Double]    |   ---    |vector of prediction |
+| Y       |      Matrix[Double]    |   ---    | vector of Golden standard One Hot Encoded|
 
 ### Returns
  
-|Name  		| Type           | Description |
+|Name  	          	| Type           | Description |
 |:-----------------| :------------- | :---------- |
-|ConfusionSum| Matrix[Double] | The Confusion Matrix Sums of classifications |
-|ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class|
+|ConfusionSum      | Matrix[Double] | The Confusion Matrix Sums of classifications |
+|ConfusionAvg      | Matrix[Double] | The Confusion Matrix averages of each true class|
 
 ### Example
-
  #here numClasses is assigned to 1 as numClasses is directly proportional to the 
  number of columns in the one hot data matrix, as confusion matrix accepts only matrices with one column.
  

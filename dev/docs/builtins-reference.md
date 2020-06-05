@@ -27,6 +27,7 @@ limitations under the License.
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
+    * [`outlierByIQR`-Function](#outlierbyiqr-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
     
@@ -323,7 +324,7 @@ w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
 
-## outlierByIQR - Function
+## `outlierByIQR`-Function
 
 Builtin function for detecting and repairing outliers using Interquartile Range.
 A commonly used rule says that a data point is an outlier if it is more than 1.5 IQR
@@ -334,29 +335,23 @@ removed from the matrix.
 
 
 ### Usage
-
 outlierByIQR(X,k,repair_method,max_iterations,verbose)
 
 ###  Arguments
-
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | matrix with outliers |
 |k         |     Double 	   |  1.5         | a constant used to discern outliers k*IQR |
 |isIterative|  Boolean | TRUE   |iterative repair or single repair |
- |repairMethod|   Integer|  1           | values: 0 = delete rows having outliers, 
-                                                              1 = replace outliers with zeros 
-                                            		      2 = replace outliers as missing values |
- |max_iterations|  Integer | 0      | values: 0 = arbitrary number of iteraition until all outliers are removed, 
-                                                            n = any constant defined by user|
+ |repairMethod|   Integer|  1           | values: 0 = delete rows having outliers, 1 = replace outliers with zeros, 2 = replace outliers as missing values |
+ |max_iterations|  Integer | 0      | values: 0 = arbitrary number of iteraition until all outliers are removed, n = any constant defined by user|
+ 
 ###  Returns
-
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | matrix without any outlier. |
 
 ###  Example
-
 ```r
 X = rand (rows=10,cols=10)
 opposite = 1

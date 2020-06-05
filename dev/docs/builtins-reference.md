@@ -27,6 +27,7 @@ limitations under the License.
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
+    * [`mice-Function`](#mice-function)
     * [`naivebayes`-Function](#naivebayes-function)
     * [`scale`-Function](#scale-function)
     * [`sigmoid`-Function](#sigmoid-function)
@@ -250,6 +251,40 @@ X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 yp = lmpredict(X, w)
+```
+
+## `mice`-Function
+
+The `mice`-function implements a method to deal with missing data.
+
+### Usage
+```r
+mice(F,cMask,iter,complete,verbose)
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| F       | Frame[String]  | required | Data Frame with one-dimensional row matrix with N columns where N>1. |
+| cMask   | Matrix[Double] | required | 0/1 row vector for identifying numeric (0) and categorical features (1) with one-dimensional row matrix with column = ncol(F).|
+| iter    | Integer        | `3`      | Number of iteration for multiple imputations.|
+| complete| Integer        | `3`      | A complete dataset generated though a specific iteration. |
+| verbose | Boolean        | `FALSE`  | Boolean value. |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Frame[String]  | imputed dataset. |
+| Frame[String]  | A complete dataset generated though a specific iteration. |
+
+### Example
+```
+F=as.frame(matrix("4 3 2 8 7 8 5", rows=1, cols=7))
+cMask=round(rand(rows=1,cols=ncol(F),min=0,max=1))
+iter=3
+complete=3
+verbose=FALSE
+[dataset,singleSet]=mice(F,cMask,iter,complete,verbose)
 ```
 
 ## `naivebayes`-Function

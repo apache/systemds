@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -32,11 +33,11 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -58,25 +59,26 @@ public class ColGroupFactory {
 	 */
 	public static ColGroup[] compressColGroups(MatrixBlock in, HashMap<Integer, Double> compRatios, List<int[]> groups,
 		CompressionSettings compSettings, int k) {
-
-		if(k == 1) {
-			compressColGroups(in, compRatios, groups, compSettings);
+		if(k <= 1) {
+			return compressColGroups(in, compRatios, groups, compSettings);
 		}
-
-		try {
-			ExecutorService pool = CommonThreadPool.get(k);
-			ArrayList<CompressTask> tasks = new ArrayList<>();
-			for(int[] colIndexes : groups)
-				tasks.add(new CompressTask(in, compRatios, colIndexes, compSettings));
-			List<Future<ColGroup>> rtask = pool.invokeAll(tasks);
-			ArrayList<ColGroup> ret = new ArrayList<>();
-			for(Future<ColGroup> lrtask : rtask)
-				ret.add(lrtask.get());
-			pool.shutdown();
-			return ret.toArray(new ColGroup[0]);
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
+		else {
+			try {
+				ExecutorService pool = CommonThreadPool.get(k);
+				ArrayList<CompressTask> tasks = new ArrayList<>();
+				for(int[] colIndexes : groups)
+					tasks.add(new CompressTask(in, compRatios, colIndexes, compSettings));
+				List<Future<ColGroup>> rtask = pool.invokeAll(tasks);
+				ArrayList<ColGroup> ret = new ArrayList<>();
+				for(Future<ColGroup> lrtask : rtask)
+					ret.add(lrtask.get());
+				pool.shutdown();
+				return ret.toArray(new ColGroup[0]);
+			}
+			catch(InterruptedException | ExecutionException e) {
+				// If there is an error in the parallel execution default to the non parallel implementation
+				return compressColGroups(in, compRatios, groups, compSettings);
+			}
 		}
 	}
 
@@ -144,14 +146,10 @@ public class ColGroupFactory {
 		CompressedSizeInfoColGroup sizeInfo;
 		// The compression type is decided based on a full bitmap since it
 		// will be reused for the actual compression step.
-		UncompressedBitmap ubm = null;
+		AbstractBitmap ubm = null;
 		PriorityQueue<CompressedColumn> compRatioPQ = CompressedColumn.makePriorityQue(compRatios, colIndexes);
 
-		// TODO: Use sample based estimator still here.
 		// Switching to exact estimator here, when doing the actual compression.
-		// FYI, this was also how it was doing it before, under the covers.
-		// This is because the ubm is extracted for the entire column, (because it is going to be used for the later
-		// compression i guess)
 		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings);
 
 		while(true) {
@@ -210,32 +208,31 @@ public class ColGroupFactory {
 	 * 
 	 * @param colIndexes     The Column indexes to compress
 	 * @param rlen           The number of rows in the columns
-	 * @param ubm            The uncompressedBitmap containing all the data needed for the compression (unless
-	 *                       Uncompressed ColGroup)
+	 * @param ubm            The Bitmap containing all the data needed for the compression (unless Uncompressed
+	 *                       ColGroup)
 	 * @param compType       The CompressionType selected
-	 * @param compSettings   The compression Settings used for the given compression
+	 * @param cs             The compression Settings used for the given compression
 	 * @param rawMatrixBlock The copy of the original input (maybe transposed) MatrixBlock
 	 * @return A Compressed ColGroup
 	 */
-	public static ColGroup compress(int[] colIndexes, int rlen, UncompressedBitmap ubm, CompressionType compType,
-		CompressionSettings compSettings, MatrixBlock rawMatrixBlock) {
-
+	public static ColGroup compress(int[] colIndexes, int rlen, AbstractBitmap ubm, CompressionType compType,
+		CompressionSettings cs, MatrixBlock rawMatrixBlock) {
 		switch(compType) {
 			case DDC:
 				if(ubm.getNumValues() < 256) {
-					return new ColGroupDDC1(colIndexes, rlen, ubm);
+					return new ColGroupDDC1(colIndexes, rlen, ubm, cs);
 				}
 				else {
-					return new ColGroupDDC2(colIndexes, rlen, ubm);
+					return new ColGroupDDC2(colIndexes, rlen, ubm, cs);
 				}
 			case RLE:
-				return new ColGroupRLE(colIndexes, rlen, ubm);
+				return new ColGroupRLE(colIndexes, rlen, ubm, cs);
 			case OLE:
-				return new ColGroupOLE(colIndexes, rlen, ubm);
+				return new ColGroupOLE(colIndexes, rlen, ubm, cs);
 			case UNCOMPRESSED:
-				return new ColGroupUncompressed(colIndexes, rawMatrixBlock, compSettings);
-			case QUAN:
-				return new ColGroupQuan(colIndexes, rlen, ubm);
+				return new ColGroupUncompressed(colIndexes, rawMatrixBlock, cs);
+			// case QUAN:
+				// return new ColGroupQuan(colIndexes, rlen, ubm);
 			default:
 				throw new DMLCompressionException("Not implemented ColGroup Type compressed in factory.");
 		}
@@ -248,9 +245,9 @@ public class ColGroupFactory {
 	 * TODO Redesign this method such that it does not utilize the null pointers to decide on which ColGroups should be
 	 * incompressable. This is done by changing both this method and compressColGroup inside this class.
 	 * 
-	 * @param numCols The number of columns in input matrix
-	 * @param colGroups The colgroups made to assign
-	 * @param rawBlock The (maybe transposed) original MatrixBlock
+	 * @param numCols      The number of columns in input matrix
+	 * @param colGroups    The colgroups made to assign
+	 * @param rawBlock     The (maybe transposed) original MatrixBlock
 	 * @param compSettings The Compressionsettings used.
 	 * @return return the final ColGroupList.
 	 */

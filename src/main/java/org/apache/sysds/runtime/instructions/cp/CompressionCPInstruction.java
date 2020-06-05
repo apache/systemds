@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -33,7 +32,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		super(CPType.Compression, op, in, null, null, out, opcode, istr);
 	}
 
-	public static Instruction parseInstruction(String str) {
+	public static CompressionCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
@@ -46,7 +45,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		// Get matrix block input
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
 		// Compress the matrix block
-		MatrixBlock out = CompressedMatrixBlockFactory.compress(in, OptimizerUtils.getConstrainedNumThreads(-1));
+		MatrixBlock out = CompressedMatrixBlockFactory.compress(in, OptimizerUtils.getConstrainedNumThreads(-1)).getLeft();
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);

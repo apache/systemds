@@ -62,7 +62,7 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
-			return CompressedMatrixBlockFactory.compress(arg0);
+			return CompressedMatrixBlockFactory.compress(arg0).getLeft();
 		}
 	}
 }

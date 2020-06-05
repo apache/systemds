@@ -28,15 +28,15 @@ public abstract class ReaderColumnSelection {
 	protected int[] _colIndexes = null;
 	protected int _numRows = -1;
 	protected int _lastRow = -1;
-	protected boolean _skipZeros = false;
+	// protected boolean _skipZeros = false;
 
 	protected CompressionSettings _compSettings;
 
-	protected ReaderColumnSelection(int[] colIndexes, int numRows, boolean skipZeros, CompressionSettings compSettings) {
+	protected ReaderColumnSelection(int[] colIndexes, int numRows, CompressionSettings compSettings) {
 		_colIndexes = colIndexes;
 		_numRows = numRows;
 		_lastRow = -1;
-		_skipZeros = skipZeros;
+		// _skipZeros = skipZeros;
 		_compSettings = compSettings;
 	}
 

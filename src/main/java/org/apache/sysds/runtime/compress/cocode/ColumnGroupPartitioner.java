@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.cocode;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.GroupableColInfo;
 
 public abstract class ColumnGroupPartitioner {
@@ -31,8 +32,9 @@ public abstract class ColumnGroupPartitioner {
 	 * 
 	 * @param groupCols     list of columns
 	 * @param groupColsInfo list of column infos
+	 * @param cs            The Compression settings used for the compression
 	 * @return list of partitions (where each partition is a list of columns)
 	 */
 	public abstract List<int[]> partitionColumns(List<Integer> groupCols,
-		HashMap<Integer, GroupableColInfo> groupColsInfo);
+		HashMap<Integer, GroupableColInfo> groupColsInfo, CompressionSettings cs);
 }

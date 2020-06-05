@@ -17,61 +17,57 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress;
+package org.apache.sysds.runtime.compress.utils;
 
 import java.util.Arrays;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
-import org.apache.sysds.runtime.compress.utils.DoubleIntListHashMap;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap.DArrayIListEntry;
 import org.apache.sysds.runtime.compress.utils.DoubleIntListHashMap.DIListEntry;
-import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.util.SortUtils;
 
 /**
  * Uncompressed representation of one or more columns in bitmap format.
  */
-public final class UncompressedBitmap {
-	
-	private final int _numCols;
+public final class Bitmap extends AbstractBitmap {
 
-	/** Distinct values that appear in the column. Linearized as value groups <v11 v12> <v21 v22>. */
+	/**
+	 * Distinct values that appear in the column. Linearized as value groups <v11 v12> <v21 v22>.
+	 */
 	private double[] _values;
 
-	/** Bitmaps (as lists of offsets) for each of the values. */
-	private IntArrayList[] _offsetsLists;
+	public Bitmap(int numCols, IntArrayList[] offsetsLists, int numZeroGroups, double[] values) {
+		super(numCols, offsetsLists, numZeroGroups);
+		_values = values;
+	}
 
-	public UncompressedBitmap(DblArrayIntListHashMap distinctVals, int numColumns) {
+	public static Bitmap makeBitmap(DblArrayIntListHashMap distinctVals, int numColumns, int numZeros) {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
 		int numVals = distinctVals.size();
-		_values = new double[numVals * numColumns];
-		_offsetsLists = new IntArrayList[numVals];
+		int numCols = numColumns;
+		double[] values = new double[numVals * numCols];
+		IntArrayList[] offsetsLists = new IntArrayList[numVals];
 		int bitmapIx = 0;
 		for(DArrayIListEntry val : distinctVals.extractValues()) {
-			System.arraycopy(val.key.getData(), 0, _values, bitmapIx * numColumns, numColumns);
-			_offsetsLists[bitmapIx++] = val.value;
+			System.arraycopy(val.key.getData(), 0, values, bitmapIx * numCols, numCols);
+			offsetsLists[bitmapIx++] = val.value;
 		}
-		_numCols = numColumns;
+		return new Bitmap(numCols, offsetsLists, numZeros, values);
 	}
 
-	public UncompressedBitmap(DoubleIntListHashMap distinctVals) {
+	public static Bitmap makeBitmap(DoubleIntListHashMap distinctVals, int numZeros) {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
 		int numVals = distinctVals.size();
-		_values = new double[numVals];
-		_offsetsLists = new IntArrayList[numVals];
+		double[] values = new double[numVals];
+		IntArrayList[] offsetsLists = new IntArrayList[numVals];
 		int bitmapIx = 0;
 		for(DIListEntry val : distinctVals.extractValues()) {
-			_values[bitmapIx] = val.key;
-			_offsetsLists[bitmapIx++] = val.value;
+			values[bitmapIx] = val.key;
+			offsetsLists[bitmapIx++] = val.value;
 		}
-		_numCols = 1;
-	}
-
-	public int getNumColumns() {
-		return _numCols;
+		return new Bitmap(1, offsetsLists, numZeros, values);
 	}
 
 	/**
@@ -93,29 +89,8 @@ public final class UncompressedBitmap {
 		return Arrays.copyOfRange(_values, ix * _numCols, (ix + 1) * _numCols);
 	}
 
-	/**
-	 * Obtain number of distinct values in the column.
-	 * 
-	 * @return number of distinct values in the column; this number is also the number of bitmaps, since there is one
-	 *         bitmap per value
-	 */
 	public int getNumValues() {
 		return _values.length / _numCols;
-	}
-
-	public IntArrayList getOffsetsList(int ix) {
-		return _offsetsLists[ix];
-	}
-
-	public long getNumOffsets() {
-		long ret = 0;
-		for(IntArrayList offlist : _offsetsLists)
-			ret += offlist.size();
-		return ret;
-	}
-
-	public int getNumOffsets(int ix) {
-		return _offsetsLists[ix].size();
 	}
 
 	public void sortValuesByFrequency() {
@@ -144,5 +119,18 @@ public final class UncompressedBitmap {
 		}
 		_values = lvalues;
 		_offsetsLists = loffsets;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append("\nValues: " + Arrays.toString(_values));
+		return sb.toString();
+	}
+
+	@Override
+	public BitmapType getType() {
+		return BitmapType.Full;
 	}
 }

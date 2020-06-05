@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.compress.estim.sample;
 
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.utils.Bitmap;
 
 public class ShlosserJackknifeEstimator {
 
@@ -36,7 +36,7 @@ public class ShlosserJackknifeEstimator {
 	 * @return an estimation of number of distinct values.
 	 */
 	@SuppressWarnings("unused")
-	private static int shlosserJackknifeEstimator(UncompressedBitmap ubm, int nRows, int sampleSize) {
+	private static int shlosserJackknifeEstimator(Bitmap ubm, int nRows, int sampleSize) {
 		int numVals = ubm.getNumValues();
 		CriticalValue cv = computeCriticalValue(sampleSize);
 

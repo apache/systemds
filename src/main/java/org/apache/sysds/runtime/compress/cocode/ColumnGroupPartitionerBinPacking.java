@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.GroupableColInfo;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.util.SortUtils;
@@ -43,7 +44,8 @@ public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner {
 	public static double BIN_CAPACITY = 0.000032; // higher values, more grouping
 
 	@Override
-	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo) {
+	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo,
+		CompressionSettings cs) {
 		// obtain column weights
 		int[] items = new int[groupCols.size()];
 		double[] itemWeights = new double[groupCols.size()];

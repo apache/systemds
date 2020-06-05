@@ -44,10 +44,7 @@ public class CountDistinctTest {
 
 	private static CountDistinctTypes[] esT = new CountDistinctTypes[] {
 		// The different types of Estimators
-		CountDistinctTypes.COUNT, 
-		CountDistinctTypes.KMV,
-		CountDistinctTypes.HLL
-	};
+		CountDistinctTypes.COUNT, CountDistinctTypes.KMV, CountDistinctTypes.HLL};
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -67,9 +64,9 @@ public class CountDistinctTest {
 
 		// Sparse Multicol random values (most likely each value is unique)
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 10, 0.0, 100.0, 0.1, 7)));
-		actualUnique.add(98L); //dense representation
+		actualUnique.add(98L); // dense representation
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 1000, 0.0, 100.0, 0.1, 7)));
-		actualUnique.add(9823L+1); //sparse representation
+		actualUnique.add(9823L + 1); // sparse representation
 
 		// MultiCol Inputs (using integers)
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(5000, 5000, 1, 100, 1, 8)));
@@ -88,10 +85,6 @@ public class CountDistinctTest {
 		// Sparse Inputs
 		inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(1024, 10241, 0, 3000, 0.1, 7)));
 		actualUnique.add(3000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 5000, 0.1, 7)));
-		// actualUnique.add(5000L);
-		// inputs.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrixIntV(10240, 10241, 0, 10000, 0.1, 7)));
-		// actualUnique.add(10000L);
 
 		for(CountDistinctTypes et : esT) {
 			for(HashType ht : HashType.values()) {
@@ -105,14 +98,14 @@ public class CountDistinctTest {
 					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, NotImplementedException.class,
 						"HyperLogLog not implemented", 0.0});
 				}
-				else if (et != CountDistinctTypes.COUNT) {
+				else if(et != CountDistinctTypes.COUNT) {
 					for(int i = 0; i < inputs.size(); i++) {
 						// allowing the estimate to be 15% off
 						tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), ht, null, null, 0.15});
 					}
 				}
 			}
-			if (et == CountDistinctTypes.COUNT){
+			if(et == CountDistinctTypes.COUNT) {
 				for(int i = 0; i < inputs.size(); i++) {
 					tests.add(new Object[] {et, inputs.get(i), actualUnique.get(i), null, null, null, 0.0001});
 				}
@@ -180,7 +173,7 @@ public class CountDistinctTest {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(et);
-		if(ht != null){
+		if(ht != null) {
 			sb.append("-" + ht);
 		}
 		sb.append("  nrUnique:" + nrUnique);

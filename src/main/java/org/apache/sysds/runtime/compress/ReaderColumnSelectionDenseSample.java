@@ -38,8 +38,8 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection {
 	private double[] reusableArr;
 
 	public ReaderColumnSelectionDenseSample(MatrixBlock data, int[] colIndexes, int[] sampleIndexes,
-		boolean skipZeros, CompressionSettings compSettings) {
-		super(colIndexes, -1, skipZeros, compSettings);
+		 CompressionSettings compSettings) {
+		super(colIndexes, -1,  compSettings);
 		_data = data;
 		_sampleIndexes = sampleIndexes;
 		reusableArr = new double[colIndexes.length];
@@ -48,14 +48,14 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection {
 
 	@Override
 	public DblArray nextRow() {
-		if(_skipZeros) {
+		// if(_skipZeros) {
 			while((nonZeroReturn = getNextRow()) != null && DblArray.isZero(nonZeroReturn)) {
 			}
 			return nonZeroReturn;
-		}
-		else {
-			return getNextRow();
-		}
+		// }
+		// else {
+			// return getNextRow();
+		// }
 	}
 
 	private DblArray getNextRow() {

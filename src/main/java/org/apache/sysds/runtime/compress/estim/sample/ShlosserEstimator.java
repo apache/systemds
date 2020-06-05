@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.utils.Bitmap;
 
 public class ShlosserEstimator {
 
@@ -32,7 +32,7 @@ public class ShlosserEstimator {
 	 * @param sampleSize The number of rows in the sample
 	 * @return an estimation of number of distinct values.
 	 */
-	public static int get(UncompressedBitmap ubm, int nRows, int sampleSize) {
+	public static int get(Bitmap ubm, int nRows, int sampleSize) {
 		double q = ((double) sampleSize) / nRows;
 		double oneMinusQ = 1 - q;
 

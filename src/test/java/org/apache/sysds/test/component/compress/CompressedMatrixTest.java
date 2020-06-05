@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -34,10 +35,11 @@ import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
+import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -46,6 +48,7 @@ import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -59,27 +62,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public CompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compSettings, MatrixTypology matrixTypology) {
-		super(sparType, valType, valRange, compSettings, matrixTypology);
-	}
-
-	@Test
-	public void testConstruction() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock)) {
-				return; // Input was not compressed then just pass test
-				// Assert.assertTrue("Compression Failed \n" + this.toString(), false);
-			}
-			if(compressionSettings.lossy) {
-				TestUtils.compareMatrices(input, deCompressed, lossyTolerance);
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(input, deCompressed, 0, 0, compressionSettings.toString());
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
+		super(sparType, valType, valRange, compSettings, matrixTypology, 1);
 	}
 
 	@Test
@@ -177,7 +160,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.95, compressionSettings.toString());
 				}
 				else {
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 512, 32, compressionSettings.toString());
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 512, 350, compressionSettings.toString());
 				}
 			}
 		}
@@ -214,98 +197,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				else {
 					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 20, compressionSettings.toString());
 				}
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
-	public void testMatrixVectorMult01() {
-		testMatrixVectorMult(1.0, 1.1);
-	}
-
-	@Test
-	public void testMatrixVectorMult02() {
-		testMatrixVectorMult(0.7, 1.0);
-	}
-
-	@Test
-	public void testMatrixVectorMult03() {
-		testMatrixVectorMult(-1.0, 1.0);
-	}
-
-	@Test
-	public void testMatrixVectorMult04() {
-		testMatrixVectorMult(1.0, 5.0);
-	}
-
-	public void testMatrixVectorMult(double min, double max) {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			MatrixBlock vector = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, min, max, 1.0, 3));
-
-			// Make Operator
-			AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aop);
-
-			// matrix-vector uncompressed
-			MatrixBlock ret1 = mb.aggregateBinaryOperations(mb, vector, new MatrixBlock(), abop);
-
-			// matrix-vector compressed
-			MatrixBlock ret2 = cmb.aggregateBinaryOperations(cmb, vector, new MatrixBlock(), abop);
-
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-
-			if(compressionSettings.lossy) {
-				// TODO Make actual calculation to know the actual tolerance
-				double scaledTolerance = lossyTolerance * 30 * max;
-				TestUtils.compareMatrices(d1, d2, scaledTolerance);
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 5, compressionSettings.toString());
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
-	public void testVectorMatrixMult() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			MatrixBlock vector = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(1, rows, 0.5, 1.5, 1.0, 3));
-
-			// Make Operator
-			AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aop);
-
-			// vector-matrix uncompressed
-			MatrixBlock ret1 = mb.aggregateBinaryOperations(vector, mb, new MatrixBlock(), abop);
-
-			// vector-matrix compressed
-			MatrixBlock ret2 = cmb.aggregateBinaryOperations(vector, cmb, new MatrixBlock(), abop);
-
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy) {
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.60, 0.97, compressionSettings.toString());
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 10000, 500, compressionSettings.toString());
 			}
 		}
 		catch(Exception e) {
@@ -381,6 +272,37 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 	}
 
+	@Test
+	public void testCountDistinct() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return; // Input was not compressed then just pass test
+			// compare result with input
+
+			// matrix-scalar uncompressed
+			CountDistinctOperator op = new CountDistinctOperator(CountDistinctTypes.COUNT);
+			int ret1 = LibMatrixCountDistinct.estimateDistinctValues(mb, op);
+			// matrix-scalar compressed
+			int ret2 = LibMatrixCountDistinct.estimateDistinctValues(cmb, op);
+
+			// assertTrue(compressionSettings.toString(), ret1 == ret2);
+			String base = compressionSettings.toString() + "\n";
+			if(compressionSettings.lossy) {
+				// The number of distinct values should be significantly lower in lossy mode.
+				assertTrue(base + "estimate is less than actual", ret1 >= ret2);
+				assertTrue(base + "estimate is greater than 0", 0 < ret2);
+			}
+			else {
+				assertEquals(base, ret1, ret2);
+			}
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+		}
+	}
+
 	@Override
 	public void testUnaryOperators(AggType aggType) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, 1);
@@ -428,7 +350,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
-			CompressionStatistics cStat = ((CompressedMatrixBlock) cmb).getCompressionStatistics();
+			CompressionStatistics cStat = cmbStats;
 			assertTrue("Compression ration if compressed should be larger than 1", cStat.ratio > 1);
 		}
 		catch(Exception e) {
@@ -442,7 +364,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
-			CompressionStatistics cStat = ((CompressedMatrixBlock) cmb).getCompressionStatistics();
+			CompressionStatistics cStat = cmbStats;
 			long colsEstimate = cStat.estimatedSizeCols;
 			long actualSize = cStat.size;
 			long originalSize = cStat.originalSize;
@@ -471,15 +393,16 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testCompressionEstimationVSJolEstimate() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
-			CompressionStatistics cStat = ((CompressedMatrixBlock) cmb).getCompressionStatistics();
+			CompressionStatistics cStat = cmbStats;
 			long actualSize = cStat.size;
 			long originalSize = cStat.originalSize;
-			long JolEstimatedSize = getJolSize(((CompressedMatrixBlock) cmb));
+			long JolEstimatedSize = getJolSize(((CompressedMatrixBlock) cmb), cmbStats);
 
 			StringBuilder builder = new StringBuilder();
 			builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
@@ -511,7 +434,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
 
-			CompressionStatistics cStat = ((CompressedMatrixBlock) cmb).getCompressionStatistics();
+			CompressionStatistics cStat = cmbStats;
 
 			double compressRatio = cStat.ratio;
 			long actualSize = cStat.size;
@@ -533,11 +456,10 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 	}
 
-	private static long getJolSize(CompressedMatrixBlock cmb) {
+	private static long getJolSize(CompressedMatrixBlock cmb, CompressionStatistics cStat) {
 		Layouter l = new HotSpotLayouter(new X86_64_DataModel());
 		long jolEstimate = 0;
-		CompressionStatistics cStat = cmb.getCompressionStatistics();
-		for(Object ob : new Object[] {cmb, cStat, cStat.getColGroups(), cStat.getTimeArrayList(), cmb.getColGroups()}) {
+		for(Object ob : new Object[] {cmb, cmb.getColGroups()}) {
 			jolEstimate += ClassLayout.parseInstance(ob, l).instanceSize();
 		}
 		for(ColGroup cg : cmb.getColGroups()) {
@@ -546,26 +468,4 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		return jolEstimate;
 	}
 
-	@SuppressWarnings("unused")
-	private static String getJolSizeString(CompressedMatrixBlock cmb) {
-		StringBuilder builder = new StringBuilder();
-		Layouter l = new HotSpotLayouter(new X86_64_DataModel());
-		long diff;
-		long jolEstimate = 0;
-		CompressionStatistics cStat = cmb.getCompressionStatistics();
-		for(Object ob : new Object[] {cmb, cStat, cStat.getColGroups(), cStat.getTimeArrayList(), cmb.getColGroups()}) {
-			ClassLayout cl = ClassLayout.parseInstance(ob, l);
-			diff = cl.instanceSize();
-			jolEstimate += diff;
-			builder.append(cl.toPrintable());
-			builder.append("TOTAL MEM: " + jolEstimate + " diff " + diff + "\n");
-		}
-		for(ColGroup cg : cmb.getColGroups()) {
-			diff = cg.estimateInMemorySize();
-			jolEstimate += diff;
-			builder.append(cg.getCompType());
-			builder.append("TOTAL MEM: " + jolEstimate + " diff " + diff + "\n");
-		}
-		return builder.toString();
-	}
 }

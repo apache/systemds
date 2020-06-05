@@ -110,22 +110,4 @@ public class CompressionStatistics {
 		return sb.toString();
 	}
 
-	public static long getSizeInMemory() {
-		long total = 16; // header
-		total += 8; // compression ratio
-		total += 8; // original size
-		total += 8; // estimated size col groups
-		total += 8; // estimated size cols
-		total += 8; // actual size
-
-		total += 8; // Array list Time phases
-		total += 8; // Map colGroup Counts
-
-		// TODO what happens if we scale number of col Groups...
-		// TODO Reduce memory usage for compression statistics.
-		total += 64; // HashMap col Groups.
-		total += 40; // ArrayList time phases
-
-		return total;
-	}
 }

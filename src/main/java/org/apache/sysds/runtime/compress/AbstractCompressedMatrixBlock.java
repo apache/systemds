@@ -60,6 +60,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 
 	protected List<ColGroup> _colGroups;
 
+
 	/**
 	 * Constructor for building an empty Compressed Matrix block object.
 	 */
@@ -95,14 +96,10 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		nonZeros = that.getNonZeros();
 	}
 
-	public abstract boolean isCompressed();
-
 	public abstract MatrixBlock decompress();
 
 	@Override
 	public boolean isEmptyBlock(boolean safe) {
-		if(!isCompressed())
-			return super.isEmptyBlock(safe);
 		return(_colGroups == null || getNonZeros() == 0);
 	}
 
@@ -117,10 +114,8 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		size += 4; // clen
 		size += 1; // a single boolean fills 8 bits !
 		size += 8; // NonZeros.
-
 		size += 8; // Object reference DenseBlock
 		size += 8; // Object reference Sparse Block
-
 		size += 4; // estimated NNzs Per Row
 
 		if(size % 8 != 0)
@@ -135,14 +130,14 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
 		printDecompressWarning("unaryOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp =  decompress();
 		return tmp.unaryOperations(op, result);
 	}
 
 	@Override
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		printDecompressWarning("binaryOperations", (MatrixBlock) thatValue);
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left =  decompress();
 		MatrixBlock right = getUncompressed(thatValue);
 		return left.binaryOperations(op, right, result);
 	}
@@ -150,7 +145,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		printDecompressWarning("binaryOperationsInPlace", (MatrixBlock) thatValue);
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left =  decompress();
 		MatrixBlock right = getUncompressed(thatValue);
 		left.binaryOperationsInPlace(op, right);
 		return this;
@@ -170,7 +165,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
 		printDecompressWarning("reorgOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
 
@@ -179,7 +174,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		if(cbind) // use supported operation
 			return append(that, ret);
 		printDecompressWarning("append-rbind", that);
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(that);
 		return left.append(right, ret, cbind);
 	}
@@ -188,7 +183,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public void append(MatrixValue v2, ArrayList<IndexedMatrixValue> outlist, int blen, boolean cbind, boolean m2IsLast,
 		int nextNCol) {
 		printDecompressWarning("append", (MatrixBlock) v2);
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(v2);
 		left.append(right, outlist, blen, cbind, m2IsLast, nextNCol);
 	}
@@ -201,7 +196,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public void permutationMatrixMultOperations(MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val, int k) {
 		printDecompressWarning("permutationMatrixMultOperations", (MatrixBlock) m2Val);
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(m2Val);
 		left.permutationMatrixMultOperations(right, out1Val, out2Val, k);
 	}
@@ -210,7 +205,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, int cl, int cu, MatrixBlock ret,
 		UpdateType update) {
 		printDecompressWarning("leftIndexingOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(rhsMatrix);
 		return left.leftIndexingOperations(right, rl, ru, cl, cu, ret, update);
 	}
@@ -218,14 +213,14 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock leftIndexingOperations(ScalarObject scalar, int rl, int cl, MatrixBlock ret, UpdateType update) {
 		printDecompressWarning("leftIndexingOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.leftIndexingOperations(scalar, rl, cl, ret, update);
 	}
 
 	@Override
-	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) {
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
 		printDecompressWarning("slice");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.slice(rl, ru, cl, cu, ret);
 	}
 
@@ -234,7 +229,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		int boundaryRlen, int boundaryClen) {
 		printDecompressWarning("slice");
 		try {
-			MatrixBlock tmp = isCompressed() ? decompress() : this;
+			MatrixBlock tmp = decompress();
 			tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
 		}
 		catch(DMLRuntimeException ex) {
@@ -245,20 +240,19 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
 		printDecompressWarning("zeroOutOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.zeroOutOperations(result, range, complementary);
 	}
 
 	@Override
 	public CM_COV_Object cmOperations(CMOperator op) {
 		printDecompressWarning("cmOperations");
-		if(!isCompressed() || isEmptyBlock())
+		if(isEmptyBlock())
 			return super.cmOperations(op);
 		ColGroup grp = _colGroups.get(0);
-
 		MatrixBlock vals = grp.getValuesAsBlock();
 		if(grp.getIfCountsType()){
-			MatrixBlock counts = ColGroupValue.getCountsAsBlock(grp.getCounts(true));
+			MatrixBlock counts = ColGroupValue.getCountsAsBlock(grp.getCounts());
 			return vals.cmOperations(op, counts);
 		}else{
 			return vals.cmOperations(op);
@@ -269,7 +263,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {
 		printDecompressWarning("cmOperations");
 		MatrixBlock right = getUncompressed(weights);
-		if(!isCompressed() || isEmptyBlock())
+		if(isEmptyBlock())
 			return super.cmOperations(op, right);
 		ColGroup grp = _colGroups.get(0);
 		if(grp instanceof ColGroupUncompressed)
@@ -280,7 +274,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
 		printDecompressWarning("covOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(that);
 		return left.covOperations(op, right);
 	}
@@ -288,7 +282,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
 		printDecompressWarning("covOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(weights);
 		return left.covOperations(op, right1, right2);
@@ -298,15 +292,13 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
 		printDecompressWarning("sortOperations");
 		MatrixBlock right = getUncompressed(weights);
-		if(!isCompressed())
-			return super.sortOperations(right, result);
 		ColGroup grp = _colGroups.get(0);
 		if(grp.getIfCountsType() != true)
 			return grp.getValuesAsBlock().sortOperations(right, result);
 
 		if(right == null) {
 			MatrixBlock vals = grp.getValuesAsBlock();
-			int[] counts = grp.getCounts(true);
+			int[] counts = grp.getCounts();
 			double[] data = (vals.getDenseBlock() != null) ? vals.getDenseBlockValues() : null;
 			SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
 			MatrixBlock counts2 = ColGroupValue.getCountsAsBlock(counts);
@@ -320,7 +312,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1Value, MatrixIndexes m2Index,
 		MatrixBlock m2Value, MatrixBlock result, AggregateBinaryOperator op) {
 		printDecompressWarning("aggregateBinaryOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(m2Value);
 		return left.aggregateBinaryOperations(m1Index, left, m2Index, right, result, op);
 	}
@@ -329,7 +321,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,
 		AggregateTernaryOperator op, boolean inCP) {
 		printDecompressWarning("aggregateTernaryOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right1 = getUncompressed(m2);
 		MatrixBlock right2 = getUncompressed(m3);
 		return left.aggregateTernaryOperations(left, right1, right2, ret, op, inCP);
@@ -339,7 +331,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock uaggouterchainOperations(MatrixBlock mbLeft, MatrixBlock mbRight, MatrixBlock mbOut,
 		BinaryOperator bOp, AggregateUnaryOperator uaggOp) {
 		printDecompressWarning("uaggouterchainOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(mbRight);
 		return left.uaggouterchainOperations(left, right, mbOut, bOp, uaggOp);
 	}
@@ -354,7 +346,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups,
 		Operator op, int k) {
 		printDecompressWarning("groupedAggOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(wghts);
 		return left.groupedAggOperations(left, right, ret, ngroups, op, k);
 	}
@@ -362,14 +354,14 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) {
 		printDecompressWarning("removeEmptyOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.removeEmptyOperations(ret, rows, emptyReturn, select);
 	}
 
 	@Override
 	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn) {
 		printDecompressWarning("removeEmptyOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.removeEmptyOperations(ret, rows, emptyReturn);
 	}
 
@@ -377,14 +369,14 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock rexpandOperations(MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore,
 		int k) {
 		printDecompressWarning("rexpandOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.rexpandOperations(ret, max, rows, cast, ignore, k);
 	}
 
 	@Override
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
 		printDecompressWarning("replaceOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		return tmp.replaceOperations(result, pattern, replacement);
 	}
 
@@ -392,7 +384,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public void ctableOperations(Operator op, double scalar, MatrixValue that, CTableMap resultMap,
 		MatrixBlock resultBlock) {
 		printDecompressWarning("ctableOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(that);
 		left.ctableOperations(op, scalar, right, resultMap, resultBlock);
 	}
@@ -401,7 +393,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public void ctableOperations(Operator op, double scalar, double scalar2, CTableMap resultMap,
 		MatrixBlock resultBlock) {
 		printDecompressWarning("ctableOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		tmp.ctableOperations(op, scalar, scalar2, resultMap, resultBlock);
 	}
 
@@ -409,7 +401,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalar, boolean left, int brlen,
 		CTableMap resultMap, MatrixBlock resultBlock) {
 		printDecompressWarning("ctableOperations");
-		MatrixBlock tmp = isCompressed() ? decompress() : this;
+		MatrixBlock tmp = decompress();
 		tmp.ctableOperations(op, ix1, scalar, left, brlen, resultMap, resultBlock);
 	}
 
@@ -417,7 +409,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public void ctableOperations(Operator op, MatrixValue that, double scalar, boolean ignoreZeros, CTableMap resultMap,
 		MatrixBlock resultBlock) {
 		printDecompressWarning("ctableOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right = getUncompressed(that);
 		left.ctableOperations(op, right, scalar, ignoreZeros, resultMap, resultBlock);
 	}
@@ -432,7 +424,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that, MatrixValue that2, CTableMap resultMap) {
 		printDecompressWarning("ctableOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(that2);
 		left.ctableOperations(op, right1, right2, resultMap);
@@ -442,7 +434,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public void ctableOperations(Operator op, MatrixValue that, MatrixValue that2, CTableMap resultMap,
 		MatrixBlock resultBlock) {
 		printDecompressWarning("ctableOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(that2);
 		left.ctableOperations(op, right1, right2, resultMap, resultBlock);
@@ -451,7 +443,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
 		printDecompressWarning("ternaryOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right1 = getUncompressed(m2);
 		MatrixBlock right2 = getUncompressed(m3);
 		return left.ternaryOperations(op, right1, right2, ret);
@@ -467,7 +459,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock quaternaryOperations(QuaternaryOperator qop, MatrixBlock um, MatrixBlock vm, MatrixBlock wm,
 		MatrixBlock out, int k) {
 		printDecompressWarning("quaternaryOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock left = decompress();
 		MatrixBlock right1 = getUncompressed(um);
 		MatrixBlock right2 = getUncompressed(vm);
 		MatrixBlock right3 = getUncompressed(wm);
@@ -491,7 +483,7 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	}
 
 	private static boolean isCompressed(MatrixBlock mb) {
-		return(mb instanceof CompressedMatrixBlock && ((CompressedMatrixBlock) mb).isCompressed());
+		return(mb instanceof CompressedMatrixBlock);
 	}
 
 	private static MatrixBlock getUncompressed(MatrixValue mVal) {
@@ -499,15 +491,29 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	}
 
 	private void printDecompressWarning(String operation) {
-		if(isCompressed()) {
-			LOG.warn("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
-		}
+		LOG.warn("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
+		
 	}
 
 	private void printDecompressWarning(String operation, MatrixBlock m2) {
-		if(isCompressed() || isCompressed(m2)) {
+		if(isCompressed(m2)) {
 			LOG.warn("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
 		}
 	}
 
+
+	@Override
+	public boolean isShallowSerialize() {
+		return false;
+	}
+
+	@Override
+	public boolean isShallowSerialize(boolean inclConvert) {
+		return false;
+	}
+
+	@Override
+	public void toShallowSerializeBlock() {
+		// do nothing
+	}
 }

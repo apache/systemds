@@ -33,6 +33,7 @@ import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -41,10 +42,16 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class CompressedVectorTest extends CompressedTestBase {
 
+	private final int _k = 1;
+
 	protected static MatrixTypology[] usedMatrixTypologyLocal = new MatrixTypology[] {// types
 		MatrixTypology.SINGLE_COL,
 		// MatrixTypology.SINGLE_COL_L
 	};
+
+	protected int getK(){
+		return _k;
+	}
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -65,9 +72,11 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compSettings, MatrixTypology matrixTypology) {
-		super(sparType, valType, valRange, compSettings, matrixTypology);
+		super(sparType, valType, valRange, compSettings, matrixTypology, 1);
 	}
 
+
+	@Ignore
 	@Test
 	public void testCentralMoment() throws Exception {
 		// TODO: Make Central Moment Test work on Multi dimensional Matrix
@@ -96,6 +105,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void testQuantile() {
 		try {

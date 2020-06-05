@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -49,16 +51,16 @@ public class CompressedMatrixBlockFactory {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlockFactory.class.getName());
 	private static final CompressionSettings defaultCompressionSettings = new CompressionSettingsBuilder().create();
 
-	public static MatrixBlock compress(MatrixBlock mb) {
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb) {
 		// Default sequential execution of compression
 		return compress(mb, 1, defaultCompressionSettings);
 	}
 
-	public static MatrixBlock compress(MatrixBlock mb, CompressionSettings customSettings) {
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, CompressionSettings customSettings) {
 		return compress(mb, 1, customSettings);
 	}
 
-	public static MatrixBlock compress(MatrixBlock mb, int k) {
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k) {
 		return compress(mb, k, defaultCompressionSettings);
 	}
 
@@ -77,9 +79,9 @@ public class CompressedMatrixBlockFactory {
 	 * @param compSettings The Compression settings used
 	 * @return A compressed matrix block.
 	 */
-	public static MatrixBlock compress(MatrixBlock mb, int k, CompressionSettings compSettings) {
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, CompressionSettings compSettings) {
 		// Check for redundant compression
-		if(mb instanceof CompressedMatrixBlock && ((CompressedMatrixBlock) mb).isCompressed()) {
+		if(mb instanceof CompressedMatrixBlock) {
 			throw new DMLRuntimeException("Redundant compression, block already compressed.");
 		}
 
@@ -117,14 +119,14 @@ public class CompressedMatrixBlockFactory {
 
 		if(sizeInfos.colsC.isEmpty()) {
 			LOG.warn("Abort block compression because all columns are incompressible.");
-			return new MatrixBlock().copyShallow(mb);
+			return new ImmutablePair<>(new MatrixBlock().copyShallow(mb), _stats);
 		}
 		// --------------------------------------------------
 
 		// --------------------------------------------------
 		// PHASE 2: Grouping columns
 		// Divide the columns into column groups.
-		List<int[]> coCodeColGroups = PlanningCoCoder.findCocodesByPartitioning(sizeEstimator, sizeInfos, numRows, k);
+		List<int[]> coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
 		_stats.setNextTimePhase(time.stop());
 		LOG.debug("--compression phase 2: " + _stats.getLastTimePhase());
 
@@ -174,7 +176,7 @@ public class CompressedMatrixBlockFactory {
 
 		if(_stats.ratio < 1) {
 			LOG.warn("Abort block compression because compression ratio is less than 1.");
-			return new MatrixBlock().copyShallow(mb);
+			return new ImmutablePair<>(new MatrixBlock().copyShallow(mb), _stats);
 		}
 
 		// Final cleanup (discard uncompressed block)
@@ -191,14 +193,11 @@ public class CompressedMatrixBlockFactory {
 		LOG.debug("--compressed size: " + _stats.size);
 		LOG.debug("--compression ratio: " + _stats.ratio);
 
-		// Set the statistics object.
-		// For better compression ratios this could be removed, since it is around 64 Bytes.
-		res._stats = _stats;
+		res._lossy = compSettings.lossy;
 
-		return res;
+		return new ImmutablePair<>(res, _stats);
 		// --------------------------------------------------
 	}
-
 
 	/**
 	 * Dictionary sharing between DDC ColGroups.
@@ -218,7 +217,7 @@ public class CompressedMatrixBlockFactory {
 				final double[] values = grpDDC1.getValues();
 				double min = Double.POSITIVE_INFINITY;
 				double max = Double.NEGATIVE_INFINITY;
-				for(int i=0; i<values.length; i++) {
+				for(int i = 0; i < values.length; i++) {
 					vals.add(values[i]);
 					min = Math.min(min, values[i]);
 					max = Math.max(max, values[i]);
@@ -236,13 +235,13 @@ public class CompressedMatrixBlockFactory {
 		// build consolidated shared dictionary
 		double[] values = vals.stream().mapToDouble(Double::doubleValue).toArray();
 		int[] colIndexes = new int[numDDC1];
-		double[] extrema = new double[2*numDDC1];
+		double[] extrema = new double[2 * numDDC1];
 		int pos = 0;
-		for( Entry<Integer, Double> e : mins.entrySet() ) {
+		for(Entry<Integer, Double> e : mins.entrySet()) {
 			colIndexes[pos] = e.getKey();
-			extrema[2*pos] = e.getValue();
-			extrema[2*pos+1] = maxs.get(e.getKey());
-			pos ++;
+			extrema[2 * pos] = e.getValue();
+			extrema[2 * pos + 1] = maxs.get(e.getKey());
+			pos++;
 		}
 		return new DictionaryShared(values, colIndexes, extrema);
 	}
@@ -253,7 +252,7 @@ public class CompressedMatrixBlockFactory {
 		double[] values = dict.getValues();
 		for(int i = 0; i < values.length; i++)
 			map.put(values[i], i);
-		
+
 		// recode data of all relevant DDC1 groups
 		for(ColGroup grp : colGroups)
 			if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {

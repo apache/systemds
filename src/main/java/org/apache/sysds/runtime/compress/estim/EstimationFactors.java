@@ -19,31 +19,36 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.BitmapEncoder;
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
+import org.apache.sysds.runtime.compress.utils.AbstractBitmap.BitmapType;
 
 /**
  * Compressed Size Estimation factors. Contains meta information used to estimate the compression sizes of given columns
  * into given CompressionFormats
  */
-public class CompressedSizeEstimationFactors implements Comparable<CompressedSizeEstimationFactors> {
-	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimationFactors.class.getName());
+public class EstimationFactors {
+
+	protected static final Log LOG = LogFactory.getLog(EstimationFactors.class.getName());
 
 	protected final int numCols; // Number of columns in the compressed group
+	// TODO Make a variable called numDistinct to use for DDC.
+	/** Number of distinct value tuples in the columns, not to be confused with number of distinct values */
 	protected final int numVals; // Number of unique values in the compressed group
-	protected final int numOffs; // num OLE offsets
-	protected final int numRuns; // num RLE runs
-	protected final int numSingle; // num singletons
+	/** The number of offsets, to tuples of values in the column groups */
+	protected final int numOffs;
+	/** The Number of runs, of consecutive equal numbers, used primarily in RLE*/
+	protected final int numRuns;
+	/** The Number of Values in the collection not Zero , Also refered to as singletons */
+	protected final int numSingle;
 	protected final int numRows;
 	protected final boolean containsZero;
+	protected final boolean lossy;
 
-	protected CompressedSizeEstimationFactors(int numCols, int numVals, int numOffs, int numRuns, int numSingle,
-		int numRows, boolean containsZero) {
+	protected EstimationFactors(int numCols, int numVals, int numOffs, int numRuns, int numSingle, int numRows,
+		boolean containsZero, boolean lossy) {
 		this.numCols = numCols;
 		this.numVals = numVals;
 		this.numOffs = numOffs;
@@ -51,19 +56,15 @@ public class CompressedSizeEstimationFactors implements Comparable<CompressedSiz
 		this.numSingle = numSingle;
 		this.numRows = numRows;
 		this.containsZero = containsZero;
+		this.lossy = lossy;
 		LOG.debug(this);
 	}
 
-	protected static CompressedSizeEstimationFactors computeSizeEstimationFactors(UncompressedBitmap ubm,
-		boolean inclRLE, int numRows, int numCols) {
-
+	protected static EstimationFactors computeSizeEstimationFactors(AbstractBitmap ubm, boolean inclRLE, int numRows,
+		int numCols) {
 		int numVals = ubm.getNumValues();
-
-		// TODO: fix the UncompressedBitmap to contain information of if the specific columns extracted
-		// contains zero values.
-		// This is still not contained in the list because default behavior is to ignore 0 values.
-		boolean containsZero = false;
-
+		boolean containsZero = ubm.containsZero();
+		
 		int numRuns = 0;
 		int numOffs = 0;
 		int numSingle = 0;
@@ -78,7 +79,7 @@ public class CompressedSizeEstimationFactors implements Comparable<CompressedSiz
 			if(inclRLE) {
 				int[] list = ubm.getOffsetsList(i).extractValues();
 				int lastOff = -2;
-				numRuns += list[listSize - 1] / (BitmapEncoder.BITMAP_BLOCK_SZ - 1);
+				numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ- 1);
 				for(int j = 0; j < listSize; j++) {
 					if(list[j] != lastOff + 1) {
 						numRuns++;
@@ -88,42 +89,8 @@ public class CompressedSizeEstimationFactors implements Comparable<CompressedSiz
 			}
 		}
 
-		return new CompressedSizeEstimationFactors(numCols, numVals * numCols, numOffs + numVals, numRuns, numSingle,
-			numRows, containsZero);
-	}
-
-	protected Iterable<Integer> fieldIterator() {
-		ArrayList<Integer> fields = new ArrayList<>();
-		fields.add(new Integer(numCols));
-		fields.add(numVals);
-		fields.add(numOffs);
-		fields.add(numRuns);
-		fields.add(numSingle);
-		fields.add(numRows);
-		fields.add(containsZero ? 1 : 0);
-		return fields;
-	}
-
-	public int compareTo(CompressedSizeEstimationFactors that) {
-		int diff = 0;
-		Iterator<Integer> thisF = this.fieldIterator().iterator();
-		Iterator<Integer> thatF = that.fieldIterator().iterator();
-
-		while(thisF.hasNext() && thatF.hasNext()) {
-			Integer thisV = thisF.next();
-			Integer thatV = thatF.next();
-
-			if(thisV == thatV) {
-				diff = diff << 1;
-			}
-			else if(thisV > thatV) {
-				diff = diff + 1 << 1;
-			}
-			else {
-				diff = diff - 1 << 1;
-			}
-		}
-		return diff;
+		return new EstimationFactors(numCols, numVals * numCols, numOffs + numVals, numRuns, numSingle, numRows,
+			containsZero, ubm.getType() == BitmapType.Lossy);
 	}
 
 	@Override

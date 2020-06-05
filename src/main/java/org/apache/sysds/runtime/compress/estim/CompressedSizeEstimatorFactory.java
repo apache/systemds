@@ -24,11 +24,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorFactory {
 
-	public static final boolean EXTRACT_SAMPLE_ONCE = true;
-
 	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
 		long elements = compSettings.transposeInput ? data.getNumColumns() : data.getNumRows();
 		elements = data.getNonZeros() / (compSettings.transposeInput ? data.getNumRows() : data.getNumColumns());
+
 		return (compSettings.samplingRatio >= 1.0 || elements < 1000) ? new CompressedSizeEstimatorExact(data,
 			compSettings) : new CompressedSizeEstimatorSample(data, compSettings,
 				(int) Math.ceil(elements * compSettings.samplingRatio));

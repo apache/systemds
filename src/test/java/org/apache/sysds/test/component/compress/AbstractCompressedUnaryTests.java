@@ -38,12 +38,12 @@ import org.junit.Test;
 public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 	public AbstractCompressedUnaryTests(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettings compSettings, MatrixTypology matrixTypology) {
-		super(sparType, valType, valRange, compSettings, matrixTypology);
+		CompressionSettings compSettings, MatrixTypology matrixTypology, int parallelism) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, parallelism);
 	}
 
 	enum AggType {
-		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN,
+		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN, MEAN
 	}
 
 	@Test
@@ -93,45 +93,55 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 	@Test
 	public void testUnaryOperator_ROWMINS() {
-		testUnaryOperators(AggType.MAX);
+		testUnaryOperators(AggType.ROWMINS);
 	}
 
 	@Test
 	public void testUnaryOperator_COLMINS() {
-		testUnaryOperators(AggType.MAX);
+		testUnaryOperators(AggType.COLMINS);
 	}
 
 	@Test
 	public void testUnaryOperator_MIN() {
-		testUnaryOperators(AggType.MAX);
+		testUnaryOperators(AggType.MIN);
 	}
 
-	protected AggregateUnaryOperator getUnaryOperator(AggType aggType, int k) {
+	@Test(expected = NotImplementedException.class)
+	public void testUnaryOperator_MEAN() {
+		// if Input was not compressed then just pass test
+		if(!(cmb instanceof CompressedMatrixBlock))
+			throw new NotImplementedException("Test Passed");
+		testUnaryOperators(AggType.MEAN);
+	}
+
+	protected AggregateUnaryOperator getUnaryOperator(AggType aggType, int threads) {
 		switch(aggType) {
 			case SUM:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uak+", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uak+", threads);
 			case ROWSUMS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uark+", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uark+", threads);
 			case COLSUMS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uack+", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uack+", threads);
 			case SUMSQ:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", threads);
 			case ROWSUMSSQ:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", threads);
 			case COLSUMSSQ:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+", threads);
 			case MAX:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uamax", threads);
 			case ROWMAXS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", threads);
 			case COLMAXS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", threads);
 			case MIN:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uamin", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uamin", threads);
 			case ROWMINS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", threads);
 			case COLMINS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", k);
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", threads);
+			case MEAN:
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uamean", threads);
 			default:
 				throw new NotImplementedException("Not Supported Aggregate Unary operator in test");
 		}
@@ -165,8 +175,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 				if(aggType == AggType.COLSUMS) {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 30 * dim2);
 				}
-				else 
-				if(aggType == AggType.ROWSUMS) {
+				else if(aggType == AggType.ROWSUMS) {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * dim1);
 				}
 				else {
@@ -182,6 +191,9 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			else {
 				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 20, compressionSettings.toString());
 			}
+		}
+		catch(NotImplementedException e) {
+			throw e;
 		}
 		catch(Exception e) {
 			e.printStackTrace();

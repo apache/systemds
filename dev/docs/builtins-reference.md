@@ -478,5 +478,4 @@ m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
 
   model = w
 }
-msvm(X=X, Y=Y)
 ```

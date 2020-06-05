@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -30,16 +33,26 @@ public class PrivacyMonitor
 {
 	//TODO maybe maintain a log of checked constaints for transfers
 	// in order to provide 'privacy explanations' similar to our stats 
-	
+	private static SortedMap<Long,PrivacyConstraint> checkedConstraints = new TreeMap<Long,PrivacyConstraint>();
+
+	public static SortedMap<Long,PrivacyConstraint> getCheckedConstraints(){
+		return checkedConstraints;
+	}
+
+	public static void clearCheckedConstraints(){
+		checkedConstraints.clear();
+	}
+
 	/**
 	 * Throws DMLPrivacyException if data object is CacheableData and privacy constraint is set to private or private aggregation.
 	 * @param dataObject input data object
 	 * @return data object or data object with privacy constraint removed in case the privacy level was none. 
 	 */
-	public static Data handlePrivacy(Data dataObject){
+	public static Data handlePrivacy(Data dataObject, long varID){
 		if ( dataObject instanceof CacheableData<?> ){
 			PrivacyConstraint privacyConstraint = ((CacheableData<?>)dataObject).getPrivacyConstraint();
 			if (privacyConstraint != null){
+				checkedConstraints.put(varID, privacyConstraint);
 				PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
 				switch(privacyLevel){
 					case None:
@@ -61,9 +74,10 @@ public class PrivacyMonitor
 	 * @param matrixObject input matrix object
 	 * @return matrix object or matrix object with privacy constraint removed in case the privacy level was none.
 	 */
-	public static MatrixObject handlePrivacy(MatrixObject matrixObject){
+	public static MatrixObject handlePrivacy(MatrixObject matrixObject, long varID){
 		PrivacyConstraint privacyConstraint = matrixObject.getPrivacyConstraint();
 		if (privacyConstraint != null){
+			checkedConstraints.put(varID, privacyConstraint);
 			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
 			switch(privacyLevel){
 				case None:

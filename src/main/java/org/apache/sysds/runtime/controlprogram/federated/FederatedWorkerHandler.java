@@ -23,7 +23,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -83,6 +82,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		synchronized (_seq) {
 			FederatedResponse response = constructResponse(request);
+			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
+			PrivacyMonitor.clearCheckedConstraints();
 			if (!response.isSuccessful())
 				log.error("Method " + method + " failed: " + response.getErrorMessage());
 			ctx.writeAndFlush(response).addListener(new CloseListener());
@@ -182,7 +183,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeMatVecMult(long varID, MatrixBlock vector, boolean isMatVecMult) {
 		MatrixObject matTo = (MatrixObject) _vars.get(varID);
-		matTo = PrivacyMonitor.handlePrivacy(matTo);
+		matTo = PrivacyMonitor.handlePrivacy(matTo, varID);
 		MatrixBlock matBlock1 = matTo.acquireReadAndRelease();
 		// TODO other datatypes
 		AggregateBinaryOperator ab_op = InstructionUtils
@@ -201,7 +202,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse getVariableData(long varID) {
 		Data dataObject = _vars.get(varID);
-		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
+		dataObject = PrivacyMonitor.handlePrivacy(dataObject, varID);
 		switch (dataObject.getDataType()) {
 			case TENSOR:
 				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
@@ -236,7 +237,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					+ dataObject.getDataType().name());
 		}
 		MatrixObject matrixObject = (MatrixObject) dataObject;
-		matrixObject = PrivacyMonitor.handlePrivacy(matrixObject);
+		matrixObject = PrivacyMonitor.handlePrivacy(matrixObject, varID);
 		MatrixBlock matrixBlock = matrixObject.acquireRead();
 		// create matrix for calculation with correction
 		MatrixCharacteristics mc = new MatrixCharacteristics();
@@ -274,7 +275,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeScalarOperation(long varID, ScalarOperator operator) {
 		Data dataObject = _vars.get(varID);
-		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
+		dataObject = PrivacyMonitor.handlePrivacy(dataObject, varID);
 		if (dataObject.getDataType() != Types.DataType.MATRIX) {
 			return new FederatedResponse(FederatedResponse.Type.ERROR,
 				"FederatedWorkerHandler: ScalarOperator dont support "

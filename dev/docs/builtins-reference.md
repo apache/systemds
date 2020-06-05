@@ -290,7 +290,7 @@ If the best AIC is achieved without any features the matrix of *selected* featur
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows=ncol(X), 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
-`
+```
 
 ## `slicefinder`-Function
 
@@ -324,7 +324,7 @@ w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
 
-##`outlierBySd`-Function
+## `outlierBySd`-Function
 
 Builtin function for detecting and repairing outliers using standard deviation.
 Acording to three sigma rule if a value falls outside of three times the standard deviations then it is an outlier value.

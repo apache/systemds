@@ -23,18 +23,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.GroupableColInfo;
 
 /**
  * Column group partitioning with static distribution heuristic.
  */
 public class ColumnGroupPartitionerStatic extends ColumnGroupPartitioner {
-	private static final int MAX_COL_PER_GROUP = 20;
 
 	@Override
-	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo) {
+	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo,
+		CompressionSettings cs) {
 		List<int[]> ret = new ArrayList<>();
-		int numParts = (int) Math.ceil((double) groupCols.size() / MAX_COL_PER_GROUP);
+		int numParts = (int) Math.ceil((double) groupCols.size() / cs.maxStaticColGroupCoCode);
 		int partSize = (int) Math.ceil((double) groupCols.size() / numParts);
 		for(int i = 0, pos = 0; i < numParts; i++, pos += partSize) {
 			int[] tmp = new int[Math.min(partSize, groupCols.size() - pos)];

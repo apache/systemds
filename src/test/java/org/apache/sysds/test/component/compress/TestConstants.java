@@ -26,13 +26,13 @@ public class TestConstants {
 
 	private static final int rows[] = {4, 2008, 1283, 5, 1, 251, 5000, 100000, 3123};
 	private static final int cols[] = {20, 20, 13, 998, 321, 1, 8, 10, 1};
-	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0};
+	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
 
 	private static final int[] mins = {-10, -2147};
 	private static final int[] maxs = {10, 2147};
 
 	public enum SparsityType {
-		DENSE, SPARSE, ULTRA_SPARSE, EMPTY,
+		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL
 	}
 
 	public enum ValueType {
@@ -57,7 +57,8 @@ public class TestConstants {
 
 	public enum ValueRange {
 		SMALL, 
-		LARGE
+		LARGE,
+		BYTE
 	}
 
 
@@ -71,6 +72,8 @@ public class TestConstants {
 				return sparsityValues[2];
 			case EMPTY:
 				return sparsityValues[3];
+			case FULL:
+				return sparsityValues[4];
 			default:
 				throw new RuntimeException("Invalid Sparsity type"); 
 		}
@@ -82,6 +85,8 @@ public class TestConstants {
 				return mins[0];
 			case LARGE:
 				return mins[1];
+			case BYTE:
+				return -127;
 			default:
 			throw new RuntimeException("Invalid range value enum type"); 
 		}
@@ -93,6 +98,8 @@ public class TestConstants {
 				return maxs[0];
 			case LARGE:
 				return maxs[1];
+			case BYTE:
+				return 127;
 			default:
 				throw new RuntimeException("Invalid range value enum type"); 
 		}

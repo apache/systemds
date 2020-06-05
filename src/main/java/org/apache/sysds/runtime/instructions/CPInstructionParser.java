@@ -437,7 +437,7 @@ public class CPInstructionParser extends InstructionParser
 				return CovarianceCPInstruction.parseInstruction(str);
 
 			case Compression:
-				return (CPInstruction) CompressionCPInstruction.parseInstruction(str);
+				return CompressionCPInstruction.parseInstruction(str);
 			
 			case SpoofFused:
 				return SpoofCPInstruction.parseInstruction(str);

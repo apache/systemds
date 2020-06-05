@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.ColGroupType;
 
@@ -33,6 +35,8 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup.ColGroupType;
  * and DataOutput
  */
 public class ColGroupIO {
+
+	protected static final Log LOG = LogFactory.getLog(ColGroupIO.class.getName());
 
 	/**
 	 * Read groups from a file. Note that the information about how many should be in the file already.
@@ -46,14 +50,15 @@ public class ColGroupIO {
 
 		// Read in how many colGroups there are
 		int nColGroups = in.readInt();
-
+		LOG.debug("reading " + nColGroups + " ColGroups");
 		// Allocate that amount into an ArrayList
 		List<ColGroup> _colGroups = new ArrayList<>(nColGroups);
-		double[] sharedDict = null;
+		// double[] sharedDict = null;
 
 		// Read each ColGroup one at a time.
 		for(int i = 0; i < nColGroups; i++) {
 			ColGroupType ctype = ColGroupType.values()[in.readByte()];
+			LOG.debug(ctype);
 			ColGroup grp = null;
 
 			// create instance of column group
@@ -73,24 +78,24 @@ public class ColGroupIO {
 				case DDC2:
 					grp = new ColGroupDDC2();
 					break;
-				case QUAN8S:
-					grp = new ColGroupQuan();
-					break;
+				// case QUAN8S:
+					// grp = new ColGroupQuan();
+					// break;
 				default:
-					throw new DMLRuntimeException("Unsupported ColGroup Type used:  "  + ctype);
+					throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
 			}
 
 			// Deserialize and add column group (flag for shared dictionary passed
 			// and numCols evaluated in DDC1 because numCols not available yet
-			grp.readFields(in, sharedDict != null);
+			grp.readFields(in);
 
 			// use shared DDC1 dictionary if applicable
-			if(_sharedDDC1Dict && grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
-				if(sharedDict == null)
-					sharedDict = ((ColGroupValue) grp).getValues();
-				else
-					((ColGroupValue) grp).setValues(sharedDict);
-			}
+			// if(_sharedDDC1Dict && grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
+			// 	if(sharedDict == null)
+			// 		sharedDict = ((ColGroupValue) grp).getValues();
+			// 	else
+			// 		((ColGroupValue) grp).setValues(sharedDict);
+			// }
 
 			_colGroups.add(grp);
 		}
@@ -107,18 +112,18 @@ public class ColGroupIO {
 	 * @throws IOException Throws IO Exception if the out refuses to write.
 	 */
 	public static void writeGroups(DataOutput out, boolean _sharedDDC1Dict, List<ColGroup> _colGroups)
-		throws IOException
-	{
+		throws IOException {
 		// Write out how many ColGroups we save.
 		out.writeInt(_colGroups.size());
 
-		boolean skipDict = false;
+		// boolean skipDict = false;
 		for(ColGroup grp : _colGroups) {
 			// TODO save DDC Dict sharing smarter.
-			boolean shared = (grp instanceof ColGroupDDC1 && _sharedDDC1Dict && grp.getNumCols() == 1);
+			// boolean shared = false;// (grp instanceof ColGroupDDC1 && _sharedDDC1Dict && grp.getNumCols() == 1);
 			out.writeByte(grp.getColGroupType().ordinal());
-			grp.write(out, skipDict & shared); 
-			skipDict |= shared;
+			// grp.write(out, skipDict & shared);
+			grp.write(out);
+			// skipDict |= shared;
 		}
 	}
 }

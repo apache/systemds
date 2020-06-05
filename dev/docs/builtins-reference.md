@@ -323,111 +323,7 @@ w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 `
 
-## `outlier-Function
-
-An outlier is any value that is numerically distant from most of the other data points in a set of data.
-This outlier function takes a matrix  data set as input from where it determines which number or numbers  has the largest diference from mean,
-The number which has the largest diference from mean is indicated as an outlier.
-
-
-### Usage
-```r
-outlier(X,opposite);
-```
-
-### Arguments
-| Name    | Type           | Default  | Description |
-| :------ | :------------- | -------- | :---------- |
-| X       | Matrix[Double] | required | Matrix of Recoded dataset for outlier evaluation |
-|opposite| Boolean | required | (1)TRUE for evaluating outlier from upper quartile range |
-                                                       |(0)FALSE for evaluating outlier from lower quartile range|
-### Returns
-| Type           | Description |
-| :------------- | :---------- |
-| Matrix[Double] | matrix indicating outlier values |
-
-### Example
-```r
-X = rand (rows = 50, cols = 10)
-opposite = 1
-outlier(X=X,opposite=opposite)
-```
-
-## outlierByIQR - Function
-
-Builtin function for detecting and repairing outliers using Interquartile Range.
-A commonly used rule says that a data point is an outlier if it is more than 1.5 IQR
-above the third quartile or below the first quartile.
-outlierByIQR function computes the matrix and set's a lower-bound quartile range and upper-bound quartile range 
-and the number which is less then the lower-bound or higher then the upper-bound is treated as a outlier, hence
-removed from the matrix.
-
-
-### Usage
-
-outlierByIQR(X,k,repair_method,max_iterations,verbose)
-
-###  Arguments
-
-| Name    | Type           | Default  | Description |
-| :------ | :------------- | -------- | :---------- |
-| X       | Matrix[Double] | required | matrix with outliers |
-|k         |     Double 	   |  1.5         | a constant used to discern outliers k*IQR 
- |isIterative|  Boolean | TRUE   |iterative repair or single repair 
- |repairMethod|   Integer|  1           | values: 0 = delete rows having outliers, 
-                                                              1 = replace outliers with zeros 
-                                            		      2 = replace outliers as missing values 
- |max_iterations|  Integer | 0      | values: 0 = arbitrary number of iteraition until all outliers are removed, 
-                                                            n = any constant defined by user
-###  Returns
-
-| Type           | Description |
-| :------------- | :---------- |
-| Matrix[Double] | matrix without any outlier. |
-
-###  Example
-
-`X = rand (rows=10,cols=10)
-Z = outlierByIQR(X=X,k=1.5,repairMethod=0,max_iterations=3,verbose=1)
-print("\n"+toString(Z))
-
-
-##outlierBySd - function
-
-Builtin function for detecting and repairing outliers using standard deviation.
-Acording to three sigma rule if a value falls outside of three times the standard deviations then it is an outlier value.
-In this function outlierBySd a matrix of trained data sets is provided from which it computes the upper-bound and lower-bound of data
-and any value that is more then upper-bound or lower then lower-bound is treated as an outlier and then gets filtered from the data set.
-
-###  usage
-
-outlierBySd(X,k,repairMethod,max_iterations,verbose)
-
-###  Arguments
-
-| Name    | Type           | Default  | Description |
-| :------ | :------------- | -------- | :---------- |
-| X         |      Double    |---       |Matrix with outlier values |
-|k            |   Double    |3        | threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
-|repairMethod|    Integer  | 1 |        values: 0 = delete rows having outliers, 1 = replace outliers as  zeros 
-                                                               2 = replace outliers as missing values 
-| max_iterations|  Integer |   0  |       values: 0 = arbitrary number of iteration until all outliers are removed, 
-                                                              n = any constant defined by user
-### Returns
-
-| Type           | Description |
-| :------------- | :---------- |
-| Matrix[Double] | matrix with no outlier |
-
-### Example
-
-X = rand (rows = 20, cols = 10)
-Z=outlierBySd(X=X, k=3,repairMethod = 1,max_iterations = 10,verbose = 1)
-print("\n"+toString(Z))
-
-
-
-### confusionMatrix Function
+## `confusionMatrix`-Function
 
 A confusion matrix is a technique for summarizing the performance of a classification algorithm.
 Calculating a confusion matrix can give you a better idea of what your classification model is getting right and what types of errors it is making.
@@ -435,8 +331,9 @@ This confusionMatrix function accepts two matrices with one column each, these t
 Then it computes the max value of each vector and compare them, after whichit calculates and returns the sum of classifications and the average of each true class.
 
 ### Usage
-
+```r
 confusionMatrix(P,Y)
+```
 
 ### Arguments
 
@@ -456,7 +353,7 @@ confusionMatrix(P,Y)
 
  #here numClasses is assigned to 1 as numClasses is directly proportional to the 
 #number of columns in the one hot data matrix, as confusion matrix accepts only matrices with one column.
-
+```r
 numClasses = 1  
 z = rand(rows=5,cols=1,min = 1 , max = 9)
 X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
@@ -464,3 +361,4 @@ y = toOneHot(X,numClasses)
 print("\nOne-HOT\n"+toString(y)+"\nprediction matrix:\n"+toString(z))
 [sum,avg] = confusionMatrix(P=z,Y=y)
 print("\nconfusion-matrix-sum\n"+toString(sum)+"\nconfusion-matrix-avg\n"+toString(avg))
+```

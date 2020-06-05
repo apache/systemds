@@ -388,9 +388,7 @@ outlierByIQR(X,k,repair_method,max_iterations,verbose)
 ###  Example
 
 `X = rand (rows=10,cols=10)
-opposite = 1
-Y = outlier(X = X, opposite = opposite)
-Z = outlierByIQR(X=Y,k=1.5,repairMethod=0,max_iterations=3,verbose=1)
+Z = outlierByIQR(X=X,k=1.5,repairMethod=0,max_iterations=3,verbose=1)
 print("\n"+toString(Z))
 
 

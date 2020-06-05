@@ -35,6 +35,7 @@ limitations under the License.
     * [`normalize`-Function](#normalize-function)
     * [`gnmf`-Function](#gnmf-function)
     * [`toOneHot`-Function](#toOneHOt-function)
+    * [`gridSearch`-Function](#gridSearch-function)
     
     
 # Introduction
@@ -502,4 +503,45 @@ toOneHot(X, numClasses)
 numClasses = 5
 X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
 y = toOneHot(X,numClasses)
+```
+
+## `gridSearch`-Function
+
+The `gridSearch`-function is used to find the optimal hyperparameters of 
+a model which results in the most ‘accurate’ predictions.
+This function takes train and eval functions by name as well as lists of
+parameter names and vectors of their values, and returns the parameter
+combination and model that gave the best results.
+
+### Usage
+```r
+gridSearch(X, y, train, predict, params, paramValues, verbose = TRUE)
+
+```
+
+### Arguments
+| Name         | Type           | Default  | Description |
+| :------      | :------------- | -------- | :---------- |
+| X            | Matrix[Double] | required | Input Matrix of vectors. |
+| y            | Matrix[Double] | required | Input Matrix of vectors. |
+| train        | String         | required | Specified training function. |
+| predict      | String         | required | Evaluation based function. |
+| params       | List[String]   | required | List of parameters |
+| paramValues  | List[Unknown]  | required | Range of values for the parameters |
+| verbose      | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Parameter combination |
+| Frame[Unknown] | Best results model |
+
+### Example
+```r
+X = rand (rows = 50, cols = 10)
+y = X %*% rand(rows = ncol(X), cols = 1)
+params = list("reg", "tol", "maxi")
+paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
+[B, opt]= gridSearch(X=X, y=y, train="lm", predict="lmPredict", params=params, paramValues=paramRanges, verbose = TRUE)
+
 ```

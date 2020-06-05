@@ -447,7 +447,7 @@ msvm(X,Y, icpt=False, num_classes=10, epsilon=0.001, lamda=1.0, maxiter=100, ver
 
 
 ### Example
-```
+```r
 m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     Double epsilon = 0.001, Double lambda = 1.0, Integer maxIterations = 100, Boolean verbose = FALSE)
   return(Matrix[Double] model)

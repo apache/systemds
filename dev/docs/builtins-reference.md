@@ -425,3 +425,42 @@ X = rand (rows = 20, cols = 10)
 Z=outlierBySd(X=X, k=3,repairMethod = 1,max_iterations = 10,verbose = 1)
 print("\n"+toString(Z))
 
+
+
+### confusionMatrix Function
+
+A confusion matrix is a technique for summarizing the performance of a classification algorithm.
+Calculating a confusion matrix can give you a better idea of what your classification model is getting right and what types of errors it is making.
+This confusionMatrix function accepts two matrices with one column each, these two matrices are vector for prediction and one-hot-encoded matrix respectively.
+Then it computes the max value of each vector and compare them, after whichit calculates and returns the sum of classifications and the average of each true class.
+
+### Usage
+
+confusionMatrix(P,Y)
+
+### Arguments
+
+| Name    | Type                        | Default  | Description |
+| :------ | :-------------                    | -------- | :---------- |
+| P         |      Matrix[Double]    |---       |vector of prediction |
+| Y         |      Matrix[Double]    |---       | vector of Golden standard One Hot Encoded|
+
+### Returns
+ 
+|Name  		| Type           | Description |
+|:-----------------| :------------- | :---------- |
+|ConfusionSum| Matrix[Double] | The Confusion Matrix Sums of classifications |
+|ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class|
+
+### Example
+
+ #here numClasses is asigned to 1 as numClasses is directly proposonal to the 
+#number of columns in the one hot data matrix, as confusion matrix accepts only matrices with one column.
+
+numClasses = 1  
+z = rand(rows=5,cols=1,min = 1 , max = 9)
+X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
+y = toOneHot(X,numClasses)
+print("\nOne-HOT\n"+toString(y)+"\nprediction matrix:\n"+toString(z))
+[sum,avg] = confusionMatrix(P=z,Y=y)
+print("\nconfusion-matrix-sum\n"+toString(sum)+"\nconfusion-matrix-avg\n"+toString(avg))

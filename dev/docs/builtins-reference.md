@@ -34,6 +34,7 @@ limitations under the License.
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
     * [`gnmf`-Function](#gnmf-function)
+    * [`msvm`-Function](#msvm-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     
     
@@ -502,4 +503,41 @@ toOneHot(X, numClasses)
 numClasses = 5
 X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
 y = toOneHot(X,numClasses)
+```
+
+## `msvm`-Function
+
+The `msvm`-function implements builtin multiclass SVM with squared slack variables
+It learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
+
+### Usage
+```r
+msvm(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
+```
+
+
+### Arguments
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| X             | Double           | ---        | Matrix X of feature vectors.|
+| Y             | Double           | ---        | Matrix Y of class labels. |
+| intercept     | Boolean          | False      | No Intercept ( If set to TRUE then a constant bias column is added to X)|
+| num_classes   | Integer          | 10         | Number of classes.|
+| epsilon       | Double           | 0.001      | Procedure terminates early if the reduction in objective function value is less than epsilon (tolerance) times the initial objective function value.|
+| lamda         | Double           | 1.0        | Regularization parameter (lambda) for L2 regularization|
+| maxIterations | Integer          | 100        | Maximum number of conjugate gradient iterations|
+| verbose       | Boolean          | False      | Set to true to print while training.|
+
+
+### Returns
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| model   | Double         | ---      | Model matrix. |
+
+
+### Example
+```r
+X = rand(rows = 50, cols = 10)
+y = round(X %*% rand(rows=ncol(X), cols=1))
+model = msvm(X = X, Y = y, intercept = FALSE, epsilon = 0.005, lambda = 1.0, maxIterations = 100, verbose = FALSE)
 ```

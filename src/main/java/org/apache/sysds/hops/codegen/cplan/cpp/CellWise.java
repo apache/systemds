@@ -10,7 +10,11 @@ import static org.apache.sysds.runtime.codegen.SpoofCellwise.CellType.NO_AGG;
 
 public class CellWise implements CodeTemplate {
     public static final String TEMPLATE_NO_AGG =
-            "%TMP%\n"
+            "%TMP%\n" +
+            "// CellType: %TYPE%\n" +
+            "// AggOp: %AGG_OP%\n" +
+            "// SparseSafe: $SPARSE_SAFE%\n" +
+            "// SEQ: %SEQ%\n"
                 + "template<typename T>\n"
                 + "__device__ T getValue(T* data, int rowIndex) {\n"
                 + "    return data[rowIndex];\n"
@@ -43,6 +47,10 @@ public class CellWise implements CodeTemplate {
 
 
     public static final String TEMPLATE_FULL_AGG = "%TMP%\n" +
+            "// CellType: %TYPE%\n" +
+            "// AggOp: %AGG_OP%\n" +
+            "// SparseSafe: %SPARSE_SAFE%\n" +
+            "// SEQ: %SEQ%\n" +
             "#include \"utils.cuh\"\n" +
             "#include \"agg_ops.cuh\"\n" +
             "\n"

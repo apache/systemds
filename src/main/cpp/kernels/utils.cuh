@@ -22,7 +22,23 @@
 
 #pragma once
 
+#include <cfloat>
+#include <cmath>
 #include <cuda_runtime.h>
+
+// Use this method in templates to fetch the maximum value for a given datatype
+template<typename T>
+__forceinline__ __device__ T MAX() {
+	return T();
+}
+template<>
+__forceinline__ __device__ float MAX<float>() {
+	return FLT_MAX;
+}
+template<>
+__forceinline__ __device__ double MAX<double>() {
+	return DBL_MAX;
+}
 
 /**
  * Solution suggested by [1] to have different types of shared memory

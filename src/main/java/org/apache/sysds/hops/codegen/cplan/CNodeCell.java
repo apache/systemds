@@ -131,13 +131,11 @@ public class CNodeCell extends CNodeTpl
 		//return last TMP
 		tmp = tmp.replace("%OUT%", _output.getVarname());
 
-		if(lang == GeneratorLang.JAVA) {
-			//replace meta data information
-			tmp = tmp.replace("%TYPE%", getCellType().name());
-			tmp = tmp.replace("%AGG_OP%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
-			tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
-			tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
-		}
+		//replace meta data information
+		tmp = tmp.replace("%TYPE%", getCellType().name());
+		tmp = tmp.replace("%AGG_OP%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
+		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
+		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
 		return tmp;
 	}
 

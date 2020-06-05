@@ -9,10 +9,13 @@
 using jitify::reflection::type_of;
 
 struct SpoofOperator {
-  enum AggType { NO_AGG, ROW_AGG, COL_AGG, FULL_AGG };
+  enum class AggType : int { NO_AGG, ROW_AGG, COL_AGG, FULL_AGG, NONE };
+  enum class AggOp : int {SUM, SUM_SQ, MIN, MAX, NONE };
 
   jitify::Program program;
   AggType agg_type;
+  AggOp agg_op;
+
 };
 
 class SpoofCudaContext {
@@ -64,7 +67,7 @@ public:
       }
 
       switch (op->agg_type) {
-      case SpoofOperator::FULL_AGG: {
+      case SpoofOperator::AggType::FULL_AGG: {
         // num ctas
         int NB = std::ceil((m * n + NT * 2 - 1) / (NT * 2));
         dim3 grid(NB, 1, 1);
@@ -106,7 +109,7 @@ public:
 
         break;
       }
-      case SpoofOperator::NO_AGG:
+      case SpoofOperator::AggType::NO_AGG: 
       default: {
         // num ctas
         int NB = std::ceil((m * n + NT * VT - 1) / (NT * VT));

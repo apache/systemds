@@ -575,7 +575,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 			TEST_CONF = oldTestConf;
-			SpoofCompiler.unloadNativeCodeGenerator(SpoofCompiler.GeneratorAPI.CUDA);
+//			SpoofCompiler.unloadNativeCodeGenerator(SpoofCompiler.GeneratorAPI.CUDA);
 		}
 	}
 

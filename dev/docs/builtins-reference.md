@@ -342,11 +342,9 @@ outlierBySd(X,k,repairMethod,max_iterations,verbose)
 | :------    | :------------- | -------- | :---------- |
 | X          |      Double    |---       | Matrix with outlier values |
 | k          |      Double    |   3      | threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
-|repairMethod|     Integer    |   1      | values: 0 = delete rows having outliers, 
-                                                   1 = replace outliers as  zeros 
-                                                   2 = replace outliers as missing values 
-| max_iterations|  Integer    |   0      | values: 0 = arbitrary number of iteration until all outliers are removed, 
-                                                   n = any constant defined by user
+|repairMethod|     Integer    |   1      | values: 0 = delete rows having outliers,1 = replace outliers as  zeros,2 = replace outliers as missing values |
+| max_iterations|  Integer    |   0      | values: 0 = arbitrary number of iteration until all outliers are removed,n = any constant defined by user|
+
 ### Returns
 
 | Type           | Description |

@@ -18,13 +18,6 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#An outlier in a probability distribution function is a number that is more 
-#than 1.5 times the length of the data set away from either the lower or upper quartiles.
-#Specifically, if a number is less than Q1−1.5×IQR or greater than Q3+1.5×IQR, then it is an outlier.
-#
-
-
-
 
 m_outlier = function(Matrix[Double] X, Boolean opposite) return (Matrix[Double] Y) {
   # determine if largest value has largest diff from mean

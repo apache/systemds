@@ -321,7 +321,7 @@ X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
-`
+```
 
 ## `confusionMatrix`-Function
 
@@ -352,7 +352,8 @@ confusionMatrix(P,Y)
 ### Example
 
  #here numClasses is assigned to 1 as numClasses is directly proportional to the 
-#number of columns in the one hot data matrix, as confusion matrix accepts only matrices with one column.
+ #number of columns in the one hot data matrix, as confusion matrix accepts only matrices with one column.
+ 
 ```r
 numClasses = 1  
 z = rand(rows=5,cols=1,min = 1 , max = 9)

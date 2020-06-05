@@ -454,7 +454,7 @@ confusionMatrix(P,Y)
 
 ### Example
 
- #here numClasses is asigned to 1 as numClasses is directly proposonal to the 
+ #here numClasses is assigned to 1 as numClasses is directly proportional to the 
 #number of columns in the one hot data matrix, as confusion matrix accepts only matrices with one column.
 
 numClasses = 1  

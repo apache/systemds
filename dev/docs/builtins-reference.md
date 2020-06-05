@@ -23,7 +23,8 @@ limitations under the License.
   * [Built-In Construction Functions](#built-in-construction-functions)
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
-    * [`KMeans`-Function](#KMeans-function)
+    * [`intersect`-Function](#intersect-function)
+	* [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
@@ -116,7 +117,34 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 
+## `intersect`-Function
+
+This is a generic function, extended from the intersect function in the base package. The elements of intersect(x,y) are those elements in x and in y. 
+The original definition is preserved in the case that x and y are vectors of the same mode.
  
+ ### Usage
+ ```r
+intersect(x, y)
+
+ ```
+ 
+ ### Arguments
+ | Name    | Type           | Default  | Description |
+ | :------ | :------------- | -------- | :---------- |
+ | X       | Matrix[Double] | --       | a set of matrix A |
+ | Y       | Matrix[Double] | --       | a set of matrix B | 
+ 
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | intersection matrix, set of intersecting items|
+
+### Example
+```
+
+```
+
+
 ## `KMeans`-Function
 
 The kmeans() implements the KMeans Clustering algorithm.

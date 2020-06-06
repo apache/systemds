@@ -321,4 +321,28 @@ X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows=ncol(X), 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
-```
+```````
+## `winsorize`-Function
+
+winsorize function is used to remove outliers from the data. It does so by computing upper and lower quartile range of the given data then it
+replaces any value that falls outside this range( less then lower quartile range or more then upper quartile range).
+
+### Usage
+
+winsorize(X)
+
+### Arguments
+| Name | Type | Default | Description |
+| :------- | :------ | :--------- | :--------------- |
+| X | Matrix[Double] | required | recorded data set with possible outlier values |
+
+### Returns
+| Type | Description |
+| :----- | :---------------- |
+| Matrix[Double] | Matrix without outlier values |
+
+### Example
+X = rand(rows=10, cols=10,min = 1, max=9)
+print("\nMatrix to evaluate\n\n"+toString(X))
+Y = winsorize(X=X)
+print("\nwinsorize results:\n\n"+toString(Y))

@@ -29,11 +29,8 @@ limitations under the License.
     * [`lmpredict`-Function](#lmpredict-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
-<<<<<<< HEAD
-   * [`confusionMatrix`-Function](#confusionMatrix-function)
-=======
     * [`confusionMatrix`-Function](#confusionMatrix-function)
->>>>>>> 0b677957c156789dc014073bf814f3f6d313eccf
+
     
    
 # Introduction
@@ -295,7 +292,7 @@ If the best AIC is achieved without any features the matrix of *selected* featur
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows=ncol(X), 1)
 [C, S] = steplm(X = X, y = y, icpt = 1);
-`
+```
 
 ## `slicefinder`-Function
 
@@ -328,10 +325,7 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
-<<<<<<< HEAD
-=======
 
->>>>>>> 0b677957c156789dc014073bf814f3f6d313eccf
 ## `confusionMatrix`-Function
 
 A `confusionMatrix` is a technique for summarizing the performance of a classification algorithm.
@@ -369,7 +363,4 @@ print("\nOne-HOT\n"+toString(y)+"\nprediction matrix:\n"+toString(z))
 [sum,avg] = confusionMatrix(P=z,Y=y)
 print("\nconfusion-matrix-sum\n"+toString(sum)+"\nconfusion-matrix-avg\n"+toString(avg))
 ```
-<<<<<<< HEAD
 
-=======
->>>>>>> 0b677957c156789dc014073bf814f3f6d313eccf

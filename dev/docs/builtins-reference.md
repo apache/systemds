@@ -29,6 +29,7 @@ limitations under the License.
     * [`lmpredict`-Function](#lmpredict-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
+   * [`confusionMatrix`-Function](#confusionMatrix-function)
     
 # Introduction
 
@@ -322,3 +323,41 @@ y = X %*% rand(rows=ncol(X), 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
+## `confusionMatrix`-Function
+
+A `confusionMatrix` is a technique for summarizing the performance of a classification algorithm.
+A confusion matrix can give a better idea of what the classification model is getting right and what types of errors it is making.
+This confusionMatrix function accepts a vector for prediction and an one-hot-encoded matrix.
+Then it computes the max value of each vector and compare them, after which it calculates and returns the sum of classifications and the average of each true class.
+
+### Usage
+```r
+confusionMatrix(P,Y)
+```
+
+### Arguments
+
+| Name | Type | Default | Description |
+| :--- | :---------- | :-- | :---------- |
+| P | Matrix[Double] | --- | vector of prediction |
+| Y | Matrix[Double] | --- | vector of Golden standard One Hot Encoded |
+
+### Returns
+ 
+| Name | Type | Description |
+| :---- | :------------- | :---------- |
+| ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
+| ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
+
+### Example
+ 
+```r
+numClasses = 1  
+z = rand(rows=5,cols=1,min = 1 , max = 9)
+X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
+y = toOneHot(X,numClasses)
+print("\nOne-HOT\n"+toString(y)+"\nprediction matrix:\n"+toString(z))
+[sum,avg] = confusionMatrix(P=z,Y=y)
+print("\nconfusion-matrix-sum\n"+toString(sum)+"\nconfusion-matrix-avg\n"+toString(avg))
+```
+

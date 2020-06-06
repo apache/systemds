@@ -260,7 +260,7 @@
 					<threadCount>12</threadCount>
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>1C</forkCount>
-					<argLine>-Xms4g -Xmx4g</argLine>
+					<argLine>${argLine} -Xms4g -Xmx4g</argLine>
 					<reuseForks>false</reuseForks>
 					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
@@ -332,6 +332,26 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>generate-code-coverage-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+			</plugin>
+
+			<!-- <plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.7.6.201602180812</version>
 				<executions>
 					<execution>
@@ -341,7 +361,7 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin> -->
 
 			<plugin>
 				<groupId>org.eluder.coveralls</groupId>

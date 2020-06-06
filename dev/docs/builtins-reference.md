@@ -328,9 +328,9 @@ ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ## `confusionMatrix`-Function
 
 A `confusionMatrix` is a technique for summarizing the performance of a classification algorithm.
-Calculating a confusion matrix can give you a better idea of what your classification model is getting right and what types of errors it is making.
-This confusionMatrix function accepts two matrices with one column each, these two matrices are vector for prediction and one-hot-encoded matrix respectively.
-Then it computes the max value of each vector and compare them, after whichit calculates and returns the sum of classifications and the average of each true class.
+A confusion matrix can give a better idea of what the classification model is getting right and what types of errors it is making.
+This confusionMatrix function accepts a vector for prediction and an one-hot-encoded matrix.
+Then it computes the max value of each vector and compare them, after which it calculates and returns the sum of classifications and the average of each true class.
 
 ### Usage
 ```r
@@ -339,21 +339,19 @@ confusionMatrix(P,Y)
 
 ### Arguments
 
-| Name    | Type                   | Default  | Description |
-| :------ | :-------------         |  :---    | :---------- |
-| P       |      Matrix[Double]    |   ---    |vector of prediction |
-| Y       |      Matrix[Double]    |   ---    | vector of Golden standard One Hot Encoded|
+| Name | Type | Default | Description |
+| :--- | :---------- | :-- | :---------- |
+| P | Matrix[Double] | --- | vector of prediction |
+| Y | Matrix[Double] | --- | vector of Golden standard One Hot Encoded |
 
 ### Returns
  
-|Name  	          	| Type           | Description |
-|:-----------------| :------------- | :---------- |
-|ConfusionSum      | Matrix[Double] | The Confusion Matrix Sums of classifications |
-|ConfusionAvg      | Matrix[Double] | The Confusion Matrix averages of each true class|
+| Name | Type | Description |
+| :---- | :------------- | :---------- |
+| ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
+| ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
 
 ### Example
- #here numClasses is assigned to 1 as numClasses is directly proportional to the 
- number of columns in the one hot data matrix, as confusion matrix accepts only matrices with one column.
  
 ```r
 numClasses = 1  

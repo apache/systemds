@@ -22,9 +22,7 @@ img_brightness(img_in = A, value = 128, channel_max = 255)
 
 ### Example
 ```r
-import numpy as np
-
-A = np.random.random((500,500)) 
+A = rand (rows = 3, cols = 3, min = 0, max = 255)
 B = img_brightness(img_in = A, value = 128, channel_max = 255)
 ```
 

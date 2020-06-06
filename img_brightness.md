@@ -22,7 +22,9 @@ img_brightness(img_in = A, value = 128, channel_max = 255)
 
 ### Example
 ```r
-A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7)
+import numpy as np
+
+A = np.random.random((500,500)) 
 B = img_brightness(img_in = A, value = 128, channel_max = 255)
 ```
 

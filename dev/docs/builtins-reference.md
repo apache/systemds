@@ -29,7 +29,7 @@ limitations under the License.
     * [`lmpredict`-Function](#lmpredict-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
-   * [`confusionMatrix`-Function](#confusionMatrix-function)
+   * [`outlierBySd`-Function](#outlierBySd-function)
     
 # Introduction
 
@@ -323,41 +323,37 @@ y = X %*% rand(rows=ncol(X), 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
-## `confusionMatrix`-Function
 
-A `confusionMatrix` is a technique for summarizing the performance of a classification algorithm.
-A confusion matrix can give a better idea of what the classification model is getting right and what types of errors it is making.
-This confusionMatrix function accepts a vector for prediction and an one-hot-encoded matrix.
-Then it computes the max value of each vector and compare them, after which it calculates and returns the sum of classifications and the average of each true class.
+## `outlierBySd`-Function
+
+Builtin function for detecting and repairing outliers using standard deviation.
+Acording to three sigma rule if a value falls outside of three times the standard deviations then it is an outlier value.
+In this function `outlierBySd` a matrix of trained data sets is provided from which it computes the upper-bound and lower-bound of data
+and any value that is more then upper-bound or lower then lower-bound is treated as an outlier and then gets filtered from the data set.
 
 ### Usage
 ```r
-confusionMatrix(P,Y)
+outlierBySd(X,k,repairMethod,max_iterations,verbose)
 ```
 
-### Arguments
+###  Arguments
 
-| Name | Type | Default | Description |
-| :--- | :---------- | :-- | :---------- |
-| P | Matrix[Double] | --- | vector of prediction |
-| Y | Matrix[Double] | --- | vector of Golden standard One Hot Encoded |
+| Name       | Type           | Default  | Description |
+| :------    | :------------- | -------- | :---------- |
+| X          |      Double    |---       | Matrix with outlier values |
+| k          |      Double    |   3      | threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
+|repairMethod|     Integer    |   1      | values: 0 = delete rows having outliers,1 = replace outliers as  zeros,2 = replace outliers as missing values |
+| max_iterations|  Integer    |   0      | values: 0 = arbitrary number of iteration until all outliers are removed,n = any constant defined by user |
 
 ### Returns
- 
-| Name | Type | Description |
-| :---- | :------------- | :---------- |
-| ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
-| ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | matrix with no outlier |
 
 ### Example
- 
 ```r
-numClasses = 1  
-z = rand(rows=5,cols=1,min = 1 , max = 9)
-X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
-y = toOneHot(X,numClasses)
-print("\nOne-HOT\n"+toString(y)+"\nprediction matrix:\n"+toString(z))
-[sum,avg] = confusionMatrix(P=z,Y=y)
-print("\nconfusion-matrix-sum\n"+toString(sum)+"\nconfusion-matrix-avg\n"+toString(avg))
+X = rand (rows = 20, cols = 10)
+Z=outlierBySd(X=X, k=3,repairMethod = 1,max_iterations = 10,verbose = 1)
+print("\n"+toString(Z))
 ```
-

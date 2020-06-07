@@ -337,25 +337,25 @@ public class Explain
 
 	public static String explainLineageItems( LineageItem[] lis, int level ) {
 		StringBuilder sb = new StringBuilder();
-		LineageItem.resetVisitStatus(lis);
+		LineageItem.resetVisitStatusNR(lis);
 		for( LineageItem li : lis )
 			sb.append(explainLineageItem(li, level));
-		LineageItem.resetVisitStatus(lis);
+		LineageItem.resetVisitStatusNR(lis);
 		return sb.toString();
 	}
 
 	public static String explain( LineageItem li ) {
-		li.resetVisitStatus();
+		li.resetVisitStatusNR();
 		String s = explain(li, 0);
 		s += rExplainDedupItems(li, new ArrayList<>());
-		li.resetVisitStatus();
+		li.resetVisitStatusNR();
 		return s;
 	}
 
 	private static String explain( LineageItem li, int level ) {
-		li.resetVisitStatus();
+		li.resetVisitStatusNR();
 		String ret = explainLineageItem(li, level);
-		li.resetVisitStatus();
+		li.resetVisitStatusNR();
 		return ret;
 	}
 	

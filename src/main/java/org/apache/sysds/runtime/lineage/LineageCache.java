@@ -255,7 +255,7 @@ public class LineageCache
 			String boundVarName = outputs.get(i).getName();
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
 			if (boundLI != null)
-				boundLI.resetVisitStatus();
+				boundLI.resetVisitStatusNR();
 			if (boundLI == null || !LineageCache.probe(li) || !LineageCache.probe(boundLI)) {
 				AllOutputsCacheable = false;
 			}

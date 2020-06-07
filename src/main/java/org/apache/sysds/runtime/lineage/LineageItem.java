@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.Stack;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -128,9 +130,9 @@ public class LineageItem {
 		if (!(o instanceof LineageItem))
 			return false;
 		
-		resetVisitStatus();
+		resetVisitStatusNR();
 		boolean ret = equalsLI((LineageItem) o);
-		resetVisitStatus();
+		resetVisitStatusNR();
 		return ret;
 	}
 	
@@ -180,16 +182,47 @@ public class LineageItem {
 		return !_opcode.isEmpty();
 	}
 	
-	public LineageItem resetVisitStatus() {
+	/**
+	 * Non-recursive equivalent of {@link #resetVisitStatus()} 
+	 * for robustness with regard to stack overflow errors.
+	 */
+	public void resetVisitStatusNR() {
+		Stack<LineageItem> q = new Stack<>();
+		q.push(this);
+		while( !q.empty() ) {
+			LineageItem tmp = q.pop();
+			if( !tmp.isVisited() )
+				continue;
+			if (tmp.getInputs() != null)
+				for (LineageItem li : tmp.getInputs())
+					q.push(li);
+			tmp.setVisited(false);
+		}
+	}
+	
+	/**
+	 * Non-recursive equivalent of {@link #resetVisitStatus(LineageItem[])} 
+	 * for robustness with regard to stack overflow errors.
+	 * 
+	 * @param lis root lineage items
+	 */
+	public static void resetVisitStatusNR(LineageItem[] lis) {
+		if (lis != null)
+			for (LineageItem liRoot : lis)
+				liRoot.resetVisitStatusNR();
+	}
+	
+	@Deprecated
+	public void resetVisitStatus() {
 		if (!isVisited())
-			return this;
+			return;
 		if (_inputs != null)
 			for (LineageItem li : getInputs())
 				li.resetVisitStatus();
 		setVisited(false);
-		return this;
 	}
 	
+	@Deprecated
 	public static void resetVisitStatus(LineageItem[] lis) {
 		if (lis != null)
 			for (LineageItem liRoot : lis)

@@ -157,7 +157,7 @@ public class LineageItemUtils {
 		String varname = LVARPREFIX + rootId;
 		
 		//recursively construct hops 
-		root.resetVisitStatus();
+		root.resetVisitStatusNR();
 		Map<Long, Hop> operands = new HashMap<>();
 		rConstructHops(root, operands);
 		Hop out = HopRewriteUtils.createTransientWrite(
@@ -581,9 +581,9 @@ public class LineageItemUtils {
 			LineageItem li = new LineageItem(item.getInputs()[1].getData(),
 				item.getInputs()[1].getOpcode(), inputs.toArray(new LineageItem[0]));
 			
-			li.resetVisitStatus();
+			li.resetVisitStatusNR();
 			rSetDedupInputOntoOutput(item.getData(), li, dedupInput);
-			li.resetVisitStatus();
+			li.resetVisitStatusNR();
 			return li;
 		}
 		else {
@@ -633,9 +633,9 @@ public class LineageItemUtils {
 	}
 	
 	public static LineageItem replace(LineageItem root, LineageItem liOld, LineageItem liNew) {
-		root.resetVisitStatus();
+		root.resetVisitStatusNR();
 		rReplace(root, liOld, liNew);
-		root.resetVisitStatus();
+		root.resetVisitStatusNR();
 		return root;
 	}
 	
@@ -657,9 +657,9 @@ public class LineageItemUtils {
 	
 	public static void replaceDagLeaves(ExecutionContext ec, LineageItem root, CPOperand[] newLeaves) {
 		//find and replace the placeholder leaves
-		root.resetVisitStatus();
+		root.resetVisitStatusNR();
 		rReplaceDagLeaves(root, LineageItemUtils.getLineage(ec, newLeaves));
-		root.resetVisitStatus();
+		root.resetVisitStatusNR();
 	}
 	
 	public static void rReplaceDagLeaves(LineageItem root, LineageItem[] newleaves) {

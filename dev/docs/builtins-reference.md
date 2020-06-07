@@ -36,6 +36,7 @@ limitations under the License.
     * [`gnmf`-Function](#gnmf-function)
     * [`msvm`-Function](#msvm-function)
     * [`toOneHot`-Function](#toOneHOt-function)
+    * [`pnmf`-Function](#pnmf-function)
     
     
 # Introduction
@@ -540,4 +541,40 @@ msvm(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
 X = rand(rows = 50, cols = 10)
 y = round(X %*% rand(rows=ncol(X), cols=1))
 model = msvm(X = X, Y = y, intercept = FALSE, epsilon = 0.005, lambda = 1.0, maxIterations = 100, verbose = FALSE)
+```
+
+
+## `pnmf`-Function
+
+The `pnmf`-function implements Poisson Nonnegative Matrix Factorization (PNMF).
+Matrix X is factorized into two non-negative matrices, W and H based on Poisson probabilistic assumption.
+This non-negativity makes the resulting matrices easier to inspect.
+
+### Usage
+```r
+pnmf(X, rnk, eps = 10^-8, maxi = 10, verbose = TRUE)
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of feature vectors. |
+| rnk     | Integer        | required | Number of components into which matrix X is to be factored. |
+| eps     | Double         | `10^-8`  | Tolerance |
+| maxi    | Integer        | `10`     | Maximum number of conjugate gradient iterations. |
+| verbose | Boolean        | TRUE     | If TRUE, 'iter' and 'obj' are printed.|
+
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | List of pattern matrices, one for each repetition. |
+| Matrix[Double] | List of amplitude matrices, one for each repetition. |
+
+### Example
+```r
+X = rand(rows = 50, cols = 10)
+W = rand(rows = nrow(X), cols = 2, min = -0.05, max = 0.05)
+H = rand(rows = 2, cols = ncol(X), min = -0.05, max = 0.05)
+pnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10, verbose = TRUE)
 ```

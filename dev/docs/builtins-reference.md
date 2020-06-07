@@ -307,6 +307,51 @@ w = lm(X = X, y = y)
 yp = lmpredict(X, w)
 ```
 
+#  Introduction
+The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level function
+
+
+
+## `Multinomial Logistic Regression` -Function
+The Multinomial Logistic Regression Model is is used to link and provide an estimate of category label probabilities ( y, having multiple rows single column ) which are a response to the numerical vector of explanatory (feature) variables (x, having multiple rows and multiple columns) . The number of links can be 3 or greater unlike binomial regression.
+
+### Usage
+```
+mulLogisticRegression = function( Matrix X, Matrix Y,  intercept_scaling ,  max_iter , tolerance ,
+   max1 ,  maxi2 ,  verbose )
+  return(Matrix A)
+
+### Arguments
+
+| Name             | Type            | Default  | Description |
+| :----            | :-------------  | -------- | :------------------------------- |
+| X                | Matrix[Double]  | --       | Matrix of numerical vector of explanatory  variables|
+| Y                | Matrix[Double]  | --       | Matrix of  a categorical response variable|
+| intercept_scaling| Int             | 0        | intercept for shifting and rescaling X columns|
+| reg_para         | Double          | 0        | regularization parameter|
+| tolerance        | Double          | 0.00001  | tolerance ("epsilon")|
+| max1             | Int             | 100      | max. no. of outer newton interations|
+| max2             | Int             | 0        | max. no. of inner (conjugate gradient) iterations|
+
+### Returns
+| Type                   | Description |
+| :-------------         | :---------- |
+| Matrix[Double]         | probability regression as output |
+
+
+### Example
+
+
+
+
+
+
+
+
+
+
+
+
 ## `scale`-Function
 
 The scale function is a generic function whose default method centers or scales the column of a numeric matrix.

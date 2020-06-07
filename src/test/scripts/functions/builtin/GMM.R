@@ -25,7 +25,8 @@ library(mclust, quietly = TRUE)
 library("matrixStats") 
 
 # X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-X = iris[,1:4]
+# X = iris[,1:4]
+X = cbind(iris[,1:4],iris[,1:4])
 fit =  Mclust(X, modelType = args[2], G=args[3])
 summary(fit)
 C = fit$z

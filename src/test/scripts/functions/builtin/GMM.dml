@@ -20,9 +20,10 @@
 #-------------------------------------------------------------
 
 # X = read($1)
-X = read($1, data_type = "matrix", format = "csv")
-X = X[, 1:4]
-prob = gmm(X=X, components = $2, iter = $3,  model = $4, eps = $5, verbose=TRUE)
+X = read($1, data_type = "frame", format = "csv")
+# X = as.matrix(X[, 2:5])
+X = as.matrix(cbind(X[,2:5],X[, 2:5]))
+prob = gmm(X=X, n_components = $2,  model = $4,  iter = $3, init_params = "kmeans", eps = $5, verbose=TRUE)
 out = (rowMaxs(prob) < 0.7)
 print("outlier"+toString(out))
 maxi = (prob == rowMaxs(prob))

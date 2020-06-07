@@ -17,5 +17,7 @@
 #-------------------------------------------------------------
 
 X = read($1, data_type="frame", format="csv", header=FALSE);
+print("X\n"+toString(X))
 Y = imputeByFD(X, $2, $3, $4);
+print("Y\n"+toString(Y))
 write(Y, $5, format="binary")

@@ -28,12 +28,12 @@
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # X               Double   ---       Matrix X  
-# components      Integer  3         Number of components in the Gaussian mixture model
+# n_components      Integer  3         Number of n_components in the Gaussian mixture model
 # iterations      Integer  10        number of iterations
-# model           String   "V"       Univariate mixture     "V": unequal variance
-#                                                           "E": equal variance
-#                                    Multivariate mixture  "VVI": spherical, unequal volume 
-#                                                          "EEI": spherical, equal volume
+# model           String   "V"       Univariate mixture    "VVV": unequal variance (full)
+#                                                          "EEE": equal variance (tied)
+#                                    Multivariate mixture  "VVI": spherical, unequal volume (Diag) 
+#                                                          "VII": spherical, equal volume (Spherical)
 # eps            Double    0.000001  value for convergence 
 # ---------------------------------------------------------------------------------------------
 
@@ -47,42 +47,51 @@
 
 
 
-m_gmm = function(Matrix[Double] X, Integer components = 3, Integer iter = 10, String model = "V", Double eps = 0.000001, Boolean verbose = FALSE )
+m_gmm = function(Matrix[Double] X, Integer n_components = 1, String model = "VVV", Integer iter = 100, String init_params = "kmeans", Double eps = 0.000001, Boolean verbose = FALSE )
 return (Matrix[Double] weights)
 {
+  # sanity checks
+  if(model != "VVV" & model != "EEE" & model != "VVI" & model != "VII")
+    stop("model not supported, should be in VVV, EEE, VVI, VII");
+  
+  [nk, mu, sigma] = initialize_param(X, n_components, init_params, model)
+  
+  prec_chol = compute_precision_cholesky(sigma, method)
   # Determine the initial GMM paramters from Kmeans
   # μ, σ, weights and phi
+  n_sample = nrow(X)
   
-  phi = matrix(1/components, 1, components)
-  weights = matrix(1/components, nrow(X), components)
   
-  [C, Y] = kmeans(X,  components, 10, 10, eps, FALSE, 25)
+  phi = matrix(1/n_components, 1, n_components)
+  weights = matrix(1/n_components, nrow(X), n_components)
+  
+  [C, Y] = kmeans(X,  n_components, 10, 10, eps, FALSE, 25)
   mu = C
   sigma = list()
   
-  for(i in 1:components)
+  for(i in 1:n_components)
     sigma = append(sigma, covMatrix(X, matrix(1, nrow(X), 1)) ) #diag(matrix(1, ncol(X), 1))
 
   loglikPre = mean(log(rowSums(weights*phi)))
   loglikDiff = 1
   i = 1
   bic = matrix(0, iter, 1)
-  a = components * ncol(X) * (ncol(X) + 1) / 2
-  b = ncol(X) * components
-  df = a + b + components -1
+  a = n_components * ncol(X) * (ncol(X) + 1) / 2
+  b = ncol(X) * n_components
+  df = a + b + n_components -1
   # df = (ncol(X)*ncol(X) - ncol(X))/2 + (2*ncol(X) + 1)
-  # df = components * df -1
+  # df = n_components * df -1
   print("df "+df)
   while(i <= iter & loglikDiff >= eps ){
     print("iteration ----------------------------------"+i)
      # 
     # Estimation Step
-    [weights, loglikNew] = predict_prob(X, components, mu, sigma, phi)
+    [weights, loglikNew] = predict_prob(X, n_components, mu, sigma, phi)
     phi = colMeans(weights)
     print("phi "+toString(phi))
     # Maximization Step - Update parameter
   
-    for(j in 1:components)
+    for(j in 1:n_components)
     {
       wk = weights[, j]
       sum_wk = sum(wk)
@@ -129,11 +138,11 @@ return (Matrix[Double] covM)
       # covM[i, j] = cov(X[,i], X[,j], w)
 }
 
-predict_prob = function(Matrix[Double] X, Integer components, Matrix[Double] mu, List[Unknown] sigma, Matrix[Double] phi)
+predict_prob = function(Matrix[Double] X, Integer n_components, Matrix[Double] mu, List[Unknown] sigma, Matrix[Double] phi)
   return (Matrix[Double] weights, Double loglik)
 {
-  likelihood = matrix(0, nrow(X), components )
-  for(i in 1:components)
+  likelihood = matrix(0, nrow(X), n_components )
+  for(i in 1:n_components)
   {
 
     likelihood[, i] = mvpdf(X, mu[i,], as.matrix(sigma[i]))
@@ -258,4 +267,180 @@ swap =  function(Matrix[Double] X, Integer i1, Integer j1, Integer i2, Integer j
   X[i1, j1] = as.scalar(X[i2, j2])
   X[i2, j2] = temp; 
   # X1 = X
+}
+  
+initialize_param = function(Matrix[Double] X, Integer n_components, String init_params, String model)
+return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma)
+{
+  reg_covar = 1e-6
+  l = list()
+  print("com "+n_components)
+  n =  nrow(X)
+  d = ncol(X)
+  resp = matrix(0,n, n_components)
+  if(init_params == "kmeans")
+  {
+
+    [C, Y] = kmeans(X, n_components, 10, 10, 0.0000001, FALSE, 25)
+    print("y \n"+toString(Y))
+    resp = resp + t(seq(1,n_components))
+    print("resp" +toString(resp))
+    # resp = outer(Y, resp, "==")
+    resp = resp == Y
+    
+  }
+  else if(init_params == "random")
+  {
+    resp = Rand(rows = n, cols=n_components)   
+    resp = resp/rowSums(resp)
+  }
+  else stop("invalid paramter value, expected kmeans or random found "+init_params)
+  print("resp matrix \n"+toString(resp))
+  nk = colSums(resp)
+  print("nk "+toString(nk))
+  mu = (t(resp) %*% X) / t(nk)
+  sigma = list()
+  if(model == "VVV")
+  { 
+    for(k in 1:n_components)
+    {
+      diff = X - mu[k,]
+      cov = (t(diff * resp[, k]) %*% diff) / nk[,k]
+      cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
+      sigma = append(sigma, cov)
+    }      
+  }
+  else if(model == "EEE")
+  { 
+    avgX2 = t(X) %*% X
+    avgMean = t(mu * nk) %*% mu
+    cov = avgX2 - avgMean
+    cov /= sum(nk)
+    cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
+    sigma = append(sigma, cov)
+  }
+  else if(model ==  "VVI")
+  {
+    avgX2 = (t(resp) %*% (X*X)) / t(nk)
+    avgMean = mu ^ 2
+    avgMean2 = mu * (t(resp) %*% X) / t(nk)
+    cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
+    sigma = append(sigma, cov)
+  }
+  else if (model == "VII")
+  {
+    avgX2 = (t(resp) %*% (X*X)) / t(nk)
+    avgMean = mu ^ 2
+    avgMean2 = mu * (t(resp) %*% X) / t(nk)
+    cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
+    sigma = append(sigma, colMeans(cov))
+  }
+  weight = nk
+  mean = mu
+}
+
+compute_precision_cholesky = function(List[Unknown] sigma, String model)
+return (List[Unknown] precision_chol)
+{
+  precision_chol = list()
+  d = ncol(as.matrix(sigma[1]))
+  if(model == "VVV")
+  { 
+    comp = length(sigma)
+    for(k in 1:length(sigma))
+    {
+      cov_chol = cholesky(as.matrix(sigma[k]))
+      pre_chol = t(solve(cov_chol, diag(matrix(1, d, 1))))
+      precision_chol = append(precision_chol, pre_chol)
+    }      
+  }
+  else if(model == "EEE")
+  { 
+    cov_chol = cholesky(as.matrix(sigma[1]))
+    pre_chol = t(solve(cov_chol, diag(matrix(1, d, 1))))
+    precision_chol = append(precision_chol, pre_chol)
+  }
+  else{
+    mat = as.matrix(sigma[1])
+    if(sum(mat <= 0) > 0)
+      stop("Fitting the mixture model failed because some components have 
+        ill-defined empirical covariance (for instance caused by singleton 
+        or collapsed samples). Try to decrease the number of components, 
+        or increase reg_covar.")
+    else
+    {
+      precision_chol = append(precision_chol, 1.0/sqrt(mat))
+    }   
+  }
+}
+
+e_step = function()
+return(Double norm, Matrix[Double] log_resp){
+  weighted_log_prob = self._estimate_weighted_log_prob(X)
+  log_prob_norm = logsumexp(weighted_log_prob, axis=1)
+  with np.errstate(under='ignore'):
+  # ignore underflow
+  log_resp = weighted_log_prob - log_prob_norm[:, np.newaxis]
+    norm = mean(log_prob_norm)
+}
+
+estimate_weighted_log_prob = function(Matrix[Double] X)
+return (Matrix[Double] weight_log_pro)
+{
+  weight_log_pro = estimate_log_prob(X) + estimate_log_weights()
+}
+  
+estimate_log_weights = function(Matrix[Double] w)
+return (Matrix[Double] log_weight)
+{
+  log_weight = log(w)
+}
+
+estimate_log_prob = function(Matrix[Double] X)
+return (Matrix[Double] log_prob)
+{
+  est_weight_log_pro = estimate_log_gaussian_prob(
+            X, self.means_, self.precisions_cholesky_, self.covariance_type)
+}
+
+compute_log_det_cholesky = function(Matrix[Double] mat_chol, String model, Integer d)
+return(Matrix[Double] log_det_prec_chol)
+{
+  log_det_prec_chol = list()
+  if(model == "VVV")
+  { 
+    comp = length(mat_chol)
+     
+    for(k in 1:n_components)
+    {
+      mat_chol = mat_chol * diag(matrix(1, d, 1))
+      log_det = colSums(log(as.matrix(mat_chol[k])))   # have to take the log of diag elements only
+      log_det_prec_chol = append(log_det_prec_chol, log_det)
+    }      
+  }
+  else if(model == "EEE")
+  { 
+    avgX2 = t(X) %*% X
+    avgMean = t(mu * nk) %*% mu
+    cov = avgX2 - avgMean
+    cov /= sum(nk)
+    cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
+    sigma = append(sigma, cov)
+  }
+  else if(model ==  "VVI")
+  {
+    avgX2 = (t(resp) %*% (X*X)) / t(nk)
+    avgMean = mu ^ 2
+    avgMean2 = mu * (t(resp) %*% X) / t(nk)
+    cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
+    sigma = append(sigma, cov)
+  }
+  else if (model == "VII")
+  {
+    avgX2 = (t(resp) %*% (X*X)) / t(nk)
+    avgMean = mu ^ 2
+    avgMean2 = mu * (t(resp) %*% X) / t(nk)
+    cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
+    sigma = append(sigma, colMeans(cov))
+  }
 }

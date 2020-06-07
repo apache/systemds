@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 X = read($X, data_type="frame", format="csv");
+print("X\n"+toString(X))
 M = read($Mask)
 [dataset, singleSet]= mice(F=X, cMask=M, iter=$iteration, complete=$com, verbose = FALSE)
 
@@ -32,6 +33,7 @@ else if (sum(M) == 0)
 {
   n = as.matrix(dataset) * (1-M)
   n = removeEmpty(target=n, margin = "cols")
+  print("X\n"+toString(n))
   write(n, $dataN)
 }
 else

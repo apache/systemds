@@ -128,7 +128,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		fullDMLScriptName = HOME + testFile + "Reference.dml";
 		programArgs = new String[] {"-args", input("A"), expected("B")};
 		runTest(true, false, null, -1);
 

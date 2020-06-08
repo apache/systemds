@@ -29,6 +29,7 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -177,9 +178,10 @@ public abstract class Encoder implements Serializable
 	 * other <code>Encoder</code>.
 	 * 
 	 * @param other the encoder that should be merged in
-	 * @param col   the position where it should be placed (1-based)
+	 * @param row   the row where it should be placed (1-based)
+	 * @param col   the col where it should be placed (1-based)
 	 */
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		throw new DMLRuntimeException(
 			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getSimpleName());
 	}
@@ -187,10 +189,9 @@ public abstract class Encoder implements Serializable
 	/**
 	 * Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.
 	 *
-	 * @param beginDims the begin indexes before encoding
-	 * @param endDims   the end indexes before encoding
+	 * @param range the range before encoding
 	 */
-	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+	public void updateIndexRanges(FederatedRange range) {
 		// do nothing - default
 	}
 

@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -117,7 +118,7 @@ public class EncoderComposite extends Encoder
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if (other instanceof EncoderComposite) {
 			EncoderComposite otherComposite = (EncoderComposite) other;
 			// TODO maybe assert that the _encoders never have the same type of encoder twice or more
@@ -125,7 +126,7 @@ public class EncoderComposite extends Encoder
 				boolean mergedIn = false;
 				for (Encoder encoder : _encoders) {
 					if (encoder.getClass() == otherEnc.getClass()) {
-						encoder.mergeAt(otherEnc, col);
+						encoder.mergeAt(otherEnc, row, col);
 						mergedIn = true;
 						break;
 					}
@@ -146,7 +147,7 @@ public class EncoderComposite extends Encoder
 		}
 		for (Encoder encoder : _encoders) {
 			if (encoder.getClass() == other.getClass()) {
-				encoder.mergeAt(other, col);
+				encoder.mergeAt(other, row, col);
 				// update dummycode encoder domain sizes based on distinctness information from other encoders
 				for (Encoder encDummy : _encoders) {
 					if (encDummy instanceof EncoderDummycode) {
@@ -157,13 +158,13 @@ public class EncoderComposite extends Encoder
 				return;
 			}
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 	
 	@Override
-	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+	public void updateIndexRanges(FederatedRange range) {
 		for(Encoder enc : _encoders) {
-			enc.updateIndexRanges(beginDims, endDims);
+			enc.updateIndexRanges(range);
 		}
 	}
 	

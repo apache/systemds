@@ -19,10 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-
+import java.util.Arrays;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils;
@@ -38,8 +37,7 @@ public class EncoderOmit extends Encoder
 	private static final long serialVersionUID = 1978852120416654195L;
 
 	private boolean _federated = false;
-	//TODO perf replace with boolean[rlen] similar to removeEmpty
-	private TreeSet<Integer> _rmRows = new TreeSet<>();
+	private boolean[] _rmRows = new boolean[0];
 
 	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException 
@@ -62,14 +60,21 @@ public class EncoderOmit extends Encoder
 	}
 	
 	
-	private EncoderOmit(int[] colList, int clen, TreeSet<Integer> rmRows) {
+	private EncoderOmit(int[] colList, int clen, boolean[] rmRows) {
 		super(colList, clen);
 		_rmRows = rmRows;
 		_federated = true;
 	}
-	
+
+	public int getNumRemovedRows(boolean[] rmRows) {
+		int cnt = 0;
+		for(boolean v : rmRows)
+			cnt += v ? 1 : 0;
+		return cnt;
+	}
+
 	public int getNumRemovedRows() {
-		return _rmRows.size();
+		return getNumRemovedRows(_rmRows);
 	}
 	
 	public boolean omit(String[] words, TfUtils agents) 
@@ -99,21 +104,21 @@ public class EncoderOmit extends Encoder
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		// local rmRows for broadcasting encoder in spark
-		TreeSet<Integer> rmRows;
+		boolean[] rmRows;
 		if(_federated)
 			rmRows = _rmRows;
 		else
 			rmRows = computeRmRows(in);
 
 		// determine output size
-		int numRows = out.getNumRows() - rmRows.size();
+		int numRows = out.getNumRows() - getNumRemovedRows(rmRows);
 
 		// copy over valid rows into the output
 		MatrixBlock ret = new MatrixBlock(numRows, out.getNumColumns(), false);
 		int pos = 0;
 		for(int i = 0; i < in.getNumRows(); i++) {
 			// copy row if necessary
-			if(!rmRows.contains(i)) {
+			if(!rmRows[i]) {
 				for(int j = 0; j < out.getNumColumns(); j++)
 					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
 				pos++;
@@ -125,17 +130,17 @@ public class EncoderOmit extends Encoder
 		return ret;
 	}
 
-	private TreeSet<Integer> computeRmRows(FrameBlock in) {
-		TreeSet<Integer> rmRows = new TreeSet<>();
+	private boolean[] computeRmRows(FrameBlock in) {
+		boolean[] rmRows = new boolean[in.getNumRows()];
 		ValueType[] schema = in.getSchema();
 		for(int i = 0; i < in.getNumRows(); i++) {
-			boolean valid = true;
 			for(int colID : _colList) {
 				Object val = in.get(i, colID - 1);
-				valid &= !(val == null || (schema[colID - 1] == ValueType.STRING && val.toString().isEmpty()));
+				if (val == null || (schema[colID - 1] == ValueType.STRING && val.toString().isEmpty())) {
+					rmRows[i] = true;
+					break; // early abort
+				}
 			}
-			if(!valid)
-				rmRows.add(i);
 		}
 		return rmRows;
 	}
@@ -146,38 +151,40 @@ public class EncoderOmit extends Encoder
 		if(colList.length == 0)
 			// empty encoder -> sub range encoder does not exist
 			return null;
-
-		TreeSet<Integer> rmRows = _rmRows.stream().filter((row) -> ixRange.inRowRange(row + 1))
-			.map((row) -> (int) (row - (ixRange.rowStart - 1))).collect(Collectors.toCollection(TreeSet::new));
+		boolean[] rmRows = _rmRows;
+		if (_rmRows.length > 0)
+			rmRows = Arrays.copyOfRange(rmRows, (int) ixRange.rowStart - 1, (int) ixRange.rowEnd - 1);
 
 		return new EncoderOmit(colList, (int) (ixRange.colSpan()), rmRows);
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderOmit) {
 			mergeColumnInfo(other, col);
-			_rmRows.addAll(((EncoderOmit) other)._rmRows);
+			EncoderOmit otherOmit = (EncoderOmit) other;
+			_rmRows = Arrays.copyOf(_rmRows, Math.max(_rmRows.length, (row - 1) + otherOmit._rmRows.length));
+			for (int i = 0; i < otherOmit._rmRows.length; i++)
+				_rmRows[(row - 1) + 1] |= otherOmit._rmRows[i];
 			return;
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 	
 	@Override
-	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+	public void updateIndexRanges(FederatedRange range) {
+		long[] beginDims = range.getBeginDims();
+		long[] endDims = range.getEndDims();
 		// first update begin dims
 		int numRowsToRemove = 0;
-		Integer removedRow = _rmRows.ceiling(0);
-		while(removedRow != null && removedRow < beginDims[0]) {
-			numRowsToRemove++;
-			removedRow = _rmRows.ceiling(removedRow + 1);
-		}
+		for (int i = 0; i < beginDims[0] - 1 && i < _rmRows.length; i++)
+			if (_rmRows[i])
+				numRowsToRemove++;
 		beginDims[0] -= numRowsToRemove;
 		// update end dims
-		while(removedRow != null && removedRow < endDims[0]) {
-			numRowsToRemove++;
-			removedRow = _rmRows.ceiling(removedRow + 1);
-		}
+		for (int i = 0; i < endDims[0] - 1 && i < _rmRows.length; i++)
+			if (_rmRows[i])
+				numRowsToRemove++;
 		endDims[0] -= numRowsToRemove;
 	}
 	

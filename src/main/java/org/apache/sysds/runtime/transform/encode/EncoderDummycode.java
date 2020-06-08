@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
@@ -128,7 +129,7 @@ public class EncoderDummycode extends Encoder
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderDummycode) {
 			mergeColumnInfo(other, col);
 
@@ -138,11 +139,13 @@ public class EncoderDummycode extends Encoder
 			Arrays.fill(_domainSizes, 0, _colList.length, 1);
 			return;
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 	
 	@Override
-	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+	public void updateIndexRanges(FederatedRange range) {
+		long[] beginDims = range.getBeginDims();
+		long[] endDims = range.getEndDims();
 		long[] initialBegin = Arrays.copyOf(beginDims, beginDims.length);
 		long[] initialEnd = Arrays.copyOf(endDims, endDims.length);
 		for(int i = 0; i < _colList.length; i++) {

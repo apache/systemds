@@ -88,12 +88,12 @@ public class EncoderPassThrough extends Encoder
 	}
 	
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderPassThrough) {
 			mergeColumnInfo(other, col);
 			return;
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 
 	@Override

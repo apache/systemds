@@ -31,6 +31,7 @@ limitations under the License.
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
     * [`mice`-Function](#mice-function)
+    * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
     * [`sigmoid`-Function](#sigmoid-function)
     * [`steplm`-Function](#steplm-function)
@@ -384,6 +385,39 @@ mice(F, cMask, iter, complete, verbose)
 F = as.frame(matrix("4 3 2 8 7 8 5", rows=1, cols=7))
 cMask = round(rand(rows=1,cols=ncol(F),min=0,max=1))
 [dataset, singleSet] = mice(F, cMask, iter = 3, complete = 3, verbose = FALSE)
+```
+
+## `pnmf`-Function
+
+The `pnmf`-function implements Poisson Non-negative Matrix Factorization (PNMF). Matrix `X` is factorized into
+two non-negative matrices, `W` and `H` based on Poisson probabilistic assumption. This non-negativity makes the
+resulting matrices easier to inspect.
+
+### Usage
+```r
+pnmf(X, rnk, eps = 10^-8, maxi = 10, verbose = TRUE)
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of feature vectors. |
+| rnk     | Integer        | required | Number of components into which matrix X is to be factored. |
+| eps     | Double         | `10^-8`  | Tolerance |
+| maxi    | Integer        | `10`     | Maximum number of conjugate gradient iterations. |
+| verbose | Boolean        | TRUE     | If TRUE, 'iter' and 'obj' are printed.|
+
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | List of pattern matrices, one for each repetition. |
+| Matrix[Double] | List of amplitude matrices, one for each repetition. |
+
+### Example
+```r
+X = rand(rows = 50, cols = 10)
+[W, H] = pnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10, verbose = TRUE)
 ```
 
 ## `scale`-Function

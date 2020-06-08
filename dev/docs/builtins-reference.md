@@ -29,6 +29,7 @@ limitations under the License.
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
+    * [`Multinomial Logistic Regression`-Function](#MultinomialLogisticRegression-function)
     * [`scale`-Function](#scale-function)
     * [`sigmoid`-Function](#sigmoid-function)
     * [`steplm`-Function](#steplm-function)

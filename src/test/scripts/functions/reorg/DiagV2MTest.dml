@@ -20,9 +20,9 @@
 #-------------------------------------------------------------
 
 
-A=read($1, rows=$2, cols=1, format="text")
+A=read($1)
 B=diag(A)
 C=matrix(1, rows=nrow(B), cols=ncol(B));
 D=B%*%C
 C=B+D
-write(C, $3, format="text")
+write(C, $2, format="text")

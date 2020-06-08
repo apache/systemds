@@ -38,19 +38,19 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.privacy.PrivacyMonitor;
+import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONObject;
 
@@ -149,6 +149,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 						return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
+					cd = PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
 					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 				}
 			}
@@ -181,10 +182,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeMatVecMult(long varID, MatrixBlock vector, boolean isMatVecMult) {
 		MatrixObject matTo = (MatrixObject) _vars.get(varID);
+		matTo = PrivacyMonitor.handlePrivacy(matTo);
 		MatrixBlock matBlock1 = matTo.acquireReadAndRelease();
 		// TODO other datatypes
-		AggregateBinaryOperator ab_op = new AggregateBinaryOperator(
-			Multiply.getMultiplyFnObject(), new AggregateOperator(0, Plus.getPlusFnObject()));
+		AggregateBinaryOperator ab_op = InstructionUtils
+			.getMatMultOperator(OptimizerUtils.getConstrainedNumThreads(0));
 		MatrixBlock result = isMatVecMult ?
 			matBlock1.aggregateBinaryOperations(matBlock1, vector, new MatrixBlock(), ab_op) :
 			vector.aggregateBinaryOperations(vector, matBlock1, new MatrixBlock(), ab_op);
@@ -199,6 +201,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse getVariableData(long varID) {
 		Data dataObject = _vars.get(varID);
+		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
 		switch (dataObject.getDataType()) {
 			case TENSOR:
 				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
@@ -233,6 +236,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					+ dataObject.getDataType().name());
 		}
 		MatrixObject matrixObject = (MatrixObject) dataObject;
+		matrixObject = PrivacyMonitor.handlePrivacy(matrixObject);
 		MatrixBlock matrixBlock = matrixObject.acquireRead();
 		// create matrix for calculation with correction
 		MatrixCharacteristics mc = new MatrixCharacteristics();
@@ -270,6 +274,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeScalarOperation(long varID, ScalarOperator operator) {
 		Data dataObject = _vars.get(varID);
+		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
 		if (dataObject.getDataType() != Types.DataType.MATRIX) {
 			return new FederatedResponse(FederatedResponse.Type.ERROR,
 				"FederatedWorkerHandler: ScalarOperator dont support "

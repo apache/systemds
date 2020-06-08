@@ -49,6 +49,12 @@ def approved_join_slice(node_i, node_j, cur_lvl):
     return commons == cur_lvl - 1
 
 
+def approved_union_slice(node_i, node_j):
+    if set(node_i.attributes).intersection(set(node_j.attributes)):
+        return False
+    return True
+
+
 def make_first_level(features, predictions, loss, top_k, w, loss_type):
     first_level = []
     # First level slices are enumerated in a "classic way" (getting data and not analyzing bounds
@@ -64,15 +70,6 @@ def make_first_level(features, predictions, loss, top_k, w, loss_type):
         first_level.append(new_node)
         new_node.print_debug(top_k, 0)
     return first_level
-
-
-def approved_union_slice(node_i, node_j):
-    for attr1 in node_i.attributes:
-        for attr2 in node_j.attributes:
-            if attr1 == attr2:
-                # there are common attributes which is not the case we need
-                return False
-    return True
 
 
 def process_node(node_i, level, loss, predictions, cur_lvl, top_k, alpha, loss_type, w, debug, enumerator):

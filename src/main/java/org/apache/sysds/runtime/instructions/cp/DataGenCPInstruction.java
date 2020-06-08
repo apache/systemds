@@ -130,14 +130,16 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	}
 
 	public long getRows() {
-		return rows.isLiteral() ? Long.parseLong(rows.getName()) : -1;
+		return rows.isLiteral() ? UtilFunctions.parseToLong(rows.getName()) : -1;
 	}
 
 	public long getCols() {
-		return cols.isLiteral() ? Long.parseLong(cols.getName()) : -1;
+		return cols.isLiteral() ? UtilFunctions.parseToLong(cols.getName()) : -1;
 	}
 
-	public String getDims() { return dims.getName(); }
+	public String getDims() { 
+		return dims.getName();
+	}
 	
 	public int getBlocksize() {
 		return blocksize;
@@ -172,15 +174,15 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	}
 	
 	public long getFrom() {
-		return seq_from.isLiteral() ? Long.parseLong(seq_from.getName()) : -1;
+		return seq_from.isLiteral() ? UtilFunctions.parseToLong(seq_from.getName()) : -1;
 	}
 	
 	public long getTo() {
-		return seq_to.isLiteral() ? Long.parseLong(seq_to.getName()) : -1;
+		return seq_to.isLiteral() ? UtilFunctions.parseToLong(seq_to.getName()) : -1;
 	}
 	
 	public long getIncr() {
-		return seq_incr.isLiteral() ? Long.parseLong(seq_incr.getName()) : -1;
+		return seq_incr.isLiteral() ? UtilFunctions.parseToLong(seq_incr.getName()) : -1;
 	}
 
 	public static DataGenCPInstruction parseInstruction(String str)
@@ -385,16 +387,47 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String tmpInstStr = instString;
-		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
-			//generate pseudo-random seed (because not specified)
-			if (runtimeSeed == null)
-				runtimeSeed = (minValue == maxValue && sparsity == 1) ? 
-					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
-			int position = (method == OpOpDG.RAND) ? SEED_POSITION_RAND :
-					(method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
-			tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
-							tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
+		
+		switch(method) {
+			case RAND:
+			case SAMPLE: {
+				if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
+					//generate pseudo-random seed (because not specified)
+					if (runtimeSeed == null)
+						runtimeSeed = (minValue == maxValue && sparsity == 1) ? 
+							DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
+					int position = (method == OpOpDG.RAND) ? SEED_POSITION_RAND :
+						(method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
+					tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
+						tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
+				}
+				//replace output variable name with a placeholder
+				//tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, rows, 2, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, cols, 3, ec);
+				break;
+			}
+			case SEQ: {
+				//replace output variable name with a placeholder
+				//tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_from, 5, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_to, 6, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_incr, 7, ec);
+				break;
+			}
+			case TIME: 
+				//only opcode (time) is sufficient to compute from lineage.
+				break;
+			default:
+				throw new DMLRuntimeException("Unsupported datagen op: "+method);
 		}
 		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
+	}
+	
+	private static String replaceNonLiteral(String inst, CPOperand op, int pos, ExecutionContext ec) {
+		if( !op.isLiteral() )
+			inst = InstructionUtils.replaceOperand(inst, pos,
+				new CPOperand(ec.getScalarInput(op)).getLineageLiteral());
+		return inst;
 	}
 }

@@ -1448,15 +1448,11 @@ public class Recompiler
 	 * @param scalarsOnly if true, replace only scalar variables but no matrix operations;
 	 *            if false, apply full literal replacement
 	 */
-	public static void rReplaceLiterals( Hop hop, ExecutionContext ec, boolean scalarsOnly )
-	{
-		//public interface 
+	public static void rReplaceLiterals( Hop hop, ExecutionContext ec, boolean scalarsOnly ) {
 		LiteralReplacement.rReplaceLiterals(hop, ec, scalarsOnly);
 	}
 
-	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars, boolean scalarsOnly )
-	{
-		//public interface 
+	public static void rReplaceLiterals( Hop hop, LocalVariableMap vars, boolean scalarsOnly ) {
 		LiteralReplacement.rReplaceLiterals(hop, new ExecutionContext(vars), scalarsOnly);
 	}
 	

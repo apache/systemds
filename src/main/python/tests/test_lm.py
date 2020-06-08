@@ -19,61 +19,54 @@
 #
 # -------------------------------------------------------------
 
-import warnings
 import unittest
 
-import os
-import sys
-
 import numpy as np
-
-path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
-sys.path.insert(0, path)
-
-from systemds.context import SystemDSContext
 from sklearn.linear_model import LinearRegression
-import random
+from systemds.context import SystemDSContext
+from systemds.operator.algorithm import lm
+from systemds.matrix import Matrix
 
-sds = SystemDSContext()
-
-regressor = LinearRegression(fit_intercept=False)
-shape = (random.randrange(1, 30), random.randrange(1, 30))
-eps = 1e-03
+np.random.seed(7)
 
 class TestLm(unittest.TestCase):
-    def setUp(self):
-        warnings.filterwarnings(
-            action="ignore", message="unclosed", category=ResourceWarning)
 
-    def tearDown(self):
-        warnings.filterwarnings(
-            action="ignore", message="unclosed", category=ResourceWarning)
+    sds: SystemDSContext = None
 
-    def test_lm(self):
-        X = np.random.rand(shape[0], shape[1])
-        y = np.random.rand(shape[0], 1)
+    @classmethod
+    def setUpClass(cls):
+        cls.sds = SystemDSContext()
 
-        try:
-            sds_model_weights = sds.matrix(X).lm(sds.matrix(y)).compute()
-            model = regressor.fit(X, y)
+    @classmethod
+    def tearDownClass(cls):
+        cls.sds.close()
 
-            model.coef_ = model.coef_.reshape(sds_model_weights.shape)
-            self.assertTrue(np.allclose(sds_model_weights, model.coef_, eps))
-        except Exception as e:
-            print(e)
-            self.assertTrue(False, "This should not raise an exception!")
+    def test_lm_simple(self):
+        # if the dimensions of the input is 1, then the
+        X = np.random.rand(30, 1)
+        Y = np.random.rand(30, 1)
+        regressor = LinearRegression(fit_intercept=False)
+        model = regressor.fit(X, Y).coef_
+
+        X_sds = Matrix(self.sds, X)
+        Y_sds = Matrix(self.sds, Y)
+
+        sds_model_weights = lm(X_sds, Y_sds).compute()
+        model = model.reshape(sds_model_weights.shape)
+
+        eps = 1e-03
+
+        self.assertTrue(
+            np.allclose(sds_model_weights, model, eps),
+            "All elements are not close")
 
     def test_lm_invalid_shape(self):
-        X = np.random.rand(shape[0], 0)
-        y = np.random.rand(0, 1)
+        X = Matrix(self.sds, np.random.rand(30, 0))
+        Y = Matrix(self.sds, np.random.rand(0, 1))
 
-        try:
-            sds_model_weights = sds.matrix(X).lm(sds.matrix(y)).compute()
-            self.assertTrue(False, "An exception was expected!")
-        except Exception as e:
-            print(e)
+        with self.assertRaises(ValueError) as context:
+            sds_model_weights = lm(X, Y).compute()
 
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-    sds.close()

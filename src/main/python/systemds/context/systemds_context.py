@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,66 +17,114 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 __all__ = ["SystemDSContext"]
 
+import copy
 import os
-import subprocess
-import threading
-from typing import Optional, Sequence, Union, Dict, Tuple, Iterable
+import time
+from glob import glob
+from queue import Empty, Queue
+from subprocess import PIPE, Popen
+from threading import Lock, Thread
+from time import sleep
+from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
-from py4j.java_gateway import JavaGateway
+from py4j.java_gateway import GatewayParameters, JavaGateway
 from py4j.protocol import Py4JNetworkError
-
-from systemds.matrix import full, seq, federated, Matrix, rand, rev, order, t, OperationNode
-from systemds.utils.helpers import get_module_dir
 from systemds.utils.consts import VALID_INPUT_TYPES
-
-PROCESS_LOCK: threading.Lock = threading.Lock()
-PROCESS: Optional[subprocess.Popen] = None
-ACTIVE_PROCESS_CONNECTIONS: int = 0
+from systemds.utils.helpers import get_module_dir
 
 
 class SystemDSContext(object):
-    """A context with a connection to the java instance with which SystemDS operations are executed.
-    If necessary this class might also start a java process which is used for the SystemDS operations,
-    before connecting."""
-    _java_gateway: Optional[JavaGateway]
+    """A context with a connection to a java instance with which SystemDS operations are executed. 
+    The java process is started and is running using a random tcp port for instruction parsing."""
+
+    java_gateway: JavaGateway
+    __stdout: Queue
+    __stderr: Queue
 
     def __init__(self):
-        global PROCESS_LOCK
-        global PROCESS
-        global ACTIVE_PROCESS_CONNECTIONS
-        # make sure that a process is only started if necessary and no other thread
-        # is killing the process while the connection is established
-        PROCESS_LOCK.acquire()
-        try:
-            # attempt connection to manually started java instance
-            self._java_gateway = JavaGateway(eager_load=True)
-        except Py4JNetworkError:
-            # if no java instance is running start it
-            systemds_java_path = os.path.join(get_module_dir(), 'systemds-java')
-            cp_separator = ':'
-            if os.name == 'nt':  # nt means its Windows
-                cp_separator = ';'
-            lib_cp = os.path.join(systemds_java_path, 'lib', '*')
-            systemds_cp = os.path.join(systemds_java_path, '*')
-            classpath = cp_separator.join([lib_cp, systemds_cp])
-            process = subprocess.Popen(['java', '-cp', classpath, 'org.apache.sysds.pythonapi.PythonDMLScript'],
-                                       stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-            process.stdout.readline()  # wait for 'Gateway Server Started\n' written by server
-            assert process.poll() is None, "Could not start JMLC server"
-            self._java_gateway = JavaGateway()
-            PROCESS = process
-        if PROCESS is not None:
-            ACTIVE_PROCESS_CONNECTIONS += 1
-        PROCESS_LOCK.release()
+        """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
+        Any new instance of this SystemDS Context, would start a separate new JVM.
 
-    @property
-    def java_gateway(self):
-        return self._java_gateway
+        Standard out and standard error form the JVM is also handled in this class, filling up Queues,
+        that can be read from to get the printed statements from the JVM.
+        """
+
+        systemds_java_path = os.path.join(get_module_dir(), "systemds-java")
+        # nt means its Windows
+        cp_separator = ";" if os.name == "nt" else ":"
+        lib_cp = os.path.join(systemds_java_path, "lib", "*")
+        systemds_cp = os.path.join(systemds_java_path, "*")
+        classpath = cp_separator.join([lib_cp, systemds_cp])
+
+        # TODO make use of JavaHome env-variable if set to find java, instead of just using any java available.
+        command = ["java", "-cp", classpath]
+
+        sys_root = os.environ.get("SYSTEMDS_ROOT")
+        if sys_root != None:
+            files = glob(os.path.join(sys_root, "conf", "log4j*.properties"))
+            if len(files) > 1:
+                print("WARNING: Multiple logging files")
+            if len(files) == 0:
+                print("WARNING: No log4j file found at: "
+                      + os.path.join(sys_root, "conf")
+                      + " therefore using default settings")
+            else:
+                # print("Using Log4J file at " + files[0])
+                command.append("-Dlog4j.configuration=file:" + files[0])
+        else:
+            print("Default Log4J used, since environment $SYSTEMDS_ROOT not set")
+
+        command.append("org.apache.sysds.api.PythonDMLScript")
+
+        # TODO add an argument parser here
+        # Find a random port, and hope that no other process
+        # steals it while we wait for the JVM to startup
+        port = self.__get_open_port()
+        command.append(str(port))
+
+        process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+        first_stdout = process.stdout.readline()
+        assert (b"Server Started" in first_stdout), "Error JMLC Server not Started"
+
+        # Handle Std out from the subprocess.
+        self.__stdout = Queue()
+        self.__stderr = Queue()
+
+        Thread(target= self.__enqueue_output, args=(
+            process.stdout, self.__stdout), daemon=True).start()
+        Thread(target= self.__enqueue_output, args=(
+            process.stderr, self.__stderr), daemon=True).start()
+
+        # Py4j connect to the started process.
+        gateway_parameters = GatewayParameters(
+            port=port, eager_load=True, read_timeout=5)
+        self.java_gateway = JavaGateway(
+            gateway_parameters=gateway_parameters, java_process=process)
+
+    def get_stdout(self, lines: int = 1):
+        """Getter for the stdout of the java subprocess
+        The output is taken from the stdout queue and returned in a new list.
+        :param lines: The number of lines to try to read from the stdout queue
+        """
+        if self.__stdout.qsize() < lines:
+            return [self.__stdout.get() for x in range(self.__stdout.qsize())]
+        else:
+            return [self.__stdout.get() for x in range(lines)]
+
+    def get_stderr(self, lines: int = 1):
+        """Getter for the stderr of the java subprocess
+        The output is taken from the stderr queue and returned in a new list.
+        :param lines: The number of lines to try to read from the stderr queue
+        """
+        if self.__stderr.qsize() < lines:
+            return [self.__stderr.get() for x in range(self.__stderr.qsize())]
+        else:
+            return [self.__stderr.get() for x in range(lines)]
 
     def __enter__(self):
         return self
@@ -88,102 +136,28 @@ class SystemDSContext(object):
 
     def close(self):
         """Close the connection to the java process and do necessary cleanup."""
+        process : Popen = self.java_gateway.java_process
+        self.java_gateway.shutdown()
+        # Send SigTerm
+        os.kill(process.pid, 14)
 
-        global PROCESS_LOCK
-        global PROCESS
-        global ACTIVE_PROCESS_CONNECTIONS
-        self._java_gateway.shutdown()
-        PROCESS_LOCK.acquire()
-        # check if no other thread is connected to the process, if it was started as a subprocess
-        if PROCESS is not None and ACTIVE_PROCESS_CONNECTIONS == 1:
-            # stop the process by sending a new line (it will shutdown on its own)
-            PROCESS.communicate(input=b'\n')
-            PROCESS.wait()
-            PROCESS = None
-            ACTIVE_PROCESS_CONNECTIONS = 0
-        PROCESS_LOCK.release()
-
-    def matrix(self, mat: Union[np.array, os.PathLike], *args: Sequence[VALID_INPUT_TYPES],
-               **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Matrix':
-        """ Create matrix.
-
-        :param mat: Matrix given by numpy array or path to matrix file
-        :param args: additional arguments
-        :param kwargs: additional named arguments
-        :return: the OperationNode representing this operation
+    def __enqueue_output(self,out, queue):
+        """Method for handling the output from java.
+        It is locating the string handeling inside a different thread, since the 'out.readline' is a blocking command.
         """
-        return Matrix(self, mat, *args, **kwargs)
+        for line in iter(out.readline, b""):
+            queue.put(line.decode("utf-8").strip())
 
-    def federated(self, addresses: Iterable[str], ranges: Iterable[Tuple[Iterable[int], Iterable[int]]],
-                  *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
-        """Create federated matrix object.
-    
-        :param addresses: addresses of the federated workers
-        :param ranges: for each federated worker a pair of begin and end index of their held matrix
-        :param args: unnamed params
-        :param kwargs: named params
-        :return: the OperationNode representing this operation
-        """
-        return federated(self, addresses, ranges, *args, **kwargs)
 
-    def full(self, shape: Tuple[int, int], value: Union[float, int]) -> 'OperationNode':
-        """Generates a matrix completely filled with a value
-
-        :param shape: shape (rows and cols) of the matrix
-        :param value: the value to fill all cells with
-        :return: the OperationNode representing this operation
-        """
-        return full(self, shape, value)
-
-    def seq(self, start: Union[float, int], stop: Union[float, int] = None,
-            step: Union[float, int] = 1) -> 'OperationNode':
-        """Create a single column vector with values from `start` to `stop` and an increment of `step`.
-        If no stop is defined and only one parameter is given, then start will be 0 and the parameter will be
-        interpreted as stop.
-
-        :param start: the starting value
-        :param stop: the maximum value
-        :param step: the step size
-        :return: the OperationNode representing this operation
-        """
-        return seq(self, start, stop, step)
-
-    def rand(self, rows: int, cols: int, min: Union[float, int] = None,
-             max: Union[float, int] = None, pdf: str = "uniform",
-             sparsity: Union[float, int] = None, seed: Union[float, int] = None,
-             lambd: Union[float, int] = 1) -> 'OperationNode':
-        """Generates a matrix filled with random values
-
-        :param rows: number of rows
-        :param cols: number of cols
-        :param min: min value for cells
-        :param max: max value for cells
-        :param pdf: "uniform"/"normal"/"poison" distribution
-        :param sparsity: fraction of non-zero cells
-        :param seed: random seed
-        :param lambd: lamda value for "poison" distribution
-        :return:
-        """
-        available_pdfs = ["uniform", "normal", "poisson"]
-        if rows < 0:
-            raise ValueError("In rand statement, can only assign rows a long (integer) value >= 0 "
-                            "-- attempted to assign value: {r}".format(r=rows))
-        if cols < 0:
-            raise ValueError("In rand statement, can only assign cols a long (integer) value >= 0 "
-                            "-- attempted to assign value: {c}".format(c=cols))
-        if pdf not in available_pdfs:
-            raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(g=pdf, e=available_pdfs))
-
-        return rand(self, rows, cols, min, max, pdf, sparsity, seed, lambd)
-
-    def rev(self, mat: Matrix) -> 'OperationNode':
-        return rev(self, mat)
-
-    def order(self, mat: Matrix, by: int = 0, decreasing: bool = False,
-              index_return: bool = False) -> 'OperationNode':
-
-        return order(self, mat, by, decreasing, index_return)
-
-    def t(self, mat: Matrix) -> 'OperationNode':
-
-        return t(self, mat)
+    def __get_open_port(self):
+        """Get a random available port."""
+        # TODO Verify that it is not taking some critical ports change to select a good port range.
+        # TODO If it tries to select a port already in use, find anotherone. (recursion)
+        # https://stackoverflow.com/questions/2838244/get-open-tcp-port-in-python
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("", 0))
+        s.listen(1)
+        port = s.getsockname()[1]
+        s.close()
+        return port

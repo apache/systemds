@@ -70,7 +70,7 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase {
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			fullDMLScriptName = HOME + dml_test_name + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"), input("B"), input("Y0"), output("C")};
+			programArgs = new String[]{"-args", input("A"), input("B"), input("Y0"), output("C")};
 			double[][] A = TestUtils.ceil(getRandomMatrix(rows, cols, 0, 10, 1, 7));
 			double[][] B = TestUtils.ceil(getRandomMatrix(10, 1, 0, 10, 1.0, 3));
 			double[][] As = new double[rows][cols];

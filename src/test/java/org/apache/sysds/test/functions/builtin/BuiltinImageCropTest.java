@@ -76,7 +76,7 @@ public class BuiltinImageCropTest extends AutomatedTestBase
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-stats", "-nvargs",
+			programArgs = new String[]{"-nvargs",
 					"in_file=" + input("A"), "out_file=" + output("B"),
 					"size=" + size, "x_offset=" + x_offset, "y_offset=" + y_offset, "width=" + cols, "height=" + rows
 			};

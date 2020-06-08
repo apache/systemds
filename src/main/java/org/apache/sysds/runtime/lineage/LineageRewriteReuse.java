@@ -123,8 +123,6 @@ public class LineageRewriteReuse
 
 		//put the result into the cache
 		LineageCache.putMatrix(curr, ec, t1-t0);
-		if (DMLScript.STATISTICS) 
-			LineageCacheStatistics.incrementPRwExecTime(t1-t0);
 		DMLScript.EXPLAIN = et; //TODO can't change this here
 		
 		//cleanup execution context
@@ -142,7 +140,6 @@ public class LineageRewriteReuse
 		if(!isTsmmCbind(curr, ec, inCache))
 			return null;
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the cached tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -186,10 +183,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteTsmmCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 
@@ -202,7 +197,6 @@ public class LineageRewriteReuse
 		if(!isTsmmCbindOnes(curr, ec, inCache))
 			return null;
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the cached tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -228,10 +222,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteTsmmCbindOnes APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 	
@@ -242,7 +234,6 @@ public class LineageRewriteReuse
 		if (!isTsmmRbind(curr, ec, inCache))
 			return null;
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -272,10 +263,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteTsmmRbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 
@@ -286,7 +275,6 @@ public class LineageRewriteReuse
 		if (!isTsmm2Cbind(curr, ec, inCache))
 			return null;
 
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		MatrixObject newmo = convMBtoMO(cachedEntry);
@@ -335,10 +323,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteTsmm2Cbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS) 
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 
@@ -349,7 +335,6 @@ public class LineageRewriteReuse
 		if (!isMatMulRbindLeft(curr, ec, inCache))
 			return null;
 
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last ba+* result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -380,10 +365,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteMetMulRbindLeft APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 
@@ -394,7 +377,6 @@ public class LineageRewriteReuse
 		if (!isMatMulCbindRight(curr, ec, inCache))
 			return null;
 
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last ba+* result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -425,10 +407,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRight APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 
@@ -441,7 +421,6 @@ public class LineageRewriteReuse
 		if (!isMatMulCbindRightOnes(curr, ec, inCache))
 			return null;
 
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last ba+* result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -459,10 +438,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRightOnes APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 
@@ -473,7 +450,6 @@ public class LineageRewriteReuse
 		if (!isElementMulRbind(curr, ec, inCache))
 			return null;
 
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last * result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -515,10 +491,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteElementMulRbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 
@@ -529,7 +503,6 @@ public class LineageRewriteReuse
 		if (!isElementMulCbind(curr, ec, inCache))
 			return null;
 
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last * result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -571,10 +544,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 	
@@ -585,7 +556,6 @@ public class LineageRewriteReuse
 		if (!isAggCbind (curr, ec, inCache))
 			return null;
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Create a transient read op over the last * result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
 		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
@@ -627,10 +597,8 @@ public class LineageRewriteReuse
 			LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 
-		if (DMLScript.STATISTICS) {
-			LineageCacheStatistics.incrementPRewriteTime(System.nanoTime() - t0);
+		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
-		}
 		return inst;
 	}
 	
@@ -908,10 +876,7 @@ public class LineageRewriteReuse
 	/*----------------------INSTRUCTIONS GENERATION & EXECUTION-----------------------*/
 
 	private static ArrayList<Instruction> genInst(Hop hops, ExecutionContext ec) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(hops, ec.getVariables(), null, true, true, 0);
-		if (DMLScript.STATISTICS) 
-			LineageCacheStatistics.incrementPRwExecTime(System.nanoTime()-t0);
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("COMPENSATION PLAN: ");
 			LOG.debug("EXPLAIN LINEAGE REWRITE (HOP) \n" + Explain.explain(hops,1));

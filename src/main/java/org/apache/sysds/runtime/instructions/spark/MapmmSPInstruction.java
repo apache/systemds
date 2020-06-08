@@ -80,9 +80,8 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		boolean outputEmpty = Boolean.parseBoolean(parts[5]);
 		SparkAggType aggtype = SparkAggType.valueOf(parts[6]);
 		
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-		return new MapmmSPInstruction(aggbin, in1, in2, out, type, outputEmpty, aggtype, opcode, str);		
+		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
+		return new MapmmSPInstruction(aggbin, in1, in2, out, type, outputEmpty, aggtype, opcode, str);
 	}
 	
 	@Override
@@ -245,14 +244,10 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		private final AggregateBinaryOperator _op;
 		private final PartitionedBroadcast<MatrixBlock> _pbc;
 		
-		public RDDMapMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput )
-		{
+		public RDDMapMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput ) {
 			_type = type;
 			_pbc = binput;
-			
-			//created operator for reuse
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+			_op = InstructionUtils.getMatMultOperator(1);
 		}
 		
 		@Override
@@ -412,14 +407,10 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		private final AggregateBinaryOperator _op;
 		private final PartitionedBroadcast<MatrixBlock> _pbc;
 		
-		public RDDFlatMapMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput )
-		{
+		public RDDFlatMapMMFunction( CacheType type, PartitionedBroadcast<MatrixBlock> binput ) {
 			_type = type;
 			_pbc = binput;
-			
-			//created operator for reuse
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-			_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+			_op = InstructionUtils.getMatMultOperator(1);
 		}
 		
 		@Override

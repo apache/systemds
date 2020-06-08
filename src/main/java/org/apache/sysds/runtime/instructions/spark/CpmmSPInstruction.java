@@ -27,8 +27,6 @@ import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -42,7 +40,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -75,8 +72,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
 		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
 		SparkAggType aggtype = SparkAggType.valueOf(parts[5]);
 		return new CpmmSPInstruction(aggbin, in1, in2, out, outputEmptyBlocks, aggtype, opcode, str);
@@ -195,8 +191,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			throws Exception
 		{
 			if( _op == null ) { //lazy operator construction
-				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-				_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+				_op = InstructionUtils.getMatMultOperator(1);
 			}
 			
 			MatrixBlock blkIn1 = (MatrixBlock)arg0._2()._1().getValue();
@@ -224,8 +219,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0) throws Exception {
 			 //lazy operator construction
 			if( _op == null ) {
-				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-				_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+				_op = InstructionUtils.getMatMultOperator(1);
 				_rop = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
 			}
 			//prepare inputs, including transpose of right-hand-side

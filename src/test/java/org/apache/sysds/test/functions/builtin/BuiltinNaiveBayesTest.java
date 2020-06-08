@@ -72,7 +72,6 @@ public class BuiltinNaiveBayesTest extends AutomatedTestBase
 		double laplace_correction = 1;
 
 		List<String> proArgs = new ArrayList<>();
-		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(input("X"));
 		proArgs.add(input("Y"));

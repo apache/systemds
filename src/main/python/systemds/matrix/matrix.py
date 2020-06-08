@@ -17,26 +17,20 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
-__all__ = ['Matrix', 'federated', 'full', 'seq', 'rand', 'rev', 'order', 't']
 
 import os
-from typing import Union, Optional, Iterable, Dict, Tuple, Sequence, TYPE_CHECKING
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
-from py4j.java_gateway import JVMView, JavaObject
-
-from systemds.utils.converters import numpy_to_matrix_block
-from systemds.matrix.operation_node import OperationNode
-
+from py4j.java_gateway import JavaObject, JVMView
+from systemds.context import SystemDSContext
+from systemds.operator import OperationNode
 from systemds.utils.consts import VALID_INPUT_TYPES
+from systemds.utils.converters import numpy_to_matrix_block
 
-if TYPE_CHECKING:
-    # to avoid cyclic dependencies during runtime
-    from systemds.context import SystemDSContext
-
-# TODO maybe instead of having a new class we could have a function `matrix` instead, adding behaviour to
+# TODO maybe instead of having a new class we could have a function `matrix` instead, adding behavior to
 #  `OperationNode` would be necessary
 
 
@@ -58,17 +52,20 @@ class Matrix(OperationNode):
             named_params = {}
             self._np_array = None
         else:
-            unnamed_params = ['\'./tmp/{file_name}\'']  # TODO better alternative than format string?
+            # TODO better alternative than format string?
+            unnamed_params = ['\'./tmp/{file_name}\'']
             named_params = {'rows': -1, 'cols': -1}
             self._np_array = mat
         unnamed_params.extend(args)
         named_params.update(kwargs)
-        super().__init__(sds_context, 'read', unnamed_params, named_params, is_python_local_data=self._is_numpy())
+        super().__init__(sds_context, 'read', unnamed_params,
+                         named_params, is_python_local_data=self._is_numpy())
 
     def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
         assert self.is_python_local_data, 'Can only pass data to prepared script if it is python local!'
         if self._is_numpy():
-            prepared_script.setMatrix(var_name, numpy_to_matrix_block(jvm, self._np_array), True)  # True for reuse
+            prepared_script.setMatrix(var_name, numpy_to_matrix_block(
+                jvm, self._np_array), True)  # True for reuse
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
@@ -87,101 +84,3 @@ class Matrix(OperationNode):
 
     def _is_numpy(self) -> bool:
         return self._np_array is not None
-
-
-def federated(sds_context: 'SystemDSContext', addresses: Iterable[str],
-              ranges: Iterable[Tuple[Iterable[int], Iterable[int]]], *args,
-              **kwargs) -> OperationNode:
-    """Create federated matrix object.
-
-    :param sds_context: the SystemDS context
-    :param addresses: addresses of the federated workers
-    :param ranges: for each federated worker a pair of begin and end index of their held matrix
-    :param args: unnamed params
-    :param kwargs: named params
-    :return: the OperationNode representing this operation
-    """
-    addresses_str = 'list(' + ','.join(map(lambda s: f'"{s}"', addresses)) + ')'
-    ranges_str = 'list('
-    for begin, end in ranges:
-        ranges_str += f'list({",".join(map(str, begin))}), list({",".join(map(str, end))}),'
-    ranges_str = ranges_str[:-1]
-    ranges_str += ')'
-    named_params = {'addresses': addresses_str, 'ranges': ranges_str}
-    named_params.update(kwargs)
-    return OperationNode(sds_context, 'federated', args, named_params)
-
-
-def full(sds_context: 'SystemDSContext', shape: Tuple[int, int], value: Union[float, int]) -> OperationNode:
-    """Generates a matrix completely filled with a value
-
-    :param sds_context: SystemDS context
-    :param shape: shape (rows and cols) of the matrix TODO tensor
-    :param value: the value to fill all cells with
-    :return: the OperationNode representing this operation
-    """
-    unnamed_input_nodes = [value]
-    named_input_nodes = {'rows': shape[0], 'cols': shape[1]}
-    return OperationNode(sds_context, 'matrix', unnamed_input_nodes, named_input_nodes)
-
-
-def seq(sds_context: 'SystemDSContext', start: Union[float, int], stop: Union[float, int] = None,
-        step: Union[float, int] = 1) -> OperationNode:
-    """Create a single column vector with values from `start` to `stop` and an increment of `step`.
-    If no stop is defined and only one parameter is given, then start will be 0 and the parameter will be interpreted as
-    stop.
-
-    :param sds_context: SystemDS context
-    :param start: the starting value
-    :param stop: the maximum value
-    :param step: the step size
-    :return: the OperationNode representing this operation
-    """
-    if stop is None:
-        stop = start
-        start = 0
-    unnamed_input_nodes = [start, stop, step]
-    return OperationNode(sds_context, 'seq', unnamed_input_nodes)
-
-
-def rand(sds_context: 'SystemDSContext', rows: int, cols: int, min: Union[float, int] = None, max: Union[float, int] = None, pdf: str = "uniform",
-         sparsity: Union[float, int] = None, seed: Union[float, int] = None,
-         lambd: Union[float, int] = 1) -> OperationNode:
-    """Generates a matrix filled with random values
-
-    :param rows: number of rows
-    :param cols: number of cols
-    :param min: min value for cells
-    :param max: max value for cells
-    :param pdf: "uniform"/"normal"/"poison" distribution
-    :param sparsity: fraction of non-zero cells
-    :param seed: random seed
-    :param lambd: lamda value for "poison" distribution
-    :return:
-    """
-    pdf = '\"' + pdf + '\"'
-    named_input_nodes = {'rows': rows, 'cols': cols, 'pdf': pdf, 'lambda': lambd}
-    if min is not None:
-        named_input_nodes['min'] = min
-    if max is not None:
-        named_input_nodes['max'] = max
-    if sparsity is not None:
-        named_input_nodes['sparsity'] = sparsity
-    if seed is not None:
-        named_input_nodes['seed'] = seed
-
-    return OperationNode(sds_context, 'rand', [], named_input_nodes=named_input_nodes)
-
-
-def rev(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
-    return OperationNode(sds_context, 'rev', [mat])
-
-
-def order(sds_context: 'SystemDSContext', mat: Matrix, by: int = 1, decreasing: bool = False, index_return: bool = False) -> 'OperationNode':
-    named_input_nodes = {'target': mat, 'by': by, 'decreasing': 'FALSE', 'index.return': 'FALSE'}
-
-    return OperationNode(sds_context, 'order', [], named_input_nodes=named_input_nodes)
-
-
-def t(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
-    return OperationNode(sds_context, 't', [mat])

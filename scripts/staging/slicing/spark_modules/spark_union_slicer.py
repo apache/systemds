@@ -40,13 +40,14 @@ def process(all_features, predictions, loss, sc, debug, alpha, k, w, loss_type, 
         .map(lambda node: (node.key, node)) \
         .collect()
     first_level.update(init_slices)
-    update_top_k(first_level, b_topk.value, alpha, predictions)
+    update_top_k(first_level, top_k, alpha, predictions)
     prev_level = SparkContext.broadcast(sc, first_level)
     levels.append(prev_level)
     cur_lvl = 1
-    b_topk.value.print_topk()
+    top_k.print_topk()
     while len(levels[cur_lvl - 1].value) > 0:
         cur_lvl_res = {}
+        b_topk = SparkContext.broadcast(sc, top_k)
         for left in range(int(cur_lvl / 2) + 1):
             right = cur_lvl - left - 1
             partitions = sc.parallelize(levels[left].value.values())
@@ -59,7 +60,7 @@ def process(all_features, predictions, loss, sc, debug, alpha, k, w, loss_type, 
             cur_lvl_res.update(partial)
         prev_level = SparkContext.broadcast(sc, cur_lvl_res)
         levels.append(prev_level)
-        update_top_k(cur_lvl_res, b_topk.value, alpha, predictions)
+        update_top_k(cur_lvl_res, top_k, alpha, predictions)
         cur_lvl = cur_lvl + 1
         top_k.print_topk()
         print("Level " + str(cur_lvl) + " had " + str(len(levels[cur_lvl - 1].value) * (len(levels[cur_lvl - 1].value) - 1)) +
@@ -67,4 +68,4 @@ def process(all_features, predictions, loss, sc, debug, alpha, k, w, loss_type, 
     print("Program stopped at level " + str(cur_lvl))
     print()
     print("Selected slices are: ")
-    b_topk.value.print_topk()
+    top_k.print_topk()

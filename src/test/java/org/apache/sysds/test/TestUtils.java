@@ -779,7 +779,7 @@ public class TestUtils
 	 * 
 	 * @param d1 The expected value.
 	 * @param d2 The actual value.
-	 * @return Whether they are equal or not.
+	 * @return Whether distance in bits
 	 */
 	public static long compareScalarBits(double d1, double d2) {
 		long expectedBits = Double.doubleToLongBits(d1) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d1) : Double.doubleToLongBits(d1);
@@ -1379,6 +1379,42 @@ public class TestUtils
 				if (random.nextDouble() > sparsity)
 					continue;
 				matrix[i][j] = (random.nextDouble() * (max - min) + min);
+			}
+		}
+
+		return matrix;
+	}
+
+	/**
+	 * 
+	 * Generates a test matrix, but only containing real numbers, in the range specified.
+	 * 
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value whole number
+	 * @param max maximum value whole number
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @return random matrix containing whole numbers in the range specified.
+	 */
+	public static int[][] generateTestMatrixIntV(int rows, int cols, int min, int max, double sparsity, long seed) {
+		int[][] matrix = new int[rows][cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		if (max - min != 0){
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					if (random.nextDouble() > sparsity)
+						continue;
+					matrix[i][j] = (random.nextInt((max - min)) + min);
+				}
+			}
+		} else{
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					if (random.nextDouble() > sparsity)
+						continue;
+					matrix[i][j] = max;
+				}
 			}
 		}
 

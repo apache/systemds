@@ -112,8 +112,6 @@ public class DMLScript
 	public static String _uuid = IDHandler.createDistributedUniqueID();
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 
-	private static FileSystem fs = null;
-
 	///////////////////////////////
 	// public external interface
 	////////
@@ -283,7 +281,7 @@ public class DMLScript
 					|| IOUtilFunctions.isObjectStoreFileScheme(new Path(fileName)) )
 				{ 
 					Path scriptPath = new Path(fileName);
-					fs = IOUtilFunctions.getFileSystem(scriptPath);
+					FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 				}
 				// from local file system
@@ -303,8 +301,6 @@ public class DMLScript
 				throw ex;
 			}
 			finally {
-				if(fs != null)
-					fs.close();
 				IOUtilFunctions.closeSilently(in);
 			}
 			

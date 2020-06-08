@@ -59,7 +59,8 @@ public class ColGroupDDC2 extends ColGroupDDC {
 			int zeroIx = containsAllZeroValue();
 			if(zeroIx < 0) {
 				zeroIx = numVals;
-				_values = Arrays.copyOf(_values, _values.length + numCols);
+				double[] values = _dict.getValues();
+				_dict = new Dictionary(Arrays.copyOf(values, values.length + numCols));
 			}
 			Arrays.fill(_data, (char) zeroIx);
 		}
@@ -98,12 +99,12 @@ public class ColGroupDDC2 extends ColGroupDDC {
 
 	@Override
 	protected double getData(int r) {
-		return _values[_data[r]];
+		return _dict.getValue(_data[r]);
 	}
 
 	@Override
 	protected double getData(int r, int colIx) {
-		return _values[_data[r] * getNumCols() + colIx];
+		return _dict.getValue(_data[r] * getNumCols() + colIx);
 	}
 
 	@Override
@@ -129,8 +130,9 @@ public class ColGroupDDC2 extends ColGroupDDC {
 			out.writeInt(_colIndexes[i]);
 
 		// write distinct values
-		for(int i = 0; i < _values.length; i++)
-			out.writeDouble(_values[i]);
+		double[] values = getValues();
+		for(int i = 0; i < values.length; i++)
+			out.writeDouble(values[i]);
 
 		// write data
 		for(int i = 0; i < _numRows; i++)
@@ -149,10 +151,11 @@ public class ColGroupDDC2 extends ColGroupDDC {
 			_colIndexes[i] = in.readInt();
 
 		// read distinct values
-		_values = new double[numVals * numCols];
+		double[] values = new double[numVals * numCols];
 		for(int i = 0; i < numVals * numCols; i++)
-			_values[i] = in.readDouble();
-
+			values[i] = in.readDouble();
+		_dict = new Dictionary(values);
+		
 		// read data
 		_data = new char[_numRows];
 		for(int i = 0; i < _numRows; i++)
@@ -165,7 +168,7 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		// col indices
 		ret += 4 * _colIndexes.length;
 		// distinct values (groups of values)
-		ret += 8 * _values.length;
+		ret += 8 * getValues().length;
 		// data
 		ret += 2 * _data.length;
 
@@ -181,9 +184,10 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	@Override
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
 		int ncol = getNumCols();
+		double[] values = getValues();
 		for(int i = rl; i < ru; i++)
 			for(int j = 0; j < ncol; j++)
-				target.appendValue(i, _colIndexes[j], _values[_data[i] * ncol + j]);
+				target.appendValue(i, _colIndexes[j], values[_data[i] * ncol + j]);
 		// note: append ok because final sort per row
 	}
 
@@ -192,9 +196,10 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		int nrow = getNumRows();
 		int ncol = getNumCols();
 		double[] c = target.getDenseBlockValues();
+		double[] values = getValues();
 		int nnz = 0;
 		for(int i = 0; i < nrow; i++)
-			nnz += ((c[i] = _values[_data[i] * ncol + colpos]) != 0) ? 1 : 0;
+			nnz += ((c[i] = values[_data[i] * ncol + colpos]) != 0) ? 1 : 0;
 		target.setNonZeros(nnz);
 	}
 
@@ -216,12 +221,13 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int ncol = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 
 		// pre-aggregate nnz per value tuple
 		int[] counts = new int[numVals];
 		for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol)
 			for(int j = 0; j < ncol; j++)
-				counts[k] += (_values[valOff + j] != 0) ? 1 : 0;
+				counts[k] += (values[valOff + j] != 0) ? 1 : 0;
 
 		// scan data and add counts to output rows
 		for(int i = rl; i < ru; i++)
@@ -271,11 +277,12 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		else // general case
 		{
 			// iterate over codes, compute all, and add to the result
+			double[] values = getValues();
 			for(int i = 0; i < nrow; i++) {
 				double aval = a[i];
 				if(aval != 0)
 					for(int j = 0, valOff = _data[i] * ncol; j < ncol; j++)
-						c[_colIndexes[j]] += aval * _values[valOff + j];
+						c[_colIndexes[j]] += aval * values[valOff + j];
 			}
 		}
 	}
@@ -301,11 +308,12 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		else // general case
 		{
 			// iterate over codes, compute all, and add to the result
+			double[] values = getValues();
 			for(int i = 0; i < nrow; i++) {
 				double aval = a.getData(i, 0);
 				if(aval != 0)
 					for(int j = 0, valOff = _data[i] * ncol; j < ncol; j++)
-						c[_colIndexes[j]] += aval * _values[valOff + j];
+						c[_colIndexes[j]] += aval * values[valOff + j];
 			}
 		}
 	}
@@ -318,13 +326,14 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		if(numVals < MAX_TMP_VALS) {
 			// iterative over codes and count per code
 			int[] counts = getCounts();
+			double[] values = getValues();
 
 			// post-scaling of pre-aggregate with distinct values
 			KahanObject kbuff = new KahanObject(result.quickGetValue(0, 0), result.quickGetValue(0, 1));
 			for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol) {
 				int cntk = counts[k];
 				for(int j = 0; j < ncol; j++)
-					kplus.execute3(kbuff, _values[valOff + j], cntk);
+					kplus.execute3(kbuff, values[valOff + j], cntk);
 			}
 
 			result.quickSetValue(0, 0, kbuff._sum);

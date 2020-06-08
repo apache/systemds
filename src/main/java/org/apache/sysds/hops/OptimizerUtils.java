@@ -477,8 +477,12 @@ public class OptimizerUtils
 	}
 
 	public static boolean checkSparseBlockCSRConversion( DataCharacteristics dcIn ) {
-		return Checkpoint.CHECKPOINT_SPARSE_CSR
-			&& OptimizerUtils.getSparsity(dcIn) < MatrixBlock.SPARSITY_TURN_POINT;
+		//we use the non-zero bound to make the important csr decision in 
+		//an best effort manner (the precise non-zeros is irrelevant here)
+		double sp = OptimizerUtils.getSparsity(
+			dcIn.getRows(), dcIn.getCols(), dcIn.getNonZerosBound());
+		return Checkpoint.CHECKPOINT_SPARSE_CSR 
+			&& sp < MatrixBlock.SPARSITY_TURN_POINT;
 	}
 	
 	/**

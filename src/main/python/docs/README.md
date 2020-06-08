@@ -21,11 +21,22 @@ under the License.
 
 # Building the docs
 
-To build the docs install packages in `requires-docs.txt` and then run `make html`:
+This guide assume that you have cd'ed to `/src/main/python/docs/`.
+
+## Requirements
+
+To build the docs first install packages in `requires-docs.txt`
 
 ```bash
 python3 -m pip install -r requires-docs.txt
+```
+
+## Make Docs
+
+and then run `make html`:
+
+```bash
 make html
 ```
 
-The docs will be placed in the `./build` directory.
+The docs will then be created at: `/src/main/python/build`in HTML will be placed in the `./_build` directory.

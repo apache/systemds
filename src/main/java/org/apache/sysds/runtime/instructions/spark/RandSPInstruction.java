@@ -164,11 +164,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 	}
 
 	public long getRows() {
-		return rows.isLiteral() ? Long.parseLong(rows.getName()) : -1;
+		return rows.isLiteral() ? UtilFunctions.parseToLong(rows.getName()) : -1;
 	}
 
 	public long getCols() {
-		return cols.isLiteral() ? Long.parseLong(cols.getName()) : -1;
+		return cols.isLiteral() ? UtilFunctions.parseToLong(cols.getName()) : -1;
 	}
 
 	public int getBlocksize() {
@@ -403,8 +403,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 		if(!mcOut.dimsKnown(true)) {
 			//note: we cannot compute the nnz from sparsity because this would not reflect the
 			//actual number of non-zeros, except for extreme values of sparsity equals 0 or 1.
+			//However, in all cases we keep this information for more coarse-grained decisions.
 			long lnnz = (sparsity==0 || sparsity==1) ? (long) (sparsity*lrows*lcols) : -1;
 			mcOut.set(lrows, lcols, blocksize, lnnz);
+			if( !mcOut.nnzKnown() )
+				mcOut.setNonZerosBound((long) (sparsity*lrows*lcols));
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
@@ -1011,6 +1014,12 @@ public class RandSPInstruction extends UnarySPInstruction {
 				(_method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(
 				tmpInstStr, position, String.valueOf(runtimeSeed));
+			if( !rows.isLiteral() )
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 2,
+					new CPOperand(ec.getScalarInput(rows)).getLineageLiteral());
+			if( !cols.isLiteral() )
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 3,
+					new CPOperand(ec.getScalarInput(cols)).getLineageLiteral());
 		}
 		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
 	}

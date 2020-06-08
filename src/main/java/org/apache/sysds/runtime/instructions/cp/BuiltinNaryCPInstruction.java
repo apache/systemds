@@ -48,6 +48,14 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 		this.inputs = inputs;
 	}
 
+	public CPOperand[] getInputs(){
+		return inputs;
+	}
+
+	public CPOperand getOutput(){
+		return output;
+	}
+
 	public static BuiltinNaryCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];

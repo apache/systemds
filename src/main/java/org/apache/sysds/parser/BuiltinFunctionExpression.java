@@ -913,8 +913,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case NCOL:
 		case LENGTH:
 			checkNumParameters(1);
-			checkDataTypeParam(getFirstExpr(),
-				DataType.MATRIX, DataType.FRAME, DataType.LIST);
+			checkDataTypeParam(getFirstExpr(), 
+				DataType.FRAME, DataType.LIST, DataType.MATRIX);
+			output.setDataType(DataType.SCALAR);
+			output.setDimensions(0, 0);
+			output.setBlocksize(0);
+			output.setValueType(ValueType.INT64);
+			break;
+		case COUNT_DISTINCT:
+		case COUNT_DISTINCT_APPROX:
+			checkNumParameters(1);
+			checkDataTypeParam(getFirstExpr(), DataType.MATRIX);
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);

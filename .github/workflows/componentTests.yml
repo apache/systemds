@@ -52,4 +52,19 @@ jobs:
       run: mvn clean compile test-compile
 
     - name: Component Tests
-      run: mvn surefire:test -DskipTests=false -Dtest=org.apache.sysds.test.component.*.**
+      run: |
+        log="/tmp/sysdstest.log"
+        echo "Starting Tests"
+        mvn surefire:test -DskipTests=false -Dtest=org.apache.sysds.test.component.*.** 2>&1 > $log
+        grep_args="SUCCESS"
+        grepvals="$( tail -n 100 $log | grep $grep_args)"
+        if [[ $grepvals == *"SUCCESS"* ]]; then
+        	echo "--------------------- last 100 lines from test ------------------------"
+        	tail -n 100 $log
+        	echo "------------------ last 100 lines from test end -----------------------"
+        	exit 0
+        else
+        	echo "\n $(cat $log)"
+        	exit 1
+        fi
+

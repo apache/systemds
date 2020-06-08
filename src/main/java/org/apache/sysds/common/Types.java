@@ -175,7 +175,9 @@ public class Types
 		PROD, SUM_PROD,
 		MIN, MAX,
 		TRACE, MEAN, VAR,
-		MAXINDEX, MININDEX;
+		MAXINDEX, MININDEX,
+		COUNT_DISTINCT,
+		COUNT_DISTINCT_APPROX;
 		
 		@Override
 		public String toString() {
@@ -205,6 +207,15 @@ public class Types
 		//low-level operators //TODO used?
 		MULT2, MINUS1_MULT, MINUS_RIGHT, 
 		POW2, SUBTRACT_NZ;
+		
+
+		public boolean isScalarOutput() {
+			return this == CAST_AS_SCALAR
+				|| this == NROW || this == NCOL
+				|| this == LENGTH || this == EXISTS
+				|| this == IQM || this == LINEAGE
+				|| this == MEDIAN;
+		}
 		
 		@Override
 		public String toString() {
@@ -244,7 +255,7 @@ public class Types
 				case "ucumk+":  return CUMSUM;
 				case "ucumk+*": return CUMSUMPROD;
 				case "*2":      return MULT2;
-				case "!":       return OpOp1.NOT;
+				case "!":       return NOT;
 				case "^2":      return POW2;
 				default:        return valueOf(opcode.toUpperCase());
 			}
@@ -354,12 +365,12 @@ public class Types
 			}
 		}
 		
-		public static OpOp3 valueOfCode(String code) {
-			switch(code) {
-				case "cm": return OpOp3.MOMENT;
-				case "+*": return OpOp3.PLUS_MULT;
-				case "-*": return OpOp3.MINUS_MULT;
-				default:   return OpOp3.valueOf(code.toUpperCase());
+		public static OpOp3 valueOfByOpcode(String opcode) {
+			switch(opcode) {
+				case "cm": return MOMENT;
+				case "+*": return PLUS_MULT;
+				case "-*": return MINUS_MULT;
+				default:   return valueOf(opcode.toUpperCase());
 			}
 		}
 	}
@@ -394,9 +405,19 @@ public class Types
 		@Override
 		public String toString() {
 			switch(this) {
-				case TRANS:   return "t";
+				case DIAG:    return "rdiag";
+				case TRANS:   return "r'";
 				case RESHAPE: return "rshape";
 				default:      return name().toLowerCase();
+			}
+		}
+		
+		public static ReOrgOp valueOfByOpcode(String opcode) {
+			switch(opcode) {
+				case "rdiag":  return DIAG;
+				case "r'":     return TRANS;
+				case "rshape": return RESHAPE;
+				default:       return valueOf(opcode.toUpperCase());
 			}
 		}
 	}

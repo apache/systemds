@@ -23,6 +23,7 @@ limitations under the License.
   * [Built-In Construction Functions](#built-in-construction-functions)
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
+    * [`gridSearch`-Function](#gridSearch-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
@@ -118,7 +119,43 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 
- 
+
+## `gridSearch`-Function
+
+The `gridSearch`-function is used to find the optimal hyper-parameters of a model which results in the most _accurate_
+predictions. This function takes `train` and `eval` functions by name. 
+
+### Usage
+```r
+gridSearch(X, y, train, predict, params, paramValues, verbose)
+```
+
+### Arguments
+| Name         | Type           | Default  | Description |
+| :------      | :------------- | -------- | :---------- |
+| X            | Matrix[Double] | required | Input Matrix of vectors. |
+| y            | Matrix[Double] | required | Input Matrix of vectors. |
+| train        | String         | required | Specified training function. |
+| predict      | String         | required | Evaluation based function. |
+| params       | List[String]   | required | List of parameters |
+| paramValues  | List[Unknown]  | required | Range of values for the parameters |
+| verbose      | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Parameter combination |
+| Frame[Unknown] | Best results model |
+
+### Example
+```r
+X = rand (rows = 50, cols = 10)
+y = X %*% rand(rows = ncol(X), cols = 1)
+params = list("reg", "tol", "maxi")
+paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
+[B, opt]= gridSearch(X=X, y=y, train="lm", predict="lmPredict", params=params, paramValues=paramRanges, verbose = TRUE)
+```
+
 ## `KMeans`-Function
 
 The kmeans() implements the KMeans Clustering algorithm.

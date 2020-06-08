@@ -41,6 +41,7 @@ limitations under the License.
     * [`naivebayes`-Function](#naivebayes-function)
     * [`outlier`-Function](#outlier-function)
     * [`toOneHot`-Function](#toOneHOt-function)
+    * [`winsorize`-Function](#winsorize-function)
     
     
 # Introduction
@@ -704,4 +705,31 @@ msvm(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
 X = rand(rows = 50, cols = 10)
 y = round(X %*% rand(rows=ncol(X), cols=1))
 model = msvm(X = X, Y = y, intercept = FALSE, epsilon = 0.005, lambda = 1.0, maxIterations = 100, verbose = FALSE)
+```
+
+## `winsorize`-Function
+
+The `winsorize`-function removes outliers from the data. It does so by computing upper and lower quartile range
+of the given data then it replaces any value that falls outside this range (less than lower quartile range or more
+than upper quartile range).
+
+### Usage
+```r
+winsorize(X)
+```
+
+### Arguments
+| Name     | Type           | Default  | Description |
+| :------- | :------------- | :--------| :---------- |
+| X        | Matrix[Double] | required | recorded data set with possible outlier values |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Matrix without outlier values |
+
+### Example
+```r
+X = rand(rows=10, cols=10,min = 1, max=9)
+Y = winsorize(X=X)
 ```

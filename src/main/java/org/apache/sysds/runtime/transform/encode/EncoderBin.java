@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
@@ -140,17 +141,17 @@ public class EncoderBin extends Encoder
 	}
 	
 	@Override
-	public Encoder subRangeEncoder(int colStart, int colEnd) {
+	public Encoder subRangeEncoder(IndexRange ixRange) {
 		List<Integer> colsList = new ArrayList<>();
 		List<Integer> numBinsList = new ArrayList<>();
 		List<double[]> binMinsList = new ArrayList<>();
 		List<double[]> binMaxsList = new ArrayList<>();
 		for(int i = 0; i < _colList.length; i++) {
 			int col = _colList[i];
-			if(col >= colStart && col < colEnd) {
+			if(col >= ixRange.colStart && col < ixRange.colEnd) {
 				// add the correct column, removed columns before start
 				// colStart - 1 because colStart is 1-based
-				int corrColumn = col - (colStart - 1);
+				int corrColumn = (int) (col - (ixRange.colStart - 1));
 				colsList.add(corrColumn);
 				numBinsList.add(_numBins[i]);
 				binMinsList.add(_binMins[i]);
@@ -162,8 +163,9 @@ public class EncoderBin extends Encoder
 			return null;
 
 		int[] colList = colsList.stream().mapToInt(i -> i).toArray();
-		return new EncoderBin(colList, colEnd - colStart, numBinsList.stream().mapToInt((i) -> i).toArray(),
-			binMinsList.toArray(new double[0][0]), binMaxsList.toArray(new double[0][0]));
+		return new EncoderBin(colList, (int) (ixRange.colEnd - ixRange.colStart),
+			numBinsList.stream().mapToInt((i) -> i).toArray(), binMinsList.toArray(new double[0][0]),
+			binMaxsList.toArray(new double[0][0]));
 	}
 	
 	@Override

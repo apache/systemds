@@ -47,8 +47,10 @@ import org.apache.sysds.runtime.transform.encode.EncoderBin;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.EncoderOmit;
 import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final ArrayList<CPOperand> _outputs;
@@ -94,7 +96,11 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// the encoder in which the complete encoding information will be aggregated
 		Encoder globalEncoder = new EncoderComposite(
 			// IMPORTANT: Encoder order matters
-			Arrays.asList(new EncoderRecode(), new EncoderPassThrough(), new EncoderBin(), new EncoderDummycode()));
+			Arrays.asList(new EncoderRecode(),
+				new EncoderPassThrough(),
+				new EncoderBin(),
+				new EncoderDummycode(),
+				new EncoderOmit()));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
 		FederationMap fedMapping = fin.getFedMapping();
@@ -119,7 +125,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getCause());
+				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
 			}
 			return null;
 		});
@@ -139,14 +145,13 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// copy because we reuse it
 			long[] beginDims = range.getBeginDims();
 			long[] endDims = range.getEndDims();
-			int colStart = (int) beginDims[1] + 1;
-			int colEnd = (int) endDims[1] + 1;
+			IndexRange ixRange = new IndexRange(beginDims[0], endDims[0], beginDims[1], endDims[1]).add(1);// make 1-based
 
 			// update begin end dims (column part) considering columns added by dummycoding
 			globalEncoder.updateIndexRanges(beginDims, endDims);
 
 			// get the encoder segment that is relevant for this federated worker
-			Encoder encoder = globalEncoder.subRangeEncoder(colStart, colEnd);
+			Encoder encoder = globalEncoder.subRangeEncoder(ixRange);
 
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,

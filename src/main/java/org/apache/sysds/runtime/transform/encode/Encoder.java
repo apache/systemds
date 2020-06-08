@@ -21,16 +21,17 @@ package org.apache.sysds.runtime.transform.encode;
 
 import java.io.Serializable;
 import java.util.Arrays;
-
 import java.util.HashSet;
 import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONArray;
 
 /**
  * Base class for all transform encoders providing both a row and block
@@ -128,11 +129,10 @@ public abstract class Encoder implements Serializable
 	/**
 	 * Returns a new Encoder that only handles a sub range of columns.
 	 * 
-	 * @param colStart the start index of the sub-range (1-based, inclusive)
-	 * @param colEnd   the end index of the sub-range (1-based, exclusive)
+	 * @param ixRange the range (1-based, begin inclusive, end exclusive)
 	 * @return an encoder of the same type, just for the sub-range
 	 */
-	public Encoder subRangeEncoder(int colStart, int colEnd) {
+	public Encoder subRangeEncoder(IndexRange ixRange) {
 		throw new DMLRuntimeException(
 			this.getClass().getSimpleName() + " does not support the creation of a sub-range encoder");
 	}
@@ -166,7 +166,7 @@ public abstract class Encoder implements Serializable
 	 */
 	public void mergeAt(Encoder other, int col) {
 		throw new DMLRuntimeException(
-			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getSimpleName());
+			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getName());
 	}
 	
 	/**

@@ -23,6 +23,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.io.FrameWriter;
@@ -62,11 +63,11 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	// private final static String SPEC9b = "homes3/homes.tfspec_hash_recode2.json";
 
 	// dataset and transform tasks with missing values
-	// private final static String DATASET2 = "homes/homes.csv";
+	private final static String DATASET2 = "homes/homes.csv";
 	// private final static String SPEC4 = "homes3/homes.tfspec_impute.json";
 	// private final static String SPEC4b = "homes3/homes.tfspec_impute2.json";
-	// private final static String SPEC5 = "homes3/homes.tfspec_omit.json";
-	// private final static String SPEC5b = "homes3/homes.tfspec_omit2.json";
+	private final static String SPEC5 = "homes3/homes.tfspec_omit.json";
+	private final static String SPEC5b = "homes3/homes.tfspec_omit2.json";
 
 	private static final int[] BIN_col3 = new int[] {1, 4, 2, 3, 3, 2, 4};
 	private static final int[] BIN_col8 = new int[] {1, 2, 2, 2, 2, 2, 3};
@@ -74,7 +75,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	public enum TransformType {
 		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY,
 		// IMPUTE,
-		// OMIT,
+		OMIT,
 		// HASH,
 		// HASH_RECODE,
 	}
@@ -110,10 +111,10 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		runTransformTest(TransformType.BIN_DUMMY, false);
 	}
 
-	// @Test
-	// public void testHomesOmitIDsCSV() {
-	// runTransformTest(TransformType.OMIT, false);
-	// }
+	@Test
+	public void testHomesOmitIDsCSV() {
+		runTransformTest(TransformType.OMIT, false);
+	}
 
 	// @Test
 	// public void testHomesImputeIDsCSV() {
@@ -145,10 +146,10 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		runTransformTest(TransformType.BIN_DUMMY, true);
 	}
 
-	// @Test
-	// public void testHomesOmitColnamesCSV() {
-	// runTransformTest(TransformType.OMIT, true);
-	// }
+	@Test
+	public void testHomesOmitColnamesCSV() {
+		runTransformTest(TransformType.OMIT, true);
+	}
 
 	// @Test
 	// public void testHomesImputeColnamesCSV() {
@@ -199,7 +200,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 				DATASET = DATASET1;
 				break;
 			// case IMPUTE: SPEC = colnames?SPEC4b:SPEC4; DATASET = DATASET2; break;
-			// case OMIT: SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
+			case OMIT: SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
 			case RECODE_DUMMY:
 				SPEC = colnames ? SPEC6b : SPEC6;
 				DATASET = DATASET1;
@@ -221,7 +222,8 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			int port2 = getRandomAvailablePort();
 			t2 = startLocalFedWorker(port2);
 
-			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, ",", false);
+			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,
+				true, Double.NaN, "" + DataExpression.DELIM_NA_STRING_SEP + "NA");
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			// split up dataset
 			FrameBlock dataset = FrameReaderFactory.createFrameReader(FileFormat.CSV, ffpCSV)

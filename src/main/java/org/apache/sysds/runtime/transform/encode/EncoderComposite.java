@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.IndexRange;
 
 /**
  * Simple composite encoder that applies a list of encoders 
@@ -104,10 +105,10 @@ public class EncoderComposite extends Encoder
 	}
 
 	@Override
-	public Encoder subRangeEncoder(int colStart, int colEnd) {
+	public Encoder subRangeEncoder(IndexRange ixRange) {
 		List<Encoder> subRangeEncoders = new ArrayList<>();
 		for (Encoder encoder : _encoders) {
-			Encoder subEncoder = encoder.subRangeEncoder(colStart, colEnd);
+			Encoder subEncoder = encoder.subRangeEncoder(ixRange);
 			if (subEncoder != null) {
 				subRangeEncoders.add(subEncoder);
 			}
@@ -131,7 +132,7 @@ public class EncoderComposite extends Encoder
 				}
 				if(!mergedIn) {
 					throw new DMLRuntimeException("Tried to merge in encoder of class that is not present in "
-						+ "CompositeEncoder: " + otherEnc.getClass().getSimpleName());
+						+ "EncoderComposite: " + otherEnc.getClass().getSimpleName());
 				}
 			}
 			// update dummycode encoder domain sizes based on distinctness information from other encoders

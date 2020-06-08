@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -52,6 +53,12 @@ public class EncoderDummycode extends Encoder
 
 	public EncoderDummycode() {
 		super(new int[0], 0);
+	}
+	
+	public EncoderDummycode(int[] colList, int clen, int[] domainSizes, long dummycodedLength) {
+		super(colList, clen);
+		_domainSizes = domainSizes;
+		_dummycodedLength = dummycodedLength;
 	}
 	
 	@Override
@@ -97,16 +104,16 @@ public class EncoderDummycode extends Encoder
 	}
 
 	@Override
-	public Encoder subRangeEncoder(int colStart, int colEnd) {
+	public Encoder subRangeEncoder(IndexRange ixRange) {
 		List<Integer> cols = new ArrayList<>();
 		List<Integer> domainSizes = new ArrayList<>();
-		int newDummycodedLength = colEnd - colStart;
+		int newDummycodedLength = (int) (ixRange.colEnd - ixRange.colStart);
 		for(int i = 0; i < _colList.length; i++){
 			int col = _colList[i];
-			if(col >= colStart && col < colEnd) {
+			if(col >= ixRange.colStart && col < ixRange.colEnd) {
 				// add the correct column, removed columns before start
 				// colStart - 1 because colStart is 1-based
-				int corrColumn = col - (colStart - 1);
+				int corrColumn = (int) (col - (ixRange.colStart - 1));
 				cols.add(corrColumn);
 				domainSizes.add(_domainSizes[i]);
 				newDummycodedLength += _domainSizes[i] - 1;
@@ -115,13 +122,10 @@ public class EncoderDummycode extends Encoder
 		if(cols.isEmpty())
 			// empty encoder -> sub range encoder does not exist
 			return null;
-
-		EncoderDummycode subRangeEncoder = new EncoderDummycode();
-		subRangeEncoder._clen = colEnd - colStart;
-		subRangeEncoder._colList = cols.stream().mapToInt(i -> i).toArray();
-		subRangeEncoder._domainSizes = domainSizes.stream().mapToInt(i -> i).toArray();
-		subRangeEncoder._dummycodedLength = newDummycodedLength;
-		return subRangeEncoder;
+		
+		return new EncoderDummycode(cols.stream().mapToInt(i -> i).toArray(),
+			(int) (ixRange.colEnd - ixRange.colStart), domainSizes.stream().mapToInt(i -> i).toArray(),
+			newDummycodedLength);
 	}
 
 	@Override

@@ -19,33 +19,49 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class EncoderOmit extends Encoder 
 {	
 	private static final long serialVersionUID = 1978852120416654195L;
 
-	private int _rmRows = 0;
+	private TreeSet<Integer> _rmRows = new TreeSet<>();
 
-	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen) 
+	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException 
 	{
 		super(null, clen);
 		if (!parsedSpec.containsKey(TfMethod.OMIT.toString()))
 			return;
-		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.OMIT.toString());
+		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol);
 		initColList(collist);
 	}
 	
+	public EncoderOmit() {
+		super(new int[0], 0);
+	}
+	
+	private EncoderOmit(int[] colList, int clen, TreeSet<Integer> rmRows) {
+		super(colList, clen);
+		_rmRows = rmRows;
+	}
+	
 	public int getNumRemovedRows() {
-		return _rmRows;
+		return _rmRows.size();
 	}
 	
 	public boolean omit(String[] words, TfUtils agents) 
@@ -67,21 +83,25 @@ public class EncoderOmit extends Encoder
 	}
 	
 	@Override
-	public void build(FrameBlock in) {	
+	public void build(FrameBlock in) {
 		//do nothing
+		ValueType[] schema = in.getSchema();
+		for(int i = 0; i < in.getNumRows(); i++) {
+			boolean valid = true;
+			for(int colID : _colList) {
+				Object val = in.get(i, colID - 1);
+				valid &= !(val == null || (schema[colID - 1] == ValueType.STRING && val.toString().isEmpty()));
+			}
+			if(!valid)
+				_rmRows.add(i);
+		}
 	}
 	
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) 
 	{
 		//determine output size
-		int numRows = 0;
-		for(int i=0; i<out.getNumRows(); i++) {
-			boolean valid = true;
-			for(int j=0; j<_colList.length; j++)
-				valid &= !Double.isNaN(out.quickGetValue(i, _colList[j]-1));
-			numRows += valid ? 1 : 0;
-		}
+		int numRows = out.getNumRows() - _rmRows.size();
 		
 		//copy over valid rows into the output
 		MatrixBlock ret = new MatrixBlock(numRows, out.getNumColumns(), false);
@@ -97,14 +117,62 @@ public class EncoderOmit extends Encoder
 					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
 				pos++;
 			}
+			else
+				_rmRows.add(i);
 		}
-	
-		//keep info an remove rows
-		_rmRows = out.getNumRows() - pos;
 		
 		return ret; 
 	}
-
+	
+	@Override
+	public Encoder subRangeEncoder(IndexRange ixRange) {
+		List<Integer> colsList = new ArrayList<>();
+		for (int col : _colList) {
+			if(col >= ixRange.colStart && col < ixRange.colEnd) {
+				// add the correct column, removed columns before start
+				// colStart - 1 because colStart is 1-based
+				int corrColumn = (int) (col - (ixRange.colStart - 1));
+				colsList.add(corrColumn);
+			}
+		}
+		TreeSet<Integer> rmRows = _rmRows.stream().filter((row) -> row >= (ixRange.colStart - 1) && row < (ixRange.colEnd - 1))
+			.map((row) -> (int) (row - (ixRange.colStart - 1))).collect(Collectors.toCollection(TreeSet::new));
+		if(colsList.isEmpty())
+			// empty encoder -> sub range encoder does not exist
+			return null;
+		
+		int[] colList = colsList.stream().mapToInt(i -> i).toArray();
+		return new EncoderOmit(colList, (int) (ixRange.colEnd - ixRange.colStart), rmRows);
+	}
+	
+	@Override
+	public void mergeAt(Encoder other, int col) {
+		if(other instanceof EncoderOmit) {
+			mergeColumnInfo(other, col);
+			_rmRows.addAll(((EncoderOmit) other)._rmRows);
+			return;
+		}
+		super.mergeAt(other, col);
+	}
+	
+	@Override
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		// first update begin dims
+		int numRowsToRemove = 0;
+		Integer removedRow = _rmRows.ceiling(0);
+		while(removedRow != null && removedRow < beginDims[0]) {
+			numRowsToRemove++;
+			removedRow = _rmRows.ceiling(removedRow + 1);
+		}
+		beginDims[0] -= numRowsToRemove;
+		// update end dims
+		while(removedRow != null && removedRow < endDims[0]) {
+			numRowsToRemove++;
+			removedRow = _rmRows.ceiling(removedRow + 1);
+		}
+		endDims[0] -= numRowsToRemove;
+	}
+	
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		//do nothing

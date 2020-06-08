@@ -91,7 +91,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	/*
 	 * like other federated functionality, SPARK execution mode is not yet working (waiting for better integration of
 	 * federated instruction building, like propagating information that object is federated)
-	 * 
+	 *
 	 * @Test public void federatedFrameConstructionSP() throws IOException {
 	 * federatedFrameConstruction(Types.ExecMode.SPARK); }
 	 */

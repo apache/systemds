@@ -27,11 +27,12 @@ import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 public abstract class FEDInstruction extends Instruction {
 	
 	public enum FEDType {
-		Init,
 		AggregateBinary,
 		AggregateUnary,
 		Append,
-		Binary
+		Binary,
+		Init,
+		MultiReturnParameterizedBuiltin
 	}
 	
 	protected final FEDType _fedType;

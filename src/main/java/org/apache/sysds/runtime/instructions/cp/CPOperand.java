@@ -93,6 +93,10 @@ public class CPOperand
 	public boolean isMatrix() {
 		return _dataType.isMatrix();
 	}
+	
+	public boolean isFrame() {
+		return _dataType.isFrame();
+	}
 
 	public boolean isTensor() {
 		return _dataType.isTensor();

@@ -35,6 +35,7 @@ limitations under the License.
     * [`normalize`-Function](#normalize-function)
     * [`gnmf`-Function](#gnmf-function)
     * [`msvm`-Function](#msvm-function)
+    * [`outlier`-Function](#outlier-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     
     
@@ -413,6 +414,7 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
+
 ## `normalize`-Function
 
 The `normalize`-function normalises the values of a matrix by changing the dataset to use a common scale.
@@ -476,6 +478,33 @@ X = rand(rows = 50, cols = 10)
 W = rand(rows = nrow(X), cols = 2, min = -0.05, max = 0.05);
 H = rand(rows = 2, cols = ncol(X), min = -0.05, max = 0.05);
 gnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10)
+```
+
+## `outlier`-Function
+
+This `outlier`-function takes a matrix data set as input from where it determines which point(s)
+have the largest difference from mean.
+
+### Usage
+```r
+outlier(X, opposite)
+```
+
+### Arguments
+| Name     | Type           | Default  | Description |
+| :------- | :------------- | -------- | :---------- |
+| X        | Matrix[Double] | required | Matrix of Recoded dataset for outlier evaluation |
+| opposite | Boolean        | required | (1)TRUE for evaluating outlier from upper quartile range, (0)FALSE for evaluating outlier from lower quartile range |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | matrix indicating outlier values |
+
+### Example
+```r
+X = rand (rows = 50, cols = 10)
+outlier(X=X, opposite=1)
 ```
 
 ## `toOneHot`-Function

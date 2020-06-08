@@ -40,13 +40,13 @@
 # singleSet             Double   ---        A complete dataset generated though a specific iteration
 
 # Assumption missing value are represented with empty string i.e ",," in csv file  
-# variables with suffix n are storing continous/numeric data and variables with suffix c are storing categorical data
+# variables with suffix n are storing continuous/numeric data and variables with suffix c are storing categorical data
 s_mice= function(Frame[String] F, Matrix[Double] cMask, Integer iter = 3, Integer complete = 3, Boolean verbose = FALSE)
 return(Frame[String] dataset, Frame[String] singleSet)
 {
 
   if(ncol(F) == 1)
-    stop("invalid aregument: can not apply mice on single column")
+    stop("invalid argument: can not apply mice on single column")
     
   if(complete > iter)
     complete = iter
@@ -78,7 +78,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
   
   XO = replace(target=X, pattern=NaN, replacement=0);
 
-  # remove categorical features and impute continous features with mean
+  # remove categorical features and impute continuous features with mean
   eX_n = removeEmpty(target=X, margin="cols", select=(cMask==0))
   col_n = ncol(eX_n);
   # storing the mask/address of missing values
@@ -150,7 +150,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
   {
     Mask_Filled_n = Mask_n;
     Mask_Filled_c = Mask_c
-    in_n = 1; in_c = 1; i=1; j=1; # varibales for index selection
+    in_n = 1; in_c = 1; i=1; j=1; # variables for index selection
     while(i <= ncol(dX))
     {
       if(as.scalar(dXMask[1,i]) == 0)
@@ -197,7 +197,7 @@ return(Frame[String] dataset, Frame[String] singleSet)
         test_X =  removeEmpty(target = slice2, margin = "cols", select = selX);
         test_Y = slice2a[,in_c]
        
-        # train clasification model
+        # train classification model
         beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.00000001, reg = 0.001, maxi = 100, maxii=0, verbose=FALSE)
         # predicting missing values 
         [prob,pred,acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)

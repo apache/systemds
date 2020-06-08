@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-__all__ = ['Matrix', 'federated', 'full', 'seq', 'rand']
+__all__ = ['Matrix', 'federated', 'full', 'seq', 'rand', 'rev', 'order', 't']
 
 import os
 from typing import Union, Optional, Iterable, Dict, Tuple, Sequence, TYPE_CHECKING
@@ -171,3 +171,17 @@ def rand(sds_context: 'SystemDSContext', rows: int, cols: int, min: Union[float,
         named_input_nodes['seed'] = seed
 
     return OperationNode(sds_context, 'rand', [], named_input_nodes=named_input_nodes)
+
+
+def rev(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
+    return OperationNode(sds_context, 'rev', [mat])
+
+
+def order(sds_context: 'SystemDSContext', mat: Matrix, by: int = 1, decreasing: bool = False, index_return: bool = False) -> 'OperationNode':
+    named_input_nodes = {'target': mat, 'by': by, 'decreasing': 'FALSE', 'index.return': 'FALSE'}
+
+    return OperationNode(sds_context, 'order', [], named_input_nodes=named_input_nodes)
+
+
+def t(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
+    return OperationNode(sds_context, 't', [mat])

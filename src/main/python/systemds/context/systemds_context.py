@@ -30,7 +30,7 @@ import numpy as np
 from py4j.java_gateway import JavaGateway
 from py4j.protocol import Py4JNetworkError
 
-from systemds.matrix import full, seq, federated, Matrix, rand, OperationNode
+from systemds.matrix import full, seq, federated, Matrix, rand, rev, order, t, OperationNode
 from systemds.utils.helpers import get_module_dir
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -151,7 +151,7 @@ class SystemDSContext(object):
     def rand(self, rows: int, cols: int, min: Union[float, int] = None,
              max: Union[float, int] = None, pdf: str = "uniform",
              sparsity: Union[float, int] = None, seed: Union[float, int] = None,
-             lambd: Union[float, int] = 1) -> OperationNode:
+             lambd: Union[float, int] = 1) -> 'OperationNode':
         """Generates a matrix filled with random values
 
         :param rows: number of rows
@@ -175,3 +175,15 @@ class SystemDSContext(object):
             raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(g=pdf, e=available_pdfs))
 
         return rand(self, rows, cols, min, max, pdf, sparsity, seed, lambd)
+
+    def rev(self, mat: Matrix) -> 'OperationNode':
+        return rev(self, mat)
+
+    def order(self, mat: Matrix, by: int = 0, decreasing: bool = False,
+              index_return: bool = False) -> 'OperationNode':
+
+        return order(self, mat, by, decreasing, index_return)
+
+    def t(self, mat: Matrix) -> 'OperationNode':
+
+        return t(self, mat)

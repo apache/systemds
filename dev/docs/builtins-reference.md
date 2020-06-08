@@ -118,7 +118,7 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 
-## `Multinomial Logistic Regression` -Function
+## `imputeByFD` -Function
 Data imputation using functional dependencies is a probabilistic technique to fill the missing data inside a data frame.
 
 ### Usage

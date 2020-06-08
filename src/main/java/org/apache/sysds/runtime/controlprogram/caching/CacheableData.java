@@ -768,7 +768,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			new Path(_hdfsFileName), new Path(fName));
 		
 		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
-		if( isDirty() || !eqScheme ||
+		if( isDirty() || !eqScheme || isFederated() ||
 			(pWrite && !isEqualOutputFormat(outputFormat)) ) 
 		{
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)

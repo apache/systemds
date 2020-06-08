@@ -23,6 +23,7 @@ limitations under the License.
   * [Built-In Construction Functions](#built-in-construction-functions)
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
+    * [`imputeByFD`-Function](#imputeByFD-function)
     * [`intersect`-Function](#intersect-function)
 	* [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)

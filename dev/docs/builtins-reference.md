@@ -35,6 +35,7 @@ limitations under the License.
     * [`normalize`-Function](#normalize-function)
     * [`gnmf`-Function](#gnmf-function)
     * [`msvm`-Function](#msvm-function)
+    * [`naivebayes`-Function](#naivebayes-function)
     * [`outlier`-Function](#outlier-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     
@@ -478,6 +479,36 @@ X = rand(rows = 50, cols = 10)
 W = rand(rows = nrow(X), cols = 2, min = -0.05, max = 0.05);
 H = rand(rows = 2, cols = ncol(X), min = -0.05, max = 0.05);
 gnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10)
+```
+
+## `naivebayes`-Function
+
+The `naivebayes`-function computes the class conditional probabilities and class priors.
+
+### Usage
+```r
+naivebayes(D, C, laplace, verbose)
+```
+
+### Arguments
+| Name            | Type           | Default  | Description |
+| :------         | :------------- | -------- | :---------- |
+| D               | Matrix[Double] | required | One dimensional column matrix with N rows. |
+| C               | Matrix[Double] | required | One dimensional column matrix with N rows. |
+| Laplace         | Double         | `1`      | Any Double value. |
+| Verbose         | Boolean        | `TRUE`   | Boolean value. |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Class priors, One dimensional column matrix with N rows. |
+| Matrix[Double] | Class conditional probabilites, One dimensional column matrix with N rows. |
+
+### Example
+```r
+D=rand(rows=10,cols=1,min=10)
+C=rand(rows=10,cols=1,min=10)
+[prior, classConditionals] = naivebayes(D, C, laplace = 1, verbose = TRUE)
 ```
 
 ## `outlier`-Function

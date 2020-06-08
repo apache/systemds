@@ -19,27 +19,39 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class EncoderDummycode extends Encoder 
 {
 	private static final long serialVersionUID = 5832130477659116489L;
 
-	private int[] _domainSizes = null;  // length = #of dummycoded columns
+	public int[] _domainSizes = null;  // length = #of dummycoded columns
 	private long _dummycodedLength = 0; // #of columns after dummycoded
 
-	public EncoderDummycode(JSONObject parsedSpec, String[] colnames, int clen) throws JSONException {
+	public EncoderDummycode(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
+		throws JSONException {
 		super(null, clen);
-		
-		if ( parsedSpec.containsKey(TfMethod.DUMMYCODE.toString()) ) {
-			int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.DUMMYCODE.toString());
+
+		if(parsedSpec.containsKey(TfMethod.DUMMYCODE.toString())) {
+			int[] collist = TfMetaUtils
+				.parseJsonIDList(parsedSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol);
 			initColList(collist);
 		}
+	}
+
+	public EncoderDummycode() {
+		super(new int[0], 0);
 	}
 	
 	@Override
@@ -82,6 +94,104 @@ public class EncoderDummycode extends Encoder
 			}
 		}
 		return ret;
+	}
+
+	@Override
+	public Encoder subRangeEncoder(int colStart, int colEnd) {
+		List<Integer> cols = new ArrayList<>();
+		List<Integer> domainSizes = new ArrayList<>();
+		int newDummycodedLength = colEnd - colStart;
+		for(int i = 0; i < _colList.length; i++){
+			int col = _colList[i];
+			if(col >= colStart && col < colEnd) {
+				// add the correct column, removed columns before start
+				// colStart - 1 because colStart is 1-based
+				int corrColumn = col - (colStart - 1);
+				cols.add(corrColumn);
+				domainSizes.add(_domainSizes[i]);
+				newDummycodedLength += _domainSizes[i] - 1;
+			}
+		}
+		if(cols.isEmpty())
+			// empty encoder -> sub range encoder does not exist
+			return null;
+
+		EncoderDummycode subRangeEncoder = new EncoderDummycode();
+		subRangeEncoder._clen = colEnd - colStart;
+		subRangeEncoder._colList = cols.stream().mapToInt(i -> i).toArray();
+		subRangeEncoder._domainSizes = domainSizes.stream().mapToInt(i -> i).toArray();
+		subRangeEncoder._dummycodedLength = newDummycodedLength;
+		return subRangeEncoder;
+	}
+
+	@Override
+	public void mergeAt(Encoder other, int col) {
+		if(other instanceof EncoderDummycode) {
+			mergeColumnInfo(other, col);
+
+			_domainSizes = new int[_colList.length];
+			_dummycodedLength = _clen;
+			for( int j=0; j<_colList.length; j++ ) {
+				// temporary, will be updated later
+				_domainSizes[j] = 1;
+			}
+			return;
+		}
+		super.mergeAt(other, col);
+	}
+	
+	@Override
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		long[] initialBegin = Arrays.copyOf(beginDims, beginDims.length);
+		long[] initialEnd = Arrays.copyOf(endDims, endDims.length);
+		for(int i = 0; i < _colList.length; i++) {
+			// 1-based vs 0-based
+			if(_colList[i] < initialBegin[1] + 1) {
+				// new columns inserted left of the columns of this partial (federated) block
+				beginDims[1] += _domainSizes[i] - 1;
+				endDims[1] += _domainSizes[i] - 1;
+			}
+			else if(_colList[i] < initialEnd[1] + 1) {
+				// new columns inserted in this (federated) block
+				endDims[1] += _domainSizes[i] - 1;
+			}
+		}
+	}
+	
+	public void updateDomainSizes(List<Encoder> encoders) {
+		if(_colList == null)
+			return;
+
+		// maps the column ids of the columns encoded by this Dummycode Encoder to their respective indexes
+		// in the _colList
+		Map<Integer, Integer> colIDToIxMap = new HashMap<>();
+		for (int i = 0; i < _colList.length; i++)
+			colIDToIxMap.put(_colList[i], i);
+		
+		_dummycodedLength = _clen;
+		for (Encoder encoder : encoders) {
+			int[] distinct = null;
+			if (encoder instanceof EncoderRecode) {
+				EncoderRecode encoderRecode = (EncoderRecode) encoder;
+				distinct = encoderRecode.numDistinctValues();
+			}
+			else if (encoder instanceof EncoderBin) {
+				distinct = ((EncoderBin) encoder)._numBins;
+			}
+			
+			if (distinct != null) {
+				// search for match of encoded columns
+				for (int i = 0; i < encoder._colList.length; i++) {
+					Integer ix = colIDToIxMap.get(encoder._colList[i]);
+					
+					if (ix != null) {
+						// set size
+						_domainSizes[ix] = distinct[i];
+						_dummycodedLength += _domainSizes[ix] - 1;
+					}
+				}
+			}
+		}
 	}
 
 	@Override

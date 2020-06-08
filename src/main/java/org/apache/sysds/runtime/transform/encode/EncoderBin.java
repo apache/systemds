@@ -42,7 +42,7 @@ public class EncoderBin extends Encoder
 	public static final String MAX_PREFIX = "max";
 	public static final String NBINS_PREFIX = "nbins";
 
-	private int[] _numBins = null;
+	protected int[] _numBins = null;
 	
 	//frame transform-apply attributes
 	//TODO binMins is redundant and could be removed

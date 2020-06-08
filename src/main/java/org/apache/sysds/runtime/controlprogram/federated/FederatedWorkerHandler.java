@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -185,6 +186,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		
 		//put meta data object in symbol table, read on first operation
 		cd.setMetaData(new MetaDataFormat(mc, fmt));
+		// TODO send FileFormatProperties with request and use them for CSV, this is currently a workaround so reading
+		//  of CSV files works
+		cd.setFileFormatProperties(new FileFormatPropertiesCSV());
 		cd.enableCleanup(false); //guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 		

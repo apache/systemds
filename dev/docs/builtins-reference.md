@@ -321,14 +321,14 @@ mulLogisticRegression = function( Matrix[Double] X, Matrix[Double] Y, Integer in
 
 ### Arguments
 | Name             | Type            | Default  | Description |
-| :----            | :-------------  | -------- | :------------------------------- |
-| X                | Matrix[Double]  | --       | Matrix of numerical vector of explanatory  variables|
-| Y                | Matrix[Double]  | --       | Matrix of  a categorical response variable|
-| intercept_scaling| Int             | 0        | intercept for shifting and rescaling X columns|
-| reg_para         | Double          | 0        | regularization parameter|
-| tolerance        | Double          | 0.00001  | tolerance ("epsilon")|
-| max1             | Int             | 100      | max. no. of outer newton interations|
-| max2             | Int             | 0        | max. no. of inner (conjugate gradient) iterations|
+| :----            | :-------------  | --------   | :------------------------------- |
+| X                | Matrix[Double]  | --         | Matrix of numerical vector of explanatory  variables|
+| Y                | Matrix[Double]  | --         | Matrix of  a categorical response variable|
+| intercept_scaling| Int             | `0`        | intercept for shifting and rescaling X columns|
+| reg_para         | Double          | `0`        | regularization parameter|
+| tolerance        | Double          | `0.00001`  | tolerance ("epsilon")|
+| max1             | Int             | `100`      | max. no. of outer newton interations|
+| max2             | Int             | `0`        | max. no. of inner (conjugate gradient) iterations|
 
 ### Returns
 | Type                   | Description |

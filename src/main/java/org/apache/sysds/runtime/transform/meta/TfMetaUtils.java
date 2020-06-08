@@ -25,18 +25,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.jmlc.Connection;
-import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -47,6 +45,9 @@ import org.apache.sysds.runtime.transform.decode.DecoderRecode;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class TfMetaUtils 
 {
@@ -80,17 +81,33 @@ public class TfMetaUtils
 	
 	/**
 	 * TODO consolidate external and internal json spec definitions
-	 * 
+	 *
 	 * @param spec transform specification as json string
 	 * @param colnames column names
-	 * @param group ?
+	 * @param group attribute name in json class
 	 * @return list of column ids
 	 * @throws JSONException if JSONException occurs
 	 */
-	public static int[] parseJsonIDList(JSONObject spec, String[] colnames, String group) 
+	public static int[] parseJsonIDList(JSONObject spec, String[] colnames, String group)
+			throws JSONException
+	{
+		return parseJsonIDList(spec, colnames, group, -1, -1);
+	}
+	
+	/**
+	 * @param spec transform specification as json string
+	 * @param colnames column names
+	 * @param group attribute name in json class
+	 * @param minCol start of columns to ignore (1-based, inclusive, if -1 not used)
+	 * @param maxCol end of columns to ignore (1-based, exclusive, if -1 not used)
+	 * @return list of column ids
+	 * @throws JSONException if JSONException occurs
+	 */
+	public static int[] parseJsonIDList(JSONObject spec, String[] colnames, String group, int minCol, int maxCol)
 		throws JSONException
 	{
-		int[] colList = new int[0];
+		List<Integer> colList = new ArrayList<>();
+		int[] arr = new int[0];
 		boolean ids = spec.containsKey("ids") && spec.getBoolean("ids");
 		
 		if( spec.containsKey(group) ) {
@@ -104,21 +121,35 @@ public class TfMetaUtils
 				attrs = (JSONArray)spec.get(group);
 			
 			//construct ID list array
-			colList = new int[attrs.size()];
-			for(int i=0; i < colList.length; i++) {
-				colList[i] = ids ? UtilFunctions.toInt(attrs.get(i)) : 
-					(ArrayUtils.indexOf(colnames, attrs.get(i)) + 1);
-				if( colList[i] <= 0 ) {
-					throw new RuntimeException("Specified column '" + 
-						attrs.get(i)+"' does not exist.");
+			for(int i=0; i < attrs.length(); i++) {
+				int ix;
+				if (ids) {
+					ix = UtilFunctions.toInt(attrs.get(i));
+					if(maxCol != -1 && ix >= maxCol)
+						ix = -1;
+					if(minCol != -1 && ix >= 0)
+						ix -= minCol - 1;
 				}
+				else {
+					ix = ArrayUtils.indexOf(colnames, attrs.get(i)) + 1;
+				}
+				if(ix <= 0) {
+					if (minCol == -1 && maxCol == -1) {
+						// only if we cut of some columns, ix -1 is expected
+						throw new RuntimeException("Specified column '"
+							+ attrs.get(i)+"' does not exist.");
+					}
+					else // ignore column
+						continue;
+				}
+				colList.add(ix);
 			}
-		
+			
 			//ensure ascending order of column IDs
-			Arrays.sort(colList);
+			arr = colList.stream().mapToInt((i) -> i)
+				.sorted().toArray();
 		}
-		
-		return colList;
+		return arr;
 	}
 
 	public static int[] parseJsonObjectIDList(JSONObject spec, String[] colnames, String group) 

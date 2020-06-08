@@ -152,14 +152,14 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			long[] beginDims = range.getBeginDims();
 			long[] endDims = range.getEndDims();
 			int colStartBefore = (int) beginDims[1];
-
+			
 			// update begin end dims (column part) considering columns added by dummycoding
 			globalDecoder.updateIndexRanges(beginDims, endDims);
-
+			
 			// get the decoder segment that is relevant for this federated worker
 			Decoder decoder = globalDecoder
-				.subRangeDecoder((int) beginDims[1] + 1, (int) endDims[1] + 1, colStartBefore);
-
+					.subRangeDecoder((int) beginDims[1] + 1, (int) endDims[1] + 1, colStartBefore);
+			
 			FrameBlock metaSlice = new FrameBlock();
 			synchronized(meta) {
 				meta.slice(0, meta.getNumRows() - 1, (int) beginDims[1], (int) endDims[1] - 1, metaSlice);

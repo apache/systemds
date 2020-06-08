@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.EncoderBin;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
@@ -92,7 +93,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		// the encoder in which the complete encoding information will be aggregated
 		Encoder globalEncoder = new EncoderComposite(
-			Arrays.asList(new EncoderRecode(), new EncoderPassThrough(), new EncoderDummycode()));
+			// IMPORTANT: Encoder order matters
+			Arrays.asList(new EncoderRecode(), new EncoderPassThrough(), new EncoderBin(), new EncoderDummycode()));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
 		FederationMap fedMapping = fin.getFedMapping();
@@ -117,7 +119,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
+				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getCause());
 			}
 			return null;
 		});

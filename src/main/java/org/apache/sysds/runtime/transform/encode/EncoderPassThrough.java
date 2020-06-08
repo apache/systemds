@@ -73,9 +73,6 @@ public class EncoderPassThrough extends Encoder
 	
 	@Override
 	public Encoder subRangeEncoder(int colStart, int colEnd) {
-		if (colStart - 1 >= _clen)
-			return null;
-		
 		List<Integer> colList = new ArrayList<>();
 		for (int col : _colList) {
 			if (col >= colStart && col < colEnd)

@@ -102,7 +102,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			return new ParameterizedBuiltinFEDInstruction(null, paramsMap, out, opcode, str);
 		}
 		else {
-			throw new DMLRuntimeException("Unsupported opcode (" + opcode + ") for ParameterizedBuiltinFEDInstruction.");
+			throw new DMLRuntimeException(
+				"Unsupported opcode (" + opcode + ") for ParameterizedBuiltinFEDInstruction.");
 		}
 	}
 
@@ -135,22 +136,37 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		FrameBlock meta = ec.getFrameInput(params.get("meta"));
 		String spec = params.get("spec");
 		
+		Decoder globalDecoder = DecoderFactory
+				.createDecoder(spec, meta.getColumnNames(), null, meta, (int) mo.getNumColumns());
+		
 		FederationMap fedMapping = mo.getFedMapping();
 		
 		ValueType[] schema = new ValueType[(int) mo.getNumColumns()];
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap decodedMapping = fedMapping.mapParallel(varID, (range, data) -> {
-			int columnOffset = (int) range.getBeginDims()[1] + 1;
+			long[] beginDims = range.getBeginDims();
+			long[] endDims = range.getEndDims();
+			int colStartBefore = (int) beginDims[1];
 			
-			FrameBlock subMeta = new FrameBlock();
+			// update begin end dims (column part) considering columns added by dummycoding
+			globalDecoder.updateIndexRanges(beginDims, endDims);
+			
+			// get the decoder segment that is relevant for this federated worker
+			Decoder decoder = globalDecoder
+					.subRangeDecoder((int) beginDims[1] + 1, (int) endDims[1] + 1, colStartBefore);
+			
+			FrameBlock metaSlice = new FrameBlock();
 			synchronized(meta) {
-				meta.slice(0, meta.getNumRows() - 1, columnOffset - 1, (int) range.getEndDims()[1] - 1, subMeta);
+				meta.slice(0, meta.getNumRows() - 1, (int) beginDims[1], (int) endDims[1] - 1, metaSlice);
 			}
+			
 			
 			FederatedResponse response;
 			try {
-				response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					varID, new DecodeMatrix(data.getVarID(), varID, subMeta, spec, columnOffset))).get();
+				response = data
+						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, varID,
+								new DecodeMatrix(data.getVarID(), varID, metaSlice, decoder)))
+						.get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 				
@@ -158,7 +174,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				synchronized(schema) {
 					// It would be possible to assert that different federated workers don't give different value
 					// types for the same columns, but the performance impact is not worth the effort
-					System.arraycopy(subSchema, 0, schema, columnOffset - 1, subSchema.length);
+					System.arraycopy(subSchema, 0, schema, colStartBefore, subSchema.length);
 				}
 			}
 			catch(Exception e) {
@@ -169,8 +185,9 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		
 		// construct a federated matrix with the encoded data
 		FrameObject decodedFrame = ec.getFrameObject(output);
-		decodedFrame.setSchema(schema);
+		decodedFrame.setSchema(globalDecoder.getSchema());
 		decodedFrame.getDataCharacteristics().set(mo.getDataCharacteristics());
+		decodedFrame.getDataCharacteristics().setCols(globalDecoder.getSchema().length);
 		// set the federated mapping for the matrix
 		decodedFrame.setFedMapping(decodedMapping);
 		
@@ -185,34 +202,28 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 	private CPOperand getTargetOperand() {
 		return new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
 	}
-	
+
 	public static class DecodeMatrix extends FederatedUDF {
 		private static final long serialVersionUID = 2376756757742169692L;
-		private	final long _outputID;
+		private final long _outputID;
 		private final FrameBlock _meta;
-		private final String _spec;
-		private final int _globalOffset;
-		
-		public DecodeMatrix(long input, long outputID, FrameBlock meta, String spec, int globalOffset) {
-			super(new long[]{input});
+		private final Decoder _decoder;
+
+		public DecodeMatrix(long input, long outputID, FrameBlock meta, Decoder decoder) {
+			super(new long[] {input});
 			_outputID = outputID;
 			_meta = meta;
-			_spec = spec;
-			_globalOffset = globalOffset;
+			_decoder = decoder;
 		}
-		
-		@Override
+
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixObject mo = (MatrixObject) PrivacyMonitor.handlePrivacy(data[0]);
 			MatrixBlock mb = mo.acquireRead();
 			String[] colNames = _meta.getColumnNames();
-			
-			// compute transformdecode
-			Decoder decoder = DecoderFactory.createDecoder(_spec, colNames, null,
-				_meta, mb.getNumColumns(), _globalOffset, _globalOffset + mb.getNumColumns());
-			FrameBlock fbout = decoder.decode(mb, new FrameBlock(decoder.getSchema()));
+
+			FrameBlock fbout = _decoder.decode(mb, new FrameBlock(_decoder.getSchema()));
 			fbout.setColumnNames(Arrays.copyOfRange(colNames, 0, fbout.getNumColumns()));
-			
+
 			// copy characteristics
 			MatrixCharacteristics mc = new MatrixCharacteristics(mo.getDataCharacteristics());
 			FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(),
@@ -221,7 +232,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			fo.acquireModify(fbout);
 			fo.release();
 			mo.release();
-			
+
 			// add it to the list of variables
 			ec.setVariable(String.valueOf(_outputID), fo);
 			// return schema

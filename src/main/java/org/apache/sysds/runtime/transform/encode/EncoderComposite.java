@@ -134,17 +134,35 @@ public class EncoderComposite extends Encoder
 						+ "CompositeEncoder: " + otherEnc.getClass().getSimpleName());
 				}
 			}
+			// update dummycode encoder domain sizes based on distinctness information from other encoders
+			for (Encoder encoder : _encoders) {
+				if (encoder instanceof EncoderDummycode) {
+					((EncoderDummycode) encoder).updateDomainSizes(_encoders);
+					return;
+				}
+			}
 			return;
 		}
 		for (Encoder encoder : _encoders) {
 			if (encoder.getClass() == other.getClass()) {
 				encoder.mergeAt(other, col);
+				// update dummycode encoder domain sizes based on distinctness information from other encoders
+				if (encoder instanceof EncoderDummycode) {
+					((EncoderDummycode) encoder).updateDomainSizes(_encoders);
+				}
 				return;
 			}
 		}
 		super.mergeAt(other, col);
 	}
-
+	
+	@Override
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		for(Encoder enc : _encoders) {
+			enc.updateIndexRanges(beginDims, endDims);
+		}
+	}
+	
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		if( _meta != null )

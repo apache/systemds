@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -55,6 +59,35 @@ public class DecoderPassThrough extends Decoder
 			}
 		}
 		return out;
+	}
+	
+	@Override
+	public Decoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
+		List<Integer> colList = new ArrayList<>();
+		List<Integer> dcList = new ArrayList<>();
+		List<Integer> srcList = new ArrayList<>();
+		
+		for (int i = 0; i < _colList.length; i++) {
+			int colID = _colList[i];
+			if (colID >= colStart && colID < colEnd) {
+				colList.add(colID - (colStart - 1));
+				srcList.add(_srcCols[i] - dummycodedOffset);
+			}
+		}
+		for (int colID : _dcCols) {
+			if(colID >= colStart && colID < colEnd) {
+				dcList.add(colID);
+			}
+		}
+		if (colList.isEmpty())
+			// empty decoder -> return null
+			return null;
+		
+		DecoderPassThrough decoder = new DecoderPassThrough(Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
+			colList.stream().mapToInt(i -> i).toArray(),
+			dcList.stream().mapToInt(i -> i).toArray());
+		decoder._srcCols = srcList.stream().mapToInt(i -> i).toArray();
+		return decoder;
 	}
 	
 	@Override

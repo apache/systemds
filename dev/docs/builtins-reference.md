@@ -29,7 +29,7 @@ limitations under the License.
     * [`lmpredict`-Function](#lmpredict-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
-   * [`confusionMatrix`-Function](#confusionMatrix-function)
+   * [````cvlm`-Function](#cvlm-function)
     
 # Introduction
 
@@ -359,5 +359,41 @@ y = toOneHot(X,numClasses)
 print("\nOne-HOT\n"+toString(y)+"\nprediction matrix:\n"+toString(z))
 [sum,avg] = confusionMatrix(P=z,Y=y)
 print("\nconfusion-matrix-sum\n"+toString(sum)+"\nconfusion-matrix-avg\n"+toString(avg))
+```
+## `cvlm`-Function
+
+`cvlm` function is used for cross-validation of the provided data model. This function follows Non-exhaustive cross validation  method,
+It uses lm and lmpredict functions to solve the linear regression and to predict the class of a feature vector with no intercept, no shifting, no rescaling. 
+
+### Usage
+```r
+cvlm(X,y,k)
+```
+
+### Arguments
+
+| Name | Type | Default | Description |
+| :--- | :---------- | :-- | :---------- |
+| X | Matrix[Double] | required | Recorded Data set into matrix |
+| y | Matrix[Double] | required | 1-column matrix of response values.  |
+| k | Integer | required | number of subsets needed, It should always be more then 1 and less then nrow(X) |
+| icpt | Integer | 0 | Intercept presence, shifting and rescaling the columns of X |
+| reg | Double | 1e-7 | Regularization constant (lambda) for L2-regularization. set to nonzero for highly dependant/sparse/numerous features |
+
+### Returns
+ 
+| Type | Description |
+| :------------- | :---------- |
+| Matrix[Double] | response values |
+| Matrix[Double] | validated data set |
+
+### Example
+ 
+```r
+X = rand (rows = 5, cols = 5)
+y = X %*% rand(rows = ncol(X), cols = 1)
+print("\n Data set \n"+toString(X)+"\n response values \n"+toString(y))
+[predict,beta]=cvlm(X=X,y=y,k=4)
+print("\n prediction \n"+toString(predict)+"\n validated data set \n"+toString(beta))
 ```
 

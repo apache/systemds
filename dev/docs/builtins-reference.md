@@ -118,6 +118,40 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 
+## `Multinomial Logistic Regression` -Function
+Data imputation using functional dependencies is a probabilistic technique to fill the missing data inside a data frame.
+
+### Usage
+```r
+data_imputeFD = function(Data[String] x, Integer imputeData, Integer y, Double threshold)
+  return(Data[String] imputedData_X)
+```
+
+
+### Arguments
+| Name             | Type            | Default    | Description |
+| :----            | :-------------  | --------   | :------------------------------- |
+| x                | String          | --         | A data frame or a matrix containing the incomplete data|
+| y                | Integer         | --         | Matrix or data frame of target values|
+| imputeData       | Integer         | --         | Data to be used for imputation|
+| threshold        | Double          | --         | A numeric vector candidate probability thresholds between [0,1]|
+
+### Returns
+| Type                   | Description |
+| :-------------         | :---------- |
+| Data[String]           | data frame obtained after imputation |
+
+### Example
+```r
+X = rand("age1" = 12, "age2" = n/a, "age3" = 13, "age4" = 12)
+data_imputeFD(X, 12, age3, 0.5)
+```
+
+
+
+
+
+
 ## `intersect`-Function
 
 This is a generic function, extended from the intersect function in the base package. The elements of intersect(x,y) are those elements in x and in y. 

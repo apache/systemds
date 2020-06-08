@@ -23,6 +23,7 @@ limitations under the License.
   * [Built-In Construction Functions](#built-in-construction-functions)
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
+    * [`confusionMatrix`-Function](#confusionmatrix-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
@@ -119,6 +120,40 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
 
+## `confusionMatrix`-Function
+
+A `confusionMatrix`-accepts a vector for prediction and a one-hot-encoded matrix, then it computes the max value
+of each vector and compare them, after which it calculates and returns the sum of classifications and the average of
+each true class.
+
+### Usage
+```r
+confusionMatrix(P, Y)
+```
+
+### Arguments
+
+| Name | Type           | Default | Description |
+| :--- | :------------- | :------ | :---------- |
+| P    | Matrix[Double] | ---     | vector of prediction |
+| Y    | Matrix[Double] | ---     | vector of Golden standard One Hot Encoded |
+
+### Returns
+ 
+| Name         | Type           | Description |
+| :----------- | :------------- | :---------- |
+| ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
+| ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
+
+### Example
+ 
+```r
+numClasses = 1
+z = rand(rows = 5, cols = 1, min = 1, max = 9)
+X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
+y = toOneHot(X, numClasses)
+[ConfusionSum, ConfusionAvg] = confusionMatrix(P=z, Y=y)
+```
 
 ## `gridSearch`-Function
 

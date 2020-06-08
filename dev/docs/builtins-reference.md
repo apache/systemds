@@ -337,28 +337,11 @@ mulLogisticRegression = function( Matrix[Double] X, Matrix[Double] Y, Integer in
 | Matrix[Double]         | probability regression as output |
 
 ### Example
+```r
 X = rand(rows = 50, cols = 30)
 Y = X %*% rand(rows = ncol(X), cols = 1)
 mulLogisticRegression(X, Y, intercept_scaling = 2 ,   max_iter = 100 ,  tolerance = 0.000001, max1 = 100 ,  maxi2 = 20 ,  verbose = True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
 
 

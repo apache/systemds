@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -62,6 +63,17 @@ public class FEDInstructionUtils {
 				MatrixObject mo = ec.getMatrixObject(instruction.input2);
 				if(mo.isFederated())
 					return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			}
+		}
+		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {
+			MultiReturnParameterizedBuiltinCPInstruction instruction = (MultiReturnParameterizedBuiltinCPInstruction) inst;
+			String opcode = instruction.getOpcode();
+			if(opcode.equals("transformencode") && instruction.input1.isFrame()) {
+				CacheableData<?> fo = ec.getCacheableData(instruction.input1);
+				if(fo.isFederated()) {
+					return MultiReturnParameterizedBuiltinFEDInstruction
+						.parseInstruction(instruction.getInstructionString());
+				}
 			}
 		}
 		return inst;

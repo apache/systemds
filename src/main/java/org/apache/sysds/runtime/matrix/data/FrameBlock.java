@@ -657,6 +657,9 @@ public class FrameBlock implements CacheBlock, Externalizable
 
 	///////
 	// serialization / deserialization (implementation of writable and externalizable)
+	// FIXME for FrameBlock fix write and readFields, it does not work if the Arrays are not yet
+	// allocated (after fixing remove hack in FederatedWorkerHandler.createFrameEncodeMeta(FederatedRequest) call to
+	// FrameBlock.ensureAllocatedColumns())
 	
 	@Override
 	public void write(DataOutput out) throws IOException {

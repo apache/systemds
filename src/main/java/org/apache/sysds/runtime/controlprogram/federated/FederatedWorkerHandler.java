@@ -39,17 +39,21 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.privacy.PrivacyPropagator;
+import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONObject;
 
@@ -108,6 +112,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return getVariable(request);
 				case EXEC_INST:
 					return execInstruction(request);
+				case ENCODE_META:
+					return createFrameEncodeMeta(request);
+				case FRAME_ENCODE:
+					return executeFrameEncode(request);
 				default:
 					String message = String.format("Method %s is not supported.", method);
 					return new FederatedResponse(FederatedResponse.ResponseType.ERROR, new FederatedWorkerHandlerException(message));
@@ -117,12 +125,83 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return new FederatedResponse(FederatedResponse.ResponseType.ERROR, ex);
 		}
 		catch (Exception ex) {
-			return new FederatedResponse(FederatedResponse.ResponseType.ERROR, 
-				new FederatedWorkerHandlerException("Exception of type " 
+			return new FederatedResponse(FederatedResponse.ResponseType.ERROR,
+				new FederatedWorkerHandlerException("Exception of type "
 				+ ex.getClass() + " thrown when processing request", ex));
 		}
 	}
-
+	
+	private FederatedResponse createFrameEncodeMeta(FederatedRequest request) {
+		// param parsing
+		checkNumParams(request.getNumParams(), 3);
+		String spec = (String) request.getParam(0);
+		int globalOffset = (int) request.getParam(1);
+		long varID = (long) request.getParam(2);
+		
+		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(_vars.get(varID));
+		FrameBlock data = fo.acquireRead();
+		String[] colNames = data.getColumnNames();
+		
+		// create the encoder
+		Encoder encoder = EncoderFactory.createEncoder(spec,
+				colNames,
+				data.getNumColumns(),
+				null,
+				globalOffset,
+				globalOffset + data.getNumColumns());
+		// build necessary structures for encoding
+		encoder.build(data);
+		// just get the meta frame block
+		FrameBlock meta = encoder.getMetaData(new FrameBlock(data.getNumColumns(), Types.ValueType.STRING));
+		meta.setColumnNames(colNames);
+		// otherwise data of FrameBlock would be null, therefore it would fail
+		// hack because serialization of FrameBlock does not function if Arrays are not allocated
+		meta.ensureAllocatedColumns(meta.getNumRows());
+		fo.release();
+		
+		return new FederatedResponse(FederatedResponse.Type.SUCCESS, meta);
+	}
+	
+	private FederatedResponse executeFrameEncode(FederatedRequest request) {
+		checkNumParams(request.getNumParams(), 4);
+		FrameBlock meta = (FrameBlock) request.getParam(0);
+		String spec = (String) request.getParam(1);
+		// offset of local column indexes compared to global (due to federation)
+		int globalOffset = (int) request.getParam(2);
+		long varID = (long) request.getParam(3);
+		
+		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(_vars.get(varID));
+		FrameBlock data = fo.acquireRead();
+		String[] colNames = data.getColumnNames();
+		
+		// compute encoding with given meta data
+		Encoder encoder = EncoderFactory.createEncoder(spec,
+				colNames,
+				data.getNumColumns(),
+				meta,
+				globalOffset,
+				globalOffset + data.getNumColumns());
+		
+		// apply transformation
+		MatrixBlock mbout = encoder.apply(data, new MatrixBlock(data.getNumRows(), data.getNumColumns(), false));
+		
+		// copy characteristics
+		MatrixCharacteristics mc = new MatrixCharacteristics(fo.getDataCharacteristics());
+		MatrixObject mo = new MatrixObject(Types.ValueType.FP64, OptimizerUtils.getUniqueTempFileName(),
+				new MetaDataFormat(mc, FileFormat.BINARY));
+		// set the encoded data
+		mo.acquireModify(mbout);
+		mo.release();
+		fo.release();
+		
+		// create a new id handle
+		long id = _seq.getNextID();
+		// add it to the list of variables
+		_vars.put(id, mo);
+		// return id handle
+		return new FederatedResponse(FederatedResponse.Type.SUCCESS, id);
+	}
+	
 	private FederatedResponse readData(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 2);
 		String filename = (String) request.getParam(0);
@@ -143,7 +222,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				break;
 			default:
 				// should NEVER happen (if we keep request codes in sync with actual behaviour)
-				return new FederatedResponse(FederatedResponse.ResponseType.ERROR, 
+				return new FederatedResponse(FederatedResponse.ResponseType.ERROR,
 					new FederatedWorkerHandlerException("Could not recognize datatype"));
 		}
 		
@@ -168,6 +247,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw new DMLRuntimeException(ex);
 		}
 		cd.setMetaData(new MetaDataFormat(mc, fmt));
+		// TODO send FileFormatProperties with request and use them for CSV
+		cd.setFileFormatProperties(new FileFormatPropertiesCSV());
 		cd.acquireRead();
 		cd.refreshMetaData(); //in pinned state
 		cd.release();

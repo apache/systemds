@@ -34,7 +34,9 @@ public class FederatedRequest implements Serializable {
 		READ_VAR, // create variable for local data, read on first access
 		PUT_VAR,  // receive data from main and store to local variable
 		GET_VAR,  // return local variable to main
-		EXEC_INST // execute arbitrary instruction over
+		EXEC_INST, // execute arbitrary instruction over
+		FRAME_ENCODE, // TODO replace with user defined functions
+		ENCODE_META
 	}
 	
 	private RequestType _method;

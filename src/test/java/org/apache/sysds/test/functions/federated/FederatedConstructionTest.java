@@ -91,7 +91,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 	/*
 	 * like other federated functionality, SPARK execution mode is not yet working (waiting for better integration of
 	 * federated instruction building, like propagating information that object is federated)
-	 * 
+	 *
 	 * @Test public void federatedFrameConstructionSP() throws IOException {
 	 * federatedFrameConstruction(Types.ExecMode.SPARK); }
 	 */
@@ -128,8 +128,8 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
 		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + testFile + "Reference.dml";
-		programArgs = new String[] {"-args", input(inputIdentifier), expected("B")};
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		programArgs = new String[] {"-args", input("A"), expected("B")};
 		runTest(true, false, null, -1);
 
 		// reference file should not be written to hdfs

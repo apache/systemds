@@ -307,8 +307,7 @@ w = lm(X = X, y = y)
 yp = lmpredict(X, w)
 ```
 
-#  Introduction
-The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level function
+
 
 
 
@@ -316,13 +315,11 @@ The DML (Declarative Machine Learning) language has built-in functions which ena
 The Multinomial Logistic Regression Model is is used to link and provide an estimate of category label probabilities ( y, having multiple rows single column ) which are a response to the numerical vector of explanatory (feature) variables (x, having multiple rows and multiple columns) . The number of links can be 3 or greater unlike binomial regression.
 
 ### Usage
-```
-mulLogisticRegression = function( Matrix X, Matrix Y,  intercept_scaling ,  max_iter , tolerance ,
-   max1 ,  maxi2 ,  verbose )
-  return(Matrix A)
+```r
+mulLogisticRegression = function( Matrix[Double] X, Matrix[Double] Y, Integer intercept_scaling = 2 , Integer  max_iter = 100 , Double tolerance = .000001,Integer max1 = 100 , Integer maxi2 = 20 ,  verbose = True)
+
 
 ### Arguments
-
 | Name             | Type            | Default  | Description |
 | :----            | :-------------  | -------- | :------------------------------- |
 | X                | Matrix[Double]  | --       | Matrix of numerical vector of explanatory  variables|
@@ -338,8 +335,17 @@ mulLogisticRegression = function( Matrix X, Matrix Y,  intercept_scaling ,  max_
 | :-------------         | :---------- |
 | Matrix[Double]         | probability regression as output |
 
-
 ### Example
+
+
+
+
+
+
+
+
+
+
 
 
 

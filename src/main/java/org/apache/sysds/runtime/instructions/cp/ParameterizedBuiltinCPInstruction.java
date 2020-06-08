@@ -37,6 +37,7 @@ import org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
@@ -304,7 +305,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			//get input spec and path
 			String spec = getParameterMap().get("spec");
 			String path = getParameterMap().get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD);
-			String delim = getParameterMap().containsKey("sep") ? getParameterMap().get("sep") : TfUtils.TXMTD_SEP;
+			String delim = getParameterMap().getOrDefault("sep", TfUtils.TXMTD_SEP);
 			
 			//execute transform meta data read
 			FrameBlock meta = null;
@@ -457,8 +458,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 	}
 	
-	public MatrixObject getTarget(ExecutionContext ec) {
-		return ec.getMatrixObject(params.get("target"));
+	public CacheableData<?> getTarget(ExecutionContext ec) {
+		return ec.getCacheableData(params.get("target"));
 	}
 	
 	private CPOperand getTargetOperand() {

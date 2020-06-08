@@ -147,8 +147,11 @@ public class EncoderComposite extends Encoder
 			if (encoder.getClass() == other.getClass()) {
 				encoder.mergeAt(other, col);
 				// update dummycode encoder domain sizes based on distinctness information from other encoders
-				if (encoder instanceof EncoderDummycode) {
-					((EncoderDummycode) encoder).updateDomainSizes(_encoders);
+				for (Encoder encDummy : _encoders) {
+					if (encDummy instanceof EncoderDummycode) {
+						((EncoderDummycode) encDummy).updateDomainSizes(_encoders);
+						return;
+					}
 				}
 				return;
 			}

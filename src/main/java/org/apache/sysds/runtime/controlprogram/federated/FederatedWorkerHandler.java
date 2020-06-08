@@ -164,6 +164,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		
 		// read metadata
 		FileFormat fmt = null;
+		boolean header = false;
 		try {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
@@ -175,6 +176,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 							new FederatedWorkerHandlerException("Could not parse metadata file"));
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
+					if (mtd.has(DataExpression.DELIM_HAS_HEADER_ROW))
+						header = mtd.getBoolean(DataExpression.DELIM_HAS_HEADER_ROW);
 					cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
 					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 				}
@@ -188,7 +191,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		cd.setMetaData(new MetaDataFormat(mc, fmt));
 		// TODO send FileFormatProperties with request and use them for CSV, this is currently a workaround so reading
 		//  of CSV files works
-		cd.setFileFormatProperties(new FileFormatPropertiesCSV());
+		cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, DataExpression.DEFAULT_DELIM_DELIMITER,
+			DataExpression.DEFAULT_DELIM_SPARSE));
 		cd.enableCleanup(false); //guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 		

@@ -86,9 +86,12 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// obtain and pin input frame
 		FrameObject fin = ec.getFrameObject(input1.getName());
 		String spec = ec.getScalarInput(input2).getStringValue();
+		
+		String[] colNames = new String[(int) fin.getNumColumns()];
+		Arrays.fill(colNames, "");
 
 		// the encoder in which the complete encoding information will be aggregated
-		EncoderComposite globalEncoder = new EncoderComposite(
+		Encoder globalEncoder = new EncoderComposite(
 			Arrays.asList(new EncoderRecode(), new EncoderPassThrough(), new EncoderDummycode()));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
@@ -98,22 +101,37 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 			// create an encoder with the given spec. The columnOffset (which is 1 based) has to be used to
 			// tell the federated worker how much the indexes in the spec have to be offset.
-			Future<FederatedResponse> response = data.executeFederatedOperation(
+			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(
 				new FederatedRequest(RequestType.EXEC_UDF, data.getVarID(),
 					new CreateFrameEncoder(data.getVarID(), spec, columnOffset)));
 			// collect responses with encoders
 			try {
-				Encoder encoder = (Encoder) response.get().getData()[0];
+				FederatedResponse response = responseFuture.get();
+				Encoder encoder = (Encoder) response.getData()[0];
 				// merge this encoder into a composite encoder
 				synchronized(globalEncoder) {
 					globalEncoder.mergeAt(encoder, columnOffset);
 				}
+				// no synchronization necessary since names should anyway match
+				String[] subRangeColNames = (String[]) response.getData()[1];
+				System.arraycopy(subRangeColNames, 0, colNames, (int) range.getBeginDims()[1], subRangeColNames.length);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
 			}
 			return null;
 		});
+		encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
+		
+		Types.ValueType[] metaSchema = new Types.ValueType[(int) fin.getNumColumns()];
+		Arrays.fill(metaSchema, Types.ValueType.STRING);
+		// release input and outputs
+		ec.setFrameOutput(getOutput(1).getName(),
+			globalEncoder.getMetaData(new FrameBlock(metaSchema, colNames)));
+	}
+	
+	public static void encodeFederatedFrames(FederationMap fedMapping, Encoder globalEncoder,
+		MatrixObject transformedMat) {
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap transformedFedMapping = fedMapping.mapParallel(varID, (range, data) -> {
 			// copy because we reuse it
@@ -141,17 +159,11 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		});
 
 		// construct a federated matrix with the encoded data
-		MatrixObject transformedMat = ec.getMatrixObject(getOutput(0));
 		transformedMat.getDataCharacteristics().setRows(transformedFedMapping.getMaxIndexInRange(0));
 		transformedMat.getDataCharacteristics().setCols(transformedFedMapping.getMaxIndexInRange(1));
 		// set the federated mapping for the matrix
 		transformedMat.setFedMapping(transformedFedMapping);
-
-		// release input and outputs
-		ec.setFrameOutput(getOutput(1).getName(),
-			globalEncoder.getMetaData(new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING)));
 	}
-	
 	
 	public static class CreateFrameEncoder extends FederatedUDF {
 		private static final long serialVersionUID = 2376756757742169692L;
@@ -179,7 +191,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			fo.release();
 
 			// create federated response
-			return new FederatedResponse(ResponseType.SUCCESS, encoder);
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {encoder, fb.getColumnNames()});
 		}
 	}
 

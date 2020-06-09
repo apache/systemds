@@ -1,0 +1,28 @@
+syntax = "proto3";
+package sysds;
+option java_package = "org.apache.sysds.protobuf";
+option java_outer_classname = "SysdsProtos";
+option java_multiple_files = false;
+
+message Frame {
+    repeated Row rows = 1;
+}
+
+message Row {
+    repeated string column_names = 2;
+    repeated string column_data = 3;
+    repeated Schema column_schema = 4;
+}
+
+message Schema {
+    enum ValueType {
+        FP32 = 0;
+        FP64 = 1;
+        INT32 = 2;
+        INT64 = 3;
+        BOOLEAN = 4;
+        STRING = 5;
+        UNKNOWN = 6;
+    }
+    repeated ValueType valueType = 1;
+}

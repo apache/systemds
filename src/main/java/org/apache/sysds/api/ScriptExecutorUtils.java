@@ -85,6 +85,10 @@ public class ScriptExecutorUtils {
 				}
 				gCtxs.get(0).initializeThread();
 				ec.setGPUContexts(gCtxs);
+
+				SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+				if(configured_generator == SpoofCompiler.GeneratorAPI.AUTO || configured_generator == SpoofCompiler.GeneratorAPI.CUDA )
+					SpoofCompiler.loadNativeCodeGenerator(SpoofCompiler.GeneratorAPI.CUDA);
 			}
 			rtprog.execute(ec);
 		} catch (Throwable e) {

@@ -107,7 +107,7 @@ public class SpoofCompiler {
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 
 	//internal configuration flags
-	public static final boolean LDEBUG = false;
+	public static final boolean LDEBUG = true;
 	public static CompilerType JAVA_COMPILER = CompilerType.JANINO;
 	public static PlanSelector PLAN_SEL_POLICY = PlanSelector.FUSE_COST_BASED_V2;
 	public static final IntegrationType INTEGRATION = IntegrationType.RUNTIME;
@@ -186,7 +186,12 @@ public class SpoofCompiler {
 			Logger.getLogger("org.apache.sysds.hops.codegen")
 					.setLevel(Level.TRACE);
 		}
-		native_contexts = new HashMap<>();
+	}
+
+	public static void loadNativeCodeGenerator(GeneratorAPI generator) {
+
+		if(native_contexts == null)
+			native_contexts = new HashMap<>();
 
 		GeneratorAPI configured_generator = GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
 
@@ -196,12 +201,6 @@ public class SpoofCompiler {
 
 		if(configured_generator == GeneratorAPI.CUDA && !DMLScript.USE_ACCELERATOR)
 			configured_generator = GeneratorAPI.JAVA;
-
-		if(configured_generator != GeneratorAPI.JAVA)
-			loadNativeCodeGenerator(GeneratorAPI.CUDA);
-	}
-
-	public static void loadNativeCodeGenerator(GeneratorAPI generator) {
 
 		if(!native_contexts.containsKey(generator)) {
 			if(generator == GeneratorAPI.CUDA) {
@@ -552,6 +551,10 @@ public class SpoofCompiler {
 			CodegenUtils.clearClassCache(); //class cache
 			planCache.clear(); //plan cache
 		}
+
+		if(API != GeneratorAPI.JAVA)
+			unloadNativeCodeGenerator(GeneratorAPI.CUDA);
+
 	}
 	
 	/**

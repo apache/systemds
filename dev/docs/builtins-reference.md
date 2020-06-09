@@ -332,7 +332,7 @@ as console output by setting "verbose = TRUE".
 ### Usage
 ```r
 glm(X,Y)
-`
+```
 
 ### Arguments
 | Name | Type | Default | Description |
@@ -363,5 +363,5 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 print("\n Matrix with vectors \n"+toString(X)+"\n response values \n"+toString(y))
 beta = glm(X=X,Y=y)
 print("\n return of glm \n"+toString(beta))
-`
+```
 

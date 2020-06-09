@@ -18,6 +18,9 @@
  */
 package org.apache.sysds.runtime.io;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -30,53 +33,54 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-import java.io.IOException;
-import java.io.InputStream;
-public class FrameReaderProto extends FrameReader
-{
+public class FrameReaderProto extends FrameReader {
 	@Override
-	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen, long clen) throws IOException, DMLRuntimeException {
-		//prepare file access
+	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
+		// prepare file access
 		JobConf jobConf = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
 		FileSystem fileSystem = IOUtilFunctions.getFileSystem(path, jobConf);
 		FileInputFormat.addInputPath(jobConf, path);
 
-		//check existence and non-empty file
+		// check existence and non-empty file
 		checkValidInputFile(fileSystem, path);
 
-		Types.ValueType[] lschema = createOutputSchema(schema, clen);
-		String[] lnames = createOutputNames(names, clen);
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
+		Types.ValueType[] outputSchema = createOutputSchema(schema, clen);
+		String[] outputNames = createOutputNames(names, clen);
+		FrameBlock outputFrameBlock = createOutputFrameBlock(outputSchema, outputNames, rlen);
 
-		//core read (sequential/parallel)
-		readProtoFrameFromHDFS(path, fileSystem, ret, rlen, clen);
-		return ret;
+		// core read (sequential/parallel)
+		readProtoFrameFromHDFS(path, fileSystem, outputFrameBlock, rlen, clen);
+		return outputFrameBlock;
 	}
 
-	private void readProtoFrameFromHDFS(Path path, FileSystem fileSystem, FrameBlock dest,
-										long rlen, long clen) throws IOException {
+	private void readProtoFrameFromHDFS(Path path, FileSystem fileSystem, FrameBlock dest, long rlen, long clen)
+		throws IOException {
 		SysdsProtos.Frame frame = readProtoFrameFromFile(path, fileSystem);
-		for (int row = 0; row < rlen; row++) {
-			for (int column = 0; column < clen; column++) {
-				dest.set(row, column, UtilFunctions.stringToObject(Types.ValueType.STRING, frame.getRows(row).getColumnData(column)));
+		for(int row = 0; row < rlen; row++) {
+			for(int column = 0; column < clen; column++) {
+				dest.set(row,
+					column,
+					UtilFunctions.stringToObject(Types.ValueType.STRING, frame.getRows(row).getColumnData(column)));
 			}
 		}
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fileSystem, path);
 	}
 
-	private SysdsProtos.Frame readProtoFrameFromFile(Path path, FileSystem fileSystem) throws IOException
-	{
+	private SysdsProtos.Frame readProtoFrameFromFile(Path path, FileSystem fileSystem) throws IOException {
 		FSDataInputStream fsDataInputStream = fileSystem.open(path);
 		try {
 			return SysdsProtos.Frame.newBuilder().mergeFrom(fsDataInputStream).build();
-		} finally {
+		}
+		finally {
 			IOUtilFunctions.closeSilently(fsDataInputStream);
 		}
 	}
 
 	@Override
-	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names, long rlen, long clen) throws DMLRuntimeException {
+	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names, long rlen,
+		long clen) throws DMLRuntimeException {
 		throw new DMLRuntimeException("Not implemented yet.");
 	}
 }

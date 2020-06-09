@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysds.runtime.io;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -33,8 +32,6 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-
 public class FrameReaderProto extends FrameReader
 {
 	@Override
@@ -53,39 +50,33 @@ public class FrameReaderProto extends FrameReader
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
 
 		//core read (sequential/parallel)
-		readProtoFrameFromHDFS(path, jobConf, fileSystem, ret, rlen, clen);
+		readProtoFrameFromHDFS(path, fileSystem, ret, rlen, clen);
 		return ret;
 	}
 
-	private void readProtoFrameFromHDFS(Path path, JobConf jobConf, FileSystem fileSystem,
-										FrameBlock dest, long rlen, long clen) throws IOException {
-
-		FSDataInputStream inputStream = fileSystem.open(path);
+	private void readProtoFrameFromHDFS(Path path, FileSystem fileSystem, FrameBlock dest,
+										long rlen, long clen) throws IOException {
 		SysdsProtos.Frame frame = readProtoFrameFromFile(path, fileSystem);
-
 		for (int row = 0; row < rlen; row++) {
 			for (int column = 0; column < clen; column++) {
-				dest.set(row, column, UtilFunctions.stringToObject(Types.ValueType.STRING,
-						frame.getRows(row).getColumnData(column)));
+				dest.set(row, column, UtilFunctions.stringToObject(Types.ValueType.STRING, frame.getRows(row).getColumnData(column)));
 			}
 		}
-
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fileSystem, path);
 	}
 
-	protected SysdsProtos.Frame readProtoFrameFromFile(Path path, FileSystem fileSystem) throws IOException
+	private SysdsProtos.Frame readProtoFrameFromFile(Path path, FileSystem fileSystem) throws IOException
 	{
 		FSDataInputStream fsDataInputStream = fileSystem.open(path);
 		try {
-			SysdsProtos.Frame frame = SysdsProtos.Frame.newBuilder().mergeFrom(fsDataInputStream).build();
-			return frame;
+			return SysdsProtos.Frame.newBuilder().mergeFrom(fsDataInputStream).build();
 		} finally {
 			IOUtilFunctions.closeSilently(fsDataInputStream);
 		}
 	}
 
 	@Override
-	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names, long rlen, long clen) throws IOException, DMLRuntimeException {
+	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names, long rlen, long clen) throws DMLRuntimeException {
 		throw new DMLRuntimeException("Not implemented yet.");
 	}
 }

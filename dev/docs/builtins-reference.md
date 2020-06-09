@@ -25,6 +25,7 @@ limitations under the License.
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
     * [`gridSearch`-Function](#gridSearch-function)
+    * [`imputeByFD`-Function](#imputeByFD-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
@@ -192,6 +193,35 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 params = list("reg", "tol", "maxi")
 paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
 [B, opt]= gridSearch(X=X, y=y, train="lm", predict="lmPredict", params=params, paramValues=paramRanges, verbose = TRUE)
+```
+
+## `imputeByFD` -Function
+Data imputation using functional dependencies is a probabilistic technique to fill the missing data inside a data frame.
+
+### Usage
+```r
+data_imputeFD = function(Data[String] x, Integer imputeData, Integer y, Double threshold)
+  return(Data[String] imputedData_X)
+```
+
+
+### Arguments
+| Name             | Type            | Default    | Description |
+| :----            | :-------------  | --------   | :------------------------------- |
+| x                | String          | --         | A data frame or a matrix containing the incomplete data|
+| y                | Integer         | --         | Matrix or data frame of target values|
+| imputeData       | Integer         | --         | Data to be used for imputation|
+| threshold        | Double          | --         | A numeric vector candidate probability thresholds between [0,1]|
+
+### Returns
+| Type                   | Description |
+| :-------------         | :---------- |
+| Data[String]           | data frame obtained after imputation |
+
+### Example
+```r
+X = rand("age1" = 12, "age2" = n/a, "age3" = 13, "age4" = 12)
+data_imputeFD(X, 12, age3, 0.5)
 ```
 
 ## `KMeans`-Function

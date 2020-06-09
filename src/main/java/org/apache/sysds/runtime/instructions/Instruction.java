@@ -58,6 +58,7 @@ public abstract class Instruction
 	public static final String SP_INST_PREFIX = "sp_";
 	public static final String GPU_INST_PREFIX = "gpu_";
 	public static final String FEDERATED_INST_PREFIX = "fed_";
+	
 	//basic instruction meta data
 	protected String instString = null;
 	protected String instOpcode = null;

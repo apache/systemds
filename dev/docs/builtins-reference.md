@@ -29,7 +29,7 @@ limitations under the License.
     * [`lmpredict`-Function](#lmpredict-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
-   * [`confusionMatrix`-Function](#confusionMatrix-function)
+    * [`glm`-Function](#glm-function)
     
 # Introduction
 
@@ -323,41 +323,45 @@ y = X %*% rand(rows=ncol(X), 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
-## `confusionMatrix`-Function
-
-A `confusionMatrix` is a technique for summarizing the performance of a classification algorithm.
-A confusion matrix can give a better idea of what the classification model is getting right and what types of errors it is making.
-This confusionMatrix function accepts a vector for prediction and an one-hot-encoded matrix.
-Then it computes the max value of each vector and compare them, after which it calculates and returns the sum of classifications and the average of each true class.
+## `glm`- Function
+Generalized linear model is a flexible generalization of ordinary linear regression that allows for response variables that have 
+error distribution models . This `glm`  function uses trust regions with Newton-Raphson method(uses observed derivative of score),
+or Fisher Scoring method(uses the expected derivative of the score)  to solve GLM regression. GLM statistics are provided 
+as console output by setting "verbose = TRUE".
 
 ### Usage
 ```r
-confusionMatrix(P,Y)
-```
+glm(X,Y)
+`
 
 ### Arguments
-
 | Name | Type | Default | Description |
-| :--- | :---------- | :-- | :---------- |
-| P | Matrix[Double] | --- | vector of prediction |
-| Y | Matrix[Double] | --- | vector of Golden standard One Hot Encoded |
+| :------- | :------ | ---------- | :---------- |
+| X | Matrix[Double] | required | matrix X of feature vectors |
+| Y | Matrix[Double] | required |matrix Y with either 1 or 2 columns: if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg) |
+| dfam | Int | 1 | Distribution family code: 1 = Power, 2 = Binomial |
+|vpow | Double | 0.0 | Power for Variance defined as (mean)^power (ignored if dfam != 1):  0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian |
+| link | Int | 0 | Link function code: 0 = canonical (depends on distribution), 1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit |
+| lpow | Double | 1.0 | Power for Link function defined as (mean)^power (ignored if link != 1):  -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity |
+| yneg |Double | 0.0 | Response value for Bernoulli "No" label, usually 0.0 or -1.0 |
+|icpt | Int | 0 |  Intercept presence, X columns shifting and rescaling: 0 = no intercept, no shifting, no rescaling;1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1 |
+| reg | Double | 0.0 | Regularization parameter (lambda) for L2 regularization |
+| tol | Double | 0.000001 | Tolerance(epislon) value. |
+|disp | Double | 0.0 |  (Over-)dispersion value, or 0.0 to estimate it from data |
+| moi | Int | 200 |  Maximum number of outer (Newton / Fisher Scoring) iterations |
+| mii | Int | 0 | Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum |
 
 ### Returns
- 
-| Name | Type | Description |
-| :---- | :------------- | :---------- |
-| ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
-| ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
+| Type | Description |
+| :------ | :--------------- |
+| Matrix[Double] | Matrix whose size depends on icpt ( icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2) |
 
 ### Example
- 
 ```r
-numClasses = 1  
-z = rand(rows=5,cols=1,min = 1 , max = 9)
-X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
-y = toOneHot(X,numClasses)
-print("\nOne-HOT\n"+toString(y)+"\nprediction matrix:\n"+toString(z))
-[sum,avg] = confusionMatrix(P=z,Y=y)
-print("\nconfusion-matrix-sum\n"+toString(sum)+"\nconfusion-matrix-avg\n"+toString(avg))
-```
+X = rand (rows = 5, cols = 5 )
+y = X %*% rand(rows = ncol(X), cols = 1)
+print("\n Matrix with vectors \n"+toString(X)+"\n response values \n"+toString(y))
+beta = glm(X=X,Y=y)
+print("\n return of glm \n"+toString(beta))
+`
 

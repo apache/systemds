@@ -289,7 +289,7 @@ if [ $WORKER == 1 ]; then
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
-  -Dlog4j.configuration=file:$LOG4JPROP \
+  $LOG4JPROP \
   org.apache.sysds.api.DMLScript \
   -w $PORT"
 

@@ -23,6 +23,7 @@ limitations under the License.
   * [Built-In Construction Functions](#built-in-construction-functions)
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
+    * [`discoverFD`-Function](#discoverFD-function)
     * [`imputeByFD`-Function](#imputeByFD-function)
     * [`intersect`-Function](#intersect-function)
 	* [`KMeans`-Function](#KMeans-function)
@@ -118,6 +119,36 @@ Note that reshape construction is not yet supported for **SPARK** execution.
 # DML-Bodied Built-In Functions
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
+
+## `discoverFD` -Function
+Employed to discover meaningful functional dependencies that are used for downstream data preparation tasks
+
+### Usage
+```r
+func_dependencies = function(Matrix[Double] M, Matrix[Double] V, Double threshold)
+  return(Matrix[Double] A)
+```
+
+
+### Arguments
+| Name             | Type            | Default    | Description |
+| :----            | :-------------  | --------   | :------------------------------- |
+| M                | Double          | --         | Matrix to input data|
+| V                | Double          | --         | A vector for attribute in consideration in rows|
+| threshold        | Double          | --         | A numeric vector candidate probability thresholds between [0,1]|
+
+### Returns
+| Type                   | Description |
+| :-------------         | :---------- |
+| FD[String]             | matrix of discovered functional dependencies |
+
+### Example
+```r
+M = rand (rows = 50, cols = 10)
+V = X %*% rand(rows = ncol(X), cols = 1)
+func_dependencies( X, V, 0.5)
+
+```
 
 ## `imputeByFD` -Function
 Data imputation using functional dependencies is a probabilistic technique to fill the missing data inside a data frame.

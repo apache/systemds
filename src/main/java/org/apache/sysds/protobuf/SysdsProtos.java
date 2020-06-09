@@ -812,24 +812,24 @@ public final class SysdsProtos {
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @return A list containing the columnNames.
      */
     java.util.List<java.lang.String>
         getColumnNamesList();
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @return The count of columnNames.
      */
     int getColumnNamesCount();
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @param index The index of the element to return.
      * @return The columnNames at the given index.
      */
     java.lang.String getColumnNames(int index);
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @param index The index of the value to return.
      * @return The bytes of the columnNames at the given index.
      */
@@ -837,24 +837,24 @@ public final class SysdsProtos {
         getColumnNamesBytes(int index);
 
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @return A list containing the columnData.
      */
     java.util.List<java.lang.String>
         getColumnDataList();
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @return The count of columnData.
      */
     int getColumnDataCount();
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @param index The index of the element to return.
      * @return The columnData at the given index.
      */
     java.lang.String getColumnData(int index);
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @param index The index of the value to return.
      * @return The bytes of the columnData at the given index.
      */
@@ -862,25 +862,25 @@ public final class SysdsProtos {
         getColumnDataBytes(int index);
 
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     java.util.List<org.apache.sysds.protobuf.SysdsProtos.Schema> 
         getColumnSchemaList();
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     org.apache.sysds.protobuf.SysdsProtos.Schema getColumnSchema(int index);
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     int getColumnSchemaCount();
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     java.util.List<? extends org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder> 
         getColumnSchemaOrBuilderList();
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder getColumnSchemaOrBuilder(
         int index);
@@ -934,7 +934,7 @@ public final class SysdsProtos {
             case 0:
               done = true;
               break;
-            case 18: {
+            case 10: {
               java.lang.String s = input.readStringRequireUtf8();
               if (!((mutable_bitField0_ & 0x00000001) != 0)) {
                 columnNames_ = new com.google.protobuf.LazyStringArrayList();
@@ -943,7 +943,7 @@ public final class SysdsProtos {
               columnNames_.add(s);
               break;
             }
-            case 26: {
+            case 18: {
               java.lang.String s = input.readStringRequireUtf8();
               if (!((mutable_bitField0_ & 0x00000002) != 0)) {
                 columnData_ = new com.google.protobuf.LazyStringArrayList();
@@ -952,7 +952,7 @@ public final class SysdsProtos {
               columnData_.add(s);
               break;
             }
-            case 34: {
+            case 26: {
               if (!((mutable_bitField0_ & 0x00000004) != 0)) {
                 columnSchema_ = new java.util.ArrayList<org.apache.sysds.protobuf.SysdsProtos.Schema>();
                 mutable_bitField0_ |= 0x00000004;
@@ -1002,10 +1002,10 @@ public final class SysdsProtos {
               org.apache.sysds.protobuf.SysdsProtos.Row.class, org.apache.sysds.protobuf.SysdsProtos.Row.Builder.class);
     }
 
-    public static final int COLUMN_NAMES_FIELD_NUMBER = 2;
+    public static final int COLUMN_NAMES_FIELD_NUMBER = 1;
     private com.google.protobuf.LazyStringList columnNames_;
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @return A list containing the columnNames.
      */
     public com.google.protobuf.ProtocolStringList
@@ -1013,14 +1013,14 @@ public final class SysdsProtos {
       return columnNames_;
     }
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @return The count of columnNames.
      */
     public int getColumnNamesCount() {
       return columnNames_.size();
     }
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @param index The index of the element to return.
      * @return The columnNames at the given index.
      */
@@ -1028,7 +1028,7 @@ public final class SysdsProtos {
       return columnNames_.get(index);
     }
     /**
-     * <code>repeated string column_names = 2;</code>
+     * <code>repeated string column_names = 1;</code>
      * @param index The index of the value to return.
      * @return The bytes of the columnNames at the given index.
      */
@@ -1037,10 +1037,10 @@ public final class SysdsProtos {
       return columnNames_.getByteString(index);
     }
 
-    public static final int COLUMN_DATA_FIELD_NUMBER = 3;
+    public static final int COLUMN_DATA_FIELD_NUMBER = 2;
     private com.google.protobuf.LazyStringList columnData_;
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @return A list containing the columnData.
      */
     public com.google.protobuf.ProtocolStringList
@@ -1048,14 +1048,14 @@ public final class SysdsProtos {
       return columnData_;
     }
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @return The count of columnData.
      */
     public int getColumnDataCount() {
       return columnData_.size();
     }
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @param index The index of the element to return.
      * @return The columnData at the given index.
      */
@@ -1063,7 +1063,7 @@ public final class SysdsProtos {
       return columnData_.get(index);
     }
     /**
-     * <code>repeated string column_data = 3;</code>
+     * <code>repeated string column_data = 2;</code>
      * @param index The index of the value to return.
      * @return The bytes of the columnData at the given index.
      */
@@ -1072,17 +1072,17 @@ public final class SysdsProtos {
       return columnData_.getByteString(index);
     }
 
-    public static final int COLUMN_SCHEMA_FIELD_NUMBER = 4;
+    public static final int COLUMN_SCHEMA_FIELD_NUMBER = 3;
     private java.util.List<org.apache.sysds.protobuf.SysdsProtos.Schema> columnSchema_;
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     @java.lang.Override
     public java.util.List<org.apache.sysds.protobuf.SysdsProtos.Schema> getColumnSchemaList() {
       return columnSchema_;
     }
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     @java.lang.Override
     public java.util.List<? extends org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder> 
@@ -1090,21 +1090,21 @@ public final class SysdsProtos {
       return columnSchema_;
     }
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     @java.lang.Override
     public int getColumnSchemaCount() {
       return columnSchema_.size();
     }
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     @java.lang.Override
     public org.apache.sysds.protobuf.SysdsProtos.Schema getColumnSchema(int index) {
       return columnSchema_.get(index);
     }
     /**
-     * <code>repeated .sysds.Schema column_schema = 4;</code>
+     * <code>repeated .sysds.Schema column_schema = 3;</code>
      */
     @java.lang.Override
     public org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder getColumnSchemaOrBuilder(
@@ -1127,13 +1127,13 @@ public final class SysdsProtos {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       for (int i = 0; i < columnNames_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, columnNames_.getRaw(i));
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, columnNames_.getRaw(i));
       }
       for (int i = 0; i < columnData_.size(); i++) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, columnData_.getRaw(i));
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, columnData_.getRaw(i));
       }
       for (int i = 0; i < columnSchema_.size(); i++) {
-        output.writeMessage(4, columnSchema_.get(i));
+        output.writeMessage(3, columnSchema_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -1162,7 +1162,7 @@ public final class SysdsProtos {
       }
       for (int i = 0; i < columnSchema_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, columnSchema_.get(i));
+          .computeMessageSize(3, columnSchema_.get(i));
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1530,7 +1530,7 @@ public final class SysdsProtos {
          }
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @return A list containing the columnNames.
        */
       public com.google.protobuf.ProtocolStringList
@@ -1538,14 +1538,14 @@ public final class SysdsProtos {
         return columnNames_.getUnmodifiableView();
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @return The count of columnNames.
        */
       public int getColumnNamesCount() {
         return columnNames_.size();
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @param index The index of the element to return.
        * @return The columnNames at the given index.
        */
@@ -1553,7 +1553,7 @@ public final class SysdsProtos {
         return columnNames_.get(index);
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @param index The index of the value to return.
        * @return The bytes of the columnNames at the given index.
        */
@@ -1562,7 +1562,7 @@ public final class SysdsProtos {
         return columnNames_.getByteString(index);
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @param index The index to set the value at.
        * @param value The columnNames to set.
        * @return This builder for chaining.
@@ -1578,7 +1578,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @param value The columnNames to add.
        * @return This builder for chaining.
        */
@@ -1593,7 +1593,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @param values The columnNames to add.
        * @return This builder for chaining.
        */
@@ -1606,7 +1606,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @return This builder for chaining.
        */
       public Builder clearColumnNames() {
@@ -1616,7 +1616,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_names = 2;</code>
+       * <code>repeated string column_names = 1;</code>
        * @param value The bytes of the columnNames to add.
        * @return This builder for chaining.
        */
@@ -1640,7 +1640,7 @@ public final class SysdsProtos {
          }
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @return A list containing the columnData.
        */
       public com.google.protobuf.ProtocolStringList
@@ -1648,14 +1648,14 @@ public final class SysdsProtos {
         return columnData_.getUnmodifiableView();
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @return The count of columnData.
        */
       public int getColumnDataCount() {
         return columnData_.size();
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @param index The index of the element to return.
        * @return The columnData at the given index.
        */
@@ -1663,7 +1663,7 @@ public final class SysdsProtos {
         return columnData_.get(index);
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @param index The index of the value to return.
        * @return The bytes of the columnData at the given index.
        */
@@ -1672,7 +1672,7 @@ public final class SysdsProtos {
         return columnData_.getByteString(index);
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @param index The index to set the value at.
        * @param value The columnData to set.
        * @return This builder for chaining.
@@ -1688,7 +1688,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @param value The columnData to add.
        * @return This builder for chaining.
        */
@@ -1703,7 +1703,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @param values The columnData to add.
        * @return This builder for chaining.
        */
@@ -1716,7 +1716,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearColumnData() {
@@ -1726,7 +1726,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated string column_data = 3;</code>
+       * <code>repeated string column_data = 2;</code>
        * @param value The bytes of the columnData to add.
        * @return This builder for chaining.
        */
@@ -1755,7 +1755,7 @@ public final class SysdsProtos {
           org.apache.sysds.protobuf.SysdsProtos.Schema, org.apache.sysds.protobuf.SysdsProtos.Schema.Builder, org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder> columnSchemaBuilder_;
 
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public java.util.List<org.apache.sysds.protobuf.SysdsProtos.Schema> getColumnSchemaList() {
         if (columnSchemaBuilder_ == null) {
@@ -1765,7 +1765,7 @@ public final class SysdsProtos {
         }
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public int getColumnSchemaCount() {
         if (columnSchemaBuilder_ == null) {
@@ -1775,7 +1775,7 @@ public final class SysdsProtos {
         }
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public org.apache.sysds.protobuf.SysdsProtos.Schema getColumnSchema(int index) {
         if (columnSchemaBuilder_ == null) {
@@ -1785,7 +1785,7 @@ public final class SysdsProtos {
         }
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder setColumnSchema(
           int index, org.apache.sysds.protobuf.SysdsProtos.Schema value) {
@@ -1802,7 +1802,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder setColumnSchema(
           int index, org.apache.sysds.protobuf.SysdsProtos.Schema.Builder builderForValue) {
@@ -1816,7 +1816,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder addColumnSchema(org.apache.sysds.protobuf.SysdsProtos.Schema value) {
         if (columnSchemaBuilder_ == null) {
@@ -1832,7 +1832,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder addColumnSchema(
           int index, org.apache.sysds.protobuf.SysdsProtos.Schema value) {
@@ -1849,7 +1849,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder addColumnSchema(
           org.apache.sysds.protobuf.SysdsProtos.Schema.Builder builderForValue) {
@@ -1863,7 +1863,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder addColumnSchema(
           int index, org.apache.sysds.protobuf.SysdsProtos.Schema.Builder builderForValue) {
@@ -1877,7 +1877,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder addAllColumnSchema(
           java.lang.Iterable<? extends org.apache.sysds.protobuf.SysdsProtos.Schema> values) {
@@ -1892,7 +1892,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder clearColumnSchema() {
         if (columnSchemaBuilder_ == null) {
@@ -1905,7 +1905,7 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public Builder removeColumnSchema(int index) {
         if (columnSchemaBuilder_ == null) {
@@ -1918,14 +1918,14 @@ public final class SysdsProtos {
         return this;
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public org.apache.sysds.protobuf.SysdsProtos.Schema.Builder getColumnSchemaBuilder(
           int index) {
         return getColumnSchemaFieldBuilder().getBuilder(index);
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder getColumnSchemaOrBuilder(
           int index) {
@@ -1935,7 +1935,7 @@ public final class SysdsProtos {
         }
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public java.util.List<? extends org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder> 
            getColumnSchemaOrBuilderList() {
@@ -1946,14 +1946,14 @@ public final class SysdsProtos {
         }
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public org.apache.sysds.protobuf.SysdsProtos.Schema.Builder addColumnSchemaBuilder() {
         return getColumnSchemaFieldBuilder().addBuilder(
             org.apache.sysds.protobuf.SysdsProtos.Schema.getDefaultInstance());
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public org.apache.sysds.protobuf.SysdsProtos.Schema.Builder addColumnSchemaBuilder(
           int index) {
@@ -1961,7 +1961,7 @@ public final class SysdsProtos {
             index, org.apache.sysds.protobuf.SysdsProtos.Schema.getDefaultInstance());
       }
       /**
-       * <code>repeated .sysds.Schema column_schema = 4;</code>
+       * <code>repeated .sysds.Schema column_schema = 3;</code>
        */
       public java.util.List<org.apache.sysds.protobuf.SysdsProtos.Schema.Builder> 
            getColumnSchemaBuilderList() {
@@ -2930,8 +2930,8 @@ public final class SysdsProtos {
     java.lang.String[] descriptorData = {
       "\n\'src/main/resources/protobuf/Frame.prot" +
       "o\022\005sysds\"!\n\005Frame\022\030\n\004rows\030\001 \003(\0132\n.sysds." +
-      "Row\"V\n\003Row\022\024\n\014column_names\030\002 \003(\t\022\023\n\013colu" +
-      "mn_data\030\003 \003(\t\022$\n\rcolumn_schema\030\004 \003(\0132\r.s" +
+      "Row\"V\n\003Row\022\024\n\014column_names\030\001 \003(\t\022\023\n\013colu" +
+      "mn_data\030\002 \003(\t\022$\n\rcolumn_schema\030\003 \003(\0132\r.s" +
       "ysds.Schema\"\221\001\n\006Schema\022*\n\tvalueType\030\001 \003(" +
       "\0162\027.sysds.Schema.ValueType\"[\n\tValueType\022" +
       "\010\n\004FP32\020\000\022\010\n\004FP64\020\001\022\t\n\005INT32\020\002\022\t\n\005INT64\020" +

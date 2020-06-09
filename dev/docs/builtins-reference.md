@@ -323,9 +323,9 @@ y = X %*% rand(rows=ncol(X), 1)
 w = lm(X = X, y = y)
 ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
 ```
-## `glm`- Function
+## `glm`-Function
 Generalized linear model is a flexible generalization of ordinary linear regression that allows for response variables that have 
-error distribution models . This `glm`  function uses trust regions with Newton-Raphson method(uses observed derivative of score),
+error distribution models . This glm function uses trust regions with Newton-Raphson method(uses observed derivative of score),
 or Fisher Scoring method(uses the expected derivative of the score)  to solve GLM regression. GLM statistics are provided 
 as console output by setting "verbose = TRUE".
 

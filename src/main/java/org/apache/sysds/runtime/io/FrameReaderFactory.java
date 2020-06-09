@@ -58,6 +58,9 @@ public class FrameReaderFactory
 				else
 					reader = new FrameReaderBinaryBlock();
 				break;
+			case PROTO:
+				reader = new FrameReaderProto();
+				break;
 				
 			default:
 				throw new DMLRuntimeException(

@@ -35,38 +35,37 @@ import org.junit.Test;
 public class FrameReaderWriterProtoTest {
 
 	private static final String FILENAME_SINGLE = "target/testTemp/functions/data/FrameReaderWriterProtoTest/testFrameBlock.proto";
-
 	private static final long SEED = 4669201;
 
+	private FrameWriter frameWriterProto = FrameWriterFactory.createFrameWriter(Types.FileFormat.PROTO);
+	private FrameReader frameReaderProto = FrameReaderFactory.createFrameReader(Types.FileFormat.PROTO);
+
 	@Test
-	public void testWriteReadFrameBlockSingleSingleFromHDFS() throws IOException {
-		testWriteReadProtoFrameBlock(1, 1);
+	public void testWriteReadFrameBlockWithSinleRowAndSingleColumnFromHDFS() throws IOException {
+		testWriteReadFrameBlockWith(1, 1);
 	}
 
 	@Test
-	public void testWriteReadFrameBlockSingleMultipleFromHDFS() throws IOException {
-		testWriteReadProtoFrameBlock(1, 23);
+	public void testWriteReadFrameBlockWithSingleRowAndMultipleColumnsFromHDFS() throws IOException {
+		testWriteReadFrameBlockWith(1, 23);
 	}
 
 	@Test
-	public void testWriteReadFrameBlockMultipleSingleFromHDFS() throws IOException {
-		testWriteReadProtoFrameBlock(21, 1);
+	public void testWriteReadFrameBlockWithMultipleRowsAndSingleColumnFromHDFS() throws IOException {
+		testWriteReadFrameBlockWith(21, 1);
 	}
 
 	@Test
-	public void testWriteReadFrameBlockMultipleMultipleFromHDFS() throws IOException {
-		testWriteReadProtoFrameBlock(42, 35);
+	public void testWriteReadFrameBlockWithSmallMultipleRowsAndMultipleColumnsFromHDFS() throws IOException {
+		testWriteReadFrameBlockWith(42, 35);
 	}
 
 	@Test
-	public void testWriteReadFrameBlockMultipleMultipleSmallFromHDFS() throws IOException {
-		testWriteReadProtoFrameBlock(694, 164);
+	public void testWriteReadFrameBlockWithMediumMultipleRowsAndMultipleColumnsFromHDFS() throws IOException {
+		testWriteReadFrameBlockWith(694, 164);
 	}
 
-	public void testWriteReadProtoFrameBlock(int rows, int cols) throws IOException {
-		FrameWriter frameWriterProto = FrameWriterFactory.createFrameWriter(Types.FileFormat.PROTO);
-		FrameReader frameReaderProto = FrameReaderFactory.createFrameReader(Types.FileFormat.PROTO);
-
+	public void testWriteReadFrameBlockWith(int rows, int cols) throws IOException {
 		final Random random = new Random(SEED);
 		Types.ValueType[] schema = TestUtils.generateRandomSchema(cols, random);
 		FrameBlock expectedFrame = TestUtils.generateRandomFrameBlock(rows, cols, schema, random);

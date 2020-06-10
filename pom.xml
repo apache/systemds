@@ -541,6 +541,8 @@
 								<exclude>src/main/python/tests/lt*.txt</exclude>
 								<!-- Perftest requirement file -->
 								<exclude>scripts/perftest/python/requirements.txt</exclude>
+								<!-- Protobuf defintions -->
+								<exclude>src/main/resources/protobuf/*.proto</exclude>
 							</excludes>
 						</configuration>
 					</plugin>

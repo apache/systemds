@@ -66,6 +66,7 @@ public final class SysdsProtos {
 	public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
 		return descriptor;
 	}
+
 	public interface FrameOrBuilder extends
 		// @@protoc_insertion_point(interface_extends:sysds.Frame)
 		com.google.protobuf.MessageOrBuilder {
@@ -95,6 +96,7 @@ public final class SysdsProtos {
 		 */
 		org.apache.sysds.protobuf.SysdsProtos.RowOrBuilder getRowsOrBuilder(int index);
 	}
+
 	public interface RowOrBuilder extends
 		// @@protoc_insertion_point(interface_extends:sysds.Row)
 		com.google.protobuf.MessageOrBuilder {
@@ -184,6 +186,7 @@ public final class SysdsProtos {
 		 */
 		org.apache.sysds.protobuf.SysdsProtos.SchemaOrBuilder getColumnSchemaOrBuilder(int index);
 	}
+
 	public interface SchemaOrBuilder extends
 		// @@protoc_insertion_point(interface_extends:sysds.Schema)
 		com.google.protobuf.MessageOrBuilder {
@@ -260,6 +263,7 @@ public final class SysdsProtos {
 		private Frame() {
 			rows_ = java.util.Collections.emptyList();
 		}
+
 		private Frame(com.google.protobuf.CodedInputStream input,
 			com.google.protobuf.ExtensionRegistryLite extensionRegistry)
 			throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2239,9 +2243,11 @@ public final class SysdsProtos {
 		private Schema(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
 			super(builder);
 		}
+
 		private Schema() {
 			valueType_ = java.util.Collections.emptyList();
 		}
+
 		private Schema(com.google.protobuf.CodedInputStream input,
 			com.google.protobuf.ExtensionRegistryLite extensionRegistry)
 			throws com.google.protobuf.InvalidProtocolBufferException {

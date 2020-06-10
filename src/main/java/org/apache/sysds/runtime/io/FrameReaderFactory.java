@@ -59,6 +59,7 @@ public class FrameReaderFactory
 					reader = new FrameReaderBinaryBlock();
 				break;
 			case PROTO:
+				// TODO performance improvement: add parallel reader
 				reader = new FrameReaderProto();
 				break;
 				

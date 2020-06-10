@@ -20,10 +20,8 @@
 package org.apache.sysds.test.functions.io.proto;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Random;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -32,70 +30,53 @@ import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
-import org.apache.wink.json4j.JSONException;
 import org.junit.Test;
 
-public class FrameReaderWriterProtoTest
-{
+public class FrameReaderWriterProtoTest {
+
 	private static final String FILENAME_SINGLE = "target/testTemp/functions/data/FrameReaderWriterProtoTest/testFrameBlock.proto";
 
-	@Test
-	public void testWriteReadFrameBlockSingleSingleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(1,1, 4669201);
-	}
+	private static final long SEED = 4669201;
 
 	@Test
-	public void testWriteReadFrameBlockSingleMultipleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(1,23, 4669201);
+	public void testWriteReadFrameBlockSingleSingleFromHDFS() throws IOException {
+		testWriteReadProtoFrameBlock(1, 1);
 	}
 
 	@Test
-	public void testWriteReadFrameBlockMultipleSingleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(21,1, 4669201);
+	public void testWriteReadFrameBlockSingleMultipleFromHDFS() throws IOException {
+		testWriteReadProtoFrameBlock(1, 23);
 	}
 
 	@Test
-	public void testWriteReadFrameBlockMultipleMultipleFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(42,35, 4669201);
+	public void testWriteReadFrameBlockMultipleSingleFromHDFS() throws IOException {
+		testWriteReadProtoFrameBlock(21, 1);
 	}
 
 	@Test
-	public void testWriteReadFrameBlockMultipleMultipleSmallFromHDFS() throws IOException, JSONException {
-		testWriteReadFrameBlockComplete(694,164, 4669201);
+	public void testWriteReadFrameBlockMultipleMultipleFromHDFS() throws IOException {
+		testWriteReadProtoFrameBlock(42, 35);
 	}
 
-	public void testWriteReadFrameBlockComplete(int rows, int cols, long seed) throws IOException, JSONException {
-		Pair<FrameBlock, FrameBlock> writeReadPair = testWriteReadFullFrameBlockFromHDFS(rows, cols, seed);
-		String[][] strWriteBlock = DataConverter.convertToStringFrame(writeReadPair.getLeft());
-		String[][] strReadBlock = DataConverter.convertToStringFrame(writeReadPair.getRight());
-		TestUtils.compareFrames(strWriteBlock, strReadBlock, rows, cols);
+	@Test
+	public void testWriteReadFrameBlockMultipleMultipleSmallFromHDFS() throws IOException {
+		testWriteReadProtoFrameBlock(694, 164);
 	}
 
-	public Pair<FrameBlock,FrameBlock> testWriteReadFullFrameBlockFromHDFS(int rows, int cols,
-		Types.ValueType[] schema, Map<String, Integer> schemaMap, Random random)
-			throws IOException, JSONException
-	{
-
+	public void testWriteReadProtoFrameBlock(int rows, int cols) throws IOException {
 		FrameWriter frameWriterProto = FrameWriterFactory.createFrameWriter(Types.FileFormat.PROTO);
 		FrameReader frameReaderProto = FrameReaderFactory.createFrameReader(Types.FileFormat.PROTO);
 
-		// Generate Random frameBlock to be written
-		FrameBlock writeBlock = TestUtils.generateRandomFrameBlock(rows, cols, schema, random);
-
-		// Write FrameBlock
-		frameWriterProto.writeFrameToHDFS(writeBlock, FILENAME_SINGLE, rows, cols);
-
-		// Read FrameBlock
-		FrameBlock readBlock = frameReaderProto.readFrameFromHDFS(FILENAME_SINGLE, schema, rows, cols);
-
-		return Pair.of(writeBlock, readBlock);
-	}
-
-	public Pair<FrameBlock,FrameBlock> testWriteReadFullFrameBlockFromHDFS(int rows, int cols, long seed)
-			throws IOException, JSONException {
-		Random random = new Random(seed);
-		Map<String, Integer> schemaMap = TestUtils.generateRandomSchemaMap(cols, random);
+		final Random random = new Random(SEED);
 		Types.ValueType[] schema = TestUtils.generateRandomSchema(cols, random);
-		return testWriteReadFullFrameBlockFromHDFS(rows, cols, schema, schemaMap, random);
+		FrameBlock expectedFrame = TestUtils.generateRandomFrameBlock(rows, cols, schema, random);
+
+		frameWriterProto.writeFrameToHDFS(expectedFrame, FILENAME_SINGLE, rows, cols);
+		FrameBlock actualFrame = frameReaderProto.readFrameFromHDFS(FILENAME_SINGLE, schema, rows, cols);
+
+		String[][] expected = DataConverter.convertToStringFrame(expectedFrame);
+		String[][] actual = DataConverter.convertToStringFrame(actualFrame);
+
+		TestUtils.compareFrames(expected, actual, rows, cols);
 	}
 }

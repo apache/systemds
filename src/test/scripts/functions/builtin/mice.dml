@@ -19,8 +19,13 @@
 #
 #-------------------------------------------------------------
 
+# read data frame
 F = read($X, data_type="frame", format="csv");
+# the mask for identifying categorical columns
 Mask = read($Mask)
+
+# Test cases
+# case 1: if all columns are categorical
 if(sum(Mask) == ncol(F))
 {
   scat = seq(1, ncol(Mask))
@@ -30,17 +35,23 @@ if(sum(Mask) == ncol(F))
   # encoding categorical columns using recode transformation
   jspecR = "{ids:true, recode:["+s+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
-  
+  # call mice
   dataset = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  # decode data back to original format
   output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
+  # cherry picking columns to compare with R results
   output = output[, 3:4]
   write(output, $dataC)
 }
+# case 2: if all data is numeric
 else if(sum(Mask) == 0){
+  # no transformation is required, cast the frame into matrix and call mice
+  # as.matrix() will convert the null values into zeros, so explicitly replace zeros with NaN
   X = replace(target = as.matrix(F), pattern = 0, replacement = NaN)
-  output = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  output = mice(X=X, cMask=Mask, iter=$iteration, verbose = FALSE )
   write(output, $dataN)
 }
+# case 3: if the data is combination of numeric and categorical columns
 else
 {
   scat = seq(1, ncol(Mask))
@@ -52,8 +63,11 @@ else
   # encoding categorical columns using recode transformation
   jspecR = "{ids:true, recode:["+s+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
+  # call mice
   dataset = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  # decode data into original format
   output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
+  # below lines are only for testing purpose  
   c = output * (Mask)
   c = removeEmpty(target=c, margin = "cols")
   n = output * (1-Mask)

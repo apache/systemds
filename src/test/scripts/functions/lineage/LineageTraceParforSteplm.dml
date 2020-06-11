@@ -21,6 +21,6 @@
 
 X = rand(rows=$2, cols=$3, seed=7);
 Y = rand(rows=nrow(X), cols=1, seed=2)
-X = steplm(X=X, y=Y)
+[B,S] = steplm(X=X, y=Y)
 
-write(X, $1);
+write(B, $1);

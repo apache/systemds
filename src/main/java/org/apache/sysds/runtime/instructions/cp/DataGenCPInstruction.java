@@ -402,7 +402,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 						tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
 				}
 				//replace output variable name with a placeholder
-				//tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
+				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, rows, 2, ec);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, cols, 3, ec);
 				break;

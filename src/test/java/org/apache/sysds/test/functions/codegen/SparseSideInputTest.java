@@ -153,7 +153,7 @@ public class SparseSideInputTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "-stats", "-args", 
+			programArgs = new String[]{"-stats", "-args", 
 				input("X"), input("Y"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";

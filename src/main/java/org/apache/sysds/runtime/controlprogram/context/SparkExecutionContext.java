@@ -171,18 +171,14 @@ public class SparkExecutionContext extends ExecutionContext
 		_spctx = null;
 	}
 
-	public void close()
-	{
+	public void close() {
 		synchronized( SparkExecutionContext.class ) {
-			if( _spctx != null )
-			{
+			if( _spctx != null ) {
 				//stop the spark context if existing
 				_spctx.stop();
-
 				//make sure stopped context is never used again
 				_spctx = null;
 			}
-
 		}
 	}
 

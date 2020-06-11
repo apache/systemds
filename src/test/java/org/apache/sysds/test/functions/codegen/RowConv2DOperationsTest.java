@@ -84,7 +84,7 @@ public class RowConv2DOperationsTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "recompile_runtime", "-stats", "-args",
+			programArgs = new String[]{"recompile_runtime", "-stats", "-args",
 				String.valueOf(imgSize), String.valueOf(numImg), String.valueOf(numChannels),
 				String.valueOf(numFilters), String.valueOf(filterSize), String.valueOf(stride),
 				String.valueOf(pad), output("B"), sparseVal1, sparseVal2 };

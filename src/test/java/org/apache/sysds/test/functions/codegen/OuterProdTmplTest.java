@@ -265,7 +265,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "-stats", "-args", output("S"), input("A")};
+			programArgs = new String[]{"-stats", "-args", output("S"), input("A")};
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());

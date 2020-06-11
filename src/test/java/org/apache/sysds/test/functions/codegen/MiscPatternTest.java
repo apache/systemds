@@ -126,7 +126,7 @@ public class MiscPatternTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "recompile_runtime", "-stats", "-args", output("S") };
+			programArgs = new String[]{"recompile_runtime", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(expectedDir());

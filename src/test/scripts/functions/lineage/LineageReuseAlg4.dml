@@ -1,0 +1,82 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME   TYPE   DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# INPUT  String ---      Location to read the matrix A of feature vectors
+# K      Int    ---      Indicates dimension of the new vector space constructed from eigen vector
+# CENTER Int    0        Indicates whether or not to center data
+# SCALE  Int    0        Indicates whether or not to scale data
+# PROJDATA Int  0      This argument indicates if the data should be projected or not
+# ---------------------------------------------------------------------------------------------
+
+PCA = function(Matrix[Double] A, Integer K = ncol(A), Integer center = 1, Integer scale = 1,
+    Integer projectData = 1) return(Matrix[Double] newA)
+{
+  evec_dominant = matrix(0,cols=1,rows=1);
+
+  N = nrow(A);
+  D = ncol(A);
+
+  # perform z-scoring (centering and scaling)
+  A = scale(A, center==1, scale==1);
+
+  # co-variance matrix
+  mu = colSums(A)/N;
+  C = (t(A) %*% A)/(N-1) - (N/(N-1))*t(mu) %*% mu;
+
+  # compute eigen vectors and values
+  [evalues, evectors] = eigen(C);
+
+  decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
+  diagmat = table(seq(1,D),decreasing_Idx);
+  # sorts eigenvalues by decreasing order
+  evalues = diagmat %*% evalues;
+  # sorts eigenvectors column-wise in the order of decreasing eigenvalues
+  evectors = evectors %*% diagmat;
+
+
+  # select K dominant eigen vectors
+  nvec = ncol(evectors);
+
+  eval_dominant = evalues[1:K, 1];
+  evec_dominant = evectors[,1:K];
+
+  # the square root of eigenvalues
+  eval_stdev_dominant = sqrt(eval_dominant);
+
+  if (projectData == 1){
+    # Construct new data set by treating computed dominant eigenvectors as the basis vectors
+    newA = A %*% evec_dominant;
+  }
+}
+
+A = rand(rows=100, cols=10, seed=42);
+R = matrix(0, rows=1, cols=ncol(A));
+for (i in 1:ncol(A)) {
+  newA = PCA(A=A, K=i);
+  while(FALSE){}
+  R[,i] = sum(newA);
+}
+write(R, $1, format="text");
+

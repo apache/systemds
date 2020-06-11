@@ -318,6 +318,8 @@ SYSTEMDS-400 Spark Backend Improvements
 
 SYSTEMDS-410 Lineage Tracing, Reuse and Integration II
  * 411 Improved handling of multi-level cache duplicates              OK 
+ * 412 Robust lineage tracing (non-recursive, parfor)                 OK
+ * 413 Cache and reuse MultiReturnBuiltin instructions                OK
 
 Others:
  * Break append instruction to cbind and rbind 

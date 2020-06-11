@@ -97,6 +97,10 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		}
 
 	}
+	
+	public int getNumOutputs() {
+		return _outputs.size();
+	}
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) {

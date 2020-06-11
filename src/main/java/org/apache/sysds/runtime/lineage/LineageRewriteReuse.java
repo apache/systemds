@@ -71,6 +71,7 @@ public class LineageRewriteReuse
 	private static final String LR_VAR = "__lrwrt";
 	private static BasicProgramBlock _lrPB = null;
 	private static ExecutionContext _lrEC = null;
+	private static boolean _disableReuse = true;
 	private static final Log LOG = LogFactory.getLog(LineageRewriteReuse.class.getName());
 	
 	private static boolean LDEBUG = false; //internal debugging
@@ -111,6 +112,8 @@ public class LineageRewriteReuse
 		newInst = (newInst == null) ? rewriteElementMulCbind(curr, ec, lrwec) : newInst;
 		//aggregate(target=cbind(X, deltaX,...) = cbind(aggregate(target=X,...), aggregate(target=deltaX,...)) for same agg function
 		newInst = (newInst == null) ? rewriteAggregateCbind(curr, ec, lrwec) : newInst;
+		//A %*% B[,1:k] = (A %*% B)[,1:k];
+		newInst = (newInst == null) ? rewriteIndexingMatMul(curr, ec, lrwec) : newInst;
 		
 		if (newInst == null)
 			return false;
@@ -221,6 +224,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteTsmmCbindOnes APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -262,6 +266,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteTsmmRbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -322,6 +327,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteTsmm2Cbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS) 
 			LineageCacheStatistics.incrementPRewrites();
@@ -364,6 +370,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteMetMulRbindLeft APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -406,6 +413,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRight APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -437,6 +445,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteMatMulCbindRightOnes APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -490,6 +499,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteElementMulRbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -543,6 +553,7 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -596,6 +607,58 @@ public class LineageRewriteReuse
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteElementMulCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
+
+		if (DMLScript.STATISTICS)
+			LineageCacheStatistics.incrementPRewrites();
+		return inst;
+	}
+
+	private static ArrayList<Instruction> rewriteIndexingMatMul (Instruction curr, ExecutionContext ec, ExecutionContext lrwec)
+	{
+		/* This rewrite replaces the indexed matrix with its source as an 
+		 * input to matrix multiplication, with the hope that in future 
+		 * iterations all the outputs can be sliced out from the cached 
+		 * result (e.g. PCA in a loop)
+		 * Note: this particular rewrite needs to cache the compensation plan
+		 * execution results (unlike other rewrites) to be effective.
+		 * TODO: Generalize for all cases and move to compiler
+		 */
+		// Check the applicability of this rewrite.
+		Map<String, MatrixBlock> inCache = new HashMap<>();
+		if (!isIndexingMatMul (curr, ec, inCache))
+			return null;
+		
+		// Create a transient read op over the input to rightIndex
+		MatrixBlock indexSource = inCache.get("indexSource");
+		lrwec.setVariable("indexSource", convMBtoMO(indexSource));
+		DataOp input2Index = HopRewriteUtils.createTransientRead("indexSource", indexSource);
+		// Create or read the matrix multiplication
+		Hop matMultRes;
+		MatrixObject moL = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
+		if (inCache.containsKey("BigMatMult")) {
+			MatrixBlock BigMatMult = inCache.get("BigMatMult");
+			lrwec.setVariable("BigMatMult", convMBtoMO(BigMatMult));
+			matMultRes = HopRewriteUtils.createTransientRead("BigMatMult", BigMatMult);
+		}
+		else {
+			lrwec.setVariable("left", moL);
+			DataOp leftMatrix = HopRewriteUtils.createTransientRead("left", moL);
+			matMultRes = HopRewriteUtils.createMatrixMultiply(leftMatrix, input2Index);
+			// Perform the multiplication once and cache for future iterations.
+		}
+		// Gather the indexing parameters.
+		MatrixObject moR = ec.getMatrixObject(((ComputationCPInstruction)curr).input2);
+		IndexingOp lrwHop = HopRewriteUtils.createIndexingOp(matMultRes, new LiteralOp(1), 
+				new LiteralOp(moL.getNumRows()), new LiteralOp(1), new LiteralOp(moR.getNumColumns()));
+		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+
+		// generate runtime instructions
+		if (LOG.isDebugEnabled())
+			LOG.debug("LINEAGE REWRITE rewriteIndexingMatMul APPLIED");
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		// Keep reuse enabled
+		_disableReuse = false;
 
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
@@ -872,6 +935,33 @@ public class LineageRewriteReuse
 		// return true only if the last tsmm is found
 		return inCache.containsKey("lastMatrix") ? true : false;
 	}
+	
+	private static boolean isIndexingMatMul(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache) {
+		if (!LineageCacheConfig.isReusable(curr, ec)) {
+			return false;
+		}
+		/* rightIndex -> ba+* is to generic. 
+		 * Use ba+* -> rightIndex -> ba+* to avoid false positives.
+		 * TODO: generalized but robust applicability function
+		 */
+
+		// Check if the right input of ba+* came from rightindex
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
+		if (curr.getOpcode().equalsIgnoreCase("ba+*")) {
+			LineageItem left = item.getInputs()[0];
+			LineageItem right = item.getInputs()[1];
+			if (right.getOpcode().equalsIgnoreCase("rightIndex")) {
+				LineageItem indexSource = right.getInputs()[0];
+				if (LineageCache.probe(indexSource) && indexSource.getOpcode().equalsIgnoreCase("ba+*"))
+					inCache.put("indexSource", LineageCache.getMatrix(indexSource));
+				LineageItem tmp = new LineageItem(item.getOpcode(), new LineageItem[] {left, indexSource});
+				if (LineageCache.probe(tmp))
+					inCache.put("BigMatMult", LineageCache.getMatrix(tmp));
+			}
+		}
+		// return true only if the input to rightIndex is found
+		return inCache.containsKey("indexSource") ? true : false;
+	}
 
 	/*----------------------INSTRUCTIONS GENERATION & EXECUTION-----------------------*/
 
@@ -896,9 +986,11 @@ public class LineageRewriteReuse
 			BasicProgramBlock pb = getProgramBlock();
 			pb.setInstructions(newInst);
 			ReuseCacheType oldReuseOption = DMLScript.LINEAGE_REUSE;
-			LineageCacheConfig.shutdownReuse();
+			if (_disableReuse)
+				LineageCacheConfig.shutdownReuse();
 			pb.execute(lrwec);
-			LineageCacheConfig.restartReuse(oldReuseOption);
+			if (_disableReuse)
+				LineageCacheConfig.restartReuse(oldReuseOption);
 		}
 		catch (Exception e) {
 			throw new DMLRuntimeException("Error executing lineage rewrites" , e);

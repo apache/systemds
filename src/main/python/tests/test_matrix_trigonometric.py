@@ -32,7 +32,7 @@ m2 = np.random.choice(np.arange(0.01, 1, 0.1), size=(dim,dim))
 s = 3.02
 
 
-class TestBinaryOp(unittest.TestCase):
+class TestTrigonometricOp(unittest.TestCase):
 
     sds: SystemDSContext = None
 
@@ -54,7 +54,6 @@ class TestBinaryOp(unittest.TestCase):
         self.assertTrue(np.allclose(Matrix(self.sds, m1).tan().compute(), np.tan(m1)))
 
     def test_asin(self):
-        a= 1
         self.assertTrue(np.allclose(Matrix(self.sds, m2).asin().compute(), np.arcsin(m2)))
 
     def test_acos(self):

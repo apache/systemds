@@ -109,7 +109,11 @@ def rev(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
 
 
 def order(sds_context: 'SystemDSContext', mat: Matrix, by: int = 1, decreasing: bool = False, index_return: bool = False) -> 'OperationNode':
-    named_input_nodes = {'target': mat, 'by': by, 'decreasing': 'FALSE', 'index.return': 'FALSE'}
+    cols = mat._np_array.shape[1]
+    if by > cols:
+        raise IndexError("Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
+
+    named_input_nodes = {'target': mat, 'by': by, 'decreasing': str(decreasing).upper(), 'index.return': str(index_return).upper()}
 
     return OperationNode(sds_context, 'order', [], named_input_nodes=named_input_nodes)
 

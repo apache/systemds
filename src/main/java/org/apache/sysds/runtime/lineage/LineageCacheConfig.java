@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 
 import java.util.Comparator;
 
@@ -151,7 +152,9 @@ public class LineageCacheConfig
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
-		return insttype && rightop;
+		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)
+			&& ec.getMatrixObject(((ComputationCPInstruction)inst).input1).getUpdateType().isInPlace();
+		return insttype && rightop && !updateInplace;
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {

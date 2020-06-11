@@ -48,23 +48,38 @@ public class LineageReuseAlg extends AutomatedTestBase {
 		for( int i=1; i<=TEST_VARIANTS; i++ )
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
-	
+
 	@Test
-	public void testStepLM() {
-		testLineageTrace(TEST_NAME+"1", ReuseCacheType.REUSE_HYBRID.name().toLowerCase());
+	public void testStepLMHybrid() {
+		testLineageTrace(TEST_NAME+"1", ReuseCacheType.REUSE_HYBRID);
 	}
 	
 	@Test
-	public void testGridSearchLM() {
-		testLineageTrace(TEST_NAME+"2", ReuseCacheType.REUSE_HYBRID.name().toLowerCase());
+	public void testGridSearchLMHybrid() {
+		testLineageTrace(TEST_NAME+"2", ReuseCacheType.REUSE_HYBRID);
 	}
 
 	@Test
-	public void testMultiLogReg() {
-		testLineageTrace(TEST_NAME+"3", ReuseCacheType.REUSE_HYBRID.name().toLowerCase());
+	public void testMultiLogRegHybrid() {
+		testLineageTrace(TEST_NAME+"3", ReuseCacheType.REUSE_HYBRID);
+	}
+	
+	@Test
+	public void testStepLMFull() {
+		testLineageTrace(TEST_NAME+"1", ReuseCacheType.REUSE_FULL);
+	}
+	
+	@Test
+	public void testGridSearchLMFull() {
+		testLineageTrace(TEST_NAME+"2", ReuseCacheType.REUSE_FULL);
 	}
 
-	public void testLineageTrace(String testname, String reuseType) {
+	@Test
+	public void testMultiLogRegFull() {
+		testLineageTrace(TEST_NAME+"3", ReuseCacheType.REUSE_FULL);
+	}
+
+	public void testLineageTrace(String testname, ReuseCacheType reuseType) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		ExecMode platformOld = setExecMode(ExecType.CP);
@@ -85,7 +100,6 @@ public class LineageReuseAlg extends AutomatedTestBase {
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
-			
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> X_orig = readDMLMatrixFromHDFS("X");
@@ -93,17 +107,16 @@ public class LineageReuseAlg extends AutomatedTestBase {
 			// With lineage-based reuse enabled
 			proArgs.clear();
 			proArgs.add("-stats");
-			//proArgs.add("-explain");
 			proArgs.add("-lineage");
-			proArgs.add(reuseType);
+			proArgs.add(reuseType.name().toLowerCase());
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
-			
 			Lineage.resetInternalState();
 			Lineage.setLinReuseFull();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromHDFS("X");
+			
 			Lineage.setLinReuseNone();
 			TestUtils.compareMatrices(X_orig, X_reused, 1e-6, "Origin", "Reused");
 		}

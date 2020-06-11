@@ -83,6 +83,11 @@ public class LineageItem {
 		return _inputs;
 	}
 	
+	public void setInput(int i, LineageItem item) {
+		_inputs[i] = item;
+		_hash = 0; //reset hash
+	}
+	
 	public String getData() {
 		return _data;
 	}

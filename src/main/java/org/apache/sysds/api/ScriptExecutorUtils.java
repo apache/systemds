@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.utils.Statistics;
 
 public class ScriptExecutorUtils {

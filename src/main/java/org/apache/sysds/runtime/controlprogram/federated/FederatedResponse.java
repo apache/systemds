@@ -20,11 +20,13 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
-import java.util.SortedMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class FederatedResponse implements Serializable {
 	private static final long serialVersionUID = 3142180026498695091L;
@@ -37,7 +39,7 @@ public class FederatedResponse implements Serializable {
 	
 	private FederatedResponse.Type _status;
 	private Object[] _data;
-	private SortedMap<Long,PrivacyConstraint> checkedConstraints;
+	private ConcurrentHashMap<PrivacyLevel,LongAdder> checkedConstraints;
 	
 	public FederatedResponse(FederatedResponse.Type status) {
 		this(status, null);
@@ -66,6 +68,7 @@ public class FederatedResponse implements Serializable {
 	}
 	
 	public Object[] getData() throws Exception {
+		updateCheckedConstraintsLog();
 		if ( !isSuccessful() )
 			throwExceptionFromResponse(); 
 		return _data;
@@ -91,9 +94,14 @@ public class FederatedResponse implements Serializable {
 	 * If the map is empty, it means that no privacy constraints were found.
 	 * @param checkedConstraints map of checked constraints from the PrivacyMonitor
 	 */
-	public void setCheckedConstraints(SortedMap<Long,PrivacyConstraint> checkedConstraints){
+	public void setCheckedConstraints(ConcurrentHashMap<PrivacyLevel,LongAdder> checkedConstraints){
 		if ( checkedConstraints != null && !checkedConstraints.isEmpty() ){
 			this.checkedConstraints = checkedConstraints;
 		}
+	}
+
+	public void updateCheckedConstraintsLog(){
+		if ( checkedConstraints != null && !checkedConstraints.isEmpty() )
+			CheckedConstraintsLog.addCheckedConstraints(checkedConstraints);
 	}
 }

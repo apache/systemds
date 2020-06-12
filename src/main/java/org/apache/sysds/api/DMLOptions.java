@@ -63,6 +63,7 @@ public class DMLOptions {
 	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE;
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
+	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -226,6 +227,8 @@ public class DMLOptions {
 			}
 		}
 
+		dmlOptions.checkPrivacy = line.hasOption("checkPrivacy");
+
 		return dmlOptions;
 	}
 	
@@ -273,6 +276,9 @@ public class DMLOptions {
 			.hasOptionalArgs().create("lineage");
 		Option fedOpt = OptionBuilder.withDescription("starts a federated worker with the given argument as the port.")
 			.hasOptionalArg().create("w");
+		Option checkPrivacy = OptionBuilder
+			.withDescription("Check which privacy constraints are loaded and checked during federated execution")
+			.create("checkPrivacy");
 		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
@@ -285,6 +291,7 @@ public class DMLOptions {
 		options.addOption(pythonOpt);
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
+		options.addOption(checkPrivacy);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

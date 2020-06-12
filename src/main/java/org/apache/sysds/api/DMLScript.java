@@ -65,6 +65,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.Explain;
@@ -92,6 +93,7 @@ public class DMLScript
 	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                 // whether compute lineage trace
 	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;     // whether deduplicate lineage items
 	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
+	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution 
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
 	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
@@ -194,6 +196,7 @@ public class DMLScript
 			LINEAGE             = dmlOptions.lineage;
 			LINEAGE_DEDUP       = dmlOptions.lineage_dedup;
 			LINEAGE_REUSE       = dmlOptions.linReuseType;
+			CHECK_PRIVACY       = dmlOptions.checkPrivacy;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -468,6 +471,8 @@ public class DMLScript
 		Statistics.resetNoOfExecutedJobs();
 		if( STATISTICS )
 			Statistics.reset();
+		if ( CHECK_PRIVACY )
+			CheckedConstraintsLog.reset();
 	}
 	
 	public static void cleanupHadoopExecution( DMLConfig config ) 

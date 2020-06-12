@@ -79,15 +79,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw new DMLRuntimeException("FederatedWorkerHandler: Received object no instance of `FederatedRequest`.");
 		FederatedRequest.FedMethod method = request.getMethod();
 		log.debug("Received command: " + method.name());
+		PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 
 		synchronized (_seq) {
 			FederatedResponse response = constructResponse(request);
-			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
-			PrivacyMonitor.clearCheckedConstraints();
+			conditionalAddCheckedConstraints(request, response);
 			if (!response.isSuccessful())
 				log.error("Method " + method + " failed: " + response.getErrorMessage());
 			ctx.writeAndFlush(response).addListener(new CloseListener());
 		}
+	}
+
+	private void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response){
+		if ( request.checkPrivacy() )
+			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
 	}
 
 	private FederatedResponse constructResponse(FederatedRequest request) {
@@ -183,7 +188,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeMatVecMult(long varID, MatrixBlock vector, boolean isMatVecMult) {
 		MatrixObject matTo = (MatrixObject) _vars.get(varID);
-		matTo = PrivacyMonitor.handlePrivacy(matTo, varID);
+		matTo = PrivacyMonitor.handlePrivacy(matTo);
 		MatrixBlock matBlock1 = matTo.acquireReadAndRelease();
 		// TODO other datatypes
 		AggregateBinaryOperator ab_op = InstructionUtils
@@ -202,7 +207,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse getVariableData(long varID) {
 		Data dataObject = _vars.get(varID);
-		dataObject = PrivacyMonitor.handlePrivacy(dataObject, varID);
+		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
 		switch (dataObject.getDataType()) {
 			case TENSOR:
 				return new FederatedResponse(FederatedResponse.Type.SUCCESS,
@@ -237,7 +242,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					+ dataObject.getDataType().name());
 		}
 		MatrixObject matrixObject = (MatrixObject) dataObject;
-		matrixObject = PrivacyMonitor.handlePrivacy(matrixObject, varID);
+		matrixObject = PrivacyMonitor.handlePrivacy(matrixObject);
 		MatrixBlock matrixBlock = matrixObject.acquireRead();
 		// create matrix for calculation with correction
 		MatrixCharacteristics mc = new MatrixCharacteristics();
@@ -275,7 +280,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse executeScalarOperation(long varID, ScalarOperator operator) {
 		Data dataObject = _vars.get(varID);
-		dataObject = PrivacyMonitor.handlePrivacy(dataObject, varID);
+		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
 		if (dataObject.getDataType() != Types.DataType.MATRIX) {
 			return new FederatedResponse(FederatedResponse.Type.ERROR,
 				"FederatedWorkerHandler: ScalarOperator dont support "
@@ -319,6 +324,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		public void operationComplete(ChannelFuture channelFuture) throws InterruptedException, DMLRuntimeException {
 			if (!channelFuture.isSuccess())
 				throw new DMLRuntimeException("Federated Worker Write failed");
+			PrivacyMonitor.clearCheckedConstraints();
 			channelFuture.channel().close().sync();
 		}
 	}

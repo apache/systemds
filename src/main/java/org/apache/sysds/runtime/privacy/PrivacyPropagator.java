@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.privacy;
 
-import java.util.List;
-import java.util.function.Function;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.parser.DataExpression;

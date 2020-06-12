@@ -19,8 +19,8 @@
 
 package org.apache.sysds.runtime.privacy;
 
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -33,14 +33,24 @@ public class PrivacyMonitor
 {
 	//TODO maybe maintain a log of checked constaints for transfers
 	// in order to provide 'privacy explanations' similar to our stats 
-	private static SortedMap<Long,PrivacyConstraint> checkedConstraints = new TreeMap<Long,PrivacyConstraint>();
+	private static ConcurrentHashMap<PrivacyLevel,LongAdder> checkedConstraints = new ConcurrentHashMap<PrivacyLevel,LongAdder>();
+	private static boolean checkPrivacy = false;
 
-	public static SortedMap<Long,PrivacyConstraint> getCheckedConstraints(){
+	public static ConcurrentHashMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
 		return checkedConstraints;
+	}
+
+	private static void incrementCheckedConstraints(PrivacyLevel privacyLevel){
+		if ( checkPrivacy )
+			checkedConstraints.computeIfAbsent(privacyLevel, k -> new LongAdder()).increment();
 	}
 
 	public static void clearCheckedConstraints(){
 		checkedConstraints.clear();
+	}
+
+	public static void setCheckPrivacy(boolean checkPrivacyParam){
+		checkPrivacy = checkPrivacyParam;
 	}
 
 	/**
@@ -48,12 +58,12 @@ public class PrivacyMonitor
 	 * @param dataObject input data object
 	 * @return data object or data object with privacy constraint removed in case the privacy level was none. 
 	 */
-	public static Data handlePrivacy(Data dataObject, long varID){
+	public static Data handlePrivacy(Data dataObject){
 		if ( dataObject instanceof CacheableData<?> ){
 			PrivacyConstraint privacyConstraint = ((CacheableData<?>)dataObject).getPrivacyConstraint();
 			if (privacyConstraint != null){
-				checkedConstraints.put(varID, privacyConstraint);
 				PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+				incrementCheckedConstraints(privacyLevel);
 				switch(privacyLevel){
 					case None:
 						((CacheableData<?>)dataObject).setPrivacyConstraints(null);
@@ -74,11 +84,11 @@ public class PrivacyMonitor
 	 * @param matrixObject input matrix object
 	 * @return matrix object or matrix object with privacy constraint removed in case the privacy level was none.
 	 */
-	public static MatrixObject handlePrivacy(MatrixObject matrixObject, long varID){
+	public static MatrixObject handlePrivacy(MatrixObject matrixObject){
 		PrivacyConstraint privacyConstraint = matrixObject.getPrivacyConstraint();
 		if (privacyConstraint != null){
-			checkedConstraints.put(varID, privacyConstraint);
 			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+			incrementCheckedConstraints(privacyLevel);
 			switch(privacyLevel){
 				case None:
 					matrixObject.setPrivacyConstraints(null);
@@ -102,8 +112,11 @@ public class PrivacyMonitor
 		Data data = ec.getVariable(input);
 		if ( data != null && (data instanceof CacheableData<?>)){
 			PrivacyConstraint privacyConstraintIn = ((CacheableData<?>) data).getPrivacyConstraint();
-			if ( privacyConstraintIn != null && (privacyConstraintIn.getPrivacyLevel() == PrivacyLevel.Private) ){
-				throw new DMLPrivacyException("Privacy constraint cannot be propagated to scalar for input " + input.getName());
+			if ( privacyConstraintIn != null ) {
+				incrementCheckedConstraints(privacyConstraintIn.getPrivacyLevel());
+				if ( privacyConstraintIn.getPrivacyLevel() == PrivacyLevel.Private ){
+					throw new DMLPrivacyException("Privacy constraint cannot be propagated to scalar for input " + input.getName());
+				}
 			}
 		}
 	}

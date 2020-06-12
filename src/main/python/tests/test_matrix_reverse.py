@@ -36,7 +36,6 @@ m = np.random.rand(shape[0], shape[1])
 mx = np.random.rand(1, shape[1])
 my = np.random.rand(shape[0], 1)
 
-
 class TestReverse(unittest.TestCase):
 
     sds: SystemDSContext = None

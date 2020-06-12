@@ -37,7 +37,6 @@ mx = np.random.rand(1, shape[1])
 my = np.random.rand(shape[0], 1)
 by = random.randrange(1, np.size(m, 1)+1)
 
-
 class TestOrder(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -73,4 +72,3 @@ class TestOrder(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(exit=False)
-

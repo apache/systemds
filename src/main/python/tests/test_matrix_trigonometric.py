@@ -31,7 +31,6 @@ m1.shape = (dim, dim)
 m2 = np.random.choice(np.arange(0.01, 1, 0.1), size=(dim,dim))
 s = 3.02
 
-
 class TestTrigonometricOp(unittest.TestCase):
 
     sds: SystemDSContext = None

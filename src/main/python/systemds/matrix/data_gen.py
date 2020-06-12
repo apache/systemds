@@ -105,10 +105,13 @@ def rand(sds_context: SystemDSContext, rows: int, cols: int,
     return OperationNode(sds_context, 'rand', [], named_input_nodes=named_input_nodes)
 
 def rev(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
+    mat._check_matrix_op()
     return OperationNode(sds_context, 'rev', [mat])
 
 
 def order(sds_context: 'SystemDSContext', mat: Matrix, by: int = 1, decreasing: bool = False, index_return: bool = False) -> 'OperationNode':
+    mat._check_matrix_op()
+
     cols = mat._np_array.shape[1]
     if by > cols:
         raise IndexError("Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
@@ -119,4 +122,5 @@ def order(sds_context: 'SystemDSContext', mat: Matrix, by: int = 1, decreasing: 
 
 
 def t(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
+    mat._check_matrix_op()
     return OperationNode(sds_context, 't', [mat])

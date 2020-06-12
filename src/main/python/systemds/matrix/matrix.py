@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
 
 import os
 from typing import Dict, Optional, Sequence, Tuple, Union

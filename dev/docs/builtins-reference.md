@@ -24,6 +24,7 @@ limitations under the License.
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
+    * [`cvlm`-Function](#cvlm-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`img_brightness`-Function](#img_brightness-function)
@@ -160,6 +161,39 @@ z = rand(rows = 5, cols = 1, min = 1, max = 9)
 X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
 y = toOneHot(X, numClasses)
 [ConfusionSum, ConfusionAvg] = confusionMatrix(P=z, Y=y)
+```
+
+## `cvlm`-Function
+
+The `cvlm`-function is used for cross-validation of the provided data model. This function follows a non-exhaustive
+cross validation method. It uses [`lm`](#lm-function) and [`lmpredict`](#lmpredict-function) functions to solve the linear
+regression and to predict the class of a feature vector with no intercept, shifting, and rescaling.
+
+### Usage
+```r
+cvlm(X, y, k)
+```
+
+### Arguments
+| Name | Type           | Default  | Description |
+| :--- | :------------- | :------- | :---------- |
+| X    | Matrix[Double] | required | Recorded Data set into matrix |
+| y    | Matrix[Double] | required | 1-column matrix of response values.  |
+| k    | Integer        | required | Number of subsets needed, It should always be more than `1` and less than `nrow(X)` |
+| icpt | Integer        | `0`      | Intercept presence, shifting and rescaling the columns of X |
+| reg  | Double         | `1e-7`   | Regularization constant (lambda) for L2-regularization. set to nonzero for highly dependant/sparse/numerous features |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Response values |
+| Matrix[Double] | Validated data set |
+
+### Example
+```r
+X = rand (rows = 5, cols = 5)
+y = X %*% rand(rows = ncol(X), cols = 1)
+[predict, beta] = cvlm(X = X, y = y, k = 4)
 ```
 
 ## `glm`-Function

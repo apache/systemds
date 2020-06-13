@@ -24,6 +24,7 @@ limitations under the License.
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
+    * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
@@ -156,6 +157,45 @@ z = rand(rows = 5, cols = 1, min = 1, max = 9)
 X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
 y = toOneHot(X, numClasses)
 [ConfusionSum, ConfusionAvg] = confusionMatrix(P=z, Y=y)
+```
+
+## `glm`-Function
+
+The `glm`-function  is a flexible generalization of ordinary linear regression that allows for response variables that have
+error distribution models.
+
+### Usage
+```r
+glm(X,Y)
+```
+
+### Arguments
+| Name | Type           | Default  | Description |
+| :--- | :------------- | :------- | :---------- |
+| X    | Matrix[Double] | required | matrix X of feature vectors |
+| Y    | Matrix[Double] | required | matrix Y with either 1 or 2 columns: if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg) |
+| dfam | Int            | `1`      | Distribution family code: 1 = Power, 2 = Binomial |
+| vpow | Double         | `0.0`    | Power for Variance defined as (mean)^power (ignored if dfam != 1):  0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian |
+| link | Int            | `0`      | Link function code: 0 = canonical (depends on distribution), 1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit |
+| lpow | Double         | `1.0`    | Power for Link function defined as (mean)^power (ignored if link != 1):  -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity |
+| yneg | Double         | `0.0`    | Response value for Bernoulli "No" label, usually 0.0 or -1.0 |
+| icpt | Int            | `0`      | Intercept presence, X columns shifting and rescaling: 0 = no intercept, no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1 |
+| reg  | Double         | `0.0`    | Regularization parameter (lambda) for L2 regularization |
+| tol  | Double         | `1e-6`   | Tolerance (epislon) value. |
+| disp | Double         | `0.0`    | (Over-)dispersion value, or 0.0 to estimate it from data |
+| moi  | Int            | `200`    | Maximum number of outer (Newton / Fisher Scoring) iterations |
+| mii  | Int            | `0`      | Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum |
+
+### Returns
+| Type           | Description      |
+| :------------- | :--------------- |
+| Matrix[Double] | Matrix whose size depends on icpt ( icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2) |
+
+### Example
+```r
+X = rand (rows = 5, cols = 5 )
+y = X %*% rand(rows = ncol(X), cols = 1)
+beta = glm(X=X,Y=y)
 ```
 
 ## `gridSearch`-Function

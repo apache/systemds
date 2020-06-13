@@ -26,6 +26,9 @@ limitations under the License.
     * [`confusionMatrix`-Function](#confusionmatrix-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
+    * [`img_brightness`-Function](#img_brightness-function)
+    * [`img_crop`-Function](#img_crop-function)
+    * [`img_mirror`-Function](#img_mirror-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
@@ -232,6 +235,91 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 params = list("reg", "tol", "maxi")
 paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
 [B, opt]= gridSearch(X=X, y=y, train="lm", predict="lmPredict", params=params, paramValues=paramRanges, verbose = TRUE)
+```
+
+## `img_brightness`-Function
+
+The `img_brightness`-function is an image data augumentation function.
+It changes the brightness of the image.
+
+### Usage
+```r
+img_brightness(img_in, value, channel_max)
+```
+
+### Arguments
+| Name        | Type           | Default  | Description |
+| :---------- | :------------- | -------- | :---------- |
+| img_in      | Matrix[Double] | ---      | Input matrix/image |
+| value       | Double         | ---      | The amount of brightness to be changed for the image |
+| channel_max | Integer        | ---      | Maximum value of the brightness of the image |
+
+### Returns
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| img_out | Matrix[Double] | ---      | Output matrix/image |
+
+### Example
+```r
+A = rand(rows = 3, cols = 3, min = 0, max = 255)
+B = img_brightness(img_in = A, value = 128, channel_max = 255)
+```
+
+## `img_crop`-Function
+
+The `img_crop`-function is an image data augumentation function.
+It cuts out a subregion of an image.
+
+### Usage
+```r
+img_crop(img_in, w, h, x_offset, y_offset)
+```
+
+### Arguments
+| Name     | Type           | Default  | Description |
+| :------  | :------------- | -------- | :---------- |
+| img_in   | Matrix[Double] | ---      | Input matrix/image |
+| w        | Integer        | ---      | The width of the subregion required  |
+| h        | Integer        | ---      | The height of the subregion required |
+| x_offset | Integer        | ---      | The horizontal coordinate in the image to begin the crop operation |
+| y_offset | Integer        | ---      | The vertical coordinate in the image to begin the crop operation |
+
+### Returns
+| Name    | Type           | Default | Description |
+| :------ | :------------- | ------- | :---------- |
+| img_out | Matrix[Double] | ---     | Cropped matrix/image |
+
+### Example
+```r
+A = rand(rows = 3, cols = 3, min = 0, max = 255) 
+B = img_crop(img_in = A, w = 20, h = 10, x_offset = 0, y_offset = 0)
+```
+
+## `img_mirror`-Function
+
+The `img_mirror`-function is an image data augumentation function.
+It flips an image on the `X` (horizontal) or `Y` (vertical) axis. 
+
+### Usage
+```r
+img_mirror(img_in, horizontal_axis)
+```
+
+### Arguments
+| Name            | Type           | Default  | Description |
+| :-------------- | :------------- | -------- | :---------- |
+| img_in          | Matrix[Double] | ---      | Input matrix/image |
+| horizontal_axis | Boolean        | ---      | If TRUE, the  image is flipped with respect to horizontal axis otherwise vertical axis |
+
+### Returns
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| img_out | Matrix[Double] | ---      | Flipped matrix/image |
+
+### Example
+```r
+A = rand(rows = 3, cols = 3, min = 0, max = 255)
+B = img_mirror(img_in = A, horizontal_axis = TRUE)
 ```
 
 ## `KMeans`-Function

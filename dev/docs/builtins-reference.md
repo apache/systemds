@@ -25,11 +25,13 @@ limitations under the License.
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
     * [`cvlm`-Function](#cvlm-function)
+    * [`discoverFD`-Function](#discoverFD-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`img_brightness`-Function](#img_brightness-function)
     * [`img_crop`-Function](#img_crop-function)
     * [`img_mirror`-Function](#img_mirror-function)
+    * [`imputeByFD`-Function](#imputeByFD-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
@@ -196,6 +198,28 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 [predict, beta] = cvlm(X = X, y = y, k = 4)
 ```
 
+## `discoverFD`-Function
+
+The `discoverFD`-function finds the functional dependencies.
+
+### Usage
+```r
+discoverFD(X, Mask, threshold)
+```
+
+### Arguments
+| Name      | Type   | Default | Description |
+| :-------- | :----- | ------- | :---------- |
+| X         | Double | --      | Input Matrix X, encoded Matrix if data is categorical |
+| Mask      | Double | --      | A row vector for interested features i.e. Mask =[1, 0, 1] will exclude the second column from processing |
+| threshold | Double | --      | threshold value in interval [0, 1] for robust FDs |
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| Double | matrix of functional dependencies |
+
+
 ## `glm`-Function
 
 The `glm`-function  is a flexible generalization of ordinary linear regression that allows for response variables that have
@@ -355,6 +379,30 @@ img_mirror(img_in, horizontal_axis)
 A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_mirror(img_in = A, horizontal_axis = TRUE)
 ```
+
+## `imputeByFD`-Function
+
+The `imputeByFD`-function imputes missing values from observed values (if exist)
+using robust functional dependencies.
+
+### Usage
+```r
+imputeByFD(F, sourceAttribute, targetAttribute, threshold)
+```
+
+### Arguments
+| Name      | Type    | Default  | Description |
+| :-------- | :------ | -------- | :---------- |
+| F         | String  | --       | A data frame |
+| source    | Integer | --       | Source attribute to use for imputation and error correction |
+| target    | Integer | --       | Attribute to be fixed |
+| threshold | Double  | --       | threshold value in interval [0, 1] for robust FDs |
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| String | Frame with possible imputations |
+
 
 ## `KMeans`-Function
 

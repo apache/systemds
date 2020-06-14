@@ -22,7 +22,8 @@
  * @param SpoofCellwiseOp		initial value for the reduction variable
  */
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void reduce(T *g_idata, ///< input data stored in device memory (of size n)
+__device__ void reduce(
+		T *g_idata, ///< input data stored in device memory (of size n)
 		T *g_odata, ///< output/temporary array stored in device memory (of size n)
 		unsigned int n,
 		T initialValue, 
@@ -44,7 +45,7 @@ __device__ void reduce(T *g_idata, ///< input data stored in device memory (of s
 	// in a larger gridSize and therefore fewer elements per thread
 	while (i < n) {
 		v = reduction_op(v, spoof_op(g_idata[i]));
-		// ensure we don't read out of bounds
+
 		if (i + blockDim.x < n)
 			v = reduction_op(v, spoof_op(g_idata[i + blockDim.x]));
 		i += gridSize;

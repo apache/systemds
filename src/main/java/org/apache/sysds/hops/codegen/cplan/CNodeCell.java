@@ -136,6 +136,36 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%AGG_OP%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
+
+		if(api == GeneratorAPI.CUDA) {
+			String agg_op = "IdentityOp<T>";
+			String initial_value = "(T)0.0";
+			if(_aggOp != null)
+			switch(_aggOp) {
+				case SUM:
+					agg_op = "SumOp";
+					initial_value = "(T)0.0";
+					break;
+				case SUM_SQ:
+					agg_op = "SumSqOp";
+					initial_value = "(T)0.0";
+					break;
+				case MIN:
+					agg_op = "MinOp";
+					initial_value = "MAX<T>()";
+					break;
+				case MAX:
+					agg_op = "MaxOp";
+					initial_value = "-MAX<T>()";
+					break;
+				default:
+					agg_op = "IdentityOp<T>";
+					initial_value = "(T)0.0";
+			}
+
+			tmp = tmp.replaceAll("%AGG_TMPL%", agg_op);
+			tmp = tmp.replaceAll("%INITIAL_VALUE%", initial_value);
+		}
 		return tmp;
 	}
 

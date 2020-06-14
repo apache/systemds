@@ -14,7 +14,7 @@ public class CellWise implements CodeTemplate {
             "%TMP%\n" +
             "// CellType: %TYPE%\n" +
             "// AggOp: %AGG_OP%\n" +
-            "// SparseSafe: $SPARSE_SAFE%\n" +
+            "// SparseSafe: %SPARSE_SAFE%\n" +
             "// SEQ: %SEQ%\n" +
             "#include \"spoof_utils.cuh\"\n" +
             "\n"
@@ -26,7 +26,7 @@ public class CellWise implements CodeTemplate {
                 + "\n"
                 + "template<typename T, int VT>\n"
                 + "__global__\n"
-                + "void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix, int rix, int cix) {\n"
+                + "void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {\n"
                 + "     int tid = blockIdx.x * blockDim.x + threadIdx.x;\n"
                 + "     int first_idx = tid * VT;\n"
                 + "     int last_idx = min(first_idx + VT, m * n);\n"
@@ -38,7 +38,8 @@ public class CellWise implements CodeTemplate {
                 + "     }\n"
                 + "}\n";
 
-    public static final String TEMPLATE_FULL_AGG = "%TMP%\n" +
+    public static final String TEMPLATE_FULL_AGG =
+            "%TMP%\n" +
             "// CellType: %TYPE%\n" +
             "// AggOp: %AGG_OP%\n" +
             "// SparseSafe: %SPARSE_SAFE%\n" +
@@ -55,16 +56,19 @@ public class CellWise implements CodeTemplate {
             "   SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix, int rix, int cix) : \n" +
             "       b(b), scalars(scalars), m(m), n(n), grix(grix), rix(rix), cix(cix) {}\n" +
             "   __device__  __forceinline__ T operator()(T a) const {\n" +
-            "       %BODY_dense%\n" +
+            "%BODY_dense%" +
             "       return %OUT%;\n" +
             "   }\n" +
             "};" +
             "\n" +
             "template<typename T>\n" +
-            "__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix, int rix, int cix) {\n" +
-            "\tSumOp<T> agg_op;\n" +
+            "__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {\n" +
+            "   %AGG_TMPL%<T> agg_op;\n" +
+            "   int tid = blockIdx.x * blockDim.x * 2 + threadIdx.x;\n" +
+            "   int rix = tid / m;\n" +
+            "   int cix = tid % n;\n" +
             "   SpoofCellwiseOp<T> spoof_op(b, scalars, m, n, grix, rix, cix);\n" +
-            "\treduce<SumOp<T>, T, SpoofCellwiseOp<T>>(a, c, m*n, agg_op, (T) 0.0, spoof_op);\n" +
+            "   reduce<T, %AGG_TMPL%<T>, SpoofCellwiseOp<T>>(a, c, m*n, %INITIAL_VALUE%, agg_op, spoof_op);\n" +
             "}\n";
 
 

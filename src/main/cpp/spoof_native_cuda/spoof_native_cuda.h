@@ -89,8 +89,7 @@ public:
         CHECK_CUDA(op->program.kernel(name)
             .instantiate(type_of(result))
             .configure(grid, block, shared_mem_size)
-            .launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix,
-                    0, 0));
+            .launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix));
 
         // ToDo: block aggregation
         //        while (NB > 1) {
@@ -126,7 +125,7 @@ public:
         CHECK_CUDA(op->program.kernel(name)
             .instantiate(type_of(result), VT)
             .configure(grid, block)
-            .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix, 0, 0));
+            .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
       }
       }
 

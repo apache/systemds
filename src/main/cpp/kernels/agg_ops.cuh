@@ -46,12 +46,36 @@ struct SumOp {
 };
 
 /**
+ * Functor op for sum of squares operation (returns a + b * b)
+ */
+template<typename T>
+struct SumSqOp {
+	__device__  __forceinline__ T operator()(T a, T b) const {
+		return a + b * b;
+	}
+};
+
+/**
  * Functor op for min operation
  */
 template<typename T>
 struct MinOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
+		return a < b ? a : b;
+	}
+};
+
+template<>
+struct MinOp<double> {
+	__device__  __forceinline__  double operator()(double a, double b) const {
 		return fmin(a, b);
+	}
+};
+
+template<>
+struct MinOp<float> {
+	__device__  __forceinline__ float operator()(float a, float b) const {
+		return fminf(a, b);
 	}
 };
 

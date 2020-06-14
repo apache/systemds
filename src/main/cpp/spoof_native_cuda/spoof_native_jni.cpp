@@ -2,9 +2,12 @@
 #include "spoof_native_jni.h"
 #include "spoof_native_cuda.h"
 
-// JNI Methods to get/release double*
+// JNI Methods to get/release arrays
 #define GET_ARRAY(env, input)                                                  \
   ((void *)env->GetPrimitiveArrayCritical(input, NULL))
+
+#define RELEASE_ARRAY(env, java, cpp)                                                  \
+  (env->ReleasePrimitiveArrayCritical(java, cpp, NULL))
 
 JNIEXPORT jlong JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_initialize_1cuda_1context(
@@ -26,6 +29,8 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
   std::string src_(env->GetStringUTFChars(src, NULL));
   std::string name_(env->GetStringUTFChars(name, NULL));
   return ctx_->compile_cuda(src_, name_);
+  env->ReleaseStringUTFChars(src, src_.c_str());
+  env->ReleaseStringUTFChars(name, name_.c_str());
 }
 
 JNIEXPORT jdouble JNICALL
@@ -43,9 +48,15 @@ Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1d(
   double **sides = reinterpret_cast<double **>(GET_ARRAY(env, side_ptrs));
   double *scalars = reinterpret_cast<double *>(GET_ARRAY(env, scalars_));
 
-  return ctx_->execute_kernel(
+  double result = ctx_->execute_kernel(
       name_, inputs, num_inputs, sides, num_sides,
       reinterpret_cast<double *>(out_ptr), scalars, num_scalars, m, n, grix);
+
+  env->ReleaseStringUTFChars(name, name_.c_str());
+  RELEASE_ARRAY(env, in_ptrs, inputs_);
+  RELEASE_ARRAY(env, side_ptrs, sides);
+  RELEASE_ARRAY(env, scalars_, scalars);
+  return result;
 }
 
 JNIEXPORT jfloat JNICALL
@@ -63,7 +74,12 @@ Java_org_apache_sysds_runtime_codegen_SpoofNativeCUDA_execute_1f(
   float **sides = reinterpret_cast<float **>(GET_ARRAY(env, side_ptrs));
   float *scalars = reinterpret_cast<float *>(GET_ARRAY(env, scalars_));
 
-  return ctx_->execute_kernel(
+  float result = ctx_->execute_kernel(
       name_, inputs, num_inputs, sides, num_sides,
       reinterpret_cast<float *>(out_ptr), scalars, num_scalars, m, n, grix);
+  env->ReleaseStringUTFChars(name, name_.c_str());
+  RELEASE_ARRAY(env, in_ptrs, inputs_);
+  RELEASE_ARRAY(env, side_ptrs, sides);
+  RELEASE_ARRAY(env, scalars_, scalars);
+  return result;
 }

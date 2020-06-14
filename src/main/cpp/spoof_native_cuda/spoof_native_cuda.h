@@ -106,7 +106,7 @@ public:
         //        }
 
         cudaMemcpy(&result, d_temp_agg_buf, sizeof(T), cudaMemcpyDeviceToHost);
-
+        cudaFree(d_temp_agg_buf);
         break;
       }
       case SpoofOperator::AggType::NO_AGG: 
@@ -130,8 +130,8 @@ public:
 
       if (side_ptrs > 0)
         cudaFree(d_sides);
-
-    } else {
+    } 
+    else {
       std::cout << "kernel " << name << " not found." << std::endl;
       return result;
     }

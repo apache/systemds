@@ -9,17 +9,20 @@ size_t SpoofCudaContext::initialize_cuda(uint32_t device_id) {
   std::cout << "initializing cuda device " << device_id << std::endl;
 
   SpoofCudaContext *ctx = new SpoofCudaContext();
-  cudaSetDevice(device_id);
-
+  // cuda device is handled by jCuda atm
+  //cudaSetDevice(device_id);
+  //cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
+  //cudaDeviceSynchronize();
   return reinterpret_cast<size_t>(ctx);
 }
 
 void SpoofCudaContext::destroy_cuda(SpoofCudaContext *ctx, uint32_t device_id) {
-  std::cout << "destroying cuda context " << ctx << " of device " << device_id
-            << std::endl;
+  //std::cout << "destroying cuda context " << ctx << " of device " << device_id
+            //<< std::endl;
   delete ctx;
   ctx = nullptr;
-  cudaDeviceReset();
+  // cuda device is handled by jCuda atm
+  //cudaDeviceReset();
 }
 
 bool SpoofCudaContext::compile_cuda(const std::string &src,
@@ -27,10 +30,10 @@ bool SpoofCudaContext::compile_cuda(const std::string &src,
   std::cout << "compiling cuda kernel " << name << std::endl;
   std::cout << src << std::endl;
 
-  std::cout << "cwd: " << std::filesystem::current_path() << std::endl;
+  //std::cout << "cwd: " << std::filesystem::current_path() << std::endl;
 
   std::string cuda_path = std::string("-I") + std::getenv("CUDA_PATH") + "/include";
-  std::cout << "cuda_path: " << cuda_path << std::endl;
+  //std::cout << "cuda_path: " << cuda_path << std::endl;
 
   SpoofOperator::AggType type = SpoofOperator::AggType::NONE;
   SpoofOperator::AggOp op = SpoofOperator::AggOp::NONE;
@@ -63,10 +66,14 @@ bool SpoofCudaContext::compile_cuda(const std::string &src,
           }
   }
 
+  // ToDo: cleanup cuda path 
   jitify::Program program = kernel_cache.program(
       src, 0,
-      {"-I./src/main/cpp/kernels/", "-I/usr/local/cuda/include",
-       "-I/usr/local/cuda/include/cuda/std/detail/libcxx/include/", cuda_path});
+      {"-I./src/main/cpp/kernels/spoof_native_cuda/", 
+      "-I./src/main/cpp/kernels/",
+       "-I/usr/local/cuda/include",
+       "-I/usr/local/cuda/include/cuda/std/detail/libcxx/include/", 
+      cuda_path});
 
   // ToDo: agg types
   ops.insert(std::make_pair(

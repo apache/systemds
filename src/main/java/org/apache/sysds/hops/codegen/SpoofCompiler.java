@@ -97,6 +97,7 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.utils.Explain;
@@ -185,6 +186,21 @@ public class SpoofCompiler {
 		if (LDEBUG) {
 			Logger.getLogger("org.apache.sysds.hops.codegen")
 					.setLevel(Level.TRACE);
+		}
+
+		// load native codegen if configured
+		if(ConfigurationManager.isCodegenEnabled()) {
+			SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+			if (configured_generator == SpoofCompiler.GeneratorAPI.AUTO || configured_generator == SpoofCompiler.GeneratorAPI.CUDA) {
+				try {
+					// init GPUs with jCuda to avoid double initialization problems
+					GPUContextPool.initializeGPU();
+					SpoofCompiler.loadNativeCodeGenerator(SpoofCompiler.GeneratorAPI.CUDA);
+				}
+				catch (Exception e) {
+					LOG.error("Failed to load native cuda codegen library\n" + e);
+				}
+			}
 		}
 	}
 

@@ -21,6 +21,7 @@
 
 import static jcuda.driver.JCudaDriver.cuDeviceGetCount;
 import static jcuda.driver.JCudaDriver.cuInit;
+import static jcuda.runtime.JCuda.cudaGetDevice;
 import static jcuda.runtime.JCuda.cudaGetDeviceProperties;
 
 import java.util.ArrayList;
@@ -83,6 +84,8 @@ public class GPUContextPool {
 	 * All these need be done once, and not per GPU
 	 */
 	public synchronized static void initializeGPU() {
+		if (initialized)
+			return;
 		initialized = true;
 		GPUContext.LOG.info("Initializing CUDA");
 		long start = System.nanoTime();
@@ -141,14 +144,14 @@ public class GPUContextPool {
 		GPUContext.LOG.info("GPUs being used: " + AVAILABLE_GPUS);
 		GPUContext.LOG.info("Initial GPU memory: " + initialGPUMemBudget());
 
-		//int[] device = {-1};
-		//cudaGetDevice(device);
-		//cudaDeviceProp prop = getGPUProperties(device[0]);
-		//int maxBlocks = prop.maxGridSize[0];
-		//int maxThreadsPerBlock = prop.maxThreadsPerBlock;
-		//long sharedMemPerBlock = prop.sharedMemPerBlock;
-		//LOG.debug("Active CUDA device number : " + device[0]);
-		//LOG.debug("Max Blocks/Threads/SharedMem on active device: " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
+		int[] device = {-1};
+		cudaGetDevice(device);
+		cudaDeviceProp prop = getGPUProperties(device[0]);
+		int maxBlocks = prop.maxGridSize[0];
+		int maxThreadsPerBlock = prop.maxThreadsPerBlock;
+		long sharedMemPerBlock = prop.sharedMemPerBlock;
+		LOG.debug("Active CUDA device number : " + device[0]);
+		LOG.debug("Max Blocks/Threads/SharedMem on active device: " + maxBlocks + "/" + maxThreadsPerBlock + "/" + sharedMemPerBlock);
 		GPUStatistics.cudaInitTime = System.nanoTime() - start;
 	}
 
@@ -210,8 +213,7 @@ public class GPUContextPool {
 	public static synchronized List<GPUContext> reserveAllGPUContexts() {
 		if (reserved)
 			throw new DMLRuntimeException("Trying to re-reserve GPUs");
-		if (!initialized)
-			initializeGPU();
+		initializeGPU();
 		reserved = true;
 		LOG.trace("GPU : Reserved all GPUs");
 		return pool;

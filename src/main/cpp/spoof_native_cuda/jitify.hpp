@@ -1297,6 +1297,13 @@ class CUDAKernel {
                           block.z, smem, stream, arg_ptrs.data(), NULL);
   }
 
+  inline void safe_launch(dim3 grid, dim3 block, unsigned int smem,
+                          CUstream stream, std::vector<void*> arg_ptrs) const {
+    return cuda_safe_call(cuLaunchKernel(_kernel, grid.x, grid.y, grid.z,
+                                         block.x, block.y, block.z, smem,
+                                         stream, arg_ptrs.data(), NULL));
+  }
+
   inline CUdeviceptr get_global_ptr(const char* name,
                                     size_t* size = nullptr) const {
     CUdeviceptr global_ptr = 0;
@@ -1369,7 +1376,6 @@ static const char* jitsafe_header_preinclude_h = R"(
 #define try
 #define catch(...)
 )";
-
 
 static const char* jitsafe_header_float_h = R"(
 #pragma once
@@ -1485,8 +1491,8 @@ struct iterator_traits<T const*> {
 //              using type specific structs since we can't template on floats.
 static const char* jitsafe_header_limits = R"(
 #pragma once
-#include <climits>
 #include <cfloat>
+#include <climits>
 // TODO: epsilon(), infinity(), etc
 namespace __jitify_detail {
 #if __cplusplus >= 201103L
@@ -2889,6 +2895,13 @@ class KernelLauncher_impl {
   inline CUresult launch(
       jitify::detail::vector<void*> arg_ptrs,
       jitify::detail::vector<std::string> arg_types = 0) const;
+  inline void safe_launch(
+      jitify::detail::vector<void*> arg_ptrs,
+      jitify::detail::vector<std::string> arg_types = 0) const;
+
+ private:
+  inline void pre_launch(
+      jitify::detail::vector<std::string> arg_types = 0) const;
 };
 
 /*! An object representing a configured and instantiated kernel ready
@@ -2918,6 +2931,17 @@ class KernelLauncher {
       jitify::detail::vector<std::string> arg_types = 0) const {
     return _impl->launch(arg_ptrs, arg_types);
   }
+
+  /*! Launch the kernel and check for cuda errors.
+   *
+   *  \see launch
+   */
+  inline void safe_launch(
+      std::vector<void*> arg_ptrs = std::vector<void*>(),
+      jitify::detail::vector<std::string> arg_types = 0) const {
+    _impl->safe_launch(arg_ptrs, arg_types);
+  }
+
   // Regular function call syntax
   /*! Launch the kernel.
    *
@@ -2935,6 +2959,15 @@ class KernelLauncher {
   inline CUresult launch(ArgTypes... args) const {
     return this->launch(std::vector<void*>({(void*)&args...}),
                         {reflection::reflect<ArgTypes>()...});
+  }
+  /*! Launch the kernel and check for cuda errors.
+   *
+   *  \param args Function arguments for the kernel.
+   */
+  template <typename... ArgTypes>
+  inline void safe_launch(ArgTypes... args) const {
+    this->safe_launch(std::vector<void*>({(void*)&args...}),
+                      {reflection::reflect<ArgTypes>()...});
   }
 };
 
@@ -3259,8 +3292,7 @@ inline std::ostream& operator<<(std::ostream& stream, dim3 d) {
   return stream;
 }
 
-inline CUresult KernelLauncher_impl::launch(
-    jitify::detail::vector<void*> arg_ptrs,
+inline void KernelLauncher_impl::pre_launch(
     jitify::detail::vector<std::string> arg_types) const {
 #if JITIFY_PRINT_LAUNCH
   Kernel_impl const& kernel = _kernel_inst._kernel;
@@ -3275,8 +3307,22 @@ inline CUresult KernelLauncher_impl::launch(
     throw std::runtime_error(
         "Kernel pointer is NULL; you may need to define JITIFY_THREAD_SAFE 1");
   }
+}
+
+inline CUresult KernelLauncher_impl::launch(
+    jitify::detail::vector<void*> arg_ptrs,
+    jitify::detail::vector<std::string> arg_types) const {
+  pre_launch(arg_types);
   return _kernel_inst._cuda_kernel->launch(_grid, _block, _smem, _stream,
                                            arg_ptrs);
+}
+
+inline void KernelLauncher_impl::safe_launch(
+    jitify::detail::vector<void*> arg_ptrs,
+    jitify::detail::vector<std::string> arg_types) const {
+  pre_launch(arg_types);
+  _kernel_inst._cuda_kernel->safe_launch(_grid, _block, _smem, _stream,
+                                         arg_ptrs);
 }
 
 inline KernelInstantiation_impl::KernelInstantiation_impl(
@@ -4066,6 +4112,18 @@ class KernelLauncher {
   unsigned int _smem;
   cudaStream_t _stream;
 
+ private:
+  void pre_launch(std::vector<std::string> arg_types = {}) const {
+#if JITIFY_PRINT_LAUNCH
+    std::string arg_types_string =
+        (arg_types.empty() ? "..." : reflection::reflect_list(arg_types));
+    std::cout << "Launching " << _kernel_inst->_cuda_kernel->function_name()
+              << "<<<" << _grid << "," << _block << "," << _smem << ","
+              << _stream << ">>>"
+              << "(" << arg_types_string << ")" << std::endl;
+#endif
+  }
+
  public:
   KernelLauncher(KernelInstantiation const* kernel_inst, dim3 grid, dim3 block,
                  unsigned int smem = 0, cudaStream_t stream = 0)
@@ -4088,16 +4146,16 @@ class KernelLauncher {
    */
   CUresult launch(std::vector<void*> arg_ptrs = {},
                   std::vector<std::string> arg_types = {}) const {
-#if JITIFY_PRINT_LAUNCH
-    std::string arg_types_string =
-        (arg_types.empty() ? "..." : reflection::reflect_list(arg_types));
-    std::cout << "Launching " << _kernel_inst->_cuda_kernel->function_name()
-              << "<<<" << _grid << "," << _block << "," << _smem << ","
-              << _stream << ">>>"
-              << "(" << arg_types_string << ")" << std::endl;
-#endif
+    pre_launch(arg_types);
     return _kernel_inst->_cuda_kernel->launch(_grid, _block, _smem, _stream,
                                               arg_ptrs);
+  }
+
+  void safe_launch(std::vector<void*> arg_ptrs = {},
+                   std::vector<std::string> arg_types = {}) const {
+    pre_launch(arg_types);
+    _kernel_inst->_cuda_kernel->safe_launch(_grid, _block, _smem, _stream,
+                                            arg_ptrs);
   }
 
   /*! Launch the kernel.
@@ -4108,6 +4166,16 @@ class KernelLauncher {
   CUresult launch(ArgTypes... args) const {
     return this->launch(std::vector<void*>({(void*)&args...}),
                         {reflection::reflect<ArgTypes>()...});
+  }
+
+  /*! Launch the kernel and check for cuda errors.
+   *
+   *  \param args Function arguments for the kernel.
+   */
+  template <typename... ArgTypes>
+  void safe_launch(ArgTypes... args) const {
+    return this->safe_launch(std::vector<void*>({(void*)&args...}),
+                             {reflection::reflect<ArgTypes>()...});
   }
 };
 

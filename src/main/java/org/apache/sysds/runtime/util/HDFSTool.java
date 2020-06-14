@@ -19,20 +19,32 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileContext;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.OrderedJSONObject;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -48,15 +60,8 @@ import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.OrderedJSONObject;
 
 
 public class HDFSTool 
@@ -211,8 +216,50 @@ public class HDFSTool
 		if( !IOUtilFunctions.isSameFileScheme(pathOrig, pathNew) )
 			throw new IOException("Cannot merge files into different target file system.");
 		FileSystem fs = IOUtilFunctions.getFileSystem(pathOrig);
-		FileUtil.copyMerge(fs, pathOrig, fs, pathNew, true, 
+		copyMerge(fs, pathOrig, fs, pathNew, true, 
 			ConfigurationManager.getCachedJobConf(), null);
+	}
+
+
+	// Taken from Source Code of Hadoop, Since the copyMerge function is removed in 3.0
+	// https://github.com/c9n/hadoop/blob/master/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/fs/FileUtil.java#L382
+	public static boolean copyMerge(FileSystem srcFS, Path srcDir, FileSystem dstFS, Path dstFile,
+		Boolean deleteSource, Configuration conf, String addString) throws IOException {
+
+		// TODO: Modified Source to not check the file. since that operation has changed its syntax.
+		// dstFile = FileContext.checkDest(srcDir.getName(),  dstFile, false);
+
+		if (!srcFS.getFileStatus(srcDir).isDirectory())
+		  return false;
+		
+		OutputStream out = dstFS.create(dstFile);
+		
+		try {
+		  FileStatus contents[] = srcFS.listStatus(srcDir);
+		  Arrays.sort(contents);
+		  for (int i = 0; i < contents.length; i++) {
+			if (contents[i].isFile()) {
+			  InputStream in = srcFS.open(contents[i].getPath());
+			  try {
+				IOUtils.copyBytes(in, out, conf, false);
+				if (addString!=null)
+				  out.write(addString.getBytes("UTF-8"));
+					
+			  } finally {
+				in.close();
+			  } 
+			}
+		  }
+		} finally {
+		  out.close();
+		}
+		
+	
+		if (deleteSource) {
+		  return srcFS.delete(srcDir, true);
+		} else {
+		  return true;
+		}
 	}
 
 	public static void copyFileOnHDFS(String originalDir, String newDir) throws IOException {

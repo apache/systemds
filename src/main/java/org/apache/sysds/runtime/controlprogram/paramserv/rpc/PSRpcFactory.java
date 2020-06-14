@@ -22,11 +22,10 @@ package org.apache.sysds.runtime.controlprogram.paramserv.rpc;
 import java.io.IOException;
 import java.util.Collections;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.spark.SparkConf;
 import org.apache.spark.network.TransportContext;
-import org.apache.spark.network.netty.SparkTransportConf;
 import org.apache.spark.network.server.TransportServer;
-import org.apache.spark.network.util.TransportConf;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSProxy;
@@ -36,9 +35,10 @@ public class PSRpcFactory {
 	private static final String MODULE_NAME = "ps";
 
 	private static TransportContext createTransportContext(SparkConf conf, LocalParamServer ps) {
-		TransportConf tc = SparkTransportConf.fromSparkConf(conf, MODULE_NAME, 0);
-		PSRpcHandler handler = new PSRpcHandler(ps);
-		return new TransportContext(tc, handler);
+		throw new NotImplementedException("Not Implemented Since Spark 3.0");
+		// TransportConf tc = SparkTransportConf.fromSparkConf(conf, MODULE_NAME, 0);
+		// PSRpcHandler handler = new PSRpcHandler(ps);
+		// return new TransportContext(tc, handler);
 	}
 
 	/**
@@ -54,11 +54,12 @@ public class PSRpcFactory {
 	}
 
 	public static SparkPSProxy createSparkPSProxy(SparkConf conf, int port, LongAccumulator aRPC) throws IOException {
-		long rpcTimeout = conf.contains("spark.rpc.askTimeout") ?
-			conf.getTimeAsMs("spark.rpc.askTimeout") :
-			conf.getTimeAsMs("spark.network.timeout", "120s");
-		String host = conf.get("spark.driver.host");
-		TransportContext context = createTransportContext(conf, new LocalParamServer());
-		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
+		throw new NotImplementedException("Not Implemented Since Spark 3.0");
+		// long rpcTimeout = conf.contains("spark.rpc.askTimeout") ?
+		// 	conf.getTimeAsMs("spark.rpc.askTimeout") :
+		// 	conf.getTimeAsMs("spark.network.timeout", "120s");
+		// String host = conf.get("spark.driver.host");
+		// TransportContext context = createTransportContext(conf, new LocalParamServer());
+		// return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
 	}
 }

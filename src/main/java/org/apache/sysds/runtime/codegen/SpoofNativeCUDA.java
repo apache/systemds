@@ -59,7 +59,7 @@ public class SpoofNativeCUDA extends SpoofOperator {
             offset = 2;
 
         // only dense input preparation for now
-        long[] in_ptrs = new long[offset+1];
+        long[] in_ptrs = new long[offset];
         for(int i = 0; i < offset; ++i)
             in_ptrs[i] = ec.getGPUPointerAddress(inputs.get(i));
 
@@ -72,16 +72,14 @@ public class SpoofNativeCUDA extends SpoofOperator {
 
             // ToDo: handle float
            ret = execute_f(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
-                    in_ptrs, in_ptrs.length, side_ptrs, side_ptrs.length, out_ptr, scalars,
-                    scalars.length, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+                    in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
 
         }
         else {
             double[] scalars = prepInputScalars(scalarObjects);
 
             ret = execute_d(SpoofCompiler.native_contexts.get(SpoofCompiler.GeneratorAPI.CUDA), name.split("\\.")[1],
-                    in_ptrs, in_ptrs.length, side_ptrs, side_ptrs.length, out_ptr, scalars,
-                    scalars.length, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
+                    in_ptrs, side_ptrs, out_ptr, scalars, inputs.get(0).getNumRows(), inputs.get(0).getNumColumns(), 0);
         }
         return ret;
     }
@@ -92,9 +90,9 @@ public class SpoofNativeCUDA extends SpoofOperator {
             return  tmp[tmp.length-1] + "_" + getSpoofTemplateType() + "_" + name.split("\\.")[1];
     }
 
-    private native float execute_f(long ctx, String name, long[] in_ptr, long num_inputs, long[] side_ptr, long num_sides,
-                                   long out_ptr, float[] scalars, long num_scalars, long m, long n, long grix);
+    private native float execute_f(long ctx, String name, long[] in_ptr, long[] side_ptr,
+                                   long out_ptr, float[] scalars, long m, long n, long grix);
 
-    private native double execute_d(long ctx, String name, long[] in_ptr, long num_inputs, long[] side_ptr, long num_sides,
-                                    long out_ptr, double[] scalars, long num_scalars, long m, long n, long grix);
+    private native double execute_d(long ctx, String name, long[] in_ptr, long[] side_ptr,
+                                    long out_ptr, double[] scalars, long m, long n, long grix);
 }

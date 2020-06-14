@@ -69,7 +69,7 @@ bool SpoofCudaContext::compile_cuda(const std::string &src,
   // ToDo: cleanup cuda path 
   jitify::Program program = kernel_cache.program(
       src, 0,
-      {"-I./src/main/cpp/kernels/spoof_native_cuda/", 
+      {"-I./src/main/cpp/spoof_native_cuda/", 
       "-I./src/main/cpp/kernels/",
        "-I/usr/local/cuda/include",
        "-I/usr/local/cuda/include/cuda/std/detail/libcxx/include/", 

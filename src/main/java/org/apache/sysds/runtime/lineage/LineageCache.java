@@ -380,14 +380,14 @@ public class LineageCache
 			else
 				e.setValue(oe.getSOValue(), computetime);
 			e._origItem = probeItem; 
-			// Add the SB/func entry to the end of the list of items pointing to the same data.
+			// Add itself as original item to navigate the list.
+			oe._origItem = probeItem;
+
+			// Add the SB/func entry to the list of items pointing to the same data.
 			// No cache size update is necessary.
-			LineageCacheEntry tmp = oe;
 			// Maintain _origItem as head.
-			while (tmp._nextEntry != null)
-				tmp = tmp._nextEntry;
-			// FIXME: No need add at the end; add just after head.
-			tmp._nextEntry = e;
+			e._nextEntry = oe._nextEntry;
+			oe._nextEntry = e;
 			
 			//maintain order for eviction
 			LineageCacheEviction.addEntry(e);

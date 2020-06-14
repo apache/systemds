@@ -409,7 +409,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			}
 			case SEQ: {
 				//replace output variable name with a placeholder
-				//tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
+				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_from, 5, ec);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_to, 6, ec);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_incr, 7, ec);

@@ -204,6 +204,11 @@ public class SpoofCompiler {
 		}
 	}
 
+	@Override
+	protected void finalize() throws Throwable {
+			SpoofCompiler.cleanupCodeGenerator();
+	}
+
 	public static void loadNativeCodeGenerator(GeneratorAPI generator) {
 
 		if(native_contexts == null)

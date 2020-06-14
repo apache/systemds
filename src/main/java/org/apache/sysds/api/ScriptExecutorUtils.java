@@ -116,9 +116,7 @@ public class ScriptExecutorUtils {
 				}
 				GPUContextPool.freeAllGPUContexts();
 			}
-			if( ConfigurationManager.isCodegenEnabled() )
-				SpoofCompiler.cleanupCodeGenerator();
-			
+
 			// display statistics (incl caching stats if enabled)
 			Statistics.stopRunTimer();
 			(exceptionThrown ? System.err : System.out)

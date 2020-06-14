@@ -22,10 +22,6 @@ package org.apache.sysds.test.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -502,13 +498,12 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			TEST_CONF = TEST_CONF6;
 
 		// ToDo: remove when done with testing
-//		if(test_num > 27)
+	   // for now comment next line to run all tests on GPU
+		if(test_num > 27)
 		{
 			TEST_CONF = TEST_CONF8;
 			TEST_GPU = true;
 			DEBUG = true;
-			//ToDo: proper precision handling in testcase setup
-//			DMLScript.FLOATING_POINT_PRECISION = "single";
 		}
 
 		try
@@ -575,7 +570,6 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 			TEST_CONF = oldTestConf;
-//			SpoofCompiler.unloadNativeCodeGenerator(SpoofCompiler.GeneratorAPI.CUDA);
 		}
 	}
 

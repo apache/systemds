@@ -32,12 +32,14 @@ limitations under the License.
     * [`img_crop`-Function](#img_crop-function)
     * [`img_mirror`-Function](#img_mirror-function)
     * [`imputeByFD`-Function](#imputeByFD-function)
+    * [`intersect`-Function](#intersect-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
     * [`mice`-Function](#mice-function)
+    * [`multiLogReg`-Function](#multiLogReg-function)
     * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
     * [`sigmoid`-Function](#sigmoid-function)
@@ -475,6 +477,27 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 lm(X = X, y = y)
 ```
 
+## `intersect`-Function
+
+The `intersect`-function implements set intersection for numeric data.
+
+### Usage
+```r
+intersect(X, Y)
+```
+
+### Arguments
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Double | --       | matrix X, set A |
+| Y    | Double | --       | matrix Y, set B | 
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| Double | intersection matrix, set of intersecting items |
+
+
 ## `lmDS`-Function
 
 The `lmDS`-function solves linear regression by directly solving the *linear system*.
@@ -596,6 +619,40 @@ F = as.frame(matrix("4 3 2 8 7 8 5", rows=1, cols=7))
 cMask = round(rand(rows=1,cols=ncol(F),min=0,max=1))
 [dataset, singleSet] = mice(F, cMask, iter = 3, complete = 3, verbose = FALSE)
 ```
+
+## `multiLogReg`-Function
+
+The `multiLogReg`-function solves Multinomial Logistic Regression using Trust Region method.
+(See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
+
+### Usage
+```r
+multiLogReg(X, Y, icpt, reg, tol, maxi, maxii, verbose)
+```
+
+### Arguments
+| Name  | Type   | Default | Description |
+| :---- | :----- | ------- | :---------- |
+| X     | Double | --      | The matrix of feature vectors |
+| Y     | Double | --      | The matrix with category labels |
+| icpt  | Int    | `0`     | Intercept presence, shifting and rescaling X columns: 0 = no intercept, no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1 |
+| reg   | Double | `0`     | regularization parameter (lambda = 1/C); intercept is not regularized |
+| tol   | Double | `1e-6`  | tolerance ("epsilon") |
+| maxi  | Int    | `100`   | max. number of outer newton interations |
+| maxii | Int    | `0`     | max. number of inner (conjugate gradient) iterations |
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| Double | Regression betas as output for prediction |
+
+### Example
+```r
+X = rand(rows = 50, cols = 30)
+Y = X %*% rand(rows = ncol(X), cols = 1)
+betas = multiLogReg(X = X, Y = Y, icpt = 2,  tol = 0.000001, reg = 1.0, maxi = 100, maxii = 20, verbose = TRUE)
+```
+
 
 ## `pnmf`-Function
 

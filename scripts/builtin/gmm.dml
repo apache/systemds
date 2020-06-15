@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 # ------------------------------------------
-# Guassian Mixture Model
+# Gaussian Mixture Model
 # ------------------------------------------
 
 # INPUT PARAMETERS:
@@ -47,245 +47,36 @@
 
 
 
-m_gmm = function(Matrix[Double] X, Integer n_components = 1, String model = "VVV", Integer iter = 100, String init_params = "kmeans", Double eps = 0.000001, Boolean verbose = FALSE )
-return (Matrix[Double] weights)
+m_gmm = function(Matrix[Double] X, Integer n_components = 1, String model = "VVV", String init_params = "kmeans", Integer iter = 100, Double reg_covar = 1e-6, Double tol = 0.000001, Boolean verbose = FALSE )
+return (Matrix[Double] weights, Matrix[Double] labels, Double df, Double bic)
 {
   # sanity checks
   if(model != "VVV" & model != "EEE" & model != "VVI" & model != "VII")
     stop("model not supported, should be in VVV, EEE, VVI, VII");
-  
-  [nk, mu, sigma] = initialize_param(X, n_components, init_params, model)
-  
-  prec_chol = compute_precision_cholesky(sigma, method)
-  # Determine the initial GMM parameters from Kmeans
-  # μ, σ, weights and phi
-  n_sample = nrow(X)
-  
-  
-  phi = matrix(1/n_components, 1, n_components)
-  weights = matrix(1/n_components, nrow(X), n_components)
-  
-  [C, Y] = kmeans(X,  n_components, 10, 10, eps, FALSE, 25)
-  mu = C
-  sigma = list()
-  
-  for(i in 1:n_components)
-    sigma = append(sigma, covMatrix(X, matrix(1, nrow(X), 1)) ) #diag(matrix(1, ncol(X), 1))
 
-  loglikPre = mean(log(rowSums(weights*phi)))
-  loglikDiff = 1
-  i = 1
-  bic = matrix(0, iter, 1)
-  a = n_components * ncol(X) * (ncol(X) + 1) / 2
-  b = ncol(X) * n_components
-  df = a + b + n_components -1
-  # df = (ncol(X)*ncol(X) - ncol(X))/2 + (2*ncol(X) + 1)
-  # df = n_components * df -1
-  print("df "+df)
-  while(i <= iter & loglikDiff >= eps ){
-    print("iteration ----------------------------------"+i)
-     # 
-    # Estimation Step
-    [weights, loglikNew] = predict_prob(X, n_components, mu, sigma, phi)
-    phi = colMeans(weights)
-    print("phi "+toString(phi))
-    # Maximization Step - Update parameter
-  
-    for(j in 1:n_components)
-    {
-      wk = weights[, j]
-      sum_wk = sum(wk)
-      mu[j, ] = colSums(X*wk)/sum_wk
-      sigma[j] = covMatrix(X, (wk/sum_wk)) # A covariance matrix instead of single covariance value
-      print("mu m "+toString(mu[j, ]))
-      print("sigma m "+toString(as.matrix(sigma[j])))
-    }
-    loglikDiff = abs(loglikNew - loglikPre)
-    loglikPre = loglikNew
-    bic[i,1] = (-2 * loglikNew * nrow(X) + df * log(nrow(X)))
-    i = i+1
-  }
-  
-  # predict 
-  predict = rowIndexMax(weights)
-  if(verbose) {
-    print("logliklihood diff "+loglikDiff)
-    print("logliklihood "+loglikNew)
-    print("BIC for each iteration "+toString(bic))
-    print("predictions \n"+toString(predict))
-    print("weights \n"+toString(weights))
-  }
-
+  [labels, weights, norm] = fit(X, n_components, model, init_params, iter, reg_covar, tol)
+  df = estimate_free_param(n_components, ncol(X), model)
+  bic = getBIC(nrow(X),norm,df)
 }
-
-covMatrix = function(Matrix[Double] X, Matrix[Double] w)
-return (Matrix[Double] covM) 
-{ 
-  covM = matrix(0, ncol(X), ncol(X))
-  if(ncol(X) < 2 )
-    covM[1,1] = var(X)
-
-  wmu = colSums(X*w)/sum(w)
-  Xc = X - wmu
-  # R = (t(Xc) %*% Xc)/(nrow(X)-1)/ (t(colSds(X)) %*% colSds(X)); #cov(X)
-  # print("this is wsigma "+toString(R));
-  sig = 1/(sum(w)) * (t(Xc * w) %*% Xc) 
-    
-  covM = sig  
-  # print("this is wsigma "+toString(sig))
-  # for(i in 1:ncol(X))
-    # for(j in 1:ncol(X))
-      # covM[i, j] = cov(X[,i], X[,j], w)
-}
-
-predict_prob = function(Matrix[Double] X, Integer n_components, Matrix[Double] mu, List[Unknown] sigma, Matrix[Double] phi)
-  return (Matrix[Double] weights, Double loglik)
-{
-  likelihood = matrix(0, nrow(X), n_components )
-  for(i in 1:n_components)
-  {
-
-    likelihood[, i] = mvpdf(X, mu[i,], as.matrix(sigma[i]))
-  }
-  numer = likelihood * phi
-  denom = rowSums(numer)
-  loglik = mean(log(denom)) 
  
-  weights = numer/denom
-
-}
-
-mvpdf = function(Matrix[Double] X, Matrix[Double] mu, Matrix[Double] sigma) 
-return (Matrix[Double] pdf)
+initialize_param = function(Matrix[Double] X, Integer n_components, String init_params, String model, Double reg_covar)
+return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma, List[Unknown] precision_chol) 
 {
-  pdf = matrix(0, nrow(X), 1)
-  # [eva, evec] = eigen(sigma)
-  # det = colProds(eva)
-  # det = as.scalar(det)
-  # print("this is eval "+det)
-  det = determinant(sigma, nrow(sigma))
-    print("det "+det)
-  if (det == 0) {
-    stop("Determinant is equal to 0.")
-  }
-  d = ncol(X)
-  for(i in 1:nrow(X))
-  {
-    x_m = X[i, ] - mu 
-    p1 = 1/sqrt((2*pi)^d*det) 
-    p2 = -0.5 * x_m %*% inverse(sigma) %*% t(x_m)
-    p3 = p1 * exp(p2)
-    pdf[i,1] += as.scalar(p1 * exp(p2))
-  }
-  # print("pdf "+toString(pdf))
-}
-
-determinant = function(Matrix[Double] X, Double n)
-  return (Double det)
-{      
- 
-  # temporary array for storing row  
-  # int []temp = new int[n + 1];  
-  num1=0; num2=0; detr = 1;index=0;total = 1;
-  temp = matrix(0, n+1, 1)        
-  # loop for traversing the diagonal elements  
-  for(i in 1:n)  
-  {  
-    index = i; # initialize the index  
-              
-    # finding the index which has non zero value  
-    while(as.scalar(X[index, i]) == 0 & index < n) 
-    {  
-      index =  index + 1;      
-                  
-    }  
-    if(index == n)# if there is non zero element  
-    {  
-    # the determinat of matrix as zero  
-                  
-    }  
-    if(index != i)  
-    {  
-      # loop for swaping the diagonal element row and index row  
-      for(j in 1:n)  
-      {  
-        swap(X, index, j, i, j); 
-        print("after swap "+toString(X))
-      }  
-      # determinant sign changes when we shift rows  
-      # go through determinant properties  
-        detr = as.integer(detr* (-1)^(index-i));  
-    }  
-          
-    # storing the values of diagonal row elements  
-    for(j in 1:n)  
-    {  
-      temp[j,1] = X[i,j];  
-                  
-    }  
-      
-    # traversing every row below the diagonal element 
-    j = i+1
-    while(j<=n)  
-    {  
-      num1 = as.scalar(temp[i,1]);  # value of diagonal element  
-      num2 = as.scalar(X[j, i]); # value of next row element  
-                  
-      # traversing every column of row  
-      # and multiplying to every row  
-      for(k in 1:n)  
-      {  
-                  
-        # multiplying to make the diagonal  
-        # element and next row element equal  
-        X[j, k] = (num1 * X[j, k]) - (num2 * temp[k, 1]);  
-                      
-      }  
-      total = total * num1; # Det(kA)=kDet(A);
-      j = j+1
-    }  
-              
-  }  
-      
-    # mulitplying the diagonal elements to get determinant  
-  for(i in 1:n)  
-  {  
-    detr = detr * as.scalar(X[i, i]);  
-              
-  }  
-  det = (detr/total); # Det(kA)/k=Det(A);  
-} 
- 
-  
-swap =  function(Matrix[Double] X, Integer i1, Integer j1, Integer i2, Integer j2) 
-  # return (Matrix[Double] X1)
-{ 
-  print("before swap "+toString(X))
-  temp = as.scalar(X[i1, j1])
-    # int temp = arr[i1][j1];
-  X[i1, j1] = as.scalar(X[i2, j2]); 
-  X[i1, j1] = as.scalar(X[i2, j2])
-  X[i2, j2] = temp; 
-  # X1 = X
-}
-  
-initialize_param = function(Matrix[Double] X, Integer n_components, String init_params, String model)
-return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma)
-{
-  reg_covar = 1e-6
-  l = list()
-  print("com "+n_components)
   n =  nrow(X)
   d = ncol(X)
+  resp = compute_responsiblities(X,n, n_components, init_params)
+  [weight, mean, sigma, precision_chol] = initialize(X, resp, n_components, model, reg_covar)
+}
+
+compute_responsiblities = function(Matrix[Double] X, Integer n, Integer n_components, String init_params)
+return(Matrix[Double] resp)
+{
   resp = matrix(0,n, n_components)
   if(init_params == "kmeans")
   {
 
     [C, Y] = kmeans(X, n_components, 10, 10, 0.0000001, FALSE, 25)
-    print("y \n"+toString(Y))
     resp = resp + t(seq(1,n_components))
-    print("resp" +toString(resp))
-    # resp = outer(Y, resp, "==")
     resp = resp == Y
     
   }
@@ -294,70 +85,122 @@ return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma)
     resp = Rand(rows = n, cols=n_components)   
     resp = resp/rowSums(resp)
   }
-  else stop("invalid parameter value, expected kmeans or random found "+init_params)
-  print("resp matrix \n"+toString(resp))
-  nk = colSums(resp)
-  print("nk "+toString(nk))
+  else stop("invalid parameter value, expected kmeans or random found "+init_params) 
+}
+
+initialize = function(Matrix[Double] X, Matrix[Double] resp, Integer n_components, String model,  Double reg_covar)
+return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma, List[Unknown] precision_chol)  
+{
+  n =  nrow(X)
+  [weight, mean, sigma] = estimate_gaussian_param(X, resp, n_components, model, reg_covar)
+  weight = weight/n
+  precision_chol = compute_precision_cholesky(sigma, model)
+}
+
+estimate_gaussian_param = function(Matrix[Double] X, Matrix[Double] resp, Integer n_components, String model, Double reg_covar)
+return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma)
+{
+  l = list()
+  n =  nrow(X)
+  # estimate Gaussian parameter
+  nk = colSums(resp) #+ 2.220446049250313e-15
   mu = (t(resp) %*% X) / t(nk)
   sigma = list()
   if(model == "VVV")
   { 
-    for(k in 1:n_components)
-    {
-      diff = X - mu[k,]
-      cov = (t(diff * resp[, k]) %*% diff) / nk[,k]
-      cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
-      sigma = append(sigma, cov)
-    }      
+    sigma = covariances_VVV(X, resp, mu, nk, reg_covar)
+    
   }
   else if(model == "EEE")
   { 
-    avgX2 = t(X) %*% X
-    avgMean = t(mu * nk) %*% mu
-    cov = avgX2 - avgMean
-    cov /= sum(nk)
-    cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
-    sigma = append(sigma, cov)
+    sigma = covariances_EEE(X, resp, mu, nk, reg_covar)
   }
   else if(model ==  "VVI")
   {
-    avgX2 = (t(resp) %*% (X*X)) / t(nk)
-    avgMean = mu ^ 2
-    avgMean2 = mu * (t(resp) %*% X) / t(nk)
-    cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
-    sigma = append(sigma, cov)
+    sigma = covariances_VVI(X, resp, mu, nk, reg_covar)
   }
   else if (model == "VII")
   {
-    avgX2 = (t(resp) %*% (X*X)) / t(nk)
-    avgMean = mu ^ 2
-    avgMean2 = mu * (t(resp) %*% X) / t(nk)
-    cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
-    sigma = append(sigma, colMeans(cov))
+    sigma = covariances_VII(X, resp, mu, nk, reg_covar)
   }
   weight = nk
-  mean = mu # n_components * n_features
+  mean = mu # n_components * n_features   
+  
 }
+
+covariances_VVV = function(Matrix[Double] X, Matrix[Double] resp, Matrix[Double] mu, Matrix[Double] nk, Double reg_covar)
+return(List[Unknown] sigma)
+{
+  sigma = list()
+  for(k in 1:nrow(mu))
+  {
+    diff = X - mu[k,]
+    cov = (t(diff * resp[, k]) %*% diff) / nk[,k]
+    cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
+    # cov = cov + t(cov)
+    # print(k+" sigma mat before \n"+toString(cov))
+    # print("p1\n"+sum(diag(cov - t(cov))) == 0)
+    # print("diag\n"+toString(diag(cov - t(cov))))
+    sigma = append(sigma, cov)
+  }      
+  
+}
+
+covariances_EEE = function(Matrix[Double] X, Matrix[Double] resp, Matrix[Double] mu, Matrix[Double] nk, Double reg_covar)
+return(List[Unknown] sigma)
+{
+  sigma = list()
+  avgX2 = t(X) %*% X
+  avgMean = t(mu * t(nk)) %*% mu
+  cov = avgX2 - avgMean
+  cov = cov / sum(nk)
+  cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
+  sigma = append(sigma, cov)
+}
+
+covariances_VVI = function(Matrix[Double] X, Matrix[Double] resp, Matrix[Double] mu, Matrix[Double] nk, Double reg_covar)
+return(List[Unknown] sigma)
+{
+  sigma = list()
+  avgX2 = (t(resp) %*% (X*X)) / t(nk)
+  avgMean = mu ^ 2
+  avgMean2 = mu * (t(resp) %*% X) / t(nk)
+  cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
+  sigma = append(sigma, cov)
+}
+
+covariances_VII = function(Matrix[Double] X, Matrix[Double] resp, Matrix[Double] mu, Matrix[Double] nk, Double reg_covar)
+return(List[Unknown] sigma)
+{
+  sigma = list()
+  avgX2 = (t(resp) %*% (X*X)) / t(nk)
+  avgMean = mu ^ 2
+  avgMean2 = mu * (t(resp) %*% X) / t(nk)
+  cov = avgX2 - 2 * avgMean + avgMean2 + reg_covar
+  sigma = list(rowMeans(cov))
+}
+
 
 compute_precision_cholesky = function(List[Unknown] sigma, String model)
 return (List[Unknown] precision_chol)
 {
   precision_chol = list()
-  d = ncol(as.matrix(sigma[1]))
-  if(model == "VVV")
-  { 
+
+  if(model == "VVV") {
+    # d = ncol(as.matrix(sigma[1]))
     comp = length(sigma)
     for(k in 1:length(sigma))
     {
       cov_chol = cholesky(as.matrix(sigma[k]))
-      pre_chol = t(solve(cov_chol, diag(matrix(1, d, 1))))
+      pre_chol = t(inv(cov_chol))                      
       precision_chol = append(precision_chol, pre_chol)
     }      
   }
   else if(model == "EEE")
-  { 
+  {
+    # d = ncol(as.matrix(sigma[1]))
     cov_chol = cholesky(as.matrix(sigma[1]))
-    pre_chol = t(solve(cov_chol, diag(matrix(1, d, 1))))
+    pre_chol = t(inv(cov_chol))
     precision_chol = append(precision_chol, pre_chol)
   }
   else{
@@ -374,18 +217,28 @@ return (List[Unknown] precision_chol)
   }
 }
 
-e_step = function(Matrix[Double] w)
+e_step = function(Matrix[Double] X, Matrix[Double] w, Matrix[Double] mu, List[Unknown] precisions_cholesky, String model)
 return(Double norm, Matrix[Double] log_resp){
-  weighted_log_prob = estimate_weighted_log_prob(X, w)
+  weighted_log_prob = estimate_weighted_log_prob(X, w, mu, precisions_cholesky, model)
   log_prob_norm = logsumexp(weighted_log_prob)
-  log_resp = weighted_log_prob - t(log_prob_norm)
+  log_resp = weighted_log_prob - log_prob_norm
   norm = mean(log_prob_norm)
+  # norm = 0
+  # log_resp = as.matrix(0)
 }
 
-estimate_weighted_log_prob = function(Matrix[Double] X, Matrix[Double] w)
+m_step = function(Matrix[Double] X, Matrix[Double] log_resp, Integer n_components, String model, Double reg_covar)
+return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma, List[Unknown] precision_chol) {
+  n =  nrow(X)
+  [weight, mean, sigma] = estimate_gaussian_param(X, exp(log_resp), n_components, model, reg_covar)
+  weight = weight/n
+  precision_chol = compute_precision_cholesky(sigma, model)
+}
+
+estimate_weighted_log_prob = function(Matrix[Double] X, Matrix[Double] w, Matrix[Double] mu, List[Unknown] precisions_cholesky, String model)
 return (Matrix[Double] weight_log_pro)
 {
-  weight_log_pro = estimate_log_prob(X) + estimate_log_weights(w)
+  weight_log_pro = estimate_log_prob(X, mu, precisions_cholesky, model) + estimate_log_weights(w)
 }
   
 estimate_log_weights = function(Matrix[Double] w)
@@ -394,43 +247,44 @@ return (Matrix[Double] log_weight)
   log_weight = log(w)
 }
 
-estimate_log_prob = function(Matrix[Double] X)
+estimate_log_prob = function(Matrix[Double] X, Matrix[Double] mu, List[Unknown] precisions_cholesky, String model)
 return (Matrix[Double] log_prob)
 {
-  est_weight_log_pro = estimate_log_gaussian_prob(
-            X, self.means_, self.precisions_cholesky_, self.covariance_type)
+  log_prob = estimate_log_gaussian_prob(
+            X, mu, precisions_cholesky, model)
 }
 
 compute_log_det_cholesky = function(List[Unknown] mat_chol, String model, Integer d)
-return(Matrix[Double] log_det_chol)
+return(Matrix[Double] log_det_cholesky)
 {
   comp = length(mat_chol)
 
   if(model == "VVV")
   { 
-    log_det_chol == matrix(0, 1, comp) 
-    for(k in 1:n_components)
+    log_det_chol = matrix(0, 1, comp) 
+    for(k in 1:comp)
     {
       mat = as.matrix(mat_chol[k])
-      log_det = sum(log(diag(mat)))   # have to take the log of diag elements only
-      log_det_chol[1,k] = as.scalar(log_det)
+      log_det = sum(log(diag(t(mat))))   # have to take the log of diag elements only
+      log_det_chol[1,k] = log_det
     }      
   }
   else if(model == "EEE")
   { 
     mat = as.matrix(mat_chol[1])
-    log_det_chol = sum(log(diag(mat))) 
+    log_det_chol = as.matrix(sum(log(diag(mat))))
   }
   else if(model ==  "VVI")
   {
     mat = as.matrix(mat_chol[1])
-    log_det_chol = rowSums(log(mat))
+    log_det_chol = t(rowSums(log(mat)))
   }
   else if (model == "VII")
   {
     mat = as.matrix(mat_chol[1])
-    log_det_chol = d * log(mat)
+    log_det_chol = t(d * log(mat))
   }
+  log_det_cholesky = log_det_chol
 }
 
 estimate_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu, List[Unknown] prec_chol, String model)
@@ -440,20 +294,20 @@ return(Matrix[Double] es_log_prob ) # nrow(X) * n_components
   d = ncol(X)
   n_components = nrow(mu)
 
-  log_det = compute_log_det_cholesky(pre_chol, model, d)
+  log_det = compute_log_det_cholesky(prec_chol, model, d)
   if(model == "VVV")
   { 
-    log_prob == matrix(0, n, n_components) 
+    log_prob = matrix(0, n, n_components) 
     for(k in 1:n_components)
     {
-      prec = as.matrix(prec_chol[k])
-      y = X %*% prec - mu[k,] %*% prec  
+      prec = as.matrix(prec_chol[k]) 
+      y = X %*% prec - mu[k,] %*% prec  # changing here t intro:  y = X %*% prec - mu[k,] %*% prec 
       log_prob[, k] = rowSums(y*y)
     }      
   }
   else if(model == "EEE")
   { 
-    log_prob == matrix(0, n, n_components) 
+    log_prob = matrix(0, n, n_components) 
     prec = as.matrix(prec_chol[1])
     for(k in 1:n_components) {
       y = X %*% prec - mu[k,] %*% prec
@@ -464,18 +318,19 @@ return(Matrix[Double] es_log_prob ) # nrow(X) * n_components
   {
     prec = as.matrix(prec_chol[1])
     precisions = prec^2
-    log_prob = (rowSums(mu^2 * precisions) -
+    bc_matrix = matrix(1,nrow(X), nrow(mu))
+    log_prob = (bc_matrix*t(rowSums(mu^2 * precisions)) -
                     2. * (X %*% t(mu * precisions)) +
                     X^2 %*% t(precisions))
   }
   else if (model == "VII")
   {
     prec = as.matrix(prec_chol[1])
-    precisions = prec^2
-    precisions = precisions_chol ** 2
-    log_prob = (rowSums(mu^2) * precisions -
-                    2 * X %*% (t(mu) * precisions) +
-                    outer(rowSums(X*X), precisions, "*")) # TODO replace rowSums(X*X) with squared rowNorm() built-in
+    precisions = prec^ 2
+    bc_matrix = matrix(1,nrow(X), nrow(mu))
+    log_prob = (bc_matrix * t(rowSums(mu^2) * precisions) -
+                    2 * X %*% t(mu * precisions) +
+                    rowSums(X*X) %*% t(precisions) ) # TODO replace rowSums(X*X) with squared rowNorm() built-in
   }
   es_log_prob = -.5 * (d * log(2 * pi) + log_prob) + log_det
 }
@@ -487,4 +342,56 @@ return(Matrix[Double] soft)
   ds = M - max
   sumOfexp = rowSums(exp(ds))
   soft = max + log(sumOfexp)
+}
+
+estimate_free_param = function(Integer n_components, Integer n_features, String model)
+return (Integer n_parameters)
+{
+  if(model == "VVV")
+    cov_param = n_components * n_features * (n_features + 1) / 2
+  else if(model == "EEE")
+    cov_param = n_features * (n_features + 1) / 2
+  else if (model == "VVI")
+    cov_param = n_components * n_features
+  else if (model == "VII")
+    cov_param = n_components
+  else 
+    stop("invalid model expecting any of [VVV,EEE,VVI,VII], found "+model)
+  mean_param = n_features * n_components
+  
+  n_parameters = as.integer( cov_param + mean_param + n_components - 1 )
+
+}
+
+fit = function(Matrix[Double] X, Integer n_components, String model, String init_params, Integer iter , Double reg_covar, Double tol)
+return (Matrix[Double] label, Matrix[Double] predict_prob, Double log_prob_norm)
+{
+
+  lower_bound = 0
+  converged = FALSE
+  n = nrow(X)
+  [weight, mean, sigma, precision_chol] = initialize_param(X, n_components,init_params, model, reg_covar)
+  i = 1
+  while(i < iter & !converged)
+  {
+    print("iteration "+i)
+    prev_lower_bound = lower_bound
+    [log_prob_norm, log_resp] = e_step(X,weight, mean, precision_chol, model)
+    [weight, mean, sigma, precision_chol] = m_step(X, log_resp, n_components, model, reg_covar)
+    lower_bound = log_prob_norm
+    change = lower_bound - prev_lower_bound
+    if(abs(change) < tol)
+      converged = TRUE
+    i = i+1
+    
+  }
+  [log_prob_norm, log_resp] = e_step(X,weight, mean, precision_chol, model)
+  label = rowIndexMax(log_resp)
+  predict_prob = exp(log_resp)
+}
+
+getBIC = function(Integer n, Double norm, Integer df)
+return(Double bic)
+{
+  bic = -2 * norm * n + df * log(n)
 }

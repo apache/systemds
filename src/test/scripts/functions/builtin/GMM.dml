@@ -19,25 +19,14 @@
 #
 #-------------------------------------------------------------
 
-# X = read($1)
+
 X = read($1, data_type = "frame", format = "csv")
-# X = as.matrix(X[, 2:5])
-X = as.matrix(cbind(X[,2:5],X[, 2:5]))
-prob = gmm(X=X, n_components = $2,  model = $4,  iter = $3, init_params = "kmeans", eps = $5, verbose=TRUE)
+X = as.matrix(X[, 2:5])
+[prob, labels, df, bic] = gmm(X=X, n_components = $2,  model = $3,  init_params = $4, iter = $5, reg_covar = $6, tol = $7, verbose=TRUE)
 out = (rowMaxs(prob) < 0.7)
-print("outlier"+toString(out))
-maxi = (prob == rowMaxs(prob))
-cluster = colSums(maxi)
-clusMean = matrix(0, ncol(prob), ncol(X))
-for(i in 1:ncol(prob))
-{
-  iPoints = colSums(X * maxi[,i])
-  clusMean[i,] = iPoints/cluster[1,i]
-}
-
-
-print("this is cluster "+toString(cluster))
-print("this is mean "+toString(clusMean))
-write(prob, $6)
-# out = rowSums(t(clusMean))
-write(out, $7)
+cluster = colSums(prob == rowMaxs(prob))
+print("clusters "+toString(cluster))
+print("bic "+bic)
+print("df "+df)
+write(prob, $8)
+write(out, $9)

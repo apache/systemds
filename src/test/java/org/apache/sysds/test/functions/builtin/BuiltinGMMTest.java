@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -38,7 +37,8 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinGMMTest.class.getSimpleName() + "/";
 
-	private final static double eps = 0.1;
+	private final static double eps = 1;
+	private final static double tol = 1e-4;
 	private final static int rows = 100;
 	private final static double spDense = 0.99;
 	private final static String DATASET = SCRIPT_DIR +"functions/transform/input/iris/iris.csv";
@@ -48,21 +48,28 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 	}
 
+
 	@Test
 	public void testGMMM1() {
-		runGMMTest(1,200,"VVV",2, LopProperties.ExecType.CP);
+		runGMMTest(3,"VVV","random",100,0.000001,2, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM2() {
-		runGMMTest(2,200,"VVV",2, LopProperties.ExecType.CP);
+		runGMMTest(3,"EEE", "random",100, 0.000001,2, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM3() {
-		runGMMTest(3,200,"EEE",2, LopProperties.ExecType.CP);
+		runGMMTest(3,"VVI","random",100,0.000001,2, LopProperties.ExecType.CP);
 	}
-	private void runGMMTest(int G_mixtures, int iter, String model, int test,  LopProperties.ExecType instType)
+
+	@Test
+	public void testGMMM4() {
+		runGMMTest(3,"VII","random",100,0.000001, 2, LopProperties.ExecType.CP);
+	}
+
+	private void runGMMTest(int G_mixtures, String model, String init_param,  int iter, double reg, int test,  LopProperties.ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 
@@ -71,10 +78,10 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-args", DATASET, String.valueOf(G_mixtures), String.valueOf(iter), model, String.valueOf("0.00000001"),output("B"), output("O") };
+			programArgs = new String[]{ "-args", DATASET, String.valueOf(G_mixtures), model, init_param, String.valueOf(iter),String.valueOf(reg), String.valueOf(tol),output("B"), output("O") };
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + DATASET + " " + model + " "  +String.valueOf(G_mixtures)+ " "+ expectedDir();
+			rCmd = "Rscript" + " " + fullRScriptName + " " + DATASET + " " + String.valueOf(G_mixtures) + " "  +model+ " "+expectedDir();
 
 			if(test ==1 ) {
 				//generate actual dataset
@@ -108,11 +115,11 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 			}
 
 			runTest(true, false, null, -1);
-//			runRScript(true);
+			runRScript(true);
 
 			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("O");
-			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromFS("O");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
+			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			System.out.println(dmlfile.values().iterator().next().doubleValue());
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}

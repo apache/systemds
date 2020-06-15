@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.privacy;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -30,23 +30,33 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class PrivacyMonitor 
-{
-	//TODO maybe maintain a log of checked constaints for transfers
-	// in order to provide 'privacy explanations' similar to our stats 
-	private static ConcurrentHashMap<PrivacyLevel,LongAdder> checkedConstraints = new ConcurrentHashMap<PrivacyLevel,LongAdder>();
+{ 
+	private static HashMap<PrivacyLevel,LongAdder> checkedConstraints;
+
+	static {
+		checkedConstraints = new HashMap<PrivacyLevel,LongAdder>();
+		for ( PrivacyLevel level : PrivacyLevel.values() ){
+			checkedConstraints.put(level, new LongAdder());
+		}
+	}
+
 	private static boolean checkPrivacy = false;
 
-	public static ConcurrentHashMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
+	public static HashMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
 		return checkedConstraints;
 	}
 
 	private static void incrementCheckedConstraints(PrivacyLevel privacyLevel){
-		if ( checkPrivacy )
-			checkedConstraints.computeIfAbsent(privacyLevel, k -> new LongAdder()).increment();
+		if ( checkPrivacy ){
+			if ( privacyLevel == null )
+				throw new NullPointerException("Cannot increment checked constraints log: Privacy level is null.");
+			checkedConstraints.get(privacyLevel).increment();
+		}
+			
 	}
 
 	public static void clearCheckedConstraints(){
-		checkedConstraints.clear();
+		checkedConstraints.replaceAll((k,v)->new LongAdder());
 	}
 
 	public static void setCheckPrivacy(boolean checkPrivacyParam){
@@ -69,7 +79,7 @@ public class PrivacyMonitor
 						((CacheableData<?>)dataObject).setPrivacyConstraints(null);
 						break;
 					case Private:
-					case PrivateAggregation: 
+					case PrivateAggregation:
 						throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
 					default:
 						throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");

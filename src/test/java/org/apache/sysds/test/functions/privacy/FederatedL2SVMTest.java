@@ -375,8 +375,8 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 				compareResults(1e-9);
 			}
 
-			//if ( expectedPrivacyLevel != null)
-			//	assert(checkedPrivacyConstraintsContains(expectedPrivacyLevel));
+			if ( expectedPrivacyLevel != null)
+				assert(checkedPrivacyConstraintsContains(expectedPrivacyLevel));
 		}
 		finally {
 			TestUtils.shutdownThreads(t1, t2);

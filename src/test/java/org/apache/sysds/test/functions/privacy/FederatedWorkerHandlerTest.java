@@ -24,7 +24,6 @@ import java.util.Arrays;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -270,7 +269,6 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	@Test
 	public void matVecMultPrivateTest() {
-		CheckedConstraintsLog.reset();
 		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLException.class);
 	}
 
@@ -340,7 +338,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if (expectedException == null)
 			compareResults(1e-9);
 
-		//assert(checkedPrivacyConstraintsContains(privacyLevel));
+		assert(checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThreads(t1, t2);
 

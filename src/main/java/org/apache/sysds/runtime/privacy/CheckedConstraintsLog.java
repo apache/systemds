@@ -19,14 +19,14 @@
 
 package org.apache.sysds.runtime.privacy;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiFunction;
 
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class CheckedConstraintsLog {
-	private static ConcurrentHashMap<PrivacyLevel,LongAdder> checkedConstraintsTotal = new ConcurrentHashMap<PrivacyLevel,LongAdder>();
+	private static HashMap<PrivacyLevel,LongAdder> checkedConstraintsTotal = new HashMap<PrivacyLevel,LongAdder>();
 	private static BiFunction<LongAdder, LongAdder, LongAdder> mergeLongAdders = (v1, v2) -> {
 		v1.add(v2.longValue() );
 		return v1;
@@ -36,7 +36,7 @@ public class CheckedConstraintsLog {
 	 * Adds checkedConstraints to the checked constraints total. 
 	 * @param checkedConstraints constraints checked by federated worker
 	 */
-	public static void addCheckedConstraints(ConcurrentHashMap<PrivacyLevel,LongAdder> checkedConstraints){
+	public static void addCheckedConstraints(HashMap<PrivacyLevel,LongAdder> checkedConstraints){
 		if ( checkedConstraints != null){
 			checkedConstraints.forEach( 
 			(key,value) -> checkedConstraintsTotal.merge( key, value, mergeLongAdders) );
@@ -50,7 +50,7 @@ public class CheckedConstraintsLog {
 		checkedConstraintsTotal.clear();
 	}
 
-	public static ConcurrentHashMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
+	public static HashMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
 		return checkedConstraintsTotal;
 	}
 

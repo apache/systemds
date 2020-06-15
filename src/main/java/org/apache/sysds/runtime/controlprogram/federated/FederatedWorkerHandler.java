@@ -80,6 +80,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedRequest.FedMethod method = request.getMethod();
 		log.debug("Received command: " + method.name());
 		PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
+		PrivacyMonitor.clearCheckedConstraints();
 
 		synchronized (_seq) {
 			FederatedResponse response = constructResponse(request);

@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 
-__all__ = ['full', 'seq', 'rand', 'rev', 'order', 't']
+__all__ = ['full', 'seq', 'rand', 'rev', 'order', 't', 'cholesky']
 
 '''
 Contains a number of different data generators
@@ -30,6 +30,7 @@ from typing import Union, Tuple
 from systemds.operator import OperationNode
 from systemds.context import SystemDSContext
 from systemds.matrix import Matrix
+import numpy as np
 
 def full(sds_context: SystemDSContext, shape: Tuple[int, int], value: Union[float, int]) -> OperationNode:
     """Generates a matrix completely filled with a value
@@ -69,6 +70,7 @@ def rand(sds_context: SystemDSContext, rows: int, cols: int,
          lambd: Union[float, int] = 1) -> OperationNode:
     """Generates a matrix filled with random values
 
+    :param sds_context: SystemDS context
     :param rows: number of rows
     :param cols: number of cols
     :param min: min value for cells
@@ -104,23 +106,69 @@ def rand(sds_context: SystemDSContext, rows: int, cols: int,
 
     return OperationNode(sds_context, 'rand', [], named_input_nodes=named_input_nodes)
 
-def rev(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
-    mat._check_matrix_op()
-    return OperationNode(sds_context, 'rev', [mat])
+
+def rev(sds_context: 'SystemDSContext', X: Matrix) -> 'OperationNode':
+    """ Reverses the rows in a matrix
+
+    :param sds_context: SystemDS context
+    :param X: Input matrix
+    :return: reversed matrix
+    """
+    X._check_matrix_op()
+    return OperationNode(sds_context, 'rev', [X])
 
 
-def order(sds_context: 'SystemDSContext', mat: Matrix, by: int = 1, decreasing: bool = False, index_return: bool = False) -> 'OperationNode':
-    mat._check_matrix_op()
+def order(sds_context: 'SystemDSContext', X: Matrix, by: int = 1, decreasing: bool = False, index_return: bool = False) -> 'OperationNode':
+    """ Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data
 
-    cols = mat._np_array.shape[1]
+    :param sds_context: SystemDS context
+    :param X: Input matrix
+    :param by: Column number
+    :param decreasing: If true the matrix will be sorted in decreasing order
+    :param index_return: If true, theindex numbers will be returned
+    :return: sorted matrix
+    """
+    X._check_matrix_op()
+
+    cols = X._np_array.shape[1]
     if by > cols:
         raise IndexError("Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
 
-    named_input_nodes = {'target': mat, 'by': by, 'decreasing': str(decreasing).upper(), 'index.return': str(index_return).upper()}
+    named_input_nodes = {'target': X, 'by': by, 'decreasing': str(decreasing).upper(), 'index.return': str(index_return).upper()}
 
     return OperationNode(sds_context, 'order', [], named_input_nodes=named_input_nodes)
 
 
-def t(sds_context: 'SystemDSContext', mat: Matrix) -> 'OperationNode':
-    mat._check_matrix_op()
-    return OperationNode(sds_context, 't', [mat])
+def t(sds_context: 'SystemDSContext', X: Matrix) -> 'OperationNode':
+    """ Transposes the input matrix
+
+    :param sds_context: SystemDS context
+    :param X: Input matrix
+    :return: transposed matrix
+    """
+    X._check_matrix_op()
+    return OperationNode(sds_context, 't', [X])
+
+
+def cholesky(sds_context: 'SystemDSContext', X: Matrix) -> 'OperationNode':
+    """ Computes the Cholesky decomposition of a symmetric, positive definite matrix
+
+    :param sds_context: SystemDS context
+    :param X: Input matrix
+    :return: Cholesky decomposition
+    """
+    X._check_matrix_op()
+
+    # check square dimension
+    if X._np_array.shape[0] != X._np_array.shape[1]:
+        raise ValueError("Last 2 dimensions of the array must be square")
+
+    # check if mat is positive definite
+    if not np.all(np.linalg.eigvals(X._np_array)>0):
+        raise ValueError("Matrix is not positive definite")
+
+    # check if mat is symmetric
+    if not np.allclose(X._np_array, X._np_array.transpose()):
+        raise ValueError("Matrix is not symmetric")
+
+    return OperationNode(sds_context, 'cholesky', [X])

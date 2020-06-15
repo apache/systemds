@@ -18,26 +18,25 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import math
-import os
-import random
-import sys
+
 import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import order
+from systemds.matrix.data_gen import cholesky
 from systemds.matrix import Matrix
 
 np.random.seed(7)
+shape = np.random.randint(1, 100)
+A = np.random.rand(shape, shape)
+# set A = MM^T and A is a positive definite matrix
+A = np.matmul(A, A.transpose())
 
-shape = (random.randrange(1, 25), random.randrange(1, 25))
-m = np.random.rand(shape[0], shape[1])
-mx = np.random.rand(1, shape[1])
-my = np.random.rand(shape[0], 1)
-by = random.randrange(1, np.size(m, 1)+1)
+m1 = -np.random.rand(shape, shape)
+m2 = np.asarray([[4, 9], [1, 4]])
+m3 = np.random.rand(shape, shape + 1)
 
-class TestOrder(unittest.TestCase):
+class TestCholesky(unittest.TestCase):
 
     sds: SystemDSContext = None
 
@@ -49,25 +48,27 @@ class TestOrder(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_basic(self):
-        o = order(self.sds, Matrix(self.sds, m), by=by, decreasing=False, index_return=False).compute()
-        s = m[np.argsort(m[:, by-1])]
-        self.assertTrue(np.allclose(o, s))
+    def test_basic1(self):
+        L = cholesky(self.sds, Matrix(self.sds, A)).compute()
+        self.assertTrue(np.allclose(L, np.linalg.cholesky(A)))
 
-    def test_index(self):
-        o = order(self.sds, Matrix(self.sds, m), by=by, decreasing=False, index_return=True).compute()
-        s = np.argsort(m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
+    def test_basic2(self):
+        L = cholesky(self.sds, Matrix(self.sds, A)).compute()
+        # L * L.H = A
+        self.assertTrue(np.allclose(A, np.dot(L, L.T.conj())))
 
-    def test_out_of_bounds(self):
-        by_max = np.size(m, 1) + 2
-        with self.assertRaises(IndexError) as context:
-            order(self.sds, Matrix(self.sds, m), by=by_max).compute()
+    def test_pos_def(self):
+        with self.assertRaises(ValueError) as context:
+            cholesky(self.sds, Matrix(self.sds, m1)).compute()
 
-    def test_decreasing(self):
-        o = order(self.sds, Matrix(self.sds, m), by=by, decreasing=True, index_return=True).compute()
-        s = np.argsort(-m[:, by - 1]) + 1
-        self.assertTrue(np.allclose(np.transpose(o), s))
+    def test_symmetric_matrix(self):
+        np.linalg.cholesky(m2)
+        with self.assertRaises(ValueError) as context:
+            cholesky(self.sds, Matrix(self.sds, m2)).compute()
+
+    def test_asymetric_dim(self):
+        with self.assertRaises(ValueError) as context:
+            cholesky(self.sds, Matrix(self.sds, m3)).compute()
 
 
 if __name__ == "__main__":

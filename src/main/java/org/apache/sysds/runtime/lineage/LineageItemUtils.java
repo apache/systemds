@@ -86,6 +86,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 public class LineageItemUtils {
@@ -633,12 +635,39 @@ public class LineageItemUtils {
 	}
 	
 	public static LineageItem replace(LineageItem root, LineageItem liOld, LineageItem liNew) {
+		if( liNew == null )
+			throw new DMLRuntimeException("Invalid null lineage item for "+liOld.getId());
 		root.resetVisitStatusNR();
-		rReplace(root, liOld, liNew);
+		rReplaceNR(root, liOld, liNew);
 		root.resetVisitStatusNR();
 		return root;
 	}
 	
+	/**
+	 * Non-recursive equivalent of {@link #rReplace(LineageItem, LineageItem, LineageItem)} 
+	 * for robustness with regard to stack overflow errors.
+	 */
+	public static void rReplaceNR(LineageItem current, LineageItem liOld, LineageItem liNew) {
+		Stack<LineageItem> q = new Stack<>();
+		q.push(current);
+		while( !q.empty() ) {
+			LineageItem tmp = q.pop();
+			if( tmp.isVisited() || tmp.getInputs() == null )
+				continue;
+			//process children until old item found, then replace
+			for(int i=0; i<tmp.getInputs().length; i++) {
+				LineageItem ctmp = tmp.getInputs()[i];
+				if (liOld.getId() == ctmp.getId() && liOld.equals(ctmp))
+					tmp.setInput(i, liNew);
+				else
+					q.push(ctmp);
+			}
+			tmp.setVisited(true);
+		}
+	}
+	
+	@Deprecated
+	@SuppressWarnings("unused")
 	private static void rReplace(LineageItem current, LineageItem liOld, LineageItem liNew) {
 		if( current.isVisited() || current.getInputs() == null )
 			return;
@@ -648,7 +677,7 @@ public class LineageItemUtils {
 		for(int i=0; i<current.getInputs().length; i++) {
 			LineageItem tmp = current.getInputs()[i];
 			if (liOld.equals(tmp))
-				current.getInputs()[i] = liNew;
+				current.setInput(i, liNew);
 			else
 				rReplace(tmp, liOld, liNew);
 		}
@@ -671,7 +700,7 @@ public class LineageItemUtils {
 			if (li.isLeaf() && li.getType() != LineageItemType.Literal
 				&& li.getData().startsWith(LPLACEHOLDER))
 				//order-preserving replacement. IN#<xxx> represents relative position xxx
-				root.getInputs()[i] = newleaves[Integer.parseInt(li.getData().substring(3))];
+				root.setInput(i, newleaves[Integer.parseInt(li.getData().substring(3))]);
 			else
 				rReplaceDagLeaves(li, newleaves);
 		}
@@ -690,6 +719,25 @@ public class LineageItemUtils {
 				rGetDagLeaves(leaves, li);
 		}
 		root.setVisited();
+	}
+	
+	public static void checkCycles(LineageItem current) {
+		current.resetVisitStatusNR();
+		rCheckCycles(current, new HashSet<Long>(), true);
+		current.resetVisitStatusNR();
+	}
+	
+	public static void rCheckCycles(LineageItem current, Set<Long> probe, boolean useObjIdent) {
+		if( current.isVisited() )
+			return;
+		long id = useObjIdent ? System.identityHashCode(current) : current.getId();
+		if( probe.contains(id) )
+			throw new DMLRuntimeException("Cycle detected for "+current.toString());
+		probe.add(id);
+		if( current.getInputs() != null )
+			for(LineageItem li : current.getInputs())
+				rCheckCycles(li, probe, useObjIdent);
+		current.setVisited();
 	}
 	
 	private static Hop[] createNaryInputs(LineageItem item, Map<Long, Hop> operands) {
@@ -766,5 +814,4 @@ public class LineageItemUtils {
 		return(CPOpInputs != null ? LineageItemUtils.getLineage(ec, 
 			CPOpInputs.toArray(new CPOperand[CPOpInputs.size()])) : null);
 	}
-	
 }

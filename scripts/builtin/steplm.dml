@@ -98,7 +98,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
 
   # First pass to examine single features
   AICs = matrix(0, 1, m_orig);
-  parfor (i in 1:m_orig, check = 0) {
+  parfor (i in 1:m_orig) {
     [AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, icpt, reg, tol, maxi, verbose);
     AICs[1, i] = AIC_1;
     beta_out_all[1:nrow(beta_out_i), i] = beta_out_i;
@@ -129,25 +129,25 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     while (continue) {
       # Subsequent passes over the features
       beta_out_all_2 = matrix(0, boa_ncol, m_orig * 1);
-      AICs = matrix(0, 1, m_orig); # full overwrite
-      parfor (i in 1:m_orig, check = 0) {
+      AICs_2 = matrix(0, 1, m_orig); # full overwrite
+      parfor (i in 1:m_orig) {
         if (as.scalar(columns_fixed[1, i]) == 0) {
           # Construct the feature matrix
-          X = cbind(X_global, X_orig[, i]);
-          [AIC_2, beta_out_i] = linear_regression(X, y, icpt, reg, tol, maxi, verbose);
-          AICs[1, i] = AIC_2;
-          beta_out_all_2[1:nrow(beta_out_i), i] = beta_out_i;
+          Xi = cbind(X_global, X_orig[, i]);
+          [AIC_2, beta_out_i2] = linear_regression(Xi, y, icpt, reg, tol, maxi, verbose);
+          AICs_2[1, i] = AIC_2;
+          beta_out_all_2[1:nrow(beta_out_i2), i] = beta_out_i2;
         }
         else {
-          AICs[1,i] = Inf;
+          AICs_2[1,i] = Inf;
         }
       }
 
       # Determine the best AIC
       AIC_best_orig = AIC_best;
-      AIC_best = min(min(AICs), AIC_best_orig);
+      AIC_best = min(min(AICs_2), AIC_best_orig);
       AIC_check = checkAIC(AIC_best, AIC_best_orig, thr);
-      column_best = ifelse(AIC_check, as.scalar(rowIndexMin(AICs)), column_best);
+      column_best = ifelse(AIC_check, as.scalar(rowIndexMin(AICs_2)), column_best);
 
       # have the best beta store in the matrix
       beta_best = beta_out_all_2[, column_best];

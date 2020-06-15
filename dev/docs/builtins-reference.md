@@ -24,13 +24,22 @@ limitations under the License.
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
+    * [`cvlm`-Function](#cvlm-function)
+    * [`discoverFD`-Function](#discoverFD-function)
+    * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
+    * [`img_brightness`-Function](#img_brightness-function)
+    * [`img_crop`-Function](#img_crop-function)
+    * [`img_mirror`-Function](#img_mirror-function)
+    * [`imputeByFD`-Function](#imputeByFD-function)
+    * [`intersect`-Function](#intersect-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
     * [`mice`-Function](#mice-function)
+    * [`multiLogReg`-Function](#multiLogReg-function)
     * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
     * [`sigmoid`-Function](#sigmoid-function)
@@ -158,6 +167,100 @@ y = toOneHot(X, numClasses)
 [ConfusionSum, ConfusionAvg] = confusionMatrix(P=z, Y=y)
 ```
 
+## `cvlm`-Function
+
+The `cvlm`-function is used for cross-validation of the provided data model. This function follows a non-exhaustive
+cross validation method. It uses [`lm`](#lm-function) and [`lmpredict`](#lmpredict-function) functions to solve the linear
+regression and to predict the class of a feature vector with no intercept, shifting, and rescaling.
+
+### Usage
+```r
+cvlm(X, y, k)
+```
+
+### Arguments
+| Name | Type           | Default  | Description |
+| :--- | :------------- | :------- | :---------- |
+| X    | Matrix[Double] | required | Recorded Data set into matrix |
+| y    | Matrix[Double] | required | 1-column matrix of response values.  |
+| k    | Integer        | required | Number of subsets needed, It should always be more than `1` and less than `nrow(X)` |
+| icpt | Integer        | `0`      | Intercept presence, shifting and rescaling the columns of X |
+| reg  | Double         | `1e-7`   | Regularization constant (lambda) for L2-regularization. set to nonzero for highly dependant/sparse/numerous features |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Response values |
+| Matrix[Double] | Validated data set |
+
+### Example
+```r
+X = rand (rows = 5, cols = 5)
+y = X %*% rand(rows = ncol(X), cols = 1)
+[predict, beta] = cvlm(X = X, y = y, k = 4)
+```
+
+## `discoverFD`-Function
+
+The `discoverFD`-function finds the functional dependencies.
+
+### Usage
+```r
+discoverFD(X, Mask, threshold)
+```
+
+### Arguments
+| Name      | Type   | Default | Description |
+| :-------- | :----- | ------- | :---------- |
+| X         | Double | --      | Input Matrix X, encoded Matrix if data is categorical |
+| Mask      | Double | --      | A row vector for interested features i.e. Mask =[1, 0, 1] will exclude the second column from processing |
+| threshold | Double | --      | threshold value in interval [0, 1] for robust FDs |
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| Double | matrix of functional dependencies |
+
+
+## `glm`-Function
+
+The `glm`-function  is a flexible generalization of ordinary linear regression that allows for response variables that have
+error distribution models.
+
+### Usage
+```r
+glm(X,Y)
+```
+
+### Arguments
+| Name | Type           | Default  | Description |
+| :--- | :------------- | :------- | :---------- |
+| X    | Matrix[Double] | required | matrix X of feature vectors |
+| Y    | Matrix[Double] | required | matrix Y with either 1 or 2 columns: if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg) |
+| dfam | Int            | `1`      | Distribution family code: 1 = Power, 2 = Binomial |
+| vpow | Double         | `0.0`    | Power for Variance defined as (mean)^power (ignored if dfam != 1):  0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian |
+| link | Int            | `0`      | Link function code: 0 = canonical (depends on distribution), 1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit |
+| lpow | Double         | `1.0`    | Power for Link function defined as (mean)^power (ignored if link != 1):  -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity |
+| yneg | Double         | `0.0`    | Response value for Bernoulli "No" label, usually 0.0 or -1.0 |
+| icpt | Int            | `0`      | Intercept presence, X columns shifting and rescaling: 0 = no intercept, no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1 |
+| reg  | Double         | `0.0`    | Regularization parameter (lambda) for L2 regularization |
+| tol  | Double         | `1e-6`   | Tolerance (epislon) value. |
+| disp | Double         | `0.0`    | (Over-)dispersion value, or 0.0 to estimate it from data |
+| moi  | Int            | `200`    | Maximum number of outer (Newton / Fisher Scoring) iterations |
+| mii  | Int            | `0`      | Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum |
+
+### Returns
+| Type           | Description      |
+| :------------- | :--------------- |
+| Matrix[Double] | Matrix whose size depends on icpt ( icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2) |
+
+### Example
+```r
+X = rand (rows = 5, cols = 5 )
+y = X %*% rand(rows = ncol(X), cols = 1)
+beta = glm(X=X,Y=y)
+```
+
 ## `gridSearch`-Function
 
 The `gridSearch`-function is used to find the optimal hyper-parameters of a model which results in the most _accurate_
@@ -193,6 +296,115 @@ params = list("reg", "tol", "maxi")
 paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
 [B, opt]= gridSearch(X=X, y=y, train="lm", predict="lmPredict", params=params, paramValues=paramRanges, verbose = TRUE)
 ```
+
+## `img_brightness`-Function
+
+The `img_brightness`-function is an image data augumentation function.
+It changes the brightness of the image.
+
+### Usage
+```r
+img_brightness(img_in, value, channel_max)
+```
+
+### Arguments
+| Name        | Type           | Default  | Description |
+| :---------- | :------------- | -------- | :---------- |
+| img_in      | Matrix[Double] | ---      | Input matrix/image |
+| value       | Double         | ---      | The amount of brightness to be changed for the image |
+| channel_max | Integer        | ---      | Maximum value of the brightness of the image |
+
+### Returns
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| img_out | Matrix[Double] | ---      | Output matrix/image |
+
+### Example
+```r
+A = rand(rows = 3, cols = 3, min = 0, max = 255)
+B = img_brightness(img_in = A, value = 128, channel_max = 255)
+```
+
+## `img_crop`-Function
+
+The `img_crop`-function is an image data augumentation function.
+It cuts out a subregion of an image.
+
+### Usage
+```r
+img_crop(img_in, w, h, x_offset, y_offset)
+```
+
+### Arguments
+| Name     | Type           | Default  | Description |
+| :------  | :------------- | -------- | :---------- |
+| img_in   | Matrix[Double] | ---      | Input matrix/image |
+| w        | Integer        | ---      | The width of the subregion required  |
+| h        | Integer        | ---      | The height of the subregion required |
+| x_offset | Integer        | ---      | The horizontal coordinate in the image to begin the crop operation |
+| y_offset | Integer        | ---      | The vertical coordinate in the image to begin the crop operation |
+
+### Returns
+| Name    | Type           | Default | Description |
+| :------ | :------------- | ------- | :---------- |
+| img_out | Matrix[Double] | ---     | Cropped matrix/image |
+
+### Example
+```r
+A = rand(rows = 3, cols = 3, min = 0, max = 255) 
+B = img_crop(img_in = A, w = 20, h = 10, x_offset = 0, y_offset = 0)
+```
+
+## `img_mirror`-Function
+
+The `img_mirror`-function is an image data augumentation function.
+It flips an image on the `X` (horizontal) or `Y` (vertical) axis. 
+
+### Usage
+```r
+img_mirror(img_in, horizontal_axis)
+```
+
+### Arguments
+| Name            | Type           | Default  | Description |
+| :-------------- | :------------- | -------- | :---------- |
+| img_in          | Matrix[Double] | ---      | Input matrix/image |
+| horizontal_axis | Boolean        | ---      | If TRUE, the  image is flipped with respect to horizontal axis otherwise vertical axis |
+
+### Returns
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| img_out | Matrix[Double] | ---      | Flipped matrix/image |
+
+### Example
+```r
+A = rand(rows = 3, cols = 3, min = 0, max = 255)
+B = img_mirror(img_in = A, horizontal_axis = TRUE)
+```
+
+## `imputeByFD`-Function
+
+The `imputeByFD`-function imputes missing values from observed values (if exist)
+using robust functional dependencies.
+
+### Usage
+```r
+imputeByFD(F, sourceAttribute, targetAttribute, threshold)
+```
+
+### Arguments
+| Name      | Type    | Default  | Description |
+| :-------- | :------ | -------- | :---------- |
+| F         | String  | --       | A data frame |
+| source    | Integer | --       | Source attribute to use for imputation and error correction |
+| target    | Integer | --       | Attribute to be fixed |
+| threshold | Double  | --       | threshold value in interval [0, 1] for robust FDs |
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| String | Frame with possible imputations |
+
 
 ## `KMeans`-Function
 
@@ -264,6 +476,27 @@ X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
 lm(X = X, y = y)
 ```
+
+## `intersect`-Function
+
+The `intersect`-function implements set intersection for numeric data.
+
+### Usage
+```r
+intersect(X, Y)
+```
+
+### Arguments
+| Name | Type   | Default  | Description |
+| :--- | :----- | -------- | :---------- |
+| X    | Double | --       | matrix X, set A |
+| Y    | Double | --       | matrix Y, set B | 
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| Double | intersection matrix, set of intersecting items |
+
 
 ## `lmDS`-Function
 
@@ -386,6 +619,40 @@ F = as.frame(matrix("4 3 2 8 7 8 5", rows=1, cols=7))
 cMask = round(rand(rows=1,cols=ncol(F),min=0,max=1))
 [dataset, singleSet] = mice(F, cMask, iter = 3, complete = 3, verbose = FALSE)
 ```
+
+## `multiLogReg`-Function
+
+The `multiLogReg`-function solves Multinomial Logistic Regression using Trust Region method.
+(See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
+
+### Usage
+```r
+multiLogReg(X, Y, icpt, reg, tol, maxi, maxii, verbose)
+```
+
+### Arguments
+| Name  | Type   | Default | Description |
+| :---- | :----- | ------- | :---------- |
+| X     | Double | --      | The matrix of feature vectors |
+| Y     | Double | --      | The matrix with category labels |
+| icpt  | Int    | `0`     | Intercept presence, shifting and rescaling X columns: 0 = no intercept, no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1 |
+| reg   | Double | `0`     | regularization parameter (lambda = 1/C); intercept is not regularized |
+| tol   | Double | `1e-6`  | tolerance ("epsilon") |
+| maxi  | Int    | `100`   | max. number of outer newton interations |
+| maxii | Int    | `0`     | max. number of inner (conjugate gradient) iterations |
+
+### Returns
+| Type   | Description |
+| :----- | :---------- |
+| Double | Regression betas as output for prediction |
+
+### Example
+```r
+X = rand(rows = 50, cols = 30)
+Y = X %*% rand(rows = ncol(X), cols = 1)
+betas = multiLogReg(X = X, Y = Y, icpt = 2,  tol = 0.000001, reg = 1.0, maxi = 100, maxii = 20, verbose = TRUE)
+```
+
 
 ## `pnmf`-Function
 

@@ -101,8 +101,12 @@ public class LineageCacheEviction
 	private static void removeOrSpillEntry(Map<LineageItem, LineageCacheEntry> cache, LineageCacheEntry e, boolean spill) {
 		if (e._origItem == null) {
 			// Single entry. Remove or spill.
-			if (spill)
-				spillToLocalFS(cache, e);
+			if (spill) {
+				updateSize(e.getSize(), false);                //Release memory
+				spillToLocalFS(cache, e);                      //Spill to disk
+				e.setNullValues();                             //Set null
+				e.setCacheStatus(LineageCacheStatus.SPILLED);  //Set status to spilled
+			}
 			else
 				removeEntry(cache, e);
 			return;
@@ -129,7 +133,9 @@ public class LineageCacheEviction
 		if (write) {
 			// Spill to disk if at least one entry has status TOSPILL. 
 			spillToLocalFS(cache, cache.get(e._origItem));
-			LineageCacheEntry h = cache.get(e._origItem);
+			// Reduce cachesize once for all the entries.
+			updateSize(e.getSize(), false);
+			LineageCacheEntry h = cache.get(e._origItem);  //head
 			while (h != null) {
 				// Set values to null for all the entries.
 				h.setNullValues();
@@ -137,8 +143,6 @@ public class LineageCacheEviction
 				h.setCacheStatus(LineageCacheStatus.SPILLED);
 				h = h._nextEntry;
 			}
-			// Reduce cachesize once for all the entries.
-			updateSize(e.getSize(), false);
 			// Keep them in cache.
 			return;
 		}
@@ -359,9 +363,10 @@ public class LineageCacheEviction
 				h.setValue(mb);
 				h = h._nextEntry;
 			}
-			// Increase cachesize once for all the entries.
-			updateSize(e.getSize(), true);
 		}
+
+		// Increase cachesize once for all the entries.
+		updateSize(e.getSize(), true);
 
 		// Adjust disk reading speed
 		adjustReadWriteSpeed(e, ((double)(t1-t0))/1000000000, true);

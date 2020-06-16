@@ -39,7 +39,7 @@ public class LineageReuseAlg extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "LineageReuseAlg";
-	protected static final int TEST_VARIANTS = 3;
+	protected static final int TEST_VARIANTS = 5;
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageReuseAlg.class.getSimpleName() + "/";
 	
 	@Override
@@ -63,6 +63,16 @@ public class LineageReuseAlg extends AutomatedTestBase {
 	public void testMultiLogRegHybrid() {
 		testLineageTrace(TEST_NAME+"3", ReuseCacheType.REUSE_HYBRID);
 	}
+
+	@Test
+	public void testPCAHybrid() {
+		testLineageTrace(TEST_NAME+"4", ReuseCacheType.REUSE_HYBRID);
+	}
+
+	@Test
+	public void testGridSearchL2svmHybrid() {
+		testLineageTrace(TEST_NAME+"5", ReuseCacheType.REUSE_HYBRID);
+	}
 	
 	@Test
 	public void testStepLMFull() {
@@ -77,6 +87,11 @@ public class LineageReuseAlg extends AutomatedTestBase {
 	@Test
 	public void testMultiLogRegFull() {
 		testLineageTrace(TEST_NAME+"3", ReuseCacheType.REUSE_FULL);
+	}
+
+	@Test
+	public void testPCAFull() {
+		testLineageTrace(TEST_NAME+"4", ReuseCacheType.REUSE_FULL);
 	}
 
 	public void testLineageTrace(String testname, ReuseCacheType reuseType) {
@@ -96,7 +111,6 @@ public class LineageReuseAlg extends AutomatedTestBase {
 			// Without lineage-based reuse enabled
 			List<String> proArgs = new ArrayList<>();
 			proArgs.add("-stats");
-			proArgs.add("-lineage");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

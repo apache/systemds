@@ -129,7 +129,7 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
 		//return last TMP
-		tmp = tmp.replace("%OUT%", _output.getVarname());
+		tmp = tmp.replaceAll("%OUT%", _output.getVarname());
 
 		//replace meta data information
 		tmp = tmp.replace("%TYPE%", getCellType().name());

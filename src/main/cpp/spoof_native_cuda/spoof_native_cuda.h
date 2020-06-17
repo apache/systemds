@@ -70,108 +70,109 @@ public:
       }
 
       switch (op->agg_type) {
-      case SpoofOperator::AggType::FULL_AGG: {
-        // num ctas
-        int NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
-        dim3 grid(NB, 1, 1);
-        dim3 block(NT, 1, 1);
-        unsigned int shared_mem_size = NT * sizeof(T);
+          case SpoofOperator::AggType::FULL_AGG: {
+            // num ctas
+            int NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
+            dim3 grid(NB, 1, 1);
+            dim3 block(NT, 1, 1);
+            unsigned int shared_mem_size = NT * sizeof(T);
 
-        dev_buf_size = sizeof(T) * NB;
-        CHECK_CUDART(cudaMalloc((void **)&d_temp_agg_buf, dev_buf_size));
+            dev_buf_size = sizeof(T) * NB;
+            CHECK_CUDART(cudaMalloc((void **)&d_temp_agg_buf, dev_buf_size));
 
-        // ToDo: connect output to SystemDS logging facilities
-        std::cout << "launching spoof cellwise kernel " << name << " with "
-                  << NT * NB << " threads in " << NB << " blocks and "
-                  << shared_mem_size
-                  << " bytes of shared memory for full aggregation of "
-                  << N << " elements"
-                  << std::endl;
+            // ToDo: connect output to SystemDS logging facilities
+            std::cout << "launching spoof cellwise kernel " << name << " with "
+                      << NT * NB << " threads in " << NB << " blocks and "
+                      << shared_mem_size
+                      << " bytes of shared memory for full aggregation of "
+                      << N << " elements"
+                      << std::endl;
 
-        CHECK_CUDA(op->program.kernel(name)
-            .instantiate(type_of(result))
-            .configure(grid, block, shared_mem_size)
-            .launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix));
+            CHECK_CUDA(op->program.kernel(name)
+                .instantiate(type_of(result))
+                .configure(grid, block, shared_mem_size)
+                .launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix));
 
-        cudaDeviceSynchronize();
-        std::string reduction_kernel_name;
-        std::string reduction_type;
-        std::string suffix = (typeid(T) == typeid(double) ? "_d" : "_f");
+            if(NB > 1) {
+                std::string reduction_kernel_name;
+                std::string reduction_type;
+                std::string suffix = (typeid(T) == typeid(double) ? "_d" : "_f");
 
-        switch(op->agg_type) {
-        case SpoofOperator::AggType::FULL_AGG:
-            reduction_type = "_";
+                switch(op->agg_type) {
+                case SpoofOperator::AggType::FULL_AGG:
+                    reduction_type = "_";
+                    break;
+                case SpoofOperator::AggType::ROW_AGG:
+                    reduction_type = "_row_";
+                    break;
+                case SpoofOperator::AggType::COL_AGG:
+                    reduction_type = "_col_";
+                    break;
+                default:
+                    std::cout << "unknown reduction type" << std::endl;
+                    return result;
+                }
+
+                switch(op->agg_op) {
+                case SpoofOperator::AggOp::MIN:
+                    reduction_kernel_name = "reduce" + reduction_type + "min" + suffix;
+                case SpoofOperator::AggOp::MAX:
+                    reduction_kernel_name = "reduce" + reduction_type + "max" + suffix;
+                case SpoofOperator::AggOp::SUM_SQ:
+                    reduction_kernel_name = "reduce" + reduction_type + "sum_sq" + suffix;
+                default:
+                case SpoofOperator::AggOp::SUM:
+                    reduction_kernel_name = "reduce" + reduction_type + "sum" + suffix;
+                }
+
+                std::cout << "using reduction kernel " << reduction_kernel_name << std::endl;
+
+                CUfunction reduce_kernel = reduction_kernels.find(reduction_kernel_name)->second;
+                N = NB;
+                int iter = 1;
+                while (NB > 1) {
+                    void* args[3] = { &d_temp_agg_buf, &d_temp_agg_buf, &N};
+
+                    NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
+
+                    std::cout << "agg iter " << iter++ << " launching spoof cellwise kernel " << name << " with "
+                    << NT * NB << " threads in " << NB << " blocks and "
+                    << shared_mem_size
+                    << " bytes of shared memory for full aggregation of "
+                    << N << " elements"
+                    << std::endl;
+
+                    CHECK_CUDA(cuLaunchKernel(reduce_kernel, 
+                        NB, 1, 1, 
+                        NT, 1, 1,
+                        shared_mem_size, 0, args, 0));
+                    N = NB;
+                    cudaDeviceSynchronize();
+                }
+            }
+                            
+            CHECK_CUDART(cudaMemcpy(&result, d_temp_agg_buf, sizeof(T), cudaMemcpyDeviceToHost));
+            CHECK_CUDART(cudaFree(d_temp_agg_buf));
             break;
-        case SpoofOperator::AggType::ROW_AGG:
-            reduction_type = "_row_";
-            break;
-        case SpoofOperator::AggType::COL_AGG:
-            reduction_type = "_col_";
-            break;
-        default:
-            std::cout << "unknown reduction type" << std::endl;
-            return result;
-        }
+          }
+          case SpoofOperator::AggType::NO_AGG: 
+          default: {
+            // num ctas
+            int NB = std::ceil((N + NT * VT - 1) / (NT * VT));
+            dim3 grid(NB, 1, 1);
+            dim3 block(NT, 1, 1);
+            std::cout << "launching spoof cellwise kernel " << name << " with " << NT * NB
+                      << " threads in " << NB << " blocks without aggregation for " 
+                      << N << " elements"
+                      << std::endl;
 
-        switch(op->agg_op) {
-        case SpoofOperator::AggOp::MIN:
-            reduction_kernel_name = "reduce" + reduction_type + "min" + suffix;
-        case SpoofOperator::AggOp::MAX:
-            reduction_kernel_name = "reduce" + reduction_type + "max" + suffix;
-        case SpoofOperator::AggOp::SUM_SQ:
-            reduction_kernel_name = "reduce" + reduction_type + "sum_sq" + suffix;
-        default:
-        case SpoofOperator::AggOp::SUM:
-            reduction_kernel_name = "reduce" + reduction_type + "sum" + suffix;
-        }
-
-        std::cout << "using reduction kernel " << reduction_kernel_name << std::endl;
-
-        CUfunction reduce_kernel = reduction_kernels.find(reduction_kernel_name)->second;
-        N = NB;
-        int iter = 1;
-        while (NB > 1) {
-            void* args[3] = { &d_temp_agg_buf, &d_temp_agg_buf, &N};
-
-            NB = std::ceil((N + NT * 2 - 1) / (NT * 2));
-
-            std::cout << "agg iter " << iter++ << " launching spoof cellwise kernel " << name << " with "
-            << NT * NB << " threads in " << NB << " blocks and "
-            << shared_mem_size
-            << " bytes of shared memory for full aggregation of "
-            << N << " elements"
-            << std::endl;
-
-            CHECK_CUDA(cuLaunchKernel(reduce_kernel, 
-                NB, 1, 1, 
-                NT, 1, 1,
-                shared_mem_size, 0, args, 0));
-            N = NB;
-            cudaDeviceSynchronize();
-        }
-
-        CHECK_CUDART(cudaMemcpy(&result, d_temp_agg_buf, sizeof(T), cudaMemcpyDeviceToHost));
-        CHECK_CUDART(cudaFree(d_temp_agg_buf));
-        break;
+            CHECK_CUDA(op->program.kernel(name)
+                .instantiate(type_of(result), VT)
+                .configure(grid, block)
+                .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
+          }
       }
-      case SpoofOperator::AggType::NO_AGG: 
-      default: {
-        // num ctas
-        int NB = std::ceil((N + NT * VT - 1) / (NT * VT));
-        dim3 grid(NB, 1, 1);
-        dim3 block(NT, 1, 1);
-        std::cout << "launching spoof cellwise kernel " << name << " with " << NT * NB
-                  << " threads in " << NB << " blocks without aggregation for " 
-                  << N << " elements"
-                  << std::endl;
-
-        CHECK_CUDA(op->program.kernel(name)
-            .instantiate(type_of(result), VT)
-            .configure(grid, block)
-            .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
-      }
-      }
-
+      
       if (num_scalars > 0)
         CHECK_CUDART(cudaFree(d_scalars));
 

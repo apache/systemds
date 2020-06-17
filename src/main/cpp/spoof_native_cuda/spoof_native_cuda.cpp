@@ -61,8 +61,8 @@ bool SpoofCudaContext::compile_cuda(const std::string &src,
                                     const std::string &name) {
 
     std::string cuda_path = std::string("-I") + std::getenv("CUDA_PATH") + "/include";
-  //std::cout << "compiling cuda kernel " << name << std::endl;
-  //std::cout << src << std::endl;
+  std::cout << "compiling cuda kernel " << name << std::endl;
+  std::cout << src << std::endl;
   //std::cout << "cwd: " << std::filesystem::current_path() << std::endl;
   //std::cout << "cuda_path: " << cuda_path << std::endl;
 

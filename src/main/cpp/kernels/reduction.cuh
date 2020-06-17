@@ -44,10 +44,15 @@ __device__ void reduce(
 	// number of active thread blocks (via gridDim).  More blocks will result
 	// in a larger gridSize and therefore fewer elements per thread
 	while (i < n) {
-		v = reduction_op(v, spoof_op(g_idata[i]));
+		v = reduction_op(v, spoof_op(g_idata[i], i));
 
-		if (i + blockDim.x < n)
-			v = reduction_op(v, spoof_op(g_idata[i + blockDim.x]));
+		if (i + blockDim.x < n)	
+		{
+			//__syncthreads();
+			//printf("loop fetch i(%d)+blockDim.x(%d)=%d, in=%f\n",i, blockDim.x, i + blockDim.x, g_idata[i + blockDim.x]);
+			v = reduction_op(v, spoof_op(g_idata[i + blockDim.x], blockDim.x + i));
+		}
+
 		i += gridSize;
 	}
 

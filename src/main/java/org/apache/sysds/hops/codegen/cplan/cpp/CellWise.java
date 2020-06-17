@@ -32,7 +32,7 @@ public class CellWise implements CodeTemplate {
                 + "     int last_idx = min(first_idx + VT, m * n);\n"
                 + "     #pragma unroll\n"
                 + "     for(int i = first_idx; i < last_idx; i++) {\n"
-                + "         int row = i / m;\n"
+                + "         int row = i / n;\n"
                 + "         int col = i % n;\n"
                 + "         c[i] = genexec(a[i], b, scalars, m, n, grix, row, col);\n"
                 + "     }\n"
@@ -52,11 +52,15 @@ public class CellWise implements CodeTemplate {
             "template<typename T>\n" +
             "struct SpoofCellwiseOp {\n" +
             "   T**b; T* scalars; \n" +
-            "   int m, n, grix, rix, cix;\n" +
-            "   SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix, int rix, int cix) : \n" +
-            "       b(b), scalars(scalars), m(m), n(n), grix(grix), rix(rix), cix(cix) {}\n" +
-            "   __device__  __forceinline__ T operator()(T a) const {\n" +
+            "   int m, n, grix;\n" +
+            "   SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix) : \n" +
+            "       b(b), scalars(scalars), m(m), n(n), grix(grix) {}\n" +
+            "   __device__  __forceinline__ T operator()(T a, int idx) const {\n" +
+            "   int rix = idx / n;\n" +
+            "   int cix = idx % n;\n" +
             "%BODY_dense%" +
+//                    "__syncthreads();\n" +
+//                    "printf(\"idx=%d, rix=%d, cix=%d, out=%f\\n\", idx, rix, cix, %OUT%);\n" +
             "       return %OUT%;\n" +
             "   }\n" +
             "};" +
@@ -64,10 +68,7 @@ public class CellWise implements CodeTemplate {
             "template<typename T>\n" +
             "__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {\n" +
             "   %AGG_TMPL%<T> agg_op;\n" +
-            "   int tid = blockIdx.x * blockDim.x * 2 + threadIdx.x;\n" +
-            "   int rix = tid / m;\n" +
-            "   int cix = tid % n;\n" +
-            "   SpoofCellwiseOp<T> spoof_op(b, scalars, m, n, grix, rix, cix);\n" +
+            "   SpoofCellwiseOp<T> spoof_op(b, scalars, m, n, grix);\n" +
             "   reduce<T, %AGG_TMPL%<T>, SpoofCellwiseOp<T>>(a, c, m*n, %INITIAL_VALUE%, agg_op, spoof_op);\n" +
             "}\n";
 

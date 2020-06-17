@@ -30,7 +30,7 @@
  */
 template<typename T>
 struct IdentityOp {
-	__device__  __forceinline__ T operator()(T a) const {
+	__device__  __forceinline__ T operator()(T a, int idx = 0) const {
 		return a;
 	}
 };

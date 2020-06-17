@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.functions.privacy;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
@@ -43,41 +43,41 @@ public class CheckedConstraintsLogTest extends AutomatedTestBase {
 	
 	@Test
 	public void addCheckedConstraintsEmpty(){
-		HashMap<PrivacyLevel,LongAdder> checked = new HashMap<>();
+		EnumMap<PrivacyLevel,LongAdder> checked = new EnumMap<>(PrivacyLevel.class);
 		CheckedConstraintsLog.addCheckedConstraints(checked);
 		assert(CheckedConstraintsLog.getCheckedConstraints() != null && CheckedConstraintsLog.getCheckedConstraints().isEmpty());
 	}
 
 	@Test
 	public void addCheckedConstraintsSingleValue(){
-		HashMap<PrivacyLevel,LongAdder> checked = getMap(PrivacyLevel.Private, 300);
+		EnumMap<PrivacyLevel,LongAdder> checked = getMap(PrivacyLevel.Private, 300);
 		CheckedConstraintsLog.addCheckedConstraints(checked);
 		assert(CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.Private).longValue() == 300);
 	}
 
 	@Test
 	public void addCheckedConstraintsTwoValues(){
-		HashMap<PrivacyLevel,LongAdder> checked = getMap(PrivacyLevel.Private, 300);
+		EnumMap<PrivacyLevel,LongAdder> checked = getMap(PrivacyLevel.Private, 300);
 		CheckedConstraintsLog.addCheckedConstraints(checked);
-		HashMap<PrivacyLevel,LongAdder> checked2 = getMap(PrivacyLevel.Private, 150);
+		EnumMap<PrivacyLevel,LongAdder> checked2 = getMap(PrivacyLevel.Private, 150);
 		CheckedConstraintsLog.addCheckedConstraints(checked2);
 		assert(CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.Private).longValue() == 450);
 	}
 
 	@Test
 	public void addCheckedConstraintsMultipleValues(){
-		HashMap<PrivacyLevel,LongAdder> checked = getMap(PrivacyLevel.Private, 300);
+		EnumMap<PrivacyLevel,LongAdder> checked = getMap(PrivacyLevel.Private, 300);
 		CheckedConstraintsLog.addCheckedConstraints(checked);
-		HashMap<PrivacyLevel,LongAdder> checked2 = getMap(PrivacyLevel.Private, 150);
+		EnumMap<PrivacyLevel,LongAdder> checked2 = getMap(PrivacyLevel.Private, 150);
 		CheckedConstraintsLog.addCheckedConstraints(checked2);
-		HashMap<PrivacyLevel,LongAdder> checked3 = getMap(PrivacyLevel.PrivateAggregation, 150);
+		EnumMap<PrivacyLevel,LongAdder> checked3 = getMap(PrivacyLevel.PrivateAggregation, 150);
 		CheckedConstraintsLog.addCheckedConstraints(checked3);
 		assert(CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.Private).longValue() == 450 
 		    && CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.PrivateAggregation).longValue() == 150);
 	}
 
-	private HashMap<PrivacyLevel,LongAdder> getMap(PrivacyLevel level, long value){
-		HashMap<PrivacyLevel,LongAdder> checked = new HashMap<>();
+	private EnumMap<PrivacyLevel,LongAdder> getMap(PrivacyLevel level, long value){
+		EnumMap<PrivacyLevel,LongAdder> checked = new EnumMap<>(PrivacyLevel.class);
 		LongAdder valueAdder = new LongAdder();
 		valueAdder.add(value);
 		checked.put(level, valueAdder);

@@ -250,7 +250,7 @@ public class PrivacyPropagator
 	}
 
 	private static void throwExceptionIfPrivacyActivated(Instruction inst, ExecutionContext ec){
-		if ( inst.getPrivacyConstraint() != null && inst.getPrivacyConstraint().getPrivacyLevel().equals(PrivacyLevel.Private) ) {
+		if ( inst.getPrivacyConstraint() != null && inst.getPrivacyConstraint().getPrivacyLevel() == PrivacyLevel.Private ) {
 			throw new DMLPrivacyException("Instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
 		}
 	}
@@ -360,7 +360,7 @@ public class PrivacyPropagator
 			if ( dd instanceof CacheableData ){
 				((CacheableData<?>) dd).setPrivacyConstraints(privacyConstraint);
 				ec.setVariable(outputName, dd);
-			} else if ( privacyConstraint.privacyLevel.equals(PrivacyLevel.Private) || !(dd.getDataType().equals(DataType.SCALAR)) )
+			} else if ( privacyConstraint.privacyLevel == PrivacyLevel.Private || !(dd.getDataType() == DataType.SCALAR) )
 				throw new DMLPrivacyException("Privacy constraint of " + outputName + " cannot be set since it is not an instance of CacheableData and it is not a scalar with privacy level " + PrivacyLevel.PrivateAggregation.name() );
 			// if privacy level is PrivateAggregation and data is scalar, the call should pass without propagating any constraints
 		}

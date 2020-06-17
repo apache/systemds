@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -31,10 +32,10 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class PrivacyMonitor 
 { 
-	private static HashMap<PrivacyLevel,LongAdder> checkedConstraints;
+	private static EnumMap<PrivacyLevel,LongAdder> checkedConstraints;
 
 	static {
-		checkedConstraints = new HashMap<PrivacyLevel,LongAdder>();
+		checkedConstraints = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
 		for ( PrivacyLevel level : PrivacyLevel.values() ){
 			checkedConstraints.put(level, new LongAdder());
 		}
@@ -42,7 +43,7 @@ public class PrivacyMonitor
 
 	private static boolean checkPrivacy = false;
 
-	public static HashMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
+	public static EnumMap<PrivacyLevel,LongAdder> getCheckedConstraints(){
 		return checkedConstraints;
 	}
 

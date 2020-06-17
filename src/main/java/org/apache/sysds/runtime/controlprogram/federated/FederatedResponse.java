@@ -20,7 +20,8 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -39,7 +40,7 @@ public class FederatedResponse implements Serializable {
 	
 	private FederatedResponse.Type _status;
 	private Object[] _data;
-	private HashMap<PrivacyLevel,LongAdder> checkedConstraints;
+	private Map<PrivacyLevel,LongAdder> checkedConstraints;
 	
 	public FederatedResponse(FederatedResponse.Type status) {
 		this(status, null);
@@ -94,9 +95,9 @@ public class FederatedResponse implements Serializable {
 	 * If the map is empty, it means that no privacy constraints were found.
 	 * @param checkedConstraints map of checked constraints from the PrivacyMonitor
 	 */
-	public void setCheckedConstraints(HashMap<PrivacyLevel,LongAdder> checkedConstraints){
+	public void setCheckedConstraints(Map<PrivacyLevel,LongAdder> checkedConstraints){
 		if ( checkedConstraints != null && !checkedConstraints.isEmpty() ){
-			this.checkedConstraints = new HashMap<PrivacyLevel, LongAdder>();
+			this.checkedConstraints = new EnumMap<PrivacyLevel, LongAdder>(PrivacyLevel.class);
 			this.checkedConstraints.putAll(checkedConstraints);
 		}	
 	}

@@ -83,7 +83,10 @@ public abstract class CNode
 	public String getVarname() {
 		return _genVar;
 	}
-	
+
+	public String getVarname(GeneratorAPI api) { return getVarname(); }
+
+
 	public String getVectorLength() {
 		if( getVarname().startsWith("a") )
 			return "len";
@@ -243,6 +246,8 @@ public abstract class CNode
 						return new org.apache.sysds.hops.codegen.cplan.cpp.Unary();
 					else if (caller instanceof CNodeBinary)
 						return new org.apache.sysds.hops.codegen.cplan.cpp.Binary();
+					else if (caller instanceof CNodeTernary)
+						return new org.apache.sysds.hops.codegen.cplan.cpp.Ternary();
 					else
 						return null;
 				}
@@ -256,6 +261,9 @@ public abstract class CNode
 					return new org.apache.sysds.hops.codegen.cplan.java.Unary();
 				else if (caller instanceof CNodeBinary)
 					return new org.apache.sysds.hops.codegen.cplan.java.Binary();
+				else if (caller instanceof CNodeTernary)
+					return new org.apache.sysds.hops.codegen.cplan.java.Ternary();
+
 				else
 					return null;
 			default:

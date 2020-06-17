@@ -165,7 +165,7 @@ public class CNodeBinary extends CNode {
 		
 		//replace input references and start indexes
 		for( int j=0; j<2; j++ ) {
-			String varj = _inputs.get(j).getVarname();
+			String varj = _inputs.get(j).getVarname(api);
 			
 			//replace sparse and dense inputs
 			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");

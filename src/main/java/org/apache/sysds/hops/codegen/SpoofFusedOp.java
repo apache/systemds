@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class SpoofFusedOp extends MultiThreadedHop
 {
@@ -313,11 +314,12 @@ public class SpoofFusedOp extends MultiThreadedHop
 		
 		SpoofFusedOp that2 = (SpoofFusedOp)that;
 		//note: class implies dims type as well
-		boolean ret = ( _class.equals(that2._class)
+		boolean ret = (Objects.equals(_class, that2._class)
 				&& _distSupported == that2._distSupported
 				&& _maxNumThreads == that2._maxNumThreads
 				&& _constDim2 == that2._constDim2
-				&& getInput().size() == that2.getInput().size());
+				&& getInput().size() == that2.getInput().size()
+				&& _api == that2._api);
 		
 		if( ret ) {
 			for( int i=0; i<getInput().size(); i++ )

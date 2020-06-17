@@ -147,7 +147,6 @@ public:
                         NT, 1, 1,
                         shared_mem_size, 0, args, 0));
                     N = NB;
-                    cudaDeviceSynchronize();
                 }
             }
                             

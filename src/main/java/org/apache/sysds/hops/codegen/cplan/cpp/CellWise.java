@@ -35,7 +35,7 @@ public class CellWise implements CodeTemplate {
                 + "     for(int i = first_idx; i < last_idx; i++) {\n"
                 + "         int row = i / n;\n"
                 + "         int col = i % n;\n"
-                + "         c[i] = genexec(a[i], b, scalars, m, n, grix, row, col);\n"
+                + "         c[i] = genexec(a[i], b, scalars, m, n, grix + row, row, col);\n"
                 + "     }\n"
                 + "}\n";
 
@@ -53,15 +53,16 @@ public class CellWise implements CodeTemplate {
             "template<typename T>\n" +
             "struct SpoofCellwiseOp {\n" +
             "   T**b; T* scalars; \n" +
-            "   int m, n, grix;\n" +
+            "   int m, n, grix_;\n" +
             "   SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix) : \n" +
-            "       b(b), scalars(scalars), m(m), n(n), grix(grix) {}\n" +
+            "       b(b), scalars(scalars), m(m), n(n), grix_(grix) {}\n" +
             "   __device__  __forceinline__ T operator()(T a, int idx) const {\n" +
             "   int rix = idx / n;\n" +
             "   int cix = idx % n;\n" +
+            "   int grix = grix_ + rix;\n" +
             "%BODY_dense%" +
 //                    "__syncthreads();\n" +
-//                    "printf(\"idx=%d, rix=%d, cix=%d, out=%f\\n\", idx, rix, cix, %OUT%);\n" +
+//                    "printf(\"idx=%d, grix=%d, rix=%d, cix=%d, m=%d, n=%d, out=%f\\n\", idx, grix, rix, cix, m, n, %OUT%);\n" +
             "       return %OUT%;\n" +
             "   }\n" +
             "};" +

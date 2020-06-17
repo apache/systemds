@@ -117,7 +117,8 @@ public class CNodeCell extends CNodeTpl
 		renameInputs(_inputs, 1);
 	}
 
-	public String codegen(boolean sparse, GeneratorAPI api, GeneratorLang lang) {
+	public String codegen(boolean sparse, GeneratorAPI _api, GeneratorLang lang) {
+		api = _api;
 
 		String tmp = getLanguageTemplateClass(this, api, lang).getTemplate(_type);
 
@@ -237,12 +238,6 @@ public class CNodeCell extends CNodeTpl
 	}
 	@Override
 	public boolean isSupported(GeneratorAPI api) {
-		boolean is_supported = (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA);
-		int i = 0;
-		while(is_supported && i < _inputs.size()) {
-			CNode in = _inputs.get(i++);
-			is_supported = in.isSupported(api);
-		}
-		return  is_supported;
+		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api);
 	}
 }

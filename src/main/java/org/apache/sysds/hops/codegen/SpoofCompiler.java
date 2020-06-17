@@ -728,7 +728,7 @@ public class SpoofCompiler {
 			CNodeTpl tmpCNode = cplans.get(hop.getHopID()).getValue();
 			
 			hnew = new SpoofFusedOp(hop.getName(), hop.getDataType(), hop.getValueType(),
-				tmpCla.getValue(), API, tmpCNode.getVarname(),false, tmpCNode.getOutputDimType());
+				tmpCla.getValue(), tmpCNode.getGeneratorAPI(), tmpCNode.getVarname(), false, tmpCNode.getOutputDimType());
 			Hop[] inHops = tmpCla.getKey();
 			
 

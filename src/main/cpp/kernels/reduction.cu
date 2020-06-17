@@ -17,8 +17,9 @@ using uint = unsigned int;
  */
 template<typename T>
 __device__ void reduce_sum(T *g_idata, T *g_odata, unsigned int n) {
-	SumOp<T> op;
-	reduce<SumOp<T>, T>(g_idata, g_odata, n, op, (T) 0.0);
+	SumOp<T> agg_op;
+	IdentityOp<T> spoof_op;
+	reduce<T, SumOp<T>, IdentityOp<T>>(g_idata, g_odata, n, (T) 0.0, agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_sum_d(double *g_idata, double *g_odata,
@@ -92,8 +93,9 @@ extern "C" __global__ void reduce_col_sum_f(float *g_idata, float *g_odata,
  */
 template<typename T>
 __device__ void reduce_max(T *g_idata, T *g_odata, unsigned int n) {
-	MaxOp<T> op;
-	reduce<MaxOp<T>, T>(g_idata, g_odata, n, op, -MAX<T>());
+	MaxOp<T> agg_op;
+	IdentityOp<T> spoof_op;
+	reduce<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, n, -MAX<T>(), agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_max_d(double *g_idata, double *g_odata,
@@ -167,8 +169,9 @@ extern "C" __global__ void reduce_col_max_f(float *g_idata, float *g_odata,
  */
 template<typename T>
 __device__ void reduce_min(T *g_idata, T *g_odata, unsigned int n) {
-	MinOp<T> op;
-	reduce<MinOp<T>, T>(g_idata, g_odata, n, op, MAX<T>());
+	MinOp<T> agg_op;
+	IdentityOp<T> spoof_op;
+	reduce<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, n, MAX<T>(), agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_min_d(double *g_idata, double *g_odata,
@@ -244,8 +247,9 @@ extern "C" __global__ void reduce_col_min_f(float *g_idata, float *g_odata,
  */
 template<typename T>
 __device__ void reduce_prod(T *g_idata, T *g_odata, unsigned int n) {
-	ProductOp<T> op;
-	reduce<ProductOp<T>, T>(g_idata, g_odata, n, op, (T) 1.0);
+	ProductOp<T> agg_op;
+	IdentityOp<T> spoof_op;
+	reduce<T, ProductOp<T>, IdentityOp<T>>(g_idata, g_odata, n, (T) 1.0, agg_op, spoof_op);
 }
 
 extern "C"
@@ -310,4 +314,26 @@ extern "C" __global__ void reduce_col_mean_d(double *g_idata, double *g_odata,
 extern "C" __global__ void reduce_col_mean_f(float *g_idata, float *g_odata,
 		unsigned int rows, unsigned int cols) {
 	reduce_col_mean(g_idata, g_odata, rows, cols);
+}
+
+
+/**
+ * Do a summation over all squared elements of an array/matrix
+ * @param g_idata   input data stored in device memory (of size n)
+ * @param g_odata   output/temporary array stored in device memory (of size n)
+ * @param n         size of the input and temporary/output arrays
+ */
+template<typename T>
+__device__ void reduce_sum_sq(T *g_idata, T *g_odata, unsigned int n) {
+	SumSqOp<T> agg_op;
+	IdentityOp<T> spoof_op;
+	reduce<T, SumSqOp<T>, IdentityOp<T>>(g_idata, g_odata, n, (T) 0.0, agg_op, spoof_op);
+}
+
+extern "C" __global__ void reduce_sum_sq_d(double *g_idata, double *g_odata, unsigned int n) {
+	reduce_sum_sq(g_idata, g_odata, n);
+}
+
+extern "C" __global__ void reduce_sum_sq_f(float *g_idata, float *g_odata, unsigned int n) {
+	reduce_sum_sq(g_idata, g_odata, n);
 }

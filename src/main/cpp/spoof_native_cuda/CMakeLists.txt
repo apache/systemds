@@ -40,9 +40,9 @@ set(SOURCES spoof_native_jni.cpp spoof_native_cuda.cpp)
 # Build a shared libraray
 add_library(spoof_native_cuda SHARED ${SOURCES} ${HEADERS} )
 
-if (WIN32)
-    set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
+if (WIN32)    
     set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
+    set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
     target_link_libraries(spoof_native_cuda DbgHelp.lib)
 endif()
 
@@ -77,3 +77,8 @@ include_directories($ENV{JAVA_HOME}/include/)
 include_directories($ENV{JAVA_HOME}/include/darwin)
 include_directories($ENV{JAVA_HOME}/include/linux)
 include_directories($ENV{JAVA_HOME}/include/win32)
+
+add_library(reduction OBJECT ../kernels/reduction.cu ../kernels/reduction.cuh)
+set_property(TARGET reduction PROPERTY CUDA_PTX_COMPILATION ON)
+#install(TARGETS reduction OBJECTS DESTINATION ptx)
+install(FILES $<TARGET_OBJECTS:reduction> DESTINATION ptx)

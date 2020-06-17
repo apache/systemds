@@ -107,8 +107,11 @@ __device__ void reduce(
 	}
 
 	// write result for this block to global mem
-	if (tid == 0)
+	if (tid == 0) {
+		if(gridDim.x < 10)
+			printf("blockIdx.x=%d reduction result: %3.1f\n", blockIdx.x, sdata[0]);
 		g_odata[blockIdx.x] = sdata[0];
+	}
 }
 
 /**

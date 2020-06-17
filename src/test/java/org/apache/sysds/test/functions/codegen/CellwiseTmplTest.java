@@ -62,8 +62,6 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME25 = TEST_NAME+25; //bias_add
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
-	private static final String TEST_NAME28 = TEST_NAME+28; // run TEST1 with spoof native cuda config
-	private static final String TEST_NAME29 = TEST_NAME+29; // run TEST6 with spoof native cuda config
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -78,7 +76,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=29; i++ ) {
+		for( int i=1; i<=27; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -465,41 +463,18 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME27, true, ExecType.SPARK );
 	}
 
-	@Test
-	public void testCodegenCellwise28() {
-		testCodegenIntegration( TEST_NAME28, false, ExecType.CP );
-	}
-
-	@Test
-	public void testCodegenCellwiseRewrite28() {
-		testCodegenIntegration( TEST_NAME28, true, ExecType.CP );
-	}
-
-	@Test
-	public void testCodegenCellwise29() {
-		testCodegenIntegration( TEST_NAME29, false, ExecType.CP );
-	}
-
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		String oldTestConf = TEST_CONF;
 		ExecMode platformOld = setExecMode(instType);
 
-		Integer test_num = 0;
-		try {
-			test_num = Integer.parseInt(testname.substring(testname.length() - 2));
-		}
-		catch(NumberFormatException e) {
-			test_num = Integer.parseInt(testname.substring(testname.length() - 1));
-			/* ToDo: remove temporary hack */ }
-
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
 
 		// ToDo: remove when done with testing
 	   // for now comment next line to run all tests on GPU
-		if(test_num > 27)
+		if(false)
 		{
 			TEST_CONF = TEST_CONF8;
 			TEST_GPU = true;
@@ -521,48 +496,41 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
 			runTest(true, false, null, -1);
+			runRScript(true);
 
-			if(test_num < 27) {
-				runRScript(true);
-
-				if (testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7)
-						|| testname.equals(TEST_NAME9) || testname.equals(TEST_NAME10)) {
-					//compare scalars
-					HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
-					HashMap<CellIndex, Double> rfile = readRScalarFromFS("S");
-					TestUtils.compareScalars((Double) dmlfile.values().toArray()[0], (Double) rfile.values().toArray()[0], 0);
-				} else {
-					//compare matrices
-					HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
-					HashMap<CellIndex, Double> rfile = readRMatrixFromFS("S");
-					TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-				}
-
-				if (!(rewrites && (testname.equals(TEST_NAME2)
-						|| testname.equals(TEST_NAME19))))
-					Assert.assertTrue(heavyHittersContainsSubString(
-							"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "SpoofNativeCUDA"));
-				if (testname.equals(TEST_NAME7)) //ensure matrix mult is fused
-					Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
-				else if (testname.equals(TEST_NAME10)) //ensure min/max is fused
-					Assert.assertTrue(!heavyHittersContainsSubString("uamin", "uamax"));
-				else if (testname.equals(TEST_NAME11)) //ensure replace is fused
-					Assert.assertTrue(!heavyHittersContainsSubString("replace"));
-				else if (testname.equals(TEST_NAME15))
-					Assert.assertTrue(!heavyHittersContainsSubString("uacmin"));
-				else if (testname.equals(TEST_NAME16))
-					Assert.assertTrue(!heavyHittersContainsSubString("uack+"));
-				else if (testname.equals(TEST_NAME17))
-					Assert.assertTrue(!heavyHittersContainsSubString("xor"));
-				else if (testname.equals(TEST_NAME22))
-					Assert.assertTrue(!heavyHittersContainsSubString("seq"));
-				else if (testname.equals(TEST_NAME23) || testname.equals(TEST_NAME24))
-					Assert.assertTrue(!heavyHittersContainsSubString("min", "nmin"));
+			if (testname.equals(TEST_NAME6) || testname.equals(TEST_NAME7)
+					|| testname.equals(TEST_NAME9) || testname.equals(TEST_NAME10)) {
+				//compare scalars
+				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromHDFS("S");
+				HashMap<CellIndex, Double> rfile = readRScalarFromFS("S");
+				TestUtils.compareScalars((Double) dmlfile.values().toArray()[0], (Double) rfile.values().toArray()[0], 0);
+			} else {
+				//compare matrices
+				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
+				HashMap<CellIndex, Double> rfile = readRMatrixFromFS("S");
+				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			}
-			else {
-				Assert.assertTrue(heavyHittersContainsSubString("SpoofNativeCUDA", "gpu_ba+*"));
-				// ToDo: better compare (too slow with files of significant size, maybe use GPU here too :-) )
-			}
+
+			if( !(rewrites && (testname.equals(TEST_NAME2)
+					|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
+				Assert.assertTrue(heavyHittersContainsSubString(
+						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "SpoofNativeCUDA"));
+			if (testname.equals(TEST_NAME7)) //ensure matrix mult is fused
+				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
+			else if (testname.equals(TEST_NAME10)) //ensure min/max is fused
+				Assert.assertTrue(!heavyHittersContainsSubString("uamin", "uamax"));
+			else if (testname.equals(TEST_NAME11)) //ensure replace is fused
+				Assert.assertTrue(!heavyHittersContainsSubString("replace"));
+			else if (testname.equals(TEST_NAME15))
+				Assert.assertTrue(!heavyHittersContainsSubString("uacmin"));
+			else if (testname.equals(TEST_NAME16))
+				Assert.assertTrue(!heavyHittersContainsSubString("uack+"));
+			else if (testname.equals(TEST_NAME17))
+				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
+			else if (testname.equals(TEST_NAME22))
+				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
+			else if (testname.equals(TEST_NAME23) || testname.equals(TEST_NAME24))
+				Assert.assertTrue(!heavyHittersContainsSubString("min", "nmin"));
 		}
 		finally {
 			resetExecMode(platformOld);

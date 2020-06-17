@@ -2,6 +2,7 @@ package org.apache.sysds.hops.codegen.cplan.java;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
@@ -122,6 +123,11 @@ public class Unary implements CodeTemplate {
 
     @Override
     public String getTemplate(SpoofCellwise.CellType ct) {
+        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+    }
+
+    @Override
+    public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
         throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
     }
 }

@@ -1,6 +1,7 @@
 package org.apache.sysds.hops.codegen.cplan.java;
 
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
+import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
@@ -49,6 +50,11 @@ public class CellWise implements CodeTemplate {
 
     @Override
     public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector, boolean scalarInput) {
+        throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+    }
+
+    @Override
+    public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
         throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
     }
 }

@@ -11,5 +11,7 @@ public interface CodeTemplate {
     String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector,
                               boolean scalarInput);
 
+    String getTemplate(CNodeTernary.TernaryType type, boolean sparse);
+
     String getTemplate(SpoofCellwise.CellType ct);
 }

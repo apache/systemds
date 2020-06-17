@@ -247,7 +247,9 @@ public class Connection implements Closeable
 			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
 		
 		setLocalConfigs();
-		
+
+		configureCodeGen();
+
 		//simplified compilation chain
 		Program rtprog = null;
 		try {
@@ -916,5 +918,22 @@ public class Connection implements Closeable
 		//set thread-local configurations for compilation and read
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
+	}
+
+	private static void configureCodeGen() {
+		// load native codegen if configured
+		if(ConfigurationManager.isCodegenEnabled()) {
+			SpoofCompiler.GeneratorAPI configured_generator =
+					SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager
+							.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+			if (configured_generator != SpoofCompiler.GeneratorAPI.JAVA) {
+				try {
+					SpoofCompiler.loadNativeCodeGenerator(configured_generator);
+				}
+				catch (Exception e) {
+					System.err.println("Failed to load native cuda codegen library\n" + e);
+				}
+			}
+		}
 	}
 }

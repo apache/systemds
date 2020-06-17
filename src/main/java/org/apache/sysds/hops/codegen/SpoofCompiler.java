@@ -187,44 +187,34 @@ public class SpoofCompiler {
 			Logger.getLogger("org.apache.sysds.hops.codegen")
 					.setLevel(Level.TRACE);
 		}
-
-		// load native codegen if configured
-		if(ConfigurationManager.isCodegenEnabled()) {
-			SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
-			if (configured_generator == SpoofCompiler.GeneratorAPI.AUTO || configured_generator == SpoofCompiler.GeneratorAPI.CUDA) {
-				try {
-					// init GPUs with jCuda to avoid double initialization problems
-					GPUContextPool.initializeGPU();
-					SpoofCompiler.loadNativeCodeGenerator(SpoofCompiler.GeneratorAPI.CUDA);
-				}
-				catch (Exception e) {
-					LOG.error("Failed to load native cuda codegen library\n" + e);
-				}
-			}
-		}
 	}
 
 	@Override
-	protected void finalize() throws Throwable {
+	protected void finalize() {
 			SpoofCompiler.cleanupCodeGenerator();
 	}
 
 	public static void loadNativeCodeGenerator(GeneratorAPI generator) {
+		if(DMLScript.getGlobalExecMode() == ExecMode.SPARK) {
+			LOG.warn("Not loading native codegen library in SPARK execution mode!\n");
+			return;
+		}
+
+		// loading cuda codegen (the only supported API atm)
+		if(generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
+			generator = GeneratorAPI.CUDA;
+
+		if(generator == GeneratorAPI.CUDA && !DMLScript.USE_ACCELERATOR)
+			generator = GeneratorAPI.JAVA;
 
 		if(native_contexts == null)
 			native_contexts = new HashMap<>();
 
-		GeneratorAPI configured_generator = GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
-
-		// loading cuda codegen (the only supported API atm)
-		if(configured_generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
-			configured_generator = GeneratorAPI.CUDA;
-
-		if(configured_generator == GeneratorAPI.CUDA && !DMLScript.USE_ACCELERATOR)
-			configured_generator = GeneratorAPI.JAVA;
-
 		if(!native_contexts.containsKey(generator)) {
 			if(generator == GeneratorAPI.CUDA) {
+				// init GPUs with jCuda to avoid double initialization problems
+				GPUContextPool.initializeGPU();
+
 				String arch = SystemUtils.OS_ARCH;
 				String os = SystemUtils.OS_NAME;
 
@@ -259,10 +249,12 @@ public class SpoofCompiler {
 		}
 	}
 
-	public static void unloadNativeCodeGenerator(GeneratorAPI generator) {
-		if(native_contexts.containsKey(generator)) {
-			destroy_cuda_context(native_contexts.get(generator), 0);
-			native_contexts.remove(generator);
+	public static void unloadNativeCodeGenerator() {
+		if(native_contexts.containsKey(GeneratorAPI.CUDA)) {
+			destroy_cuda_context(native_contexts.get(GeneratorAPI.CUDA), 0);
+			native_contexts.remove(GeneratorAPI.CUDA);
+			if(API == GeneratorAPI.CUDA)
+				API = GeneratorAPI.JAVA;
 		}
 	}
 
@@ -574,7 +566,7 @@ public class SpoofCompiler {
 		}
 
 		if(API != GeneratorAPI.JAVA)
-			unloadNativeCodeGenerator(GeneratorAPI.CUDA);
+			unloadNativeCodeGenerator();
 
 	}
 	

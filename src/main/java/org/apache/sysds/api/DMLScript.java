@@ -44,6 +44,7 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -354,7 +355,10 @@ public class DMLScript
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
 		
 		setGlobalFlags(dmlconf);
-		
+
+		//Step 2: configure codegen
+		configureCodeGen();
+
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
 		ParserWrapper parser = ParserFactory.createParser();
@@ -404,9 +408,27 @@ public class DMLScript
 			LOG.info("END DML run " + getDateTime() );
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution( dmlconf );
+			SpoofCompiler.cleanupCodeGenerator();
 		}
 	}
-	
+
+	private static void configureCodeGen() {
+		// load native codegen if configured
+		if(ConfigurationManager.isCodegenEnabled()) {
+			SpoofCompiler.GeneratorAPI configured_generator =
+					SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager
+							.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+			if (configured_generator != SpoofCompiler.GeneratorAPI.JAVA) {
+				try {
+					SpoofCompiler.loadNativeCodeGenerator(configured_generator);
+				}
+				catch (Exception e) {
+					LOG.error("Failed to load native cuda codegen library\n" + e);
+				}
+			}
+		}
+	}
+
 	/**
 	 * Sets the global flags in DMLScript based on user provided configuration
 	 * 

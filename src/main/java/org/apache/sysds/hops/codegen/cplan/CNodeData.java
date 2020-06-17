@@ -123,4 +123,8 @@ public class CNodeData extends CNode
 				_name.equals(((CNodeData)o)._name) : 
 				_hopID == ((CNodeData)o)._hopID));
 	}
+	@Override
+	public boolean isSupported(GeneratorAPI api) {
+		return true;
+	}
 }

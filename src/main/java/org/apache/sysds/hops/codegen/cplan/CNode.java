@@ -262,4 +262,6 @@ public abstract class CNode
 				throw new RuntimeException("Language not supported by code generator: " + lang.toString());
 		}
 	}
+
+	public abstract boolean isSupported(GeneratorAPI api);
 }

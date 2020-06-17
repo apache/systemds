@@ -490,23 +490,23 @@ public class SpoofCompiler {
 				Class<?> cla = planCache.getPlan(tmp.getValue());
 				
 				if( cla == null ) {
-					String src;
-					switch(API) {
-						case CUDA:
-							src = tmp.getValue().codegen(false, GeneratorAPI.CUDA, GeneratorLang.CPP);
-							if(compile_cuda(tmp.getValue().getVarname(), src))
-								CodegenUtils.putNativeOpData(new SpoofNativeCUDA(tmp.getValue()));
-							else
-								LOG.error("cuda compilation failed"); // ToDo: Fallback to java
+					String src = "";
+					boolean native_compiled_successfully = false;
 
-							break;
-						case JAVA:
-						default:
+					if(API == GeneratorAPI.CUDA && tmp.getValue().isSupported(API)) {
+						src = tmp.getValue().codegen(false, GeneratorAPI.CUDA, GeneratorLang.CPP);
+						native_compiled_successfully = compile_cuda(tmp.getValue().getVarname(), src);
+						if (native_compiled_successfully)
+							CodegenUtils.putNativeOpData(new SpoofNativeCUDA(tmp.getValue()));
+						else
+							LOG.warn("CUDA compilation failed, falling back to JAVA");
+					}
+
+					if(API == GeneratorAPI.JAVA || !native_compiled_successfully) {
 							src = tmp.getValue().codegen(false, GeneratorAPI.JAVA, GeneratorLang.JAVA);
-							//compile generated java source code
 							cla = CodegenUtils.compileClass("codegen."+ tmp.getValue().getClassname(), src);
 					}
-					
+
 					//explain debug output cplans or generated source code
 					if( LOG.isTraceEnabled() || DMLScript.EXPLAIN.isHopsType(recompile) ) {
 						LOG.info("Codegen EXPLAIN (generated cplan for HopID: " + cplan.getKey() + 

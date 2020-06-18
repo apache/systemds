@@ -1,8 +1,6 @@
 ---
-layout: global
-displayTitle: SystemDS Documentation
+layout: base
 title: SystemDS Documentation
-description: SystemDS Documentation
 ---
 <!--
 {% comment %}
@@ -36,11 +34,11 @@ This version of SystemDS supports: Java 8+,  Python 3.5+, Hadoop 2.6+ (Not 3.X),
 
 Various forms of documentation for SystemDS are available.
 
-- a [DML language reference](/site/dml-language-reference) for an list of operations possible inside SystemDS.
-- [builtin functions](/site/builtins-reference) contains a collection of builtin functions providing an high level abstraction on complex machine learning algorithms.
-- [Run SystemDS](/site/run) contains an Helloworld example along with an environment setup guide.
-- Instructions on python can be found at [Python Documentation](/api/python/index)
-- The [javadoc API](/api/java/index) contains internal documentation of the system source code.
-- [Install from Source](/site/install) guides through setup from git download to running system.
+- a [DML language reference](./site/dml-language-reference) for an list of operations possible inside SystemDS.
+- [builtin functions](./site/builtins-reference) contains a collection of builtin functions providing an high level abstraction on complex machine learning algorithms.
+- [Run SystemDS](./site/run) contains an Helloworld example along with an environment setup guide.
+- Instructions on python can be found at [Python Documentation](./api/python/index)
+- The [javadoc API](./api/java/index) contains internal documentation of the system source code.
+- [Install from Source](./site/install) guides through setup from git download to running system.
 - If you want to contribute take a look at [Contributing](https://github.com/apache/systemml/blob/master/CONTRIBUTING.md)
 

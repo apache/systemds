@@ -1,5 +1,5 @@
 ---
-layout: global
+layout: site
 title: DML Language Reference
 ---
 <!--

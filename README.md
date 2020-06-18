@@ -28,11 +28,11 @@ systems - that either provide homogeneous tensors or 2D Datasets - and in order 
 the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a 
 heterogeneous and nested schema.
 
-**Quick Start** [Install, Quick Start and Hello World](/bin/README.md)
+**Quick Start** [Install, Quick Start and Hello World](https://apache.github.io/systemml/site/install.html)
 
-**Documentation:** [SystemDS Documentation](/docs/README.md)
+**Documentation:** [SystemDS Documentation](https://apache.github.io/systemml/)
 
-**Python Documentation** [Python SystemDS Documentation](https://damslab.github.io/docs/sysdspython/index.html)
+**Python Documentation** [Python SystemDS Documentation](https://apache.github.io/systemml/api/python/index.html)
 
 **Status and Build:** SystemDS is still in pre-alpha status. The original code base was forked from 
 [**Apache SystemML**](http://systemml.apache.org/) 1.2 in September 2018. We will continue to support linear algebra 

@@ -1,0 +1,299 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>QuickStart Onnx &mdash; SystemDS 2.0.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../static/documentation_options.js"></script>
+        <script src="../static/jquery.js"></script>
+        <script src="../static/underscore.js"></script>
+        <script src="../static/doctools.js"></script>
+        <script src="../static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Design" href="onnx_systemds_design.html" />
+    <link rel="prev" title="Built-in Algorithms" href="../guide/algorithms.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> SystemDS
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/install.html">Install SystemDS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/simple_examples.html">QuickStart</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guide/federated.html">Federated Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/algorithms.html">Built-in Algorithms</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">QuickStart Onnx</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-tests">Run Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#converter">Converter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="onnx_systemds_design.html">Design</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/context/systemds_context.html">SystemDSContext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/matrix/data_gen.html">Data Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/matrix/matrix.html">Matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/matrix/federated.html">Federated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/convert.html">Convert</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/onnx_helper.html">Onnx Helper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/operator_gen.html">Operator Gen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/onnx_systemds/util.html">Util</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Internals API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/script_building/dag.html">Dag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/script_building/script.html">Script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils/converters.html">Converters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/utils/helpers.html">Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SystemDS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>QuickStart Onnx</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../sources/onnx_systemds/onnx_systemds.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="quickstart-onnx">
+<h1>QuickStart Onnx<a class="headerlink" href="#quickstart-onnx" title="Permalink to this headline">¶</a></h1>
+<p>onnx-systemds is a tool for importing/exporting onnx graphs into/from SystemDS DML scripts.</p>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>to run onnx-systemds you need to:</p>
+<ul class="simple">
+<li><p>install <a class="reference external" href="https://github.com/onnx/onnx">onnx</a>: <a class="reference external" href="https://github.com/onnx/onnx#installation">Installation instructions</a></p></li>
+<li><p><a class="reference external" href="https://github.com/apache/systemml/blob/master/bin/README.md">set up the environment</a></p></li>
+</ul>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>An example call from the <code class="docutils literal notranslate"><span class="pre">src/main/python</span></code> directory of systemds:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">systemds</span><span class="o">.</span><span class="n">onnx_systemds</span><span class="o">.</span><span class="n">convert</span> <span class="n">tests</span><span class="o">/</span><span class="n">onnx</span><span class="o">/</span><span class="n">test_models</span><span class="o">/</span><span class="n">simple_mat_add</span><span class="o">.</span><span class="n">onnx</span>
+</pre></div>
+</div>
+<p>This will generate the dml script <code class="docutils literal notranslate"><span class="pre">simple_mat_add.dml</span></code> in the current directory.</p>
+</div>
+<div class="section" id="run-tests">
+<h2>Run Tests<a class="headerlink" href="#run-tests" title="Permalink to this headline">¶</a></h2>
+<p>Form the <code class="docutils literal notranslate"><span class="pre">src/main/python</span></code> directory of systemds:</p>
+<p>At first generate the test models:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">tests</span><span class="o">/</span><span class="n">onnx</span><span class="o">/</span><span class="n">test_models</span><span class="o">/</span><span class="n">model_generate</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Then you can run the tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">unittest</span> <span class="n">tests</span><span class="o">/</span><span class="n">onnx</span><span class="o">/</span><span class="n">test_simple</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="converter">
+<h2>Converter<a class="headerlink" href="#converter" title="Permalink to this headline">¶</a></h2>
+<p>It is also possible to invoke the converter from within python.</p>
+<dl class="py function">
+<dt id="systemds.onnx_systemds.convert.onnx2systemds">
+<code class="sig-prename descclassname">systemds.onnx_systemds.convert.</code><code class="sig-name descname">onnx2systemds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_onnx_file</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">output_dml_file</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.onnx_systemds.convert.onnx2systemds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the model from the input file and generates a dml file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_onnx_file</strong> – the onnx input file</p></li>
+<li><p><strong>output_dml_file</strong> – (optional) the dml output file,
+if this parameter is not given the output file will have the same name as the input file</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="onnx_systemds_design.html" class="btn btn-neutral float-right" title="Design" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../guide/algorithms.html" class="btn btn-neutral float-left" title="Built-in Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Apache SystemDS
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

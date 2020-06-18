@@ -1,0 +1,58 @@
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% endcomment %}
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="http://systemml.apache.org/"><img class="logo" src=".{% if page.path contains 'site' %}/..{% endif %}/img/systemml-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="http://systemml.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">{{site.SYSTEMDS_VERSION}}</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href=".{% if page.path contains 'site' %}/..{% endif %}/">Overview</a></li>
+                <li><a href="https://github.com/apache/systemml">GitHub</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API Docs<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href=".{% if page.path contains 'site' %}/..{% endif %}/api/java/">Java</a></li>
+                        <li><a href=".{% if page.path contains 'site' %}/..{% endif %}/api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Issues<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="https://issues.apache.org/jira/browse/SYSTEMML">SystemDS JIRA</a></li>
+                    </ul>
+                </li>
+                <li><input id="s-bar" placeholder="Search Docs.." style="margin-top: 20px;"></input>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>

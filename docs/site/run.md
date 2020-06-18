@@ -1,5 +1,5 @@
 ---
-layout: global
+layout: site
 title: Running SystemDS
 ---
 <!--
@@ -21,7 +21,7 @@ limitations under the License.
 {% endcomment %}
 -->
 
-If you want to execute from source code follow the [Install from source](/site/install) guide first.
+If you want to execute from source code follow the [Install from source](install) guide first.
 
 ## Setting SYSTEMDS_ROOT environment variable
 

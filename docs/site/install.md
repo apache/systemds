@@ -1,5 +1,5 @@
 ---
-layout: global
+layout: site
 title: SystemDS Install from source
 ---
 <!--
@@ -81,4 +81,4 @@ The first time you package the system it will take longer since maven will downl
 But successive compiles should become faster.
 
 Now everything is setup and ready to go!
-To execute dml scripts i suggest to take a look at [Execute SystemDS](/site/run)
+To execute dml scripts i suggest to take a look at [Execute SystemDS](run)

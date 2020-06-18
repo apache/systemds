@@ -1538,7 +1538,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize (id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;
-			default:
+
+		default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();
 				//unary operations

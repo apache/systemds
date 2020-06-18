@@ -25,3 +25,4 @@ colLength = read($2); # row vector with -1 for exempted features and
 R = dropInvalidLength(X, colLength);
 # print(toString(R))
 write(R, $5, format="binary");
+

@@ -65,23 +65,14 @@ return (Matrix[Double] weights, Matrix[Double] labels, Integer df, Double bic)
   bic = getBIC(nrow(X),norm,df)
 }
  
-initialize_param = function(Matrix[Double] X, Integer n_components, String init_params, String model, Double reg_covar)
+initialize_param = function(Matrix[Double] X, Integer n_components, String init_params, String model, Double reg_covar, Double tol)
 return (Matrix[Double] weight, Matrix[Double] mean, List[Unknown] sigma, List[Unknown] precision_chol) 
 {
-  resp = compute_responsiblities(X, n_components, init_params)
-  [weight, mean, sigma, precision_chol] = initialize(X, resp, n_components, model, reg_covar)
-}
-
-# Matrix/Vector Parameters
-# input: (X[n_samples, n_features])
-# output: (resp[n_samples, n_components])
-compute_responsiblities = function(Matrix[Double] X, Integer n_components, String init_params)
-return(Matrix[Double] resp)
-{
+  # create responsibility matrix, resp[n_samples, n_components]
   resp = matrix(0, nrow(X), n_components)
   if(init_params == "kmeans")
   {
-    [C, Y] = kmeans(X, n_components, 10, 10, 0.0000001, FALSE, 25)
+    [C, Y] = kmeans(X, n_components, 10, 10, tol, FALSE, 25)
     resp = resp + t(seq(1,n_components))
     resp = resp == Y
   }
@@ -91,7 +82,10 @@ return(Matrix[Double] resp)
     resp = resp/rowSums(resp)
   }
   else stop("invalid parameter value, expected kmeans or random found "+init_params) 
+  
+  [weight, mean, sigma, precision_chol] = initialize(X, resp, n_components, model, reg_covar)
 }
+
 
 # Matrix/Vector Parameters
 # input: (X[n_samples, n_features], resp[n_samples, n_components])
@@ -137,7 +131,7 @@ return(List[Unknown] sigma)
   for(k in 1:nrow(mu))
   {
     diff = X - mu[k,]
-    cov = (t(diff * resp[, k]) %*% diff) / nk[,k]
+    cov = (t(diff * resp[, k]) %*% diff) / as.scalar(nk[1,k])
     cov = cov + diag(matrix(reg_covar, ncol(cov), 1))
     sigma = append(sigma, cov)
   }       
@@ -381,7 +375,7 @@ return (Matrix[Double] label, Matrix[Double] predict_prob, Double log_prob_norm)
   lower_bound = 0
   converged = FALSE
   n = nrow(X)
-  [weight, mean, sigma, precision_chol] = initialize_param(X, n_components,init_params, model, reg_covar)
+  [weight, mean, sigma, precision_chol] = initialize_param(X, n_components,init_params, model, reg_covar, tol)
   i = 1
   while(i <= iter & !converged) {
     prev_lower_bound = lower_bound

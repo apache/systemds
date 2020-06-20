@@ -143,6 +143,10 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 					
 					transformedFedMapping.put(federatedRange, new FederatedData(federatedData, varId));
 				}
+				else {
+					throw new DMLRuntimeException(
+						"Federated request was not successful: " + federatedResponse.getErrorMessage());
+				}
 			}
 		}
 		catch(InterruptedException | ExecutionException e) {

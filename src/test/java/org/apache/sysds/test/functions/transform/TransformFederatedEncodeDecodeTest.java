@@ -112,7 +112,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME1 + ".dml";
 
-			programArgs = new String[] {"-explain", "-args", TestUtils.federatedAddress("localhost", port1, input("A")),
+			programArgs = new String[] {"-args", TestUtils.federatedAddress("localhost", port1, input("A")),
 				TestUtils.federatedAddress("localhost", port1, input("B")), Integer.toString(rows),
 				Integer.toString(cols / 2), Integer.toString(cols), SCRIPT_DIR + TEST_DIR + SPEC, output("FO"),
 				format.toString()};

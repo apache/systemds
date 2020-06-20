@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import cholesky
 from systemds.matrix import Matrix
 
 np.random.seed(7)
@@ -49,26 +48,26 @@ class TestCholesky(unittest.TestCase):
         cls.sds.close()
 
     def test_basic1(self):
-        L = cholesky(self.sds, Matrix(self.sds, A)).compute()
+        L = Matrix(self.sds, A).cholesky().compute()
         self.assertTrue(np.allclose(L, np.linalg.cholesky(A)))
 
     def test_basic2(self):
-        L = cholesky(self.sds, Matrix(self.sds, A)).compute()
+        L = Matrix(self.sds, A).cholesky().compute()
         # L * L.H = A
         self.assertTrue(np.allclose(A, np.dot(L, L.T.conj())))
 
     def test_pos_def(self):
         with self.assertRaises(ValueError) as context:
-            cholesky(self.sds, Matrix(self.sds, m1)).compute()
+            Matrix(self.sds, m1).cholesky(safe=True).compute()
 
     def test_symmetric_matrix(self):
         np.linalg.cholesky(m2)
         with self.assertRaises(ValueError) as context:
-            cholesky(self.sds, Matrix(self.sds, m2)).compute()
+            Matrix(self.sds, m2).cholesky(safe=True).compute()
 
     def test_asymetric_dim(self):
         with self.assertRaises(ValueError) as context:
-            cholesky(self.sds, Matrix(self.sds, m3)).compute()
+            Matrix(self.sds, m3).cholesky().compute()
 
 
 if __name__ == "__main__":

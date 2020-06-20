@@ -18,15 +18,12 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import math
-import os
-import random
-import sys
+
 import unittest
+import random
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import rev
 from systemds.matrix import Matrix
 
 np.random.seed(7)
@@ -49,19 +46,20 @@ class TestReverse(unittest.TestCase):
         cls.sds.close()
 
     def test_basic(self):
-        r = rev(self.sds, Matrix(self.sds, m)).compute()
+        Matrix(self.sds, m)
+        r = Matrix(self.sds, m).rev().compute()
         self.assertTrue(np.allclose(r, np.flip(m, 0)))
 
     def test_empty(self):
         m_empty = np.asarray([[]])
-        r = rev(self.sds, Matrix(self.sds, np.asarray(m_empty))).compute()
+        r = Matrix(self.sds, np.asarray(m_empty)).rev().compute()
         self.assertTrue(np.allclose(r, m_empty))
 
     def test_x_axis(self):
-        self.assertTrue(np.allclose(rev(self.sds, Matrix(self.sds, mx)).compute(), mx))
+        self.assertTrue(np.allclose(Matrix(self.sds, mx).rev().compute(), mx))
 
     def test_y_axis(self):
-        self.assertTrue(np.allclose(rev(self.sds, Matrix(self.sds, my)).compute(), np.flip(my, 0)))
+        self.assertTrue(np.allclose(Matrix(self.sds, my).rev().compute(), np.flip(my, 0)))
 
 
 if __name__ == "__main__":

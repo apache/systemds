@@ -18,15 +18,12 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import math
-import os
-import random
-import sys
+
 import unittest
+import random
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix.data_gen import order
 from systemds.matrix import Matrix
 
 np.random.seed(7)
@@ -50,22 +47,22 @@ class TestOrder(unittest.TestCase):
         cls.sds.close()
 
     def test_basic(self):
-        o = order(self.sds, Matrix(self.sds, m), by=by, decreasing=False, index_return=False).compute()
+        o = Matrix(self.sds, m).order(by=by, decreasing=False, index_return=False).compute()
         s = m[np.argsort(m[:, by-1])]
         self.assertTrue(np.allclose(o, s))
 
     def test_index(self):
-        o = order(self.sds, Matrix(self.sds, m), by=by, decreasing=False, index_return=True).compute()
+        o = Matrix(self.sds, m).order(by=by, decreasing=False, index_return=True).compute()
         s = np.argsort(m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 
     def test_out_of_bounds(self):
         by_max = np.size(m, 1) + 2
         with self.assertRaises(IndexError) as context:
-            order(self.sds, Matrix(self.sds, m), by=by_max).compute()
+            Matrix(self.sds, m).order(by=by_max).compute()
 
     def test_decreasing(self):
-        o = order(self.sds, Matrix(self.sds, m), by=by, decreasing=True, index_return=True).compute()
+        o = Matrix(self.sds, m).order(by=by, decreasing=True, index_return=True).compute()
         s = np.argsort(-m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 

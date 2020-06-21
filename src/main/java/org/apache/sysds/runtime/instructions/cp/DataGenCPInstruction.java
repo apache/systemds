@@ -172,6 +172,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public boolean isOnesCol() {
 		return minValue == maxValue && minValue == 1 && sparsity == 1 && getCols() == 1;
 	}
+
+	public boolean isMatrixCall() {
+		return minValue == maxValue && sparsity == 1;
+	}
 	
 	public long getFrom() {
 		return seq_from.isLiteral() ? UtilFunctions.parseToLong(seq_from.getName()) : -1;

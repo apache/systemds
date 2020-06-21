@@ -375,6 +375,7 @@ public class LineageCache
 		if (LineageCache.probe(probeItem)) {
 			LineageCacheEntry oe = getIntern(probeItem);
 			LineageCacheEntry e = _cache.get(item);
+			boolean exists = !e.isNullVal();
 			if (oe.isMatrixValue())
 				e.setValue(oe.getMBValue(), computetime); 
 			else
@@ -386,8 +387,10 @@ public class LineageCache
 			// Add the SB/func entry to the list of items pointing to the same data.
 			// No cache size update is necessary.
 			// Maintain _origItem as head.
-			e._nextEntry = oe._nextEntry;
-			oe._nextEntry = e;
+			if (!exists) {
+				e._nextEntry = oe._nextEntry;
+				oe._nextEntry = e;
+			}
 			
 			//maintain order for eviction
 			LineageCacheEviction.addEntry(e);

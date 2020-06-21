@@ -53,7 +53,7 @@ public class LineageCache
 {
 	private static final Map<LineageItem, LineageCacheEntry> _cache = new HashMap<>();
 	private static final double CACHE_FRAC = 0.05; // 5% of JVM heap size
-	protected static final boolean DEBUG = false;
+	protected static final boolean DEBUG = true;
 
 	static {
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();

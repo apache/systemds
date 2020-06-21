@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
@@ -114,6 +115,8 @@ public class LineageRewriteReuse
 		newInst = (newInst == null) ? rewriteAggregateCbind(curr, ec, lrwec) : newInst;
 		//A %*% B[,1:k] = (A %*% B)[,1:k];
 		newInst = (newInst == null) ? rewriteIndexingMatMul(curr, ec, lrwec) : newInst;
+		//PCA --> lmDS pipeline
+		newInst = (newInst == null) ? rewritePcaTsmm(curr, ec, lrwec) : newInst;
 		
 		if (newInst == null)
 			return false;
@@ -664,6 +667,65 @@ public class LineageRewriteReuse
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
 	}
+
+	private static ArrayList<Instruction> rewritePcaTsmm(Instruction curr, ExecutionContext ec, ExecutionContext lrwec)
+	{
+		Map<String, MatrixBlock> inCache = new HashMap<>();
+		if (!isPcaTsmm(curr, ec, inCache))
+			return null;
+
+		// Create a transient read op over the last tsmm result
+		MatrixBlock cachedEntry = inCache.get("lastMatrix");
+		MatrixObject newmo = convMBtoMO(cachedEntry);
+		lrwec.setVariable("cachedEntry", newmo);
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
+
+		// Create a transient read op over this tsmm's input 
+		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
+		lrwec.setVariable("oldMatrix", mo);
+		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
+		
+		// Index out the added column from the projected matrix
+		MatrixBlock projected = inCache.get("projected");
+		MatrixObject projmo = convMBtoMO(projected);
+		lrwec.setVariable("projected", projmo);
+		DataOp projRes = HopRewriteUtils.createTransientRead("projected", projmo);
+		IndexingOp lastCol = HopRewriteUtils.createIndexingOp(projRes, new LiteralOp(1), new LiteralOp(projmo.getNumRows()), 
+				new LiteralOp(projmo.getNumColumns()), new LiteralOp(projmo.getNumColumns()));
+		
+		// Apply t(lastCol) on i/p matrix to get the result vectors.
+		ReorgOp tlastCol = HopRewriteUtils.createTranspose(lastCol);
+		AggBinaryOp newCol = HopRewriteUtils.createMatrixMultiply(tlastCol, newMatrix);
+		ReorgOp tnewCol = HopRewriteUtils.createTranspose(newCol);
+		
+		// Push the result row & column inside the cashed block as 2nd last row and col respectively.
+		IndexingOp topLeft = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(1), new LiteralOp(newmo.getNumRows()-1), 
+			new LiteralOp(1), new LiteralOp(newmo.getNumColumns()-1));
+		IndexingOp topRight = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(1), new LiteralOp(newmo.getNumRows()-1), 
+			new LiteralOp(newmo.getNumColumns()), new LiteralOp(newmo.getNumColumns()));
+		IndexingOp bottomLeft = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(newmo.getNumRows()), 
+			new LiteralOp(newmo.getNumRows()), new LiteralOp(1), new LiteralOp(newmo.getNumColumns()-1));
+		IndexingOp bottomRight = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(newmo.getNumRows()), 
+			new LiteralOp(newmo.getNumRows()), new LiteralOp(newmo.getNumColumns()), new LiteralOp(newmo.getNumColumns()));
+		IndexingOp topCol = HopRewriteUtils.createIndexingOp(tnewCol, new LiteralOp(1), new LiteralOp(mo.getNumColumns()-2), 
+			new LiteralOp(1), new LiteralOp(1));
+		IndexingOp bottomCol = HopRewriteUtils.createIndexingOp(tnewCol, new LiteralOp(mo.getNumColumns()), 
+			new LiteralOp(mo.getNumColumns()), new LiteralOp(1), new LiteralOp(1));
+		NaryOp rowOne = HopRewriteUtils.createNary(OpOpN.CBIND, topLeft, topCol, topRight);
+		NaryOp rowTwo = HopRewriteUtils.createNary(OpOpN.CBIND, bottomLeft, bottomCol, bottomRight);
+		NaryOp lrwHop = HopRewriteUtils.createNary(OpOpN.RBIND, rowOne, newCol, rowTwo);
+		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+		
+		// Generate runtime instructions
+		if (LOG.isDebugEnabled())
+			LOG.debug("LINEAGE REWRITE rewritePcaTsmm APPLIED");
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
+
+		if (DMLScript.STATISTICS) 
+			LineageCacheStatistics.incrementPRewrites();
+		return inst;
+	}
 	
 	/*------------------------REWRITE APPLICABILITY CHECKS-------------------------*/
 
@@ -963,6 +1025,41 @@ public class LineageRewriteReuse
 		return inCache.containsKey("indexSource") ? true : false;
 	}
 
+	private static boolean isPcaTsmm(Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache) {
+		if (!LineageCacheConfig.isReusable(curr, ec)) {
+			return false;
+		}
+		
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
+		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
+			LineageItem src1 = item.getInputs()[0];
+			if (src1.getOpcode().equalsIgnoreCase("cbind")) {
+				LineageItem src21 = src1.getInputs()[0];
+				LineageItem src22 = src1.getInputs()[1]; //ones
+				if (src21.getOpcode().equalsIgnoreCase("ba+*")) {
+					if (LineageCache.probe(src21))
+						inCache.put("projected", LineageCache.getMatrix(src21));
+				
+					LineageItem src31 = src21.getInputs()[1];
+					LineageItem src32 = src21.getInputs()[0];
+					if (src31.getOpcode().equalsIgnoreCase("rightIndex")) {
+						LineageItem cu = src31.getInputs()[4];
+						//TODO: delta with more than one column
+						LineageItem old_cu = reduceColByOne(cu);
+						LineageItem old_RI = new LineageItem("rightIndex", new LineageItem[] {src31.getInputs()[0], 
+								src31.getInputs()[1], src31.getInputs()[2], src31.getInputs()[3], old_cu});
+						LineageItem old_ba = new LineageItem("ba+*", new LineageItem[] {src32, old_RI});
+						LineageItem old_cbind = new LineageItem("cbind", new LineageItem[] {old_ba, src22});
+						LineageItem old_tsmm = new LineageItem("tsmm", new LineageItem[] {old_cbind});
+						if (LineageCache.probe(old_tsmm))
+							inCache.put("lastMatrix", LineageCache.getMatrix(old_tsmm));
+					}
+				}
+			}
+		}
+		return inCache.containsKey("projected") && inCache.containsKey("lastMatrix");
+	}
+
 	/*----------------------INSTRUCTIONS GENERATION & EXECUTION-----------------------*/
 
 	private static ArrayList<Instruction> genInst(Hop hops, ExecutionContext ec) {
@@ -1005,6 +1102,15 @@ public class LineageRewriteReuse
 		mo.acquireModify(cachedEntry);
 		mo.release();
 		return mo;
+	}
+	
+	private static LineageItem reduceColByOne(LineageItem cu) {
+		String data = cu.getData();  //xx·SCALAR·INT64·true
+		String[] parts = data.split(Instruction.VALUETYPE_PREFIX);
+		int cuNum = Integer.valueOf(parts[0]);
+		parts[0] = String.valueOf(cuNum-1);
+		String old_data = InstructionUtils.concatOperandParts(parts);
+		return(new LineageItem(old_data));
 	}
 
 	private static ExecutionContext getExecutionContext() {

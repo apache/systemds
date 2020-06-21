@@ -57,6 +57,7 @@ public class LineageCache
 
 	static {
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		System.out.println("Total memory " + maxMem);
 		LineageCacheEviction.setCacheLimit((long)(CACHE_FRAC * maxMem));
 	}
 	

@@ -319,6 +319,7 @@ public class LineageCacheEviction
 		long t1 = System.nanoTime();
 		// Adjust disk writing speed
 		adjustReadWriteSpeed(entry, ((double)(t1-t0))/1000000000, false);
+		System.out.println("spilled item " + entry._key.getOpcode());
 		
 		// Add all the entries associated with this matrix to spillList.
 		if (entry._origItem == null) {

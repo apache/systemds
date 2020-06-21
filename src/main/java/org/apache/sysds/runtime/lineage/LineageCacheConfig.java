@@ -24,6 +24,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 
@@ -38,7 +39,7 @@ public class LineageCacheConfig
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*"
+		"^2", "uack+", "tak+*", "uacsqk+", "uark+"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -152,7 +153,8 @@ public class LineageCacheConfig
 		boolean insttype = inst instanceof ComputationCPInstruction 
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
+			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
+			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)
 			&& ec.getMatrixObject(((ComputationCPInstruction)inst).input1).getUpdateType().isInPlace();
 		return insttype && rightop && !updateInplace;

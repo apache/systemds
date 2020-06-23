@@ -68,6 +68,7 @@ def rand(sds_context: SystemDSContext, rows: int, cols: int,
          lambd: Union[float, int] = 1) -> OperationNode:
     """Generates a matrix filled with random values
 
+    :param sds_context: SystemDS context
     :param rows: number of rows
     :param cols: number of cols
     :param min: min value for cells

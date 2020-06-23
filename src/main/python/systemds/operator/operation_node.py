@@ -211,6 +211,77 @@ class OperationNode(DAGNode):
         """
         return OperationNode(self.sds_context, 'abs', [self])
 
+    def sin(self) -> 'OperationNode':
+        """Calculate sin.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'sin', [self])
+
+    def cos(self) -> 'OperationNode':
+        """Calculate cos.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'cos', [self])
+
+    def tan(self) -> 'OperationNode':
+        """Calculate tan.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'tan', [self])
+
+    def asin(self) -> 'OperationNode':
+        """Calculate arcsin.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'asin', [self])
+
+    def acos(self) -> 'OperationNode':
+        """Calculate arccos.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'acos', [self])
+
+    def atan(self) -> 'OperationNode':
+        """Calculate arctan.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'atan', [self])
+
+    def sinh(self) -> 'OperationNode':
+        """Calculate sin.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'sinh', [self])
+
+    def cosh(self) -> 'OperationNode':
+        """Calculate cos.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'cosh', [self])
+
+    def tanh(self) -> 'OperationNode':
+        """Calculate tan.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'tanh', [self])
+    '''
+    def rev(self) -> 'OperationNode':
+        """Calculate tan.
+
+        :return: `OperationNode` representing operation
+        """
+        return OperationNode(self.sds_context, 'rev', [self])
+    '''
+
     def moment(self, moment, weights: DAGNode = None) -> 'OperationNode':
         # TODO write tests
         self._check_matrix_op()
@@ -219,3 +290,19 @@ class OperationNode(DAGNode):
             unnamed_inputs.append(weights)
         unnamed_inputs.append(moment)
         return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
+
+    def lm(self, y: DAGNode, **kwargs) -> 'OperationNode':
+        self._check_matrix_op()
+
+        if self._np_array.size == 0:
+            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                             .format(s=self._np_array.shape))
+
+        if y._np_array.size == 0:
+            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                             .format(s=y._np_array.shape))
+
+        params_dict = {'X': self, 'y': y}
+        params_dict.update(kwargs)
+
+        return OperationNode(self.sds_context, 'lm', named_input_nodes=params_dict)

@@ -95,4 +95,3 @@ jobs:
         python tests/onnx_systemds/test_models/model_generate.py
         python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
-

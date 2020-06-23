@@ -278,6 +278,24 @@ public class LineageItemUtils {
 							operands.put(item.getId(), aggunary);
 							break;
 						}
+						case AggregateBinary: {
+							Hop input1 = operands.get(item.getInputs()[0].getId());
+							Hop input2 = operands.get(item.getInputs()[1].getId());
+							Hop aggbinary = HopRewriteUtils.createMatrixMultiply(input1, input2);
+							operands.put(item.getId(), aggbinary);
+							break;
+						}
+						case AggregateTernary: {
+							Hop input1 = operands.get(item.getInputs()[0].getId());
+							Hop input2 = operands.get(item.getInputs()[1].getId());
+							Hop input3 = operands.get(item.getInputs()[2].getId());
+							Hop aggternary = HopRewriteUtils.createSum(
+								HopRewriteUtils.createBinary(
+								HopRewriteUtils.createBinary(input1, input2, OpOp2.MULT),
+								input3, OpOp2.MULT));
+							operands.put(item.getId(), aggternary);
+							break;
+						}
 						case Unary:
 						case Builtin: {
 							Hop input = operands.get(item.getInputs()[0].getId());
@@ -306,13 +324,6 @@ public class LineageItemUtils {
 							Hop input2 = operands.get(item.getInputs()[1].getId());
 							Hop binary = HopRewriteUtils.createBinary(input1, input2, opcode);
 							operands.put(item.getId(), binary);
-							break;
-						}
-						case AggregateBinary: {
-							Hop input1 = operands.get(item.getInputs()[0].getId());
-							Hop input2 = operands.get(item.getInputs()[1].getId());
-							Hop aggbinary = HopRewriteUtils.createMatrixMultiply(input1, input2);
-							operands.put(item.getId(), aggbinary);
 							break;
 						}
 						case Ternary: {

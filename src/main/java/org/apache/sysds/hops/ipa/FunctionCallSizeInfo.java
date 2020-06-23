@@ -233,13 +233,10 @@ public class FunctionCallSizeInfo
 								   &&  h1.getDim1()==h2.getDim1() 
 								   &&  h1.getDim2()==h2.getDim2()
 								   &&  h1.getNnz()==h2.getNnz() );
-						//check literal values (equi value)
-						if( h1 instanceof LiteralOp ) {
-							consistent &= (h2 instanceof LiteralOp 
+						//check literal values (both needs to be literals and same value)
+						if( h1 instanceof LiteralOp || h2 instanceof LiteralOp ) {
+							consistent &= (h1 instanceof LiteralOp && h2 instanceof LiteralOp
 								&& HopRewriteUtils.isEqualValue((LiteralOp)h1, (LiteralOp)h2));
-						}
-						else if(h2 instanceof LiteralOp) {
-							consistent = false; //h2 literal, but h1 not
 						}
 					}
 				}

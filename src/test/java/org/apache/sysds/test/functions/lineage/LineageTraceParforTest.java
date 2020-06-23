@@ -46,6 +46,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 	protected static final String TEST_NAME3 = "LineageTraceParfor3"; //rand - matrix result - remote spark parfor
 	protected static final String TEST_NAME4 = "LineageTraceParforSteplm"; //rand - steplm
 	protected static final String TEST_NAME5 = "LineageTraceParforKmeans"; //rand - kmeans
+	protected static final String TEST_NAME6 = "LineageTraceParforMSVM"; //rand - msvm remote parfor
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceParforTest.class.getSimpleName() + "/";
 	
@@ -63,6 +64,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}) );
 	}
 	
 	@Test
@@ -133,6 +135,11 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 	@Test
 	public void testLineageTraceKmeans_32() {
 		testLineageTraceParFor(32, TEST_NAME5);
+	}
+	
+	@Test
+	public void testLineageTraceMSVM_Remote64() {
+		testLineageTraceParFor(64, TEST_NAME6);
 	}
 	
 	private void testLineageTraceParFor(int ncol, String testname) {

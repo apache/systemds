@@ -72,7 +72,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
 
   # TODO make this a stop condition for l2svm instead of just printing.
   if(num_min + num_max != nrow(Y))
-    print("L2SVM: WARNING invalid number of labels in Y")
+    print("L2SVM: WARNING invalid number of labels in Y: "+num_min+" "+num_max)
 
   # Scale inputs to -1 for negative, and 1 for positive classification
   if(check_min != -1 | check_max != +1)

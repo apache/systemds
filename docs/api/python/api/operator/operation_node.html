@@ -230,6 +230,39 @@ Therefore errors will not immediately be recognized while constructing an sequen
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.operator.OperationNode.acos">
+<code class="sig-name descname">acos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.acos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate arccos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.asin">
+<code class="sig-name descname">asin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.asin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate arcsin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.atan">
+<code class="sig-name descname">atan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.atan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate arctan.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.operator.OperationNode.code_line">
 <code class="sig-name descname">code_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">unnamed_input_vars</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">named_input_vars</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#systemds.operator.OperationNode.code_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates the DML code line equal to the intended action of this node.</p>
@@ -261,6 +294,28 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>the output as an python builtin data type or numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.cos">
+<code class="sig-name descname">cos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate cos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.cosh">
+<code class="sig-name descname">cosh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cosh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate cos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -306,6 +361,28 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.operator.OperationNode.sin">
+<code class="sig-name descname">sin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate sin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.sinh">
+<code class="sig-name descname">sinh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sinh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate sin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.operator.OperationNode.sum">
 <code class="sig-name descname">sum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate sum of matrix.</p>
@@ -315,6 +392,28 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.tan">
+<code class="sig-name descname">tan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.tan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate tan.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.tanh">
+<code class="sig-name descname">tanh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.tanh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate tan.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
 </dd>
 </dl>
 </dd></dl>

@@ -83,3 +83,67 @@ class Matrix(OperationNode):
 
     def _is_numpy(self) -> bool:
         return self._np_array is not None
+
+    def rev(self) -> OperationNode:
+        """ Reverses the rows in a matrix
+
+        :return: the OperationNode representing this operation
+        """
+
+        self._is_numpy()
+        return OperationNode(self.sds_context, 'rev', [self])
+
+    def order(self, by: int = 1, decreasing: bool = False,
+              index_return: bool = False) -> OperationNode:
+        """ Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data
+
+        :param by: sort matrix by this column number
+        :param decreasing: If true the matrix will be sorted in decreasing order
+        :param index_return: If true, the index numbers will be returned
+        :return: the OperationNode representing this operation
+        """
+
+        self._is_numpy()
+
+        cols = self._np_array.shape[1]
+        if by > cols:
+            raise IndexError("Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
+
+        named_input_nodes = {'target': self, 'by': by, 'decreasing': str(decreasing).upper(),
+                             'index.return': str(index_return).upper()}
+
+        return OperationNode(self.sds_context, 'order', [], named_input_nodes=named_input_nodes)
+
+    def t(self) -> OperationNode:
+        """ Transposes the input matrix
+
+        :return: the OperationNode representing this operation
+        """
+
+        self._is_numpy()
+        return OperationNode(self.sds_context, 't', [self])
+
+    def cholesky(self, safe: bool = False) -> OperationNode:
+        """ Computes the Cholesky decomposition of a symmetric, positive definite matrix
+
+        :param safe: default value is False, if flag is True additional checks to ensure
+        that the matrix is symmetric positive definite are applied, if False, checks will be skipped
+        :return: the OperationNode representing this operation
+        """
+
+        self._is_numpy()
+
+        # check square dimension
+        if self._np_array.shape[0] != self._np_array.shape[1]:
+            raise ValueError("Last 2 dimensions of the array must be square")
+
+        if safe:
+            # check if mat is positive definite
+            if not np.all(np.linalg.eigvals(self._np_array) > 0):
+                raise ValueError("Matrix is not positive definite")
+
+            # check if mat is symmetric
+            if not np.allclose(self._np_array, self._np_array.transpose()):
+                raise ValueError("Matrix is not symmetric")
+
+        return OperationNode(self.sds_context, 'cholesky', [self])

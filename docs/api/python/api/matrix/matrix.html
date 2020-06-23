@@ -209,6 +209,19 @@ on need, or a path pointing to a matrix.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.matrix.Matrix.cholesky">
+<code class="sig-name descname">cholesky</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">safe</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.cholesky" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Cholesky decomposition of a symmetric, positive definite matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>safe</strong> – default value is False, if flag is True additional checks to ensure</p>
+</dd>
+</dl>
+<p>that the matrix is symmetric positive definite are applied, if False, checks will be skipped
+:return: the OperationNode representing this operation</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.matrix.Matrix.code_line">
 <code class="sig-name descname">code_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">unnamed_input_vars</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">named_input_vars</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#systemds.matrix.Matrix.code_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates the DML code line equal to the intended action of this node.</p>
@@ -245,6 +258,24 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.matrix.Matrix.order">
+<code class="sig-name descname">order</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">by</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">decreasing</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">index_return</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.order" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>by</strong> – sort matrix by this column number</p></li>
+<li><p><strong>decreasing</strong> – If true the matrix will be sorted in decreasing order</p></li>
+<li><p><strong>index_return</strong> – If true, the index numbers will be returned</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.matrix.Matrix.pass_python_data_to_prepared_script">
 <code class="sig-name descname">pass_python_data_to_prepared_script</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jvm</span><span class="p">:</span> <span class="n">py4j.java_gateway.JVMView</span></em>, <em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prepared_script</span><span class="p">:</span> <span class="n">py4j.java_gateway.JavaObject</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.matrix.Matrix.pass_python_data_to_prepared_script" title="Permalink to this definition">¶</a></dt>
 <dd><p>Passes data from python to the prepared script object.</p>
@@ -255,6 +286,28 @@ all operations are only building the DAG without actually executing (lazy evalua
 <li><p><strong>var_name</strong> – the variable name the data should get in java</p></li>
 <li><p><strong>prepared_script</strong> – the prepared script</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.matrix.Matrix.rev">
+<code class="sig-name descname">rev</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.rev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reverses the rows in a matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.matrix.Matrix.t">
+<code class="sig-name descname">t</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.t" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transposes the input matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the OperationNode representing this operation</p>
 </dd>
 </dl>
 </dd></dl>

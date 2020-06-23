@@ -341,6 +341,9 @@ SYSTEMDS-410 Lineage Tracing, Reuse and Integration II
  * 413 Cache and reuse MultiReturnBuiltin instructions                OK
  * 414 New rewrite for PCA --> lmDS pipeline                          OK
 
+SYSTEMDS-420 Compiler Improvements
+ * 421 Fix invalid IPA scalar propagation into functions              OK
+
 SYSTEMDS-500 Documentation Webpage Reintroduction
  * 501 Make Documentation webpage framework                           OK
 

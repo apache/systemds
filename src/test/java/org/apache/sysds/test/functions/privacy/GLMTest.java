@@ -188,7 +188,6 @@ public class GLMTest extends AutomatedTestBase
 
 	@Test
 	public void TestGLMPrivateX(){
-		
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
 		Class<?> expectedException = DMLException.class; 
 		testGLM(pc, null, expectedException);

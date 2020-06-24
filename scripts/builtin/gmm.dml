@@ -336,6 +336,8 @@ return(Matrix[Double] es_log_prob ) # nrow(X) * n_components
                     2 * X %*% t(mu * precisions) +
                     rowSums(X*X) %*% t(precisions) ) # TODO replace rowSums(X*X) with squared rowNorm() built-in
   }
+  if(ncol(log_det) == 1)
+    log_det = matrix(1, 1, ncol(log_prob)) * log_det 
   es_log_prob = -.5 * (d * log(2 * pi) + log_prob) + log_det
 }
 

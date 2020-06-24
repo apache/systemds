@@ -93,6 +93,10 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 		runGMMTest(3, "VVV", "kmeans", 100, 0.000001, false, LopProperties.ExecType.SPARK);
 	}
 
+	@Test public void testGMMM2KmeanSpark() {
+		runGMMTest(3, "EEE", "kmeans", 100, 0.000001, false, LopProperties.ExecType.SPARK);
+	}
+
 	@Test public void testGMMM3KmeanSpark() {
 		runGMMTest(3, "VVI", "kmeans", 100, 0.000001, false, LopProperties.ExecType.SPARK);
 	}

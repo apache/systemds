@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.gpu;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
@@ -89,8 +90,15 @@ public class SpoofGPUInstruction extends GPUInstruction implements LineageTracea
 
         // set the output dimensions to the hop node matrix dimensions
         if( _out.getDataType() == Types.DataType.MATRIX) {
-            MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), inputs.get(0).getNumRows(),
-                    inputs.get(0).getNumColumns()).getKey();
+            long rows = inputs.get(0).getNumRows();
+            long cols = inputs.get(0).getNumColumns();
+            if(_op.getSpoofTemplateType().contains("CW"))
+                if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.COL_AGG)
+                    rows = 1;
+                else if(((CNodeCell)_op.getCNodeTemplate()).getCellType() == SpoofCellwise.CellType.ROW_AGG)
+                    cols = 1;
+
+            MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(_out.getName(), rows, cols).getKey();
             ec.setMetaData(_out.getName(), out_obj.getNumRows(), out_obj.getNumColumns());
             _op.execute(inputs, scalars, out_obj, ec);
             ec.releaseMatrixOutputForGPUInstruction(_out.getName());

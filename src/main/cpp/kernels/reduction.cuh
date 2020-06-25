@@ -244,15 +244,15 @@ __device__ void reduce_row(T *g_idata, ///< input data stored in device memory (
  * the value before writing it to its final location in global memory for each
  * column
  */
-template<typename ReductionOp, typename AssignmentOp, typename T>
+template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
 __device__ void reduce_col(T *g_idata, ///< input data stored in device memory (of size rows*cols)
 		T *g_odata,  ///< output/temporary array store in device memory (of size rows*cols)
 		unsigned int rows,  ///< rows in input and temporary/output arrays
 		unsigned int cols,  ///< columns in input and temporary/output arrays
+		T initialValue,  ///< initial value for the reduction variable
 		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
-		AssignmentOp assignment_op, ///< Operation to perform before assigning this
-		/// to its final location in global memory for each column
-		T initialValue)  ///< initial value for the reduction variable
+		SpoofCellwiseOp spoof_op) ///< Operation to perform before aggregation
+		
 {
 	unsigned int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
 	if (global_tid >= cols) {
@@ -264,8 +264,8 @@ __device__ void reduce_col(T *g_idata, ///< input data stored in device memory (
 	T val = initialValue;
 
 	while (i < rows * cols) {
-		val = reduction_op(val, g_idata[i]);
+		val = reduction_op(val, spoof_op(g_idata[i], i));
 		i += grid_size;
 	}
-	g_odata[global_tid] = assignment_op(val);
+	g_odata[global_tid] = val;
 }

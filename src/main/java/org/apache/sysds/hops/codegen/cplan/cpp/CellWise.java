@@ -79,7 +79,40 @@ public class CellWise implements CodeTemplate {
 
     public static final String TEMPLATE_ROW_AGG = "\n";
 
-    public static final String TEMPLATE_COL_AGG = "\n";
+    public static final String TEMPLATE_COL_AGG =
+        "%TMP%\n" +
+            "// CellType: %TYPE%\n" +
+            "// AggOp: %AGG_OP%\n" +
+            "// SparseSafe: %SPARSE_SAFE%\n" +
+            "// SEQ: %SEQ%\n" +
+            "#include \"utils.cuh\"\n" +
+            "#include \"agg_ops.cuh\"\n" +
+            "#include \"spoof_utils.cuh\"\n" +
+            "#include \"reduction.cuh\"\n" +
+            "\n" +
+            "template<typename T>\n" +
+            "struct SpoofCellwiseOp {\n" +
+            "   T**b; T* scalars; \n" +
+            "   int m, n, grix_;\n" +
+            "   SpoofCellwiseOp(T** b, T* scalars, int m, int n, int grix) : \n" +
+            "       b(b), scalars(scalars), m(m), n(n), grix_(grix) {}\n" +
+            "   __device__  __forceinline__ T operator()(T a, int idx) const {\n" +
+            "   int rix = idx / n;\n" +
+            "   int cix = idx % n;\n" +
+            "   int grix = grix_ + rix;\n" +
+            "%BODY_dense%" +
+            //                    "__syncthreads();\n" +
+            //                    "printf(\"idx=%d, grix=%d, rix=%d, cix=%d, m=%d, n=%d, out=%f\\n\", idx, grix, rix, cix, m, n, %OUT%);\n" +
+            "       return %OUT%;\n" +
+            "   }\n" +
+            "};" +
+            "\n" +
+            "template<typename T>\n" +
+            "__global__ void %TMP% (T *a, T** b, T* c, T* scalars, int m, int n, int grix) {\n" +
+            "   %AGG_TMPL%<T> agg_op;\n" +
+            "   SpoofCellwiseOp<T> spoof_op(b, scalars, m, n, grix);\n" +
+            "   reduce_col<T, %AGG_TMPL%<T>, SpoofCellwiseOp<T>>(a, c, m, n, %INITIAL_VALUE%, agg_op, spoof_op);\n" +
+            "}\n";
 
     @Override
     public String getTemplate() {

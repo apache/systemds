@@ -2681,11 +2681,11 @@ BB19_5:
 	ret;
 }
 
-	// .globl	reduce_prod_d
-.visible .entry reduce_prod_d(
-	.param .u64 reduce_prod_d_param_0,
-	.param .u64 reduce_prod_d_param_1,
-	.param .u32 reduce_prod_d_param_2
+	// .globl	reduce_sum_sq_d
+.visible .entry reduce_sum_sq_d(
+	.param .u64 reduce_sum_sq_d_param_0,
+	.param .u64 reduce_sum_sq_d_param_1,
+	.param .u32 reduce_sum_sq_d_param_2
 )
 {
 	.local .align 16 .b8 	__local_depot20[16];
@@ -2699,15 +2699,15 @@ BB19_5:
 
 	mov.u64 	%SPL, __local_depot20;
 	cvta.local.u64 	%SP, %SPL;
-	ld.param.u64 	%rd1, [reduce_prod_d_param_0];
-	ld.param.u64 	%rd2, [reduce_prod_d_param_1];
-	ld.param.u32 	%r6, [reduce_prod_d_param_2];
+	ld.param.u64 	%rd1, [reduce_sum_sq_d_param_0];
+	ld.param.u64 	%rd2, [reduce_sum_sq_d_param_1];
+	ld.param.u32 	%r6, [reduce_sum_sq_d_param_2];
 	mov.u32 	%r7, %ctaid.x;
 	shl.b32 	%r8, %r7, 1;
 	mov.u32 	%r9, %ntid.x;
 	mov.u32 	%r10, %tid.x;
 	mad.lo.s32 	%r38, %r8, %r9, %r10;
-	mov.f64 	%fd45, 0d3FF0000000000000;
+	mov.f64 	%fd45, 0d0000000000000000;
 	setp.ge.u32	%p1, %r38, %r6;
 	@%p1 bra 	BB20_4;
 
@@ -2716,7 +2716,7 @@ BB20_1:
 	mul.wide.u32 	%rd4, %r38, 8;
 	add.s64 	%rd5, %rd3, %rd4;
 	ld.global.f64 	%fd30, [%rd5];
-	mul.f64 	%fd45, %fd45, %fd30;
+	fma.rn.f64 	%fd45, %fd30, %fd30, %fd45;
 	add.s32 	%r3, %r38, %r9;
 	setp.ge.u32	%p2, %r3, %r6;
 	@%p2 bra 	BB20_3;
@@ -2724,7 +2724,7 @@ BB20_1:
 	mul.wide.u32 	%rd7, %r3, 8;
 	add.s64 	%rd8, %rd3, %rd7;
 	ld.global.f64 	%fd31, [%rd8];
-	mul.f64 	%fd45, %fd45, %fd31;
+	fma.rn.f64 	%fd45, %fd31, %fd31, %fd45;
 
 BB20_3:
 	shl.b32 	%r13, %r9, 1;
@@ -2746,7 +2746,7 @@ BB20_4:
 	@%p5 bra 	BB20_7;
 
 	ld.shared.f64 	%fd32, [%r5+4096];
-	mul.f64 	%fd45, %fd45, %fd32;
+	fma.rn.f64 	%fd45, %fd32, %fd32, %fd45;
 	st.shared.f64 	[%r5], %fd45;
 
 BB20_7:
@@ -2760,7 +2760,7 @@ BB20_8:
 	@%p7 bra 	BB20_11;
 
 	ld.shared.f64 	%fd33, [%r5+2048];
-	mul.f64 	%fd45, %fd45, %fd33;
+	fma.rn.f64 	%fd45, %fd33, %fd33, %fd45;
 	st.shared.f64 	[%r5], %fd45;
 
 BB20_11:
@@ -2774,7 +2774,7 @@ BB20_12:
 	@%p9 bra 	BB20_15;
 
 	ld.shared.f64 	%fd34, [%r5+1024];
-	mul.f64 	%fd45, %fd45, %fd34;
+	fma.rn.f64 	%fd45, %fd34, %fd34, %fd45;
 	st.shared.f64 	[%r5], %fd45;
 
 BB20_15:
@@ -2788,7 +2788,7 @@ BB20_16:
 	@%p11 bra 	BB20_19;
 
 	ld.shared.f64 	%fd35, [%r5+512];
-	mul.f64 	%fd45, %fd45, %fd35;
+	fma.rn.f64 	%fd45, %fd35, %fd35, %fd45;
 	st.shared.f64 	[%r5], %fd45;
 
 BB20_19:
@@ -2802,7 +2802,7 @@ BB20_20:
 	@%p13 bra 	BB20_23;
 
 	ld.volatile.shared.f64 	%fd36, [%r5+256];
-	mul.f64 	%fd45, %fd45, %fd36;
+	fma.rn.f64 	%fd45, %fd36, %fd36, %fd45;
 	st.volatile.shared.f64 	[%r5], %fd45;
 
 BB20_23:
@@ -2810,7 +2810,7 @@ BB20_23:
 	@%p14 bra 	BB20_25;
 
 	ld.volatile.shared.f64 	%fd37, [%r5+128];
-	mul.f64 	%fd45, %fd45, %fd37;
+	fma.rn.f64 	%fd45, %fd37, %fd37, %fd45;
 	st.volatile.shared.f64 	[%r5], %fd45;
 
 BB20_25:
@@ -2818,7 +2818,7 @@ BB20_25:
 	@%p15 bra 	BB20_27;
 
 	ld.volatile.shared.f64 	%fd38, [%r5+64];
-	mul.f64 	%fd45, %fd45, %fd38;
+	fma.rn.f64 	%fd45, %fd38, %fd38, %fd45;
 	st.volatile.shared.f64 	[%r5], %fd45;
 
 BB20_27:
@@ -2826,7 +2826,7 @@ BB20_27:
 	@%p16 bra 	BB20_29;
 
 	ld.volatile.shared.f64 	%fd39, [%r5+32];
-	mul.f64 	%fd45, %fd45, %fd39;
+	fma.rn.f64 	%fd45, %fd39, %fd39, %fd45;
 	st.volatile.shared.f64 	[%r5], %fd45;
 
 BB20_29:
@@ -2834,7 +2834,7 @@ BB20_29:
 	@%p17 bra 	BB20_31;
 
 	ld.volatile.shared.f64 	%fd40, [%r5+16];
-	mul.f64 	%fd45, %fd45, %fd40;
+	fma.rn.f64 	%fd45, %fd40, %fd40, %fd45;
 	st.volatile.shared.f64 	[%r5], %fd45;
 
 BB20_31:
@@ -2842,7 +2842,7 @@ BB20_31:
 	@%p18 bra 	BB20_33;
 
 	ld.volatile.shared.f64 	%fd41, [%r5+8];
-	mul.f64 	%fd42, %fd45, %fd41;
+	fma.rn.f64 	%fd42, %fd41, %fd41, %fd45;
 	st.volatile.shared.f64 	[%r5], %fd42;
 
 BB20_33:
@@ -2891,11 +2891,11 @@ BB20_37:
 	ret;
 }
 
-	// .globl	reduce_prod_f
-.visible .entry reduce_prod_f(
-	.param .u64 reduce_prod_f_param_0,
-	.param .u64 reduce_prod_f_param_1,
-	.param .u32 reduce_prod_f_param_2
+	// .globl	reduce_sum_sq_f
+.visible .entry reduce_sum_sq_f(
+	.param .u64 reduce_sum_sq_f_param_0,
+	.param .u64 reduce_sum_sq_f_param_1,
+	.param .u32 reduce_sum_sq_f_param_2
 )
 {
 	.local .align 16 .b8 	__local_depot21[16];
@@ -2910,15 +2910,15 @@ BB20_37:
 
 	mov.u64 	%SPL, __local_depot21;
 	cvta.local.u64 	%SP, %SPL;
-	ld.param.u64 	%rd1, [reduce_prod_f_param_0];
-	ld.param.u64 	%rd2, [reduce_prod_f_param_1];
-	ld.param.u32 	%r6, [reduce_prod_f_param_2];
+	ld.param.u64 	%rd1, [reduce_sum_sq_f_param_0];
+	ld.param.u64 	%rd2, [reduce_sum_sq_f_param_1];
+	ld.param.u32 	%r6, [reduce_sum_sq_f_param_2];
 	mov.u32 	%r7, %ctaid.x;
 	shl.b32 	%r8, %r7, 1;
 	mov.u32 	%r9, %ntid.x;
 	mov.u32 	%r10, %tid.x;
 	mad.lo.s32 	%r38, %r8, %r9, %r10;
-	mov.f32 	%f45, 0f3F800000;
+	mov.f32 	%f45, 0f00000000;
 	setp.ge.u32	%p1, %r38, %r6;
 	@%p1 bra 	BB21_4;
 
@@ -2927,7 +2927,7 @@ BB21_1:
 	mul.wide.u32 	%rd4, %r38, 4;
 	add.s64 	%rd5, %rd3, %rd4;
 	ld.global.f32 	%f30, [%rd5];
-	mul.f32 	%f45, %f45, %f30;
+	fma.rn.f32 	%f45, %f30, %f30, %f45;
 	add.s32 	%r3, %r38, %r9;
 	setp.ge.u32	%p2, %r3, %r6;
 	@%p2 bra 	BB21_3;
@@ -2935,7 +2935,7 @@ BB21_1:
 	mul.wide.u32 	%rd7, %r3, 4;
 	add.s64 	%rd8, %rd3, %rd7;
 	ld.global.f32 	%f31, [%rd8];
-	mul.f32 	%f45, %f45, %f31;
+	fma.rn.f32 	%f45, %f31, %f31, %f45;
 
 BB21_3:
 	shl.b32 	%r13, %r9, 1;
@@ -2957,7 +2957,7 @@ BB21_4:
 	@%p5 bra 	BB21_7;
 
 	ld.shared.f32 	%f32, [%r5+2048];
-	mul.f32 	%f45, %f45, %f32;
+	fma.rn.f32 	%f45, %f32, %f32, %f45;
 	st.shared.f32 	[%r5], %f45;
 
 BB21_7:
@@ -2971,7 +2971,7 @@ BB21_8:
 	@%p7 bra 	BB21_11;
 
 	ld.shared.f32 	%f33, [%r5+1024];
-	mul.f32 	%f45, %f45, %f33;
+	fma.rn.f32 	%f45, %f33, %f33, %f45;
 	st.shared.f32 	[%r5], %f45;
 
 BB21_11:
@@ -2985,7 +2985,7 @@ BB21_12:
 	@%p9 bra 	BB21_15;
 
 	ld.shared.f32 	%f34, [%r5+512];
-	mul.f32 	%f45, %f45, %f34;
+	fma.rn.f32 	%f45, %f34, %f34, %f45;
 	st.shared.f32 	[%r5], %f45;
 
 BB21_15:
@@ -2999,7 +2999,7 @@ BB21_16:
 	@%p11 bra 	BB21_19;
 
 	ld.shared.f32 	%f35, [%r5+256];
-	mul.f32 	%f45, %f45, %f35;
+	fma.rn.f32 	%f45, %f35, %f35, %f45;
 	st.shared.f32 	[%r5], %f45;
 
 BB21_19:
@@ -3013,7 +3013,7 @@ BB21_20:
 	@%p13 bra 	BB21_23;
 
 	ld.volatile.shared.f32 	%f36, [%r5+128];
-	mul.f32 	%f45, %f45, %f36;
+	fma.rn.f32 	%f45, %f36, %f36, %f45;
 	st.volatile.shared.f32 	[%r5], %f45;
 
 BB21_23:
@@ -3021,7 +3021,7 @@ BB21_23:
 	@%p14 bra 	BB21_25;
 
 	ld.volatile.shared.f32 	%f37, [%r5+64];
-	mul.f32 	%f45, %f45, %f37;
+	fma.rn.f32 	%f45, %f37, %f37, %f45;
 	st.volatile.shared.f32 	[%r5], %f45;
 
 BB21_25:
@@ -3029,7 +3029,7 @@ BB21_25:
 	@%p15 bra 	BB21_27;
 
 	ld.volatile.shared.f32 	%f38, [%r5+32];
-	mul.f32 	%f45, %f45, %f38;
+	fma.rn.f32 	%f45, %f38, %f38, %f45;
 	st.volatile.shared.f32 	[%r5], %f45;
 
 BB21_27:
@@ -3037,7 +3037,7 @@ BB21_27:
 	@%p16 bra 	BB21_29;
 
 	ld.volatile.shared.f32 	%f39, [%r5+16];
-	mul.f32 	%f45, %f45, %f39;
+	fma.rn.f32 	%f45, %f39, %f39, %f45;
 	st.volatile.shared.f32 	[%r5], %f45;
 
 BB21_29:
@@ -3045,7 +3045,7 @@ BB21_29:
 	@%p17 bra 	BB21_31;
 
 	ld.volatile.shared.f32 	%f40, [%r5+8];
-	mul.f32 	%f45, %f45, %f40;
+	fma.rn.f32 	%f45, %f40, %f40, %f45;
 	st.volatile.shared.f32 	[%r5], %f45;
 
 BB21_31:
@@ -3053,7 +3053,7 @@ BB21_31:
 	@%p18 bra 	BB21_33;
 
 	ld.volatile.shared.f32 	%f41, [%r5+4];
-	mul.f32 	%f42, %f45, %f41;
+	fma.rn.f32 	%f42, %f41, %f41, %f45;
 	st.volatile.shared.f32 	[%r5], %f42;
 
 BB21_33:
@@ -3103,873 +3103,107 @@ BB21_37:
 	ret;
 }
 
-	// .globl	reduce_row_mean_d
-.visible .entry reduce_row_mean_d(
-	.param .u64 reduce_row_mean_d_param_0,
-	.param .u64 reduce_row_mean_d_param_1,
-	.param .u32 reduce_row_mean_d_param_2,
-	.param .u32 reduce_row_mean_d_param_3
-)
-{
-	.reg .pred 	%p<20>;
-	.reg .b32 	%r<72>;
-	.reg .f64 	%fd<58>;
-	.reg .b64 	%rd<9>;
-
-
-	ld.param.u64 	%rd1, [reduce_row_mean_d_param_0];
-	ld.param.u64 	%rd2, [reduce_row_mean_d_param_1];
-	ld.param.u32 	%r5, [reduce_row_mean_d_param_2];
-	ld.param.u32 	%r4, [reduce_row_mean_d_param_3];
-	mov.u32 	%r6, %ctaid.x;
-	setp.ge.u32	%p1, %r6, %r5;
-	@%p1 bra 	BB22_35;
-
-	mov.u32 	%r71, %tid.x;
-	mov.f64 	%fd6, 0d0000000000000000;
-	setp.ge.u32	%p2, %r71, %r4;
-	@%p2 bra 	BB22_4;
-
-	cvta.to.global.u64 	%rd3, %rd1;
-
-BB22_3:
-	mad.lo.s32 	%r8, %r6, %r4, %r71;
-	mul.wide.u32 	%rd4, %r8, 8;
-	add.s64 	%rd5, %rd3, %rd4;
-	ld.global.f64 	%fd28, [%rd5];
-	add.f64 	%fd6, %fd6, %fd28;
-	mov.u32 	%r9, %ntid.x;
-	add.s32 	%r71, %r9, %r71;
-	setp.lt.u32	%p3, %r71, %r4;
-	@%p3 bra 	BB22_3;
-
-BB22_4:
-	mov.u32 	%r10, %tid.x;
-	shl.b32 	%r11, %r10, 3;
-	mov.u32 	%r12, memory;
-	add.s32 	%r13, %r12, %r11;
-	st.shared.f64 	[%r13], %fd6;
-	bar.sync 	0;
-	mov.u32 	%r14, %ntid.x;
-	setp.lt.u32	%p4, %r14, 1024;
-	@%p4 bra 	BB22_8;
-
-	setp.gt.u32	%p5, %r10, 511;
-	@%p5 bra 	BB22_7;
-
-	ld.shared.f64 	%fd29, [%r13+4096];
-	add.f64 	%fd6, %fd6, %fd29;
-	st.shared.f64 	[%r13], %fd6;
-
-BB22_7:
-	bar.sync 	0;
-
-BB22_8:
-	setp.lt.u32	%p6, %r14, 512;
-	@%p6 bra 	BB22_12;
-
-	setp.gt.u32	%p7, %r10, 255;
-	@%p7 bra 	BB22_11;
-
-	ld.shared.f64 	%fd30, [%r13+2048];
-	add.f64 	%fd6, %fd6, %fd30;
-	st.shared.f64 	[%r13], %fd6;
-
-BB22_11:
-	bar.sync 	0;
-
-BB22_12:
-	setp.lt.u32	%p8, %r14, 256;
-	@%p8 bra 	BB22_16;
-
-	setp.gt.u32	%p9, %r10, 127;
-	@%p9 bra 	BB22_15;
-
-	ld.shared.f64 	%fd31, [%r13+1024];
-	add.f64 	%fd6, %fd6, %fd31;
-	st.shared.f64 	[%r13], %fd6;
-
-BB22_15:
-	bar.sync 	0;
-
-BB22_16:
-	setp.lt.u32	%p10, %r14, 128;
-	@%p10 bra 	BB22_20;
-
-	setp.gt.u32	%p11, %r10, 63;
-	@%p11 bra 	BB22_19;
-
-	ld.shared.f64 	%fd32, [%r13+512];
-	add.f64 	%fd6, %fd6, %fd32;
-	st.shared.f64 	[%r13], %fd6;
-
-BB22_19:
-	bar.sync 	0;
-
-BB22_20:
-	setp.gt.u32	%p12, %r10, 31;
-	@%p12 bra 	BB22_33;
-
-	setp.lt.u32	%p13, %r14, 64;
-	@%p13 bra 	BB22_23;
-
-	ld.volatile.shared.f64 	%fd33, [%r13+256];
-	add.f64 	%fd6, %fd6, %fd33;
-	st.volatile.shared.f64 	[%r13], %fd6;
-
-BB22_23:
-	setp.lt.u32	%p14, %r14, 32;
-	@%p14 bra 	BB22_25;
-
-	ld.volatile.shared.f64 	%fd34, [%r13+128];
-	add.f64 	%fd6, %fd6, %fd34;
-	st.volatile.shared.f64 	[%r13], %fd6;
-
-BB22_25:
-	setp.lt.u32	%p15, %r14, 16;
-	@%p15 bra 	BB22_27;
-
-	ld.volatile.shared.f64 	%fd35, [%r13+64];
-	add.f64 	%fd6, %fd6, %fd35;
-	st.volatile.shared.f64 	[%r13], %fd6;
-
-BB22_27:
-	setp.lt.u32	%p16, %r14, 8;
-	@%p16 bra 	BB22_29;
-
-	ld.volatile.shared.f64 	%fd36, [%r13+32];
-	add.f64 	%fd6, %fd6, %fd36;
-	st.volatile.shared.f64 	[%r13], %fd6;
-
-BB22_29:
-	setp.lt.u32	%p17, %r14, 4;
-	@%p17 bra 	BB22_31;
-
-	ld.volatile.shared.f64 	%fd37, [%r13+16];
-	add.f64 	%fd6, %fd6, %fd37;
-	st.volatile.shared.f64 	[%r13], %fd6;
-
-BB22_31:
-	setp.lt.u32	%p18, %r14, 2;
-	@%p18 bra 	BB22_33;
-
-	ld.volatile.shared.f64 	%fd38, [%r13+8];
-	add.f64 	%fd39, %fd6, %fd38;
-	st.volatile.shared.f64 	[%r13], %fd39;
-
-BB22_33:
-	setp.ne.s32	%p19, %r10, 0;
-	@%p19 bra 	BB22_35;
-
-	ld.shared.f64 	%fd40, [memory];
-	cvt.rn.f64.s32	%fd41, %r4;
-	div.rn.f64 	%fd42, %fd40, %fd41;
-	cvta.to.global.u64 	%rd6, %rd2;
-	mul.wide.u32 	%rd7, %r6, 8;
-	add.s64 	%rd8, %rd6, %rd7;
-	st.global.f64 	[%rd8], %fd42;
-
-BB22_35:
-	ret;
-}
-
-	// .globl	reduce_row_mean_f
-.visible .entry reduce_row_mean_f(
-	.param .u64 reduce_row_mean_f_param_0,
-	.param .u64 reduce_row_mean_f_param_1,
-	.param .u32 reduce_row_mean_f_param_2,
-	.param .u32 reduce_row_mean_f_param_3
-)
-{
-	.reg .pred 	%p<20>;
-	.reg .f32 	%f<58>;
-	.reg .b32 	%r<72>;
-	.reg .b64 	%rd<9>;
-
-
-	ld.param.u64 	%rd1, [reduce_row_mean_f_param_0];
-	ld.param.u64 	%rd2, [reduce_row_mean_f_param_1];
-	ld.param.u32 	%r5, [reduce_row_mean_f_param_2];
-	ld.param.u32 	%r4, [reduce_row_mean_f_param_3];
-	mov.u32 	%r6, %ctaid.x;
-	setp.ge.u32	%p1, %r6, %r5;
-	@%p1 bra 	BB23_35;
-
-	mov.u32 	%r71, %tid.x;
-	mov.f32 	%f6, 0f00000000;
-	setp.ge.u32	%p2, %r71, %r4;
-	@%p2 bra 	BB23_4;
-
-	cvta.to.global.u64 	%rd3, %rd1;
-
-BB23_3:
-	mad.lo.s32 	%r8, %r6, %r4, %r71;
-	mul.wide.u32 	%rd4, %r8, 4;
-	add.s64 	%rd5, %rd3, %rd4;
-	ld.global.f32 	%f28, [%rd5];
-	add.f32 	%f6, %f6, %f28;
-	mov.u32 	%r9, %ntid.x;
-	add.s32 	%r71, %r9, %r71;
-	setp.lt.u32	%p3, %r71, %r4;
-	@%p3 bra 	BB23_3;
-
-BB23_4:
-	mov.u32 	%r10, %tid.x;
-	shl.b32 	%r11, %r10, 2;
-	mov.u32 	%r12, memory;
-	add.s32 	%r13, %r12, %r11;
-	st.shared.f32 	[%r13], %f6;
-	bar.sync 	0;
-	mov.u32 	%r14, %ntid.x;
-	setp.lt.u32	%p4, %r14, 1024;
-	@%p4 bra 	BB23_8;
-
-	setp.gt.u32	%p5, %r10, 511;
-	@%p5 bra 	BB23_7;
-
-	ld.shared.f32 	%f29, [%r13+2048];
-	add.f32 	%f6, %f6, %f29;
-	st.shared.f32 	[%r13], %f6;
-
-BB23_7:
-	bar.sync 	0;
-
-BB23_8:
-	setp.lt.u32	%p6, %r14, 512;
-	@%p6 bra 	BB23_12;
-
-	setp.gt.u32	%p7, %r10, 255;
-	@%p7 bra 	BB23_11;
-
-	ld.shared.f32 	%f30, [%r13+1024];
-	add.f32 	%f6, %f6, %f30;
-	st.shared.f32 	[%r13], %f6;
-
-BB23_11:
-	bar.sync 	0;
-
-BB23_12:
-	setp.lt.u32	%p8, %r14, 256;
-	@%p8 bra 	BB23_16;
-
-	setp.gt.u32	%p9, %r10, 127;
-	@%p9 bra 	BB23_15;
-
-	ld.shared.f32 	%f31, [%r13+512];
-	add.f32 	%f6, %f6, %f31;
-	st.shared.f32 	[%r13], %f6;
-
-BB23_15:
-	bar.sync 	0;
-
-BB23_16:
-	setp.lt.u32	%p10, %r14, 128;
-	@%p10 bra 	BB23_20;
-
-	setp.gt.u32	%p11, %r10, 63;
-	@%p11 bra 	BB23_19;
-
-	ld.shared.f32 	%f32, [%r13+256];
-	add.f32 	%f6, %f6, %f32;
-	st.shared.f32 	[%r13], %f6;
-
-BB23_19:
-	bar.sync 	0;
-
-BB23_20:
-	setp.gt.u32	%p12, %r10, 31;
-	@%p12 bra 	BB23_33;
-
-	setp.lt.u32	%p13, %r14, 64;
-	@%p13 bra 	BB23_23;
-
-	ld.volatile.shared.f32 	%f33, [%r13+128];
-	add.f32 	%f6, %f6, %f33;
-	st.volatile.shared.f32 	[%r13], %f6;
-
-BB23_23:
-	setp.lt.u32	%p14, %r14, 32;
-	@%p14 bra 	BB23_25;
-
-	ld.volatile.shared.f32 	%f34, [%r13+64];
-	add.f32 	%f6, %f6, %f34;
-	st.volatile.shared.f32 	[%r13], %f6;
-
-BB23_25:
-	setp.lt.u32	%p15, %r14, 16;
-	@%p15 bra 	BB23_27;
-
-	ld.volatile.shared.f32 	%f35, [%r13+32];
-	add.f32 	%f6, %f6, %f35;
-	st.volatile.shared.f32 	[%r13], %f6;
-
-BB23_27:
-	setp.lt.u32	%p16, %r14, 8;
-	@%p16 bra 	BB23_29;
-
-	ld.volatile.shared.f32 	%f36, [%r13+16];
-	add.f32 	%f6, %f6, %f36;
-	st.volatile.shared.f32 	[%r13], %f6;
-
-BB23_29:
-	setp.lt.u32	%p17, %r14, 4;
-	@%p17 bra 	BB23_31;
-
-	ld.volatile.shared.f32 	%f37, [%r13+8];
-	add.f32 	%f6, %f6, %f37;
-	st.volatile.shared.f32 	[%r13], %f6;
-
-BB23_31:
-	setp.lt.u32	%p18, %r14, 2;
-	@%p18 bra 	BB23_33;
-
-	ld.volatile.shared.f32 	%f38, [%r13+4];
-	add.f32 	%f39, %f6, %f38;
-	st.volatile.shared.f32 	[%r13], %f39;
-
-BB23_33:
-	setp.ne.s32	%p19, %r10, 0;
-	@%p19 bra 	BB23_35;
-
-	ld.shared.f32 	%f40, [memory];
-	cvt.rn.f32.s32	%f41, %r4;
-	div.rn.f32 	%f42, %f40, %f41;
-	cvta.to.global.u64 	%rd6, %rd2;
-	mul.wide.u32 	%rd7, %r6, 4;
-	add.s64 	%rd8, %rd6, %rd7;
-	st.global.f32 	[%rd8], %f42;
-
-BB23_35:
-	ret;
-}
-
-	// .globl	reduce_col_mean_d
-.visible .entry reduce_col_mean_d(
-	.param .u64 reduce_col_mean_d_param_0,
-	.param .u64 reduce_col_mean_d_param_1,
-	.param .u32 reduce_col_mean_d_param_2,
-	.param .u32 reduce_col_mean_d_param_3
+	// .globl	reduce_col_sum_sq_d
+.visible .entry reduce_col_sum_sq_d(
+	.param .u64 reduce_col_sum_sq_d_param_0,
+	.param .u64 reduce_col_sum_sq_d_param_1,
+	.param .u32 reduce_col_sum_sq_d_param_2,
+	.param .u32 reduce_col_sum_sq_d_param_3
 )
 {
 	.reg .pred 	%p<4>;
 	.reg .b32 	%r<11>;
-	.reg .f64 	%fd<11>;
+	.reg .f64 	%fd<9>;
 	.reg .b64 	%rd<9>;
 
 
-	ld.param.u64 	%rd2, [reduce_col_mean_d_param_0];
-	ld.param.u64 	%rd3, [reduce_col_mean_d_param_1];
-	ld.param.u32 	%r5, [reduce_col_mean_d_param_2];
-	ld.param.u32 	%r6, [reduce_col_mean_d_param_3];
+	ld.param.u64 	%rd2, [reduce_col_sum_sq_d_param_0];
+	ld.param.u64 	%rd3, [reduce_col_sum_sq_d_param_1];
+	ld.param.u32 	%r5, [reduce_col_sum_sq_d_param_2];
+	ld.param.u32 	%r6, [reduce_col_sum_sq_d_param_3];
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %ctaid.x;
 	mov.u32 	%r9, %tid.x;
 	mad.lo.s32 	%r1, %r7, %r8, %r9;
 	setp.ge.u32	%p1, %r1, %r6;
-	@%p1 bra 	BB24_5;
+	@%p1 bra 	BB22_5;
 
 	mul.lo.s32 	%r2, %r6, %r5;
 	cvta.to.global.u64 	%rd1, %rd2;
-	mov.f64 	%fd10, 0d0000000000000000;
+	mov.f64 	%fd8, 0d0000000000000000;
 	setp.ge.u32	%p2, %r1, %r2;
-	@%p2 bra 	BB24_4;
+	@%p2 bra 	BB22_4;
 
 	mov.u32 	%r10, %r1;
 
-BB24_3:
+BB22_3:
 	mul.wide.u32 	%rd4, %r10, 8;
 	add.s64 	%rd5, %rd1, %rd4;
 	ld.global.f64 	%fd6, [%rd5];
-	add.f64 	%fd10, %fd10, %fd6;
+	fma.rn.f64 	%fd8, %fd6, %fd6, %fd8;
 	add.s32 	%r10, %r10, %r6;
 	setp.lt.u32	%p3, %r10, %r2;
-	@%p3 bra 	BB24_3;
+	@%p3 bra 	BB22_3;
 
-BB24_4:
-	cvt.rn.f64.s32	%fd7, %r5;
-	div.rn.f64 	%fd8, %fd10, %fd7;
+BB22_4:
 	cvta.to.global.u64 	%rd6, %rd3;
 	mul.wide.u32 	%rd7, %r1, 8;
 	add.s64 	%rd8, %rd6, %rd7;
 	st.global.f64 	[%rd8], %fd8;
 
-BB24_5:
+BB22_5:
 	ret;
 }
 
-	// .globl	reduce_col_mean_f
-.visible .entry reduce_col_mean_f(
-	.param .u64 reduce_col_mean_f_param_0,
-	.param .u64 reduce_col_mean_f_param_1,
-	.param .u32 reduce_col_mean_f_param_2,
-	.param .u32 reduce_col_mean_f_param_3
+	// .globl	reduce_col_sum_sq_f
+.visible .entry reduce_col_sum_sq_f(
+	.param .u64 reduce_col_sum_sq_f_param_0,
+	.param .u64 reduce_col_sum_sq_f_param_1,
+	.param .u32 reduce_col_sum_sq_f_param_2,
+	.param .u32 reduce_col_sum_sq_f_param_3
 )
 {
 	.reg .pred 	%p<4>;
-	.reg .f32 	%f<11>;
+	.reg .f32 	%f<9>;
 	.reg .b32 	%r<11>;
 	.reg .b64 	%rd<9>;
 
 
-	ld.param.u64 	%rd2, [reduce_col_mean_f_param_0];
-	ld.param.u64 	%rd3, [reduce_col_mean_f_param_1];
-	ld.param.u32 	%r5, [reduce_col_mean_f_param_2];
-	ld.param.u32 	%r6, [reduce_col_mean_f_param_3];
+	ld.param.u64 	%rd2, [reduce_col_sum_sq_f_param_0];
+	ld.param.u64 	%rd3, [reduce_col_sum_sq_f_param_1];
+	ld.param.u32 	%r5, [reduce_col_sum_sq_f_param_2];
+	ld.param.u32 	%r6, [reduce_col_sum_sq_f_param_3];
 	mov.u32 	%r7, %ntid.x;
 	mov.u32 	%r8, %ctaid.x;
 	mov.u32 	%r9, %tid.x;
 	mad.lo.s32 	%r1, %r7, %r8, %r9;
 	setp.ge.u32	%p1, %r1, %r6;
-	@%p1 bra 	BB25_5;
+	@%p1 bra 	BB23_5;
 
 	mul.lo.s32 	%r2, %r6, %r5;
 	cvta.to.global.u64 	%rd1, %rd2;
-	mov.f32 	%f10, 0f00000000;
+	mov.f32 	%f8, 0f00000000;
 	setp.ge.u32	%p2, %r1, %r2;
-	@%p2 bra 	BB25_4;
+	@%p2 bra 	BB23_4;
 
 	mov.u32 	%r10, %r1;
 
-BB25_3:
+BB23_3:
 	mul.wide.u32 	%rd4, %r10, 4;
 	add.s64 	%rd5, %rd1, %rd4;
 	ld.global.f32 	%f6, [%rd5];
-	add.f32 	%f10, %f10, %f6;
+	fma.rn.f32 	%f8, %f6, %f6, %f8;
 	add.s32 	%r10, %r10, %r6;
 	setp.lt.u32	%p3, %r10, %r2;
-	@%p3 bra 	BB25_3;
+	@%p3 bra 	BB23_3;
 
-BB25_4:
-	cvt.rn.f32.s32	%f7, %r5;
-	div.rn.f32 	%f8, %f10, %f7;
+BB23_4:
 	cvta.to.global.u64 	%rd6, %rd3;
 	mul.wide.u32 	%rd7, %r1, 4;
 	add.s64 	%rd8, %rd6, %rd7;
 	st.global.f32 	[%rd8], %f8;
 
-BB25_5:
-	ret;
-}
-
-	// .globl	reduce_sum_sq_d
-.visible .entry reduce_sum_sq_d(
-	.param .u64 reduce_sum_sq_d_param_0,
-	.param .u64 reduce_sum_sq_d_param_1,
-	.param .u32 reduce_sum_sq_d_param_2
-)
-{
-	.local .align 16 .b8 	__local_depot26[16];
-	.reg .b64 	%SP;
-	.reg .b64 	%SPL;
-	.reg .pred 	%p<21>;
-	.reg .b32 	%r<39>;
-	.reg .f64 	%fd<61>;
-	.reg .b64 	%rd<16>;
-
-
-	mov.u64 	%SPL, __local_depot26;
-	cvta.local.u64 	%SP, %SPL;
-	ld.param.u64 	%rd1, [reduce_sum_sq_d_param_0];
-	ld.param.u64 	%rd2, [reduce_sum_sq_d_param_1];
-	ld.param.u32 	%r6, [reduce_sum_sq_d_param_2];
-	mov.u32 	%r7, %ctaid.x;
-	shl.b32 	%r8, %r7, 1;
-	mov.u32 	%r9, %ntid.x;
-	mov.u32 	%r10, %tid.x;
-	mad.lo.s32 	%r38, %r8, %r9, %r10;
-	mov.f64 	%fd45, 0d0000000000000000;
-	setp.ge.u32	%p1, %r38, %r6;
-	@%p1 bra 	BB26_4;
-
-BB26_1:
-	cvta.to.global.u64 	%rd3, %rd1;
-	mul.wide.u32 	%rd4, %r38, 8;
-	add.s64 	%rd5, %rd3, %rd4;
-	ld.global.f64 	%fd30, [%rd5];
-	fma.rn.f64 	%fd45, %fd30, %fd30, %fd45;
-	add.s32 	%r3, %r38, %r9;
-	setp.ge.u32	%p2, %r3, %r6;
-	@%p2 bra 	BB26_3;
-
-	mul.wide.u32 	%rd7, %r3, 8;
-	add.s64 	%rd8, %rd3, %rd7;
-	ld.global.f64 	%fd31, [%rd8];
-	fma.rn.f64 	%fd45, %fd31, %fd31, %fd45;
-
-BB26_3:
-	shl.b32 	%r13, %r9, 1;
-	mov.u32 	%r14, %nctaid.x;
-	mad.lo.s32 	%r38, %r13, %r14, %r38;
-	setp.lt.u32	%p3, %r38, %r6;
-	@%p3 bra 	BB26_1;
-
-BB26_4:
-	shl.b32 	%r16, %r10, 3;
-	mov.u32 	%r17, memory;
-	add.s32 	%r5, %r17, %r16;
-	st.shared.f64 	[%r5], %fd45;
-	bar.sync 	0;
-	setp.lt.u32	%p4, %r9, 1024;
-	@%p4 bra 	BB26_8;
-
-	setp.gt.u32	%p5, %r10, 511;
-	@%p5 bra 	BB26_7;
-
-	ld.shared.f64 	%fd32, [%r5+4096];
-	fma.rn.f64 	%fd45, %fd32, %fd32, %fd45;
-	st.shared.f64 	[%r5], %fd45;
-
-BB26_7:
-	bar.sync 	0;
-
-BB26_8:
-	setp.lt.u32	%p6, %r9, 512;
-	@%p6 bra 	BB26_12;
-
-	setp.gt.u32	%p7, %r10, 255;
-	@%p7 bra 	BB26_11;
-
-	ld.shared.f64 	%fd33, [%r5+2048];
-	fma.rn.f64 	%fd45, %fd33, %fd33, %fd45;
-	st.shared.f64 	[%r5], %fd45;
-
-BB26_11:
-	bar.sync 	0;
-
-BB26_12:
-	setp.lt.u32	%p8, %r9, 256;
-	@%p8 bra 	BB26_16;
-
-	setp.gt.u32	%p9, %r10, 127;
-	@%p9 bra 	BB26_15;
-
-	ld.shared.f64 	%fd34, [%r5+1024];
-	fma.rn.f64 	%fd45, %fd34, %fd34, %fd45;
-	st.shared.f64 	[%r5], %fd45;
-
-BB26_15:
-	bar.sync 	0;
-
-BB26_16:
-	setp.lt.u32	%p10, %r9, 128;
-	@%p10 bra 	BB26_20;
-
-	setp.gt.u32	%p11, %r10, 63;
-	@%p11 bra 	BB26_19;
-
-	ld.shared.f64 	%fd35, [%r5+512];
-	fma.rn.f64 	%fd45, %fd35, %fd35, %fd45;
-	st.shared.f64 	[%r5], %fd45;
-
-BB26_19:
-	bar.sync 	0;
-
-BB26_20:
-	setp.gt.u32	%p12, %r10, 31;
-	@%p12 bra 	BB26_33;
-
-	setp.lt.u32	%p13, %r9, 64;
-	@%p13 bra 	BB26_23;
-
-	ld.volatile.shared.f64 	%fd36, [%r5+256];
-	fma.rn.f64 	%fd45, %fd36, %fd36, %fd45;
-	st.volatile.shared.f64 	[%r5], %fd45;
-
-BB26_23:
-	setp.lt.u32	%p14, %r9, 32;
-	@%p14 bra 	BB26_25;
-
-	ld.volatile.shared.f64 	%fd37, [%r5+128];
-	fma.rn.f64 	%fd45, %fd37, %fd37, %fd45;
-	st.volatile.shared.f64 	[%r5], %fd45;
-
-BB26_25:
-	setp.lt.u32	%p15, %r9, 16;
-	@%p15 bra 	BB26_27;
-
-	ld.volatile.shared.f64 	%fd38, [%r5+64];
-	fma.rn.f64 	%fd45, %fd38, %fd38, %fd45;
-	st.volatile.shared.f64 	[%r5], %fd45;
-
-BB26_27:
-	setp.lt.u32	%p16, %r9, 8;
-	@%p16 bra 	BB26_29;
-
-	ld.volatile.shared.f64 	%fd39, [%r5+32];
-	fma.rn.f64 	%fd45, %fd39, %fd39, %fd45;
-	st.volatile.shared.f64 	[%r5], %fd45;
-
-BB26_29:
-	setp.lt.u32	%p17, %r9, 4;
-	@%p17 bra 	BB26_31;
-
-	ld.volatile.shared.f64 	%fd40, [%r5+16];
-	fma.rn.f64 	%fd45, %fd40, %fd40, %fd45;
-	st.volatile.shared.f64 	[%r5], %fd45;
-
-BB26_31:
-	setp.lt.u32	%p18, %r9, 2;
-	@%p18 bra 	BB26_33;
-
-	ld.volatile.shared.f64 	%fd41, [%r5+8];
-	fma.rn.f64 	%fd42, %fd41, %fd41, %fd45;
-	st.volatile.shared.f64 	[%r5], %fd42;
-
-BB26_33:
-	setp.ne.s32	%p19, %r10, 0;
-	@%p19 bra 	BB26_37;
-
-	mov.u32 	%r34, %nctaid.x;
-	setp.gt.u32	%p20, %r34, 9;
-	@%p20 bra 	BB26_36;
-
-	ld.shared.f64 	%fd43, [memory];
-	add.u64 	%rd9, %SP, 0;
-	add.u64 	%rd10, %SPL, 0;
-	st.local.u32 	[%rd10], %r7;
-	st.local.f64 	[%rd10+8], %fd43;
-	mov.u64 	%rd11, $str;
-	cvta.global.u64 	%rd12, %rd11;
-	// Callseq Start 8
-	{
-	.reg .b32 temp_param_reg;
-	// <end>}
-	.param .b64 param0;
-	st.param.b64	[param0+0], %rd12;
-	.param .b64 param1;
-	st.param.b64	[param1+0], %rd9;
-	.param .b32 retval0;
-	call.uni (retval0), 
-	vprintf, 
-	(
-	param0, 
-	param1
-	);
-	ld.param.b32	%r36, [retval0+0];
-	
-	//{
-	}// Callseq End 8
-
-BB26_36:
-	ld.shared.f64 	%fd44, [memory];
-	cvta.to.global.u64 	%rd13, %rd2;
-	mul.wide.u32 	%rd14, %r7, 8;
-	add.s64 	%rd15, %rd13, %rd14;
-	st.global.f64 	[%rd15], %fd44;
-
-BB26_37:
-	ret;
-}
-
-	// .globl	reduce_sum_sq_f
-.visible .entry reduce_sum_sq_f(
-	.param .u64 reduce_sum_sq_f_param_0,
-	.param .u64 reduce_sum_sq_f_param_1,
-	.param .u32 reduce_sum_sq_f_param_2
-)
-{
-	.local .align 16 .b8 	__local_depot27[16];
-	.reg .b64 	%SP;
-	.reg .b64 	%SPL;
-	.reg .pred 	%p<21>;
-	.reg .f32 	%f<61>;
-	.reg .b32 	%r<39>;
-	.reg .f64 	%fd<2>;
-	.reg .b64 	%rd<16>;
-
-
-	mov.u64 	%SPL, __local_depot27;
-	cvta.local.u64 	%SP, %SPL;
-	ld.param.u64 	%rd1, [reduce_sum_sq_f_param_0];
-	ld.param.u64 	%rd2, [reduce_sum_sq_f_param_1];
-	ld.param.u32 	%r6, [reduce_sum_sq_f_param_2];
-	mov.u32 	%r7, %ctaid.x;
-	shl.b32 	%r8, %r7, 1;
-	mov.u32 	%r9, %ntid.x;
-	mov.u32 	%r10, %tid.x;
-	mad.lo.s32 	%r38, %r8, %r9, %r10;
-	mov.f32 	%f45, 0f00000000;
-	setp.ge.u32	%p1, %r38, %r6;
-	@%p1 bra 	BB27_4;
-
-BB27_1:
-	cvta.to.global.u64 	%rd3, %rd1;
-	mul.wide.u32 	%rd4, %r38, 4;
-	add.s64 	%rd5, %rd3, %rd4;
-	ld.global.f32 	%f30, [%rd5];
-	fma.rn.f32 	%f45, %f30, %f30, %f45;
-	add.s32 	%r3, %r38, %r9;
-	setp.ge.u32	%p2, %r3, %r6;
-	@%p2 bra 	BB27_3;
-
-	mul.wide.u32 	%rd7, %r3, 4;
-	add.s64 	%rd8, %rd3, %rd7;
-	ld.global.f32 	%f31, [%rd8];
-	fma.rn.f32 	%f45, %f31, %f31, %f45;
-
-BB27_3:
-	shl.b32 	%r13, %r9, 1;
-	mov.u32 	%r14, %nctaid.x;
-	mad.lo.s32 	%r38, %r13, %r14, %r38;
-	setp.lt.u32	%p3, %r38, %r6;
-	@%p3 bra 	BB27_1;
-
-BB27_4:
-	shl.b32 	%r16, %r10, 2;
-	mov.u32 	%r17, memory;
-	add.s32 	%r5, %r17, %r16;
-	st.shared.f32 	[%r5], %f45;
-	bar.sync 	0;
-	setp.lt.u32	%p4, %r9, 1024;
-	@%p4 bra 	BB27_8;
-
-	setp.gt.u32	%p5, %r10, 511;
-	@%p5 bra 	BB27_7;
-
-	ld.shared.f32 	%f32, [%r5+2048];
-	fma.rn.f32 	%f45, %f32, %f32, %f45;
-	st.shared.f32 	[%r5], %f45;
-
-BB27_7:
-	bar.sync 	0;
-
-BB27_8:
-	setp.lt.u32	%p6, %r9, 512;
-	@%p6 bra 	BB27_12;
-
-	setp.gt.u32	%p7, %r10, 255;
-	@%p7 bra 	BB27_11;
-
-	ld.shared.f32 	%f33, [%r5+1024];
-	fma.rn.f32 	%f45, %f33, %f33, %f45;
-	st.shared.f32 	[%r5], %f45;
-
-BB27_11:
-	bar.sync 	0;
-
-BB27_12:
-	setp.lt.u32	%p8, %r9, 256;
-	@%p8 bra 	BB27_16;
-
-	setp.gt.u32	%p9, %r10, 127;
-	@%p9 bra 	BB27_15;
-
-	ld.shared.f32 	%f34, [%r5+512];
-	fma.rn.f32 	%f45, %f34, %f34, %f45;
-	st.shared.f32 	[%r5], %f45;
-
-BB27_15:
-	bar.sync 	0;
-
-BB27_16:
-	setp.lt.u32	%p10, %r9, 128;
-	@%p10 bra 	BB27_20;
-
-	setp.gt.u32	%p11, %r10, 63;
-	@%p11 bra 	BB27_19;
-
-	ld.shared.f32 	%f35, [%r5+256];
-	fma.rn.f32 	%f45, %f35, %f35, %f45;
-	st.shared.f32 	[%r5], %f45;
-
-BB27_19:
-	bar.sync 	0;
-
-BB27_20:
-	setp.gt.u32	%p12, %r10, 31;
-	@%p12 bra 	BB27_33;
-
-	setp.lt.u32	%p13, %r9, 64;
-	@%p13 bra 	BB27_23;
-
-	ld.volatile.shared.f32 	%f36, [%r5+128];
-	fma.rn.f32 	%f45, %f36, %f36, %f45;
-	st.volatile.shared.f32 	[%r5], %f45;
-
-BB27_23:
-	setp.lt.u32	%p14, %r9, 32;
-	@%p14 bra 	BB27_25;
-
-	ld.volatile.shared.f32 	%f37, [%r5+64];
-	fma.rn.f32 	%f45, %f37, %f37, %f45;
-	st.volatile.shared.f32 	[%r5], %f45;
-
-BB27_25:
-	setp.lt.u32	%p15, %r9, 16;
-	@%p15 bra 	BB27_27;
-
-	ld.volatile.shared.f32 	%f38, [%r5+32];
-	fma.rn.f32 	%f45, %f38, %f38, %f45;
-	st.volatile.shared.f32 	[%r5], %f45;
-
-BB27_27:
-	setp.lt.u32	%p16, %r9, 8;
-	@%p16 bra 	BB27_29;
-
-	ld.volatile.shared.f32 	%f39, [%r5+16];
-	fma.rn.f32 	%f45, %f39, %f39, %f45;
-	st.volatile.shared.f32 	[%r5], %f45;
-
-BB27_29:
-	setp.lt.u32	%p17, %r9, 4;
-	@%p17 bra 	BB27_31;
-
-	ld.volatile.shared.f32 	%f40, [%r5+8];
-	fma.rn.f32 	%f45, %f40, %f40, %f45;
-	st.volatile.shared.f32 	[%r5], %f45;
-
-BB27_31:
-	setp.lt.u32	%p18, %r9, 2;
-	@%p18 bra 	BB27_33;
-
-	ld.volatile.shared.f32 	%f41, [%r5+4];
-	fma.rn.f32 	%f42, %f41, %f41, %f45;
-	st.volatile.shared.f32 	[%r5], %f42;
-
-BB27_33:
-	setp.ne.s32	%p19, %r10, 0;
-	@%p19 bra 	BB27_37;
-
-	mov.u32 	%r34, %nctaid.x;
-	setp.gt.u32	%p20, %r34, 9;
-	@%p20 bra 	BB27_36;
-
-	ld.shared.f32 	%f43, [memory];
-	cvt.f64.f32	%fd1, %f43;
-	add.u64 	%rd9, %SP, 0;
-	add.u64 	%rd10, %SPL, 0;
-	st.local.u32 	[%rd10], %r7;
-	st.local.f64 	[%rd10+8], %fd1;
-	mov.u64 	%rd11, $str;
-	cvta.global.u64 	%rd12, %rd11;
-	// Callseq Start 9
-	{
-	.reg .b32 temp_param_reg;
-	// <end>}
-	.param .b64 param0;
-	st.param.b64	[param0+0], %rd12;
-	.param .b64 param1;
-	st.param.b64	[param1+0], %rd9;
-	.param .b32 retval0;
-	call.uni (retval0), 
-	vprintf, 
-	(
-	param0, 
-	param1
-	);
-	ld.param.b32	%r36, [retval0+0];
-	
-	//{
-	}// Callseq End 9
-
-BB27_36:
-	ld.shared.f32 	%f44, [memory];
-	cvta.to.global.u64 	%rd13, %rd2;
-	mul.wide.u32 	%rd14, %r7, 4;
-	add.s64 	%rd15, %rd13, %rd14;
-	st.global.f32 	[%rd15], %f44;
-
-BB27_37:
+BB23_5:
 	ret;
 }
 

@@ -29,6 +29,10 @@ public class SpoofNativeCUDA extends SpoofOperator {
         return name;
     }
 
+    public CNodeTpl getCNodeTemplate() {
+        return cnt;
+    }
+
     public String getSpoofTemplateType() {
         if (cnt instanceof CNodeCell)
             return "CW";

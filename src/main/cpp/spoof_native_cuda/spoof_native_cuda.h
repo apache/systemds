@@ -94,38 +94,8 @@ public:
                 .launch(in_ptrs[0], d_sides, d_temp_agg_buf, d_scalars, m, n, grix));
 
             if(NB > 1) {
-                std::string reduction_kernel_name;
-                std::string reduction_type;
-                std::string suffix = (typeid(T) == typeid(double) ? "_d" : "_f");
-
-                switch(op->agg_type) {
-                case SpoofOperator::AggType::FULL_AGG:
-                    reduction_type = "_";
-                    break;
-                case SpoofOperator::AggType::ROW_AGG:
-                    reduction_type = "_row_";
-                    break;
-                case SpoofOperator::AggType::COL_AGG:
-                    reduction_type = "_col_";
-                    break;
-                default:
-                    std::cout << "unknown reduction type" << std::endl;
-                    return result;
-                }
-
-                switch(op->agg_op) {
-                case SpoofOperator::AggOp::MIN:
-                    reduction_kernel_name = "reduce" + reduction_type + "min" + suffix;
-                case SpoofOperator::AggOp::MAX:
-                    reduction_kernel_name = "reduce" + reduction_type + "max" + suffix;
-                case SpoofOperator::AggOp::SUM_SQ:
-                    reduction_kernel_name = "reduce" + reduction_type + "sum_sq" + suffix;
-                default:
-                case SpoofOperator::AggOp::SUM:
-                    reduction_kernel_name = "reduce" + reduction_type + "sum" + suffix;
-                }
-
-                std::cout << "using reduction kernel " << reduction_kernel_name << std::endl;
+                std::string reduction_kernel_name = determine_agg_kernel<T>(op);
+                std::cout << "using full reduction kernel " << reduction_kernel_name << std::endl;
 
                 CUfunction reduce_kernel = reduction_kernels.find(reduction_kernel_name)->second;
                 N = NB;
@@ -153,6 +123,27 @@ public:
             CHECK_CUDART(cudaMemcpy(&result, d_temp_agg_buf, sizeof(T), cudaMemcpyDeviceToHost));
             CHECK_CUDART(cudaFree(d_temp_agg_buf));
             break;
+          }
+          case SpoofOperator::AggType::COL_AGG: {
+              // num ctas
+              int NB = std::ceil((N + NT - 1) / NT);
+              dim3 grid(NB, 1, 1);
+              dim3 block(NT, 1, 1);
+              unsigned int shared_mem_size = NT * sizeof(T);
+
+              std::cout << " launching spoof cellwise kernel " << name << " with "
+                  << NT * NB << " threads in " << NB << " blocks and "
+                  << shared_mem_size
+                  << " bytes of shared memory for column aggregation of "
+                  << N << " elements"
+                  << std::endl;
+
+              CHECK_CUDA(op->program.kernel(name)
+                  .instantiate(type_of(result))
+                  .configure(grid, block)
+                  .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
+
+              break;
           }
           case SpoofOperator::AggType::NO_AGG: 
           default: {
@@ -183,5 +174,46 @@ public:
       return result;
     }
     return result;
+  }
+
+  template<typename T>
+  std::string determine_agg_kernel(SpoofOperator* op) {
+      std::string reduction_kernel_name;
+      std::string reduction_type;
+      std::string suffix = (typeid(T) == typeid(double) ? "_d" : "_f");
+      switch (op->agg_type) {
+      case SpoofOperator::AggType::FULL_AGG:
+          reduction_type = "_";
+          break;
+      case SpoofOperator::AggType::ROW_AGG:
+          reduction_type = "_row_";
+          break;
+      case SpoofOperator::AggType::COL_AGG:
+          reduction_type = "_col_";
+          break;
+      default:
+          std::cout << "unknown reduction type" << std::endl;
+          return "";
+      }
+    
+      switch (op->agg_op) {
+      case SpoofOperator::AggOp::MIN:
+          reduction_kernel_name = "reduce" + reduction_type + "min" + suffix;
+          break;
+      case SpoofOperator::AggOp::MAX:
+          reduction_kernel_name = "reduce" + reduction_type + "max" + suffix;
+          break;
+      case SpoofOperator::AggOp::SUM_SQ:
+          reduction_kernel_name = "reduce" + reduction_type + "sum_sq" + suffix;
+          break;
+      case SpoofOperator::AggOp::SUM:
+          reduction_kernel_name = "reduce" + reduction_type + "sum" + suffix;
+          break;
+      default:
+          std::cout << "unknown reduction op" << std::endl;
+          return "";
+      }
+
+      return reduction_kernel_name;
   }
 };

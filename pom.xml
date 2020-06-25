@@ -1034,6 +1034,18 @@
 			<artifactId>maven-gpg-plugin</artifactId>
 			<version>1.6</version>
 		</dependency>
-  
+
+		<!-- https://github.com/protocolbuffers/protobuf/tree/master/java -->
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>3.12.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java-util</artifactId>
+			<version>3.12.2</version>
+		</dependency>
 	</dependencies>
 </project>

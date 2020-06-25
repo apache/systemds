@@ -55,6 +55,11 @@ public class FrameWriterFactory
 				else
 					writer = new FrameWriterBinaryBlock();
 				break;
+
+			case PROTO:
+				// TODO performance improvement: add parallel reader
+				writer = new FrameWriterProto();
+				break;
 			
 			default:
 				throw new DMLRuntimeException("Failed to create frame writer for unknown format: " + fmt.toString());

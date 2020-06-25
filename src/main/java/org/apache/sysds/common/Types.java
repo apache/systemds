@@ -483,7 +483,8 @@ public class Types
 		CSV,    // text dense representation
 		LIBSVM, // text libsvm sparse row representation
 		JSONL,  // text nested JSON (Line) representation
-		BINARY; // binary block representation (dense/sparse/ultra-sparse) 
+		BINARY, // binary block representation (dense/sparse/ultra-sparse)
+		PROTO;  // protocol buffer representation
 		
 		public boolean isIJVFormat() {
 			return this == TEXT || this == MM;

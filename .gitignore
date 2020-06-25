@@ -61,7 +61,8 @@ conf/systemds-env.sh
 
 # Documentation artifacts
 docs/_site
-docs/api
+# TODO Make the API auto generate and relocate into this api folder for webpage
+# docs/api
 
 # Test Artifacts
 src/test/scripts/**/*.dmlt

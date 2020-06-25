@@ -35,7 +35,7 @@ public class FederatedRequest implements Serializable {
 	
 	private FedMethod _method;
 	private List<Object> _data;
-	private boolean checkPrivacy;
+	private boolean _checkPrivacy;
 	
 	public FederatedRequest(FedMethod method, List<Object> data) {
 		_method = method;
@@ -82,7 +82,7 @@ public class FederatedRequest implements Serializable {
 	}
 
 	public void setCheckPrivacy(boolean checkPrivacy){
-		this.checkPrivacy = checkPrivacy;
+		this._checkPrivacy = checkPrivacy;
 	}
 
 	public void setCheckPrivacy(){
@@ -90,6 +90,6 @@ public class FederatedRequest implements Serializable {
 	}
 
 	public boolean checkPrivacy(){
-		return checkPrivacy;
+		return _checkPrivacy;
 	}
 }

@@ -36,7 +36,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 public class FrameReaderProto extends FrameReader {
 	@Override
 	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen, long clen)
-		throws IOException, DMLRuntimeException {
+		throws IOException {
 		// prepare file access
 		JobConf jobConf = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
@@ -80,7 +80,7 @@ public class FrameReaderProto extends FrameReader {
 
 	@Override
 	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names, long rlen,
-		long clen) throws DMLRuntimeException {
+		long clen) {
 		throw new DMLRuntimeException("Not implemented yet.");
 	}
 }

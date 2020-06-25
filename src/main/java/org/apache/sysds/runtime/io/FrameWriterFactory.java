@@ -57,6 +57,7 @@ public class FrameWriterFactory
 				break;
 
 			case PROTO:
+				// TODO performance improvement: add parallel reader
 				writer = new FrameWriterProto();
 				break;
 			

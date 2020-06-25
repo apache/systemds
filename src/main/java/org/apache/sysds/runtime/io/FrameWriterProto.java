@@ -29,14 +29,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.protobuf.SysdsProtos;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 public class FrameWriterProto extends FrameWriter {
 	@Override
 	public void writeFrameToHDFS(FrameBlock src, String fname, long rlen, long clen)
-		throws IOException, DMLRuntimeException {
+		throws IOException {
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);

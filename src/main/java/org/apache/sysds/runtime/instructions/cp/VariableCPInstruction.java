@@ -1126,7 +1126,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return parseInstruction(sb.toString());
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) {
+	public static Instruction prepMoveInstruction(String srcVar, String destFileName, String format) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -1141,7 +1141,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destVar) {
+	public static Instruction prepMoveInstruction(String srcVar, String destVar) {
 		// example: mvvar tempA A 
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
@@ -1155,7 +1155,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return parseInstruction(str);
 	}
 	
-	private static String getBasicCreateVarString(String varName, String fileName, boolean fNameOverride, DataType dt, String format) {
+	private static String getBasicCreatevarString(String varName, String fileName, boolean fNameOverride, DataType dt, String format) {
 		//note: the filename override property leads to concatenation of unique ids in order to 
 		//ensure conflicting filenames for objects that originate from the same instruction
 		boolean lfNameOverride = fNameOverride && !ConfigurationManager
@@ -1179,13 +1179,13 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return sb.toString();
 	}
 	
-	public static Instruction prepareCreateMatrixVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) {
-		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, DataType.MATRIX, format));
+	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, String format) {
+		return parseInstruction(getBasicCreatevarString(varName, fileName, fNameOverride, DataType.MATRIX, format));
 	}
 
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update) {
+	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update) {
 		StringBuilder sb = new StringBuilder();
-		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
+		sb.append(getBasicCreatevarString(varName, fileName, fNameOverride, dt, format));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getRows());
@@ -1203,9 +1203,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
+	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
 		StringBuilder sb = new StringBuilder();
-		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
+		sb.append(getBasicCreatevarString(varName, fileName, fNameOverride, dt, format));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(mc.getRows());

@@ -64,6 +64,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -86,6 +87,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -824,5 +826,19 @@ public class LineageItemUtils {
 		}
 		return(CPOpInputs != null ? LineageItemUtils.getLineage(ec, 
 			CPOpInputs.toArray(new CPOperand[CPOpInputs.size()])) : null);
+	}
+	
+	public static void addAllDataLineage(ExecutionContext ec) {
+		for( Entry<String, Data> e : ec.getVariables().entrySet() ) {
+			if( e.getValue() instanceof CacheableData<?> ) {
+				CacheableData<?> cdata = (CacheableData<?>) e.getValue();
+				//only createvar instruction with pREAD prefix added to lineage
+				String fromVar = org.apache.sysds.lops.Data.PREAD_PREFIX+e.getKey();
+				ec.traceLineage(VariableCPInstruction.prepCreatevarInstruction(
+					fromVar, "CacheableData::"+cdata.getUniqueID(), false, "binary"));
+				//move from pREADx to x
+				ec.traceLineage(VariableCPInstruction.prepMoveInstruction(fromVar, e.getKey()));
+			}
+		}
 	}
 }

@@ -340,6 +340,7 @@ SYSTEMDS-410 Lineage Tracing, Reuse and Integration II
  * 412 Robust lineage tracing (non-recursive, parfor)                 OK
  * 413 Cache and reuse MultiReturnBuiltin instructions                OK
  * 414 New rewrite for PCA --> lmDS pipeline                          OK
+ * 415 MLContext lineage support (tracing and reuse correctness)      OK
 
 SYSTEMDS-420 Compiler Improvements
  * 421 Fix invalid IPA scalar propagation into functions              OK

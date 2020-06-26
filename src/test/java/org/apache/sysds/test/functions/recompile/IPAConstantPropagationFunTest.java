@@ -30,27 +30,38 @@ import org.apache.sysds.test.TestUtils;
 
 public class IPAConstantPropagationFunTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "IPAFunctionArgs";
+	private final static String TEST_NAME1 = "IPAFunctionArgsFor";
+	private final static String TEST_NAME2 = "IPAFunctionArgsParfor";
+	
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAConstantPropagationFunTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
 	}
 
 	@Test
-	public void runIPAConstantPropagationTest()
-	{
+	public void runIPAConstantPropagationForTest() {
+		runIPAConstantPropagationTest(TEST_NAME1);
+	}
+	
+	@Test
+	public void runIPAConstantPropagationParForTest() {
+		runIPAConstantPropagationTest(TEST_NAME2);
+	}
+	
+	private void runIPAConstantPropagationTest(String testname) {
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
 		{
-			TestConfiguration config = getTestConfiguration(TEST_NAME1);
+			TestConfiguration config = getTestConfiguration(testname);
 			loadTestConfiguration(config);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-args", output("R") };
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = true;

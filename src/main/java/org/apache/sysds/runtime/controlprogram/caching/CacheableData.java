@@ -215,7 +215,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	protected CacheableData(DataType dt, ValueType vt) {
 		super (dt, vt);
-		_uniqueID = isCachingActive() ? _seq.getNextID() : -1;
+		_uniqueID = _seq.getNextID();
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
 		_gpuObjects = DMLScript.USE_ACCELERATOR ? new HashMap<>() : null;
@@ -269,6 +269,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	public String getFileName() {
 		return _hdfsFileName;
+	}
+	
+	public long getUniqueID() {
+		return _uniqueID;
 	}
 
 	public synchronized void setFileName( String file ) {

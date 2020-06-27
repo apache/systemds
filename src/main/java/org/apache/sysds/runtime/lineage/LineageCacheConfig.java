@@ -39,7 +39,7 @@ public class LineageCacheConfig
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+"
+		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};

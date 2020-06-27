@@ -818,6 +818,12 @@ public class TestUtils
 		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance);
 	}
 	
+	public static void compareMatrices(MatrixBlock m1, MatrixBlock m2, double tolerance) {
+		double[][] ret1 = DataConverter.convertToDoubleMatrix(m1);
+		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
+		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance);
+	}
+	
 	/**
 	 * Compares two matrices given as HashMaps. The matrix containing more nnz
 	 * is iterated and each cell value compared against the corresponding cell

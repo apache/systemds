@@ -19,43 +19,102 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.Instruction;
 
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class LineageDedupBlock {
-	private ArrayList<DistinctPaths> _blocks = new ArrayList<>();
+	private Map<Long, LineageMap> _distinctPaths = new HashMap<>();
+	private BitSet _path = new BitSet();
+	private int _numPaths = 0;
 	
-	public LineageMap getMap(int block, Long path) {
-		return block < _blocks.size() && _blocks.get(block).pathExists(path) ?
-			_blocks.get(block).getMap(path) : null;
-	}
+	private long _activePath = -1;
 	
 	public LineageMap getActiveMap() {
-		return _blocks.get(_blocks.size() - 1).getActiveMap();
+		if (_activePath < 0 || !_distinctPaths.containsKey(_activePath))
+			throw new DMLRuntimeException("Active path in LineageDedupBlock could not be found.");
+		return _distinctPaths.get(_activePath);
 	}
 	
-	public void traceIfProgramBlock(IfProgramBlock ipb, ExecutionContext ec) {
-		_blocks.get(_blocks.size() - 1).traceIfProgramBlock(ipb, ec);
+	public LineageMap getMap(Long path) {
+		if (!_distinctPaths.containsKey(path))
+			throw new DMLRuntimeException("Given path in LineageDedupBlock could not be found.");
+		return _distinctPaths.get(path);
 	}
 	
-	public void traceBasicProgramBlock(BasicProgramBlock bpb, ExecutionContext ec) {
-		_blocks.get(_blocks.size() - 1).traceBasicProgramBlock(bpb, ec);
+	public boolean pathExists(Long path) {
+		return _distinctPaths.containsKey(path);
 	}
 	
-	public void splitBlocks() {
-		if (!_blocks.get(_blocks.size() - 1).empty())
-			_blocks.add(new DistinctPaths());
+	public void resetPath() {
+		_path.clear();
 	}
 	
-	public void addBlock() {
-		_blocks.add(new DistinctPaths());
+	public void setPathBranch(int pos, boolean value) {
+		_path.set(pos, value);
 	}
 	
-	public void removeLastBlockIfEmpty() {
-		if (_blocks.size() > 0 && _blocks.get(_blocks.size() - 1).empty())
-			_blocks.remove(_blocks.size() - 1);
+	public long getPath() {
+		return _path.length() == 0 ? 0 :
+			_path.toLongArray()[0];
+	}
+	
+	public void traceProgramBlocks(ArrayList<ProgramBlock> pbs, ExecutionContext ec) {
+		if (_distinctPaths.size() == 0) //main path
+			_distinctPaths.put(0L, new LineageMap());
+		//process top-level blocks with changing set of all paths
+		//Note: list copy required as distinct paths is modified
+		for( ProgramBlock pb : pbs )
+			traceProgramBlock(pb, ec, new ArrayList<>(_distinctPaths.entrySet()));
+	}
+	
+	public void traceProgramBlock(ProgramBlock pb, ExecutionContext ec, Collection<Entry<Long, LineageMap>> paths) {
+		if (pb instanceof IfProgramBlock)
+			traceIfProgramBlock((IfProgramBlock) pb, ec, paths);
+		else if (pb instanceof BasicProgramBlock)
+			traceBasicProgramBlock((BasicProgramBlock) pb, ec, paths);
+		else
+			throw new DMLRuntimeException("Only BasicProgramBlocks or "
+				+ "IfProgramBlocks are allowed inside a LineageDedupBlock.");
+	}
+	
+	public void traceIfProgramBlock(IfProgramBlock ipb, ExecutionContext ec, Collection<Entry<Long, LineageMap>> paths) {
+		//step 0: materialize branch position
+		ipb.setLineageDedupPathPos(_numPaths++);
+		
+		//step 1: create new paths
+		//replicate all existing paths in current scope for the new branch
+		//(existing path IDs reflect the else branch)
+		Map<Long, LineageMap> rep = new HashMap<>();
+		int pathKey = 1 << (_numPaths-1);
+		for (Map.Entry<Long, LineageMap> entry : paths) {
+			Long pathIndex = entry.getKey() | pathKey;
+			rep.put(pathIndex, new LineageMap(entry.getValue()));
+		}
+		_distinctPaths.putAll(rep);
+		
+		//step 3: trace if and else branches separately
+		for (ProgramBlock pb : ipb.getChildBlocksIfBody())
+			traceProgramBlock(pb, ec, rep.entrySet());
+		for (ProgramBlock pb : ipb.getChildBlocksElseBody())
+			traceProgramBlock(pb, ec, paths);
+	}
+	
+	public void traceBasicProgramBlock(BasicProgramBlock bpb, ExecutionContext ec, Collection<Entry<Long,LineageMap>> paths) {
+		for (Entry<Long, LineageMap> entry : paths) {
+			_activePath = entry.getKey();
+			for (Instruction inst : bpb.getInstructions())
+				entry.getValue().trace(inst, ec);
+		}
 	}
 }

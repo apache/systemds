@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
@@ -97,13 +98,27 @@ public class WhileProgramBlock extends ProgramBlock
 			// prepare update in-place variables
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
+			// compute lineage patches for all distinct paths, and store globally
+			if (DMLScript.LINEAGE_DEDUP)
+				ec.getLineage().computeDedupBlock(this, ec);
+			
 			//run loop body until predicate becomes false
 			while( executePredicate(ec).getBooleanValue() ) {
+				if (DMLScript.LINEAGE_DEDUP)
+					ec.getLineage().resetDedupPath();
+				
 				//execute all child blocks
 				for (int i=0 ; i < _childBlocks.size() ; i++) {
 					_childBlocks.get(i).execute(ec);
 				}
+				
+				if( DMLScript.LINEAGE_DEDUP )
+					ec.getLineage().traceCurrentDedupPath();
 			}
+			
+			// clear current LineageDedupBlock
+			if (DMLScript.LINEAGE_DEDUP)
+				ec.getLineage().clearDedupBlock();
 			
 			// reset update-in-place variables
 			resetUpdateInPlaceVariableFlags(ec, flags);

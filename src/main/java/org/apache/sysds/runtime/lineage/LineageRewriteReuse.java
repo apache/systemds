@@ -800,7 +800,7 @@ public class LineageRewriteReuse
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 				// look for the appended column in cache
-				if (LineageCache.probe(source.getInputs()[1])) 
+				if (source.getInputs().length>1 && LineageCache.probe(source.getInputs()[1])) 
 					inCache.put("deltaX", LineageCache.getMatrix(source.getInputs()[1]));
 			}
 		}
@@ -1105,11 +1105,17 @@ public class LineageRewriteReuse
 	}
 	
 	private static LineageItem reduceColByOne(LineageItem cu) {
-		String data = cu.getData();  //xx·SCALAR·INT64·true
-		String[] parts = data.split(Instruction.VALUETYPE_PREFIX);
-		int cuNum = Integer.valueOf(parts[0]);
-		parts[0] = String.valueOf(cuNum-1);
-		String old_data = InstructionUtils.concatOperandParts(parts);
+		String old_data = null;
+		try {
+			String data = cu.getData();  //xx·SCALAR·INT64·true
+			String[] parts = data.split(Instruction.VALUETYPE_PREFIX);
+			float cuNum = Float.valueOf(parts[0]);
+			parts[0] = String.valueOf((int)cuNum-1);
+			old_data = InstructionUtils.concatOperandParts(parts);
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Error reading 'cu' from RightIndex instruction" , e);
+		}
 		return(new LineageItem(old_data));
 	}
 

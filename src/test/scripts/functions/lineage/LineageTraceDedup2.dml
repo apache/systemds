@@ -19,15 +19,10 @@
 #
 #-------------------------------------------------------------
 
-# How to invoke this dml script LineageTrace.dml?
-# Assume LR_HOME is set to the home of the dml script
-# Assume rows = 20 and cols = 20 for X
-# hadoop jar SystemDS.jar -f $LR_HOME/LineageTrace.dml -args "$INPUT_DIR/X" "$OUTPUT_DIR/X"
-
 X = read($1);
 
 R = X;
-for(i in 1:10){
+for(i in 1:2){ #10
   if(i %% 2 == 1)
     R = R + 1 / 2;
   else

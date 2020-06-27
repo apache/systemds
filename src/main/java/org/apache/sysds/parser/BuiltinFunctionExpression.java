@@ -826,8 +826,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					appendDim2 = (m2clen>=0) ? m2clen : appendDim2;
 				}
 			}
-			//TODO: calculate output dimensions of List 
-			if( output.getDataType() == DataType.LIST ) {
+			
+			if( id.getDataType() == DataType.LIST ) {
 				appendDim1 = -1;
 				appendDim2 = -1;
 			}

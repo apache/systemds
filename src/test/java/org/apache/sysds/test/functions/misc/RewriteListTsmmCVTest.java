@@ -39,7 +39,8 @@ import org.apache.sysds.utils.Statistics;
  */
 public class RewriteListTsmmCVTest extends AutomatedTestBase 
 {
-	private static final String TEST_NAME1 = "RewriteListTsmmCV";
+	private static final String TEST_NAME1 = "RewriteListTsmmCV1";
+	private static final String TEST_NAME2 = "RewriteListTsmmCV2";
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteListTsmmCVTest.class.getSimpleName() + "/";
@@ -50,27 +51,48 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}));
 	}
 	
 	@Test
-	public void testListTsmmRewriteCP() {
+	public void testListTsmm1RewriteCP() {
 		testListTsmmCV(TEST_NAME1, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testListTsmmRewriteSP() {
+	public void testListTsmm1RewriteSP() {
 		testListTsmmCV(TEST_NAME1, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testListTsmmRewriteLineageCP() {
+	public void testListTsmm1RewriteLineageCP() {
 		testListTsmmCV(TEST_NAME1, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testListTsmmRewriteLineageSP() {
+	public void testListTsmm1RewriteLineageSP() {
 		testListTsmmCV(TEST_NAME1, true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testListTsmm2RewriteCP() {
+		testListTsmmCV(TEST_NAME2, true, false, ExecType.CP);
+	}
+	
+	@Test
+	public void testListTsmm2RewriteSP() {
+		testListTsmmCV(TEST_NAME2, true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testListTsmm2RewriteLineageCP() {
+		testListTsmmCV(TEST_NAME2, true, true, ExecType.CP);
+	}
+	
+	@Test
+	public void testListTsmm2RewriteLineageSP() {
+		testListTsmmCV(TEST_NAME2, true, true, ExecType.SPARK);
 	}
 	
 	private void testListTsmmCV( String testname, boolean rewrites, boolean lineage, ExecType instType )

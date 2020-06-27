@@ -160,7 +160,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 			
 			String dedup_trace = readDMLLineageFromHDFS("R");
 			LineageItem dedup_li = LineageParser.parseLineageTrace(dedup_trace);
-
+			
 			//check lineage DAG
 			assertEquals(dedup_li, li);
 		}

@@ -56,7 +56,7 @@ public class FrameReaderProto extends FrameReader {
 		return outputFrameBlock;
 	}
 
-	private void readProtoFrameFromHDFS(Path path, FileSystem fileSystem, FrameBlock dest, long rlen, long clen)
+	private static void readProtoFrameFromHDFS(Path path, FileSystem fileSystem, FrameBlock dest, long rlen, long clen)
 		throws IOException {
 		SysdsProtos.Frame frame = readProtoFrameFromFile(path, fileSystem);
 		for(int row = 0; row < rlen; row++) {
@@ -69,7 +69,7 @@ public class FrameReaderProto extends FrameReader {
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fileSystem, path);
 	}
 
-	private SysdsProtos.Frame readProtoFrameFromFile(Path path, FileSystem fileSystem) throws IOException {
+	private static SysdsProtos.Frame readProtoFrameFromFile(Path path, FileSystem fileSystem) throws IOException {
 		FSDataInputStream fsDataInputStream = fileSystem.open(path);
 		try {
 			return SysdsProtos.Frame.newBuilder().mergeFrom(fsDataInputStream).build();

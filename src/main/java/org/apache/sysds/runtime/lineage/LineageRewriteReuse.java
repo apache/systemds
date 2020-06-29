@@ -99,6 +99,8 @@ public class LineageRewriteReuse
 		newInst = (newInst == null) ? rewriteTsmmCbind(curr, ec, lrwec) : newInst;
 		//tsmm(cbind(cbind(X, deltaX), ones)) -> TODO
 		newInst = (newInst == null) ? rewriteTsmm2Cbind(curr, ec, lrwec) : newInst;
+		//tsmm(cbind(cbind(X, deltaX), ones)) -> TODO
+		newInst = (newInst == null) ? rewriteTsmm2CbindSameLeft(curr, ec, lrwec) : newInst;
 		//tsmm(rbind(X, deltaX)) -> tsmm(X) + tsmm(deltaX)
 		newInst = (newInst == null) ? rewriteTsmmRbind(curr, ec, lrwec) : newInst;
 		//rbind(X,deltaX) %*% Y -> rbind(X %*% Y, deltaX %*% Y)
@@ -329,6 +331,74 @@ public class LineageRewriteReuse
 		// generate runtime instructions
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteTsmm2Cbind APPLIED");
+		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
+		_disableReuse = true;
+
+		if (DMLScript.STATISTICS) 
+			LineageCacheStatistics.incrementPRewrites();
+		return inst;
+	}
+
+	private static ArrayList<Instruction> rewriteTsmm2CbindSameLeft (Instruction curr, ExecutionContext ec, ExecutionContext lrwec) 
+	{
+		/* The difference between rewriteTsmm2Cbind and this rewrite is that the former applies
+		 * when columns are increasingly appended where the later applies when different columns 
+		 * are appended to a single base matrix.
+		 */
+		// Check the applicability of this rewrite.
+		Map<String, MatrixBlock> inCache = new HashMap<>();
+		if (!isTsmm2CbindSameLeft(curr, ec, inCache))
+			return null;
+
+		// Create a transient read op over the last tsmm result
+		MatrixBlock cachedEntry = inCache.get("lastMatrix");
+		MatrixObject newmo = convMBtoMO(cachedEntry);
+		lrwec.setVariable("cachedEntry", newmo);
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
+
+		// Create a transient read op over the input to this tsmm
+		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
+		lrwec.setVariable("oldMatrix", mo);
+		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
+
+		// pull out the newly added column(2nd last) from the input matrix
+		Hop lastCol;
+		// Use deltaX from cache, or create rightIndex
+		if (inCache.containsKey("deltaX")) {
+			MatrixBlock cachedRI = inCache.get("deltaX");
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
+			lastCol = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
+		}
+		else
+			lastCol = HopRewriteUtils.createIndexingOp(newMatrix, new LiteralOp(1), new LiteralOp(mo.getNumRows()), 
+				new LiteralOp(mo.getNumColumns()-1), new LiteralOp(mo.getNumColumns()-1));
+
+		// apply t(lastCol) on i/p matrix to get the result vectors.
+		ReorgOp tlastCol = HopRewriteUtils.createTranspose(lastCol);
+		AggBinaryOp newCol = HopRewriteUtils.createMatrixMultiply(tlastCol, newMatrix);
+		ReorgOp tnewCol = HopRewriteUtils.createTranspose(newCol);
+
+		// Replace the 2nd last row and column of the last tsmm resutl with the result vector.
+		IndexingOp topLeft = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(1), new LiteralOp(newmo.getNumRows()-2), 
+			new LiteralOp(1), new LiteralOp(newmo.getNumColumns()-2));
+		IndexingOp topRight = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(1), new LiteralOp(newmo.getNumRows()-2), 
+			new LiteralOp(newmo.getNumColumns()), new LiteralOp(newmo.getNumColumns()));
+		IndexingOp bottomLeft = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(newmo.getNumRows()), 
+			new LiteralOp(newmo.getNumRows()), new LiteralOp(1), new LiteralOp(newmo.getNumColumns()-2));
+		IndexingOp bottomRight = HopRewriteUtils.createIndexingOp(lastRes, new LiteralOp(newmo.getNumRows()), 
+			new LiteralOp(newmo.getNumRows()), new LiteralOp(newmo.getNumColumns()), new LiteralOp(newmo.getNumColumns()));
+		IndexingOp topCol = HopRewriteUtils.createIndexingOp(tnewCol, new LiteralOp(1), new LiteralOp(mo.getNumColumns()-2), 
+			new LiteralOp(1), new LiteralOp(1));
+		IndexingOp bottomCol = HopRewriteUtils.createIndexingOp(tnewCol, new LiteralOp(mo.getNumColumns()), 
+			new LiteralOp(mo.getNumColumns()), new LiteralOp(1), new LiteralOp(1));
+		NaryOp rowOne = HopRewriteUtils.createNary(OpOpN.CBIND, topLeft, topCol, topRight);
+		NaryOp rowTwo = HopRewriteUtils.createNary(OpOpN.CBIND, bottomLeft, bottomCol, bottomRight);
+		NaryOp lrwHop = HopRewriteUtils.createNary(OpOpN.RBIND, rowOne, newCol, rowTwo);
+		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
+
+		// generate runtime instructions
+		if (LOG.isDebugEnabled())
+			LOG.debug("LINEAGE REWRITE rewriteTsmm2CbindSameLeft APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
@@ -830,6 +900,42 @@ public class LineageRewriteReuse
 					// look for the appended column in cache
 					if (LineageCache.probe(input.getInputs()[1])) 
 						inCache.put("deltaX", LineageCache.getMatrix(input.getInputs()[1]));
+				}
+			}
+		}
+		// return true only if the last tsmm is found
+		return inCache.containsKey("lastMatrix") ? true : false;
+	}
+
+	private static boolean isTsmm2CbindSameLeft (Instruction curr, ExecutionContext ec, Map<String, MatrixBlock> inCache)
+	{
+		if (!LineageCacheConfig.isReusable(curr, ec))
+			return false;
+
+		//TODO: support nary cbind
+		// If the input to tsmm came from cbind, look for both the inputs in cache.
+		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
+		// look for two consecutive cbinds
+		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
+			LineageItem source = item.getInputs()[0];
+			if (source.getOpcode().equalsIgnoreCase("cbind")) {
+				LineageItem input = source.getInputs()[0];
+				if (input.getOpcode().equalsIgnoreCase("cbind")) {
+					LineageItem L2appin1 = input.getInputs()[0]; 
+					if (!L2appin1.getOpcode().equalsIgnoreCase("rightIndex"))
+						return false;
+					LineageItem RI = input.getInputs()[1];
+					if (LineageCache.probe(RI))
+						inCache.put("deltaX", LineageCache.getMatrix(RI));
+					LineageItem cu = RI.getInputs()[4];
+					LineageItem old_cu = reduceColByOne(cu);
+					LineageItem old_RI = new LineageItem("rightIndex", new LineageItem[] {RI.getInputs()[0],
+							RI.getInputs()[1], RI.getInputs()[2], old_cu, old_cu});
+					LineageItem old_cbind = new LineageItem("cbind", new LineageItem[] {L2appin1, old_RI});
+					LineageItem tmp = new LineageItem("cbind", new LineageItem[] {old_cbind, source.getInputs()[1]});
+					LineageItem toProbe = new LineageItem(curr.getOpcode(), new LineageItem[] {tmp});
+					if (LineageCache.probe(toProbe)) 
+						inCache.put("lastMatrix", LineageCache.getMatrix(toProbe));
 				}
 			}
 		}

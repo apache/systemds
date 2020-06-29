@@ -19,10 +19,10 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 /**
  *   
@@ -64,6 +64,6 @@ public class InvalidFunctionSignatureTest extends AutomatedTestBase
 		programArgs = new String[]{};
 		
 		//run tests
-        runTest(true, exceptionExpected, DMLException.class, -1);
+        runTest(true, exceptionExpected, LanguageException.class, -1);
 	}
 }

@@ -25,7 +25,7 @@ foo1 = function(Matrix[Double] A=matrix(1, 300, 500), Matrix[Double] B, Double s
 }
 
 foo2 = function(Matrix[Double] A, Matrix[Double] B) return (Matrix[Double] C) {
-  while(FALSE}{) # no inlining
+  while(FALSE){} # no inlining
   C = A %*% B + 7;
 }
 

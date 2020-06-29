@@ -1201,9 +1201,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(update.toString().toLowerCase());
 		
-		String str = sb.toString();
-
-		return parseInstruction(str);
+		return parseInstruction(sb.toString());
 	}
 	
 	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
@@ -1229,7 +1227,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(sparse);
 		
 		String str = sb.toString();
-
 		return parseInstruction(str);
 	}
 	

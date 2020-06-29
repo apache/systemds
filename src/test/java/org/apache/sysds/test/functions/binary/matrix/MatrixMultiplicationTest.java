@@ -21,12 +21,12 @@ package org.apache.sysds.test.functions.binary.matrix;
 
 import java.util.HashMap;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 
 public class MatrixMultiplicationTest extends AutomatedTestBase 
@@ -122,7 +122,7 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 		createRandomMatrix("a", m, n1, -1, 1, 0.5, -1);
 		createRandomMatrix("b", n2, k, -1, 1, 0.5, -1);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test

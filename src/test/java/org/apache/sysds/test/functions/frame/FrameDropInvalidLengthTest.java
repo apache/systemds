@@ -19,6 +19,11 @@
 
 package org.apache.sysds.test.functions.frame;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -32,10 +37,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "DropInvalidLength";
@@ -129,7 +130,7 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 			initFrameDataString(frame1,A, schemaStrings); // initialize a frame with one column
 			FrameWriter writer = FrameWriterFactory.createFrameWriter(Types.FileFormat.CSV);
 
-			ArrayList<Integer> badIndex = getBadIndexes(rows/4);
+			List<Integer> badIndex = getBadIndexes(rows/4);
 			int expected = 0;
 
 			switch (test) { //Double in String
@@ -186,15 +187,11 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 		}
 	}
 
-	private static ArrayList<Integer> getBadIndexes(int length) {
+	private static List<Integer> getBadIndexes(int length) {
 		ArrayList<Integer> list = new ArrayList<>();
 		for(int i =0; i<length; i++)
-		{
-			int r = ThreadLocalRandom.current().nextInt(0, rows);
-			list.add(r);
-		}
-		return (ArrayList<Integer>) list.stream()
-			.distinct().collect(Collectors.toList());
+			list.add(ThreadLocalRandom.current().nextInt(0, rows));
+		return list.stream().distinct().collect(Collectors.toList());
 	}
 
 	public static void initFrameDataString(FrameBlock frame1, double[][] data, Types.ValueType[] lschema) {

@@ -27,145 +27,139 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.InputStreamInputFormat;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.hadoop.mapred.InputFormat;
 
 /**
  * Single-threaded frame text csv reader.
  * 
  */
-public class FrameReaderTextCSV extends FrameReader
-{
+public class FrameReaderTextCSV extends FrameReader {
 	protected FileFormatPropertiesCSV _props = null;
-	
+
 	public FrameReaderTextCSV(FileFormatPropertiesCSV props) {
 		_props = props;
 	}
 
 	@Override
-	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names,
-			long rlen, long clen)
-		throws IOException, DMLRuntimeException 
-	{
-		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-		Path path = new Path( fname );
+	public final FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
+		LOG.debug("readFrameFromHDFS csv");
+		// prepare file access
+		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
+		Path path = new Path(fname);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		FileInputFormat.addInputPath(job, path);
-		
-		//check existence and non-empty file
-		checkValidInputFile(fs, path); 
-		
-		//compute size if necessary
-		if( rlen <= 0 || clen <= 0 ) {
-			Pair<Integer,Integer> size = computeCSVSize(path, job, fs);
+
+		// check existence and non-empty file
+		checkValidInputFile(fs, path);
+
+		// compute size if necessary
+		if(rlen <= 0 || clen <= 0) {
+			Pair<Integer, Integer> size = computeCSVSize(path, job, fs);
 			rlen = size.getKey();
 			clen = size.getValue();
 		}
-		
-		//allocate output frame block
+
+		// allocate output frame block
 		ValueType[] lschema = createOutputSchema(schema, clen);
 		String[] lnames = createOutputNames(names, clen);
 		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
-	
-		//core read (sequential/parallel) 
+
+		// core read (sequential/parallel)
 		readCSVFrameFromHDFS(path, job, fs, ret, lschema, lnames, rlen, clen);
-		
-		return ret;
-	}
-	
-	@Override
-	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, 
-			long rlen, long clen)
-		throws IOException, DMLRuntimeException 
-	{
-		//allocate output frame block
-		ValueType[] lschema = createOutputSchema(schema, clen);
-		String[] lnames = createOutputNames(names, clen);
-		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
-	
-		//core read (sequential/parallel) 
-		InputStreamInputFormat informat = new InputStreamInputFormat(is);
-		InputSplit split = informat.getSplits(null, 1)[0];
-		readCSVFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
-		
+
 		return ret;
 	}
 
-	protected void readCSVFrameFromHDFS( Path path, JobConf job, FileSystem fs, 
-			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen) 
-		throws IOException
-	{
+	@Override
+	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
+		LOG.debug("readFrameFromInputStream csv");
+		// allocate output frame block
+		ValueType[] lschema = createOutputSchema(schema, clen);
+		String[] lnames = createOutputNames(names, clen);
+		FrameBlock ret = createOutputFrameBlock(lschema, lnames, rlen);
+
+		// core read (sequential/parallel)
+		InputStreamInputFormat informat = new InputStreamInputFormat(is);
+		InputSplit split = informat.getSplits(null, 1)[0];
+		readCSVFrameFromInputSplit(split, informat, null, ret, schema, names, rlen, clen, 0, true);
+
+		return ret;
+	}
+
+	protected void readCSVFrameFromHDFS(Path path, JobConf job, FileSystem fs, FrameBlock dest, ValueType[] schema,
+		String[] names, long rlen, long clen) throws IOException {
+		LOG.debug("readCSVFrameFromHDFS csv");
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);
 		splits = IOUtilFunctions.sortInputSplits(splits);
-		for( int i=0, rpos=0; i<splits.length; i++ )
-			rpos = readCSVFrameFromInputSplit(splits[i], informat,
-				job, dest, schema, names, rlen, clen, rpos, i==0);
+		for(int i = 0, rpos = 0; i < splits.length; i++)
+			rpos = readCSVFrameFromInputSplit(splits[i], informat, job, dest, schema, names, rlen, clen, rpos, i == 0);
 	}
 
-	protected final int readCSVFrameFromInputSplit( InputSplit split, InputFormat<LongWritable,Text> informat, JobConf job, 
-			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen, int rl, boolean first)
-		throws IOException
-	{
+	protected final int readCSVFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
+		JobConf job, FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen, int rl, boolean first)
+		throws IOException {
 		boolean hasHeader = _props.hasHeader();
 		boolean isFill = _props.isFill();
 		double dfillValue = _props.getFillValue();
 		String sfillValue = String.valueOf(_props.getFillValue());
 		String delim = _props.getDelim();
-		
-		//create record reader
+
+		// create record reader
 		RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 		LongWritable key = new LongWritable();
 		Text value = new Text();
 		int row = rl;
 		int col = -1;
-		
-		//handle header if existing
-		if(first && hasHeader ) {
-			reader.next(key, value); //read header
+
+		// handle header if existing
+		if(first && hasHeader) {
+			reader.next(key, value); // read header
 			dest.setColumnNames(value.toString().split(delim));
 		}
-			
+
 		// Read the data
 		boolean emptyValuesFound = false;
-		try
-		{
-			while( reader.next(key, value) ) //foreach line
+		try {
+			while(reader.next(key, value)) // foreach line
 			{
 				String cellStr = value.toString().trim();
-				emptyValuesFound = false; col = 0;
+				emptyValuesFound = false;
+				col = 0;
 				String[] parts = IOUtilFunctions.splitCSV(cellStr, delim);
-				
-				//parse frame meta data (missing values / num distinct)
-				if( parts[0].equals(TfUtils.TXMTD_MVPREFIX) || parts[0].equals(TfUtils.TXMTD_NDPREFIX) ) {
-					if( parts[0].equals(TfUtils.TXMTD_MVPREFIX) )
-						for( int j=0; j<dest.getNumColumns(); j++ )
-							dest.getColumnMetadata(j).setMvValue(parts[j+1]);
-					else if( parts[0].equals(TfUtils.TXMTD_NDPREFIX) )
-						for( int j=0; j<dest.getNumColumns(); j++ )
-							dest.getColumnMetadata(j).setNumDistinct(Long.parseLong(parts[j+1]));
+
+				// parse frame meta data (missing values / num distinct)
+				if(parts[0].equals(TfUtils.TXMTD_MVPREFIX) || parts[0].equals(TfUtils.TXMTD_NDPREFIX)) {
+					if(parts[0].equals(TfUtils.TXMTD_MVPREFIX))
+						for(int j = 0; j < dest.getNumColumns(); j++)
+							dest.getColumnMetadata(j).setMvValue(parts[j + 1]);
+					else if(parts[0].equals(TfUtils.TXMTD_NDPREFIX))
+						for(int j = 0; j < dest.getNumColumns(); j++)
+							dest.getColumnMetadata(j).setNumDistinct(Long.parseLong(parts[j + 1]));
 					continue;
 				}
-				
-				for( String part : parts ) //foreach cell
+
+				for(String part : parts) // foreach cell
 				{
 					part = part.trim();
-					if ( part.isEmpty() ) {
-						if( isFill && dfillValue!=0 )
+					if(part.isEmpty()) {
+						if(isFill && dfillValue != 0)
 							dest.set(row, col, UtilFunctions.stringToObject(schema[col], sfillValue));
 						emptyValuesFound = true;
 					}
@@ -174,8 +168,8 @@ public class FrameReaderTextCSV extends FrameReader
 					}
 					col++;
 				}
-				
-				//sanity checks for empty values and number of columns
+
+				// sanity checks for empty values and number of columns
 				IOUtilFunctions.checkAndRaiseErrorCSVEmptyField(cellStr, isFill, emptyValuesFound);
 				IOUtilFunctions.checkAndRaiseErrorCSVNumColumns("", cellStr, parts, clen);
 				row++;
@@ -184,40 +178,35 @@ public class FrameReaderTextCSV extends FrameReader
 		finally {
 			IOUtilFunctions.closeSilently(reader);
 		}
-		
+
 		return row;
 	}
 
-	protected Pair<Integer,Integer> computeCSVSize( Path path, JobConf job, FileSystem fs) 
-		throws IOException 
-	{	
+	protected Pair<Integer, Integer> computeCSVSize(Path path, JobConf job, FileSystem fs) throws IOException {
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
 		InputSplit[] splits = informat.getSplits(job, 1);
 		splits = IOUtilFunctions.sortInputSplits(splits);
-		
-		//compute number of columns
+
+		// compute number of columns
 		int ncol = IOUtilFunctions.countNumColumnsCSV(splits, informat, job, _props.getDelim());
-		
-		//compute number of rows
+
+		// compute number of rows
 		int nrow = 0;
-		for( int i=0; i<splits.length; i++ ) 
-		{
+		for(int i = 0; i < splits.length; i++) {
 			RecordReader<LongWritable, Text> reader = informat.getRecordReader(splits[i], job, Reporter.NULL);
 			LongWritable key = new LongWritable();
 			Text value = new Text();
-			
-			try
-			{
-				//ignore header of first split
-				if( i==0 && _props.hasHeader() )
+
+			try {
+				// ignore header of first split
+				if(i == 0 && _props.hasHeader())
 					reader.next(key, value);
-				
-				//count remaining number of rows, ignore meta data
-				while ( reader.next(key, value) ) {
+
+				// count remaining number of rows, ignore meta data
+				while(reader.next(key, value)) {
 					String val = value.toString();
-					nrow += ( val.startsWith(TfUtils.TXMTD_MVPREFIX)
-						|| val.startsWith(TfUtils.TXMTD_NDPREFIX)) ? 0 : 1; 
+					nrow += (val.startsWith(TfUtils.TXMTD_MVPREFIX) || val.startsWith(TfUtils.TXMTD_NDPREFIX)) ? 0 : 1;
 				}
 			}
 			finally {

@@ -19,18 +19,26 @@
 
 package org.apache.sysds.runtime.io;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class FrameReaderFactory {
+	protected static final Log LOG = LogFactory.getLog(FrameReaderFactory.class.getName());
+
 	public static FrameReader createFrameReader(FileFormat fmt) {
+		if( LOG.isDebugEnabled() )
+			LOG.debug("Creating Frame Reader " + fmt);
 		FileFormatProperties props = (fmt == FileFormat.CSV) ? new FileFormatPropertiesCSV() : null;
 		return createFrameReader(fmt, props);
 	}
 
 	public static FrameReader createFrameReader(FileFormat fmt, FileFormatProperties props) {
+		if( LOG.isDebugEnabled() )
+			LOG.debug("Creating Frame Reader " + fmt + props);
 		FrameReader reader = null;
 
 		switch(fmt) {

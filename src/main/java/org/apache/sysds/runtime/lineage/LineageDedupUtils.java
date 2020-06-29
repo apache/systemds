@@ -19,32 +19,49 @@
 
 package org.apache.sysds.runtime.lineage;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 
 public class LineageDedupUtils {
 	
-	public static LineageDedupBlock computeDedupBlock(ForProgramBlock fpb, ExecutionContext ec) {
-		LineageDedupBlock ldb = new LineageDedupBlock();
-		ec.getLineage().pushInitDedupBlock(ldb);
-		ldb.addBlock();
-		for (ProgramBlock pb : fpb.getChildBlocks()) {
-			if (pb instanceof IfProgramBlock)
-				ldb.traceIfProgramBlock((IfProgramBlock) pb, ec);
-			else if (pb instanceof BasicProgramBlock)
-				ldb.traceBasicProgramBlock((BasicProgramBlock) pb, ec);
-			else if (pb instanceof ForProgramBlock)
-				ldb.splitBlocks();
-			else
-				throw new DMLRuntimeException("Only BasicProgramBlocks or "
-					+ "IfProgramBlocks are allowed inside a LineageDedupBlock.");
+	public static boolean isValidDedupBlock(ProgramBlock pb, boolean inLoop) {
+		boolean ret = true; //basic program block
+		if (pb instanceof FunctionProgramBlock) {
+			FunctionProgramBlock fsb = (FunctionProgramBlock)pb;
+			for (ProgramBlock cpb : fsb.getChildBlocks())
+				ret &= isValidDedupBlock(cpb, inLoop);
 		}
-		ldb.removeLastBlockIfEmpty();
-		ec.getLineage().popInitDedupBlock();
+		else if (pb instanceof WhileProgramBlock) {
+			if( inLoop ) return false;
+			WhileProgramBlock wpb = (WhileProgramBlock) pb;
+			for (ProgramBlock cpb : wpb.getChildBlocks())
+				ret &= isValidDedupBlock(cpb, true);
+		}
+		else if (pb instanceof IfProgramBlock) {
+			IfProgramBlock ipb = (IfProgramBlock) pb;
+			for (ProgramBlock cpb : ipb.getChildBlocksIfBody())
+				ret &= isValidDedupBlock(cpb, inLoop);
+			for (ProgramBlock cpb : ipb.getChildBlocksElseBody())
+				ret &= isValidDedupBlock(cpb, inLoop);
+		}
+		else if (pb instanceof ForProgramBlock) { //incl parfor
+			if( inLoop ) return false;
+			ForProgramBlock fpb = (ForProgramBlock) pb;
+			for (ProgramBlock cpb : fpb.getChildBlocks())
+				ret &= isValidDedupBlock(cpb, true);
+		}
+		return ret;
+	}
+	
+	public static LineageDedupBlock computeDedupBlock(ProgramBlock fpb, ExecutionContext ec) {
+		LineageDedupBlock ldb = new LineageDedupBlock();
+		ec.getLineage().setInitDedupBlock(ldb);
+		ldb.traceProgramBlocks(fpb.getChildBlocks(), ec);
+		ec.getLineage().setInitDedupBlock(null);
 		return ldb;
 	}
 }

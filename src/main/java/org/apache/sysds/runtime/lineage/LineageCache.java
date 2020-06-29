@@ -37,8 +37,10 @@ import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -78,38 +80,65 @@ public class LineageCache
 		// will always fit in memory and hence can be pinned unconditionally
 		if (LineageCacheConfig.isReusable(inst, ec)) {
 			ComputationCPInstruction cinst = (ComputationCPInstruction) inst;
-			LineageItem item = cinst.getLineageItem(ec).getValue();
+			LineageItem instLI = cinst.getLineageItem(ec).getValue();
+			HashMap<LineageItem, LineageCacheEntry> liMap = new HashMap<>();
+			if (inst instanceof MultiReturnBuiltinCPInstruction) {
+				MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
+				for (int i=0; i<mrInst.getNumOutputs(); i++) {
+					String opcode = instLI.getOpcode() + String.valueOf(i);
+					liMap.put(new LineageItem(opcode, instLI.getInputs()), null);
+				}
+			}
+			else
+				liMap.put(instLI, null);
 			
 			//atomic try reuse full/partial and set placeholder, without
 			//obtaining value to avoid blocking in critical section
 			LineageCacheEntry e = null;
+			Boolean reuseAll = true;
 			synchronized( _cache ) {
 				//try to reuse full or partial intermediates
-				if (LineageCacheConfig.getCacheType().isFullReuse())
-					e = LineageCache.probe(item) ? getIntern(item) : null;
-				//TODO need to also move execution of compensation plan out of here
-				//(create lazily evaluated entry)
-				if (e == null && LineageCacheConfig.getCacheType().isPartialReuse())
-					if( LineageRewriteReuse.executeRewrites(inst, ec) )
-						e = getIntern(item);
-				reuse = (e != null);
-				
-				//create a placeholder if no reuse to avoid redundancy
-				//(e.g., concurrent threads that try to start the computation)
-				if(!reuse && isMarkedForCaching(inst, ec)) {
-					putIntern(item, cinst.output.getDataType(), null, null,  0);
+				for (LineageItem item : liMap.keySet()) {
+					if (LineageCacheConfig.getCacheType().isFullReuse())
+						e = LineageCache.probe(item) ? getIntern(item) : null;
+					//TODO need to also move execution of compensation plan out of here
+					//(create lazily evaluated entry)
+					if (e == null && LineageCacheConfig.getCacheType().isPartialReuse())
+						if( LineageRewriteReuse.executeRewrites(inst, ec) )
+							e = getIntern(item);
+					//TODO: MultiReturnBuiltin and partial rewrites
+					reuseAll &= (e != null);
+					liMap.put(item, e);
+					
+					//create a placeholder if no reuse to avoid redundancy
+					//(e.g., concurrent threads that try to start the computation)
+					if(e == null && isMarkedForCaching(inst, ec)) {
+						putIntern(item, cinst.output.getDataType(), null, null,  0);
+						//FIXME: different o/p datatypes for MultiReturnBuiltins.
+					}
 				}
 			}
+			reuse = reuseAll;
 			
 			if(reuse) { //reuse
 				//put reuse value into symbol table (w/ blocking on placeholders)
-				if (e.isMatrixValue())
-					ec.setMatrixOutput(cinst.output.getName(), e.getMBValue());
-				else
-					ec.setScalarOutput(cinst.output.getName(), e.getSOValue());
+				for (Map.Entry<LineageItem, LineageCacheEntry> entry : liMap.entrySet()) {
+					e = entry.getValue();
+					String outName = null;
+					if (inst instanceof MultiReturnBuiltinCPInstruction)
+						outName = ((MultiReturnBuiltinCPInstruction)inst).
+							getOutput(entry.getKey().getOpcode().charAt(entry.getKey().getOpcode().length()-1)-'0').getName(); 
+					else
+						outName = cinst.output.getName();
+
+					if (e.isMatrixValue())
+						ec.setMatrixOutput(outName, e.getMBValue());
+					else
+						ec.setScalarOutput(outName, e.getSOValue());
+					reuse = true;
+				}
 				if (DMLScript.STATISTICS)
 					LineageCacheStatistics.incrementInstHits();
-				reuse = true;
 			}
 		}
 		
@@ -127,7 +156,7 @@ public class LineageCache
 		HashMap<String, LineageItem> funcLIs = new HashMap<>();
 		for (int i=0; i<numOutputs; i++) {
 			String opcode = name + String.valueOf(i+1);
-			LineageItem li = new LineageItem(outNames.get(i), opcode, liInputs);
+			LineageItem li = new LineageItem(opcode, liInputs);
 			LineageCacheEntry e = null;
 			synchronized(_cache) {
 				if (LineageCache.probe(li)) {
@@ -219,23 +248,38 @@ public class LineageCache
 			return;
 		if (LineageCacheConfig.isReusable(inst, ec) ) {
 			//if (!isMarkedForCaching(inst, ec)) return;
-			LineageItem item = ((LineageTraceable) inst).getLineageItem(ec).getValue();
-			Data data = ec.getVariable(((ComputationCPInstruction) inst).output);
+			HashMap<LineageItem, Data> liDataMap = new HashMap<>();
+			LineageItem instLI = ((LineageTraceable) inst).getLineageItem(ec).getValue();
+			if (inst instanceof MultiReturnBuiltinCPInstruction) {
+				MultiReturnBuiltinCPInstruction mrInst = (MultiReturnBuiltinCPInstruction)inst;
+				for (int i=0; i<mrInst.getNumOutputs(); i++) {
+					String opcode = instLI.getOpcode() + String.valueOf(i);
+					LineageItem li = new LineageItem(opcode, instLI.getInputs());
+					Data value = ec.getVariable(mrInst.getOutput(i));
+					liDataMap.put(li, value);
+				}
+			}
+			else
+				liDataMap.put(instLI, ec.getVariable(((ComputationCPInstruction) inst).output));
 			synchronized( _cache ) {
-				if (data instanceof MatrixObject)
-					_cache.get(item).setValue(((MatrixObject)data).acquireReadAndRelease(), computetime);
-				else if (data instanceof ScalarObject)
-					_cache.get(item).setValue((ScalarObject)data, computetime);
-				else
-					throw new DMLRuntimeException("Lineage Cache: unsupported data: "+data.getDataType());
+				for (Map.Entry<LineageItem, Data> entry : liDataMap.entrySet()) {
+					LineageItem item = entry.getKey();
+					Data data = entry.getValue();
+					if (data instanceof MatrixObject)
+						_cache.get(item).setValue(((MatrixObject)data).acquireReadAndRelease(), computetime);
+					else if (data instanceof ScalarObject)
+						_cache.get(item).setValue((ScalarObject)data, computetime);
+					else
+						throw new DMLRuntimeException("Lineage Cache: unsupported data: "+data.getDataType());
 
-				//maintain order for eviction
-				LineageCacheEviction.addEntry(_cache.get(item));
+					//maintain order for eviction
+					LineageCacheEviction.addEntry(_cache.get(item));
 
-				long size = _cache.get(item).getSize();
-				if (!LineageCacheEviction.isBelowThreshold(size))
-					LineageCacheEviction.makeSpace(_cache, size);
-				LineageCacheEviction.updateSize(size, true);
+					long size = _cache.get(item).getSize();
+					if (!LineageCacheEviction.isBelowThreshold(size))
+						LineageCacheEviction.makeSpace(_cache, size);
+					LineageCacheEviction.updateSize(size, true);
+				}
 			}
 		}
 	}
@@ -250,13 +294,14 @@ public class LineageCache
 		boolean AllOutputsCacheable = true;
 		for (int i=0; i<outputs.size(); i++) {
 			String opcode = name + String.valueOf(i+1);
-			LineageItem li = new LineageItem(outputs.get(i).getName(), opcode, liInputs);
+			LineageItem li = new LineageItem(opcode, liInputs);
 			String boundVarName = outputs.get(i).getName();
 			LineageItem boundLI = ec.getLineage().get(boundVarName);
 			if (boundLI != null)
-				boundLI.resetVisitStatus();
-			if (boundLI == null || !LineageCache.probe(li)) {
+				boundLI.resetVisitStatusNR();
+			if (boundLI == null || !LineageCache.probe(li) || !LineageCache.probe(boundLI)) {
 				AllOutputsCacheable = false;
+				//FIXME: if boundLI is for a MultiReturnBuiltin instruction 
 			}
 			FuncLIMap.put(li, boundLI);
 		}
@@ -282,7 +327,7 @@ public class LineageCache
 	
 	//----------------- INTERNAL CACHE LOGIC IMPLEMENTATION --------------//
 	
-	protected static void putIntern(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
+	private static void putIntern(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
 		if (_cache.containsKey(key))
 			//can come here if reuse_partial option is enabled
 			return;
@@ -300,7 +345,7 @@ public class LineageCache
 			LineageCacheEviction.updateSize(size, true);
 		}
 		
-		// Place the entry at head position.
+		// Place the entry in the weighted queue.
 		LineageCacheEviction.addEntry(newItem);
 		
 		_cache.put(key, newItem);
@@ -310,8 +355,7 @@ public class LineageCache
 	
 	private static LineageCacheEntry getIntern(LineageItem key) {
 		// This method is called only when entry is present either in cache or in local FS.
-		if (_cache.containsKey(key)) {
-			// Read and put the entry at head.
+		if (_cache.containsKey(key) && _cache.get(key).getCacheStatus() != LineageCacheStatus.SPILLED) {
 			LineageCacheEntry e = _cache.get(key);
 			// Maintain order for eviction
 			LineageCacheEviction.getEntry(e);
@@ -331,19 +375,25 @@ public class LineageCache
 		if (LineageCache.probe(probeItem)) {
 			LineageCacheEntry oe = getIntern(probeItem);
 			LineageCacheEntry e = _cache.get(item);
+			boolean exists = !e.isNullVal();
 			if (oe.isMatrixValue())
 				e.setValue(oe.getMBValue(), computetime); 
 			else
 				e.setValue(oe.getSOValue(), computetime);
 			e._origItem = probeItem; 
+			// Add itself as original item to navigate the list.
+			oe._origItem = probeItem;
+
+			// Add the SB/func entry to the list of items pointing to the same data.
+			// No cache size update is necessary.
+			// Maintain _origItem as head.
+			if (!exists) {
+				e._nextEntry = oe._nextEntry;
+				oe._nextEntry = e;
+			}
 			
 			//maintain order for eviction
 			LineageCacheEviction.addEntry(e);
-
-			long size = oe.getSize();
-			if(!LineageCacheEviction.isBelowThreshold(size)) 
-				LineageCacheEviction.makeSpace(_cache, size);
-			LineageCacheEviction.updateSize(size, true);
 		}
 		else
 			_cache.remove(item);    //remove the placeholder
@@ -503,10 +553,6 @@ public class LineageCache
 				throw new DMLRuntimeException("Lineage Cache: unsupported instruction: "+inst.getOpcode());
 		}
 		
-		if (DMLScript.STATISTICS) {
-			long t1 = System.nanoTime();
-			LineageCacheStatistics.incrementCostingTime(t1-t0);
-		}
 		return nflops / (2L * 1024 * 1024 * 1024);
 	}
 }

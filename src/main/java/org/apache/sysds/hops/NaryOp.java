@@ -214,14 +214,18 @@ public class NaryOp extends Hop {
 	public void refreshSizeInformation() {
 		switch( _op ) {
 			case CBIND:
-				setDim1(HopRewriteUtils.getMaxInputDim(this, true));
-				setDim2(HopRewriteUtils.getSumValidInputDims(this, false));
-				setNnz(HopRewriteUtils.getSumValidInputNnz(this));
+				if( !getInput().get(0).getDataType().isList() ) {
+					setDim1(HopRewriteUtils.getMaxInputDim(this, true));
+					setDim2(HopRewriteUtils.getSumValidInputDims(this, false));
+					setNnz(HopRewriteUtils.getSumValidInputNnz(this));
+				}
 				break;
 			case RBIND:
-				setDim1(HopRewriteUtils.getSumValidInputDims(this, true));
-				setDim2(HopRewriteUtils.getMaxInputDim(this, false));
-				setNnz(HopRewriteUtils.getSumValidInputNnz(this));
+				if( !getInput().get(0).getDataType().isList() ) {
+					setDim1(HopRewriteUtils.getSumValidInputDims(this, true));
+					setDim2(HopRewriteUtils.getMaxInputDim(this, false));
+					setNnz(HopRewriteUtils.getSumValidInputNnz(this));
+				}
 				break;
 			case MIN:
 			case MAX:

@@ -24,7 +24,9 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 
 import java.util.Comparator;
 
@@ -32,10 +34,15 @@ public class LineageCacheConfig
 {
 	//-------------CACHING LOGIC RELATED CONFIGURATIONS--------------//
 
-	private static final String[] REUSE_OPCODES = new String[] {
-		"tsmm", "ba+*", "*", "/", "+", "nrow", "ncol", "round", "exp", "log",
-		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof"
+	private static final String[] OPCODES = new String[] {
+		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
+		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
+		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
+		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
+		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+"
+		//TODO: Reuse everything. 
 	};
+	private static String[] REUSE_OPCODES  = new String[] {};
 	
 	public enum ReuseCacheType {
 		REUSE_FULL,
@@ -97,9 +104,11 @@ public class LineageCacheConfig
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
 		CACHED,    //General cached data. Can be evicted.
-		EVICTED,   //Data is in disk. Empty value. Cannot be evicted.
+		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
-		PINNED;    //Pinned to memory. Cannot be evicted.
+		PINNED,    //Pinned to memory. Cannot be evicted.
+		TOSPILL,   //To be spilled lazily 
+		TODELETE;  //TO be removed lazily
 		public boolean canEvict() {
 			return this == CACHED || this == RELOADED;
 		}
@@ -117,7 +126,7 @@ public class LineageCacheConfig
 		double w2 = LineageCacheConfig.WEIGHTS[1];
 		// Generate scores
 		double score1 = w1*(((double)e1._computeTime)/e1.getSize()) + w2*e1.getTimestamp();
-		double score2 = w1*((double)e2._computeTime)/e2.getSize() + w2*e1.getTimestamp();
+		double score2 = w1*((double)e2._computeTime)/e2.getSize() + w2*e2.getTimestamp();
 		// Generate order. If scores are same, order by LineageItem ID.
 		return score1 == score2 ? Long.compare(e1._key.getId(), e2._key.getId()) : score1 < score2 ? -1 : 1;
 	};
@@ -126,18 +135,29 @@ public class LineageCacheConfig
 
 	static {
 		//setup static configuration parameters
+		REUSE_OPCODES = OPCODES;
 		setSpill(true); 
-		//setCachePolicy(LineageCachePolicy.WEIGHTED);
+		setCachePolicy(LineageCachePolicy.HYBRID);
 		setCompAssRW(true);
 	}
 
+	public static void setReusableOpcodes(String... ops) {
+		REUSE_OPCODES = ops;
+	}
+	
+	public static void resetReusableOpcodes() {
+		REUSE_OPCODES = OPCODES;
+	}
 
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
 		boolean insttype = inst instanceof ComputationCPInstruction 
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec)));
-		return insttype && rightop;
+			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
+			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
+		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)
+			&& ec.getMatrixObject(((ComputationCPInstruction)inst).input1).getUpdateType().isInPlace();
+		return insttype && rightop && !updateInplace;
 	}
 	
 	private static boolean isVectorAppend(Instruction inst, ExecutionContext ec) {

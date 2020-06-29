@@ -172,6 +172,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public boolean isOnesCol() {
 		return minValue == maxValue && minValue == 1 && sparsity == 1 && getCols() == 1;
 	}
+
+	public boolean isMatrixCall() {
+		return minValue == maxValue && sparsity == 1;
+	}
 	
 	public long getFrom() {
 		return seq_from.isLiteral() ? UtilFunctions.parseToLong(seq_from.getName()) : -1;
@@ -401,16 +405,23 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 					tmpInstStr = position != 0 ? InstructionUtils.replaceOperand(
 						tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
 				}
+				//replace output variable name with a placeholder
+				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, rows, 2, ec);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, cols, 3, ec);
 				break;
 			}
 			case SEQ: {
+				//replace output variable name with a placeholder
+				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_from, 5, ec);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_to, 6, ec);
 				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_incr, 7, ec);
 				break;
 			}
+			case TIME: 
+				//only opcode (time) is sufficient to compute from lineage.
+				break;
 			default:
 				throw new DMLRuntimeException("Unsupported datagen op: "+method);
 		}

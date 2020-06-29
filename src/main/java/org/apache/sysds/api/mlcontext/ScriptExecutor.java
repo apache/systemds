@@ -51,6 +51,7 @@ import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.Explain.ExplainCounts;
@@ -215,8 +216,11 @@ public class ScriptExecutor {
 	protected void createAndInitializeExecutionContext() {
 		executionContext = ExecutionContextFactory.createContext(runtimeProgram);
 		LocalVariableMap symbolTable = script.getSymbolTable();
-		if (symbolTable != null)
+		if (symbolTable != null) {
 			executionContext.setVariables(symbolTable);
+			if( DMLScript.LINEAGE )
+				LineageItemUtils.addAllDataLineage(executionContext);
+		}
 		//attach registered outputs (for dynamic recompile)
 		executionContext.getVariables().setRegisteredOutputs(
 			new HashSet<>(script.getOutputVariables()));

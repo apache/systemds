@@ -17,31 +17,32 @@
  * under the License.
  */
 
+
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
-{
-	protected BinaryFrameFrameCPInstruction(Operator op, CPOperand in1,
+public class BinaryFrameMatrixCPInstruction extends BinaryCPInstruction {
+	protected BinaryFrameMatrixCPInstruction(Operator op, CPOperand in1,
 			CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(CPType.Binary, op, in1, in2, out, opcode, istr);
+		super(CPInstruction.CPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		// Read input matrices
+		// Read input frame
 		FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
-		FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
-
-		// Perform computation using input frames, and produce the result frame
-		FrameBlock retBlock = inBlock1.dropInvalid(inBlock2);
-		// Release the memory occupied by input frames
+		// the vector with valid column lengths
+		MatrixBlock featurelength = ec.getMatrixInput(input2.getName());
+		// identify columns with invalid lengths
+		FrameBlock out = inBlock1.invalidByLength(featurelength);
+		// Release the memory occupied by inputs
 		ec.releaseFrameInput(input1.getName());
-		ec.releaseFrameInput(input2.getName());
-		// Attach result frame with FrameBlock associated with output_name
-		ec.setFrameOutput(output.getName(), retBlock);
+		ec.releaseMatrixInput(input2.getName());
+		// Attach result frame with output
+		ec.setFrameOutput(output.getName(),out);
 	}
 }

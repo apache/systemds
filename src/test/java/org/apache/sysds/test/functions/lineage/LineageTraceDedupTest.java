@@ -149,7 +149,6 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("dedup");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(input("X"));
 			proArgs.add(output("R"));

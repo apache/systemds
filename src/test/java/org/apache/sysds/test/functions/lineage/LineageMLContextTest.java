@@ -47,7 +47,7 @@ public class LineageMLContextTest extends MLContextTestBase {
 
 		Script script = dml(
 			 "print('sum: '+sum(M+M));"
-			+"print(lineage(M+M));"
+			+ "print(lineage(M+M));"
 			).in("M", javaRDD, mm);
 		setExpectedStdOut("sum: 30.0");
 		
@@ -68,7 +68,8 @@ public class LineageMLContextTest extends MLContextTestBase {
 		
 		Script script = dml(
 			 "print('sum: '+sum(M+M));"
-			+"print(lineage(M+M));"
+			+ "s = lineage(M+M);"
+			+"if( sum(M) < 0 )  print(s);"
 			).in("M", javaRDD, mm);
 		setExpectedStdOut("sum: 30.0");
 		
@@ -90,7 +91,8 @@ public class LineageMLContextTest extends MLContextTestBase {
 		
 		Script script = dml(
 			 "print('sum: '+sum(M+M));"
-			+"print(lineage(M+M));"
+			+ "s = lineage(M+M);"
+			+"if( sum(M) < 0 )  print(s);"
 			).in("M", javaRDD, mm);
 		
 		ml.setLineage(ReuseCacheType.REUSE_FULL);

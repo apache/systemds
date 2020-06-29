@@ -95,7 +95,6 @@ public class SBFullReuseTest extends AutomatedTestBase {
 			// With lineage-based reuse enabled
 			proArgs.clear();
 			proArgs.add("-stats");
-			proArgs.add("-explain");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_MULTILEVEL.name().toLowerCase());
 			proArgs.add("-args");

@@ -113,7 +113,6 @@ public class LineageRewriteTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(testname);
 			List<String> proArgs = new ArrayList<>();
 			
-			proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("-args");

@@ -1875,7 +1875,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 *  if data value in any cell is greater than the specified threshold of that attribute
 	 *  the output frame will store a null on that cell position, thus removing the length-violating values.
 	 * 
-	 *  @param row vector of valid lengths
+	 *  @param feaLen vector of valid lengths
 	 *  @return FrameBlock with invalid values converted into missing values (null)
 	 */
 	public FrameBlock invalidByLength(MatrixBlock feaLen) {

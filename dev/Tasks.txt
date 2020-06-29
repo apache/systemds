@@ -354,3 +354,6 @@ Others:
 
 SYSTEMDS-510 IO formats
  * 511 Add protobuf support to write and read FrameBlocks to HDFS     OK
+
+ SYSTEMDS-610 Cleaning Pipelines
+ * 611 Initial Brute force execution                                  OK

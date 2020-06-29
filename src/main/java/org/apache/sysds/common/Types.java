@@ -266,7 +266,8 @@ public class Types
 	public enum OpOp2 {
 		AND(true), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
-		DROP_INVALID(false), EQUAL(true), GREATER(true), GREATEREQUAL(true),
+		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false),
+		EQUAL(true), GREATER(true), GREATEREQUAL(true),
 		INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true), LESSEQUAL(true),
 		LOG(true), MAX(true), MEDIAN(false), MIN(true), MINUS(true), MODULUS(true),
 		MOMENT(false), MULT(true), NOTEQUAL(true), OR(true), PLUS(true), POW(true),
@@ -313,7 +314,8 @@ public class Types
 				case BITWXOR:      return "bitwXor";
 				case BITWSHIFTL:   return "bitwShiftL";
 				case BITWSHIFTR:   return "bitwShiftR";
-				case DROP_INVALID: return "dropInvalid";
+				case DROP_INVALID_TYPE: return "dropInvalidType";
+				case DROP_INVALID_LENGTH: return "dropInvalidLength";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -345,7 +347,8 @@ public class Types
 				case "bitwXor":     return BITWXOR;
 				case "bitwShiftL":  return BITWSHIFTL;
 				case "bitwShiftR":  return BITWSHIFTR;
-				case "dropInvalid": return DROP_INVALID;
+				case "dropInvalidType": return DROP_INVALID_TYPE;
+				case "dropInvalidLength": return DROP_INVALID_LENGTH;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}

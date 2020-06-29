@@ -21,5 +21,5 @@
 
 X = read($1, rows=$3, cols=$4, data_type="frame", format="csv");
 M = read($2, rows=1, cols=$4, data_type="frame", format="csv");
-R = dropInvalid(X,M);
+R = dropInvalidType(X,M);
 write(R, $5, format="binary");

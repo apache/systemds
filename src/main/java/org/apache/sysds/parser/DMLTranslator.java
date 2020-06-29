@@ -2503,7 +2503,8 @@ public class DMLTranslator
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
 				OpOp1.valueOf(source.getOpCode().name()), expr);
 			break;
-		case DROP_INVALID:
+		case DROP_INVALID_TYPE:
+		case DROP_INVALID_LENGTH:
 			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
 			break;

@@ -308,6 +308,7 @@ SYSTEMDS-340 Compiler Assisted Lineage Caching and Reuse
 
 SYSTEMDS-350 Data Cleaning Framework
  * 351 New builtin function for error correction by schema            OK
+ * 352 New builtin function for error correction by length            Ok
 
 SYSTEMDS-360 Privacy/Data Exchange Constraints
  * 361 Initial privacy meta data (compiler/runtime)                   OK

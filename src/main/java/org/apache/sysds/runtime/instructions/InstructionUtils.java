@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions;
 
 import java.util.StringTokenizer;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.Direction;
@@ -485,7 +486,7 @@ public class InstructionUtils
 	}
 	
 	public static Operator parseExtendedBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) {
-		boolean matrixScalar = (in1.getDataType() != in2.getDataType());
+		boolean matrixScalar = (in1.getDataType() != in2.getDataType() && (in1.getDataType() != Types.DataType.FRAME && in2.getDataType() != Types.DataType.FRAME));
 		return Builtin.isBuiltinFnObject(opcode) ?
 			(matrixScalar ? new RightScalarOperator( Builtin.getBuiltinFnObject(opcode), 0) :
 				new BinaryOperator( Builtin.getBuiltinFnObject(opcode))) :
@@ -548,9 +549,11 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		else if ( opcode.equalsIgnoreCase("min") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		else if( opcode.equalsIgnoreCase("dropInvalid"))
-			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalid"));
-		
+		else if( opcode.equalsIgnoreCase("dropInvalidType"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidType"));
+		else if( opcode.equalsIgnoreCase("dropInvalidLength"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
+
 		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}
 	
@@ -777,6 +780,8 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		else if ( opcode.equalsIgnoreCase("min") || opcode.equalsIgnoreCase("mapmin") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
+		else if ( opcode.equalsIgnoreCase("dropInvalidLength") || opcode.equalsIgnoreCase("mapdropInvalidLength") )
+			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}

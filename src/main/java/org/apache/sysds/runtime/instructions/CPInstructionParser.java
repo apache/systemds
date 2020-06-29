@@ -151,7 +151,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "solve"  , CPType.Binary);
 		String2CPInstructionType.put( "max"  , CPType.Binary);
 		String2CPInstructionType.put( "min"  , CPType.Binary);
-		String2CPInstructionType.put( "dropInvalid"  , CPType.Binary);
+		String2CPInstructionType.put( "dropInvalidType"  , CPType.Binary);
+		String2CPInstructionType.put( "dropInvalidLength"  , CPType.Binary);
 
 		String2CPInstructionType.put( "nmax", CPType.BuiltinNary);
 		String2CPInstructionType.put( "nmin", CPType.BuiltinNary);

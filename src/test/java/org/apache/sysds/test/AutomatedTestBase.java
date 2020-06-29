@@ -19,15 +19,28 @@
 
 package org.apache.sysds.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
@@ -54,21 +67,11 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.ParameterBuilder;
 import org.apache.sysds.utils.Statistics;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 
 /**
  * <p>
@@ -85,6 +88,9 @@ import static org.junit.Assert.fail;
  */
 @SuppressWarnings("deprecation")
 public abstract class AutomatedTestBase {
+
+	private static final Log LOG = LogFactory.getLog(AutomatedTestBase.class.getName());
+	
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 
@@ -197,6 +203,9 @@ public abstract class AutomatedTestBase {
 	private int iExpectedStdErrState = 0;
 	private PrintStream originalErrStreamStd = null;
 
+	// Timestamp before test start.
+	private long lTimeBeforeTest;
+
 	@Before
 	public abstract void setUp();
 
@@ -239,7 +248,7 @@ public abstract class AutomatedTestBase {
 		expectedFiles = new ArrayList<>();
 		outputDirectories = new String[0];
 		setOutAndExpectedDeletionDisabled(false);
-		// lTimeBeforeTest = System.currentTimeMillis();
+		lTimeBeforeTest = System.currentTimeMillis();
 
 		TestUtils.clearAssertionInformation();
 	}
@@ -311,7 +320,7 @@ public abstract class AutomatedTestBase {
 	protected File getCodegenConfigFile(String parent, CodegenTestType type) {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
 		File tmp = new File(parent, type.getCodgenConfig());
-		System.out.println("This test case overrides default configuration with " + tmp.getPath());
+		LOG.info("This test case overrides default configuration with " + tmp.getPath());
 		return tmp;
 	}
 	
@@ -666,7 +675,7 @@ public abstract class AutomatedTestBase {
 	}
 
 	public HashMap<CellIndex, Double> readRMatrixFromFS(String fileName) {
-		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
+		LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
@@ -709,7 +718,7 @@ public abstract class AutomatedTestBase {
 	}
 
 	public HashMap<CellIndex, Double> readRScalarFromFS(String fileName) {
-		System.out.println("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
+		LOG.info("R script out: " + baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
@@ -842,7 +851,7 @@ public abstract class AutomatedTestBase {
 
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 
-			// System.out.printf("This test case will use SystemDS config file %s\n", getCurConfigFile());
+			LOG.debug("This test case will use SystemDS config file %s\n" + getCurConfigFile());
 		}
 		catch(IOException e) {
 			throw new RuntimeException(e);
@@ -940,22 +949,24 @@ public abstract class AutomatedTestBase {
 			if(outputFiles != null && outputFiles.length > 0) {
 				expectedFile = new File(expectedDir.getPath() + "/" + outputFiles[0]);
 				if(expectedFile.canRead()) {
-					System.out.println("Skipping R script cmd: " + cmd);
+					LOG.info("Skipping R script cmd: " + cmd);
 					return;
 				}
 			}
 		}
 
+		String outputR;
+		String errorString;
 		try {
 			long t0 = System.nanoTime();
-			System.out.println("starting R script");
-			System.out.println("cmd: " + cmd);
+			LOG.info("starting R script");
+			LOG.debug("R cmd: " + cmd);
 			Process child = Runtime.getRuntime().exec(cmd);
 
-			String outputR = IOUtils.toString(child.getInputStream());
-			System.out.println("Standard Output from R:" + outputR);
-			String errorString = IOUtils.toString(child.getErrorStream());
-			System.err.println("Standard Error from R:" + errorString);
+			outputR = IOUtils.toString(child.getInputStream());
+			LOG.trace("Standard Output from R:" + outputR);
+			errorString = IOUtils.toString(child.getErrorStream());
+			LOG.trace("Standard Error from R:" + errorString);
 
 			//
 			// To give any stream enough time to print all data, otherwise there
@@ -978,19 +989,26 @@ public abstract class AutomatedTestBase {
 			}
 
 			long t1 = System.nanoTime();
-			System.out.println("R is finished (in " + ((double) t1 - t0) / 1000000000 + " sec)");
+
+			LOG.info("R is finished (in " + ((double) t1 - t0) / 1000000000 + " sec)");
 		}
 		catch(Exception e) {
-			e.printStackTrace();
-			StringBuilder errorMessage = new StringBuilder();
-			errorMessage.append("failed to run script " + executionFile);
-			errorMessage.append("\nexception: " + e.toString());
-			errorMessage.append("\nmessage: " + e.getMessage());
-			errorMessage.append("\nstack trace:");
-			for(StackTraceElement ste : e.getStackTrace()) {
-				errorMessage.append("\n>" + ste);
+			if(e.getMessage().contains("ERROR: R has ended irregularly")){
+				StringBuilder errorMessage = new StringBuilder();
+				errorMessage.append(e.getMessage());
+				fail(errorMessage.toString());
+			}else {
+				e.printStackTrace();
+				StringBuilder errorMessage = new StringBuilder();
+				errorMessage.append("failed to run script " + executionFile);
+				errorMessage.append("\nexception: " + e.toString());
+				errorMessage.append("\nmessage: " + e.getMessage());
+				errorMessage.append("\nstack trace:");
+				for(StackTraceElement ste : e.getStackTrace()) {
+					errorMessage.append("\n>" + ste);
+				}
+				fail(errorMessage.toString());
 			}
-			fail(errorMessage.toString());
 		}
 	}
 
@@ -999,8 +1017,8 @@ public abstract class AutomatedTestBase {
 	 * Runs a test for which no exception is expected.
 	 * </p>
 	 */
-	protected void runTest() {
-		runTest(false, null);
+	protected ByteArrayOutputStream runTest() {
+		return runTest(false, null);
 	}
 
 	/**
@@ -1011,8 +1029,8 @@ public abstract class AutomatedTestBase {
 	 *
 	 * @param maxMRJobs specifies a maximum limit for the number of MR jobs. If set to -1 there is no limit.
 	 */
-	protected void runTest(int maxMRJobs) {
-		runTest(false, null, maxMRJobs);
+	protected ByteArrayOutputStream runTest(int maxMRJobs) {
+		return runTest(false, null, maxMRJobs);
 	}
 
 	/**
@@ -1022,8 +1040,8 @@ public abstract class AutomatedTestBase {
 	 *
 	 * @param exceptionExpected exception expected
 	 */
-	protected void runTest(boolean exceptionExpected) {
-		runTest(exceptionExpected, null);
+	protected ByteArrayOutputStream runTest(boolean exceptionExpected) {
+		return runTest(exceptionExpected, null);
 	}
 
 	/**
@@ -1035,8 +1053,8 @@ public abstract class AutomatedTestBase {
 	 * @param exceptionExpected exception expected
 	 * @param expectedException expected exception
 	 */
-	protected void runTest(boolean exceptionExpected, Class<?> expectedException) {
-		runTest(exceptionExpected, expectedException, -1);
+	protected ByteArrayOutputStream runTest(boolean exceptionExpected, Class<?> expectedException) {
+		return runTest(exceptionExpected, expectedException, -1);
 	}
 
 	/**
@@ -1049,8 +1067,8 @@ public abstract class AutomatedTestBase {
 	 * @param expectedException expected exception
 	 * @param maxMRJobs         specifies a maximum limit for the number of MR jobs. If set to -1 there is no limit.
 	 */
-	protected void runTest(boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
-		runTest(false, exceptionExpected, expectedException, null, maxMRJobs);
+	protected ByteArrayOutputStream runTest(boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
+		return runTest(false, exceptionExpected, expectedException, null, maxMRJobs);
 	}
 
 	/**
@@ -1064,8 +1082,29 @@ public abstract class AutomatedTestBase {
 	 * @param expectedException expected exception
 	 * @param maxMRJobs         specifies a maximum limit for the number of MR jobs. If set to -1 there is no limit.
 	 */
-	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
-		runTest(newWay, exceptionExpected, expectedException, null, maxMRJobs);
+	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
+		return runTest(newWay, exceptionExpected, expectedException, null, maxMRJobs);
+	}
+
+	/**
+	 * Run a test for which an exception is expected if not set to null.
+	 * 
+	 * Note this test execute in the "new" way.
+	 * 
+	 * @param expectedException The expected exception
+	 * @return The Std output from the test.
+	 */
+	protected ByteArrayOutputStream runTest(Class<?> expectedException){
+		return runTest( expectedException, -1);
+	}
+
+	protected ByteArrayOutputStream runTest(Class<?> expectedException, int maxSparkInst){
+		return runTest( expectedException, null, maxSparkInst);
+	}
+
+	protected ByteArrayOutputStream runTest(Class<?> expectedException, String errMessage,
+		int maxSparkInst){
+		return runTest(true, expectedException!= null, expectedException, errMessage, maxSparkInst);
 	}
 
 	/**
@@ -1080,7 +1119,7 @@ public abstract class AutomatedTestBase {
 	 * @param errMessage        expected error message
 	 * @param maxSparkInst      specifies a maximum limit for the number of MR jobs. If set to -1 there is no limit.
 	 */
-	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage,
+	protected ByteArrayOutputStream runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage,
 		int maxSparkInst) {
 
 		String executionFile = sourceDirectory + selectedTest + ".dml";
@@ -1127,9 +1166,13 @@ public abstract class AutomatedTestBase {
 			}
 		}
 
+		ByteArrayOutputStream buff = new ByteArrayOutputStream();
+		PrintStream ps = new PrintStream(buff);
+		PrintStream old = System.out;
+		System.setOut(ps);
 		try {
 			String[] dmlScriptArgs = args.toArray(new String[args.size()]);
-			System.out.println("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
+			LOG.trace("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
 			DMLScript.main(dmlScriptArgs);
 
 			if(maxSparkInst > -1 && maxSparkInst < Statistics.getNoOfCompiledSPInst())
@@ -1147,18 +1190,19 @@ public abstract class AutomatedTestBase {
 				}
 			}
 			if(!exceptionExpected || (expectedException != null && !(e.getClass().equals(expectedException)))) {
-				e.printStackTrace();
 				StringBuilder errorMessage = new StringBuilder();
-				errorMessage.append("failed to run script " + executionFile);
-				errorMessage.append("\nexception: " + e.toString());
-				errorMessage.append("\nmessage: " + e.getMessage());
-				errorMessage.append("\nstack trace:");
-				for(StackTraceElement ste : e.getStackTrace()) {
-					errorMessage.append("\n>" + ste);
-				}
+				errorMessage.append("\nfailed to run script: " + executionFile);
+				errorMessage.append("\nStandard Out:");
+				errorMessage.append("\n" + buff);
+				errorMessage.append("\nStackTrace:");
+				errorMessage.append(getStackTraceString(e, 0));
 				fail(errorMessage.toString());
 			}
 		}
+		System.out.flush();
+		System.setOut(old);
+
+		return buff;
 	}
 
 	private void addProgramIndependentArguments(ArrayList<String> args) {
@@ -1232,6 +1276,26 @@ public abstract class AutomatedTestBase {
 			result = true;
 		}
 		return result;
+	}
+
+	private String getStackTraceString(Throwable e, int level){
+		StringBuilder sb = new StringBuilder();
+		sb.append("\nLEVEL : " + level);
+		sb.append("\nException : " + e.getClass());
+		sb.append("\nMessage   : " + e.getMessage());
+		for(StackTraceElement ste : e.getStackTrace()) {
+			if(ste.toString().contains("org.junit")) {
+				sb.append("\n   >  ... Stopping Stack Trace at JUnit");
+				break;
+			}else{
+				sb.append("\n"+ level+"  >  " + ste);
+			}
+		}
+		if(e.getCause() == null){
+			return sb.toString();
+		}
+		sb.append(getStackTraceString(e.getCause(), level +1));
+		return sb.toString();
 	}
 
 	public void cleanupScratchSpace()
@@ -1433,7 +1497,7 @@ public abstract class AutomatedTestBase {
 
 	@After
 	public void tearDown() {
-		// System.out.println("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
+		LOG.trace("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
 
 
 		assertTrue("expected String did not occur: " + expectedStdOut, iExpectedStdOutState == 0
@@ -1460,6 +1524,16 @@ public abstract class AutomatedTestBase {
 		}
 
 		TestUtils.clearAssertionInformation();
+	}
+	
+	public boolean bufferContainsString(ByteArrayOutputStream buffer, String str){
+		String[] content = buffer.toString().split("\n");
+		for(String x : content){
+			if (x.contains(str)){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

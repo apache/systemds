@@ -20,13 +20,13 @@
 package org.apache.sysds.test.functions.append;
 
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 public class StringAppendTest extends AutomatedTestBase
 {
@@ -105,7 +105,7 @@ public class StringAppendTest extends AutomatedTestBase
 			programArgs = new String[]{
 				"-args", Integer.toString(iters), output("C") };
 			
-			runTest(true, exceptionExpected, DMLException.class, 0);
+			runTest(exceptionExpected ? DMLRuntimeException.class : null);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

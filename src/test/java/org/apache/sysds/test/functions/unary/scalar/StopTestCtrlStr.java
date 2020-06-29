@@ -19,10 +19,15 @@
 
 package org.apache.sysds.test.functions.unary.scalar;
 
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayOutputStream;
+
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 
 /**
@@ -88,17 +93,21 @@ public class StopTestCtrlStr extends AutomatedTestBase
         double[][] vector = getRandomMatrix(rows, 1, 0, 1, 1, System.currentTimeMillis());
         writeInputMatrix(inputName, vector);
 
-		boolean exceptionExpected = false;
 		
-        int cutoffIndex = findIndexAtCutoff(vector, cutoff);
+		int cutoffIndex = findIndexAtCutoff(vector, cutoff);
+		String expextedStdErr = "";
         if(cutoffIndex <= rows) {
-    		setExpectedStdErr("Element " + cutoffIndex + ".");
+			// Expected exception
+			expextedStdErr = "Element " + cutoffIndex + ".";
+			runTest(DMLScriptException.class, expextedStdErr,-1);
         }
         else {
-        	setExpectedStdOut("None made to cutoff.");
+			// No exception
+        	String outMessage = "None made to cutoff.";
+			ByteArrayOutputStream stdOut = runTest(true, false, null, -1);
+			assertTrue(bufferContainsString(stdOut, outMessage));
         }
 		
-		runTest(true, exceptionExpected, null, -1);
 		
 		rtplatform = oldRT;
 	}

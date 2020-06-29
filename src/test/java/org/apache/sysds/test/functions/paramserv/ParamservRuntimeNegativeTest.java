@@ -22,8 +22,10 @@ package org.apache.sysds.test.functions.paramserv;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 @Ignore
 public class ParamservRuntimeNegativeTest extends AutomatedTestBase {
@@ -62,8 +64,8 @@ public class ParamservRuntimeNegativeTest extends AutomatedTestBase {
 	private void runDMLTest(String testname, String errmsg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
-		programArgs = new String[] { "-explain" };
+		programArgs = new String[] { };
 		fullDMLScriptName = HOME + testname + ".dml";
-		runTest(true, true, DMLException.class, errmsg, -1);
+		runTest(true, true, DMLRuntimeException.class, errmsg, -1);
 	}
 }

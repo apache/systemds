@@ -106,8 +106,9 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_FILL = "fill";
 	public static final String DELIM_FILL_VALUE = "default";
 	//public static final String DELIM_RECODE = "recode";
-	public static final String DELIM_NA_STRINGS = "na.strings";
+	public static final String DELIM_NA_STRINGS = "naStrings";
 	public static final String DELIM_NA_STRING_SEP = "\u00b7";
+
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
@@ -124,7 +125,7 @@ public class DataExpression extends DataIdentifier
 	public static final Set<String> FEDERATED_VALID_PARAM_NAMES = new HashSet<>(
 		Arrays.asList(FED_ADDRESSES, FED_RANGES, FED_TYPE));
 
-	// Valid parameter names in a metadata file
+	/** Valid parameter names in metadata file */
 	public static final Set<String> READ_VALID_MTD_PARAM_NAMES =new HashSet<>(
 		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM,
 			FORMAT_TYPE, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, DATATYPEPARAM,
@@ -134,6 +135,7 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to privacy
 			PRIVACY));
 
+	/** Valid parameter names in arguments to read instruction */
 	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
 		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM,
 			VALUETYPEPARAM, SCHEMAPARAM, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
@@ -146,6 +148,7 @@ public class DataExpression extends DataIdentifier
 	public static final boolean DEFAULT_DELIM_FILL = true;
 	public static final double  DEFAULT_DELIM_FILL_VALUE = 0.0;
 	public static final boolean DEFAULT_DELIM_SPARSE = false;
+	public static final String  DEFAULT_NA_STRINGS = "";
 	
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
@@ -171,7 +174,7 @@ public class DataExpression extends DataIdentifier
 			ParseInfo parseInfo, CustomErrorListener errorListener) {
 		if (functionName == null || passedParamExprs == null)
 			return null;
-		
+		LOG.debug("getDataExpression: " + functionName + " " + passedParamExprs + " " + parseInfo + " " + errorListener);
 		// check if the function name is built-in function
 		//	 (assign built-in function op if function is built-in)
 		Expression.DataOp dop;
@@ -875,7 +878,7 @@ public class DataExpression extends DataIdentifier
 					shouldReadMTD = false;
 				}
 			}
-			
+
 			// check if file is delimited format
 			if (formatTypeString == null && shouldReadMTD ) {
 				formatTypeString = checkHasDelimitedFormat(inputFileName, conditional);
@@ -986,16 +989,12 @@ public class DataExpression extends DataIdentifier
 				//		as ONLY valid parameters
 				if( !inferredFormatType ){
 					for (String key : _varParams.keySet()){
-						if (!  (key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) 
-								|| key.equals(DELIM_HAS_HEADER_ROW) || key.equals(DELIM_DELIMITER) 
-								|| key.equals(DELIM_FILL) || key.equals(DELIM_FILL_VALUE)
-								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
-								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) || key.equals(VALUETYPEPARAM)
-								|| key.equals(SCHEMAPARAM)) )
+						if (! READ_VALID_PARAM_NAMES.contains(key))
 						{	
 							String msg = "Only parameters allowed are: " + Arrays.toString(new String[] {
-								IO_FILENAME, SCHEMAPARAM, DELIM_HAS_HEADER_ROW, DELIM_DELIMITER,
-								DELIM_FILL, DELIM_FILL_VALUE, READROWPARAM, READCOLPARAM});
+								IO_FILENAME, FORMAT_TYPE, SCHEMAPARAM, DELIM_HAS_HEADER_ROW, DELIM_DELIMITER,
+								DELIM_FILL, DELIM_FILL_VALUE, READNNZPARAM, READROWPARAM, DATATYPEPARAM,
+								VALUETYPEPARAM, READCOLPARAM,DELIM_NA_STRINGS});
 							raiseValidateError("Invalid parameter " + key + " in read statement: " +
 								toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
@@ -1023,7 +1022,7 @@ public class DataExpression extends DataIdentifier
 					{
 						raiseValidateError("For delimited file '" + getVarParam(DELIM_FILL_VALUE)  +  "' must be a numeric value ", conditional);
 					}
-				} 
+				}
 				
 				// DEFAULT for "header": boolean false
 				if (getVarParam(DELIM_HAS_HEADER_ROW) == null) {
@@ -1047,7 +1046,19 @@ public class DataExpression extends DataIdentifier
 					{
 						raiseValidateError("For delimited file '" + getVarParam(DELIM_FILL) + "' must be a boolean value ", conditional);
 					}
-				}		
+				}
+
+				// DEFAULT for "naStrings": String ""
+				if (getVarParam(DELIM_NA_STRINGS) == null){
+					addVarParam(DELIM_NA_STRINGS, new StringIdentifier(DEFAULT_NA_STRINGS, this));
+				} 
+				else {
+					if ((getVarParam(DELIM_NA_STRINGS) instanceof ConstIdentifier)
+							&& (! (getVarParam(DELIM_NA_STRINGS) instanceof StringIdentifier)))
+						{
+							raiseValidateError("For delimited file '" + getVarParam(DELIM_NA_STRINGS) + "' must be a string value ", conditional);
+						}
+				}
 			} 
 
 			boolean islibsvm = false;
@@ -1162,7 +1173,6 @@ public class DataExpression extends DataIdentifier
 				getOutput().setDataType(DataType.SCALAR);
 				getOutput().setNnz(-1L);
 			}
-			
 			else{
 				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}

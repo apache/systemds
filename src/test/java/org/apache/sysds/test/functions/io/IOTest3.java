@@ -19,11 +19,10 @@
 
 package org.apache.sysds.test.functions.io;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-
+import org.junit.Test;
 
 /**
  * <p>
@@ -41,8 +40,7 @@ import org.apache.sysds.test.TestConfiguration;
  * 
  * 
  */
-public class IOTest3 extends AutomatedTestBase 
-{
+public class IOTest3 extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/io/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IOTest3.class.getSimpleName() + "/";
 	private final static String TEST_NAME = "SimpleTest";
@@ -50,10 +48,9 @@ public class IOTest3 extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		// positive tests
-		
+
 		// negative tests
-		addTestConfiguration(TEST_NAME,
-			new TestConfiguration(TEST_CLASS_DIR, "IOTest3", new String[] { "a" }));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, "IOTest3", new String[] {"a"}));
 	}
 
 	@Test
@@ -65,14 +62,14 @@ public class IOTest3 extends AutomatedTestBase
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		config.addVariable("format", "text");
-	
+
 		loadTestConfiguration(config);
 
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 0.5, -1);
 		writeInputMatrix("a", a);
 		writeExpectedMatrix("a", a);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 
 	}
 

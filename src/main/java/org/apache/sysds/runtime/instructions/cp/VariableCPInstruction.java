@@ -308,6 +308,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	
 	public static VariableCPInstruction parseInstruction ( String str ) {
+		LOG.debug("Parsing Variable CP Instruction " + str);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
 		VariableOperationCode voc = getVariableOperationCode(opcode);
@@ -1179,6 +1180,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(dt.toString());
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(format);
+		LOG.debug(sb.toString());
 		return sb.toString();
 	}
 	
@@ -1203,6 +1205,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		
 		String str = sb.toString();
 
+		LOG.debug(str);
 		return parseInstruction(str);
 	}
 	
@@ -1229,7 +1232,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(sparse);
 		
 		String str = sb.toString();
-
 		return parseInstruction(str);
 	}
 	

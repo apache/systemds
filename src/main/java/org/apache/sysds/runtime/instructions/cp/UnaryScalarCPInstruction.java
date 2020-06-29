@@ -54,7 +54,12 @@ public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 			sores = new StringObject(outString);
 		}
 		else if ( opcode.equalsIgnoreCase("stop") ) {
-			throw new DMLScriptException(so.getStringValue());
+			String message = so.getStringValue();
+			if(message != null && message != ""){
+				throw new DMLScriptException(message);
+			} else {
+				throw new DMLScriptException("Stop Called");
+			}
 		}
 		else if ( opcode.equalsIgnoreCase("assert") ) {
 			sores = new BooleanObject(so.getBooleanValue());

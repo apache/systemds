@@ -19,15 +19,15 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *   
@@ -170,10 +170,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 				}				
 				HDFSTool.writeScalarMetaDataFile(input("V.mtd"), vtIn);
 			}
-			
-			//run tests
-	        runTest(true, exceptionExpected, DMLException.class, -1);
-	        
+			runTest(true, exceptionExpected, LanguageException.class, -1);
 	        if( !exceptionExpected ){		        
 		        //compare results
 	        	String outName = output("R");

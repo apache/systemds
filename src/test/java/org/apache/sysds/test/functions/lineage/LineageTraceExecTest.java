@@ -103,7 +103,6 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(testname);
 		List<String> proArgs = new ArrayList<>();
 		
-		proArgs.add("-explain");
 		proArgs.add("-lineage");
 		proArgs.add("-args");
 		proArgs.add(input("X"));

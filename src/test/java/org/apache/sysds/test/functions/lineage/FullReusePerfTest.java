@@ -81,7 +81,6 @@ public class FullReusePerfTest extends AutomatedTestBase
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("reuse_full");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(input("X"));
 			proArgs.add(output("X"));

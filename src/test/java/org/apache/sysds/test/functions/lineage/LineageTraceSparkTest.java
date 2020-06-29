@@ -106,7 +106,6 @@ public class LineageTraceSparkTest extends AutomatedTestBase {
 			
 			List<String> proArgs = new ArrayList<>();
 			
-			proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("-args");

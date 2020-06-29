@@ -106,7 +106,6 @@ public class FunctionFullReuseTest extends AutomatedTestBase
 			List<String> proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

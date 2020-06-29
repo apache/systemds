@@ -72,7 +72,6 @@ public class LineageTraceRandomSparkTest extends AutomatedTestBase {
 			
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			proArgs.add(output("Y"));

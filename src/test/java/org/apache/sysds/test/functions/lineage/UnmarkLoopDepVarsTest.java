@@ -57,7 +57,6 @@ public class UnmarkLoopDepVarsTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(UnmarkLoopDepVarsTest.TEST_NAME1);
 			List<String> proArgs = new ArrayList<>();
 			
-			proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("-args");
@@ -71,7 +70,6 @@ public class UnmarkLoopDepVarsTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromHDFS("Res");
 
 			proArgs.clear();
-			proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());

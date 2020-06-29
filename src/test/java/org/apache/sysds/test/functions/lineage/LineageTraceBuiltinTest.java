@@ -67,7 +67,6 @@ public class LineageTraceBuiltinTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(testname);
 		List<String> proArgs = new ArrayList<>();
 		
-		proArgs.add("-explain");
 		proArgs.add("-args");
 		proArgs.add(input("X"));
 		proArgs.add(output("R"));

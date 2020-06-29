@@ -19,10 +19,9 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -30,6 +29,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 public class ConditionalValidateTest extends AutomatedTestBase
 {
@@ -55,52 +55,52 @@ public class ConditionalValidateTest extends AutomatedTestBase
 	@Test
 	public void testUnconditionalReadNoError() 
 	{ 
-		runTest( TEST_NAME1, false, true ); 
+		runTest( TEST_NAME1, null, true ); 
 	}
 	
 	@Test
 	public void testUnconditionalReadError() 
 	{ 
-		runTest( TEST_NAME1, true, false ); 
+		runTest( TEST_NAME1, LanguageException.class, false ); 
 	}
 	
 	@Test
 	public void testIfConditionalReadNoErrorExists() 
 	{ 
-		runTest( TEST_NAME2, false, true ); 
+		runTest( TEST_NAME2, null, true ); 
 	}
 	
 	@Test
 	public void testIfConditionalReadNoErrorNotExists() 
 	{ 
-		runTest( TEST_NAME2, false, false ); 
+		runTest( TEST_NAME2, null, false ); 
 	}
 	
 	@Test
 	public void testForConditionalReadNoErrorExists() 
 	{ 
-		runTest( TEST_NAME3, false, true ); 
+		runTest( TEST_NAME3, null, true ); 
 	}
 	
 	@Test
 	public void testForConditionalReadNoErrorNotExists() 
 	{ 
-		runTest( TEST_NAME3, false, false ); 
+		runTest( TEST_NAME3, null, false ); 
 	}
 	
 	@Test
 	public void testWhileConditionalReadNoErrorExists() 
 	{ 
-		runTest( TEST_NAME4, false, true ); 
+		runTest( TEST_NAME4, null, true ); 
 	}
 	
 	@Test
 	public void testWhileConditionalReadNoErrorNotExists() 
 	{ 
-		runTest( TEST_NAME4, false, false ); 
+		runTest( TEST_NAME4, null, false ); 
 	}
 	
-	private void runTest( String testName, boolean exceptionExpected, boolean fileExists )
+	private void runTest( String testName, Class<?> exceptionClass, boolean fileExists )
 	{
 		String TEST_NAME = testName;
 
@@ -124,7 +124,7 @@ public class ConditionalValidateTest extends AutomatedTestBase
 			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.FP64, mc, FileFormat.TEXT);
 			
 			//run tests
-			runTest(true, exceptionExpected, DMLException.class, -1);
+			runTest(true, exceptionClass != null, exceptionClass, -1);
 
 			//cleanup
 			HDFSTool.deleteFileIfExistOnHDFS(input);

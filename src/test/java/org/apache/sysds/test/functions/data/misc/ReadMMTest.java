@@ -23,16 +23,17 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 
 /**
@@ -134,7 +135,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		createRandomMatrix("a", (rows + 5), cols, -1, 1, 1, -1);
 
-		runTest(true, DMLException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -151,7 +152,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		createRandomMatrix("a", rows, (cols + 5), -1, 1, 1, -1);
 
-		runTest(true, DMLException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	/**
@@ -181,7 +182,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		writeInputMatrix("a", a);
 
-		runTest(true, DMLException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	/**
@@ -200,7 +201,7 @@ public class ReadMMTest extends AutomatedTestBase
 		
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -218,7 +219,7 @@ public class ReadMMTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix(rows, cols, -1, 1, 1, -1);
 		writeInputBinaryMatrix("a", a, rows, cols, false);
 
-		runTest(true, DMLException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -238,7 +239,7 @@ public class ReadMMTest extends AutomatedTestBase
 		double[][] a = getRandomMatrix((rows + 5), cols, -1, 1, 1, -1);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
-		runTest(true, DMLException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -259,7 +260,7 @@ public class ReadMMTest extends AutomatedTestBase
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
-		runTest(true, DMLException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	/**
@@ -292,7 +293,7 @@ public class ReadMMTest extends AutomatedTestBase
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, rowsInBlock, colsInBlock);
 		writeInputBinaryMatrixWithMTD("a", a, rowsInBlock, colsInBlock, false, mc);
 
-		runTest(true, DMLException.class);
+		runTest(true, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -316,7 +317,7 @@ public class ReadMMTest extends AutomatedTestBase
 		writeInputMatrixWithMTD("a", a, false, mc);
 		//protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, DataCharacteristics mc) throws IOException {
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -333,7 +334,7 @@ public class ReadMMTest extends AutomatedTestBase
 
 		try {
 			TestUtils.createFile(input("a/in"));
-			runTest(true, DMLException.class);
+			runTest(true, DMLRuntimeException.class);
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to create file " + input("a/in"));
@@ -360,7 +361,7 @@ public class ReadMMTest extends AutomatedTestBase
 			TestUtils.createFile(fname + "/in");
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
 			HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mc, FileFormat.BINARY);
-			runTest(true, DMLException.class);
+			runTest(true, DMLRuntimeException.class);
 		} catch (IOException e) {
 			e.printStackTrace();
 			fail("unable to create file " + input("a/in"));

@@ -98,13 +98,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		if( root.getDataType() == DataType.SCALAR //scalar output
 			&& ( isApplicableBinaryOp(root) || isApplicableUnaryOp(root) ) )
 		{ 
-			//core constant folding via runtime instructions
-			try {
-				literal = evalScalarOperation(root); 
-			}
-			catch(Exception ex) {
-				LOG.error("Failed to execute constant folding instructions. No abort.", ex);
-			}
+			literal = evalScalarOperation(root); 
 		}
 		//fold conjunctive predicate if at least one input is literal 'false'
 		else if( isApplicableFalseConjunctivePredicate(root) ) {

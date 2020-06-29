@@ -188,9 +188,9 @@ print ("Number of successful runs = " + as.integer (as.scalar (termination_stats
 print ("Number of incomplete runs = " + as.integer (as.scalar (termination_stats [1, 2])));
 print ("Number of failed runs (with lost centroids) = " + as.integer (as.scalar (termination_stats [1, 3])));
 
-num_successful_runs = as.scalar (termination_stats [1, 1]);
+num_successful_runs = as.integer(as.scalar (termination_stats [1, 1]));
 if (num_successful_runs > 0) {
-    final_wcss_successful = final_wcss * termination_bitmap [, 1];
+    final_wcss_successful = replace(target = final_wcss, pattern = Inf, replacement = 0)* termination_bitmap [, 1];
     worst_wcss = max (final_wcss_successful);
     best_wcss = min (final_wcss_successful + (10 * worst_wcss + 10) * (1 - termination_bitmap [, 1]));
     avg_wcss = sum (final_wcss_successful) / num_successful_runs;

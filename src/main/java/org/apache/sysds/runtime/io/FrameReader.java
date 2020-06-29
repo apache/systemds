@@ -23,112 +23,105 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
- * Base class for all format-specific frame readers. Every reader is required to implement the basic 
- * read functionality but might provide additional custom functionality. Any non-default parameters
- * (e.g., CSV read properties) should be passed into custom constructors. There is also a factory
- * for creating format-specific readers. 
+ * Base class for all format-specific frame readers. Every reader is required to implement the basic read functionality
+ * but might provide additional custom functionality. Any non-default parameters (e.g., CSV read properties) should be
+ * passed into custom constructors. There is also a factory for creating format-specific readers.
  * 
  */
-public abstract class FrameReader 
-{
-	public abstract FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, String[] names, long rlen, long clen)
+public abstract class FrameReader {
+	protected static final Log LOG = LogFactory.getLog(FrameReader.class.getName());
+
+	public abstract FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException, DMLRuntimeException;
 
-	public FrameBlock readFrameFromHDFS( String fname, ValueType[] schema, long rlen, long clen )
-		throws IOException, DMLRuntimeException
-	{
+	public FrameBlock readFrameFromHDFS(String fname, ValueType[] schema, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
+		LOG.debug("readFrameFromHDFS with schema");
 		return readFrameFromHDFS(fname, schema, getDefColNames(schema.length), rlen, clen);
 	}
 
-	public FrameBlock readFrameFromHDFS( String fname, long rlen, long clen )
-		throws IOException, DMLRuntimeException
-	{
+	public FrameBlock readFrameFromHDFS(String fname, long rlen, long clen) throws IOException, DMLRuntimeException {
+		LOG.debug("readFrameFromHDFS no schema");
 		return readFrameFromHDFS(fname, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
 
-	public abstract FrameBlock readFrameFromInputStream( InputStream is, ValueType[] schema, String[] names, long rlen, long clen)
-		throws IOException, DMLRuntimeException;
+	public abstract FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, String[] names, long rlen,
+		long clen) throws IOException, DMLRuntimeException;
 
-	public FrameBlock readFrameFromInputStream( InputStream is, ValueType[] schema, long rlen, long clen )
-		throws IOException, DMLRuntimeException
-	{
+	public FrameBlock readFrameFromInputStream(InputStream is, ValueType[] schema, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
+		LOG.debug("readFrame from Input Stream with schema");
 		return readFrameFromInputStream(is, schema, getDefColNames(schema.length), rlen, clen);
 	}
 
-	public FrameBlock readFrameFromInputStream( InputStream is, long rlen, long clen )
-		throws IOException, DMLRuntimeException
-	{
+	public FrameBlock readFrameFromInputStream(InputStream is, long rlen, long clen)
+		throws IOException, DMLRuntimeException {
+		LOG.debug("readFrame from Input Stream no schema");
 		return readFrameFromInputStream(is, getDefSchema(clen), getDefColNames(clen), rlen, clen);
 	}
 
-	public ValueType[] getDefSchema( long clen )
-		throws DMLRuntimeException
-	{
-		int lclen = Math.max((int)clen, 1);
+	public ValueType[] getDefSchema(long clen) throws DMLRuntimeException {
+		int lclen = Math.max((int) clen, 1);
 		return UtilFunctions.nCopies(lclen, ValueType.STRING);
 	}
 
-	public String[] getDefColNames( long clen )
-		throws DMLRuntimeException
-	{
-		return (clen < 0) ? new String[0] : 
-			FrameBlock.createColNames((int)clen);
+	public String[] getDefColNames(long clen) throws DMLRuntimeException {
+		return (clen < 0) ? new String[0] : FrameBlock.createColNames((int) clen);
 	}
-	
+
 	/**
-	 * NOTE: mallocDense controls if the output matrix blocks is fully allocated, this can be redundant
-	 * if binary block read and single block. 
+	 * NOTE: mallocDense controls if the output matrix blocks is fully allocated, this can be redundant if binary block
+	 * read and single block.
 	 * 
 	 * @param schema schema as array of ValueTypes
-	 * @param names column names
-	 * @param nrow number of rows
+	 * @param names  column names
+	 * @param nrow   number of rows
 	 * @return frame block
 	 * @throws IOException if IOException occurs
 	 */
 	protected static FrameBlock createOutputFrameBlock(ValueType[] schema, String[] names, long nrow)
-		throws IOException
-	{
-		//check schema and column names
-		if( !OptimizerUtils.isValidCPDimensions(schema, names) )
+		throws IOException {
+		// check schema and column names
+		if(!OptimizerUtils.isValidCPDimensions(schema, names))
 			throw new DMLRuntimeException("Schema and names to be define with equal size.");
-		
-		//prepare result frame block
+
+		// prepare result frame block
 		FrameBlock ret = new FrameBlock(schema, names);
-		ret.ensureAllocatedColumns((int)nrow);
+		ret.ensureAllocatedColumns((int) nrow);
 		return ret;
 	}
 
 	protected static ValueType[] createOutputSchema(ValueType[] schema, long ncol) {
-		if( schema.length==1 && ncol > 1 )
-			return UtilFunctions.nCopies((int)ncol, schema[0]);
+		if(schema.length == 1 && ncol > 1)
+			return UtilFunctions.nCopies((int) ncol, schema[0]);
 		return schema;
 	}
 
 	protected static String[] createOutputNames(String[] names, long ncol) {
-		if( names.length != ncol )
-			return FrameBlock.createColNames((int)ncol);
+		if(names.length != ncol)
+			return FrameBlock.createColNames((int) ncol);
 		return names;
 	}
 
-	protected static void checkValidInputFile(FileSystem fs, Path path) 
-		throws IOException
-	{
-		//check non-existing file
-		if( !fs.exists(path) )	
-			throw new IOException("File "+path.toString()+" does not exist on HDFS/LFS.");
-	
-		//check for empty file
-		if( HDFSTool.isFileEmpty(fs, path) )
-			throw new EOFException("Empty input file "+ path.toString() +".");		
+	protected static void checkValidInputFile(FileSystem fs, Path path) throws IOException {
+		// check non-existing file
+		if(!fs.exists(path))
+			throw new IOException("File " + path.toString() + " does not exist on HDFS/LFS.");
+
+		// check for empty file
+		if(HDFSTool.isFileEmpty(fs, path))
+			throw new EOFException("Empty input file " + path.toString() + ".");
 	}
 }

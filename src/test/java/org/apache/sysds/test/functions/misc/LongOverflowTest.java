@@ -19,11 +19,11 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 /**
  *   
@@ -107,7 +107,7 @@ public class LongOverflowTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", Long.toString(input1), Long.toString(input2) };
 			
 			//run tests
-	        runTest(true, error, DMLException.class, -1);
+	        runTest(true, error, DMLRuntimeException.class, -1);
 		}
 		catch(Exception ex)
 		{

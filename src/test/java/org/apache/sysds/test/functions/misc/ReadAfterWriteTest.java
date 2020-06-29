@@ -21,11 +21,11 @@ package org.apache.sysds.test.functions.misc;
 
 import java.util.Random;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 /**
  *   
@@ -123,7 +123,7 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", filename, filename2};
 			
 			//run tests
-	        runTest(true, !positive, DMLException.class, -1);
+	        runTest(true, !positive, LanguageException.class, -1);
 		}
 		catch(Exception ex)
 		{

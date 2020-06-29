@@ -21,21 +21,25 @@ package org.apache.sysds.test.functions.misc;
 
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
-/**
- *   
- */
+@net.jcip.annotations.NotThreadSafe
 public class SetWorkingDirTest extends AutomatedTestBase {
+	// Force Logging to error level on API file, to enforce test.
+	static {
+		Logger.getLogger("org.apache.sysds.api.DMLScript").setLevel(Level.ERROR);
+	}
+
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_NAME1 = "PackageFunCall1";
 	private final static String TEST_NAME2 = "PackageFunCall2";
@@ -81,51 +85,25 @@ public class SetWorkingDirTest extends AutomatedTestBase {
 		String nameCall = testName + ".dml";
 		String nameLib = TEST_NAME0 + ".dml";
 
-		PrintStream originalStdErr = System.err;
-
 		try {
-			ByteArrayOutputStream baos = null;
-			if (fileMissingTest) {
-				baos = new ByteArrayOutputStream();
-				PrintStream newStdErr = new PrintStream(baos);
-				System.setErr(newStdErr);
-			}
-
-			// copy dml/pydml scripts to current dir
 			FileUtils.copyFile(new File(dir + nameCall), new File(nameCall));
-			if (!fileMissingTest)
+			if(!fileMissingTest)
 				FileUtils.copyFile(new File(dir + nameLib), new File(nameLib));
-
-			// setup test configuration
-			TestConfiguration config = getTestConfiguration(testName);
-			fullDMLScriptName = nameCall;
-			programArgs = new String[] {};
-			loadTestConfiguration(config);
-
-			// run tests
-			runTest(true, false, null, -1);
-
-			if (fileMissingTest) {
-				String stdErrString = baos.toString();
-				if (stdErrString == null) {
-					fail("Standard error string is null"); // shouldn't happen
-				} else if (!stdErrString.contains("Cannot find file")) {
-					// the error message should contain "Cannot find file" if file is missing
-					fail("Should not be able to find file: " + nameLib);
-				}
-				if (stdErrString != null) {
-					originalStdErr.println(stdErrString); // send standard err string to console
-				}
-			}
-
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} finally {
-			System.setErr(originalStdErr);
-			// delete dml/pydml scripts from current dir (see above)
-			LocalFileUtils.deleteFileIfExists(nameCall);
-			if (!fileMissingTest)
-				LocalFileUtils.deleteFileIfExists(nameLib);
 		}
+		catch(IOException e) {
+			fail("Failed due to IO Exception: " + e.getMessage());
+		}
+
+		// setup test configuration
+		TestConfiguration config = getTestConfiguration(testName);
+		fullDMLScriptName = nameCall;
+		programArgs = new String[] {};
+		loadTestConfiguration(config);
+
+		runTest(true, fileMissingTest, fileMissingTest ? ParseException.class : null, -1);
+
+		LocalFileUtils.deleteFileIfExists(nameCall);
+		if(!fileMissingTest)
+			LocalFileUtils.deleteFileIfExists(nameLib);
 	}
 }

@@ -19,13 +19,12 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import static org.junit.Assert.fail;
-
 import java.util.HashMap;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -173,20 +172,8 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("P", p, false);
 			writeInputMatrixWithMTD("Y", y, false);
 
-			// TODO make stop throw exception instead
-			// https://issues.apache.org/jira/projects/SYSTEMML/issues/SYSTEMML-2540
-			// runTest(true, true, DMLScriptException.class, -1);
+			runTest(DMLScriptException.class);
 
-			// Verify that the outputfile is not existing!
-			runTest(true, false, null, -1);
-
-			try {
-				readDMLMatrixFromHDFS("B");
-				fail("File should not have been written");
-			}
-			catch(AssertionError e) {
-				// exception expected
-			}
 		}
 		finally {
 			rtplatform = platformOld;

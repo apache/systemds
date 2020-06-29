@@ -39,14 +39,14 @@ public class AlgorithmKMeans extends AutomatedTestBase
 
 	//private final static double eps = 1e-5;
 	
-	private final static int rows = 2972;
-	private final static int cols = 972;
+	private final static int rows = 1241;
+	private final static int cols = 83;
 		
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
 	private final static double epsilon = 0.000000001;
-	private final static double maxiter = 10;
+	private final static double maxiter = 50;
 	
 	private CodegenTestType currentTestType = CodegenTestType.DEFAULT;
 	

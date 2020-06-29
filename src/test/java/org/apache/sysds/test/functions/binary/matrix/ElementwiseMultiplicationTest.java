@@ -19,11 +19,11 @@
 
 package org.apache.sysds.test.functions.binary.matrix;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 
 public class ElementwiseMultiplicationTest extends AutomatedTestBase 
@@ -136,7 +136,7 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -154,7 +154,7 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -172,7 +172,7 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -190,7 +190,7 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -208,7 +208,7 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -226,7 +226,7 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -244,7 +244,7 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 	@Test
@@ -262,6 +262,6 @@ public class ElementwiseMultiplicationTest extends AutomatedTestBase
 
 		loadTestConfiguration(config);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 }

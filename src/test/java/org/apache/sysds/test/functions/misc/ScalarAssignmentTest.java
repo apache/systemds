@@ -19,11 +19,11 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 
 public class ScalarAssignmentTest extends AutomatedTestBase
@@ -187,6 +187,6 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 		
         boolean exceptionExpected = (cfc==ControlFlowConstruct.PARFOR)? true : false; //dependency analysis
         int expectedNumberOfJobs = -1;
-		runTest(true, exceptionExpected, DMLException.class, expectedNumberOfJobs);
+		runTest(true, exceptionExpected, LanguageException.class, expectedNumberOfJobs);
 	}
 }

@@ -21,8 +21,6 @@ package org.apache.sysds.test.functions.codegenalg.parttwo;
 
 import java.io.File;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -30,6 +28,9 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class AlgorithmStepwiseRegression extends AutomatedTestBase 
 {
@@ -60,44 +61,52 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void testStepwiseGLMDenseRewritesCP() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
+	@Ignore
 	public void testStepwiseGLMSparseRewritesCP() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
+	@Ignore
 	public void testStepwiseGLMDenseNoRewritesCP() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, false, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
 	@Test
+	@Ignore
 	public void testStepwiseGLMSparseNoRewritesCP() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, true, false, ExecType.CP, CodegenTestType.DEFAULT);
 	}
 	
-//	@Test
-//	public void testStepwiseGLMDenseRewritesSP() {
-//		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testStepwiseGLMSparseRewritesSP() {
-//		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testStepwiseGLMDenseNoRewritesSP() {
-//		runStepwiseTest(StepwiseType.GLM_PROBIT, false, false, ExecType.SPARK);
-//	}
-//	
-//	@Test
-//	public void testStepwiseGLMSparseNoRewritesSP() {
-//		runStepwiseTest(StepwiseType.GLM_PROBIT, true, false, ExecType.SPARK);
-//	}
+	@Test
+	@Ignore
+	public void testStepwiseGLMDenseRewritesSP() {
+		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.SPARK, CodegenTestType.DEFAULT);
+	}
+	
+	@Test
+	@Ignore
+	public void testStepwiseGLMSparseRewritesSP() {
+		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.SPARK, CodegenTestType.DEFAULT);
+	}
+	
+	@Test
+	@Ignore
+	public void testStepwiseGLMDenseNoRewritesSP() {
+		runStepwiseTest(StepwiseType.GLM_PROBIT, false, false, ExecType.SPARK, CodegenTestType.DEFAULT);
+	}
+	
+	@Test
+	@Ignore
+	public void testStepwiseGLMSparseNoRewritesSP() {
+		runStepwiseTest(StepwiseType.GLM_PROBIT, true, false, ExecType.SPARK, CodegenTestType.DEFAULT);
+	}
 	
 	@Test
 	public void testStepwiseLinregDSDenseRewritesCP() {
@@ -120,11 +129,13 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void testStepwiseGLMDenseRewritesCPFuseAll() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
 
 	@Test
+	@Ignore
 	public void testStepwiseGLMSparseRewritesCPFuseAll() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, CodegenTestType.FUSE_ALL);
 	}
@@ -140,11 +151,13 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void testStepwiseGLMDenseRewritesCPFuseNoRedundancy() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, false, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}
 
 	@Test
+	@Ignore
 	public void testStepwiseGLMSparseRewritesCPFuseNoRedundancy() {
 		runStepwiseTest(StepwiseType.GLM_PROBIT, true, true, ExecType.CP, CodegenTestType.FUSE_NO_REDUNDANCY);
 	}

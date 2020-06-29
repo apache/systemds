@@ -19,10 +19,10 @@
 
 package org.apache.sysds.test.functions.io;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 
 /**
@@ -72,7 +72,7 @@ public class IOTest5 extends AutomatedTestBase
 		writeInputMatrix("a", a);
 		writeExpectedMatrix("a", a);
 
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 
 	}
 

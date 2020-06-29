@@ -19,10 +19,11 @@
 
 package org.apache.sysds.test.functions.paramserv;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 public class ParamservSyntaxTest extends AutomatedTestBase {
 
@@ -63,25 +64,25 @@ public class ParamservSyntaxTest extends AutomatedTestBase {
 	@Test
 	public void testParamservMissArgs() {
 		final String errmsg = "Named parameter 'features' missing. Please specify the input.";
-		runDMLTest(TEST_NAME3, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME3, true, LanguageException.class, errmsg);
 	}
 
 	@Test
 	public void testParamservWrongTypeArgs() {
 		final String errmsg = "Input to PARAMSERV::model must be of type 'LIST'. It should not be of type 'MATRIX'";
-		runDMLTest(TEST_NAME4, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME4, true, LanguageException.class, errmsg);
 	}
 
 	@Test
 	public void testParamservWrongArgs() {
 		final String errmsg = "Paramserv function: not support update type 'NSP'.";
-		runDMLTest(TEST_NAME5, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME5, true, DMLRuntimeException.class, errmsg);
 	}
 
 	@Test
 	public void testParamservWrongArgs2() {
 		final String errmsg = "Invalid parameters for PARAMSERV: [modelList, val_featur=X_val]";
-		runDMLTest(TEST_NAME6, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME6, true, LanguageException.class, errmsg);
 	}
 
 	@Test

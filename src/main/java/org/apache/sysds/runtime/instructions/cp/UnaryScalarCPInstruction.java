@@ -54,13 +54,18 @@ public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 			sores = new StringObject(outString);
 		}
 		else if ( opcode.equalsIgnoreCase("stop") ) {
-			throw new DMLScriptException(so.getStringValue());
+			String message = so.getStringValue();
+			if(message != null && !message.isEmpty())
+				throw new DMLScriptException(message);
+			else
+				throw new DMLScriptException("Stop Called");
 		}
 		else if ( opcode.equalsIgnoreCase("assert") ) {
 			sores = new BooleanObject(so.getBooleanValue());
 			if(!so.getBooleanValue()) {
-				String fileName = this.getFilename() == null ? "" : this.getFilename() + " "; 
-				throw new DMLScriptException("assertion failed at " + fileName  + this.getBeginLine() + ":" + this.getBeginColumn() + "-" + this.getEndLine() + ":" + this.getEndColumn());
+				String fileName = (getFilename() == null) ? "" : getFilename() + " "; 
+				throw new DMLScriptException("assertion failed at " + fileName  + getBeginLine() 
+					+ ":" + getBeginColumn() + "-" + getEndLine() + ":" + getEndColumn());
 			}
 		}
 		else {
@@ -75,5 +80,4 @@ public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 		
 		ec.setScalarOutput(output.getName(), sores);
 	}
-
 }

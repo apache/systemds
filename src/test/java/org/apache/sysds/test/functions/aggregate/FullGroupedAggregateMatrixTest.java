@@ -22,21 +22,21 @@ package org.apache.sysds.test.functions.aggregate;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * 
@@ -296,7 +296,7 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 			HDFSTool.writeMetaDataFile(input("B.mtd"), ValueType.FP64, mc2, FileFormat.TEXT);
 			
 			//run tests
-			Class cla = (exceptionExpected ? DMLException.class : null);
+			Class cla = (exceptionExpected ? DMLRuntimeException.class : null);
 			runTest(true, exceptionExpected, cla, -1); 
 			
 			//compare matrices 

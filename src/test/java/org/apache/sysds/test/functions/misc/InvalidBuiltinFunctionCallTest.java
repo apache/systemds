@@ -19,11 +19,11 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 public class InvalidBuiltinFunctionCallTest extends AutomatedTestBase
 {
@@ -52,6 +52,6 @@ public class InvalidBuiltinFunctionCallTest extends AutomatedTestBase
 		programArgs = new String[]{};
 		
 		//run tests
-		runTest(true, expected, DMLException.class, -1);
+		runTest(true, expected, LanguageException.class, -1);
 	}
 }

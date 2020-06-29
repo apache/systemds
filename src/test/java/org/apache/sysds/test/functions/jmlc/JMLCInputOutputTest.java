@@ -19,16 +19,18 @@
 
 package org.apache.sysds.test.functions.jmlc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.jmlc.Connection;
 import org.apache.sysds.api.jmlc.PreparedScript;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test input and output capabilities of JMLC API.
@@ -54,9 +56,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		int inScalar2 = 3;
 		script.setScalar("inScalar1", inScalar1);
 		script.setScalar("inScalar2", inScalar2);
-
-		setExpectedStdOut("total:5");
-		script.executeScript();
+		bufferContainsString(executeAndCatchStdOut(script), "total:5");
 		conn.close();
 	}
 
@@ -71,8 +71,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		script.setScalar("inScalar1", inScalar1);
 		script.setScalar("inScalar2", inScalar2);
 
-		setExpectedStdOut("total:8.0");
-		script.executeScript();
+		bufferContainsString(executeAndCatchStdOut(script), "total:8.0");
 		conn.close();
 	}
 
@@ -87,8 +86,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		script.setScalar("inScalar1", inScalar1);
 		script.setScalar("inScalar2", inScalar2);
 
-		setExpectedStdOut("total:2.0");
-		script.executeScript();
+		bufferContainsString(executeAndCatchStdOut(script), "total:2.0");
 		conn.close();
 	}
 
@@ -103,8 +101,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		script.setScalar("inScalar1", inScalar1);
 		script.setScalar("inScalar2", inScalar2);
 
-		setExpectedStdOut("total:9");
-		script.executeScript();
+		bufferContainsString(executeAndCatchStdOut(script), "total:9");
 		conn.close();
 	}
 
@@ -119,8 +116,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		script.setScalar("inScalar1", inScalar1);
 		script.setScalar("inScalar2", inScalar2);
 
-		setExpectedStdOut("total:Plant Trees");
-		script.executeScript();
+		bufferContainsString(executeAndCatchStdOut(script), "total:Plant Trees");
 		conn.close();
 	}
 
@@ -135,8 +131,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		script.setScalar("inScalar1", inScalar1);
 		script.setScalar("inScalar2", inScalar2);
 
-		setExpectedStdOut("result:hellogoodbye");
-		script.executeScript();
+		bufferContainsString(executeAndCatchStdOut(script), "result:hellogoodbye");
 		conn.close();
 	}
 
@@ -199,5 +194,16 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		double result = so.getDoubleValue();
 		Assert.assertEquals(1.23, result, 0);
 		conn.close();
+	}
+
+	private static ByteArrayOutputStream executeAndCatchStdOut(PreparedScript script){
+		ByteArrayOutputStream buff = new ByteArrayOutputStream();
+		PrintStream ps = new PrintStream(buff);
+		PrintStream old = System.out;
+		System.setOut(ps);
+		script.executeScript();
+		System.out.flush();
+		System.setOut(old);
+		return buff;
 	}
 }

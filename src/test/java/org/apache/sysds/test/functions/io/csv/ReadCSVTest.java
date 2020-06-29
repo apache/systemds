@@ -19,159 +19,93 @@
 
 package org.apache.sysds.test.functions.io.csv;
 
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 /**
  * JUnit Test cases to evaluate the functionality of reading CSV files.
  * 
- * Test 1: read() w/ mtd file.
- * Test 2: read(format="csv") w/o mtd file.
- * Test 3: read() w/ complete mtd file.
+ * Test 1: read() with a mtd file.
+ * 
+ * Test 2: read(format="csv") without mtd file.
+ * 
+ * Test 3: read() with complete mtd file.
  *
  */
+public abstract class ReadCSVTest extends CSVTestBase {
 
-@net.jcip.annotations.NotThreadSafe
-public class ReadCSVTest extends AutomatedTestBase 
-{
-	private final static String TEST_NAME = "ReadCSVTest";
-	private final static String TEST_DIR = "functions/io/csv/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + ReadCSVTest.class.getSimpleName() + "/";
-	
-	private final static double eps = 1e-9;
+	protected abstract int getId();
 
-	@Override
-	public void setUp() 
-	{
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );  
-	}
-	
 	@Test
-	public void testCSV1_Sequential_CP1() {
-		runCSVTest(1, ExecMode.SINGLE_NODE, false);
-	}
-	
-	@Test
-	public void testCSV1_Parallel_CP1() {
-		runCSVTest(1, ExecMode.SINGLE_NODE, true);
-	}
-	
-	@Test
-	public void testCSV1_Sequential_CP() {
-		runCSVTest(1, ExecMode.HYBRID, false);
-	}
-	
-	@Test
-	public void testCSV1_Parallel_CP() {
-		runCSVTest(1, ExecMode.HYBRID, true);
-	}
-	
-	@Test
-	public void testCSV1_SP() {
-		runCSVTest(1, ExecMode.SPARK, true);
-	}
-	
-	@Test
-	public void testCSV2_Sequential_CP1() {
-		runCSVTest(2, ExecMode.SINGLE_NODE, false);
-	}
-	
-	@Test
-	public void testCSV2_Parallel_CP1() {
-		runCSVTest(2, ExecMode.SINGLE_NODE, true);
-	}
-	
-	@Test
-	public void testCSV2_Sequential_CP() {
-		runCSVTest(2, ExecMode.HYBRID, false);
-	}
-	
-	@Test
-	public void testCSV2_Parallel_CP() {
-		runCSVTest(2, ExecMode.HYBRID, true);
-	}
-	
-	@Test
-	public void testCSV2_SP() {
-		runCSVTest(2, ExecMode.SPARK, true);
+	public void testCSV_Sequential_CP1() {
+		runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
-	public void testCSV3_Sequential_CP1() {
-		runCSVTest(3, ExecMode.SINGLE_NODE, false);
-	}
-	
-	@Test
-	public void testCSV3_Parallel_CP1() {
-		runCSVTest(3, ExecMode.SINGLE_NODE, true);
-	}
-	
-	@Test
-	public void testCSV3_Sequential_CP() {
-		runCSVTest(3, ExecMode.HYBRID, false);
-	}
-	
-	@Test
-	public void testCSV3_Parallel_CP() {
-		runCSVTest(3, ExecMode.HYBRID, true);
-	}
-	
-	@Test
-	public void testCSV3_SP() {
-		runCSVTest(3, ExecMode.SPARK, false);
+	public void testCSV_Parallel_CP1() {
+		runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
 	}
 
-	private void runCSVTest(int testNumber, ExecMode platform, boolean parallel) 
-	{
+	@Test
+	public void testCSV_Sequential_CP() {
+		runCSVTest(getId(), ExecMode.HYBRID, false);
+	}
+
+	@Test
+	public void testCSV_Parallel_CP() {
+		runCSVTest(getId(), ExecMode.HYBRID, true);
+	}
+
+	@Test
+	public void testCSV_SP() {
+		runCSVTest(getId(), ExecMode.SPARK, false);
+	}
+
+	protected void runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
-		
+
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
+		if(rtplatform == ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
-		
-		try
-		{
+
+		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
-			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			
+
+			TestConfiguration config = getTestConfiguration(getTestName());
+
 			loadTestConfiguration(config);
-			
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrixNameNoExtension = HOME + INPUT_DIR + "transfusion_" + testNumber;
 			String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".csv";
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
-			
-			fullDMLScriptName = HOME + TEST_NAME + "_" + testNumber + ".dml";
-			programArgs = new String[]{"-args", inputMatrixNameWithExtension, dmlOutput};
-			
+
+			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
+			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
+
 			fullRScriptName = HOME + "csv_verify2.R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixNameNoExtension + ".single.csv " + rOutput;
-			
+
 			runTest(true, false, null, -1);
 			runRScript(true);
-			
-			double dmlScalar = TestUtils.readDMLScalar(dmlOutput); 
-			double rScalar = TestUtils.readRScalar(rOutput); 
-			
+
+			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
+			double rScalar = TestUtils.readRScalar(rOutput);
+
 			TestUtils.compareScalars(dmlScalar, rScalar, eps);
 		}
 		finally {
 			rtplatform = oldPlatform;
-			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;		
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
-	
 }

@@ -185,7 +185,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
   if (num_successful_runs > 0)
   {
-    final_wcss_successful = final_wcss * termination_bitmap [, 1];
+    final_wcss_successful = replace(target = final_wcss, pattern = Inf, replacement = 0)* termination_bitmap [, 1];
     worst_wcss = max (final_wcss_successful);
     best_wcss = min (final_wcss_successful + (10 * worst_wcss + 10) * (1 - termination_bitmap [, 1]));
     avg_wcss = sum (final_wcss_successful) / num_successful_runs;

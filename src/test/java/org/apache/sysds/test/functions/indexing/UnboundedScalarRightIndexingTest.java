@@ -19,13 +19,13 @@
 
 package org.apache.sysds.test.functions.indexing;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 
 public class UnboundedScalarRightIndexingTest extends AutomatedTestBase
@@ -82,7 +82,7 @@ public class UnboundedScalarRightIndexingTest extends AutomatedTestBase
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			
 			//run test (expected runtime exception)
-			runTest(true, true, DMLException.class, -1);
+			runTest(true, true, DMLRuntimeException.class, -1);
 		}
 		finally
 		{

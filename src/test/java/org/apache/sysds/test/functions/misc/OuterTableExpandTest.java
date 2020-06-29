@@ -21,16 +21,16 @@ package org.apache.sysds.test.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 /**
  * 
@@ -194,7 +194,7 @@ public class OuterTableExpandTest extends AutomatedTestBase
 			
 			//run the testcase (expect exceptions for table w/ 0s)
 			boolean exceptionExpected = testname.equals(TEST_NAME2) && sparsity < 1.0;
-			runTest(true, exceptionExpected, DMLException.class, -1); 
+			runTest(true, exceptionExpected, DMLRuntimeException.class, -1); 
 			runRScript(true); 
 			
 			if( !exceptionExpected ) {

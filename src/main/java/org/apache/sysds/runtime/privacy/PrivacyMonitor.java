@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.privacy;
 
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;

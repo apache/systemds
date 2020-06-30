@@ -65,7 +65,11 @@ public class FederatedResponse implements Serializable {
 	}
 	
 	public String getErrorMessage() {
-		return ExceptionUtils.getFullStackTrace( (Exception) _data[0] );
+		if (_data[0] instanceof Throwable )
+			return ExceptionUtils.getFullStackTrace( (Throwable) _data[0] );
+		else if (_data[0] instanceof String)
+			return (String) _data[0];
+		else return "No readable error message";
 	}
 	
 	public Object[] getData() throws Exception {

@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 import org.apache.sysds.utils.JSONHelper;
@@ -114,11 +115,16 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return executeScalarOperation(request);
 				default:
 					String message = String.format("Method %s is not supported.", method);
-					return new FederatedResponse(FederatedResponse.Type.ERROR, message);
+					return new FederatedResponse(FederatedResponse.Type.ERROR, new FederatedWorkerHandlerException(message));
 			}
 		}
-		catch (Exception exception) {
+		catch (DMLPrivacyException | FederatedWorkerHandlerException exception) {
 			return new FederatedResponse(FederatedResponse.Type.ERROR, exception);
+		}
+		catch (Exception exception) {
+			return new FederatedResponse(FederatedResponse.Type.ERROR, 
+				new FederatedWorkerHandlerException("Exception of type " 
+				+ exception.getClass() + " thrown when processing request"));
 		}
 	}
 
@@ -141,7 +147,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				break;
 			default:
 				// should NEVER happen (if we keep request codes in sync with actual behaviour)
-				return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not recognize datatype");
+				return new FederatedResponse(FederatedResponse.Type.ERROR, 
+					new FederatedWorkerHandlerException("Could not recognize datatype"));
 		}
 		
 		// read metadata
@@ -153,7 +160,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
 					JSONObject mtd = JSONHelper.parse(br);
 					if (mtd == null)
-						return new FederatedResponse(FederatedResponse.Type.ERROR, "Could not parse metadata file");
+						return new FederatedResponse(FederatedResponse.Type.ERROR, new FederatedWorkerHandlerException("Could not parse metadata file"));
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
 					cd = PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
@@ -224,7 +231,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// TODO rest of the possible datatypes
 			default:
 				return new FederatedResponse(FederatedResponse.Type.ERROR,
-					"FederatedWorkerHandler: Not possible to send datatype " + dataObject.getDataType().name());
+					new FederatedWorkerHandlerException("Not possible to send datatype " + dataObject.getDataType().name()));
 		}
 	}
 
@@ -238,9 +245,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse executeAggregation(long varID, AggregateUnaryOperator operator) {
 		Data dataObject = _vars.get(varID);
 		if (dataObject.getDataType() != Types.DataType.MATRIX) {
-			return new FederatedResponse(FederatedResponse.Type.ERROR,
-				"FederatedWorkerHandler: Aggregation only supported for matrices, not for "
-					+ dataObject.getDataType().name());
+			return new FederatedResponse(FederatedResponse.Type.ERROR, 
+				new FederatedWorkerHandlerException("Aggregation only supported for matrices, not for "
+				+ dataObject.getDataType().name()));
 		}
 		MatrixObject matrixObject = (MatrixObject) dataObject;
 		matrixObject = PrivacyMonitor.handlePrivacy(matrixObject);
@@ -261,12 +268,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				outNumCols += numMissing;
 		}
 		MatrixBlock ret = new MatrixBlock(outNumRows, outNumCols, operator.aggOp.initialValue);
-		try {
-			LibMatrixAgg.aggregateUnaryMatrix(matrixBlock, ret, operator);
-		}
-		catch (Exception e) {
-			return new FederatedResponse(FederatedResponse.Type.ERROR, "FederatedWorkerHandler: " + e);
-		}
+		LibMatrixAgg.aggregateUnaryMatrix(matrixBlock, ret, operator);
 		// result block without correction
 		ret.dropLastRowsOrColumns(operator.aggOp.correction);
 		return new FederatedResponse(FederatedResponse.Type.SUCCESS, ret);
@@ -284,8 +286,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
 		if (dataObject.getDataType() != Types.DataType.MATRIX) {
 			return new FederatedResponse(FederatedResponse.Type.ERROR,
-				"FederatedWorkerHandler: ScalarOperator dont support "
-					+ dataObject.getDataType().name());
+				new FederatedWorkerHandlerException("FederatedWorkerHandler: ScalarOperator dont support "
+					+ dataObject.getDataType().name()));
 		}
 
 		MatrixObject matrixObject = (MatrixObject) dataObject;

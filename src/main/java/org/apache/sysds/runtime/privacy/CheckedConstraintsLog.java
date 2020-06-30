@@ -26,7 +26,15 @@ import java.util.function.BiFunction;
 
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
+/**
+ * Class counting the checked privacy constraints and the loaded privacy constraints. 
+ */
 public class CheckedConstraintsLog {
+	private static Map<PrivacyLevel,LongAdder> loadedConstraintsTotal = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
+	static {
+		for ( PrivacyLevel level : PrivacyLevel.values() )
+			loadedConstraintsTotal.put(level, new LongAdder());
+	}
 	private static Map<PrivacyLevel,LongAdder> checkedConstraintsTotal = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
 	private static BiFunction<LongAdder, LongAdder, LongAdder> mergeLongAdders = (v1, v2) -> {
 		v1.add(v2.longValue() );
@@ -45,14 +53,28 @@ public class CheckedConstraintsLog {
 	}
 
 	/**
-	 * Remove all elements from checked constraints log.
+	 * Add an occurence of the given privacy level to the loaded constraints log total. 
+	 * @param level privacy level from loaded privacy constraint
+	 */
+	public static void addLoadedConstraint(PrivacyLevel level){
+		if (level != null)
+			loadedConstraintsTotal.get(level).increment();
+	}
+
+	/**
+	 * Remove all elements from checked constraints log and loaded constraints log.
 	 */
 	public static void reset(){
 		checkedConstraintsTotal.clear();
+		loadedConstraintsTotal.replaceAll((k,v)->new LongAdder());
 	}
 
 	public static Map<PrivacyLevel,LongAdder> getCheckedConstraints(){
 		return checkedConstraintsTotal;
+	}
+
+	public static Map<PrivacyLevel, LongAdder> getLoadedConstraints(){
+		return loadedConstraintsTotal;
 	}
 
 	/**
@@ -61,7 +83,10 @@ public class CheckedConstraintsLog {
 	 */
 	public static String display(){
 		StringBuilder sb = new StringBuilder();
+		sb.append("Checked Privacy Constraints:\n");
 		checkedConstraintsTotal.forEach((k,v)->sb.append("\t" + k + ": " + v + "\n"));
+		sb.append("Loaded Privacy Constraints:\n");
+		loadedConstraintsTotal.forEach((k,v)->sb.append("\t" + k + ": " + v + "\n"));
 		return sb.toString();
 	}
 }

@@ -999,7 +999,7 @@ public class Statistics
 		}
 
 		if (DMLScript.CHECK_PRIVACY)
-			sb.append("Checked Privacy Constraints:\n" + CheckedConstraintsLog.display());
+			sb.append(CheckedConstraintsLog.display());
 
 		return sb.toString();
 	}

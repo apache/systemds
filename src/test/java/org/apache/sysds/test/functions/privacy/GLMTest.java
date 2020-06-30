@@ -39,6 +39,11 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
+/**
+ * Adapted from org.apache.sysds.test.applications.GLMTest.
+ * Different privacy constraints are added to the input. 
+ */
+
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class GLMTest extends AutomatedTestBase
@@ -183,46 +188,8 @@ public class GLMTest extends AutomatedTestBase
 
 	@Test
 	public void TestGLMPrivateX(){
-		
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		Class<?> expectedException = null;
-		switch ( glmType ){
-			case Gaussianinverse:
-			case Poissonlog1:
-			case Poissonlog2:	 
-			case Poissonsqrt:
-			case Poissonid:
-			case Gammalog:
-			case Gammainverse:
-			case InvGaussian1mu:
-			case InvGaussianinverse:
-			case InvGaussianlog:
-			case InvGaussianid:
-			case Binomialid:
-			case Binomialcauchit:
-			case Gaussianlog:
-			case Gaussianid:
-			case Bernoullilog:
-			case Bernoulliid:
-			case Bernoullisqrt:
-			case Bernoullilogit1:
-			case Bernoullilogit2:
-			case Bernoulliprobit1:
-			case Bernoulliprobit2:
-			case Bernoullicloglog1:
-			case Bernoullicloglog2:
-			case Bernoullicauchit:
-			case Binomiallog:
-			case Binomialsqrt:
-			case Binomiallogit:
-			case Binomialprobit:
-			case Binomialcloglog:
-				expectedException = DMLException.class;
-				break;
-			default:
-				expectedException = null;
-				break;
-		}
+		Class<?> expectedException = DMLException.class; 
 		testGLM(pc, null, expectedException);
 	}
 
@@ -243,44 +210,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMPrivateY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		Class<?> expectedException = null;
-		switch ( glmType ){
-			case Gaussianinverse:
-			case Poissonlog1:
-			case Poissonlog2:	 
-			case Poissonsqrt:
-			case Poissonid:
-			case Gammalog:
-			case Gammainverse:
-			case InvGaussian1mu:
-			case InvGaussianinverse:
-			case InvGaussianlog:
-			case InvGaussianid:
-			case Binomialid:
-			case Binomialcauchit:
-			case Gaussianlog:
-			case Gaussianid:
-			case Bernoullilog:
-			case Bernoulliid:
-			case Bernoullisqrt:
-			case Bernoullilogit1:
-			case Bernoullilogit2:
-			case Bernoulliprobit1:
-			case Bernoulliprobit2:
-			case Bernoullicloglog1:
-			case Bernoullicloglog2:
-			case Bernoullicauchit:
-			case Binomiallog:
-			case Binomialsqrt:
-			case Binomiallogit:
-			case Binomialprobit:
-			case Binomialcloglog:
-				expectedException = DMLException.class;
-				break;
-			default:
-				expectedException = null;
-				break;
-		}
+		Class<?> expectedException = DMLException.class;
 		testGLM(null, pc, expectedException);
 	}
 

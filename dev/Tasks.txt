@@ -344,6 +344,7 @@ SYSTEMDS-410 Lineage Tracing, Reuse and Integration II
  * 415 MLContext lineage support (tracing and reuse correctness)      OK
  * 416 Lineage deduplication while, nested if, loop sequences         OK
  * 417 New rewrite for partial reuse in StepLM                        OK
+ * 418 Performance lineage tracing and reuse probing small data       OK
 
 SYSTEMDS-420 Compiler Improvements
  * 421 Fix invalid IPA scalar propagation into functions              OK

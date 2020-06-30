@@ -147,8 +147,8 @@ public class LineageItem {
 		
 		boolean ret = _opcode.equals(that._opcode);
 		ret &= _data.equals(that._data);
-		
-		if (_inputs != null && ret && (_inputs.length == that._inputs.length))
+		ret &= (hashCode() == that.hashCode());
+		if( ret && _inputs != null && _inputs.length == that._inputs.length )
 			for (int i = 0; i < _inputs.length; i++)
 				ret &= _inputs[i].equalsLI(that._inputs[i]);
 		

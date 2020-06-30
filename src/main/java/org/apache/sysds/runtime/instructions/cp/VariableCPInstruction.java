@@ -116,6 +116,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private final CPOperand output;
 	private final MetaData metadata;
 	private final UpdateType _updateType;
+	private final boolean _containsPreadPrefix;
 	
 	// Frame related members
 	private final String _schema;
@@ -136,6 +137,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		_formatProperties = fprops;
 		_schema = schema;
 		_updateType = utype;
+		_containsPreadPrefix = in1 != null && in1.getName()
+			.contains(org.apache.sysds.lops.Data.PREAD_PREFIX);
 	}
 	
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
@@ -1259,7 +1262,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		LineageItem li = null;
 		switch (getVariableOpcode()) {
 			case CreateVariable:
-				if (!getInput1().getName().contains(org.apache.sysds.lops.Data.PREAD_PREFIX))
+				if (!_containsPreadPrefix)
 					break; //otherwise fall through
 			
 			case Read: {

@@ -57,12 +57,12 @@ public class LineageMap {
 			return; // no need for lineage tracing
 		if (!(inst instanceof LineageTraceable))
 			throw new DMLRuntimeException("Unknown Instruction (" + inst.getOpcode() + ") traced.");
-		
-		if( ((LineageTraceable) inst).hasSingleLineage() ) {
-			trace(inst, ec, ((LineageTraceable) inst).getLineageItem(ec));
+		LineageTraceable linst = (LineageTraceable) inst;
+		if( linst.hasSingleLineage() ) {
+			trace(inst, ec, linst.getLineageItem(ec));
 		}
 		else {
-			Pair<String, LineageItem>[] items = ((LineageTraceable) inst).getLineageItems(ec);
+			Pair<String, LineageItem>[] items = linst.getLineageItems(ec);
 			if (items == null || items.length < 1)
 				trace(inst, ec, null);
 			else {

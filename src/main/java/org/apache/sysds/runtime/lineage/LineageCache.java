@@ -95,7 +95,7 @@ public class LineageCache
 			//atomic try reuse full/partial and set placeholder, without
 			//obtaining value to avoid blocking in critical section
 			LineageCacheEntry e = null;
-			Boolean reuseAll = true;
+			boolean reuseAll = true;
 			synchronized( _cache ) {
 				//try to reuse full or partial intermediates
 				for (LineageItem item : liMap.keySet()) {

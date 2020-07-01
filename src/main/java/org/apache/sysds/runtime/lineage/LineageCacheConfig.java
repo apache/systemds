@@ -39,7 +39,7 @@ public class LineageCacheConfig
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+"
+		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -223,7 +223,7 @@ public class LineageCacheConfig
 				WEIGHTS[0] = 1; WEIGHTS[1] = 0;
 				break;
 			case HYBRID:
-				WEIGHTS[0] = 1; WEIGHTS[1] = 1;
+				WEIGHTS[0] = 1; WEIGHTS[1] = 0.0033;
 				break;
 		}
 		_cachepolicy = policy;
@@ -233,9 +233,9 @@ public class LineageCacheConfig
 		return _cachepolicy;
 	}
 	
-	public static boolean isLRU() {
+	public static boolean isTimeBased() {
 		// Check the LRU component of weights array.
-		return (WEIGHTS[1] == 1);
+		return (WEIGHTS[1] > 0);
 	}
 
 	public static void setSpill(boolean toSpill) {

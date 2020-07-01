@@ -80,7 +80,7 @@ public class LineageCacheEviction
 	
 	protected static void getEntry(LineageCacheEntry entry) {
 		// Reset the timestamp to maintain the LRU component of the scoring function
-		if (!LineageCacheConfig.isLRU()) 
+		if (!LineageCacheConfig.isTimeBased()) 
 			return;
 		
 		if (weightedQueue.remove(entry)) {

@@ -358,3 +358,6 @@ Others:
 
 SYSTEMDS-510 IO formats
  * 511 Add protobuf support to write and read FrameBlocks to HDFS     OK
+ 
+SYSTEMDS-520 Lineage Tracing, Reuse and Integration III
+ * 521 New lineage option exposing cache policies                     OK

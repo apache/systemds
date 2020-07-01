@@ -20,9 +20,7 @@
 package org.apache.sysds.runtime.privacy;
 
 
-import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
@@ -45,7 +43,7 @@ import org.apache.wink.json4j.JSONObject;
  */
 public class PrivacyPropagator
 {
-	public static CacheableData<?> parseAndSetPrivacyConstraint(CacheableData<?> cd, JSONObject mtd)
+	public static Data parseAndSetPrivacyConstraint(Data cd, JSONObject mtd)
 		throws JSONException
 	{
 		if ( mtd.containsKey(DataExpression.PRIVACY) ) {
@@ -263,7 +261,7 @@ public class PrivacyPropagator
 	 */
 	private static Instruction propagateCastAsScalarVariablePrivacy(VariableCPInstruction inst, ExecutionContext ec){
 		inst = (VariableCPInstruction) propagateFirstInputPrivacy(inst, ec); 
-		return preprocessInstructionSimple(inst, ec);
+		return inst;
 	}
 
 	/**
@@ -325,11 +323,17 @@ public class PrivacyPropagator
 		return inst;
 	}
 
+	/**
+	 * Get privacy constraint of input data variable from execution context.
+	 * @param ec execution context from which the data variable is retrieved
+	 * @param input data variable from which the privacy constraint is retrieved
+	 * @return privacy constraint of variable or null if privacy constraint is not set
+	 */
 	private static PrivacyConstraint getInputPrivacyConstraint(ExecutionContext ec, CPOperand input){
 		if ( input != null && input.getName() != null){
 			Data dd = ec.getVariable(input.getName());
-			if ( dd != null && dd instanceof CacheableData)
-				return ((CacheableData<?>) dd).getPrivacyConstraint();
+			if ( dd != null )
+				return dd.getPrivacyConstraint();
 		}
 		return null;
 	}
@@ -354,15 +358,20 @@ public class PrivacyPropagator
 		setOutputPrivacyConstraint(ec, privacyConstraint, output.getName());
 	}
 
+	/**
+	 * Set privacy constraint of data variable with outputName 
+	 * if the variable exists and the privacy constraint is not null.
+	 * @param ec execution context from which the data variable is retrieved
+	 * @param privacyConstraint privacy constraint which the variable should have
+	 * @param outputName name of variable that is retrieved from the execution context
+	 */
 	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, String outputName){
-		Data dd = ec.getVariable(outputName);
-		if ( dd != null && privacyConstraint != null ){
-			if ( dd instanceof CacheableData ){
-				((CacheableData<?>) dd).setPrivacyConstraints(privacyConstraint);
+		if ( privacyConstraint != null ){
+			Data dd = ec.getVariable(outputName);
+			if ( dd != null ){
+				dd.setPrivacyConstraints(privacyConstraint);
 				ec.setVariable(outputName, dd);
-			} else if ( privacyConstraint.privacyLevel == PrivacyLevel.Private || !(dd.getDataType() == DataType.SCALAR) )
-				throw new DMLPrivacyException("Privacy constraint of " + outputName + " cannot be set since it is not an instance of CacheableData and it is not a scalar with privacy level " + PrivacyLevel.PrivateAggregation.name() );
-			// if privacy level is PrivateAggregation and data is scalar, the call should pass without propagating any constraints
+			}
 		}
 	}
 }

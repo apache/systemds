@@ -24,8 +24,6 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
@@ -112,22 +110,5 @@ public class PrivacyMonitor
 			}
 		}
 		return matrixObject;
-	}
-	
-	/**
-	 * Throw DMLPrivacyException if privacy is activated for the input variable
-	 * @param input variable for which the privacy constraint is checked
-	 */
-	public static void handlePrivacyScalarOutput(CPOperand input, ExecutionContext ec) {
-		Data data = ec.getVariable(input);
-		if ( data != null && (data instanceof CacheableData<?>)){
-			PrivacyConstraint privacyConstraintIn = ((CacheableData<?>) data).getPrivacyConstraint();
-			if ( privacyConstraintIn != null ) {
-				incrementCheckedConstraints(privacyConstraintIn.getPrivacyLevel());
-				if ( privacyConstraintIn.getPrivacyLevel() == PrivacyLevel.Private ){
-					throw new DMLPrivacyException("Privacy constraint cannot be propagated to scalar for input " + input.getName());
-				}
-			}
-		}
 	}
 }

@@ -1096,11 +1096,7 @@ public class DataExpression extends DataIdentifier
 					getOutput().setNnz(nnz);
 				}
 				
-				// set privacy
-				Expression eprivacy = getVarParam("privacy");
-				if ( eprivacy != null ){
-					getOutput().setPrivacy(PrivacyLevel.valueOf(eprivacy.toString()));
-				}
+				setPrivacy();
 
 				// Following dimension checks must be done when data type = MATRIX_DATA_TYPE 
 				// initialize size of target data identifier to UNKNOWN
@@ -1161,6 +1157,7 @@ public class DataExpression extends DataIdentifier
 			else if ( dataTypeString.equalsIgnoreCase(Statement.SCALAR_DATA_TYPE)) {
 				getOutput().setDataType(DataType.SCALAR);
 				getOutput().setNnz(-1L);
+				setPrivacy();
 			}
 			
 			else{
@@ -2224,6 +2221,16 @@ public class DataExpression extends DataIdentifier
 	public boolean isRead()
 	{
 		return (_opcode == DataOp.READ);
+	}
+
+	/**
+	 * Sets privacy of identifier if privacy variable parameter is set.  
+	 */
+	private void setPrivacy(){
+		Expression eprivacy = getVarParam("privacy");
+		if ( eprivacy != null ){
+			getOutput().setPrivacy(PrivacyLevel.valueOf(eprivacy.toString()));
+		}
 	}
 	
 } // end class

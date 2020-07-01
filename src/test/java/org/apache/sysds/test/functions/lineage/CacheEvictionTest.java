@@ -92,11 +92,11 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			proArgs.add("policy_lru");
 			proArgs.add("-args");
 			proArgs.add(String.valueOf(cacheSize));
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
-			LineageCacheConfig.setCachePolicy(LineageCacheConfig.LineageCachePolicy.LRU);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromHDFS("R");
 			long expCount_lru = Statistics.getCPHeavyHitterCount("exp");
@@ -108,12 +108,12 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
+			proArgs.add("policy_weighted");
 			proArgs.add("-args");
 			proArgs.add(String.valueOf(cacheSize));
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
-			LineageCacheConfig.setCachePolicy(LineageCacheConfig.LineageCachePolicy.WEIGHTED);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_weighted= readDMLMatrixFromHDFS("R");
 			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");

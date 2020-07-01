@@ -280,10 +280,18 @@ public class LineageCache
 					else
 						throw new DMLRuntimeException("Lineage Cache: unsupported data: "+data.getDataType());
 
+					long size = centry.getSize();
+					//remove the entry if the entry is bigger than the cache.
+					//FIXME: the resumed threads will enter into infinite wait as the entry
+					//is removed. Need to add support for graceful remove (placeholder) and resume.
+					if (size > LineageCacheEviction.getCacheLimit()) {
+						_cache.remove(item);
+						continue; 
+					}
+
 					//maintain order for eviction
 					LineageCacheEviction.addEntry(centry);
 
-					long size = centry.getSize();
 					if (!LineageCacheEviction.isBelowThreshold(size))
 						LineageCacheEviction.makeSpace(_cache, size);
 					LineageCacheEviction.updateSize(size, true);

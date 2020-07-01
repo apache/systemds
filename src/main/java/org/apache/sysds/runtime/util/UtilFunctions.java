@@ -59,9 +59,17 @@ public class UtilFunctions
 	//because it determines the max hash domain size
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
-	
+
 	public static int intHashCode(int key1, int key2) {
 		return 31 * (31 + key1) + key2;
+	}
+	
+	public static int intHashCodeRobust(int key1, int key2) {
+		// handle overflows to avoid systematic hash code repetitions
+		// in long recursive hash computations w/ repeated structure
+		long tmp = 31L * (31L + key1) + key2;
+		return (tmp < Integer.MAX_VALUE) ?
+			(int) tmp : longHashCode(tmp);
 	}
 	
 	public static int longHashCode(long key1) {

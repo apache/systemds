@@ -133,14 +133,15 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replaceAll("%OUT%", _output.getVarname());
 
 		//replace meta data information
-		tmp = tmp.replace("%TYPE%", getCellType().name());
-		tmp = tmp.replace("%AGG_OP%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
+		tmp = tmp.replaceAll("%TYPE%", getCellType().name());
+		tmp = tmp.replace("%AGG_OP_NAME%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
 
 		if(api == GeneratorAPI.CUDA) {
-			String agg_op = "IdentityOp<T>";
-			String initial_value = "(T)0.0";
+			// ToDo: initial_value is misused to pass VT (values per thread) to no_agg operator
+			String agg_op = "IdentityOp";
+			String initial_value = "(T)4.0";
 			if(_aggOp != null)
 			switch(_aggOp) {
 				case SUM:
@@ -160,11 +161,11 @@ public class CNodeCell extends CNodeTpl
 					initial_value = "-MAX<T>()";
 					break;
 				default:
-					agg_op = "IdentityOp<T>";
+					agg_op = "IdentityOp";
 					initial_value = "(T)0.0";
 			}
 
-			tmp = tmp.replaceAll("%AGG_TMPL%", agg_op);
+			tmp = tmp.replaceAll("%AGG_OP%", agg_op);
 			tmp = tmp.replaceAll("%INITIAL_VALUE%", initial_value);
 		}
 		return tmp;

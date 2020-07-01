@@ -22,7 +22,7 @@
  * @param SpoofCellwiseOp		initial value for the reduction variable
  */
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void reduce(
+__device__ void FULL_AGG(
 		T *g_idata, ///< input data stored in device memory (of size n)
 		T *g_odata, ///< output/temporary array stored in device memory (of size n)
 		unsigned int n,
@@ -140,7 +140,7 @@ __device__ void reduce(
  * row
  */
 template<typename ReductionOp, typename AssignmentOp, typename T>
-__device__ void reduce_row(T *g_idata, ///< input data stored in device memory (of size rows*cols)
+__device__ void ROW_AGG(T *g_idata, ///< input data stored in device memory (of size rows*cols)
 		T *g_odata,  ///< output/temporary array store in device memory (of size
 		/// rows*cols)
 		unsigned int rows,  ///< rows in input and temporary/output arrays
@@ -245,7 +245,7 @@ __device__ void reduce_row(T *g_idata, ///< input data stored in device memory (
  * column
  */
 template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
-__device__ void reduce_col(T *g_idata, ///< input data stored in device memory (of size rows*cols)
+__device__ void COL_AGG(T *g_idata, ///< input data stored in device memory (of size rows*cols)
 		T *g_odata,  ///< output/temporary array store in device memory (of size rows*cols)
 		unsigned int rows,  ///< rows in input and temporary/output arrays
 		unsigned int cols,  ///< columns in input and temporary/output arrays
@@ -268,4 +268,17 @@ __device__ void reduce_col(T *g_idata, ///< input data stored in device memory (
 		i += grid_size;
 	}
 	g_odata[global_tid] = val;
+}
+
+template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
+__device__ void NO_AGG(T* g_idata, T* g_odata,  unsigned int rows, unsigned int cols,  
+	T VT,  ReductionOp reduction_op, SpoofCellwiseOp spoof_op) 
+{
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	int first_idx = tid * static_cast<int>(VT);
+	int last_idx = min(first_idx + static_cast<int>(VT), spoof_op.m * spoof_op.n);
+	#pragma unroll
+	for(int i = first_idx; i < last_idx; i++) {
+		g_odata[i] = spoof_op(g_idata[i], i);
+	}
 }

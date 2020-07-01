@@ -148,6 +148,7 @@ public:
           case SpoofOperator::AggType::NO_AGG: 
           default: {
             // num ctas
+              // ToDo: VT not a template parameter anymore
             int NB = std::ceil((N + NT * VT - 1) / (NT * VT));
             dim3 grid(NB, 1, 1);
             dim3 block(NT, 1, 1);
@@ -157,7 +158,7 @@ public:
                       << std::endl;
 
             CHECK_CUDA(op->program.kernel(name)
-                .instantiate(type_of(result), VT)
+                .instantiate(type_of(result))
                 .configure(grid, block)
                 .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
           }

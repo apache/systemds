@@ -97,6 +97,10 @@
 				<directory>src/main/cpp/lib</directory>
 				<targetPath>lib</targetPath>
 			</resource>
+			<resource>
+				<directory>src/main/cpp/spoof</directory>
+				<targetPath>spoof</targetPath>
+			</resource>
 		</resources>
 
 		<plugins>

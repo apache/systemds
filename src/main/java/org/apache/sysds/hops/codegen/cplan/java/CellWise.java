@@ -18,7 +18,7 @@ public class CellWise implements CodeTemplate {
                     + "\n"
                     + "public final class %TMP% extends SpoofCellwise {\n"
                     + "  public %TMP%() {\n"
-                    + "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP%);\n"
+                    + "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP_NAME%);\n"
                     + "  }\n"
                     + "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n"
                     + "%BODY_dense%"

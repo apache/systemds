@@ -19,7 +19,7 @@ template<typename T>
 __device__ void reduce_sum(T *g_idata, T *g_odata, unsigned int n) {
 	SumOp<T> agg_op;	
 	IdentityOp<T> spoof_op;
-	reduce<T, SumOp<T>, IdentityOp<T>>(g_idata, g_odata, n, (T) 0.0, agg_op, spoof_op);
+	FULL_AGG<T, SumOp<T>, IdentityOp<T>>(g_idata, g_odata, n, (T) 0.0, agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_sum_d(double *g_idata, double *g_odata,
@@ -44,7 +44,7 @@ __device__ void reduce_row_sum(T *g_idata, T *g_odata, unsigned int rows,
 		unsigned int cols) {
 	SumOp<T> op;
 	IdentityOp<T> aop;
-	reduce_row<SumOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op,
+	ROW_AGG<SumOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op,
 			aop, 0.0);
 }
 
@@ -69,7 +69,7 @@ template<typename T>
 __device__ void reduce_col_sum(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols) {
 	SumOp<T> agg_op;
 	IdentityOp<T> spoof_op;
-	reduce_col<T, SumOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, (T)0.0, agg_op, spoof_op);
+	COL_AGG<T, SumOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, (T)0.0, agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_col_sum_d(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols) {
@@ -91,7 +91,7 @@ template<typename T>
 __device__ void reduce_max(T *g_idata, T *g_odata, unsigned int n) {
 	MaxOp<T> agg_op;
 	IdentityOp<T> spoof_op;
-	reduce<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, n, -MAX<T>(), agg_op, spoof_op);
+	FULL_AGG<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, n, -MAX<T>(), agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_max_d(double *g_idata, double *g_odata,
@@ -116,7 +116,7 @@ __device__ void reduce_row_max(T *g_idata, T *g_odata, unsigned int rows,
 		unsigned int cols) {
 	MaxOp<T> op;
 	IdentityOp<T> aop;
-	reduce_row<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op,
+	ROW_AGG<MaxOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op,
 			aop, -MAX<T>());
 }
 
@@ -141,7 +141,7 @@ template<typename T>
 __device__ void reduce_col_max(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols) {
 	MaxOp<T> agg_op;
 	IdentityOp<T> spoof_op;
-	reduce_col<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, -MAX<T>(), agg_op, spoof_op);
+	COL_AGG<T, MaxOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, -MAX<T>(), agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_col_max_d(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols) {
@@ -163,7 +163,7 @@ template<typename T>
 __device__ void reduce_min(T *g_idata, T *g_odata, unsigned int n) {
 	MinOp<T> agg_op;
 	IdentityOp<T> spoof_op;
-	reduce<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, n, MAX<T>(), agg_op, spoof_op);
+	FULL_AGG<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, n, MAX<T>(), agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_min_d(double *g_idata, double *g_odata,
@@ -189,7 +189,7 @@ __device__ void reduce_row_min(T *g_idata, T *g_odata, unsigned int rows,
 		unsigned int cols) {
 	MinOp<T> op;
 	IdentityOp<T> aop;
-	reduce_row<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op,
+	ROW_AGG<MinOp<T>, IdentityOp<T>, T>(g_idata, g_odata, rows, cols, op,
 			aop, MAX<T>());
 }
 
@@ -214,7 +214,7 @@ template<typename T>
 __device__ void reduce_col_min(T *g_idata, T *g_odata, unsigned int rows, unsigned int cols) {
 	MinOp<T> agg_op;
 	IdentityOp<T> spoof_op;
-	reduce_col<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, MAX<T>(), agg_op, spoof_op);
+	COL_AGG<T, MinOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, MAX<T>(), agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_col_min_d(double *g_idata, double *g_odata, unsigned int rows, unsigned int cols) {
@@ -236,7 +236,7 @@ template<typename T>
 __device__ void reduce_sum_sq(T *g_idata, T *g_odata, unsigned int n) {
 	SumSqOp<T> agg_op;
 	IdentityOp<T> spoof_op;
-	reduce<T, SumSqOp<T>, IdentityOp<T>>(g_idata, g_odata, n, (T) 0.0, agg_op, spoof_op);
+	FULL_AGG<T, SumSqOp<T>, IdentityOp<T>>(g_idata, g_odata, n, (T) 0.0, agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_sum_sq_d(double *g_idata, double *g_odata, unsigned int n) {
@@ -258,7 +258,7 @@ template<typename T>
 __device__ void reduce_col_sum_sq(T* g_idata, T* g_odata, unsigned int rows, unsigned int cols) {
 	SumSqOp<T> agg_op;
 	IdentityOp<T> spoof_op;
-	reduce_col<T, SumSqOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, (T)0.0, agg_op, spoof_op);
+	COL_AGG<T, SumSqOp<T>, IdentityOp<T>>(g_idata, g_odata, rows, cols, (T)0.0, agg_op, spoof_op);
 }
 
 extern "C" __global__ void reduce_col_sum_sq_d(double* g_idata, double* g_odata, unsigned int rows, unsigned int cols) {

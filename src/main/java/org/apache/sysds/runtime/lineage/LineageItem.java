@@ -160,11 +160,12 @@ public class LineageItem {
 	public int hashCode() {
 		if (_hash == 0) {
 			//compute hash over opcode and all inputs
-			int h = _opcode.hashCode();
+			int h = UtilFunctions.intHashCode(
+				_opcode.hashCode(), _data.hashCode());
 			if (_inputs != null)
 				for (LineageItem li : _inputs)
-					h = UtilFunctions.intHashCode(h, li.hashCode());
-			_hash = UtilFunctions.intHashCode(h, _data.hashCode());
+					h = UtilFunctions.intHashCodeRobust(li.hashCode(), h);
+			_hash = h;
 		}
 		return _hash;
 	}

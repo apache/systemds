@@ -27,21 +27,11 @@ size_t SpoofCudaContext::initialize_cuda(uint32_t device_id) {
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_f"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_sum_f", func));
 
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_col_sum_d"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_sum_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_col_sum_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_sum_f", func));
-
   // SUM_SQ
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_d"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_d", func));
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_f"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_f", func));
-
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_col_sum_sq_d"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_sum_sq_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_col_sum_sq_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_sum_sq_f", func));
 
   // MIN
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_d"));
@@ -49,21 +39,11 @@ size_t SpoofCudaContext::initialize_cuda(uint32_t device_id) {
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_f"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_min_f", func));
 
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_col_min_d"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_min_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_col_min_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_min_f", func));
-
   // MAX
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_d"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_max_d", func));
   CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_f"));
   ctx->reduction_kernels.insert(std::make_pair("reduce_max_f", func));
-
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_col_max_d"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_max_d", func));
-  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_max_f"));
-  ctx->reduction_kernels.insert(std::make_pair("reduce_col_max_f", func));
 
   return reinterpret_cast<size_t>(ctx);
 }
@@ -79,8 +59,7 @@ void SpoofCudaContext::destroy_cuda(SpoofCudaContext *ctx, uint32_t device_id) {
 
 bool SpoofCudaContext::compile_cuda(const std::string &src,
                                     const std::string &name) {
-
-    std::string cuda_path = std::string("-I") + std::getenv("CUDA_PATH") + "/include";
+  std::string cuda_path = std::string("-I") + std::getenv("CUDA_PATH") + "/include";
   std::cout << "compiling cuda kernel " << name << std::endl;
   std::cout << src << std::endl;
   //std::cout << "cwd: " << std::filesystem::current_path() << std::endl;

@@ -25,6 +25,7 @@ template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
 __device__ void FULL_AGG(
 		T *g_idata, ///< input data stored in device memory (of size n)
 		T *g_odata, ///< output/temporary array stored in device memory (of size n)
+		unsigned int m,
 		unsigned int n,
 		T initialValue, 
 		ReductionOp reduction_op, 
@@ -37,16 +38,16 @@ __device__ void FULL_AGG(
 	unsigned int tid = threadIdx.x;
 	unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
 	unsigned int gridSize = blockDim.x * 2 * gridDim.x;
-
+	unsigned int N = m * n;
 	T v = initialValue;
 
 	// we reduce multiple elements per thread.  The number is determined by the
 	// number of active thread blocks (via gridDim).  More blocks will result
 	// in a larger gridSize and therefore fewer elements per thread
-	while (i < n) {
+	while (i < N) {
 		v = reduction_op(v, spoof_op(g_idata[i], i));
 
-		if (i + blockDim.x < n)	
+		if (i + blockDim.x < N)	
 		{
 			//__syncthreads();
 			//printf("loop fetch i(%d)+blockDim.x(%d)=%d, in=%f\n",i, blockDim.x, i + blockDim.x, g_idata[i + blockDim.x]);
@@ -139,17 +140,16 @@ __device__ void FULL_AGG(
  * the value before writing it to its final location in global memory for each
  * row
  */
-template<typename ReductionOp, typename AssignmentOp, typename T>
-__device__ void ROW_AGG(T *g_idata, ///< input data stored in device memory (of size rows*cols)
+template<typename T, typename ReductionOp, typename SpoofCellwiseOp>
+__device__ void ROW_AGG(
+		T *g_idata, ///< input data stored in device memory (of size rows*cols)
 		T *g_odata,  ///< output/temporary array store in device memory (of size
 		/// rows*cols)
 		unsigned int rows,  ///< rows in input and temporary/output arrays
 		unsigned int cols,  ///< columns in input and temporary/output arrays
+		T initialValue,  ///< initial value for the reduction variable
 		ReductionOp reduction_op, ///< Reduction operation to perform (functor object)
-		AssignmentOp assignment_op, ///< Operation to perform before assigning this
-		/// to its final location in global memory for
-		/// each row
-		T initialValue)  ///< initial value for the reduction variable
+		SpoofCellwiseOp spoof_op) ///< Operation to perform before assigning this
 {
 	auto sdata = shared_memory_proxy<T>();
 
@@ -165,7 +165,7 @@ __device__ void ROW_AGG(T *g_idata, ///< input data stored in device memory (of 
 
 	T v = initialValue;
 	while (i < cols) {
-		v = reduction_op(v, g_idata[block_offset + i]);
+		v = reduction_op(v, spoof_op(g_idata[block_offset + i], i));
 		i += blockDim.x;
 	}
 
@@ -226,7 +226,7 @@ __device__ void ROW_AGG(T *g_idata, ///< input data stored in device memory (of 
 
 	// write result for this block to global mem, modify it with assignment op
 	if (tid == 0)
-		g_odata[block] = assignment_op(sdata[0]);
+		g_odata[block] = sdata[0];
 }
 
 /**

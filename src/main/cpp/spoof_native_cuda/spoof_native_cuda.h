@@ -48,8 +48,8 @@ public:
 
     T result = 0.0;
     size_t dev_buf_size;
-    T **d_sides;
-    T *d_scalars;
+    T **d_sides = nullptr;
+    T *d_scalars = nullptr;
     T *d_temp_agg_buf;
     uint32_t N = m * n;
 
@@ -129,18 +129,35 @@ public:
               int NB = std::ceil((N + NT - 1) / NT);
               dim3 grid(NB, 1, 1);
               dim3 block(NT, 1, 1);
-              unsigned int shared_mem_size = NT * sizeof(T);
+              unsigned int shared_mem_size = 0;
 
               std::cout << " launching spoof cellwise kernel " << name << " with "
-                  << NT * NB << " threads in " << NB << " blocks and "
-                  << shared_mem_size
-                  << " bytes of shared memory for column aggregation of "
-                  << N << " elements"
-                  << std::endl;
+                  << NT * NB << " threads in " << NB << " blocks for column aggregation of "
+                  << N << " elements" << std::endl;
 
               CHECK_CUDA(op->program.kernel(name)
                   .instantiate(type_of(result))
                   .configure(grid, block)
+                  .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
+
+              break;
+          }
+          case SpoofOperator::AggType::ROW_AGG: {
+              // num ctas
+              int NB = m;
+              dim3 grid(NB, 1, 1);
+              dim3 block(NT, 1, 1);
+              unsigned int shared_mem_size = NT * sizeof(T);
+
+
+              std::cout << " launching spoof cellwise kernel " << name << " with "
+                  << NT * NB << " threads in " << NB << " blocks and "
+                  << shared_mem_size << " bytes of shared memory for row aggregation of "
+                  << N << " elements" << std::endl;
+
+              CHECK_CUDA(op->program.kernel(name)
+                  .instantiate(type_of(result))
+                  .configure(grid, block, shared_mem_size)
                   .launch(in_ptrs[0], d_sides, out_ptr, d_scalars, m, n, grix));
 
               break;

@@ -99,7 +99,7 @@ public class LineageCacheConfig
 
 	private static LineageCachePolicy _cachepolicy = null;
 	// Weights for scoring components (computeTime/size, LRU timestamp)
-	private static double[] WEIGHTS = {0, 1};
+	protected static double[] WEIGHTS = {0, 1};
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
@@ -121,14 +121,9 @@ public class LineageCacheConfig
 	}
 	
 	protected static Comparator<LineageCacheEntry> LineageCacheComparator = (e1, e2) -> {
-		// Gather the weights for scoring components
-		double w1 = LineageCacheConfig.WEIGHTS[0];
-		double w2 = LineageCacheConfig.WEIGHTS[1];
-		// Generate scores
-		double score1 = w1*(((double)e1._computeTime)/e1.getSize()) + w2*e1.getTimestamp();
-		double score2 = w1*((double)e2._computeTime)/e2.getSize() + w2*e2.getTimestamp();
-		// Generate order. If scores are same, order by LineageItem ID.
-		return score1 == score2 ? Long.compare(e1._key.getId(), e2._key.getId()) : score1 < score2 ? -1 : 1;
+		return e1.score == e2.score ?
+			Long.compare(e1._key.getId(), e2._key.getId()) :
+			e1.score < e2.score ? -1 : 1;
 	};
 
 	//----------------------------------------------------------------//

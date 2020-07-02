@@ -254,7 +254,7 @@ public class PrivacyPropagator
 	}
 
 	/**
-	 * Propagate privacy from first input and throw exception if privacy is activated.
+	 * Propagate privacy from first input.
 	 * @param inst Instruction
 	 * @param ec execution context
 	 * @return instruction with or without privacy constraints

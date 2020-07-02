@@ -89,7 +89,7 @@ public class BuiltinGLMTest extends AutomatedTestBase
 	@Test
 	public void glmTestIntercept_0_CP_Private() {
 		setIntercept(0);
-		runtestGLM(new PrivacyConstraint(PrivacyLevel.Private), DMLException.class);
+		runtestGLM(new PrivacyConstraint(PrivacyLevel.Private), null);
 	}
 
 	// PrivateAggregation

@@ -45,6 +45,10 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		return _outputs.get(i);
 	}
 
+	public String[] getOutputNames(){
+		return (String[]) _outputs.parallelStream().map(output -> output.getName()).toArray();
+	}
+
 	public static MultiReturnParameterizedBuiltinCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<>();

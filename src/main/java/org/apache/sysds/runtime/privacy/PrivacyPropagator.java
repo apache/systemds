@@ -30,6 +30,8 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
@@ -373,5 +375,36 @@ public class PrivacyPropagator
 				ec.setVariable(outputName, dd);
 			}
 		}
+	}
+
+	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
+		PrivacyConstraint instructionPrivacyConstraint = inst.getPrivacyConstraint();
+		if ( privacyConstraintActivated(instructionPrivacyConstraint) )
+		{
+			String[] instructionOutputNames = getOutputVariableName(inst);
+			if ( instructionOutputNames != null && instructionOutputNames.length > 0 )
+				for ( String instructionOutputName : instructionOutputNames )
+					setOutputPrivacyConstraint(ec, instructionPrivacyConstraint, instructionOutputName);
+		}
+	}
+
+	private static boolean privacyConstraintActivated(PrivacyConstraint instructionPrivacyConstraint){
+		return instructionPrivacyConstraint != null && 
+			(instructionPrivacyConstraint.privacyLevel == PrivacyLevel.Private 
+			|| instructionPrivacyConstraint.privacyLevel == PrivacyLevel.PrivateAggregation);
+	}
+
+	private static String[] getOutputVariableName(Instruction inst){
+		String[] instructionOutputNames = null;
+		// The order of the following statements is important
+		if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
+			instructionOutputNames = ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputNames();
+		else if ( inst instanceof MultiReturnBuiltinCPInstruction )
+			instructionOutputNames = ((MultiReturnBuiltinCPInstruction) inst).getOutputNames();
+		else if ( inst instanceof ComputationCPInstruction )
+			instructionOutputNames = new String[]{((ComputationCPInstruction) inst).getOutputVariableName()};
+		else if ( inst instanceof VariableCPInstruction )
+			instructionOutputNames = new String[]{((VariableCPInstruction) inst).getOutputVariableName()};
+		return instructionOutputNames;
 	}
 }

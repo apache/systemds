@@ -314,15 +314,15 @@ SYSTEMDS-360 Privacy/Data Exchange Constraints
  * 361 Initial privacy meta data (compiler/runtime)                   OK
  * 362 Runtime privacy propagation
  * 363 Compile-time privacy propagation
- * 364 Error handling violated privacy constraints
- * 365 Extended privacy/data exchange constraints
+ * 364 Error handling violated privacy constraints                    OK
+ * 365 Extended privacy/data exchange constraints                     OK
 
 SYSTEMDS-370 Lossy Compression Blocks
- * 361 ColGroup Quantization
- * 362 ColGroup Base Data change (from Double to ??)
+ * 371 ColGroup Quantization
+ * 372 ColGroup Base Data change (from Double to ??)
 
 SYSTEMDS-380 Memory Footprint
- * 371 Matrix Block Memory footprint update
+ * 381 Matrix Block Memory footprint update
 
 SYSTEMDS-390 New Builtin Functions IV
  * 391 New GLM builtin function (from algorithms)                     OK

@@ -21,8 +21,6 @@ struct SpoofCellwiseOp {
         int cix = idx % n;
         int grix = grix_ + rix;
 %BODY_dense%
-//        __syncthreads();
-//        printf(\"idx=%d, grix=%d, rix=%d, cix=%d, m=%d, n=%d, out=%f\\n\", idx, grix, rix, cix, m, n, %OUT%);
         return %OUT%;
    }
 };

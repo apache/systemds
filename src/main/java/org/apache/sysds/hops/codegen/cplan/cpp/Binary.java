@@ -119,9 +119,9 @@ public class Binary implements CodeTemplate {
                 case MINUS:
                     return "    T %TMP% = %IN1% - %IN2%;\n";
                 case MODULUS:
-                    return "    T %TMP% = %IN1% % %IN2%;\n";
+                    return "    T %TMP% = modulus(%IN1%, %IN2%);\n";
                 case INTDIV:
-                    return "    T %TMP% = %IN1% / %IN2%;\n";
+                    return "    T %TMP% = intDiv(%IN1%, %IN2%);\n";
                 case LESS:
                     return "    T %TMP% = (%IN1% < %IN2%) ? 1 : 0;\n";
                 case LESSEQUAL:
@@ -150,9 +150,9 @@ public class Binary implements CodeTemplate {
                 case MINUS_NZ:
                     return "    T %TMP% = (%IN1% != 0) ? %IN1% - %IN2% : 0;\n";
                 case XOR:
-                    return "    T %TMP% = ( (%IN1% != 0) != (%IN2% != 0) ) ? 1 : 0;\n";
+                    return "    T %TMP% = ( (%IN1% != 0) != (%IN2% != 0) ) ? 1.0f : 0.0f;\n";
                 case BITWAND:
-                    return "    T %TMP% = *reinterpret_cast<unsigned long long*>(&%IN1%) &  reinterpret_cast<unsigned long long*>(&%IN2%);\n";
+                    return "    T %TMP% = bwAnd(%IN1%, %IN2%);\n";
                 case SEQ_RIX:
                     return "    T %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
 
@@ -256,17 +256,17 @@ public class Binary implements CodeTemplate {
                 case INTDIV:
                     return "    T %TMP% = intDiv(%IN1%, %IN2%);\n";
                 case LESS:
-                    return "    T %TMP% = (%IN1% < %IN2%) ? 1 : 0;\n";
+                    return "    T %TMP% = (%IN1% < %IN2%) ? 1.0 : 0.0;\n";
                 case LESSEQUAL:
-                    return "    T %TMP% = (%IN1% <= %IN2%) ? 1 : 0;\n";
+                    return "    T %TMP% = (%IN1% <= %IN2%) ? 1.0 : 0.0;\n";
                 case GREATER:
-                    return "    T %TMP% = (%IN1% > %IN2%) ? 1 : 0;\n";
+                    return "    T %TMP% = (%IN1% > (%IN2% + EPSILON)) ? 1.0 : 0.0;\n";
                 case GREATEREQUAL:
-                    return "    T %TMP% = (%IN1% >= %IN2%) ? 1 : 0;\n";
+                    return "    T %TMP% = (%IN1% >= %IN2%) ? 1.0 : 0.0;\n";
                 case EQUAL:
-                    return "    T %TMP% = (%IN1% == %IN2%) ? 1 : 0;\n";
+                    return "    T %TMP% = (%IN1% == %IN2%) ? 1.0 : 0.0;\n";
                 case NOTEQUAL:
-                    return "    T %TMP% = (%IN1% != %IN2%) ? 1 : 0;\n";
+                    return "    T %TMP% = (%IN1% != %IN2%) ? 1.0 : 0.0;\n";
 
                 case MIN:
                     return "    T %TMP% = min(%IN1%, %IN2%);\n";
@@ -283,9 +283,10 @@ public class Binary implements CodeTemplate {
                 case MINUS_NZ:
                     return "    T %TMP% = (%IN1% != 0) ? %IN1% - %IN2% : 0;\n";
                 case XOR:
-                    return "    T %TMP% = ( (%IN1% != 0) != (%IN2% != 0) ) ? 1 : 0;\n";
+//                    return "    T %TMP% = ( (%IN1% != 0.0) != (%IN2% != 0.0) ) ? 1.0 : 0.0;\n";
+                    return "    T %TMP% = ( (%IN1% < EPSILON) != (%IN2% < EPSILON) ) ? 1.0 : 0.0;\n";
                 case BITWAND:
-                    return "    T %TMP% = *reinterpret_cast<unsigned long long*>(&%IN1%) & *reinterpret_cast<unsigned long long*>(&%IN2%);\n";
+                    return "    T %TMP% = bwAnd(%IN1%, %IN2%);\n";
                 case SEQ_RIX:
                     return "    T %TMP% = %IN1% + grix * %IN2%;\n"; //0-based global rix
 

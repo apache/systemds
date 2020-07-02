@@ -35,6 +35,7 @@ public class LineageCacheEntry {
 	protected LineageCacheStatus _status;
 	protected LineageCacheEntry _nextEntry;
 	protected LineageItem _origItem;
+	protected double score;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
 		_key = key;
@@ -123,9 +124,18 @@ public class LineageCacheEntry {
 	
 	protected synchronized void setTimestamp() {
 		_timestamp = System.currentTimeMillis();
+		recomputeScore();
 	}
 	
 	protected synchronized long getTimestamp() {
 		return _timestamp;
+	}
+	
+	private void recomputeScore() {
+		// Gather the weights for scoring components
+		double w1 = LineageCacheConfig.WEIGHTS[0];
+		double w2 = LineageCacheConfig.WEIGHTS[1];
+		// Generate scores
+		score = w1*(((double)_computeTime)/getSize()) + w2*getTimestamp();
 	}
 }

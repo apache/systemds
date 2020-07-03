@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.privacy;
 
-
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -31,8 +30,10 @@ import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -125,10 +126,13 @@ public class PrivacyPropagator
 				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
 			case External:
 				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
-			case Ctable: 
 			case MultiReturnParameterizedBuiltin:
-			case MultiReturnBuiltin:  
+				return preprocessMultiReturnParameterized((MultiReturnParameterizedBuiltinCPInstruction) inst, ec);
+			case MultiReturnBuiltin:
+				return preprocessMultiReturn((MultiReturnBuiltinCPInstruction) inst, ec);
 			case ParameterizedBuiltin:
+				return preprocessParameterizedBuiltin((ParameterizedBuiltinCPInstruction) inst, ec);
+			case Ctable:   
 			default:
 				return preprocessInstructionSimple(inst, ec);
 		}
@@ -153,6 +157,18 @@ public class PrivacyPropagator
 			inst.getInputs(), 
 			inst.getBoundOutputParamNames().toArray(new String[0])
 		);
+	}
+
+	public static Instruction preprocessMultiReturn(MultiReturnBuiltinCPInstruction inst, ExecutionContext ec){
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutputNames() );
+	}
+
+	public static Instruction preprocessMultiReturnParameterized(MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutputNames() );
+	}
+
+	public static Instruction preprocessParameterizedBuiltin(ParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), new String[]{inst.getOutputVariableName()} );
 	}
 
 	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, String[] outputNames){
@@ -192,7 +208,7 @@ public class PrivacyPropagator
 		return mergePrivacyConstraintsFromInput(
 			inst, 
 			ec, 
-			new CPOperand[]{inst.input1, inst.input2, inst.input3}, 
+			inst.getInputs(), 
 			inst.output
 		);
 	}
@@ -405,6 +421,8 @@ public class PrivacyPropagator
 			instructionOutputNames = new String[]{((ComputationCPInstruction) inst).getOutputVariableName()};
 		else if ( inst instanceof VariableCPInstruction )
 			instructionOutputNames = new String[]{((VariableCPInstruction) inst).getOutputVariableName()};
+		else if ( inst instanceof SqlCPInstruction )
+			instructionOutputNames = new String[]{((SqlCPInstruction) inst).getOutputVariableName()};
 		return instructionOutputNames;
 	}
 }

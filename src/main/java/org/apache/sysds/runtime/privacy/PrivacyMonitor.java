@@ -22,8 +22,6 @@ package org.apache.sysds.runtime.privacy;
 import java.util.EnumMap;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
@@ -62,26 +60,24 @@ public class PrivacyMonitor
 	}
 
 	/**
-	 * Throws DMLPrivacyException if data object is CacheableData and privacy constraint is set to private or private aggregation.
+	 * Throws DMLPrivacyException if privacy constraint is set to private or private aggregation.
 	 * @param dataObject input data object
 	 * @return data object or data object with privacy constraint removed in case the privacy level was none. 
 	 */
 	public static Data handlePrivacy(Data dataObject){
-		if ( dataObject instanceof CacheableData<?> ){
-			PrivacyConstraint privacyConstraint = ((CacheableData<?>)dataObject).getPrivacyConstraint();
-			if (privacyConstraint != null){
-				PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
-				incrementCheckedConstraints(privacyLevel);
-				switch(privacyLevel){
-					case None:
-						((CacheableData<?>)dataObject).setPrivacyConstraints(null);
-						break;
-					case Private:
-					case PrivateAggregation:
-						throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
-					default:
-						throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
-				}
+		PrivacyConstraint privacyConstraint = dataObject.getPrivacyConstraint();
+		if (privacyConstraint != null){
+			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
+			incrementCheckedConstraints(privacyLevel);
+			switch(privacyLevel){
+				case None:
+					dataObject.setPrivacyConstraints(null);
+					break;
+				case Private:
+				case PrivateAggregation:
+					throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
+				default:
+					throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
 			}
 		}
 		return dataObject;
@@ -92,14 +88,14 @@ public class PrivacyMonitor
 	 * @param matrixObject input matrix object
 	 * @return matrix object or matrix object with privacy constraint removed in case the privacy level was none.
 	 */
-	public static MatrixObject handlePrivacy(MatrixObject matrixObject){
-		PrivacyConstraint privacyConstraint = matrixObject.getPrivacyConstraint();
+	public static Data handlePrivacyAllowAggregation(Data dataObject){
+		PrivacyConstraint privacyConstraint = dataObject.getPrivacyConstraint();
 		if (privacyConstraint != null){
 			PrivacyLevel privacyLevel = privacyConstraint.getPrivacyLevel();
 			incrementCheckedConstraints(privacyLevel);
 			switch(privacyLevel){
 				case None:
-					matrixObject.setPrivacyConstraints(null);
+					dataObject.setPrivacyConstraints(null);
 					break;
 				case Private:
 					throw new DMLPrivacyException("Cannot share variable, since the privacy constraint of the requested variable is set to " + privacyLevel.name());
@@ -109,6 +105,6 @@ public class PrivacyMonitor
 					throw new DMLPrivacyException("Privacy level " + privacyLevel.name() + " of variable not recognized");
 			}
 		}
-		return matrixObject;
+		return dataObject;
 	}
 }

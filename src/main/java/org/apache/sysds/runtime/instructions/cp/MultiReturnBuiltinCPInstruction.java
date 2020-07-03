@@ -48,7 +48,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 	}
 
 	public String[] getOutputNames(){
-		return (String[]) _outputs.parallelStream().map(output -> output.getName()).toArray();
+		return _outputs.parallelStream().map(output -> output.getName()).toArray(String[]::new);
 	}
 	
 	public static MultiReturnBuiltinCPInstruction parseInstruction ( String str ) {

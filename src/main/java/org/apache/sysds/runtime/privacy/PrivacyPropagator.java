@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.privacy;
 
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
@@ -126,10 +127,9 @@ public class PrivacyPropagator
 				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
 			case External:
 				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
-			case MultiReturnParameterizedBuiltin:
-				return preprocessMultiReturnParameterized((MultiReturnParameterizedBuiltinCPInstruction) inst, ec);
 			case MultiReturnBuiltin:
-				return preprocessMultiReturn((MultiReturnBuiltinCPInstruction) inst, ec);
+			case MultiReturnParameterizedBuiltin:
+				return preprocessMultiReturn((ComputationCPInstruction)inst, ec);
 			case ParameterizedBuiltin:
 				return preprocessParameterizedBuiltin((ParameterizedBuiltinCPInstruction) inst, ec);
 			case Ctable:   
@@ -159,12 +159,12 @@ public class PrivacyPropagator
 		);
 	}
 
-	public static Instruction preprocessMultiReturn(MultiReturnBuiltinCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutputNames() );
-	}
-
-	public static Instruction preprocessMultiReturnParameterized(MultiReturnParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutputNames() );
+	public static Instruction preprocessMultiReturn(ComputationCPInstruction inst, ExecutionContext ec){
+		if ( inst instanceof MultiReturnBuiltinCPInstruction )
+			return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), ((MultiReturnBuiltinCPInstruction) inst).getOutputNames() );
+		else if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
+			return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputNames() );
+		else throw new DMLRuntimeException("ComputationCPInstruction not recognized as either MultiReturnBuiltinCPInstruction or MultiReturnParameterizedBuiltinCPInstruction");
 	}
 
 	public static Instruction preprocessParameterizedBuiltin(ParameterizedBuiltinCPInstruction inst, ExecutionContext ec){

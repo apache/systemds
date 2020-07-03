@@ -84,9 +84,9 @@ public class PrivacyMonitor
 	}
 
 	/**
-	 * Throws DMLPrivacyException if privacy constraint of matrix object has level privacy.
-	 * @param matrixObject input matrix object
-	 * @return matrix object or matrix object with privacy constraint removed in case the privacy level was none.
+	 * Throws DMLPrivacyException if privacy constraint of data object has level privacy.
+	 * @param dataObject input matrix object
+	 * @return data object or data object with privacy constraint removed in case the privacy level was none.
 	 */
 	public static Data handlePrivacyAllowAggregation(Data dataObject){
 		PrivacyConstraint privacyConstraint = dataObject.getPrivacyConstraint();

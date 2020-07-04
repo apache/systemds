@@ -704,6 +704,10 @@ public class HopRewriteUtils
 		return createIndexingOp(input, row, row, col, col);
 	}
 	
+	public static IndexingOp createIndexingOp(Hop input, long rl, long ru, long cl, long cu) {
+		return createIndexingOp(input, new LiteralOp(rl), new LiteralOp(ru), new LiteralOp(cl), new LiteralOp(cu));
+	}
+	
 	public static IndexingOp createIndexingOp(Hop input, Hop rl, Hop ru, Hop cl, Hop cu) {
 		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.FP64, input, rl, ru, cl, cu, rl==ru, cl==cu);
 		ix.setBlocksize(input.getBlocksize());

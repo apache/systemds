@@ -158,25 +158,23 @@ public class LineageRewriteReuse
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
 		lrwec.setVariable("oldMatrix", mo);
 		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
-		IndexingOp oldMatrix = HopRewriteUtils.createIndexingOp(newMatrix, new LiteralOp(1), 
-			new LiteralOp(mo.getNumRows()), new LiteralOp(1), new LiteralOp(mo.getNumColumns()-1));
-		Hop lastCol;
+		
+		// Use X from cache, or create rightIndex
+		Hop oldMatrix = inCache.containsKey("X") ?
+			setupTReadCachedInput("X", inCache, lrwec) :
+			HopRewriteUtils.createIndexingOp(newMatrix, 1L, mo.getNumRows(), 1L, mo.getNumColumns()-1);
+		
 		// Use deltaX from cache, or create rightIndex
-		if (inCache.containsKey("deltaX")) {
-			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
-			lastCol = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
-		}
-		else
-			lastCol = HopRewriteUtils.createIndexingOp(newMatrix, new LiteralOp(1), new LiteralOp(mo.getNumRows()), 
-				new LiteralOp(mo.getNumColumns()), new LiteralOp(mo.getNumColumns()));
-		// cell topRight = t(oldMatrix) %*% lastCol
-		ReorgOp tOldM = HopRewriteUtils.createTranspose(oldMatrix);
-		AggBinaryOp topRight = HopRewriteUtils.createMatrixMultiply(tOldM, lastCol);
-		// cell bottomLeft = t(lastCol) %*% oldMatrix = t(topRight)
-		ReorgOp bottomLeft = HopRewriteUtils.createTranspose(topRight);
-		// bottomRight = t(lastCol) %*% lastCol
+		Hop lastCol = inCache.containsKey("deltaX") ?
+			setupTReadCachedInput("deltaX", inCache, lrwec) :
+			HopRewriteUtils.createIndexingOp(newMatrix, 1L, mo.getNumRows(), mo.getNumColumns(), mo.getNumColumns());
+		
+		// cell bottomLeft = t(lastCol) %*% oldMatrix
 		ReorgOp tLastCol = HopRewriteUtils.createTranspose(lastCol);
+		AggBinaryOp bottomLeft = HopRewriteUtils.createMatrixMultiply(tLastCol, oldMatrix);
+		// cell topRight = t(oldMatrix) %*% lastCol = t(bottomLeft)
+		ReorgOp topRight = HopRewriteUtils.createTranspose(bottomLeft);
+		// bottomRight = t(lastCol) %*% lastCol
 		AggBinaryOp bottomRight = HopRewriteUtils.createMatrixMultiply(tLastCol, lastCol);
 		// rowOne = cbind(lastRes, topRight)
 		BinaryOp rowOne = HopRewriteUtils.createBinary(lastRes, topRight, OpOp2.CBIND);
@@ -810,12 +808,14 @@ public class LineageRewriteReuse
 		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
 			LineageItem source = item.getInputs()[0];
 			if (source.getOpcode().equalsIgnoreCase("cbind")) {
-				//for (LineageItem input : source.getInputs()) {
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
+				// look for the old matrix in cache
+				if( LineageCache.probe(input1) )
+					inCache.put("X", LineageCache.getMatrix(input1));
 				// look for the appended column in cache
 				if (LineageCache.probe(source.getInputs()[1])) 
 					inCache.put("deltaX", LineageCache.getMatrix(source.getInputs()[1]));
@@ -846,6 +846,8 @@ public class LineageRewriteReuse
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
+				if( LineageCache.probe(input1) )
+					inCache.put("X", LineageCache.getMatrix(input1));
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 			}
@@ -1176,6 +1178,12 @@ public class LineageRewriteReuse
 			LOG.debug("EXPLAIN LINEAGE REWRITE (INSTRUCTION) \n" + Explain.explain(newInst,1));
 		}
 		return newInst;
+	}
+	
+	private static DataOp setupTReadCachedInput(String name, Map<String, MatrixBlock> inCache, ExecutionContext ec) {
+		MatrixBlock cachedRI = inCache.get(name);
+		ec.setVariable(name, convMBtoMO(cachedRI));
+		return HopRewriteUtils.createTransientRead(name, cachedRI);
 	}
 	
 	private static void executeInst (ArrayList<Instruction> newInst, ExecutionContext lrwec)

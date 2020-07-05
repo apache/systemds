@@ -1134,7 +1134,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	
 	private static Hop simplifyTransposedAppend( Hop parent, Hop hi, int pos )
 	{
-		//e.g., t(cbind(t(A),t(B))) --> rbind(A,B), t(rbind(t(A),t(B))) --> cbind(A,B)		
+		//e.g., t(cbind(t(A),t(B))) --> rbind(A,B), t(rbind(t(A),t(B))) --> cbind(A,B)
 		if(   HopRewriteUtils.isTransposeOperation(hi)  //t() rooted
 		   && hi.getInput().get(0) instanceof BinaryOp
 		   && (((BinaryOp)hi.getInput().get(0)).getOp()==OpOp2.CBIND    //append (cbind/rbind)
@@ -1156,7 +1156,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.replaceChildReference(parent, hi, bopnew, pos);
 				
 				hi = bopnew;
-				LOG.debug("Applied simplifyTransposedAppend (line "+hi.getBeginLine()+").");				
+				LOG.debug("Applied simplifyTransposedAppend (line "+hi.getBeginLine()+").");
 			}
 		}
 		

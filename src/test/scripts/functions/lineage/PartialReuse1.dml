@@ -22,12 +22,11 @@
 # Increase k for better performance gains
 
 X = rand(rows=20000, cols=300, seed=42);
-sum = 0;
-tmp = matrix(0, rows=nrow(X), cols=0);
+X2 = rand(rows=20000, cols=ncol(X)/2, seed=42);
 R = matrix(0, 1, ncol(X));
 
 for (i in 1:ncol(X)) {
-  tmp = cbind(tmp, X[,i]);
+  tmp = cbind(X2, X[,i]);
   Res1 = t(tmp) %*% tmp;
   while(FALSE) {}
   R[1,i] = sum(Res1);

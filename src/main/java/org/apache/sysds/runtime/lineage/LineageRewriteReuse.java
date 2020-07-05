@@ -170,19 +170,7 @@ public class LineageRewriteReuse
 			setupTReadCachedInput("deltaX", inCache, lrwec) :
 			HopRewriteUtils.createIndexingOp(newMatrix, 1L, mo.getNumRows(), mo.getNumColumns(), mo.getNumColumns());
 		
-		// cell bottomLeft = t(lastCol) %*% oldMatrix
-		ReorgOp tLastCol = HopRewriteUtils.createTranspose(lastCol);
-		AggBinaryOp bottomLeft = HopRewriteUtils.createMatrixMultiply(tLastCol, oldMatrix);
-		// cell topRight = t(oldMatrix) %*% lastCol = t(bottomLeft)
-		ReorgOp topRight = HopRewriteUtils.createTranspose(bottomLeft);
-		// bottomRight = t(lastCol) %*% lastCol
-		AggBinaryOp bottomRight = HopRewriteUtils.createMatrixMultiply(tLastCol, lastCol);
-		// rowOne = cbind(lastRes, topRight)
-		BinaryOp rowOne = HopRewriteUtils.createBinary(lastRes, topRight, OpOp2.CBIND);
-		// rowTwo = cbind(bottomLeft, bottomRight)
-		BinaryOp rowTwo = HopRewriteUtils.createBinary(bottomLeft, bottomRight, OpOp2.CBIND);
-		// rbind(rowOne, rowTwo)
-		BinaryOp lrwHop= HopRewriteUtils.createBinary(rowOne, rowTwo, OpOp2.RBIND);
+		Hop lrwHop = HopRewriteUtils.createPartialTsmmCbind(oldMatrix, lastCol, lastRes);
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions

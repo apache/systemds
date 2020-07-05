@@ -538,7 +538,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			
 		case RemoveVariable:
 			for( CPOperand input : inputs )
-				processRemoveVariableInstruction(ec, input.getName());
+				processRmvarInstruction(ec, input.getName());
 			break;
 			
 		case RemoveVariableAndFile:
@@ -597,7 +597,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		//PRE: for robustness we cleanup existing variables, because a setVariable
 		//would  cause a buffer pool memory leak as these objects would never be removed
 		if(ec.containsVariable(getInput1()))
-			processRemoveVariableInstruction(ec, getInput1().getName());
+			processRmvarInstruction(ec, getInput1().getName());
 		
 		switch(getInput1().getDataType()) {
 			case MATRIX: {
@@ -992,7 +992,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 * @param varname variable name
 	 */
-	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) {
+	public static void processRmvarInstruction( ExecutionContext ec, String varname ) {
 		// remove variable from symbol table
 		Data dat = ec.removeVariable(varname);
 		//cleanup matrix data on fs/hdfs (if necessary)

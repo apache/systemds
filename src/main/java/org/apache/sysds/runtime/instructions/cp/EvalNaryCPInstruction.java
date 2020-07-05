@@ -133,7 +133,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//7. cleanup of variable expanded from list
 		if( boundInputs2 != null ) {
 			for( CPOperand op : boundInputs2 )
-				VariableCPInstruction.processRemoveVariableInstruction(ec, op.getName());
+				VariableCPInstruction.processRmvarInstruction(ec, op.getName());
 		}
 	}
 	

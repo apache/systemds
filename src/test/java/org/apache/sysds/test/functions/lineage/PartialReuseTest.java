@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,11 +55,11 @@ public class PartialReuseTest extends AutomatedTestBase {
 		testLineageTraceReuse(TEST_NAME1, ExecMode.SINGLE_NODE);
 	}
 	
-//	@Test
-//	public void testLineageTrace1Hybrid() {
-//		//test partial reuse in Hybrid (i.e., w/ reuse-aware recompilation)
-//		testLineageTraceReuse(TEST_NAME1, ExecMode.HYBRID);
-//	}
+	@Test
+	public void testLineageTrace1Hybrid() {
+		//test partial reuse in Hybrid (i.e., w/ reuse-aware recompilation)
+		testLineageTraceReuse(TEST_NAME1, ExecMode.HYBRID);
+	}
 
 	
 	public void testLineageTraceReuse(String testname, ExecMode et) {
@@ -98,6 +99,9 @@ public class PartialReuseTest extends AutomatedTestBase {
 			
 			//check no evictions (previously buffer pool leak)
 			Assert.assertEquals(0, CacheStatistics.getFSWrites());
+			//if compiler assisted reuse check for the introduced appends (3x per iteration)
+			if( et == ExecMode.HYBRID )
+				Assert.assertEquals(900, Statistics.getCPHeavyHitterCount("append"));
 		}
 		finally {
 			resetExecMode(execModeOld);

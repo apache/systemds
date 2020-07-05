@@ -52,7 +52,7 @@
 		<jcuda.version>10.2.0</jcuda.version>
 		<!-->Testing settings<!-->
 		<skipTests>true</skipTests>
-		<argLine>-Xms4g -Xmx4g</argLine>
+		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
 	</properties>
 
 	<repositories>

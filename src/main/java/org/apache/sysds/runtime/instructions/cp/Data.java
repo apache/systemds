@@ -19,11 +19,14 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 import java.io.Serializable;
 
@@ -34,6 +37,11 @@ public abstract class Data implements Serializable
 
 	protected final DataType dataType;
 	protected final ValueType valueType;
+
+	/**
+	 * Object holding all privacy constraints associated with the data. 
+	 */
+	protected PrivacyConstraint _privacyConstraint = null;
 	
 	protected Data(DataType dt, ValueType vt) {
 		dataType = dt;
@@ -49,6 +57,16 @@ public abstract class Data implements Serializable
 
 	public ValueType getValueType() {
 		return valueType;
+	}
+
+	public void setPrivacyConstraints(PrivacyConstraint pc) {
+		_privacyConstraint = pc;
+		if ( DMLScript.CHECK_PRIVACY && pc != null )
+			CheckedConstraintsLog.addLoadedConstraint(pc.getPrivacyLevel());
+	}
+
+	public PrivacyConstraint getPrivacyConstraint() {
+		return _privacyConstraint;
 	}
 
 	public void setMetaData(MetaData md) {

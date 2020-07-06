@@ -750,8 +750,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 */
 	private void processCastAsScalarVariableInstruction(ExecutionContext ec){
-		//TODO: Create privacy constraints for ScalarObject so that the privacy constraints can be propagated to scalars as well.
-		PrivacyMonitor.handlePrivacyScalarOutput(getInput1(), ec);
 
 		switch( getInput1().getDataType() ) {
 			case MATRIX: {
@@ -1077,7 +1075,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		try {
 			ScalarObject scalar = ec.getScalarInput(getInput1());
 			HDFSTool.writeObjectToHDFS(scalar.getValue(), fname);
-			HDFSTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType());
+			HDFSTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType(), scalar.getPrivacyConstraint());
 
 			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
 			if (fs instanceof LocalFileSystem) {

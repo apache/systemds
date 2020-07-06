@@ -189,7 +189,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMPrivateX(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		Class<?> expectedException = DMLException.class; 
+		Class<?> expectedException = null; 
 		testGLM(pc, null, expectedException);
 	}
 
@@ -210,7 +210,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMPrivateY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		Class<?> expectedException = DMLException.class;
+		Class<?> expectedException = null;
 		testGLM(null, pc, expectedException);
 	}
 
@@ -231,7 +231,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMPrivateXY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		testGLM(pc, pc, DMLException.class);
+		testGLM(pc, pc, null);
 	}
 
 	@Test
@@ -244,7 +244,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMNonePrivateXY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		testGLM(pc, pc, DMLException.class);
+		testGLM(pc, pc, null);
 	}
 	
 	public void testGLM(PrivacyConstraint privacyX, PrivacyConstraint privacyY, Class<?> expectedException)

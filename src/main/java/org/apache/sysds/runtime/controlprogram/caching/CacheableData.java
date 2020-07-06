@@ -47,8 +47,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Statistics;
@@ -164,11 +162,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * must get the OutputInfo that matches with InputInfo stored inside _mtd.
 	 */
 	protected MetaData _metaData = null;
-
-	/**
-	 * Object holding all privacy constraints associated with the cacheable data. 
-	 */
-	protected PrivacyConstraint _privacyConstraint = null;
 	
 	protected Map<FederatedRange, FederatedData> _fedMapping = null;
 	
@@ -319,16 +312,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	@Override
 	public void removeMetaData() {
 		_metaData = null;
-	}
-
-	public void setPrivacyConstraints(PrivacyConstraint pc) {
-		_privacyConstraint = pc;
-		if ( DMLScript.CHECK_PRIVACY && pc != null )
-			CheckedConstraintsLog.addLoadedConstraint(pc.getPrivacyLevel());
-	}
-
-	public PrivacyConstraint getPrivacyConstraint() {
-		return _privacyConstraint;
 	}
 	
 	public DataCharacteristics getDataCharacteristics() {

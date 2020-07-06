@@ -123,6 +123,8 @@ public class DataOp extends Hop
 			String s = e.getKey();
 			Hop input = e.getValue();
 			getInput().add(input);
+			LOG.debug(s);
+			LOG.debug(input);
 			input.getParent().add(this);
 
 			_paramIndexMap.put(s, index);
@@ -269,6 +271,8 @@ public class DataOp extends Hop
 					.constructLops());
 		}
 
+		// LOG.error(inputLops);
+		// LOG.error(inputLops.get("naStrings").getInputs());
 		// Create the lop
 		switch(_op) 
 		{

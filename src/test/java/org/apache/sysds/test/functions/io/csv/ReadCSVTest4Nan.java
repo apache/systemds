@@ -19,57 +19,40 @@
 
 package org.apache.sysds.test.functions.io.csv;
 
+import static org.junit.Assert.assertTrue;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
 
-/**
- * JUnit Test cases to evaluate the functionality of reading CSV files.
- * 
- * Test 1: read() with a mtd file.
- * 
- * Test 2: read(format="csv") without mtd file.
- * 
- * Test 3: read() with complete mtd file.
- *
- */
-public abstract class ReadCSVTest extends CSVTestBase {
+public class ReadCSVTest4Nan extends ReadCSVTest {
 
-	protected abstract int getId();
-	
-	protected String getInputCSVFileName() {
-		return "transfusion_" + getId();
+	private final static String TEST_NAME = "ReadCSVTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadCSVTest4Nan.class.getSimpleName() + "/";
+
+    @Override
+    protected int getId() {
+        return 4;
+    }
+
+    @Override
+    protected String getTestClassDir() {
+		return TEST_CLASS_DIR;
+    }
+
+    @Override
+    protected String getTestName() {
+        return TEST_NAME;
+    }
+
+    @Override
+    protected String getInputCSVFileName() {
+		return "nan_integers_" + getId();
 	}
 
-	@Test
-	public void testCSV_Sequential_CP1() {
-		runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
-	}
-
-	// @Test
-	// public void testCSV_Parallel_CP1() {
-	// 	runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
-	// }
-
-	// @Test
-	// public void testCSV_Sequential_CP() {
-	// 	runCSVTest(getId(), ExecMode.HYBRID, false);
-	// }
-
-	// @Test
-	// public void testCSV_Parallel_CP() {
-	// 	runCSVTest(getId(), ExecMode.HYBRID, true);
-	// }
-
-	// @Test
-	// public void testCSV_SP() {
-	// 	runCSVTest(getId(), ExecMode.SPARK, false);
-	// }
-
-	protected void runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
+    @Override
+    protected void runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 
@@ -90,21 +73,13 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			String inputMatrixNameNoExtension = HOME + INPUT_DIR + getInputCSVFileName();
 			String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".csv";
 			String dmlOutput = output("dml.scalar");
-			String rOutput = output("R.scalar");
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
 			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
 
-			fullRScriptName = HOME + "csv_verify2.R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixNameNoExtension + ".single.csv " + rOutput;
-
-			runTest(true, false, null, -1);
-			runRScript(true);
-
-			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
-			double rScalar = TestUtils.readRScalar(rOutput);
-
-			TestUtils.compareScalars(dmlScalar, rScalar, eps);
+			String std = runTest(true, false, null, -1).toString();
+			LOG.debug(std);
+			assertTrue(std.contains("NaN"));
 		}
 		finally {
 			rtplatform = oldPlatform;

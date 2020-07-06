@@ -716,7 +716,7 @@ public class RDDConverterUtils
 						String part = parts[pix++];
 						emptyFound |= part.isEmpty() && !_fill;
 						double val = (part.isEmpty() && _fill) ?
-							_fillValue : UtilFunctions.parseToDouble(part);
+							_fillValue : UtilFunctions.parseToDouble(part, UtilFunctions.defaultNaString);
 						mb[cix-1].appendValue(pos, j, val);
 					}
 				}

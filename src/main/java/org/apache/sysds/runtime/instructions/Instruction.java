@@ -37,7 +37,7 @@ public abstract class Instruction
 		FEDERATED
 	}
 	
-	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
+	private static final Log LOG = LogFactory.getLog(Instruction.class.getName());
 
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;

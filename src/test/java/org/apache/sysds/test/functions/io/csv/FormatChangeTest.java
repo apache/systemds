@@ -88,7 +88,7 @@ public abstract class FormatChangeTest extends CSVTestBase {
 		runTest(true, false, null, -1);
 
 		// Test TextCell -> CSV conversion
-		LOG.info("TextCell -> CSV");
+		LOG.debug("TextCell -> CSV");
 		programArgs[2] = "text";
 		programArgs[3] = csvFile;
 		programArgs[4] = "csv";
@@ -97,7 +97,7 @@ public abstract class FormatChangeTest extends CSVTestBase {
 		compareFiles(rows, cols, sparsity, txtFile, "text", csvFile);
 
 		// Test BinaryBlock -> CSV conversion
-		LOG.info("BinaryBlock -> CSV");
+		LOG.debug("BinaryBlock -> CSV");
 		programArgs = oldProgramArgs;
 		programArgs[1] = binFile;
 		programArgs[2] = "binary";
@@ -108,7 +108,7 @@ public abstract class FormatChangeTest extends CSVTestBase {
 		compareFiles(rows, cols, sparsity, binFile, "binary", csvFile);
 
 		// Test CSV -> TextCell conversion
-		LOG.info("CSV -> TextCell");
+		LOG.debug("CSV -> TextCell");
 		programArgs = oldProgramArgs;
 		programArgs[1] = csvFile;
 		programArgs[2] = "csv";
@@ -119,7 +119,7 @@ public abstract class FormatChangeTest extends CSVTestBase {
 		compareFiles(rows, cols, sparsity, txtFile, "text", csvFile);
 
 		// Test CSV -> BinaryBlock conversion
-		LOG.info("CSV -> BinaryBlock");
+		LOG.debug("CSV -> BinaryBlock");
 		programArgs = oldProgramArgs;
 		programArgs[1] = csvFile;
 		programArgs[2] = "csv";

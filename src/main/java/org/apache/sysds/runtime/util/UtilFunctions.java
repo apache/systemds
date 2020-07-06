@@ -19,6 +19,14 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -36,13 +44,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
-
 public class UtilFunctions 
 {
 	//for accurate cast of double values to int and long 
@@ -54,6 +55,12 @@ public class UtilFunctions
 	//because it determines the max hash domain size
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
+	
+	public static final HashSet<String> defaultNaString = new HashSet<>();
+
+	static{
+		defaultNaString.add("NA");
+	}
 
 	public static int intHashCode(int key1, int key2) {
 		return 31 * (31 + key1) + key2;
@@ -354,8 +361,8 @@ public class UtilFunctions
 	 * @param str string to parse to double
 	 * @return double value
 	 */
-	public static double parseToDouble(String str) {
-		return "NA".equals(str) ?
+	public static double parseToDouble(String str, HashSet<String> isNan ) {
+		return isNan.contains(str) ?
 			Double.NaN :
 			Double.parseDouble(str);
 	}

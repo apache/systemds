@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
@@ -35,7 +37,6 @@ import org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
@@ -59,6 +60,7 @@ import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.DataConverter;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
+	private static final Log LOG = LogFactory.getLog(ParameterizedBuiltinCPInstruction.class.getName());
 	private static final int TOSTRING_MAXROWS = 100;
 	private static final int TOSTRING_MAXCOLS = 100;
 	private static final int TOSTRING_DECIMAL = 3;
@@ -327,29 +329,38 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			//get input matrix/frame and convert to string
 			String out = null;
-			
-			CacheableData<?> cacheData = ec.getCacheableData(getParam("target"));
+
+			Data cacheData = ec.getVariable(getParam("target"));
 			if( cacheData instanceof MatrixObject) {
-				MatrixBlock matrix = (MatrixBlock) cacheData.acquireRead();
+				MatrixObject dat = (MatrixObject) cacheData;
+				MatrixBlock matrix = (MatrixBlock) dat.acquireRead();
 				warnOnTrunction(matrix, rows, cols);
 				out = DataConverter.toString(matrix, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
 			else if( cacheData instanceof TensorObject ) {
-				TensorBlock tensor = (TensorBlock) cacheData.acquireRead();
+				TensorObject dat = (TensorObject) cacheData;
+				TensorBlock tensor = (TensorBlock) dat.acquireRead();
 				// TODO improve truncation to check all dimensions
 				warnOnTrunction(tensor, rows, cols);
 				out = DataConverter.toString(tensor, sparse, separator,
 					lineSeparator, "[", "]", rows, cols, decimal);
 			}
 			else if( cacheData instanceof FrameObject ) {
-				FrameBlock frame = (FrameBlock) cacheData.acquireRead();
+				FrameObject dat = (FrameObject) cacheData;
+				FrameBlock frame = (FrameBlock) dat.acquireRead();
 				warnOnTrunction(frame, rows, cols);
 				out = DataConverter.toString(frame, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
-			else {
-				throw new DMLRuntimeException("toString only converts matrix, tensors or frames to string");
+			else if (cacheData instanceof ListObject){
+				ListObject dat = (ListObject) cacheData;
+				out = DataConverter.toString(dat, rows, cols, sparse, separator, lineSeparator, rows, cols, decimal);
 			}
-			ec.releaseCacheableData(getParam("target"));
+			else {
+				throw new DMLRuntimeException("toString only converts matrix, tensors, lists or frames to string");
+			}
+			if(!(cacheData instanceof ListObject)){
+				ec.releaseCacheableData(getParam("target"));
+			}
 			ec.setScalarOutput(output.getName(), new StringObject(out));
 		}
 		else if( opcode.equals("nvlist") ) {

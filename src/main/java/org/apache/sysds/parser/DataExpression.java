@@ -19,11 +19,23 @@
 
 package org.apache.sysds.parser;
 
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_FRAME_IDENTIFIER;
+import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_MATRIX_IDENTIFIER;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -41,21 +53,13 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.JSONHelper;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Map.Entry;
-
-import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_FRAME_IDENTIFIER;
-import static org.apache.sysds.runtime.instructions.fed.InitFEDInstruction.FED_MATRIX_IDENTIFIER;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONObject;
 
 public class DataExpression extends DataIdentifier
 {
+	private static final Log LOG = LogFactory.getLog(DataExpression.class.getName());
+
 	public static final String RAND_DIMS = "dims";
 
 	public static final String RAND_ROWS = "rows";
@@ -783,9 +787,8 @@ public class DataExpression extends DataIdentifier
 			if (inputParamExpr instanceof FunctionCallIdentifier) {
 				raiseValidateError("UDF function call not supported as parameter to built-in function call", false,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			
 			inputParamExpr.validateExpression(ids, currConstVars, conditional);
-			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA) &&
+			if ( !s.equals(DELIM_NA_STRINGS) && getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA) &&
 					!s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES)) {
 				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
@@ -975,28 +978,18 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			
-			boolean isCSV = false;
-			isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.CSV.toString()));
+			boolean isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.CSV.toString()));
 			if (isCSV){
-				 // Handle delimited file format
-				 // 
-				 // 1) only allow IO_FILENAME, _HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM
-				 //  
-				 // 2) open the file
-				 //
-			
+
 				// there should be no MTD file for delimited file format
 				shouldReadMTD = true;
 				
-				// only allow IO_FILENAME, HAS_HEADER_ROW, FORMAT_DELIMITER, READROWPARAM, READCOLPARAM
-				//		as ONLY valid parameters
+				// Handle valid ParamNames.
 				if( !inferredFormatType ){
 					for (String key : _varParams.keySet()){
-						if (! READ_VALID_PARAM_NAMES.contains(key)) {
-							String msg = "Only parameters allowed are: " + Arrays.toString(new String[] {
-								IO_FILENAME, FORMAT_TYPE, SCHEMAPARAM, DELIM_HAS_HEADER_ROW, DELIM_DELIMITER,
-								DELIM_FILL, DELIM_FILL_VALUE, READNNZPARAM, READROWPARAM, DATATYPEPARAM,
-								VALUETYPEPARAM, READCOLPARAM,DELIM_NA_STRINGS});
+						if (! READ_VALID_PARAM_NAMES.contains(key))
+						{	
+							String msg = "Only parameters allowed are: " + READ_VALID_PARAM_NAMES;
 							raiseValidateError("Invalid parameter " + key + " in read statement: " +
 								toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
@@ -1059,10 +1052,11 @@ public class DataExpression extends DataIdentifier
 				} 
 				else {
 					if ((getVarParam(DELIM_NA_STRINGS) instanceof ConstIdentifier)
-						&& (! (getVarParam(DELIM_NA_STRINGS) instanceof StringIdentifier)))
-					{
-						raiseValidateError("For delimited file '" + getVarParam(DELIM_NA_STRINGS) + "' must be a string value ", conditional);
-					}
+							&& (! (getVarParam(DELIM_NA_STRINGS) instanceof StringIdentifier)))
+						{
+							raiseValidateError("For delimited file '" + getVarParam(DELIM_NA_STRINGS) + "' must be a string value ", conditional);
+						}
+					LOG.info("Replacing :" + _varParams.get(DELIM_NA_STRINGS) + " with NaN");
 				}
 			} 
 

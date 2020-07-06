@@ -20,10 +20,12 @@
 package org.apache.sysds.runtime.io;
 
 import java.io.Serializable;
+import java.util.HashSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class FileFormatPropertiesCSV extends FileFormatProperties implements Serializable
 {
@@ -34,7 +36,7 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 	private String delim;
 	private boolean fill;
 	private double fillValue;
-	private String naStrings;
+	private HashSet<String> naStrings;
 	
 	private boolean sparse;
 	
@@ -45,9 +47,10 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.fill = DataExpression.DEFAULT_DELIM_FILL;
 		this.fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
 		this.sparse = DataExpression.DEFAULT_DELIM_SPARSE;
-		this.naStrings = null;
-		if( LOG.isDebugEnabled() )
-			LOG.debug("FileFormatPropertiesCSV: " + toString());
+		this.naStrings = UtilFunctions.defaultNaString;
+		if(LOG.isDebugEnabled())
+			LOG.debug("FileFormatPropertiesCSV: " + this.toString());
+		
 	}
 	
 	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean fill, double fillValue, String naStrings) {
@@ -55,17 +58,22 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.delim = delim;
 		this.fill = fill;
 		this.fillValue = fillValue;
-		this.naStrings = naStrings;
-		if( LOG.isDebugEnabled() )
-			LOG.debug("FileFormatPropertiesCSV full settings: " + toString());
+
+		this.naStrings = new HashSet<>();
+		for(String s: naStrings.split(DataExpression.DELIM_NA_STRING_SEP)){
+			this.naStrings.add(s);
+		}
+		if(LOG.isDebugEnabled())
+			LOG.debug("FileFormatPropertiesCSV full settings: " + this.toString());
 	}
 
 	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean sparse) {
 		this.header = hasHeader;
 		this.delim = delim;
 		this.sparse = sparse;
-		if( LOG.isDebugEnabled() )
-			LOG.debug("FileFormatPropertiesCSV medium settings: " + toString());
+		if(LOG.isDebugEnabled()){
+			LOG.debug("FileFormatPropertiesCSV medium settings: " + this.toString());
+		}
 	}
 
 	public boolean hasHeader() {
@@ -80,7 +88,7 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		return delim;
 	}
 	
-	public String getNAStrings() { 
+	public HashSet<String> getNAStrings() { 
 		return naStrings;
 	}
 

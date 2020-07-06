@@ -23,15 +23,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.StringTokenizer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.util.ProgramConverter;
-
-import java.util.Set;
-import java.util.StringTokenizer;
 
 /**
  * Replaces <code>HashMap&lang;String, Data&rang;</code> as the table of
@@ -40,6 +41,8 @@ import java.util.StringTokenizer;
  */
 public class LocalVariableMap implements Cloneable
 {
+
+	protected static final Log LOG = LogFactory.getLog(LocalVariableMap.class.getName());
 	private static final String eol = System.getProperty ("line.separator");
 	private static final String ELEMENT_DELIM = ProgramConverter.ELEMENT_DELIM;
 	private static final IDSequence _seq = new IDSequence();
@@ -57,6 +60,7 @@ public class LocalVariableMap implements Cloneable
 	}
 	
 	public LocalVariableMap(LocalVariableMap vars) {
+		LOG.debug(vars);
 		localMap = new HashMap<>(vars.localMap);
 		localID = _seq.getNextID();
 	}

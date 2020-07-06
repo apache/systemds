@@ -47,8 +47,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
-import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.utils.Statistics;

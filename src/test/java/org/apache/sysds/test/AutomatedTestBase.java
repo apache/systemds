@@ -775,7 +775,6 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
-
 	public static ValueType readDMLMetaDataValueType(String fileName) {
 		try {
 			JSONObject meta = getMetaDataJSON(fileName);

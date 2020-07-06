@@ -36,6 +36,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.wink.json4j.JSON;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONArtifact;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
+import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -49,12 +55,13 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.FineGrained.DataRange;
+import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacy;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.JSONHelper;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONObject;
 
 public class DataExpression extends DataIdentifier
 {
@@ -103,6 +110,7 @@ public class DataExpression extends DataIdentifier
 	public static final String CREATEDPARAM = "created";
 
 	public static final String PRIVACY = "privacy";
+	public static final String FINE_GRAINED_PRIVACY = "fine_grained_privacy";
 
 	// Parameter names relevant to reading/writing delimited/csv files
 	public static final String DELIM_DELIMITER = "sep";
@@ -137,7 +145,7 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to privacy
-			PRIVACY));
+			PRIVACY, FINE_GRAINED_PRIVACY));
 
 	/** Valid parameter names in arguments to read instruction */
 	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
@@ -2104,12 +2112,13 @@ public class DataExpression extends DataIdentifier
 							addVarParam(key.toString(), doubleId);
 						}
 						else if (key.toString().equalsIgnoreCase(DELIM_NA_STRINGS) 
-								|| key.toString().equalsIgnoreCase(PRIVACY)) {
+								|| key.toString().equalsIgnoreCase(PRIVACY)
+								|| key.toString().equalsIgnoreCase(FINE_GRAINED_PRIVACY)) {
 							String naStrings = null;
 							if ( val instanceof String) {
 								naStrings = val.toString();
 							}
-							else {
+							else if (val instanceof JSONArray) {
 								StringBuilder sb = new StringBuilder();
 								JSONArray valarr = (JSONArray)val;
 								for(int naid=0; naid < valarr.size(); naid++ ) {
@@ -2118,7 +2127,10 @@ public class DataExpression extends DataIdentifier
 										sb.append( DELIM_NA_STRING_SEP );
 								}
 								naStrings = sb.toString();
-							}
+							} else if ( val instanceof JSONObject ){
+								JSONObject valJsonObject = (JSONObject)val;
+								naStrings = valJsonObject.toString();
+							} else throw new ParseException("Type of value " + val + " from metadata not recognized by parser.");
 							StringIdentifier sid = new StringIdentifier(naStrings, this);
 							removeVarParam(key.toString());
 							addVarParam(key.toString(), sid);
@@ -2239,9 +2251,40 @@ public class DataExpression extends DataIdentifier
 	 * Sets privacy of identifier if privacy variable parameter is set.  
 	 */
 	private void setPrivacy(){
-		Expression eprivacy = getVarParam("privacy");
-		if ( eprivacy != null ){
-			getOutput().setPrivacy(PrivacyLevel.valueOf(eprivacy.toString()));
+		Expression eprivacy = getVarParam(PRIVACY);
+		Expression eFineGrainedPrivacy = getVarParam(FINE_GRAINED_PRIVACY);
+		if ( eprivacy != null || eFineGrainedPrivacy != null ){
+
+			PrivacyConstraint privacyConstraint = new PrivacyConstraint();
+			if ( eprivacy != null ){
+				privacyConstraint.setPrivacyLevel(PrivacyLevel.valueOf(eprivacy.toString()));
+			}
+			if ( eFineGrainedPrivacy != null ){
+				FineGrainedPrivacy fineGrainedPrivacy = privacyConstraint.getFineGrainedPrivacy();
+				StringIdentifier fgPrivacyIdentifier = (StringIdentifier) eFineGrainedPrivacy;
+				String fgPrivacyValue = fgPrivacyIdentifier.getValue();
+				try {
+					JSONArtifact fgPrivacyJson = JSON.parse(fgPrivacyValue);
+					JSONObject fgPrivacyObject = (JSONObject)fgPrivacyJson;
+					JSONArray keys = fgPrivacyObject.names();
+					for ( int i = 0; i < keys.length(); i++ ){
+						String key = keys.getString(i);
+						JSONArray privateArray = fgPrivacyObject.getJSONArray(key);
+						for (Object range : privateArray.toArray()){
+							JSONArray beginDims = ((JSONArray)range).getJSONArray(0);
+							JSONArray endDims = ((JSONArray)range).getJSONArray(1);
+							long[] beginDimsLong = Arrays.stream(beginDims.toArray()).mapToLong((x)->Long.valueOf(((Integer)x).longValue())).toArray();
+							long[] endDimsLong = Arrays.stream(endDims.toArray()).mapToLong((x)->Long.valueOf(((Integer)x).longValue())).toArray();
+							DataRange dataRange = new DataRange(beginDimsLong, endDimsLong);
+							fineGrainedPrivacy.put(dataRange, PrivacyLevel.valueOf(key));
+						}
+					}
+				} catch (JSONException exception){
+					throw new DMLException("JSONException: " + exception);
+				}
+				privacyConstraint.setFineGrainedPrivacyConstraints(fineGrainedPrivacy);
+			}
+			getOutput().setPrivacy(privacyConstraint);
 		}
 	}
 	

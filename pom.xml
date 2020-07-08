@@ -31,7 +31,7 @@
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
-	<url>https://github.com/apache/systemml</url>
+	<url>https://github.com/apache/systemds</url>
 	<description>Declarative End-to-End Data Science</description>
 	<licenses>
 		<license>
@@ -66,7 +66,7 @@
 	</repositories>
 
 	<scm>
-		<developerConnection>scm:git:https://github.com/apache/systemml.git</developerConnection>
+		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
 	</scm>
 
 	<build>

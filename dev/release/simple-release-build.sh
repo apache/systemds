@@ -39,7 +39,7 @@ OPTIONS
 -v=    --overrideVersion=<no-default>
          Specifies the version of the release
   
--u=    --gitUrl=https://github.com/apache/systemml.git
+-u=    --gitUrl=https://github.com/apache/systemds.git
          The URL of the repository to clone
   
 -g=    --gitCommitHash=master
@@ -143,7 +143,7 @@ fi
 GIT_REF=${GIT_REF:-master}
 if [[ -z "$GIT_URL" ]]; then
     echo "Using default URL"
-    GIT_URL="https://github.com/apache/systemml.git"
+    GIT_URL="https://github.com/apache/systemds.git"
 fi
 
 BASE_DIR=$(pwd)

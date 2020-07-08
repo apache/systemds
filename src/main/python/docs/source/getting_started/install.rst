@@ -66,7 +66,7 @@ Note depending on your installation you might need to use pip3 instead of pip::
 
 Then to build the system you do the following
 
-- Clone the Git Repository: https://github.com/apache/systemml.git
+- Clone the Git Repository: https://github.com/apache/systemds.git
 - Open an terminal at the root of the repository.
 - Package the Java code using the ``mvn package -P distribution`` command
 - ``cd src/main/python`` to point at the root of the SystemDS Python library.

@@ -100,7 +100,7 @@ echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Cloning branch and building distribution 
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Cloning branch and building distribution package." >> $OUT_FILE
 echo "=========================================================================================================" >> $OUT_FILE
 runCommand "cd $WORKING_DIR"
-runCommand "git clone https://github.com/apache/systemml.git"
+runCommand "git clone https://github.com/apache/systemds.git"
 runCommand "cd systemds"
 runCommand "git checkout tags/$TAG_NAME -b $TAG_NAME"
 runCommand "mvn -Dmaven.repo.local=$HOME/.m2/temp-repo clean package -P distribution"

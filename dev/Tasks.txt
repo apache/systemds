@@ -357,7 +357,8 @@ Others:
  * Break append instruction to cbind and rbind 
 
 SYSTEMDS-510 IO formats
- * 511 Add protobuf support to write and read FrameBlocks to HDFS     OK
- 
-SYSTEMDS-520 Lineage Tracing, Reuse and Integration III
+ * 511 Add protobuf support to write and read FrameBlocks to HDFS     OKSYSTEMDS-520 Lineage Tracing, Reuse and Integration III
  * 521 New lineage option exposing cache policies                     OK
+
+SYSTEMDS-610 Cleaning Pipelines
+ * 611 Initial Brute force execution                                  OK

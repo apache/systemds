@@ -20,6 +20,6 @@
 #-------------------------------------------------------------
 
 X = read($1);
-Y = winsorize(X);
+Y = winsorize(X, FALSE);
 Z = outlier(Y, FALSE);
 write(Z, $2);

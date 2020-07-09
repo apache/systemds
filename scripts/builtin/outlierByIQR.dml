@@ -56,12 +56,13 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
     upperBound = (Q3 + (k * IQR));
     lowerBound = (Q1 - (k * IQR));
     outlierFilter = X < lowerBound | X > upperBound
-
     if(sum(outlierFilter) > 1 & sumNext != 0 & sumPrevious != sumNext ) {
       #TODO: see outlierBySd why are sumPrevious and sumNext necessary    	
-      sumPrevious = sum(X * !is.nan(X))
+      temp = replace(target=X, pattern = NaN, replacement = 0)
+      sumPrevious = sum(temp)
       X = fix_outliers_iqr(X, outlierFilter, repairMethod)
-      sumNext = sum(X * !is.nan(X))
+      temp = replace(target=X, pattern = NaN, replacement = 0)
+      sumNext = sum(temp)
     }
     else
       max_iterations = -1

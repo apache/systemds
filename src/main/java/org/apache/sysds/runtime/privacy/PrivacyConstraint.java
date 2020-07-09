@@ -19,8 +19,12 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacy;
+import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyBrute;
+
 /**
- * PrivacyConstraint holds all privacy constraints for data in the system at compile time and runtime. 
+ * PrivacyConstraint holds all privacy constraints for data in the system at
+ * compile time and runtime.
  */
 public class PrivacyConstraint
 {
@@ -31,6 +35,7 @@ public class PrivacyConstraint
 	}
 
 	protected PrivacyLevel privacyLevel = PrivacyLevel.None;
+	protected FineGrainedPrivacy fineGrainedPrivacy;
 
 	public PrivacyConstraint(){}
 
@@ -45,4 +50,37 @@ public class PrivacyConstraint
 	public PrivacyLevel getPrivacyLevel(){
 		return privacyLevel;
 	}
+
+	/**
+	 * Checks if fine-grained privacy is set for this privacy constraint. 
+	 * @return true if the privacy constraint has fine-grained constraints.
+	 */
+	public boolean hasFineGrainedConstraints(){
+		return fineGrainedPrivacy != null;
+	}
+
+	/**
+	 * Initializes fine-grained privacy for the privacy constraint 
+	 * with a simple FineGrainedPrivacy implementation (FineGrainedPrivacyBrute).
+	 */
+	public void initializeFineGrainedPrivacyConstraints(){
+		initializeFineGrainedPrivacyConstraints(new FineGrainedPrivacyBrute());
+	}
+
+	/**
+	 * Initializes fine-grained privacy for the privacy constraint. 
+	 * @param fineGrainedPrivacy fine-grained privacy instance which is set for the privacy constraint
+	 */
+	public void initializeFineGrainedPrivacyConstraints(FineGrainedPrivacy fineGrainedPrivacy){
+		this.fineGrainedPrivacy = fineGrainedPrivacy;
+	}
+
+	/**
+	 * Get fine-grained privacy instance. 
+	 * @return fine-grained privacy instance
+	 */
+	public FineGrainedPrivacy getFineGrainedPrivacy(){
+		return fineGrainedPrivacy;
+	}
+
 }

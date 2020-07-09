@@ -89,6 +89,7 @@ public enum Builtins {
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
 	EXISTS("exists", false),
+	ExecutePipeline("executePipeline", true),
 	EXP("exp", false),
 	EVAL("eval", false),
 	FLOOR("floor", false),

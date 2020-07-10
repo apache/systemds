@@ -258,8 +258,7 @@ return (Double psum)
       psum = sum(as.matrix(paraList[i]))
     else 
       psum = 0.0
-  }
-  
+  }  
 }
 
 # This function will compute the top k pipelines from the results of all executions
@@ -323,7 +322,6 @@ return(Matrix[Double] X)
 fclassify = function(Matrix[Double] X)
 return (Double accuracy)
 {
-
   if(min(X[,1]) < 1)
     stop("Y should contain value greater than zero")
   
@@ -344,7 +342,6 @@ return (Double accuracy)
   nTest = nrow(testSet)
   dTest = ncol(testSet)
 
-
   train_X = trainSet[, 2:dTrain] 
   train_Y = trainSet[, 1] 
  
@@ -353,10 +350,7 @@ return (Double accuracy)
  
   betas = multiLogReg(X=train_X, Y=train_Y, icpt=2, tol=1e-9, reg=1.2, maxi=100, maxii=0, verbose=FALSE)
   [prob, yhat, accuracy] = multiLogRegPredict(test_X, betas, test_Y, FALSE)
-
 }
-
-
 
 
 ##########################################

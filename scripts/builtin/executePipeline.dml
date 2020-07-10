@@ -19,29 +19,25 @@
 #
 #-------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X, List[Unknown] hyperParameters, Boolean verbose)
-return (Matrix[Double] X)
+s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X, 
+  List[Unknown] hyperParameters, Boolean verbose)
+  return (Matrix[Double] X)
 {
   for(i in 1: ncol(pipeline)) {
     hp = matrixToList(X, as.matrix(hyperParameters[i]))
     X = eval(as.scalar(pipeline[1,i]), hp)
   }
-
 }
-  
-  
+
 # This function will convert the matrix row-vector into list
 matrixToList = function(Matrix[Double] X, Matrix[Double] p)
-return (List[Unknown] l)
+  return (List[Unknown] l)
 {
   l = list()
   l = append(l, X)
-  if(sum(p) != -1)
-  {
+  if(sum(p) != -1) {
     for(i in 1:ncol(p))
       l = append(l, as.scalar(p[1,i]))
   }
   l = append(l, FALSE) #verbose parameter value
 }
-
-  

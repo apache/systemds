@@ -113,8 +113,8 @@ public class BuiltinMulticlassSVMTest extends AutomatedTestBase {
 				Integer.toString(run),
 				expectedDir());
 
-			double[][] X = getRandomMatrix(rows, colsX, 0, 1, sparsity, -1);
-			double[][] Y = getRandomMatrix(rows, 1, 0, 10, 1, -1);
+			double[][] X = getRandomMatrix(rows, colsX, 0, 1, sparsity, 2);
+			double[][] Y = getRandomMatrix(rows, 1, 0, 10, 1, 3);
 			Y = TestUtils.round(Y);
 
 			writeInputMatrixWithMTD("X", X, true);

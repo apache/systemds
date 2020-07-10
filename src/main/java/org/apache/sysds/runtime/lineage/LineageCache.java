@@ -371,8 +371,8 @@ public class LineageCache
 	
 	private static LineageCacheEntry getIntern(LineageItem key) {
 		// This method is called only when entry is present either in cache or in local FS.
-		if (_cache.containsKey(key) && _cache.get(key).getCacheStatus() != LineageCacheStatus.SPILLED) {
-			LineageCacheEntry e = _cache.get(key);
+		LineageCacheEntry e = _cache.get(key);
+		if (e != null && e.getCacheStatus() != LineageCacheStatus.SPILLED) {
 			// Maintain order for eviction
 			LineageCacheEviction.getEntry(e);
 			if (DMLScript.STATISTICS)

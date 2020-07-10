@@ -77,6 +77,9 @@ public class LineageItem {
 		_opcode = opcode;
 		_data = data;
 		_inputs = inputs;
+		// materialize hash on construction 
+		// (constant time operation if input hashes constructed)
+		_hash = hashCode();
 	}
 	
 	public LineageItem[] getInputs() {

@@ -20,16 +20,12 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -43,14 +39,19 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.EncoderComposite;
+import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+
+import com.sun.tools.javac.util.List;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final ArrayList<CPOperand> _outputs;
 
 	private MultiReturnParameterizedBuiltinFEDInstruction(Operator op, CPOperand input1, CPOperand input2,
 		ArrayList<CPOperand> outputs, String opcode, String istr) {
-		super(FEDType.MultiReturnParameterizedBuiltin, op, input1, input2, outputs.get(0), opcode, istr);
+		super(FEDType.MultiReturnParameterizedBuiltin, op, input1, input2, null, opcode, istr);
 		_outputs = outputs;
 	}
 
@@ -85,135 +86,73 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		Map<FederatedRange, FederatedData> fedMapping = fin.getFedMapping();
 
-		// first we use the spec to construct a meta frame which will provide us with info about the encodings
-		List<Pair<FederatedRange, Future<FederatedResponse>>> metaFutures = new ArrayList<>();
-		for(Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
-			Future<FederatedResponse> response = entry.getValue().executeFederatedOperation(new FederatedRequest(
-				FederatedRequest.FedMethod.ENCODE_META, spec, entry.getKey().getBeginDimsInt()[1] + 1), true);
-			metaFutures.add(new ImmutablePair<>(entry.getKey(), response));
-		}
+		// first use the spec to construct a meta frame which will provide us with info about the encodings
+		// since don't share any resources can do this in a parallel stream.
+		EncoderComposite globalEncoder = fedMapping.entrySet().parallelStream().map(entry -> {
+			int columnOffset = (int) entry.getKey().getBeginDims()[1] + 1;
 
-		// TODO support encodings other than recode
-		// the combined mappings for the frame columns (because we only support recode)
-		Map<String, Long>[] combinedRecodeMaps = new HashMap[(int) fin.getNumColumns()];
-		try {
-			for(Pair<FederatedRange, Future<FederatedResponse>> pair : metaFutures) {
-				FederatedRange range = pair.getKey();
-				FederatedResponse federatedResponse = pair.getValue().get();
-				if(federatedResponse.isSuccessful()) {
-					FrameBlock fb = (FrameBlock) federatedResponse.getData()[0];
-					combineRecodeMaps(combinedRecodeMaps, fb, range.getBeginDimsInt()[1]);
+			// create an encoder with the given spec. The columnOffset (which is 1 based) has to be used to
+			// tell the federated worker how much the indexes in the spec have to be offset.
+			Future<FederatedResponse> response = entry.getValue().executeFederatedOperation(
+				new FederatedRequest(FederatedRequest.FedMethod.CREATE_ENCODER, spec, columnOffset),
+				true);
+			// for aggregation column offset and response is needed
+			return new ImmutablePair<>(columnOffset, response);
+		}).reduce(new EncoderComposite(List.of(new EncoderRecode(), new EncoderPassThrough())),
+			(compEncoder, pair) -> {
+				// collect responses with encoders
+				try {
+					FederatedResponse federatedResponse = pair.getRight().get();
+
+					Encoder encoder = (Encoder) federatedResponse.getData()[0];
+					// merge this encoder into a composite encoder
+					compEncoder.mergeAt(encoder, pair.getLeft());
+					return compEncoder;
 				}
-			}
-		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new DMLRuntimeException("Federated meta frame creation failed: " + e.getMessage());
-		}
+				catch(Exception e) {
+					throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
+				}
+			},
+			(encL, encR) -> {
+				// combine partial results (two composite encoders)
+				encL.mergeAt(encR, 1);
+				return encL;
+			});
 
-		// construct a single meta frameblock out of the multiple HashMaps with the recodings
-		FrameBlock meta = frameBlockFromRecodeMaps(combinedRecodeMaps);
+		// redistribute sub ranges of encoders, which are globally valid with their encodings
+		Map<FederatedRange, FederatedData> transformedFedMapping = fedMapping.entrySet().stream().map(entry -> {
+			FederatedRange range = entry.getKey();
+			FederatedData data = entry.getValue();
 
-		// actually encode the frame block and construct an encoded matrix block at worker
-		List<Pair<Map.Entry<FederatedRange, FederatedData>, Future<FederatedResponse>>> encodedFutures = new ArrayList<>();
-		for(Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
-			FederatedRange fedRange = entry.getKey();
-			int columnStart = (int) fedRange.getBeginDims()[1];
-			int columnEnd = (int) fedRange.getEndDims()[1];
-			
-			// Slice out relevant meta part
-			// range is inclusive
-			FrameBlock slicedMeta = meta.slice(0, meta.getNumRows() - 1, columnStart, columnEnd - 1, null);
-			
-			Future<FederatedResponse> response = entry.getValue().executeFederatedOperation(new FederatedRequest(
-				FederatedRequest.FedMethod.FRAME_ENCODE, slicedMeta, spec, columnStart + 1), true);
-			encodedFutures.add(new ImmutablePair<>(entry, response));
-		}
-		
+			int colStart = (int) range.getBeginDims()[1] + 1;
+			int colEnd = (int) range.getEndDims()[1] + 1;
+			Encoder encoder = globalEncoder.subRangeEncoder(colStart, colEnd);
+
+			Future<FederatedResponse> response = data.executeFederatedOperation(
+				new FederatedRequest(FederatedRequest.FedMethod.FRAME_ENCODE, encoder),
+				true);
+			return new ImmutableTriple<>(range, data, response);
+		}).collect(Collectors.toMap(ImmutableTriple::getLeft,
+			triple -> {
+				// collect the responses with data into a single federated mapping map
+				try {
+					FederatedResponse response = triple.getRight().get();
+					long varId = (long) response.getData()[0];
+					return new FederatedData(triple.getMiddle(), varId);
+				}
+				catch(Exception e) {
+					throw new DMLRuntimeException("Federated encoder appliance failed: " + e.getMessage());
+				}
+			}));
+
 		// construct a federated matrix with the encoded data
 		MatrixObject transformedMat = ec.getMatrixObject(getOutput(0));
 		transformedMat.getDataCharacteristics().set(fin.getDataCharacteristics());
-		Map<FederatedRange, FederatedData> transformedFedMapping = new HashMap<>();
-		try {
-			for(Pair<Map.Entry<FederatedRange, FederatedData>, Future<FederatedResponse>> data : encodedFutures) {
-				FederatedResponse federatedResponse = data.getValue().get();
-				if(federatedResponse.isSuccessful()) {
-					FederatedRange federatedRange = data.getKey().getKey();
-					FederatedData federatedData = data.getKey().getValue();
-					long varId = (long) federatedResponse.getData()[0];
-					
-					transformedFedMapping.put(federatedRange, new FederatedData(federatedData, varId));
-				}
-				else {
-					throw new DMLRuntimeException(
-						"Federated request was not successful: " + federatedResponse.getErrorMessage());
-				}
-			}
-		}
-		catch(InterruptedException | ExecutionException e) {
-			throw new DMLRuntimeException("Federated transform apply failed: " + e.getMessage());
-		}
 		// set the federated mapping for the matrix
 		transformedMat.setFedMapping(transformedFedMapping);
 
 		// release input and outputs
-		ec.setFrameOutput(getOutput(1).getName(), meta);
-	}
-
-	private FrameBlock frameBlockFromRecodeMaps(Map<String, Long>[] combinedRecodeMaps) {
-		int rows = 0;
-		for(Map<String, Long> map : combinedRecodeMaps) {
-			if(map != null) {
-				rows = Integer.max(rows, map.size());
-			}
-		}
-		FrameBlock fb = new FrameBlock(combinedRecodeMaps.length, Types.ValueType.STRING);
-		fb.ensureAllocatedColumns(rows);
-
-		// find maximum number of elements needed for a column
-		int c = -1;
-		for(Map<String, Long> map : combinedRecodeMaps) {
-			c++;
-			if(map == null) {
-				continue;
-			}
-			int r = 0;
-			for(Map.Entry<String, Long> entry : map.entrySet()) {
-				fb.set(r++, c, EncoderRecode.constructRecodeMapEntry(entry.getKey(), entry.getValue()));
-			}
-		}
-		return fb;
-	}
-
-	private void combineRecodeMaps(Map<String, Long>[] combinedRecodeMaps, FrameBlock frameBlock, int startColumn) {
-		for(int c = 0; c < frameBlock.getNumColumns(); c++) {
-			HashMap<String, Long> recodeMap = frameBlock.getRecodeMap(c);
-			int columnCombined = startColumn + c;
-
-			if(recodeMap.isEmpty()) {
-				// no values present so no values needed in combinedRecodeMaps
-				continue;
-			}
-			else if(combinedRecodeMaps[columnCombined] == null) {
-				// the combined map was not yet needed for this column and therefore is not allocated yet
-				// we can just copy the map of the current frameblock
-				combinedRecodeMaps[columnCombined] = new HashMap<>(recodeMap);
-				continue;
-			}
-
-			// check if any keys are not yet in the combined mapping
-			Map<String, Long> combinedColumnRecodeMap = combinedRecodeMaps[columnCombined];
-			boolean keysMissing = !combinedColumnRecodeMap.keySet().containsAll(recodeMap.keySet());
-
-			if(keysMissing) {
-				// add new recode values
-				Set<String> allKeys = new HashSet<>(combinedColumnRecodeMap.keySet());
-				allKeys.addAll(recodeMap.keySet());
-
-				combinedColumnRecodeMap.clear();
-				long mapping = 1;
-				for(String key : allKeys)
-					combinedColumnRecodeMap.put(key, mapping++);
-			}
-		}
+		ec.setFrameOutput(getOutput(1).getName(),
+			globalEncoder.getMetaData(new FrameBlock(globalEncoder.getNumCols(), Types.ValueType.STRING)));
 	}
 }

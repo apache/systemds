@@ -113,7 +113,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				case EXEC_INST:
 					return execInstruction(request);
 				case ENCODE_META:
-					return createFrameEncodeMeta(request);
+					return createFrameEncoder(request);
 				case FRAME_ENCODE:
 					return executeFrameEncode(request);
 				default:
@@ -130,8 +130,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				+ ex.getClass() + " thrown when processing request", ex));
 		}
 	}
-	
-	private FederatedResponse createFrameEncodeMeta(FederatedRequest request) {
+
+	private FederatedResponse createFrameEncoder(FederatedRequest request) {
 		// param parsing
 		checkNumParams(request.getNumParams(), 3);
 		String spec = (String) request.getParam(0);
@@ -151,37 +151,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				globalOffset + data.getNumColumns());
 		// build necessary structures for encoding
 		encoder.build(data);
-		// just get the meta frame block
-		FrameBlock meta = encoder.getMetaData(new FrameBlock(data.getNumColumns(), Types.ValueType.STRING));
-		meta.setColumnNames(colNames);
 		// otherwise data of FrameBlock would be null, therefore it would fail
 		// hack because serialization of FrameBlock does not function if Arrays are not allocated
-		meta.ensureAllocatedColumns(meta.getNumRows());
 		fo.release();
-		
-		return new FederatedResponse(FederatedResponse.Type.SUCCESS, meta);
+
+		return new FederatedResponse(FederatedResponse.Type.SUCCESS, encoder);
 	}
 	
 	private FederatedResponse executeFrameEncode(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 4);
-		FrameBlock meta = (FrameBlock) request.getParam(0);
-		String spec = (String) request.getParam(1);
-		// offset of local column indexes compared to global (due to federation)
-		int globalOffset = (int) request.getParam(2);
-		long varID = (long) request.getParam(3);
-		
+		checkNumParams(request.getNumParams(), 2);
+		Encoder encoder = (Encoder) request.getParam(0);
+		long varID = (long) request.getParam(1);
+
 		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(_vars.get(varID));
 		FrameBlock data = fo.acquireRead();
-		String[] colNames = data.getColumnNames();
-		
-		// compute encoding with given meta data
-		Encoder encoder = EncoderFactory.createEncoder(spec,
-				colNames,
-				data.getNumColumns(),
-				meta,
-				globalOffset,
-				globalOffset + data.getNumColumns());
-		
+
 		// apply transformation
 		MatrixBlock mbout = encoder.apply(data, new MatrixBlock(data.getNumRows(), data.getNumColumns(), false));
 		
@@ -247,7 +231,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw new DMLRuntimeException(ex);
 		}
 		cd.setMetaData(new MetaDataFormat(mc, fmt));
-		// TODO send FileFormatProperties with request and use them for CSV
+		// TODO send FileFormatProperties with request and use them for CSV, this is currently a workaround so reading
+		//  of CSV files works
 		cd.setFileFormatProperties(new FileFormatPropertiesCSV());
 		cd.acquireRead();
 		cd.refreshMetaData(); //in pinned state

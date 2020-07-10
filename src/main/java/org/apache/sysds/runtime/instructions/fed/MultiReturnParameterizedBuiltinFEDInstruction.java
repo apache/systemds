@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -43,8 +44,7 @@ import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
-
-import com.sun.tools.javac.util.List;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final ArrayList<CPOperand> _outputs;
@@ -86,8 +86,13 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		Map<FederatedRange, FederatedData> fedMapping = fin.getFedMapping();
 
-		// first use the spec to construct a meta frame which will provide us with info about the encodings
-		// since don't share any resources can do this in a parallel stream.
+		List<Encoder> encoderList = new ArrayList<>();
+		encoderList.add(new EncoderRecode());
+		encoderList.add(new EncoderPassThrough());
+		EncoderComposite compositeEncoder = new EncoderComposite(encoderList);
+		// TODO check parallel stream problems and performance. Run in the CommonThreadPool?
+		// first create encoders at the federated workers, then collect them and aggregate them to a single large
+		// encoder
 		EncoderComposite globalEncoder = fedMapping.entrySet().parallelStream().map(entry -> {
 			int columnOffset = (int) entry.getKey().getBeginDims()[1] + 1;
 
@@ -98,7 +103,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				true);
 			// for aggregation column offset and response is needed
 			return new ImmutablePair<>(columnOffset, response);
-		}).reduce(new EncoderComposite(List.of(new EncoderRecode(), new EncoderPassThrough())),
+		}).reduce(compositeEncoder,
 			(compEncoder, pair) -> {
 				// collect responses with encoders
 				try {

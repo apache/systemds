@@ -113,7 +113,7 @@ if(check_X == 0){
 
 		w[,iter_class] = w_class
 	}
-	#print("R model "); print(w)
+	print("R model "); print(w)
 	
 	writeMM(as(w, "CsparseMatrix"), paste(args[6], "model", sep=""))
 }

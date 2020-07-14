@@ -38,14 +38,24 @@ public class LeftScalarOperator extends ScalarOperator
 	private static final long serialVersionUID = 2360577666575746424L;
 	
 	public LeftScalarOperator(ValueFunction p, double cst) {
+		this(p,cst,1);
+	}
+	
+	public LeftScalarOperator(ValueFunction p, double cst, int numThreads){
 		super(p, cst, (p instanceof GreaterThan && cst<=0)
 			|| (p instanceof GreaterThanEquals && cst<0)
 			|| (p instanceof LessThan && cst>=0)
 			|| (p instanceof LessThanEquals && cst>0)
 			|| (Builtin.isBuiltinCode(p, BuiltinCode.MAX) && cst<=0)
-			|| (Builtin.isBuiltinCode(p, BuiltinCode.MIN) && cst>=0));
+			|| (Builtin.isBuiltinCode(p, BuiltinCode.MIN) && cst>=0),
+			numThreads);
 	}
-	
+
+	@Override
+	public ScalarOperator setConstant(double cst, int numThreads) {
+		return new LeftScalarOperator(fn, cst, numThreads);
+	}
+
 	@Override
 	public ScalarOperator setConstant(double cst) {
 		return new LeftScalarOperator(fn, cst);

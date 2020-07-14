@@ -99,16 +99,10 @@ public class CompressedSizeInfoColGroup {
 		switch(ct) {
 			case DDC:
 				if(fact.numVals < 256) {
-					size = ColGroupSizes.estimateInMemorySizeDDC1(fact.numCols,
-						fact.numVals + (fact.containsZero ? 1 : 0),
-						fact.numRows,
-						fact.lossy);
+					size = ColGroupSizes.estimateInMemorySizeDDC1(fact.numCols, fact.numVals, fact.numRows, fact.lossy);
 				}
 				else {
-					size = ColGroupSizes.estimateInMemorySizeDDC2(fact.numCols,
-						fact.numVals + (fact.containsZero ? 1 : 0),
-						fact.numRows,
-						fact.lossy);
+					size = ColGroupSizes.estimateInMemorySizeDDC2(fact.numCols, fact.numVals, fact.numRows, fact.lossy);
 				}
 				break;
 			case RLE:
@@ -123,9 +117,6 @@ public class CompressedSizeInfoColGroup {
 				size = ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows,
 					fact.numCols,
 					((double) fact.numVals / (fact.numRows * fact.numCols)));
-				break;
-			case QUAN:
-				size = ColGroupSizes.estimateInMemorySizeQuan(fact.numRows, fact.numCols);
 				break;
 			default:
 				throw new NotImplementedException("The col compression Type is not yet supported");

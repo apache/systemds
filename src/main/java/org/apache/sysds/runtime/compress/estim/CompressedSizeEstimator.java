@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -145,16 +145,12 @@ public abstract class CompressedSizeEstimator {
 	 * @param ubm the UncompressedBitmap, either extracted from a sample or from the entier dataset
 	 * @return The size factors estimated from the Bit Map.
 	 */
-	public EstimationFactors estimateCompressedColGroupSize(AbstractBitmap ubm) {
+	public EstimationFactors estimateCompressedColGroupSize(ABitmap ubm) {
 		return EstimationFactors.computeSizeEstimationFactors(ubm,
 			_compSettings.validCompressions.contains(CompressionType.RLE),
 			_numRows,
 			ubm.getNumColumns());
 	}
-
-	// ------------------------------------------------
-	// PARALLEL CODE
-	// ------------------------------------------------
 
 	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {
 		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[clen];
@@ -195,12 +191,6 @@ public abstract class CompressedSizeEstimator {
 			return _estimator.estimateCompressedColGroupSize(new int[] {_col});
 		}
 	}
-
-	// ------------------------------------------------
-	// PARALLEL CODE END
-	// ------------------------------------------------
-
-	// UTIL
 
 	private int[] makeColIndexes() {
 		int[] colIndexes = new int[_numCols];

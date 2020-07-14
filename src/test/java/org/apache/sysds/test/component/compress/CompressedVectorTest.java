@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -33,7 +35,6 @@ import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -49,7 +50,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 		// MatrixTypology.SINGLE_COL_L
 	};
 
-	protected int getK(){
+	protected int getK() {
 		return _k;
 	}
 
@@ -75,8 +76,6 @@ public class CompressedVectorTest extends CompressedTestBase {
 		super(sparType, valType, valRange, compSettings, matrixTypology, 1);
 	}
 
-
-	@Ignore
 	@Test
 	public void testCentralMoment() throws Exception {
 		// TODO: Make Central Moment Test work on Multi dimensional Matrix
@@ -93,10 +92,14 @@ public class CompressedVectorTest extends CompressedTestBase {
 			// quantile compressed
 			double ret2 = cmb.cmOperations(cm).getRequiredResult(opType);
 
-			if (compressionSettings.lossy) {
-				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
-			} else {
-				TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
+			if(compressionSettings.lossy) {
+				double tol = lossyTolerance * 10;
+				assertTrue(
+					this.toString() + ": values uncomprssed: " + ret1 + "vs compressed: " + ret2 + " tolerance " + tol,
+					TestUtils.compareCellValue(ret1, ret2, tol, false));
+			}
+			else {
+				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 64));
 			}
 		}
 		catch(Exception e) {
@@ -105,7 +108,6 @@ public class CompressedVectorTest extends CompressedTestBase {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void testQuantile() {
 		try {
@@ -117,10 +119,11 @@ public class CompressedVectorTest extends CompressedTestBase {
 			MatrixBlock tmp2 = cmb.sortOperations(null, new MatrixBlock());
 			double ret2 = tmp2.pickValue(0.95);
 
-			if (compressionSettings.lossy) {
+			if(compressionSettings.lossy) {
 				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
-			} else {
-				TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
+			}
+			else {
+				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 64));
 			}
 		}
 		catch(Exception e) {

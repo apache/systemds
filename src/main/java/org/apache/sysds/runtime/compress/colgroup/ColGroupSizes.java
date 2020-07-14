@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -52,6 +51,9 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeDDC(int nrCols, int uniqueVals, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrCols, uniqueVals, lossy);
+		// if(!zeros){
+		// 	size += -nrCols * 8;
+		// }
 		return size;
 	}
 
@@ -112,13 +114,4 @@ public class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMemorySizeQuan(int nrRows, int nrColumns){
-		long size = estimateInMemorySizeGroup(nrColumns);
-		if(nrRows < 0 || nrColumns < 0){
-			throw new DMLCompressionException("Invalid number of rows and columns");
-		}
-		size += 8; // scale value
-		size += MemoryEstimates.byteArrayCost(nrRows*nrColumns);
-		return size;
-	}
 }

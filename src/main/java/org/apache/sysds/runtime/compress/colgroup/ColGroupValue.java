@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -37,20 +37,20 @@ import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
+import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysds.utils.MemoryEstimates;
 
 /**
- * Base class for column groups encoded with value dictionary.
+ * Base class for column groups encoded with value dictionary. This include column groups such as DDC OLE and RLE.
  * 
  */
 public abstract class ColGroupValue extends ColGroup {
 	private static final long serialVersionUID = 3786247536054353658L;
 
-	// thread-local pairs of reusable temporary vectors for positions and values
+	/** thread-local pairs of reusable temporary vectors for positions and values */
 	private static ThreadLocal<Pair<int[], double[]>> memPool = new ThreadLocal<Pair<int[], double[]>>() {
 		@Override
 		protected Pair<int[], double[]> initialValue() {
@@ -58,22 +58,23 @@ public abstract class ColGroupValue extends ColGroup {
 		}
 	};
 
-	/** Distinct values associated with individual bitmaps. */
-	protected IDictionary _dict;
+	/** Distinct value tuples associated with individual bitmaps. */
+	protected ADictionary _dict;
 
-	public ColGroupValue() {
+	protected ColGroupValue() {
 		super();
 	}
 
 	/**
-	 * Stores the headers for the individual bitmaps.
+	 * Main constructor for the ColGroupValues. Used to contain the dictionaries used for the different types of
+	 * ColGroup.
 	 * 
 	 * @param colIndices indices (within the block) of the columns included in this column
 	 * @param numRows    total number of rows in the parent block
 	 * @param ubm        Uncompressed bitmap representation of the block
 	 * @param cs         The Compression settings used for compression
 	 */
-	public ColGroupValue(int[] colIndices, int numRows, AbstractBitmap ubm, CompressionSettings cs) {
+	protected ColGroupValue(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
 		super(colIndices, numRows);
 		_lossy = false;
 		_zeros = ubm.containsZero();
@@ -91,26 +92,11 @@ public abstract class ColGroupValue extends ColGroup {
 				_lossy = true;
 				break;
 		}
-		// extract and store distinct values (bitmaps handled by subclasses)
-		// _dict = new Dictionary(ubm.getValues());
 	}
 
-	/**
-	 * Constructor for subclass methods that need to create shallow copies
-	 * 
-	 * @param colIndices raw column index information
-	 * @param numRows    number of rows in the block
-	 * @param values     set of distinct values for the block (associated bitmaps are kept in the subclass)
-	 */
-	protected ColGroupValue(int[] colIndices, int numRows, double[] values) {
+	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict) {
 		super(colIndices, numRows);
-		_dict = new Dictionary(values);
-	}
-
-	public long getDictionarySize() {
-		// NOTE: this estimate needs to be consistent with the estimate above,
-		// so for now we use the (incorrect) double array size, not the dictionary size
-		return (_dict != null) ? MemoryEstimates.doubleArrayCost(_dict.getValues().length) : 0;
+		_dict = dict;
 	}
 
 	/**
@@ -122,26 +108,16 @@ public abstract class ColGroupValue extends ColGroup {
 		return _dict.getNumberOfValues(_colIndexes.length);
 	}
 
+	@Override
 	public double[] getValues() {
 		return _dict.getValues();
-	}
-
-	public void setValues(double[] values) {
-		_dict = new Dictionary(values);
-	}
-
-	public double getValue(int k, int col) {
-		return _dict.getValues()[k * getNumCols() + col];
-	}
-
-	public void setDictionary(Dictionary dict) {
-		_dict = dict;
 	}
 
 	@Override
 	public MatrixBlock getValuesAsBlock() {
 		final double[] values = getValues();
 		int vlen = values.length;
+
 		int rlen = _zeros ? vlen + 1 : vlen;
 		MatrixBlock ret = new MatrixBlock(rlen, 1, false);
 		for(int i = 0; i < vlen; i++)
@@ -149,21 +125,45 @@ public abstract class ColGroupValue extends ColGroup {
 		return ret;
 	}
 
+	/**
+	 * Returns the counts of values inside the MatrixBlock returned in getValuesAsBlock Throws an exception if the
+	 * getIfCountsType is false.
+	 * 
+	 * The returned counts always contains the number of zeros as well if there are some contained, even if they are not
+	 * materialized.
+	 *
+	 * @return the count of each value in the MatrixBlock.
+	 */
 	public final int[] getCounts() {
-		int[] tmp = new int[getNumValues()];
-		tmp = getCounts(tmp);
-		if(_zeros && this instanceof ColGroupOffset) {
-			tmp = Arrays.copyOf(tmp, tmp.length + 1);
-			int sum = Arrays.stream(tmp).sum();
-			tmp[tmp.length - 1] = getNumRows() - sum;
+		int[] tmp;
+		if(_zeros) {
+			tmp = allocIVector(getNumValues() + 1, true);
 		}
-		return tmp;
+		else {
+			tmp = allocIVector(getNumValues(), true);
+		}
+		return getCounts(tmp);
 	}
 
-	public abstract int[] getCounts(int[] out);
-
+	/**
+	 * Returns the counts of values inside the MatrixBlock returned in getValuesAsBlock Throws an exception if the
+	 * getIfCountsType is false.
+	 * 
+	 * The returned counts always contains the number of zeros as well if there are some contained, even if they are not
+	 * materialized.
+	 *
+	 * @param rl the lower index of the interval of rows queried
+	 * @param ru the the upper boundary of the interval of rows queried
+	 * @return the count of each value in the MatrixBlock.
+	 */
 	public final int[] getCounts(int rl, int ru) {
-		int[] tmp = new int[getNumValues()];
+		int[] tmp;
+		if(_zeros) {
+			tmp = allocIVector(getNumValues() + 1, true);
+		}
+		else {
+			tmp = allocIVector(getNumValues(), true);
+		}
 		return getCounts(rl, ru, tmp);
 	}
 
@@ -171,83 +171,13 @@ public abstract class ColGroupValue extends ColGroup {
 		return true;
 	}
 
-	public abstract int[] getCounts(int rl, int ru, int[] out);
-
-	public MatrixBlock getCountsAsBlock() {
-		return getCountsAsBlock(getCounts());
-	}
-
-	public static MatrixBlock getCountsAsBlock(int[] counts) {
-		MatrixBlock ret = new MatrixBlock(counts.length, 1, false);
-		for(int i = 0; i < counts.length; i++)
-			ret.quickSetValue(i, 0, counts[i]);
-		return ret;
-	}
-
 	protected int containsAllZeroValue() {
 		return _dict.hasZeroTuple(_colIndexes.length);
 	}
 
-	// protected final double[] sumAllValues(KahanFunction kplus, KahanObject kbuff) {
-	// return sumAllValues(kplus, kbuff, true);
-	// }
-
-	// protected final double[] sumAllValues(KahanFunction kplus, KahanObject kbuff, boolean allocNew) {
-	// // quick path: sum
-	// if(getNumCols() > 1 && _dict instanceof QDictionary && kplus instanceof KahanPlus){
-	// return sumAllValuesQToDouble();
-	// }
-	// else if(getNumCols() == 1 && kplus instanceof KahanPlus)
-	// return _dict.getValues(); // shallow copy of values
-
-	// // pre-aggregate value tuple
-	// final int numVals = getNumValues();
-	// double[] ret = allocNew ? new double[numVals] : allocDVector(numVals, false);
-	// for(int k = 0; k < numVals; k++)
-	// ret[k] = sumValues(k, kplus, kbuff);
-
-	// return ret;
-	// }
-
-	// /**
-	// * Method for summing all value tuples in the dictionary.
-	// *
-	// * This method assumes two things
-	// *
-	// * 1. That you dont call it if the number of columns in this ColGroup is 1. (then use
-	// ((QDictionary)_dict)._values)
-	// * 2. That it is not used for anything else than KahnPlus.
-	// * @return an short array of the sum of each row in the quantized array.
-	// */
-	// protected final short[] sumAllValuesQ(){
-	// final byte[] values = ((QDictionary)_dict)._values;
-	// short[] res = new short[getNumValues()];
-
-	// for(int i = 0, off = 0; off< values.length; i++, off += _colIndexes.length){
-	// for( int j = 0 ; j < _colIndexes.length; j++){
-	// res[i] += values[off + j];
-	// }
-	// }
-	// return res;
-	// }
-
-	// protected static final double[] sumAllValuesQToDouble(QDictionary dict, int nrCol){
-	// final byte[] values = dict._values;
-	// double[] res = new double[dict.getNumberOfValues()];
-
-	// for(int i = 0, off = 0; off< values.length; i++, off += _colIndexes.length){
-	// for( int j = 0 ; j < _colIndexes.length; j++){
-	// res[i] += values[off + j];
-	// }
-	// res[i] = res[i] * dict._scale;
-	// }
-	// return res;
-	// }
-
-	protected final double sumValues(int valIx, double[] b) {
+	protected final double sumValues(int valIx, double[] b, double[] values) {
 		final int numCols = getNumCols();
 		final int valOff = valIx * numCols;
-		final double[] values = _dict.getValues();
 		double val = 0;
 		for(int i = 0; i < numCols; i++)
 			val += values[valOff + i] * b[i];
@@ -260,97 +190,89 @@ public abstract class ColGroupValue extends ColGroup {
 
 	protected final double[] preaggValues(int numVals, double[] b, boolean allocNew) {
 		double[] ret = allocNew ? new double[numVals] : allocDVector(numVals, false);
+		final double[] values = _dict.getValues();
 		for(int k = 0; k < numVals; k++)
-			ret[k] = sumValues(k, b);
+			ret[k] = sumValues(k, b, values);
 
 		return ret;
 	}
 
 	/**
+	 * Compute the Max or other equivalent operations.
+	 * 
 	 * NOTE: Shared across OLE/RLE/DDC because value-only computation.
 	 * 
-	 * @param result  output matrix block
+	 * @param c       output matrix block
 	 * @param builtin function object
 	 */
-	protected void computeMxx(MatrixBlock result, Builtin builtin) {
-		// init and 0-value handling
-		double val = (builtin
-			.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-		if(_zeros)
-			val = builtin.execute(val, 0);
-
-		// iterate over all values only
-		val = _dict.aggregate(val, builtin);
-
-		// compute new partial aggregate
-		val = builtin.execute(val, result.quickGetValue(0, 0));
-		result.quickSetValue(0, 0, val);
-	}
-
-	/**
-	 * NOTE: Shared across OLE/RLE/DDC because value-only computation.
-	 * 
-	 * @param result  output matrix block
-	 * @param builtin function object
-	 */
-	protected void computeColMxx(MatrixBlock result, Builtin builtin) {
-		final int numCols = getNumCols();
-
-		// init and 0-value handling
-		double[] vals = new double[numCols];
-
-		// TODO fix edge cases in colMax. Since currently we rely on looking at rows in dict to specify if we start with
-		// zeros or not
-		if(!_zeros && _dict.getValuesLength() / numCols == getNumRows()) {
-			Arrays.fill(vals,
-				(builtin.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
+	protected void computeMxx(double[] c, Builtin builtin) {
+		if(_zeros) {
+			c[0] = builtin.execute(c[0], 0);
 		}
-
-		// iterate over all values only
-		vals = _dict.aggregateCols(vals, builtin, _colIndexes);
-		// copy results to output
-		for(int j = 0; j < numCols; j++)
-			result.quickSetValue(0, _colIndexes[j], vals[j]);
+		c[0] = _dict.aggregate(c[0], builtin);
 	}
 
 	/**
-	 * Method for use by subclasses. Applies a scalar operation to the value metadata stored in the superclass.
+	 * Compute the Column wise Max or other equivalent operations.
+	 * 
+	 * NOTE: Shared across OLE/RLE/DDC because value-only computation.
+	 * 
+	 * @param c       output matrix block
+	 * @param builtin function object
+	 */
+	protected void computeColMxx(double[] c, Builtin builtin) {
+		if(_zeros) {
+			for(int x = 0; x < _colIndexes.length; x++) {
+				c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
+			}
+		}
+		_dict.aggregateCols(c, builtin, _colIndexes);
+	}
+
+	/**
+	 * Method for use by subclasses. Applies a scalar operation to the value metadata stored in the dictionary.
 	 * 
 	 * @param op scalar operation to perform
 	 * @return transformed copy of value metadata for this column group
 	 */
-	protected double[] applyScalarOp(ScalarOperator op) {
-		return _dict.clone().apply(op).getValues();
+	protected ADictionary applyScalarOp(ScalarOperator op) {
+		return _dict.clone().apply(op);
 	}
 
-	protected double[] applyScalarOp(ScalarOperator op, double newVal, int numCols) {
-		double[] values = _dict.getValues(); // allocate new array just once
-		Dictionary tmp = new Dictionary(Arrays.copyOf(values, values.length + numCols));
-		double[] ret = tmp.apply(op).getValues();
-
-		// add new value to the end
-		Arrays.fill(ret, values.length, values.length + numCols, newVal);
-		return ret;
+	/**
+	 * Method for use by subclasses. Applies a scalar operation to the value metadata stored in the dictionary. This
+	 * specific method is used in cases where an new entry is to be added in the dictionary.
+	 * 
+	 * Method should only be called if the newVal is not 0! Also the newVal should already have the operator applied.
+	 * 
+	 * @param op      The Operator to apply to the underlying data.
+	 * @param newVal  The new Value to append to the underlying data.
+	 * @param numCols The number of columns in the ColGroup, to specify how many copies of the newVal should be
+	 *                appended.
+	 * @return The new Dictionary containing the values.
+	 */
+	protected ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
+		return _dict.applyScalarOp(op, newVal, numCols);
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result) {
-		unaryAggregateOperations(op, result, 0, getNumRows());
+	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
+		unaryAggregateOperations(op, c, 0, _numRows);
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
+	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
 		// sum and sumsq (reduceall/reducerow over tuples and counts)
 		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq) {
 			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus) ? KahanPlus
 				.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
 
 			if(op.indexFn instanceof ReduceAll)
-				computeSum(result, kplus);
+				computeSum(c, kplus);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(result, kplus, rl, ru);
+				computeRowSums(c, kplus, rl, ru);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(result, kplus);
+				computeColSums(c, kplus);
 		}
 		// min and max (reduceall/reducerow over tuples only)
 		else if(op.aggOp.increOp.fn instanceof Builtin &&
@@ -359,26 +281,23 @@ public abstract class ColGroupValue extends ColGroup {
 			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
 
 			if(op.indexFn instanceof ReduceAll)
-				computeMxx(result, builtin);
+				computeMxx(c, builtin);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowMxx(result, builtin, rl, ru);
+				computeRowMxx(c, builtin, rl, ru);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColMxx(result, builtin);
+				computeColMxx(c, builtin);
 		}
 		else {
 			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
 		}
 	}
 
-	protected abstract void computeSum(MatrixBlock result, KahanFunction kplus);
-
-	protected abstract void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru);
-
-	protected abstract void computeColSums(MatrixBlock result, KahanFunction kplus);
-
-	protected abstract void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru);
-
-	// dynamic memory management
+	protected void setandExecute(double[] c, KahanObject kbuff, KahanPlus kplus2, double val, int rix) {
+		kbuff.set(c[rix], c[rix + 1]);
+		kplus2.execute2(kbuff, val);
+		c[rix] = kbuff._sum;
+		c[rix + 1] = kbuff._correction;
+	}
 
 	public static void setupThreadLocalMemory(int len) {
 		Pair<int[], double[]> p = new Pair<>();
@@ -447,7 +366,7 @@ public abstract class ColGroupValue extends ColGroup {
 		for(int i = 0; i < numCols; i++)
 			_colIndexes[i] = in.readInt();
 
-		_dict = IDictionary.read(in, _lossy);
+		_dict = ADictionary.read(in, _lossy);
 
 	}
 
@@ -472,7 +391,7 @@ public abstract class ColGroupValue extends ColGroup {
 		long ret = 0; // header
 		ret += 4; // num rows int
 		ret += 4; // num cols int
-		ret += 1; // Zeros boolean
+		ret += 1; // zeros boolean
 		ret += 1; // lossy boolean
 		// col indices
 		ret += 4 * _colIndexes.length;
@@ -480,5 +399,17 @@ public abstract class ColGroupValue extends ColGroup {
 		ret += _dict.getExactSizeOnDisk();
 		return ret;
 	}
+
+	public abstract int[] getCounts(int[] out);
+
+	public abstract int[] getCounts(int rl, int ru, int[] out);
+
+	protected abstract void computeSum(double[] c, KahanFunction kplus);
+
+	protected abstract void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru);
+
+	protected abstract void computeColSums(double[] c, KahanFunction kplus);
+
+	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
 
 }

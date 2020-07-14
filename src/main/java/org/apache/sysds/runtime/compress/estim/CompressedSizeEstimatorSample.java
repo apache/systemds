@@ -24,8 +24,8 @@ import java.util.HashMap;
 import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.sample.HassAndStokes;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap.BitmapType;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -63,7 +63,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		int[] sampleRows = _sampleRows;
 
 		// extract statistics from sample
-		AbstractBitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _compSettings);
+		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _compSettings);
 		EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, numCols);
 
 		// estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
@@ -99,12 +99,12 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		return new CompressedSizeInfoColGroup(totalFacts, _compSettings.validCompressions);
 	}
 
-	private static int getNumDistinctValues(AbstractBitmap ubm, int numRows, int[] sampleRows,
+	private static int getNumDistinctValues(ABitmap ubm, int numRows, int[] sampleRows,
 		HashMap<Integer, Double> solveCache) {
 		return HassAndStokes.haasAndStokes(ubm, numRows, sampleRows.length, solveCache);
 	}
 
-	private static int getNumRuns(AbstractBitmap ubm, int sampleSize, int totalNumRows, int[] sampleRows) {
+	private static int getNumRuns(ABitmap ubm, int sampleSize, int totalNumRows, int[] sampleRows) {
 		int numVals = ubm.getNumValues();
 		double numRuns = 0;
 		for(int vi = 0; vi < numVals; vi++) {

@@ -1,16 +1,17 @@
-# Developing Apache SystemDS on Windows Platform
+## Developing Apache SystemDS on Windows Platform
 
 These instructions will help you build Apache SystemDS from source code, which is the basis for engine and algorithms development.
 The following conventions will be used to refer to directories on your machine:
 
 * `<USER_HOME>` is your home directory.
-* `<MAVEN_HOME>` is the root directory for the Apache Maven source code.  
+* `<MAVEN_HOME>` is the root directory for the Apache Maven source code.
+  <details>
+    <summary> <b>Install instruction</b> </summary>
+  
+  </details>  
+
 * `<SYSTEMDS_HOME>` is the root directory for the SystemDS source code.
 * `<SPARK_HOME>` is the root directory for the Apache Spark source code.
-* `<SCALA_HOME>` is the root directory for the Scala.
-Ex. `C:\Program Files (x86)\scala`
-* `<SBT_HOME>` is the root directory for the Scala SBT.
-Ex. `C:\Program Files (x86\sbt`
 * `<JDK_18_HOME>` is the root directory for the 1.8 JDK.
 * `<CUDA_HOME>`,`<CUDA_PATH>` is the top directory for NVIDIA GPU Computing Toolkit.  
 Ex. `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0`
@@ -18,13 +19,13 @@ Also, make sure that `libnvvp`, `bin` folders are accessible to command line.
 *  `<CUDNN_PATH>` is the path 
 Ex. `C:\Program Files\cudnn-9.0-windows10-x64-v7.2.1.38\cuda`
 
-## Getting Apache SystemDS Source Code
+### Getting Apache SystemDS Source Code
 
-SystemDS source code is available from [github.com/apache/systemml](https://github.com/apache/systemml) by either cloning or
+SystemDS source code is available from [github.com/apache/systemds](https://github.com/apache/systemds) by either cloning or
 downloading a zip file (based on a branch) into `<SYSTEMDS_HOME>`. The default is the *master* branch.
 
 ````
-git clone https://github.com/apache/systemml systemds
+git clone https://github.com/apache/systemds systemds
 ```` 
 
 The master branch contains the source code which will be used to create the next major version of Apache SystemDS.
@@ -32,23 +33,17 @@ The master branch contains the source code which will be used to create the next
 _**Speed Tip:**_ If the complete repository history isn't needed then using a shallow clone (`git clone --depth 1`) will
 save significant time.
 
-[TODO 1]: Get the spark, mvn and java download installation
-Apache SystemDS requires dependencies from the other Apache projects. To download these sources,
-run one of the `getSparkMvnJdk` scripts located in the `<SYSTEMDS_HOME>` directory. These scripts clone their respective
-*master* branches.
-* `getSpark.bat` for Windows.
+### Building SystemDS source code
 
-## Building SystemDS source code
+`IntelliJ IDEA` or `Eclipse` is preferred for best developer experience.
 
-IntelliJ IDEA is preferred for best developer experience.
-
-### Opening the IntelliJ Source Code for Build
+#### Opening the IntelliJ Source Code for Build
 
 Using IntelliJ IDEA **File | Open**, select the `<SYSTEMDS_HOME>` directory. 
 * If IntelliJ IDEA displays an error about a missing or out of date required plugin (e.g. maven),
   [enable, upgrade, or install that plugin](https://www.jetbrains.com/help/idea/managing-plugins.html) and restart IntelliJ IDEA.
 
-### IntelliJ Build Configuration
+#### IntelliJ Build Configuration
 
 JDK version 1.8 (u151 or newer) is required for building and developing for SystemDS developement.
 
@@ -65,17 +60,15 @@ JDK version 1.8 (u151 or newer) is required for building and developing for Syst
 5. _**Speed Tip:**_ If the development machine have enough RAM, [configure the compiler settings](https://www.jetbrains.com/help/idea/specifying-compilation-settings.html)
    to enable the "Compile independent modules in parallel" option.
  
-### Building the Source Code
+#### Building the Source Code
 To build SystemDS from source, choose **Build | Build Project** from the main menu.
 OR
 To maven build, run the `mvn` command in `<SYSTEMDS_HOME>` directory. See the `pom.xml` file for details.
 
-## Testing
+### Testing
 To run the SystemDS built from source, choose **Run | Run** from the main menu.
 
 To run tests on the build, apply these setting to the **Run | Edit Configurations... | Defaults | JUnit** configuration tab:
   * Working dir: `<SYSTEMDS_HOME>`
   * VM options:
     * `-ea`
-    * `-junit4`
-    * `-Djava.system.class.loader=com.intellij.rt.execution.junit.JUnitStarter`

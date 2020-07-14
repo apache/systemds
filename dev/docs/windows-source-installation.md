@@ -1,7 +1,7 @@
 ## Developing Apache SystemDS on Windows Platform
 
-These instructions will help you build Apache SystemDS from source code, which is the basis for engine and algorithms development.
-The following conventions will be used to refer to directories on your machine:
+These instructions will help you build Apache SystemDS from source code, which is the basis for the engine
+and algorithms development. The following conventions will be used to refer to directories on your machine:
 
 * `<USER_HOME>` is your home directory.
 * `<JDK_18_HOME>` is the root directory for the 1.8 JDK.
@@ -69,13 +69,14 @@ JDK version 1.8 (u151 or newer) is required for building and developing for Syst
    to enable the "Compile independent modules in parallel" option. Also set the "User-local build process VM options" to `-Xmx2G`.
    These changes will greatly reduce the compile time.
 4. Now, selecting the IntelliJ IDEA **Build | Build module 'systemds'** option starts the maven build.
-5. _**Speed Tip:**_ If the development machine have enough RAM, [configure the compiler settings](https://www.jetbrains.com/help/idea/specifying-compilation-settings.html)
+5. _**Speed Tip:**_ If the development machine have enough RAM,
+   [configure the compiler settings](https://www.jetbrains.com/help/idea/specifying-compilation-settings.html)
    to enable the "Compile independent modules in parallel" option.
  
 #### Building the Source Code
 To build SystemDS from source, choose **Build | Build Project** from the main menu.
 OR
-To maven build, run the `mvn` command in `<SYSTEMDS_HOME>` directory. See the `pom.xml` file for details.
+To maven build, run the `mvn clean package` command in `<SYSTEMDS_HOME>` directory. See the `pom.xml` file for details.
 
 ### Testing
 To run the SystemDS built from source, choose **Run | Run** from the main menu.

@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress;
 
-import java.util.Set;
+import java.util.EnumSet;
 
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
@@ -46,18 +46,20 @@ public class CompressionSettings {
 	 */
 	public final double samplingRatio;
 
-	/**
-	 * Share DDC Dictionaries between ColGroups.
-	 * 
-	 * TODO Fix The DDC dictionary sharing.
-	 */
-	public final boolean allowSharedDDCDictionary;
+	/** Share DDC Dictionaries between ColGroups. */
+	public final boolean allowSharedDictionary;
 
 	/**
 	 * Transpose input matrix, to optimize performance, this reallocate the matrix to a more cache conscious allocation
 	 * for iteration in columns.
 	 */
 	public final boolean transposeInput;
+
+	/**
+	 * Boolean specifying if the OLE and RLE should construct skip to enable skipping large amounts of rows.
+	 * (Optimization)
+	 */
+	public final boolean skipList;
 
 	/** If the seed is -1 then the system used system millisecond time and class hash for seeding. */
 	public final int seed;
@@ -78,14 +80,16 @@ public class CompressionSettings {
 	 * Valid Compressions List, containing the ColGroup CompressionTypes that are allowed to be used for the compression
 	 * Default is to always allow for Uncompromisable ColGroup.
 	 */
-	public final Set<CompressionType> validCompressions;
+	public final EnumSet<CompressionType> validCompressions;
 
-	protected CompressionSettings(double samplingRatio, boolean allowSharedDDCDictionary, boolean transposeInput,
-		int seed, boolean investigateEstimate, boolean lossy, Set<CompressionType> validCompressions,
-		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxStaticColGroupCoCode) {
+	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, boolean transposeInput,
+		boolean skipList, int seed, boolean investigateEstimate, boolean lossy,
+		EnumSet<CompressionType> validCompressions, boolean sortValuesByLength, PartitionerType columnPartitioner,
+		int maxStaticColGroupCoCode) {
 		this.samplingRatio = samplingRatio;
-		this.allowSharedDDCDictionary = allowSharedDDCDictionary;
+		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
+		this.skipList = skipList;
 		this.seed = seed;
 		this.investigateEstimate = investigateEstimate;
 		this.validCompressions = validCompressions;
@@ -100,7 +104,7 @@ public class CompressionSettings {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n" + super.toString());
 		sb.append("\n Valid Compressions: " + validCompressions);
-		sb.append("\n DDC1 share dict: " + allowSharedDDCDictionary);
+		sb.append("\n DDC1 share dict: " + allowSharedDictionary);
 		sb.append("\n Partitioner: " + columnPartitioner);
 		sb.append("\n Lossy: " + lossy);
 		// If needed for debugging add more fields to the printing.

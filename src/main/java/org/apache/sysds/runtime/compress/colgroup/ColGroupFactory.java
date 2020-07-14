@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -54,7 +54,7 @@ public class ColGroupFactory {
 	 * @param compRatios   The previously computed Compression ratings of individual col indexes.
 	 * @param groups       The column groups to consider compressing together.
 	 * @param compSettings The compression settings to construct the compression based on.
-	 * @param k            The number of parallelism used.
+	 * @param k            The degree of parallelism used.
 	 * @return A Resulting array of ColGroups, containing the compressed information from the input matrix block.
 	 */
 	public static ColGroup[] compressColGroups(MatrixBlock in, HashMap<Integer, Double> compRatios, List<int[]> groups,
@@ -146,7 +146,7 @@ public class ColGroupFactory {
 		CompressedSizeInfoColGroup sizeInfo;
 		// The compression type is decided based on a full bitmap since it
 		// will be reused for the actual compression step.
-		AbstractBitmap ubm = null;
+		ABitmap ubm = null;
 		PriorityQueue<CompressedColumn> compRatioPQ = CompressedColumn.makePriorityQue(compRatios, colIndexes);
 
 		// Switching to exact estimator here, when doing the actual compression.
@@ -215,7 +215,7 @@ public class ColGroupFactory {
 	 * @param rawMatrixBlock The copy of the original input (maybe transposed) MatrixBlock
 	 * @return A Compressed ColGroup
 	 */
-	public static ColGroup compress(int[] colIndexes, int rlen, AbstractBitmap ubm, CompressionType compType,
+	public static ColGroup compress(int[] colIndexes, int rlen, ABitmap ubm, CompressionType compType,
 		CompressionSettings cs, MatrixBlock rawMatrixBlock) {
 		switch(compType) {
 			case DDC:
@@ -231,8 +231,6 @@ public class ColGroupFactory {
 				return new ColGroupOLE(colIndexes, rlen, ubm, cs);
 			case UNCOMPRESSED:
 				return new ColGroupUncompressed(colIndexes, rawMatrixBlock, cs);
-			// case QUAN:
-				// return new ColGroupQuan(colIndexes, rlen, ubm);
 			default:
 				throw new DMLCompressionException("Not implemented ColGroup Type compressed in factory.");
 		}

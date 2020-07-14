@@ -25,8 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -42,7 +41,7 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		super();
 	}
 
-	protected ColGroupDDC2(int[] colIndices, int numRows, AbstractBitmap ubm, CompressionSettings cs) {
+	protected ColGroupDDC2(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
 		super(colIndices, numRows, ubm, cs);
 		_data = new char[numRows];
 
@@ -54,9 +53,9 @@ public class ColGroupDDC2 extends ColGroupDDC {
 			int zeroIx = containsAllZeroValue();
 			if(zeroIx < 0) {
 				zeroIx = numVals;
-				_dict = IDictionary.materializeZeroValue(_dict, numCols);
 			}
 			Arrays.fill(_data, (char) zeroIx);
+			_zeros = true;
 		}
 
 		// iterate over values and write dictionary codes
@@ -68,10 +67,10 @@ public class ColGroupDDC2 extends ColGroupDDC {
 		}
 	}
 
-	// Internal Constructor, to be used when copying a DDC Colgroup, and for scalar operations
-	protected ColGroupDDC2(int[] colIndices, int numRows, double[] values, char[] data) {
-		super(colIndices, numRows, values);
+	protected ColGroupDDC2(int[] colIndices, int numRows, ADictionary dict, char[] data, boolean zeros) {
+		super(colIndices, numRows, dict);
 		_data = data;
+		_zeros = zeros;
 	}
 
 	@Override
@@ -82,23 +81,20 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	/**
 	 * Getter method to get the data, contained in The DDC ColGroup.
 	 * 
-	 * Not safe if modifications is made to the byte list.
-	 * 
 	 * @return The contained data
 	 */
-
 	public char[] getData() {
 		return _data;
 	}
 
 	@Override
-	protected int getIndex(int r){
+	protected int getIndex(int r) {
 		return _data[r];
 	}
-	
+
 	@Override
-	protected int getIndex(int r, int colIx){
-		return _data[r]  * getNumCols() + colIx;
+	protected int getIndex(int r, int colIx) {
+		return _data[r] * getNumCols() + colIx;
 	}
 
 	@Override
@@ -107,18 +103,13 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	protected double getData(int r, int colIx,  double[] dictionary) {
+	protected double getData(int r, int colIx, double[] dictionary) {
 		return _dict.getValue(_data[r] * getNumCols() + colIx);
 	}
 
 	@Override
 	protected void setData(int r, int code) {
 		_data[r] = (char) code;
-	}
-
-	@Override
-	protected int getCode(int r) {
-		return _data[r];
 	}
 
 	@Override
@@ -155,170 +146,14 @@ public class ColGroupDDC2 extends ColGroupDDC {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		int ncol = getNumCols();
-		double[] values = getValues();
-		for(int i = rl; i < ru; i++)
-			for(int j = 0; j < ncol; j++)
-				target.appendValue(i, _colIndexes[j], values[_data[i] * ncol + j]);
-		// note: append ok because final sort per row
-	}
-
-	@Override
-	public void decompressToBlock(MatrixBlock target, int colpos) {
-		int nrow = getNumRows();
-		int ncol = getNumCols();
-		double[] c = target.getDenseBlockValues();
-		double[] values = getValues();
-		int nnz = 0;
-		for(int i = 0; i < nrow; i++)
-			nnz += ((c[i] = values[_data[i] * ncol + colpos]) != 0) ? 1 : 0;
-		target.setNonZeros(nnz);
-	}
-
-	@Override
-	public int[] getCounts(int[] counts) {
-		return getCounts(0, getNumRows(), counts);
-	}
-
-	@Override
-	public int[] getCounts(int rl, int ru, int[] counts) {
-		final int numVals = getNumValues();
-		Arrays.fill(counts, 0, numVals, 0);
-		for(int i = rl; i < ru; i++)
-			counts[_data[i]]++;
-		return counts;
-	}
-
-	@Override
-	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
-		final int ncol = getNumCols();
-		final int numVals = getNumValues();
-		final double[] values = getValues();
-
-		// pre-aggregate nnz per value tuple
-		int[] counts = new int[numVals];
-		for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol)
-			for(int j = 0; j < ncol; j++)
-				counts[k] += (values[valOff + j] != 0) ? 1 : 0;
-
-		// scan data and add counts to output rows
-		for(int i = rl; i < ru; i++)
-			rnnz[i - rl] += counts[_data[i]];
-	}
-
-	@Override
-	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
-		double[] b = ColGroupConverter.getDenseVector(vector);
-		double[] c = result.getDenseBlockValues();
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-
-		// prepare reduced rhs w/ relevant values
-		double[] sb = new double[numCols];
-		for(int j = 0; j < numCols; j++) {
-			sb[j] = b[_colIndexes[j]];
-		}
-
-		// pre-aggregate all distinct values
-		double[] vals = preaggValues(numVals, sb);
-
-		// iterative over codes and add to output
-		for(int i = rl; i < ru; i++)
-			c[i] += vals[_data[i]];
-	}
-
-	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
-		double[] a = ColGroupConverter.getDenseVector(vector);
-		double[] c = result.getDenseBlockValues();
-		final int nrow = getNumRows();
-		final int ncol = getNumCols();
-		final int numVals = getNumValues();
-
-		if(8 * numVals < getNumRows()) {
-			// iterative over codes and pre-aggregate inputs per code
-			// temporary array also avoids false sharing in multi-threaded environments
-			double[] vals = allocDVector(numVals, true);
-			for(int i = 0; i < nrow; i++) {
-				vals[_data[i]] += a[i];
-			}
-
-			// post-scaling of pre-aggregate with distinct values
-			postScaling(vals, c);
-		}
-		else // general case
-		{
-			// iterate over codes, compute all, and add to the result
-			double[] values = getValues();
-			for(int i = 0; i < nrow; i++) {
-				double aval = a[i];
-				if(aval != 0)
-					for(int j = 0, valOff = _data[i] * ncol; j < ncol; j++)
-						c[_colIndexes[j]] += aval * values[valOff + j];
-			}
-		}
-	}
-
-	// @Override
-	// public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) {
-	// 	double[] c = result.getDenseBlockValues();
-	// 	final int nrow = getNumRows();
-	// 	final int ncol = getNumCols();
-	// 	final int numVals = getNumValues();
-	// 	final double[] dictionary = getValues();
-
-	// 	if(8 * numVals < getNumRows()) {
-	// 		// iterative over codes and pre-aggregate inputs per code
-	// 		// temporary array also avoids false sharing in multi-threaded environments
-	// 		double[] vals = allocDVector(numVals, true);
-	// 		for(int i = 0; i < nrow; i++) {
-	// 			vals[_data[i]] += a.getData(i, dictionary);
-	// 		}
-
-	// 		// post-scaling of pre-aggregate with distinct values
-	// 		postScaling(vals, c);
-	// 	}
-	// 	else // general case
-	// 	{
-	// 		// iterate over codes, compute all, and add to the result
-	// 		double[] values = getValues();
-	// 		for(int i = 0; i < nrow; i++) {
-	// 			double aval = a.getData(i, 0, dictionary);
-	// 			if(aval != 0)
-	// 				for(int j = 0, valOff = _data[i] * ncol; j < ncol; j++)
-	// 					c[_colIndexes[j]] += aval * values[valOff + j];
-	// 		}
-	// 	}
-	// }
-
-	// @Override
-	// protected void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru) {
-	// 	// note: due to corrections the output might be a large dense block
-	// 	DenseBlock c = result.getDenseBlock();
-	// 	KahanObject kbuff = new KahanObject(0, 0);
-	// 	KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
-
-	// 	// pre-aggregate nnz per value tuple
-	// 	double[] vals = sumAllValues(kplus, kbuff, false);
-
-	// 	// scan data and add to result (use kahan plus not general KahanFunction
-	// 	// for correctness in case of sqk+)
-	// 	for(int i = rl; i < ru; i++) {
-	// 		double[] cvals = c.values(i);
-	// 		int cix = c.pos(i);
-	// 		kbuff.set(cvals[cix], cvals[cix + 1]);
-	// 		kplus2.execute2(kbuff, vals[_data[i]]);
-	// 		cvals[cix] = kbuff._sum;
-	// 		cvals[cix + 1] = kbuff._correction;
-	// 	}
-	// }
-
-	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {
-		// fast path: sparse-safe and -unsafe operations
-		// as zero are represented, it is sufficient to simply apply the scalar op
-		return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op), _data);
+		double val0 = op.executeScalar(0);
+		if(op.sparseSafe || val0 == 0 || !_zeros) {
+			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op), _data, _zeros);
+		}
+		else {
+			return new ColGroupDDC2(_colIndexes, _numRows, applyScalarOp(op, val0, _colIndexes.length), _data, false);
+		}
 	}
 
 	@Override

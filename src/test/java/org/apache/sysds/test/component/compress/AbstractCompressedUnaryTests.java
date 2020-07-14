@@ -171,25 +171,25 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			assertTrue("dim 2 is equal in non compressed res", d1[0].length == dim2);
 			assertTrue("dim 2 is equal in compressed res", d2[0].length == dim2);
 
+			String css = compressionSettings.toString();
 			if(compressionSettings.lossy) {
 				if(aggType == AggType.COLSUMS) {
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * 30 * dim2);
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * 150 * cols, css);
 				}
 				else if(aggType == AggType.ROWSUMS) {
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * dim1);
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * rows, css);
+				}
+				else if(aggType == AggType.SUM) {
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * cols * rows, css);
+
 				}
 				else {
 					boolean ignoreZero = true;
-					TestUtils.compareMatricesPercentageDistance(d1,
-						d2,
-						0.1,
-						0.9,
-						compressionSettings.toString(),
-						ignoreZero);
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.1, 0.9, css, ignoreZero);
 				}
 			}
 			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 20, compressionSettings.toString());
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 30, css);
 			}
 		}
 		catch(NotImplementedException e) {

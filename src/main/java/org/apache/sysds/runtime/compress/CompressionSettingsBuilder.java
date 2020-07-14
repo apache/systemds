@@ -31,8 +31,9 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
  */
 public class CompressionSettingsBuilder {
 	private double samplingRatio = 1.0;
-	private boolean allowSharedDDCDictionary = false;
+	private boolean allowSharedDictionary = false;
 	private boolean transposeInput = true;
+	private boolean skipList = true;
 	private int seed = -1;
 	private boolean investigateEstimate = false;
 	private boolean lossy = false;
@@ -46,8 +47,9 @@ public class CompressionSettingsBuilder {
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
 		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED);
-		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");;
-		for(String comp:  validCompressionsString){
+		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");
+		;
+		for(String comp : validCompressionsString) {
 			validCompressions.add(CompressionType.valueOf(comp));
 		}
 	}
@@ -60,7 +62,7 @@ public class CompressionSettingsBuilder {
 	 */
 	public CompressionSettingsBuilder copySettings(CompressionSettings that) {
 		this.samplingRatio = that.samplingRatio;
-		this.allowSharedDDCDictionary = that.allowSharedDDCDictionary;
+		this.allowSharedDictionary = that.allowSharedDictionary;
 		this.transposeInput = that.transposeInput;
 		this.seed = that.seed;
 		this.investigateEstimate = that.investigateEstimate;
@@ -105,11 +107,11 @@ public class CompressionSettingsBuilder {
 	/**
 	 * Allow the Dictionaries to be shared between different column groups.
 	 * 
-	 * @param allowSharedDDCDictionary A boolean specifying if the dictionary can be shared between column groups.
+	 * @param allowSharedDictionary A boolean specifying if the dictionary can be shared between column groups.
 	 * @return The CompressionSettingsBuilder
 	 */
-	public CompressionSettingsBuilder setAllowSharedDDCDictionary(boolean allowSharedDDCDictionary) {
-		this.allowSharedDDCDictionary = allowSharedDDCDictionary;
+	public CompressionSettingsBuilder setAllowSharedDictionary(boolean allowSharedDictionary) {
+		this.allowSharedDictionary = allowSharedDictionary;
 		return this;
 	}
 
@@ -122,6 +124,18 @@ public class CompressionSettingsBuilder {
 	 */
 	public CompressionSettingsBuilder setTransposeInput(boolean transposeInput) {
 		this.transposeInput = transposeInput;
+		return this;
+	}
+
+	/**
+	 * Specify if the Offset list encoding should utilize skip lists. This increase size of compression but improves
+	 * performance in Offset encodings. OLE and RLE.
+	 * 
+	 * @param skipList a boolean specifying if the skiplist function is enabled
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setSkipList(boolean skipList) {
+		this.skipList = skipList;
 		return this;
 	}
 
@@ -212,7 +226,7 @@ public class CompressionSettingsBuilder {
 	 * @return The CompressionSettings
 	 */
 	public CompressionSettings create() {
-		return new CompressionSettings(samplingRatio, allowSharedDDCDictionary, transposeInput, seed,
+		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed,
 			investigateEstimate, lossy, validCompressions, sortValuesByLength, columnPartitioner,
 			maxStaticColGroupCoCode);
 	}

@@ -32,7 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,9 +72,9 @@ public abstract class JolEstimateTest {
 			colIndexes[x] = x;
 		}
 		try {
-			AbstractBitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, cs);
+			ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, cs);
 			cg = ColGroupFactory.compress(colIndexes, mbt.getNumColumns(), ubm, getCT(), cs, mbt);
-			AbstractBitmap ubml = BitmapEncoder.extractBitmap(colIndexes, mbt, csl);
+			ABitmap ubml = BitmapEncoder.extractBitmap(colIndexes, mbt, csl);
 			cgl = ColGroupFactory.compress(colIndexes, mbt.getNumColumns(), ubml, getCT(), csl, mbt);
 
 		}

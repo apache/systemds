@@ -36,38 +36,36 @@ import org.apache.sysds.utils.MemoryEstimates;
  * group. The primary reason for its introduction was to provide an entry point for specialization such as shared
  * dictionaries, which require additional information.
  */
-public class Dictionary extends IDictionary {
+public class Dictionary extends ADictionary {
 
-	// Linearized row major.
-	// v11 v12
-	// v21 v22
-	// ||
-	// \/
-	// v11 v12 v21 v22
-	protected final double[] _values;
+	private final double[] _values;
 
 	public Dictionary(double[] values) {
 		_values = values;
 	}
 
+	@Override
 	public double[] getValues() {
 		return _values;
 	}
 
+	@Override
 	public double getValue(int i) {
 		return _values[i];
 	}
 
+	@Override
 	public long getInMemorySize() {
 		// object + values array + double
 		return getInMemorySize(_values.length);
 	}
 
-	public static long getInMemorySize(int valuesCount) {
+	protected static long getInMemorySize(int valuesCount) {
 		// object + values array
 		return 16 + MemoryEstimates.doubleArrayCost(valuesCount);
 	}
 
+	@Override
 	public int hasZeroTuple(int ncol) {
 		int len = _values.length / ncol;
 		for(int i = 0, off = 0; i < len; i++, off += ncol) {
@@ -80,6 +78,7 @@ public class Dictionary extends IDictionary {
 		return -1;
 	}
 
+	@Override
 	public double aggregate(double init, Builtin fn) {
 		// full aggregate can disregard tuple boundaries
 		int len = _values.length;
@@ -89,16 +88,28 @@ public class Dictionary extends IDictionary {
 		return ret;
 	}
 
-	public IDictionary apply(ScalarOperator op) {
+	@Override
+	public Dictionary apply(ScalarOperator op) {
 		// in-place modification of the dictionary
 		int len = _values.length;
 		for(int i = 0; i < len; i++)
 			_values[i] = op.executeScalar(_values[i]);
-		return this; // fluent API
+		return this;
 	}
 
 	@Override
-	public IDictionary clone() {
+	public Dictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
+		// allocate new array just once because we need to add the newVal.
+		double[] values = Arrays.copyOf(_values, _values.length + numCols);
+		for(int i = 0; i < _values.length; i++) {
+			values[i] = op.executeScalar(values[i]);
+		}
+		Arrays.fill(values, _values.length, _values.length + numCols, newVal);
+		return new Dictionary(values);
+	}
+
+	@Override
+	public Dictionary clone() {
 		return new Dictionary(_values.clone());
 	}
 
@@ -128,22 +139,19 @@ public class Dictionary extends IDictionary {
 		return 4 + 8 * _values.length;
 	}
 
-	public static Dictionary materializeZeroValueFull(Dictionary OldDictionary, int numCols) {
-		return new Dictionary(Arrays.copyOf(OldDictionary._values, OldDictionary._values.length + numCols));
-	}
-
+	@Override
 	public int getNumberOfValues(int ncol) {
 		return _values.length / ncol;
 	}
 
 	@Override
-	protected double[] sumAllRowsToDouble(KahanFunction kplus, KahanObject kbuff, int nrColumns, boolean allocNew) {
+	protected double[] sumAllRowsToDouble(KahanFunction kplus, KahanObject kbuff, int nrColumns) {
 		if(nrColumns == 1 && kplus instanceof KahanPlus)
 			return getValues(); // shallow copy of values
 
 		// pre-aggregate value tuple
 		final int numVals = _values.length / nrColumns;
-		double[] ret = allocNew ? new double[numVals] : ColGroupValue.allocDVector(numVals, false);
+		double[] ret = ColGroupValue.allocDVector(numVals, false);
 		for(int k = 0; k < numVals; k++) {
 			ret[k] = sumRow(k, kplus, kbuff, nrColumns);
 		}
@@ -160,4 +168,31 @@ public class Dictionary extends IDictionary {
 		return kbuff._sum;
 	}
 
+	@Override
+	protected void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus) {
+		KahanObject kbuff = new KahanObject(0, 0);
+		for(int k = 0, valOff = 0; k < _values.length; k++, valOff += colIndexes.length) {
+			int cntk = counts[k];
+			for(int j = 0; j < colIndexes.length; j++) {
+				kbuff.set(c[colIndexes[j]], c[colIndexes[j] + colIndexes.length]);
+				// int index = getIndex();
+				kplus.execute3(kbuff, getValue(valOff + j), cntk);
+				c[colIndexes[j]] = kbuff._sum;
+				c[colIndexes[j] + colIndexes.length] = kbuff._correction;
+			}
+		}
+
+	}
+
+	@Override
+	protected double sum(int[] counts, int ncol, KahanFunction kplus) {
+		KahanObject kbuff = new KahanObject(0, 0);
+		for(int k = 0, valOff = 0; k < _values.length; k++, valOff += ncol) {
+			int cntk = counts[k];
+			for(int j = 0; j < ncol; j++) {
+				kplus.execute3(kbuff, getValue(valOff + j), cntk);
+			}
+		}
+		return kbuff._sum;
+	}
 }

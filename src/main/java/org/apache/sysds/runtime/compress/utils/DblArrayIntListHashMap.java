@@ -20,15 +20,20 @@
 package org.apache.sysds.runtime.compress.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * This class provides a memory-efficient replacement for {@code HashMap<DblArray,IntArrayList>} for restricted use
  * cases.
  * 
- * TODO: Fix allocation of size such that it contains some amount of overhead from the start, to enable hashmap
- * performance.
  */
 public class DblArrayIntListHashMap extends CustomHashMap {
+
+	protected static final Log LOG = LogFactory.getLog(DblArrayIntListHashMap.class.getName());
 
 	private DArrayIListEntry[] _data = null;
 
@@ -92,7 +97,9 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 				ret.add(e);
 			}
 		}
+		Collections.sort(ret);
 
+		LOG.info(ret);
 		return ret;
 	}
 
@@ -132,7 +139,7 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 		return h & (length - 1);
 	}
 
-	public class DArrayIListEntry {
+	public class DArrayIListEntry implements Comparator<DArrayIListEntry>, Comparable<DArrayIListEntry> {
 		public DblArray key;
 		public IntArrayList value;
 		public DArrayIListEntry next;
@@ -141,6 +148,31 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 			key = ekey;
 			value = evalue;
 			next = null;
+		}
+
+		@Override
+		public int compare(DArrayIListEntry o1, DArrayIListEntry o2) {
+			double[] o1d = o1.key.getData();
+			double[] o2d = o2.key.getData();
+			for(int i = 0; i < o1d.length && i < o2d.length; i++) {
+				if(o1d[i] > o2d[i]) {
+					return 1;
+				}
+				else if(o1d[i] < o2d[i]) {
+					return -1;
+				}
+			}
+			if(o1d.length > o2d.length) {
+				return 1;
+			}
+			else {
+				return -1;
+			}
+		}
+
+		@Override
+		public int compareTo(DArrayIListEntry o) {
+			return compare(this, o);
 		}
 	}
 }

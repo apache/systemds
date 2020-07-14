@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -35,7 +35,7 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
-		AbstractBitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _compSettings);
+		ABitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _compSettings);
 		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap),
 			_compSettings.validCompressions);
 	}

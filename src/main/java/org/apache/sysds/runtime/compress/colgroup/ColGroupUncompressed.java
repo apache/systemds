@@ -54,7 +54,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 */
 	private MatrixBlock _data;
 
-	public ColGroupUncompressed() {
+	protected ColGroupUncompressed() {
 		super();
 	}
 
@@ -71,7 +71,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param compSettings   The Settings for how to compress this block, Here using information about the raw block if
 	 *                       it is transposed.
 	 */
-	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, CompressionSettings compSettings) {
+	protected ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, CompressionSettings compSettings) {
 		super(colIndicesList, compSettings.transposeInput ? rawBlock.getNumColumns() : rawBlock.getNumRows());
 
 		// prepare meta data
@@ -116,7 +116,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * 
 	 * @param groupsToDecompress compressed columns to subsume. Must contain at least one element.
 	 */
-	public ColGroupUncompressed(List<ColGroup> groupsToDecompress) {
+	protected ColGroupUncompressed(List<ColGroup> groupsToDecompress) {
 		super(mergeColIndices(groupsToDecompress), groupsToDecompress.get(0)._numRows);
 
 		// Invert the list of column indices
@@ -141,7 +141,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param numRows    number of rows in the column, for passing to the superclass
 	 * @param data       matrix block
 	 */
-	public ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) {
+	protected ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) {
 		super(colIndices, numRows);
 		_data = data;
 	}
@@ -254,6 +254,10 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
+	public void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
 		// Pull out the relevant rows of the vector
 		int clen = _colIndexes.length;
@@ -266,22 +270,7 @@ public class ColGroupUncompressed extends ColGroup {
 		shortVector.recomputeNonZeros();
 
 		// Multiply the selected columns by the appropriate parts of the vector
-		LibMatrixMult.matrixMult(_data, shortVector, result, rl, ru);
-	}
-
-	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int k) {
-		// Pull out the relevant rows of the vector
-		int clen = _colIndexes.length;
-
-		MatrixBlock shortVector = new MatrixBlock(clen, 1, false);
-		shortVector.allocateDenseBlock();
-		double[] b = shortVector.getDenseBlockValues();
-		for(int colIx = 0; colIx < clen; colIx++)
-			b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
-		shortVector.recomputeNonZeros();
-
-		// Multiply the selected columns by the appropriate parts of the vector
-		LibMatrixMult.matrixMult(_data, shortVector, result, k);
+		LibMatrixMult.matrixMult(_data, shortVector, result,rl,ru);
 	}
 
 	@Override
@@ -324,11 +313,14 @@ public class ColGroupUncompressed extends ColGroup {
 		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
 	}
 
-	@Override
+	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] ret) {
+		throw new NotImplementedException("Should not be called");
+	}
+
 	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock ret) {
 		// execute unary aggregate operations
 		LibMatrixAgg.aggregateUnaryMatrix(_data, ret, op);
-
+		ret = ret.allocateBlock();
 		// shift result into correct column indexes
 		if(op.indexFn instanceof ReduceRow) {
 			// shift partial results, incl corrections
@@ -347,7 +339,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru) {
+	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] result, int rl, int ru) {
 		throw new NotImplementedException("Unimplemented Specific Sub ColGroup Aggregation Operation");
 	}
 
@@ -489,12 +481,6 @@ public class ColGroupUncompressed extends ColGroup {
 	@Override
 	public boolean getIfCountsType() {
 		return false;
-	}
-
-	@Override
-	public int[] getCounts() {
-		throw new DMLCompressionException(
-			"Invalid function call, the counts in Uncompressed Col Group is always 1 for each value");
 	}
 
 	@Override

@@ -4,20 +4,32 @@ These instructions will help you build Apache SystemDS from source code, which i
 The following conventions will be used to refer to directories on your machine:
 
 * `<USER_HOME>` is your home directory.
+* `<JDK_18_HOME>` is the root directory for the 1.8 JDK.
 * `<MAVEN_HOME>` is the root directory for the Apache Maven source code.
-  <details>
-    <summary> <b>Install instruction</b> </summary>
-  
-  </details>  
-
 * `<SYSTEMDS_HOME>` is the root directory for the SystemDS source code.
 * `<SPARK_HOME>` is the root directory for the Apache Spark source code.
-* `<JDK_18_HOME>` is the root directory for the 1.8 JDK.
+* `<HADOOP_HOME>` is the root directory for 
 * `<CUDA_HOME>`,`<CUDA_PATH>` is the top directory for NVIDIA GPU Computing Toolkit.  
-Ex. `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0`
+Ex. For version `9.0`, it would like `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0`
 Also, make sure that `libnvvp`, `bin` folders are accessible to command line.
 *  `<CUDNN_PATH>` is the path 
-Ex. `C:\Program Files\cudnn-9.0-windows10-x64-v7.2.1.38\cuda`
+Ex. Corresponding to the CUDA version, `C:\Program Files\cudnn-9.0-windows10-x64-v7.2.1.38\cuda`
+
+#### Directory structure of the installation
+```py
+.
+├── MAVEN_HOME = './maven'
+|   ├── bin
+|       ├── mvn.exe # and other executables
+├── SPARK_HOME = './spark'
+|   ├── bin
+|       ├── spark-shell # and other invocation commands
+├── HADOOP_HOME = './hadoop'
+│   ├── bin
+|       ├── wintuils.exe # The Default content layout and html file.
+├── SYSTEMDS_HOME
+
+```
 
 ### Getting Apache SystemDS Source Code
 

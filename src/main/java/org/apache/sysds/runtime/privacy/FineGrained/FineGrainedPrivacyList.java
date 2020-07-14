@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.privacy.FineGrained;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -27,35 +28,41 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 /**
  * Simple implementation of retrieving fine-grained privacy constraints
- * based on iterating a LinkedHashMap.
+ * based on pairs in an ArrayList.
  */
-public class FineGrainedPrivacyBrute implements FineGrainedPrivacy {
+public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 
-	private Map<DataRange, PrivacyLevel> constraintCollection = new LinkedHashMap<>();
+	private ArrayList<Map.Entry<DataRange, PrivacyLevel>> constraintCollection = new ArrayList<>();
 
 	@Override
 	public void put(DataRange dataRange, PrivacyLevel privacyLevel) {
-		constraintCollection.put(dataRange, privacyLevel);
+		constraintCollection.add(new AbstractMap.SimpleEntry<DataRange, PrivacyLevel>(dataRange, privacyLevel));
 	}
 
 	@Override
-	public Map<DataRange, PrivacyLevel> getPrivacyLevel(DataRange searchRange) {
+	public Map<DataRange,PrivacyLevel> getPrivacyLevel(DataRange searchRange) {
 		Map<DataRange, PrivacyLevel> matches = new LinkedHashMap<>();
-		constraintCollection.forEach((range,level) -> { if (range.overlaps(searchRange)) matches.put(range, level); } );
+		for ( Map.Entry<DataRange, PrivacyLevel> constraint : constraintCollection ){
+			if ( constraint.getKey().overlaps(searchRange) ) 
+				matches.put(constraint.getKey(), constraint.getValue());
+		}
 		return matches;
 	}
 
 	@Override
-	public Map<DataRange, PrivacyLevel> getPrivacyLevelOfElement(long[] searchIndex) {
+	public Map<DataRange,PrivacyLevel> getPrivacyLevelOfElement(long[] searchIndex) {
 		Map<DataRange, PrivacyLevel> matches = new LinkedHashMap<>();
-		constraintCollection.forEach((range,level) -> { if (range.contains(searchIndex)) matches.put(range, level); } );
+		constraintCollection.forEach( constraint -> { 
+			if (constraint.getKey().contains(searchIndex)) 
+				matches.put(constraint.getKey(), constraint.getValue()); 
+		} );
 		return matches;
 	}
 
 	@Override
 	public DataRange[] getDataRangesOfPrivacyLevel(PrivacyLevel privacyLevel) {
 		ArrayList<DataRange> matches = new ArrayList<>();
-		constraintCollection.forEach((k,v) -> { if (v == privacyLevel) matches.add(k); } );
+		constraintCollection.forEach(constraint -> { if (constraint.getValue() == privacyLevel) matches.add(constraint.getKey()); } );
 		return matches.toArray(new DataRange[0]);
 	}
 

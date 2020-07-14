@@ -29,10 +29,10 @@ import java.util.Map;
 
 import org.apache.sysds.runtime.privacy.FineGrained.DataRange;
 import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacy;
-import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyBrute;
+import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyList;
+import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyMap;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runner.RunWith;
@@ -47,16 +47,11 @@ public class FineGrainedPrivacyTest {
 	}
 
 	@Parameterized.Parameters
-	public static Collection FineGrainedPrivacy(){
+	public static Collection<FineGrainedPrivacy[]> FineGrainedPrivacy(){
 		return Arrays.asList(new FineGrainedPrivacy[][] {
-			{new FineGrainedPrivacyBrute()},
-			//{new FineGrainedPrivacyTree()}
+			{new FineGrainedPrivacyMap()},
+			{new FineGrainedPrivacyList()}
 		});
-	}
-
-	@Before
-	public void printFineGrainedPrivacyClass(){
-		System.out.println(this.constraints.getClass().getName());
 	}
 
 	@After
@@ -77,7 +72,6 @@ public class FineGrainedPrivacyTest {
 
 	@Test
 	public void getPrivacyLevelSingleConstraintInRangeTest(){
-		FineGrainedPrivacy constraints = new FineGrainedPrivacyBrute();
 		DataRange inputDataRange = new DataRange(new long[]{3L,2L,7L}, new long[]{5L,6L,9L});
 		PrivacyLevel inputPrivacyLevel = PrivacyLevel.Private;
 		constraints.put(inputDataRange, inputPrivacyLevel);
@@ -88,7 +82,6 @@ public class FineGrainedPrivacyTest {
 
 	@Test
 	public void getPrivacyLevelSingleConstraintNotInRangeTest(){
-		FineGrainedPrivacy constraints = new FineGrainedPrivacyBrute();
 		DataRange inputDataRange = new DataRange(new long[]{3L,2L,7L}, new long[]{5L,6L,9L});
 		PrivacyLevel inputPrivacyLevel = PrivacyLevel.Private;
 		constraints.put(inputDataRange, inputPrivacyLevel);

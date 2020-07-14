@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.privacy;
 
 import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacy;
-import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyBrute;
+import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyList;
 
 /**
  * PrivacyConstraint holds all privacy constraints for data in the system at
@@ -64,7 +64,7 @@ public class PrivacyConstraint
 	 * with a simple FineGrainedPrivacy implementation (FineGrainedPrivacyBrute).
 	 */
 	public void initializeFineGrainedPrivacyConstraints(){
-		initializeFineGrainedPrivacyConstraints(new FineGrainedPrivacyBrute());
+		initializeFineGrainedPrivacyConstraints(new FineGrainedPrivacyList());
 	}
 
 	/**

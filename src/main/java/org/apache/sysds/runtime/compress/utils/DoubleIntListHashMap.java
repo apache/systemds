@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.compress.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * This class provides a memory-efficient replacement for {@code HashMap<Double,IntArrayList>} for restricted use cases.
@@ -91,6 +93,7 @@ public class DoubleIntListHashMap extends CustomHashMap {
 				ret.add(e);
 			}
 		}
+		Collections.sort(ret);
 
 		return ret;
 	}
@@ -133,7 +136,7 @@ public class DoubleIntListHashMap extends CustomHashMap {
 		return h & (length - 1);
 	}
 
-	public class DIListEntry {
+	public class DIListEntry implements Comparator<DIListEntry>, Comparable<DIListEntry> {
 		public double key = Double.MAX_VALUE;
 		public IntArrayList value = null;
 		public DIListEntry next = null;
@@ -143,5 +146,16 @@ public class DoubleIntListHashMap extends CustomHashMap {
 			value = evalue;
 			next = null;
 		}
+
+		@Override
+		public int compareTo(DIListEntry o) {
+			return compare(this, o);
+		}
+
+		@Override
+		public int compare(DIListEntry arg0, DIListEntry arg1) {
+			return Double.compare(arg0.key, arg1.key);
+		}
+
 	}
 }

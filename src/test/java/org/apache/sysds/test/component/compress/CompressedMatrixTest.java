@@ -27,14 +27,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import org.apache.sysds.lops.MMTSJ.MMTSJType;
-import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -123,131 +120,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void testMatrixMultChain() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			MatrixBlock vector1 = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 0.5, 1.5, 1.0, 3));
-
-			// ChainType ctype = ChainType.XtwXv;
-			// Linear regression .
-			for(ChainType ctype : new ChainType[] {ChainType.XtwXv, ChainType.XtXv,
-				// ChainType.XtXvy
-			}) {
-
-				MatrixBlock vector2 = (ctype == ChainType.XtwXv) ? DataConverter
-					.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 0.5, 1.5, 1.0, 3)) : null;
-
-				// matrix-vector uncompressed
-				MatrixBlock ret1 = mb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype);
-
-				// matrix-vector compressed
-				MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype);
-
-				// compare result with input
-				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-
-				if(compressionSettings.lossy) {
-					// TODO Make actual calculation to know the tolerance
-					// double scaledTolerance = lossyTolerance * d1.length * d1.length * 1.5;
-					// if(ctype == ChainType.XtwXv){
-					// scaledTolerance *= d1.length * d1.length * 0.5;
-					// }
-					// TestUtils.compareMatrices(d1, d2, d1.length, d1[0].length, scaledTolerance );
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.95, compressionSettings.toString());
-				}
-				else {
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 512, 350, compressionSettings.toString());
-				}
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
-	public void testTransposeSelfMatrixMult() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-			// ChainType ctype = ChainType.XtwXv;
-			for(MMTSJType mType : new MMTSJType[] {MMTSJType.LEFT,
-				// MMTSJType.RIGHT
-			}) {
-				// matrix-vector uncompressed
-				MatrixBlock ret1 = mb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType);
-
-				// matrix-vector compressed
-				MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType);
-
-				// compare result with input
-				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-				if(compressionSettings.lossy) {
-					/**
-					 * Probably one of the worst thing you can do to increase the amount the values are estimated wrong
-					 */
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.8, compressionSettings.toString());
-				}
-				else {
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 20, compressionSettings.toString());
-				}
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
-	public void testScalarOperationsSparseUnsafe() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			double addValue = 1000;
-			// matrix-scalar uncompressed
-			ScalarOperator sop = new RightScalarOperator(Plus.getPlusFnObject(), addValue);
-			MatrixBlock ret1 = mb.scalarOperations(sop, new MatrixBlock());
-
-			// matrix-scalar compressed
-			MatrixBlock ret2 = cmb.scalarOperations(sop, new MatrixBlock());
-			if(ret2 instanceof CompressedMatrixBlock)
-				ret2 = ((CompressedMatrixBlock) ret2).decompress();
-
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-
-			if(compressionSettings.lossy) {
-				double modifiedTolerance = Math.max(TestConstants.getMaxRangeValue(valRange) + addValue,
-					Math.abs(TestConstants.getMinRangeValue(valRange) + addValue)) * 2 / 127.0;
-				TestUtils.compareMatrices(d1, d2, modifiedTolerance);
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 150, 1, compressionSettings.toString());
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
 	public void testScalarOperations() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
 
+			double mult = 7;
 			// matrix-scalar uncompressed
-			ScalarOperator sop = new RightScalarOperator(Multiply.getMultiplyFnObject(), 7);
+			ScalarOperator sop = new RightScalarOperator(Multiply.getMultiplyFnObject(), mult, _k);
 			MatrixBlock ret1 = mb.scalarOperations(sop, new MatrixBlock());
 
 			// matrix-scalar compressed
@@ -259,8 +139,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
 			if(compressionSettings.lossy) {
-				double modifiedTolerance = lossyTolerance * 7;
-				TestUtils.compareMatrices(d1, d2, modifiedTolerance);
+				double modifiedTolerance = lossyTolerance * mult + lossyTolerance * 0.00001;
+				TestUtils.compareMatrices(d1, d2, modifiedTolerance, compressionSettings.toString());
 			}
 			else {
 				TestUtils.compareMatricesBitAvgDistance(d1, d2, 150, 1, compressionSettings.toString());
@@ -277,20 +157,18 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-			// compare result with input
 
-			// matrix-scalar uncompressed
 			CountDistinctOperator op = new CountDistinctOperator(CountDistinctTypes.COUNT);
 			int ret1 = LibMatrixCountDistinct.estimateDistinctValues(mb, op);
-			// matrix-scalar compressed
 			int ret2 = LibMatrixCountDistinct.estimateDistinctValues(cmb, op);
-
-			// assertTrue(compressionSettings.toString(), ret1 == ret2);
 			String base = compressionSettings.toString() + "\n";
 			if(compressionSettings.lossy) {
-				// The number of distinct values should be significantly lower in lossy mode.
-				assertTrue(base + "estimate is less than actual", ret1 >= ret2);
-				assertTrue(base + "estimate is greater than 0", 0 < ret2);
+				// The number of distinct values should be same or lower in lossy mode.
+				// assertTrue(base + "lossy distinct count " +ret2+ "is less than full " + ret1, ret1 >= ret2);
+
+				// above assumption is false, since the distinct count when using multiple different scales becomes
+				// larger due to differences in scale.
+				assertTrue(base + "lossy distinct count " + ret2 + "is greater than 0", 0 < ret2);
 			}
 			else {
 				assertEquals(base, ret1, ret2);
@@ -368,7 +246,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			long colsEstimate = cStat.estimatedSizeCols;
 			long actualSize = cStat.size;
 			long originalSize = cStat.originalSize;
-			int allowedTolerance = 0;
+			int allowedTolerance = 4096;
 
 			if(compressionSettings.samplingRatio < 1.0) {
 				allowedTolerance = sampleTolerance;
@@ -384,7 +262,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
 			builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
 			builder.append("\n\t" + this.toString());
-			boolean res = actualSize - colsEstimate <= allowedTolerance;
+			boolean res = Math.abs(actualSize - colsEstimate) <= allowedTolerance;
 			assertTrue(builder.toString(), res);
 		}
 		catch(Exception e) {
@@ -417,7 +295,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// it treats the object hierarchy as a tree and not a graph
 			assertTrue(builder.toString(),
 				actualSize <= originalSize &&
-					(compressionSettings.allowSharedDDCDictionary || actualSize == JolEstimatedSize));
+					(compressionSettings.allowSharedDictionary || actualSize == JolEstimatedSize));
 		}
 		catch(Exception e) {
 			e.printStackTrace();

@@ -251,12 +251,19 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 			return super.cmOperations(op);
 		ColGroup grp = _colGroups.get(0);
 		MatrixBlock vals = grp.getValuesAsBlock();
-		if(grp.getIfCountsType()){
-			MatrixBlock counts = ColGroupValue.getCountsAsBlock(grp.getCounts());
-			return vals.cmOperations(op, counts);
+		if(grp instanceof ColGroupValue){
+			int[] counts = ((ColGroupValue) grp).getCounts();
+			return vals.cmOperations(op, getCountsAsBlock(  counts));
 		}else{
 			return vals.cmOperations(op);
 		}
+	}
+
+	private static MatrixBlock getCountsAsBlock(int[] counts) {
+		MatrixBlock ret = new MatrixBlock(counts.length, 1, false);
+		for(int i = 0; i < counts.length; i++)
+			ret.quickSetValue(i, 0, counts[i]);
+		return ret;
 	}
 
 	@Override
@@ -296,12 +303,12 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 		if(grp.getIfCountsType() != true)
 			return grp.getValuesAsBlock().sortOperations(right, result);
 
-		if(right == null) {
+		if(right == null && grp instanceof ColGroupValue) {
 			MatrixBlock vals = grp.getValuesAsBlock();
-			int[] counts = grp.getCounts();
+			int[] counts = ((ColGroupValue)grp).getCounts();
 			double[] data = (vals.getDenseBlock() != null) ? vals.getDenseBlockValues() : null;
 			SortUtils.sortByValue(0, vals.getNumRows(), data, counts);
-			MatrixBlock counts2 = ColGroupValue.getCountsAsBlock(counts);
+			MatrixBlock counts2 = getCountsAsBlock(counts);
 			return vals.sortOperations(counts2, result);
 		}
 		else
@@ -504,12 +511,12 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public boolean isShallowSerialize() {
-		return false;
+		return true;
 	}
 
 	@Override
 	public boolean isShallowSerialize(boolean inclConvert) {
-		return false;
+		return true;
 	}
 
 	@Override

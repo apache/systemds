@@ -24,16 +24,12 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
-import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -42,8 +38,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 /** A group of columns compressed with a single run-length encoded bitmap. */
 public class ColGroupRLE extends ColGroupOffset {
 	private static final long serialVersionUID = 7450232907594748177L;
-
-	private static final Log LOG = LogFactory.getLog(ColGroupRLE.class.getName());
 
 	protected ColGroupRLE() {
 		super();
@@ -57,7 +51,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	 * @param ubm        Uncompressed bitmap representation of the block
 	 * @param cs         The Compression settings used for compression
 	 */
-	protected ColGroupRLE(int[] colIndices, int numRows, AbstractBitmap ubm, CompressionSettings cs) {
+	protected ColGroupRLE(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
 		super(colIndices, numRows, ubm, cs);
 
 		// compress the bitmaps
@@ -72,16 +66,11 @@ public class ColGroupRLE extends ColGroupOffset {
 		// compact bitmaps to linearized representation
 		createCompressedBitmaps(numVals, totalLen, lbitmaps);
 
-		// debug output
-		double ucSize = ColGroupSizes.estimateInMemorySizeUncompressed(numRows, colIndices.length, 1.0);
-		if(estimateInMemorySize() > ucSize)
-			LOG.warn(String
-				.format("RLE group larger than UC dense: %8d Uncompressed: %8d", estimateInMemorySize(), (int) ucSize));
 	}
 
-	protected ColGroupRLE(int[] colIndices, int numRows, boolean zeros, double[] values, char[] bitmaps,
+	protected ColGroupRLE(int[] colIndices, int numRows, boolean zeros, ADictionary dict, char[] bitmaps,
 		int[] bitmapOffs) {
-		super(colIndices, numRows, zeros, values);
+		super(colIndices, numRows, zeros, dict);
 		_data = bitmaps;
 		_ptr = bitmapOffs;
 	}
@@ -142,7 +131,6 @@ public class ColGroupRLE extends ColGroupOffset {
 			final int blksz = 128 * 1024;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
-			final int n = getNumRows();
 			final double[] values = getValues();
 
 			// position and start offset arrays
@@ -155,8 +143,8 @@ public class ColGroupRLE extends ColGroupOffset {
 				cix[j] = colixTargets[_colIndexes[j]];
 
 			// cache conscious append via horizontal scans
-			for(int bi = 0; bi < n; bi += blksz) {
-				int bimax = Math.min(bi + blksz, n);
+			for(int bi = 0; bi < _numRows; bi += blksz) {
+				int bimax = Math.min(bi + blksz, _numRows);
 				for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
 					int boff = _ptr[k];
 					int blen = len(k);
@@ -189,7 +177,6 @@ public class ColGroupRLE extends ColGroupOffset {
 		final int blksz = 128 * 1024;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
-		final int n = getNumRows();
 		double[] c = target.getDenseBlockValues();
 		final double[] values = getValues();
 
@@ -199,8 +186,8 @@ public class ColGroupRLE extends ColGroupOffset {
 
 		// cache conscious append via horizontal scans
 		int nnz = 0;
-		for(int bi = 0; bi < n; bi += blksz) {
-			int bimax = Math.min(bi + blksz, n);
+		for(int bi = 0; bi < _numRows; bi += blksz) {
+			int bimax = Math.min(bi + blksz, _numRows);
 			Arrays.fill(c, bi, bimax, 0);
 			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
 				int boff = _ptr[k];
@@ -226,7 +213,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	@Override
 	public int[] getCounts(int[] counts) {
 		final int numVals = getNumValues();
-		Arrays.fill(counts, 0, numVals, 0);
+		int sum = 0;
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
@@ -237,7 +224,11 @@ public class ColGroupRLE extends ColGroupOffset {
 				curRunEnd = curRunStartOff + _data[boff + bix + 1];
 				count += curRunEnd - curRunStartOff;
 			}
+			sum += count;
 			counts[k] = count;
+		}
+		if(_zeros) {
+			counts[counts.length - 1] = _numRows * _colIndexes.length - sum;
 		}
 		return counts;
 	}
@@ -245,7 +236,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	@Override
 	public int[] getCounts(int rl, int ru, int[] counts) {
 		final int numVals = getNumValues();
-		Arrays.fill(counts, 0, numVals, 0);
+		int sum = 0;
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
@@ -259,15 +250,23 @@ public class ColGroupRLE extends ColGroupOffset {
 				curRunEnd = curRunStartOff + _data[boff + bix + 1];
 				count += Math.min(curRunEnd, ru) - curRunStartOff;
 			}
+			sum += count;
 			counts[k] = count;
+		}
+		if(_zeros) {
+			counts[counts.length - 1] = (ru - rl) * _colIndexes.length - sum;
 		}
 		return counts;
 	}
 
 	@Override
-	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
+	public void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru) {
 		double[] b = ColGroupConverter.getDenseVector(vector);
-		double[] c = result.getDenseBlockValues();
+		// double[] c = result.getDenseBlockValues();
+		if(c == null) {
+
+			throw new NullPointerException("Result vector not available");
+		}
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 
@@ -277,7 +276,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			sb[j] = b[_colIndexes[j]];
 		}
 
-		if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
+		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
 			// L3 cache alignment, see comment rightMultByVector OLE column group
 			// core difference of RLE to OLE is that runs are not segment alignment,
 			// which requires care of handling runs crossing cache-buckets
@@ -306,10 +305,10 @@ public class ColGroupRLE extends ColGroupOffset {
 					while(bix < blen) {
 						int lstart = _data[boff + bix];
 						int llen = _data[boff + bix + 1];
-						LinearAlgebraUtils.vectAdd(val,
-							c,
-							Math.max(bi, start + lstart),
-							Math.min(start + lstart + llen, bimax) - Math.max(bi, start + lstart));
+						int len = Math.min(start + lstart + llen, bimax) - Math.max(bi, start + lstart);
+						if(len > 0) {
+							LinearAlgebraUtils.vectAdd(val, c, Math.max(bi, start + lstart), len);
+						}
 						if(start + lstart + llen >= bimax)
 							break;
 						start += lstart + llen;
@@ -325,7 +324,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			for(int k = 0; k < numVals; k++) {
 				int boff = _ptr[k];
 				int blen = len(k);
-				double val = sumValues(k, sb);
+				double val = sumValues(k, sb, _dict.getValues());
 				int bix = 0;
 				int start = 0;
 
@@ -364,10 +363,9 @@ public class ColGroupRLE extends ColGroupOffset {
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
-		final int n = getNumRows();
 		final double[] values = getValues();
 
-		if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
+		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
 			final int blksz = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
 
 			// step 1: prepare position and value arrays
@@ -378,8 +376,8 @@ public class ColGroupRLE extends ColGroupOffset {
 			double[] cvals = allocDVector(numVals, true);
 
 			// step 2: cache conscious matrix-vector via horizontal scans
-			for(int ai = 0; ai < n; ai += blksz) {
-				int aimax = Math.min(ai + blksz, n);
+			for(int ai = 0; ai < _numRows; ai += blksz) {
+				int aimax = Math.min(ai + blksz, _numRows);
 
 				// horizontal scan, incl pos maintenance
 				for(int k = 0; k < numVals; k++) {
@@ -430,44 +428,13 @@ public class ColGroupRLE extends ColGroupOffset {
 		}
 	}
 
-	// @Override
-	// public void leftMultByRowVector(ColGroupDDC a, MatrixBlock result) {
-	// 	// note: this method is only applicable for numrows < blocksize
-	// 	double[] c = result.getDenseBlockValues();
-	// 	final int numCols = getNumCols();
-	// 	final int numVals = getNumValues();
-	// 	final double[] values = getValues();
-	// 	final double[] aValues = a.getValues();
-
-	// 	// iterate over all values and their bitmaps
-	// 	for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols) {
-	// 		int boff = _ptr[k];
-	// 		int blen = len(k);
-
-	// 		double vsum = 0;
-	// 		int curRunEnd = 0;
-	// 		for(int bix = 0; bix < blen; bix += 2) {
-	// 			int curRunStartOff = curRunEnd + _data[boff + bix];
-	// 			int curRunLen = _data[boff + bix + 1];
-	// 			for(int i = curRunStartOff; i < curRunStartOff + curRunLen; i++) {
-	// 				vsum += aValues[a.getIndex(_data[i])];
-	// 			}
-	// 			curRunEnd = curRunStartOff + curRunLen;
-	// 		}
-
-	// 		// scale partial results by values and write results
-	// 		for(int j = 0; j < numCols; j++)
-	// 			c[_colIndexes[j]] += vsum * values[valOff + j];
-	// 	}
-	// }
-
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
 
 		// fast path: sparse-safe operations
 		// Note that bitmaps don't change and are shallow-copied
-		if(op.sparseSafe || val0 == 0) {
+		if(op.sparseSafe || val0 == 0 || !_zeros) {
 			return new ColGroupRLE(_colIndexes, _numRows, _zeros, applyScalarOp(op), _data, _ptr);
 		}
 
@@ -476,79 +443,32 @@ public class ColGroupRLE extends ColGroupOffset {
 		boolean[] lind = computeZeroIndicatorVector();
 		int[] loff = computeOffsets(lind);
 		if(loff.length == 0) { // empty offset list: go back to fast path
-			return new ColGroupRLE(_colIndexes, _numRows, true, applyScalarOp(op), _data, _ptr);
+			return new ColGroupRLE(_colIndexes, _numRows, false, applyScalarOp(op), _data, _ptr);
 		}
 
-		double[] rvalues = applyScalarOp(op, val0, getNumCols());
+		ADictionary rvalues = applyScalarOp(op, val0, getNumCols());
 		char[] lbitmap = genRLEBitmap(loff, loff.length);
 		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
 		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
 		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
 		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
 
-		return new ColGroupRLE(_colIndexes, _numRows, loff.length < _numRows, rvalues, rbitmaps, rbitmapOffs);
+		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs);
 	}
 
 	@Override
-	protected final void computeSum(MatrixBlock result, KahanFunction kplus) {
-
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-
-		if(_dict instanceof QDictionary && !(kplus instanceof KahanPlusSq)) {
-			final QDictionary values = ((QDictionary) _dict);
-			long sum = 0;
-			for(int k = 0; k < numVals; k++) {
-				int count = getCountValue(k);
-				int valOff = k * _colIndexes.length;
-				// scale counts by all values
-				for(int j = 0; j < numCols; j++)
-					sum += values.getValueByte(valOff + j) * count;
-			}
-			result.quickSetValue(0, 0, result.quickGetValue(0, 0) + sum * values._scale);
-			result.quickSetValue(0, 1, 0);
-		}
-		else {
-			KahanObject kbuff = new KahanObject(result.quickGetValue(0, 0), result.quickGetValue(0, 1));
-
-			final double[] values = getValues();
-			for(int k = 0; k < numVals; k++) {
-				int count = getCountValue(k);
-				int valOff = k * _colIndexes.length;
-				// scale counts by all values
-				for(int j = 0; j < numCols; j++)
-					kplus.execute3(kbuff, values[valOff + j], count);
-			}
-
-			result.quickSetValue(0, 0, kbuff._sum);
-			result.quickSetValue(0, 1, kbuff._correction);
-		}
-
-	}
-
-	private int getCountValue(int k) {
-		int boff = _ptr[k];
-		int blen = len(k);
-		int curRunEnd = 0;
-		int count = 0;
-		for(int bix = 0; bix < blen; bix += 2) {
-			int curRunStartOff = curRunEnd + _data[boff + bix];
-			curRunEnd = curRunStartOff + _data[boff + bix + 1];
-			count += curRunEnd - curRunStartOff;
-		}
-		return count;
+	protected final void computeSum(double[] c, KahanFunction kplus) {
+		c[0] += _dict.sum(getCounts(), _colIndexes.length, kplus);
 	}
 
 	@Override
-	protected final void computeRowSums(MatrixBlock result, KahanFunction kplus, int rl, int ru) {
-		// note: due to corrections the output might be a large dense block
-		DenseBlock c = result.getDenseBlock();
+	protected final void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru) {
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
 
 		final int numVals = getNumValues();
 
-		if( numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
+		if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
 			final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 
 			// step 1: prepare position and value arrays
@@ -556,7 +476,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			// current pos / values per RLE list
 			int[] astart = new int[numVals];
 			int[] apos = skipScan(numVals, rl, astart);
-			double[] aval = _dict.sumAllRowsToDouble(kplus, kbuff, _colIndexes.length,false);
+			double[] aval = _dict.sumAllRowsToDouble(kplus, kbuff, _colIndexes.length);
 
 			// step 2: cache conscious matrix-vector via horizontal scans
 			for(int bi = rl; bi < ru; bi += blksz) {
@@ -577,12 +497,7 @@ public class ColGroupRLE extends ColGroupOffset {
 						int from = Math.max(bi, start + lstart);
 						int to = Math.min(start + lstart + llen, bimax);
 						for(int rix = from; rix < to; rix++) {
-							double[] cvals = c.values(rix);
-							int cix = c.pos(rix);
-							kbuff.set(cvals[cix], cvals[cix + 1]);
-							kplus2.execute2(kbuff, val);
-							cvals[cix] = kbuff._sum;
-							cvals[cix + 1] = kbuff._correction;
+							setandExecute(c, kbuff, kplus2, val, rix);
 						}
 						if(start + lstart + llen >= bimax)
 							break;
@@ -610,12 +525,7 @@ public class ColGroupRLE extends ColGroupOffset {
 						curRunStartOff = curRunEnd + _data[boff + bix];
 						curRunEnd = curRunStartOff + _data[boff + bix + 1];
 						for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++) {
-							double[] cvals = c.values(rix);
-							int cix = c.pos(rix);
-							kbuff.set(cvals[cix], cvals[cix + 1]);
-							kplus2.execute2(kbuff, val);
-							cvals[cix] = kbuff._sum;
-							cvals[cix + 1] = kbuff._correction;
+							setandExecute(c, kbuff, kplus2, val, rix * 2);
 						}
 					}
 				}
@@ -624,45 +534,21 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected final void computeColSums(MatrixBlock result, KahanFunction kplus) {
-		KahanObject kbuff = new KahanObject(0, 0);
+	protected final void computeColSums(double[] c, KahanFunction kplus) {
+		_dict.colSum(c, getCounts(), _colIndexes, kplus);
+	}
 
-		final int numCols = getNumCols();
+	@Override
+	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+		// NOTE: zeros handled once for all column groups outside
 		final int numVals = getNumValues();
+		// double[] c = result.getDenseBlockValues();
 		final double[] values = getValues();
 
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
-			int valOff = k * numCols;
-			int curRunEnd = 0;
-			int count = 0;
-			for(int bix = 0; bix < blen; bix += 2) {
-				int curRunStartOff = curRunEnd + _data[boff + bix];
-				curRunEnd = curRunStartOff + _data[boff + bix + 1];
-				count += curRunEnd - curRunStartOff;
-			}
-
-			// scale counts by all values
-			for(int j = 0; j < numCols; j++) {
-				kbuff.set(result.quickGetValue(0, _colIndexes[j]), result.quickGetValue(1, _colIndexes[j]));
-				kplus.execute3(kbuff, values[valOff + j], count);
-				result.quickSetValue(0, _colIndexes[j], kbuff._sum);
-				result.quickSetValue(1, _colIndexes[j], kbuff._correction);
-			}
-		}
-	}
-
-	@Override
-	protected final void computeRowMxx(MatrixBlock result, Builtin builtin, int rl, int ru) {
-		// NOTE: zeros handled once for all column groups outside
-		final int numVals = getNumValues();
-		double[] c = result.getDenseBlockValues();
-
-		for(int k = 0; k < numVals; k++) {
-			int boff = _ptr[k];
-			int blen = len(k);
-			double val = mxxValues(k, builtin);
+			double val = mxxValues(k, builtin, values);
 
 			Pair<Integer, Integer> tmp = skipScanVal(k, rl);
 			int bix = tmp.getKey();
@@ -788,7 +674,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 	@Override
 	public Iterator<Integer> getIterator(int k) {
-		return new RLEValueIterator(k, 0, getNumRows());
+		return new RLEValueIterator(k, 0, _numRows);
 	}
 
 	@Override

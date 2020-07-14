@@ -19,12 +19,18 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -35,6 +41,7 @@ import org.apache.sysds.runtime.util.DataConverter;
  * 
  */
 public class CompressibleInputGenerator {
+	protected static final Log LOG = LogFactory.getLog(CompressibleInputGenerator.class.getName());
 
 	public static MatrixBlock getInput(int rows, int cols, CompressionType ct, int nrUnique, double sparsity,
 		int seed) {
@@ -61,7 +68,15 @@ public class CompressibleInputGenerator {
 			default:
 				throw new NotImplementedException("Not implemented generator.");
 		}
+		for(double[] x : output) {
 
+			DoubleSummaryStatistics stat = Arrays.stream(x).summaryStatistics();
+			double maxV = stat.getMax();
+			double minV = stat.getMin();
+			// LOG.debug("MAX: " + maxV + " - MIN:" + minV);
+			assertTrue(maxV <= max);
+			assertTrue(minV >= min);
+		}
 		return output;
 	}
 
@@ -139,32 +154,45 @@ public class CompressibleInputGenerator {
 
 		// Generate the first column.
 		for(int x = 0; x < rows; x++) {
-			if(r.nextDouble() < sparsity) {
-				if(transpose) {
-					matrix[x][0] = values.get(r.nextInt(nrUnique));
-				}
-				else {
-					matrix[0][x] = values.get(r.nextInt(nrUnique));
-				}
+			if(transpose) {
+				matrix[x][0] = values.get(r.nextInt(nrUnique));
+				// LOG.debug(matrix[x][0]);
+			}
+			else {
+				matrix[0][x] = values.get(r.nextInt(nrUnique));
 			}
 		}
 
 		for(int y = 1; y < cols; y++) {
 			for(int x = 0; x < rows; x++) {
-				// if(r.nextDouble() < sparsity) {
-				if(transpose) {
-					if(matrix[x][0] != 0) {
-						matrix[x][y] = (matrix[x][0] * y + y) % (max - min) + min;
+				if(r.nextDouble() < sparsity) {
+					if(transpose) {
+						double off = (double) y;
+						int v = (int) (matrix[x][0] * off);
+						matrix[x][y] = Math.abs((v) % ((int) (max - min))) + min;
+					}
+					else {
+						double off = (double) y;
+						int v = (int) (matrix[0][x] * off);
+						matrix[y][x] = Math.abs((v) % ((int) (max - min))) + min;
+						// matrix[y][x] = ((int) (matrix[0][x] * y + y)) % ((int) (max - min)) + min;
 					}
 				}
-				else {
-					if(matrix[0][x] != 0) {
-						matrix[y][x] = (matrix[0][x] * y + y) % (max - min) + min;
-					}
-				}
-				// }
 			}
 		}
+
+		for(int x = 0; x < rows; x++) {
+			if(r.nextDouble() > sparsity) {
+				if(transpose) {
+					matrix[x][0] = 0.0;
+					// LOG.debug(matrix[x][0]);
+				}
+				else {
+					matrix[0][x] = 0.0;
+				}
+			}
+		}
+
 		return matrix;
 	}
 
@@ -186,9 +214,10 @@ public class CompressibleInputGenerator {
 	private static List<Double> getNRandomValues(int nrUnique, Random r, int max, int min) {
 		List<Double> values = new ArrayList<>();
 		for(int i = 0; i < nrUnique; i++) {
-			double v = (r.nextDouble() * (double) (max - min)) + (double) min;
-			values.add(Math.floor(v));
+			values.add((r.nextDouble() * (max - min)) + min);
+			// values.add(Math.floor(v));
 		}
+		// LOG.debug(values);
 		return values;
 	}
 }

@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
@@ -37,9 +38,12 @@ import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
@@ -51,10 +55,11 @@ import org.junit.runners.Parameterized.Parameters;
 
 public abstract class CompressedTestBase extends TestBase {
 	protected static final Log LOG = LogFactory.getLog(CompressedTestBase.class.getName());
+
 	protected static SparsityType[] usedSparsityTypes = new SparsityType[] { // Sparsity 0.9, 0.1, 0.01 and 0.0
-		// SparsityType.FULL,
-		SparsityType.DENSE,
-		SparsityType.SPARSE, 
+		SparsityType.FULL,
+		// SparsityType.DENSE,
+		SparsityType.SPARSE,
 		// SparsityType.ULTRA_SPARSE,
 		// SparsityType.EMPTY
 	};
@@ -63,50 +68,66 @@ public abstract class CompressedTestBase extends TestBase {
 		// ValueType.RAND,
 		// ValueType.CONST,
 		ValueType.RAND_ROUND,
-		//  ValueType.OLE_COMPRESSIBLE,
+		ValueType.OLE_COMPRESSIBLE,
 		// ValueType.RLE_COMPRESSIBLE,
 	};
 
 	protected static ValueRange[] usedValueRanges = new ValueRange[] {
-		// ValueRange.SMALL, 
-		ValueRange.LARGE,
+		ValueRange.SMALL, 
+		// ValueRange.LARGE,
 		// ValueRange.BYTE
 	};
 
 	private static final int compressionSeed = 7;
 
 	protected static CompressionSettings[] usedCompressionSettings = new CompressionSettings[] {
-		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setAllowSharedDDCDictionary(false)
-		// .setSeed(compressionSeed).setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true).create(),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1)//.setAllowSharedDDCDictionary(true)
-			.setSeed(compressionSeed).setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true)
-			.create(),
+		// CLA TESTS!
+
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+			.setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true).create(),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 			.setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true).create(),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 			.setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true).create(),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true)
 			.create(),
+		new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
+			.setAllowSharedDictionary(false).setmaxStaticColGroupCoCode(1).create(),
+
+		// LOSSY TESTS!
+
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+			.setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true).setLossy(true).create(),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+			.setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true).setLossy(true).create(),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+			.setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true).setLossy(true).create(),
+
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true)
+			.create(),
+
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
-		// .addValidCompression(CompressionType.QUAN).create(),
-		new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
-		.setAllowSharedDDCDictionary(false).setmaxStaticColGroupCoCode(1).create(),
-		new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
-		.setAllowSharedDDCDictionary(false).setmaxStaticColGroupCoCode(1).setLossy(true).create(),
+		// .setAllowSharedDictionary(false).setmaxStaticColGroupCoCode(1).setLossy(true).create(),
+
+		// COCODING TESTS!!
+
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDDCDictionary(false).setmaxStaticColGroupCoCode(20).create(),
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDDCDictionary(false).setmaxStaticColGroupCoCode(20).setLossy(true).create()
+
+		// SHARED DICTIONARY TESTS!!
+
 	};
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
-		// MatrixTypology.SMALL,
+		MatrixTypology.SMALL,
 		// MatrixTypology.FEW_COL,
 		// MatrixTypology.FEW_ROW,
-		MatrixTypology.LARGE,
-		// MatrixTypology.SINGLE_COL,
+		// MatrixTypology.LARGE,
+		MatrixTypology.SINGLE_COL,
 		// MatrixTypology.SINGLE_ROW,
-		// MatrixTypology.L_ROWS,
+		MatrixTypology.L_ROWS,
 		// MatrixTypology.XL_ROWS,
 	};
 
@@ -118,10 +139,10 @@ public abstract class CompressedTestBase extends TestBase {
 	protected MatrixBlock cmbDeCompressed;
 	protected double[][] deCompressed;
 
-	/** Method returning the number of threads used for the operation */
+	/** number of threads used for the operation */
 	protected final int _k;
 
-	protected int sampleTolerance = 1024;
+	protected int sampleTolerance = 4096 * 4;
 
 	protected double lossyTolerance;
 
@@ -138,7 +159,7 @@ public abstract class CompressedTestBase extends TestBase {
 			cmb = pair.getLeft();
 			cmbStats = pair.getRight();
 			if(cmb instanceof CompressedMatrixBlock) {
-				cmbDeCompressed = ((CompressedMatrixBlock) cmb).decompress();
+				cmbDeCompressed = ((CompressedMatrixBlock) cmb).decompress(_k);
 				if(cmbDeCompressed != null) {
 
 					deCompressed = DataConverter.convertToDoubleMatrix(cmbDeCompressed);
@@ -162,8 +183,9 @@ public abstract class CompressedTestBase extends TestBase {
 		 * Tolerance for encoding values is the maximum value in dataset divided by number distinct values available in
 		 * a single Byte (since we encode our quntization in Byte)
 		 */
-		lossyTolerance = (double) Math.max(TestConstants.getMaxRangeValue(valueRange),
-			Math.abs(TestConstants.getMinRangeValue(valueRange))) / 127.0;
+		lossyTolerance = (double) (Math.max(TestConstants.getMaxRangeValue(valueRange),
+			Math.abs(TestConstants.getMinRangeValue(valueRange)))) * (1.0 / 127.0) / 2.0;
+		// LOG.debug("TOLERANCE IN TEST:" + lossyTolerance);
 
 	}
 
@@ -198,7 +220,7 @@ public abstract class CompressedTestBase extends TestBase {
 				// Assert.assertTrue("Compression Failed \n" + this.toString(), false);
 			}
 			if(compressionSettings.lossy) {
-				TestUtils.compareMatrices(input, deCompressed, lossyTolerance);
+				TestUtils.compareMatrices(input, deCompressed, lossyTolerance, compressionSettings.toString() + "\n");
 			}
 			else {
 				TestUtils.compareMatricesBitAvgDistance(input, deCompressed, 0, 0, compressionSettings.toString());
@@ -238,7 +260,7 @@ public abstract class CompressedTestBase extends TestBase {
 				return; // Input was not compressed then just pass test
 
 			MatrixBlock vector1 = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 0.5, 1.5, 1.0, 3));
+				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 0.9, 1.1, 1.0, 3));
 
 			// ChainType ctype = ChainType.XtwXv;
 			// Linear regression .
@@ -247,7 +269,7 @@ public abstract class CompressedTestBase extends TestBase {
 			}) {
 
 				MatrixBlock vector2 = (ctype == ChainType.XtwXv) ? DataConverter
-					.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 0.5, 1.5, 1.0, 3)) : null;
+					.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 0.9, 1.1, 1.0, 3)) : null;
 
 				// matrix-vector uncompressed
 				MatrixBlock ret1 = mb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
@@ -310,7 +332,7 @@ public abstract class CompressedTestBase extends TestBase {
 			// Make Operator // matrix-vector uncompressed
 			// AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 			AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aop);
+			AggregateBinaryOperator abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aop, _k);
 
 			// matrix-vector uncompressed
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(mb, vector, new MatrixBlock(), abop);
@@ -329,6 +351,111 @@ public abstract class CompressedTestBase extends TestBase {
 			}
 			else {
 				TestUtils.compareMatricesBitAvgDistance(d1, d2, 120000, 128, compressionSettings.toString());
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testVectorMatrixMult() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return; // Input was not compressed then just pass test
+
+			MatrixBlock vector = DataConverter
+				.convertToMatrixBlock(TestUtils.generateTestMatrix(1, rows, 0.9, 1.5, 1.0, 3));
+
+			// Make Operator
+			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
+
+			// vector-matrix uncompressed
+			MatrixBlock ret1 = mb.aggregateBinaryOperations(vector, mb, new MatrixBlock(), abop);
+
+			// vector-matrix compressed
+			MatrixBlock ret2 = cmb.aggregateBinaryOperations(vector, cmb, new MatrixBlock(), abop);
+
+			// compare result with input
+			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
+			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+			if(compressionSettings.lossy) {
+				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.35, 0.96, compressionSettings.toString());
+			}
+			else {
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 10000, 500, compressionSettings.toString());
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testTransposeSelfMatrixMult() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return; // Input was not compressed then just pass test
+			// ChainType ctype = ChainType.XtwXv;
+			for(MMTSJType mType : new MMTSJType[] {MMTSJType.LEFT,
+				// MMTSJType.RIGHT
+			}) {
+				// matrix-vector uncompressed
+				MatrixBlock ret1 = mb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
+
+				// matrix-vector compressed
+				MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
+
+				// compare result with input
+				double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
+				double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+				// High probability that The value is off by some amount
+				if(compressionSettings.lossy) {
+					/**
+					 * Probably the worst thing you can do to increase the amount the values are estimated wrong
+					 */
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.8, compressionSettings.toString());
+				}
+				else {
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 64, compressionSettings.toString());
+				}
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	public void testScalarOperationsSparseUnsafe() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return; // Input was not compressed then just pass test
+
+			double addValue = 1000;
+			// matrix-scalar uncompressed
+			ScalarOperator sop = new RightScalarOperator(Plus.getPlusFnObject(), addValue);
+			MatrixBlock ret1 = mb.scalarOperations(sop, new MatrixBlock());
+
+			// matrix-scalar compressed
+			MatrixBlock ret2 = cmb.scalarOperations(sop, new MatrixBlock());
+			if(ret2 instanceof CompressedMatrixBlock)
+				ret2 = ((CompressedMatrixBlock) ret2).decompress();
+
+			// compare result with input
+			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
+			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+
+			if(compressionSettings.lossy) {
+				double modifiedTolerance = Math.max(TestConstants.getMaxRangeValue(valRange) + addValue,
+					Math.abs(TestConstants.getMinRangeValue(valRange) + addValue)) * 2 / 127.0;
+				TestUtils.compareMatrices(d1, d2, modifiedTolerance);
+			}
+			else {
+				TestUtils.compareMatricesBitAvgDistance(d1, d2, 150, 1, compressionSettings.toString());
 			}
 		}
 		catch(Exception e) {

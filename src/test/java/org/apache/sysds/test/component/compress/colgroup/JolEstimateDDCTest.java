@@ -44,8 +44,8 @@ public class JolEstimateDDCTest extends JolEstimateTest {
 		// DCC is different in that it is a dense compression
 		// that also encode 0 values the same as all the other values.
 
-		mb = DataConverter.convertToMatrixBlock(new double[][] {{0}});
-		tests.add(new Object[] {mb, 8});
+		// mb = DataConverter.convertToMatrixBlock(new double[][] {{0}});
+		// tests.add(new Object[] {mb, 0});
 
 		mb = DataConverter.convertToMatrixBlock(new double[][] {{1}});
 		tests.add(new Object[] {mb, 0});
@@ -71,34 +71,34 @@ public class JolEstimateDDCTest extends JolEstimateTest {
 		// Random Sparse Very big, because 0 is materialized.
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 254, 0.01, 7)));
-		tests.add(new Object[] {mb, 16});
+		tests.add(new Object[] {mb, 0});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 254, 0.01, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 254, 0.01, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 254, 0.001, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 254, 0.001, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 254, 0.001, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 
 		// DDC2 instances, need more unique values than 255
 
 		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 512, 0.7, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 1024, 0.7, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 2048, 0.7, 7)));
-		tests.add(new Object[] {mb, 8});
+		tests.add(new Object[] {mb, 0});
 
 		return tests;
 	}

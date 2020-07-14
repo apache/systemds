@@ -50,6 +50,7 @@ public class CompressedSizeInfo {
 
 	/**
 	 * Method for returning the calculated memory usage from this specific compression plan.
+	 * 
 	 * @return The in memory estimate as a long counting bytes.
 	 */
 	public long memoryEstimate() {
@@ -63,5 +64,4 @@ public class CompressedSizeInfo {
 		return est;
 	}
 
-	
 }

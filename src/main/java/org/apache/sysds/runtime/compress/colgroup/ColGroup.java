@@ -44,14 +44,14 @@ public abstract class ColGroup implements Serializable {
 	/**
 	 * Public Group types supported
 	 * 
-	 * Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC.
+	 * Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC. That
+	 * differentiation is hidden to a user.
+	 * 
+	 * Includes Uncompressed for sparse/dense representation RLE for Run length encoding OLE for Offset Length encoding
+	 * DDC for Dense dictionary encoding
 	 */
 	public enum CompressionType {
-		UNCOMPRESSED, // uncompressed sparse/dense
-		RLE, // RLE bitmap
-		OLE, // OLE bitmap
-		DDC, // Dictionary encoding
-		QUAN, // Quantize the double values to short
+		UNCOMPRESSED, RLE, OLE, DDC,
 	}
 
 	/**
@@ -60,30 +60,25 @@ public abstract class ColGroup implements Serializable {
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
 	protected enum ColGroupType {
-		UNCOMPRESSED, // uncompressed sparse/dense
-		RLE, // RLE bitmap
-		OLE, // OLE bitmap
-		DDC1, // DDC Small Dictionary
-		DDC2, // DDC Large Dictionary
-		QUAN8S, // Qunatized Value.
+		UNCOMPRESSED, RLE, OLE, DDC1, DDC2,
 	}
 
 	/** The ColGroup Indexes 0 offset, contained in the ColGroup */
 	protected int[] _colIndexes;
 
-	/**
-	 * ColGroup Implementation Contains zero values NOTE This variable is moved here becuse that reduce the Object size
-	 * by 8
-	 */
-	protected boolean _zeros;
-	protected boolean _lossy;
-
 	/** Number of rows in the matrix, for use by child classes. */
 	protected int _numRows;
 
 	/**
-	 * Empty constructor, used for serializing into an empty new object of ColGroup.
+	 * ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
+	 * values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
 	 */
+	protected boolean _zeros;
+
+	/** boolean specifying if the column group is encoded lossy */
+	protected boolean _lossy;
+
+	/** Empty constructor, used for serializing into an empty new object of ColGroup. */
 	protected ColGroup() {
 		this._colIndexes = null;
 		this._numRows = -1;
@@ -208,34 +203,12 @@ public abstract class ColGroup implements Serializable {
 	public abstract void write(DataOutput out) throws IOException;
 
 	/**
-	 * Serializes column group to data output.
-	 * 
-	 * @param out      data output
-	 * @param skipDict skip shared dictionary
-	 * @throws IOException if IOException occurs
-	 */
-	public void write(DataOutput out, boolean skipDict) throws IOException {
-		write(out); // skipDict ignored by default
-	}
-
-	/**
-	 * Deserializes column group from data input.
+	 * Deserialize column group from data input.
 	 * 
 	 * @param in data input
 	 * @throws IOException if IOException occurs
 	 */
 	public abstract void readFields(DataInput in) throws IOException;
-
-	// /**
-	//  * Deserializes column group from data input.
-	//  * 
-	//  * @param in       data input
-	//  * @param skipDict skip shared dictionary
-	//  * @throws IOException if IOException occurs
-	//  */
-	// public void readFields(DataInput in, boolean skipDict) throws IOException {
-	// 	readFields(in); // skipDict ignored by default
-	// }
 
 	/**
 	 * Returns the exact serialized size of column group. This can be used for example for buffer preallocation.
@@ -252,14 +225,6 @@ public abstract class ColGroup implements Serializable {
 	 * @return value at the row/column position
 	 */
 	public abstract double get(int r, int c);
-
-	/**
-	 * Multiply the slice of the matrix that this column group represents by a vector on the right. Get the number of
-	 * values. contained inside the ColGroup.
-	 * 
-	 * @return value at the row/column position
-	 */
-	// public abstract long getValuesSize();
 
 	/**
 	 * Get all the values in the colGroup. Note that this is only the stored values not the way they are stored. Making
@@ -286,31 +251,14 @@ public abstract class ColGroup implements Serializable {
 	public abstract boolean getIfCountsType();
 
 	/**
-	 * Returns the counts of values inside the MatrixBlock returned in getValuesAsBlock Throws an exception if the
-	 * getIfCountsType is false
-	 * 
-	 * @return the count of each value in the MatrixBlock.
-	 */
-	public abstract int[] getCounts();
-
-	/**
-	 * Returns the counts of values inside the MatrixBlock returned in getValuesAsBlock Throws an exception if the
-	 * getIfCountsType is false
-	 * 
-	 * @param includeZero Boolean to specify if zero should be included in the count.
-	 * @return the count of each value in the MatrixBlock.
-	 */
-	// public abstract int[] getCounts(boolean includeZero);
-
-	/**
 	 * Multiply the slice of the matrix that this column group represents by a vector on the right.
 	 * 
 	 * @param vector vector to multiply by (tall vector)
-	 * @param result accumulator for holding the result
+	 * @param c      accumulator for holding the result
 	 * @param rl     row lower
 	 * @param ru     row upper if the internal SystemML code that performs the multiplication experiences an error
 	 */
-	public abstract void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru);
+	public abstract void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru);
 
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
@@ -320,9 +268,6 @@ public abstract class ColGroup implements Serializable {
 	 * @param result matrix block result
 	 */
 	public abstract void leftMultByRowVector(MatrixBlock vector, MatrixBlock result);
-
-	// additional vector-matrix multiplication to avoid DDC uncompression
-	// public abstract void leftMultByRowVector(ColGroupDDC vector, MatrixBlock result);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual
@@ -337,21 +282,21 @@ public abstract class ColGroup implements Serializable {
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
 	 * matrix.
 	 * 
-	 * @param op     The operator used
-	 * @param result Rhe output matrix block.
+	 * @param op The operator used
+	 * @param c  Rhe output matrix block.
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c);
 
 	/**
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed
 	 * matrix.
 	 * 
-	 * @param op     The operator used
-	 * @param result The output matrix block.
-	 * @param rl     The Starting Row to do aggregation from
-	 * @param ru     The last Row to do aggregation to (not included)
+	 * @param op The operator used
+	 * @param c  The output matrix block.
+	 * @param rl The Starting Row to do aggregation from
+	 * @param ru The last Row to do aggregation to (not included)
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru);
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru);
 
 	/**
 	 * Create a column group iterator for a row index range.
@@ -393,6 +338,7 @@ public abstract class ColGroup implements Serializable {
 
 	/**
 	 * Is Lossy
+	 * 
 	 * @return returns if the ColGroup is compressed in a lossy manner.
 	 */
 	public abstract boolean isLossy();

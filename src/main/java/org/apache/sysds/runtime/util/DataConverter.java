@@ -1350,13 +1350,6 @@ public class DataConverter
 		return ret;
 	}
 
-	public static double[] toDouble(byte[] data) {
-		double[] ret = new double[data.length];
-		for(int i=0; i<data.length; i++)
-			ret[i] = data[i];
-		return ret;
-	}
-	
 	public static double[] toDouble(BitSet data, int len) {
 		double[] ret = new double[len];
 		for(int i=0; i<len; i++)

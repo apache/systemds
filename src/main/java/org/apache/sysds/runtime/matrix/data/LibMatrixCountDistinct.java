@@ -115,7 +115,7 @@ public class LibMatrixCountDistinct {
 		Set<Double> distinct = new HashSet<>();
 		double[] data;
 		long nonZeros = in.getNonZeros();
-		if(nonZeros < in.getNumColumns() * in.getNumRows()){
+		if(nonZeros < in.getNumColumns() * in.getNumRows()) {
 			distinct.add(0d);
 		}
 		if(in.sparseBlock == null && in.denseBlock == null) {
@@ -126,7 +126,7 @@ public class LibMatrixCountDistinct {
 		}
 		else if(in.sparseBlock != null) {
 			SparseBlock sb = in.sparseBlock;
-			
+
 			if(in.sparseBlock.isContiguous()) {
 				data = sb.values(0);
 				countDistinctValuesNaive(data, distinct);

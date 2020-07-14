@@ -22,8 +22,8 @@ package org.apache.sysds.runtime.compress.estim;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap;
-import org.apache.sysds.runtime.compress.utils.AbstractBitmap.BitmapType;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
 
 /**
  * Compressed Size Estimation factors. Contains meta information used to estimate the compression sizes of given columns
@@ -39,7 +39,7 @@ public class EstimationFactors {
 	protected final int numVals; // Number of unique values in the compressed group
 	/** The number of offsets, to tuples of values in the column groups */
 	protected final int numOffs;
-	/** The Number of runs, of consecutive equal numbers, used primarily in RLE*/
+	/** The Number of runs, of consecutive equal numbers, used primarily in RLE */
 	protected final int numRuns;
 	/** The Number of Values in the collection not Zero , Also refered to as singletons */
 	protected final int numSingle;
@@ -60,11 +60,11 @@ public class EstimationFactors {
 		LOG.debug(this);
 	}
 
-	protected static EstimationFactors computeSizeEstimationFactors(AbstractBitmap ubm, boolean inclRLE, int numRows,
+	protected static EstimationFactors computeSizeEstimationFactors(ABitmap ubm, boolean inclRLE, int numRows,
 		int numCols) {
 		int numVals = ubm.getNumValues();
 		boolean containsZero = ubm.containsZero();
-		
+
 		int numRuns = 0;
 		int numOffs = 0;
 		int numSingle = 0;
@@ -79,7 +79,7 @@ public class EstimationFactors {
 			if(inclRLE) {
 				int[] list = ubm.getOffsetsList(i).extractValues();
 				int lastOff = -2;
-				numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ- 1);
+				numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ - 1);
 				for(int j = 0; j < listSize; j++) {
 					if(list[j] != lastOff + 1) {
 						numRuns++;

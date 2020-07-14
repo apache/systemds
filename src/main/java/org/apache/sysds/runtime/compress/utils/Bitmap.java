@@ -22,14 +22,12 @@ package org.apache.sysds.runtime.compress.utils;
 import java.util.Arrays;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap.DArrayIListEntry;
-import org.apache.sysds.runtime.compress.utils.DoubleIntListHashMap.DIListEntry;
 import org.apache.sysds.runtime.util.SortUtils;
 
 /**
  * Uncompressed representation of one or more columns in bitmap format.
  */
-public final class Bitmap extends AbstractBitmap {
+public final class Bitmap extends ABitmap {
 
 	/**
 	 * Distinct values that appear in the column. Linearized as value groups <v11 v12> <v21 v22>.
@@ -39,35 +37,6 @@ public final class Bitmap extends AbstractBitmap {
 	public Bitmap(int numCols, IntArrayList[] offsetsLists, int numZeroGroups, double[] values) {
 		super(numCols, offsetsLists, numZeroGroups);
 		_values = values;
-	}
-
-	public static Bitmap makeBitmap(DblArrayIntListHashMap distinctVals, int numColumns, int numZeros) {
-		// added for one pass bitmap construction
-		// Convert inputs to arrays
-		int numVals = distinctVals.size();
-		int numCols = numColumns;
-		double[] values = new double[numVals * numCols];
-		IntArrayList[] offsetsLists = new IntArrayList[numVals];
-		int bitmapIx = 0;
-		for(DArrayIListEntry val : distinctVals.extractValues()) {
-			System.arraycopy(val.key.getData(), 0, values, bitmapIx * numCols, numCols);
-			offsetsLists[bitmapIx++] = val.value;
-		}
-		return new Bitmap(numCols, offsetsLists, numZeros, values);
-	}
-
-	public static Bitmap makeBitmap(DoubleIntListHashMap distinctVals, int numZeros) {
-		// added for one pass bitmap construction
-		// Convert inputs to arrays
-		int numVals = distinctVals.size();
-		double[] values = new double[numVals];
-		IntArrayList[] offsetsLists = new IntArrayList[numVals];
-		int bitmapIx = 0;
-		for(DIListEntry val : distinctVals.extractValues()) {
-			values[bitmapIx] = val.key;
-			offsetsLists[bitmapIx++] = val.value;
-		}
-		return new Bitmap(1, offsetsLists, numZeros, values);
 	}
 
 	/**

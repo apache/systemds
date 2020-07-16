@@ -66,5 +66,10 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 	public void removeAllConstraints() {
 		constraintCollection.clear();
 	}
+
+	@Override
+	public boolean hasConstraints() {
+		return !constraintCollection.isEmpty();
+	}
 	
 }

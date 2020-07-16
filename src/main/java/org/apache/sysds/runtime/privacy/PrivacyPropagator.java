@@ -36,6 +36,8 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.UnaryScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.wink.json4j.JSONException;
@@ -102,6 +104,89 @@ public class PrivacyPropagator
 				throwExceptionIfPrivacyActivated(inst, ec);
 				return inst;
 		}
+	}
+
+	public static Instruction preprocessCPInstructionFineGrained(CPInstruction inst, ExecutionContext ec){
+		switch ( inst.getCPInstructionType() ){
+			/*case AggregateBinary:
+				break;
+			case AggregateTernary:
+				break;
+			case AggregateUnary:
+				break;
+			case Append:
+				break;
+			case Binary:
+				break;
+			case Builtin:
+				break;
+			case BuiltinNary:
+				break;
+			case CentralMoment:
+				break;
+			case Compression:
+				break;
+			case Covariance:
+				break;
+			case Ctable:
+				break;
+			case Dnn:
+				break;
+			case External:
+				break;
+			case MMChain:
+				break;
+			case MMTSJ:
+				break;
+			case MatrixIndexing:
+				break;
+			case MultiReturnBuiltin:
+				break;
+			case MultiReturnParameterizedBuiltin:
+				break;
+			case PMMJ:
+				break;
+			case ParameterizedBuiltin:
+				break;
+			case Partition:
+				break;
+			case QPick:
+				break;
+			case QSort:
+				break;
+			case Quaternary:
+				break;
+			case Rand:
+				break;
+			case Reorg:
+				break;
+			case Reshape:
+				break;
+			case SpoofFused:
+				break;
+			case Sql:
+				break;
+			case StringInit:
+				break;
+			case Ternary:
+				break;
+			case UaggOuterChain:
+				break;*/
+			case Unary:
+				UnaryCPInstruction unaryCPInstruction = ((UnaryCPInstruction)inst);
+				if ( unaryCPInstruction instanceof UnaryMatrixCPInstruction || unaryCPInstruction instanceof UnaryScalarCPInstruction ) {
+					// Check operator and see what happens
+				}
+				//else if other UnaryCPInstruction instanceof do something else
+
+				break;
+			//case Variable:
+			//	break;
+			default:
+				return preprocessInstructionSimple(inst, ec);
+			
+		}
+		return inst;
 	}
 
 	public static Instruction preprocessCPInstruction(CPInstruction inst, ExecutionContext ec){

@@ -57,5 +57,11 @@ public interface FineGrainedPrivacy {
 	 * Remove all fine-grained privacy constraints.
 	 */
 	public void removeAllConstraints();
+
+	/**
+	 * True if any fine-grained constraints has been set. 
+	 * @return true if any fine-grained constraint is set
+	 */
+	public boolean hasConstraints();
 	
 }

@@ -27,6 +27,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 
@@ -41,6 +42,11 @@ public abstract class Instruction
 	}
 	
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
+	protected final Operator _optr;
+
+	protected Instruction(Operator _optr){
+		this._optr = _optr;
+	}
 
 	// local flag for debug output
 	private static final boolean LTRACE = false;
@@ -146,6 +152,10 @@ public abstract class Instruction
 
 	public PrivacyConstraint getPrivacyConstraint(){
 		return privacyConstraint;
+	}
+
+	public Operator getOperator() {
+		return _optr;
 	}
 	
 	/**

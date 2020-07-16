@@ -36,10 +36,30 @@ public class PrivacyConstraint
 
 	protected PrivacyLevel privacyLevel = PrivacyLevel.None;
 	protected FineGrainedPrivacy fineGrainedPrivacy;
+	
+	/**
+	 * Basic Constructor with a fine-grained collection 
+	 * based on a list implementation.
+	 */
+	public PrivacyConstraint(){
+		this(new FineGrainedPrivacyList());
+	}
 
-	public PrivacyConstraint(){}
+	/**
+	 * Constructor with the option to choose between 
+	 * different fine-grained collection implementations.
+	 */
+	public PrivacyConstraint(FineGrainedPrivacy fineGrainedPrivacyCollection){
+		setFineGrainedPrivacyConstraints(fineGrainedPrivacyCollection);
+	}
 
+	/**
+	 * Constructor with default fine-grained collection implementation
+	 * where the entire data object is set to the given privacy level.
+	 * @param privacyLevel for the entire data object.
+	 */
 	public PrivacyConstraint(PrivacyLevel privacyLevel) {
+		this();
 		setPrivacyLevel(privacyLevel);
 	}
 
@@ -56,22 +76,15 @@ public class PrivacyConstraint
 	 * @return true if the privacy constraint has fine-grained constraints.
 	 */
 	public boolean hasFineGrainedConstraints(){
-		return fineGrainedPrivacy != null;
+		return fineGrainedPrivacy.hasConstraints();
 	}
 
 	/**
-	 * Initializes fine-grained privacy for the privacy constraint 
-	 * with a simple FineGrainedPrivacy implementation (FineGrainedPrivacyBrute).
-	 */
-	public void initializeFineGrainedPrivacyConstraints(){
-		initializeFineGrainedPrivacyConstraints(new FineGrainedPrivacyList());
-	}
-
-	/**
-	 * Initializes fine-grained privacy for the privacy constraint. 
+	 * Sets fine-grained privacy for the privacy constraint. 
+	 * Existing fine-grained privacy collection will be overwritten.
 	 * @param fineGrainedPrivacy fine-grained privacy instance which is set for the privacy constraint
 	 */
-	public void initializeFineGrainedPrivacyConstraints(FineGrainedPrivacy fineGrainedPrivacy){
+	public void setFineGrainedPrivacyConstraints(FineGrainedPrivacy fineGrainedPrivacy){
 		this.fineGrainedPrivacy = fineGrainedPrivacy;
 	}
 

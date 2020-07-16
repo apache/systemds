@@ -52,6 +52,7 @@ limitations under the License.
     * [`outlier`-Function](#outlier-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`winsorize`-Function](#winsorize-function)
+    * [`gmm`-Function](#gmm-function)
     
     
 # Introduction
@@ -1033,4 +1034,42 @@ winsorize(X)
 ```r
 X = rand(rows=10, cols=10,min = 1, max=9)
 Y = winsorize(X=X)
+```
+
+## `gmm`-Function
+
+The `gmm`-function implements builtin Gaussian Mixture Model with four different types of 
+covariance matrices i.e., VVV, EEE, VVI, VII and two initialization methods namely "kmeans" and "random".
+
+### Usage
+```r
+gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, reg_covar = 0.000001, tol = 0.0001, verbose=TRUE)
+```
+
+
+### Arguments
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| X             | Double           | ---        | Matrix X of feature vectors.|
+| n_components             | Integer           | 3        | Number of n_components in the Gaussian mixture model |
+| model     | String          | "VVV"| "VVV": unequal variance (full),each component has its own general covariance matrix<br><br>"EEE": equal variance (tied), all components share the same general covariance matrix<br><br>"VVI": spherical, unequal volume (diag), each component has its own diagonal covariance matrix<br><br>"VII": spherical, equal volume (spherical), each component has its own single variance |
+| init_param   | String          | "kmeans"         | initialize weights with "kmeans" or "random"|
+| iterations       | Integer           | 100    |  Number of iterations|
+| reg_covar         | Double           | 1e-6        | regularization parameter for covariance matrix|
+| tol | Double          | 0.000001        |tolerance value for convergence |
+| verbose       | Boolean          | False      | Set to true to print intermediate results.|
+
+
+### Returns
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| weight    |      Double  | ---      |A matrix whose [i,k]th entry is the probability that observation i in the test data belongs to the kth class|
+|labels   |       Double  | ---     | Prediction matrix|
+|df |              Integer  |---  |    Number of estimated parameters|
+| bic |             Double  | ---  |    Bayesian information criterion for best iteration|
+
+### Example
+```r
+X = read($1)
+[labels, df, bic] = gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, reg_covar = 0.000001, tol = 0.0001, verbose=TRUE)
 ```

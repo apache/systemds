@@ -58,7 +58,7 @@ pyspark --executor-memory 4G --driver-memory 4G --jars SystemDS.jar --driver-cla
 
 ## Create MLContext
 
-All primary classes that a user interacts with are located in the `org.apache.sysml.api.mlcontext` package.
+All primary classes that a user interacts with are located in the `org.apache.sysds.api.mlcontext` package.
 For convenience, we can additionally add a static import of `ScriptFactory` to shorten the syntax for creating `Script` objects.
 An `MLContext` object can be created by passing its constructor a reference to the `SparkSession` (`spark`) or `SparkContext` (`sc`).
 If successful, you should see a "`Welcome to Apache SystemDS!`" message.
@@ -67,25 +67,25 @@ If successful, you should see a "`Welcome to Apache SystemDS!`" message.
 
 <div data-lang="Scala" markdown="1">
 {% highlight scala %}
-import org.apache.sysml.api.mlcontext._
-import org.apache.sysml.api.mlcontext.ScriptFactory._
+import org.apache.sysds.api.mlcontext._
+import org.apache.sysds.api.mlcontext.ScriptFactory._
 val ml = new MLContext(spark)
 {% endhighlight %}
 </div>
 
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
-scala> import org.apache.sysml.api.mlcontext._
-import org.apache.sysml.api.mlcontext._
+scala> import org.apache.sysds.api.mlcontext._
+import org.apache.sysds.api.mlcontext._
 
-scala> import org.apache.sysml.api.mlcontext.ScriptFactory._
-import org.apache.sysml.api.mlcontext.ScriptFactory._
+scala> import org.apache.sysds.api.mlcontext.ScriptFactory._
+import org.apache.sysds.api.mlcontext.ScriptFactory._
 
 scala> val ml = new MLContext(spark)
 
 Welcome to Apache SystemDS!
 
-ml: org.apache.sysml.api.mlcontext.MLContext = org.apache.sysml.api.mlcontext.MLContext@12139db0
+ml: org.apache.sysds.api.mlcontext.MLContext = org.apache.sysds.api.mlcontext.MLContext@12139db0
 
 {% endhighlight %}
 </div>
@@ -133,7 +133,7 @@ ml.execute(helloScript)
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val helloScript = dml("print('hello world')")
-helloScript: org.apache.sysml.api.mlcontext.Script =
+helloScript: org.apache.sysds.api.mlcontext.Script =
 Inputs:
 None
 
@@ -142,7 +142,7 @@ None
 
 scala> ml.execute(helloScript)
 hello world
-res0: org.apache.sysml.api.mlcontext.MLResults =
+res0: org.apache.sysds.api.mlcontext.MLResults =
 None
 
 {% endhighlight %}

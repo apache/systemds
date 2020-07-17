@@ -28,9 +28,9 @@ SystemDS's distinguishing characteristics are:
   2. **Multiple execution modes**, including Spark MLContext, Spark Batch, Standalone, and JMLC.
   3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
-This version of SystemDS supports: Java 8+,  Python 3.5+, Hadoop 2.6+ (Not 3.X), and Spark 2.1+ (Not 3.X).
+This version of SystemDS supports: Java 8+,  Python 3.5+, Hadoop 2.10+ (Not 3.X), and Spark 2.4.6+ (Not 3.X).
 
-# Links
+## Links
 
 Various forms of documentation for SystemDS are available.
 
@@ -41,4 +41,3 @@ Various forms of documentation for SystemDS are available.
 - The [javadoc API](./api/java/index) contains internal documentation of the system source code.
 - [Install from Source](./site/install) guides through setup from git download to running system.
 - If you want to contribute take a look at [Contributing](https://github.com/apache/systemds/blob/master/CONTRIBUTING.md)
-

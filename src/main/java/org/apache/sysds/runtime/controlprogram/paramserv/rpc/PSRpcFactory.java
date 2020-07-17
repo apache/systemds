@@ -24,10 +24,12 @@ import java.util.Collections;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.network.TransportContext;
+import org.apache.spark.network.client.TransportClient;
 import org.apache.spark.network.netty.SparkTransportConf;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.network.util.TransportConf;
 import org.apache.spark.util.LongAccumulator;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSProxy;
 
@@ -59,6 +61,11 @@ public class PSRpcFactory {
 			conf.getTimeAsMs("spark.network.timeout", "120s");
 		String host = conf.get("spark.driver.host");
 		TransportContext context = createTransportContext(conf, new LocalParamServer());
-		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
+		try{
+			TransportClient tc = context.createClientFactory().createClient(host, port);
+			return new SparkPSProxy(tc, rpcTimeout, aRPC);
+		}catch(InterruptedException e){
+			throw new DMLRuntimeException("Spark client threw Interrupted Exception",e);
+		}
 	}
 }

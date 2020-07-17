@@ -54,30 +54,32 @@ class SystemDSContext(object):
         that can be read from to get the printed statements from the JVM.
         """
 
-        systemds_java_path = os.path.join(get_module_dir(), "systemds-java")
-        # nt means its Windows
+        sys_root = os.environ.get("SYSTEMDS_ROOT")
+        if sys_root == None:
+            # Python API now require SystemDS root environment variable to be set.
+            raise Exception("SYSTEMDS_ROOT not set please consult the install guide")
+        
         cp_separator = ";" if os.name == "nt" else ":"
-        lib_cp = os.path.join(systemds_java_path, "lib", "*")
-        systemds_cp = os.path.join(systemds_java_path, "*")
-        classpath = cp_separator.join([lib_cp, systemds_cp])
+        lib_cp = os.path.join(sys_root, "target","lib", "*")
+        systemds_cp = os.path.join(sys_root,"target","SystemDS.jar")
 
-        # TODO make use of JavaHome env-variable if set to find java, instead of just using any java available.
+        classpath = cp_separator.join([lib_cp , systemds_cp])
+
         command = ["java", "-cp", classpath]
 
         sys_root = os.environ.get("SYSTEMDS_ROOT")
-        if sys_root != None:
-            files = glob(os.path.join(sys_root, "conf", "log4j*.properties"))
-            if len(files) > 1:
-                print("WARNING: Multiple logging files")
-            if len(files) == 0:
-                print("WARNING: No log4j file found at: "
-                      + os.path.join(sys_root, "conf")
-                      + " therefore using default settings")
-            else:
-                # print("Using Log4J file at " + files[0])
-                command.append("-Dlog4j.configuration=file:" + files[0])
+        
+        files = glob(os.path.join(sys_root, "conf", "log4j*.properties"))
+        if len(files) > 1:
+            print("WARNING: Multiple logging files")
+        if len(files) == 0:
+            print("WARNING: No log4j file found at: "
+                  + os.path.join(sys_root, "conf")
+                  + " therefore using default settings")
         else:
-            print("Default Log4J used, since environment $SYSTEMDS_ROOT not set")
+            # print("Using Log4J file at " + files[0])
+            command.append("-Dlog4j.configuration=file:" + files[0])
+       
 
         command.append("org.apache.sysds.api.PythonDMLScript")
 
@@ -89,8 +91,29 @@ class SystemDSContext(object):
 
         process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
         first_stdout = process.stdout.readline()
-        assert (b"Server Started" in first_stdout), "Error JMLC Server not Started"
+        if(b"GatewayServer Started" in first_stdout):
+            print("Startup success")
+        else:
+            stderr = process.stderr.readline().decode("utf-8")
+            if(len(stderr) > 1):
+                raise Exception("Exception in startup of GatewayServer: " + stderr)
+            outputs = []
+            outputs.append(first_stdout.decode("utf-8"))
+            max_tries = 10
+            for i in range(max_tries):
+                next_line = process.stdout.readline()
+                if(b"GatewayServer Started" in next_line):
+                    print("WARNING: Stdout corrupted by prints: " + str(outputs))
+                    print("Startup success")
+                    break
+                else:
+                    outputs.append(next_line)
+                
+                if (i == max_tries-1):
+                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8") )
 
+        assert (b"GatewayServer Started" in first_stdout), "Error JMLC Server not Started first message was: " + first_stdout.decode("utf-8")
+        
         # Handle Std out from the subprocess.
         self.__stdout = Queue()
         self.__stderr = Queue()

@@ -41,10 +41,10 @@
 	</licenses>
 
 	<properties>
-		<hadoop.version>2.6.0</hadoop.version>
+		<hadoop.version>2.10.0</hadoop.version>
 		<antlr.version>4.5.3</antlr.version>
-		<spark.version>2.1.0</spark.version>
-		<scala.version>2.11.8</scala.version>
+		<spark.version>2.4.6</spark.version>
+		<!-- <scala.version>2.11.8</scala.version> -->
 		<scala.binary.version>2.11</scala.binary.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
@@ -989,7 +989,7 @@
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
-			<version>3.0.8</version>
+			<version>3.0.16</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -1022,7 +1022,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.0.42.Final</version>
+			<version>4.1.47.Final</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -1058,5 +1058,21 @@
 			<artifactId>protobuf-java-util</artifactId>
 			<version>3.12.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.11.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.11.1</version>
+		  </dependency>
+		<dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
+            <version>2.11.1</version>
+        </dependency> 
 	</dependencies>
 </project>

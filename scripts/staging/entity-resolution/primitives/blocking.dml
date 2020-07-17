@@ -1,0 +1,292 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Splits the rows of X into num_blocks non-overlapping regions.
+# May produce less than num_blocks regions.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X             matrix  ---       A dataset with rows to split into blocks.
+# num_blocks    Integer ---       How many blocks to produce.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# BLOCKS         Double   A column vector with start indices for each block. Has one more row
+#                         than blocks such that the last row is the end index of the last block.
+# --------------------------------------------------------------------------------------------
+naive_blocking = function(Matrix[Double] X, Integer num_blocks) return (Matrix[Double] BLOCKS) {
+  block_size_flt = nrow(X) / num_blocks;
+  if (block_size_flt < 1.0) {
+    BLOCKS= seq(1, nrow(X) + 1);
+  } else {
+    block_size = ceil(block_size_flt);
+    BLOCKS = rbind(as.matrix(1), 1 +  block_size * seq(1, num_blocks));
+    BLOCKS[num_blocks+1,] = nrow(X) + 1
+  }
+}
+
+# Sorts the rows in dataset X by the vector v. The order is defined by the ascending order of v.
+# Can return the vector v as first column of X, depending on parameter prepend_v.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X             matrix  ---       Any matrix with rows to be sorted.
+# v             matrix  ---       A vector with the same number of rows as X. Defines ordering.
+# prepend_v     boolean ---       Whether to return v as first column of X.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_index       matrix  A vector with the original row number for each row in X.
+# X_sorted      matrix  The sorted input matrix X.
+# --------------------------------------------------------------------------------------------
+sort_by_vector = function(Matrix[Double] X, Matrix[Double] v, Boolean prepend_v) return (Matrix[Double] X_index, Matrix[Double] X_sorted) {
+  X_index = order(target=v, by=1, decreasing = FALSE, index.return=TRUE);
+  X_sorted = order(target=cbind(v, X), by=1, decreasing = FALSE, index.return=FALSE);
+  if (!prepend_v) {
+    X_sorted = X_sorted[,2:ncol(X_sorted)];
+  }
+}
+
+# Sorts the rows in dataset X by their sum.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X             matrix  ---       Any matrix with rows to be sorted.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_index       matrix  A vector with the original row number for each row in X.
+# X_sorted      matrix  The sorted input matrix X.
+# --------------------------------------------------------------------------------------------
+row_sum_sorting = function(Matrix[Double] X) return (Matrix[Double] X_index, Matrix[Double] X_sorted) {
+  X_rowSum = rowSums(X);
+  [X_index, X_sorted] = sort_by_vector(X, X_rowSum, FALSE);
+}
+
+# Sorts the rows in dataset X by their original row numbers (index).
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X             matrix  ---       Any matrix with rows to be sorted.
+# X_index       matrix  ---       The orginal row numbers to be restored.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_reindex     matrix  The reindexed matrix X.
+# --------------------------------------------------------------------------------------------
+reindex_rowwise = function(Matrix[Double] X, Matrix[Double] X_index) return (Matrix[Double] X_reindex) {
+  X_conc = cbind(X_index, X);
+  X_reindex = order(target=X_conc, by=1, decreasing = FALSE, index.return=FALSE);
+  # Remove index column
+  X_reindex = X_reindex[,2:ncol(X_reindex)];
+}
+
+# Sorts both rows and columns in dataset X by their original row numbers (index).
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X             matrix  ---       Any matrix that should be resorted.
+# X_index       matrix  ---       The orginal row numbers to be restored.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_reindex     matrix  The reindexed matrix X.
+# --------------------------------------------------------------------------------------------
+reindex_rows_and_cols = function(Matrix[Double] X, Matrix[Double] X_index) return (Matrix[Double] X_reindex) {
+  # First reindex rows
+  X_reindex = X;
+  X_reindex = reindex_rowwise(X_reindex, X_index);
+  # Then transpose and repeat
+  X_reindex = t(X_reindex);
+  X_reindex = reindex_rowwise(X_reindex, X_index);
+}
+
+# Generates a random matrix of hyperplane parameters.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# num_hyperplanes  Integer ---       How many hyperplanes to generate.
+# dimension        Integer ---       The number of parameters per hyperplane.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# H              matrix   A num_hyperplanes x dimension matrix of hyperplane parameters.
+# --------------------------------------------------------------------------------------------
+gen_rand_hyperplanes = function(Integer num_hyperplanes, Integer dimension) return (Matrix[Double] H) {
+  H = rand(rows=num_hyperplanes, cols=dimension, min=-1, max=1);
+}
+
+# Creates a scalar hash code for each row in X_plane by interpreting positive values as a
+# binary number.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X_plane         matrix  ---       The result of a plane equation for each row in X.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_hash        matrix   A row vector of scalar hash codes. Same number of rows as X_plane.
+# --------------------------------------------------------------------------------------------
+aggregate_lsh_code = function(Matrix[Double] X_code) return (Matrix[Double] X_hash) {
+  X_pos = (X_code > 0);
+  pos_weights = 2^seq(ncol(X_code)-1, 0);
+  X_weights = X_pos * t(pos_weights);
+  X_hash = rowSums(X_weights);
+}
+
+# Computes locality-sensitive hash codes for each row in X.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X               matrix  ---       A matrix that should be hashed.
+# H               matrix  ---       Hyperplanes matrix w. shape (num_hyperplanes, ncol(X))
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_hash        matrix   A column vector with hash codes. Same number of rows as X.
+# --------------------------------------------------------------------------------------------
+lsh = function(Matrix[Double] X, Matrix[Double] H) return (Matrix[Double] X_hash) {
+  X_plane = X %*% t(H);
+  X_hash = aggregate_lsh_code(X_plane);
+}
+
+lsh_find_blocks = function(Matrix[Double] X, Integer dimensions) return (Matrix[Double] BLOCKS){
+  BLOCKS = matrix(0, rows=2^dimensions+1, cols=1)
+  current_hash_value = 0.0;
+  BLOCKS[1,1] = 1
+  for (row_idx in 1:nrow(X)) {
+    this_hash = as.scalar(X[row_idx,1]);
+    if (current_hash_value < this_hash) {
+      for (h in (current_hash_value+2):(this_hash+1)) {
+        BLOCKS[h,1] = row_idx;
+      }
+      current_hash_value = this_hash;
+    }
+  }
+  n_missing_rows = nrow(BLOCKS) - (current_hash_value + 1);
+  BLOCKS[(current_hash_value+2):nrow(BLOCKS),] = matrix(nrow(X) + 1, rows=n_missing_rows, cols=1);
+}
+
+# Blocks the given matrix X by locality sensitive hashing using a set of random hyperplanes.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X               matrix  ---       A matrix that should be blocked by LSH.
+# num_hyperplanes Integer ---       How many hyperplanes to use.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_index       matrix  A vector with the original row number for each row in X.
+# X_hash        matrix  A column vector with the scalar LSH hash code for each row in X.
+# X_sorted      matrix  The sorted input matrix X.
+# BLOCKS        Double  A column vector with start indices for each block. Has one more row
+#                        than blocks such that the last row is the end index of the last block.
+# --------------------------------------------------------------------------------------------
+lsh_blocking = function(Matrix[Double] X, Integer num_hyperplanes) return (Matrix[Double] X_index, Matrix[Double] X_hash, Matrix[Double] X_sorted, Matrix[Double] BLOCKS) {
+  H = gen_rand_hyperplanes(num_hyperplanes, ncol(X));
+  X_hash = lsh(X, H);
+  [X_index, X_sorted_with_hash] = sort_by_vector(X, X_hash, TRUE);
+  BLOCKS = lsh_find_blocks(X_sorted_with_hash, num_hyperplanes);
+  B_lengths = rbind(BLOCKS[2:nrow(BLOCKS),] - BLOCKS[1:nrow(BLOCKS)-1,], as.matrix(1));
+  BLOCKS = removeEmpty(target=BLOCKS, margin="rows", select=B_lengths)
+  X_sorted = X_sorted_with_hash[,2:ncol(X_sorted_with_hash)];
+  X_hash = X_sorted_with_hash[,1];
+}
+
+# Blocks the matrices X and Y by locality sensitive hashing using a set of random hyperplanes.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X               matrix  ---       A matrix that should be blocked by LSH.
+# Y               matrix  ---       A matrix that should be blocked by LSH.
+# num_hyperplanes Integer ---       How many hyperplanes to use.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X_index       matrix  A vector with the original row number for each row in X.
+# X_hash        matrix  A column vector with the scalar LSH hash code for each row in X.
+# X_sorted      matrix  The sorted input matrix X.
+# Y_index       matrix  A vector with the original row number for each row in Y.
+# Y_hash        matrix  A column vector with the scalar LSH hash code for each row in Y.
+# Y_sorted      matrix  The sorted input matrix Y.
+# BLOCKS        Double  A matrix with start indices for each block. Has one more row
+#                        than blocks such that the last row is the end index of the last block.
+#                        First column is X, second column Y indices.
+# --------------------------------------------------------------------------------------------
+lsh_blocking2 = function(Matrix[Double] X, Matrix[Double] Y, Integer num_hyperplanes) return (
+        Matrix[Double] X_index, Matrix[Double] X_hash, Matrix[Double] X_sorted,
+        Matrix[Double] Y_index, Matrix[Double] Y_hash, Matrix[Double] Y_sorted,
+        Matrix[Double] BLOCKS) {
+  H = gen_rand_hyperplanes(num_hyperplanes, max(ncol(X), ncol(Y)));
+  X_hash = lsh(X, H[,1:ncol(X)]);
+  Y_hash = lsh(Y, H[,1:ncol(Y)]);
+  [X_index, Xs] = sort_by_vector(X, X_hash, TRUE);
+  [Y_index, Ys] = sort_by_vector(Y, Y_hash, TRUE);
+  X_blocks = lsh_find_blocks(Xs, num_hyperplanes);
+  Y_blocks = lsh_find_blocks(Ys, num_hyperplanes);
+  BLOCKS = cbind(X_blocks, Y_blocks)
+  B_lengths = rbind(BLOCKS[2:nrow(BLOCKS),] - BLOCKS[1:nrow(BLOCKS)-1,], matrix(1, rows=1, cols=2));
+  BLOCKS = removeEmpty(target=BLOCKS, margin="rows", select=B_lengths)
+  X_sorted = Xs[,2:ncol(Xs)];
+  X_hash = Xs[,1];
+  Y_sorted = Ys[,2:ncol(Ys)];
+  Y_hash = Ys[,1];
+}

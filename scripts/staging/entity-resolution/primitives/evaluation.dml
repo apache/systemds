@@ -1,0 +1,142 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Calculates the fraction of correctly predicted values in PRED given a ground truth GT.
+# In both inputs, the value 0 means no prediction.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# PRED          matrix  ---       Predicted values, same shape as GT.
+# GT            matrix  ---       Ground truth values, same shape PRED.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# score         Double   Fraction of correct values. 0 means all incorrect, 1 means all correct.
+# --------------------------------------------------------------------------------------------
+accuracy = function(Matrix[Double] PRED, Matrix[Double] GT) return (Double score) {
+  HITS = PRED == GT;
+  sum = sum(HITS);
+  total = length(HITS);
+  score = sum / total;
+}
+
+# Calculates the precision of PRED given a ground truth GT.
+# In both inputs, the value 0 means no prediction.
+#
+# This is the fraction of correctly predicted values of the number of predicted values.
+# precision = |true_positives| / |predicted_positives|
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# PRED          matrix  ---       Predicted values, same shape as GT.
+# GT            matrix  ---       Ground truth values, same shape PRED.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# score         Double   The precision score, as described above.
+# --------------------------------------------------------------------------------------------
+precision = function(Matrix[Double] PRED, Matrix[Double] GT) return (Double score) {
+  tp = sum(PRED * GT);
+  score = tp / sum(PRED);
+}
+
+# Calculates the recall of PRED given a ground truth GT.
+# In both inputs, the value 0 means no prediction.
+#
+# This is the fraction of correctly predicted values of the number of values that should be predicted.
+# recall = |true_positives| / |ground_truth_positives|
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# PRED          matrix  ---       Predicted values, same shape as GT.
+# GT            matrix  ---       Ground truth values, same shape PRED.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# score         Double   The recall score, as described above.
+# --------------------------------------------------------------------------------------------
+recall = function(Matrix[Double] PRED, Matrix[Double] GT) return (Double score) {
+  tp = sum(PRED * GT);
+  score = tp / sum(GT);
+}
+
+geometric_mean2 = function(Double a, Double b) return (Double geometric_mean) {
+  geometric_mean = 2 * (a * b) / (a  + b);
+}
+
+# Calculates the F1 score of PRED given a ground truth GT.
+# In both inputs, the value 0 means no prediction.
+#
+# This is the geometric mean of the precision and recall scores.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# PRED          matrix  ---       Predicted values, same shape as GT.
+# GT            matrix  ---       Ground truth values, same shape PRED.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# f1         Double   The F1 score, as described above.
+# precision  Double   The precision score, as described above.
+# recall     Double   The recall score, as described above.
+# --------------------------------------------------------------------------------------------
+f1 = function(Matrix[Double] PRED, Matrix[Double] GT) return (Double f1, Double precision, Double recall) {
+  precision = precision(PRED, GT);
+  recall = recall(PRED, GT);
+  f1 = geometric_mean2(precision, recall);
+}
+
+# Calculates evaluation scores for PRED given a ground truth GT and prints them.
+# In both inputs, the value 0 means no prediction.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# PRED          matrix  ---       Predicted values, same shape as GT.
+# GT            matrix  ---       Ground truth values, same shape PRED.
+print_eval_stats = function(Matrix[Double] PRED, Matrix[Double] GT) {
+  acc = accuracy(PRED, GT);
+  [f1, precision, recall] = f1(PRED, GT);
+  print("Evaluation statistics:");
+  print("  PRED_nnz : %d", as.integer(sum(PRED != 0.0)));
+  print("  GT_nnz   : %d", as.integer(sum(GT != 0.0)));
+  print("  Accuracy : %6.4f", acc);
+  print("  Precision: %6.4f", precision);
+  print("  Recall   : %6.4f", recall);
+  print("  F1 score : %6.4f", f1);
+}

@@ -132,7 +132,7 @@ public class DMLOptions {
 						else if (lineageType.equalsIgnoreCase("policy_lru"))
 							dmlOptions.linCachePolicy = LineageCachePolicy.LRU;
 						else if (lineageType.equalsIgnoreCase("policy_weighted"))
-							dmlOptions.linCachePolicy = LineageCachePolicy.WEIGHTED;
+							dmlOptions.linCachePolicy = LineageCachePolicy.COSTNSIZE;
 						else if (lineageType.equalsIgnoreCase("policy_hybrid"))
 							dmlOptions.linCachePolicy = LineageCachePolicy.HYBRID;
 						else

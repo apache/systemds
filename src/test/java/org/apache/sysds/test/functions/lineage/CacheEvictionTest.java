@@ -103,19 +103,19 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			long hitCount_lru = LineageCacheStatistics.getInstHits();
 			long evictedCount_lru = LineageCacheStatistics.getMemDeletes();
 			
-			// Weighted scheme (computationTime/Size)
+			// costnsize scheme (computationTime/Size)
 			proArgs.clear();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add(ReuseCacheType.REUSE_FULL.name().toLowerCase());
-			proArgs.add("policy_weighted");
+			proArgs.add("policy_costnsize");
 			proArgs.add("-args");
 			proArgs.add(String.valueOf(cacheSize));
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> R_weighted= readDMLMatrixFromHDFS("R");
+			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromHDFS("R");
 			long expCount_wt = Statistics.getCPHeavyHitterCount("exp");
 			long hitCount_wt = LineageCacheStatistics.getInstHits();
 			long evictedCount_wt = LineageCacheStatistics.getMemDeletes();
@@ -123,7 +123,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			
 			// Compare results
 			Lineage.setLinReuseNone();
-			TestUtils.compareMatrices(R_lru, R_weighted, 1e-6, "LRU", "Weighted");
+			TestUtils.compareMatrices(R_lru, R_costnsize, 1e-6, "LRU", "costnsize");
 			
 			// Compare reused instructions
 			Assert.assertTrue(expCount_lru > expCount_wt);

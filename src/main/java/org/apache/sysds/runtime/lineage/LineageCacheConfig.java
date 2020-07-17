@@ -116,7 +116,7 @@ public class LineageCacheConfig
 	
 	public enum LineageCachePolicy {
 		LRU,
-		WEIGHTED,
+		COSTNSIZE,
 		HYBRID;
 	}
 	
@@ -219,7 +219,7 @@ public class LineageCacheConfig
 			case LRU:
 				WEIGHTS[0] = 0; WEIGHTS[1] = 1;
 				break;
-			case WEIGHTED:
+			case COSTNSIZE:
 				WEIGHTS[0] = 1; WEIGHTS[1] = 0;
 				break;
 			case HYBRID:

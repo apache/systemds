@@ -20,8 +20,10 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -55,12 +57,13 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	private final List<String> _boundOutputNames;
 
 	public FunctionCallCPInstruction(String namespace, String functName, CPOperand[] boundInputs,
-			List<String> boundInputNames, List<String> funArgNames, List<String> boundOutputNames, String istr) {
+			List<String> funArgNames, List<String> boundOutputNames, String istr) {
 		super(CPType.External, null, functName, istr);
 		_functionName = functName;
 		_namespace = namespace;
 		_boundInputs = boundInputs;
-		_boundInputNames = boundInputNames;
+		_boundInputNames = Arrays.stream(boundInputs).map(i -> i.getName())
+			.collect(Collectors.toCollection(ArrayList::new));
 		_funArgNames = funArgNames;
 		_boundOutputNames = boundOutputNames;
 	}
@@ -81,19 +84,17 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		int numInputs = Integer.valueOf(parts[3]);
 		int numOutputs = Integer.valueOf(parts[4]);
 		CPOperand[] boundInputs = new CPOperand[numInputs];
-		List<String> boundInputNames = new ArrayList<>();
 		List<String> funArgNames = new ArrayList<>();
 		List<String> boundOutputNames = new ArrayList<>();
 		for (int i = 0; i < numInputs; i++) {
 			String[] nameValue = IOUtilFunctions.splitByFirst(parts[5 + i], "=");
 			boundInputs[i] = new CPOperand(nameValue[1]);
 			funArgNames.add(nameValue[0]);
-			boundInputNames.add(boundInputs[i].getName());
 		}
 		for (int i = 0; i < numOutputs; i++)
 			boundOutputNames.add(parts[5 + numInputs + i]);
 		return new FunctionCallCPInstruction ( namespace, functionName,
-			boundInputs, boundInputNames, funArgNames, boundOutputNames, str );
+			boundInputs, funArgNames, boundOutputNames, str );
 	}
 	
 	@Override

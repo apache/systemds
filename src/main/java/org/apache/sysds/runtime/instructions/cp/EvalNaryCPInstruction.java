@@ -67,10 +67,6 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		CPOperand[] boundInputs = Arrays.copyOfRange(inputs, 1, inputs.length);
 		List<String> boundOutputNames = new ArrayList<>();
 		boundOutputNames.add(output.getName());
-		List<String> boundInputNames = new ArrayList<>();
-		for (CPOperand input : boundInputs) {
-			boundInputNames.add(input.getName());
-		}
 
 		//2. copy the created output matrix
 		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
@@ -103,32 +99,30 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 				ec.getVariables().put(varName, in);
 				boundInputs2[i] = new CPOperand(varName, in);
 			}
-			boundInputNames = lo.isNamedList() ? lo.getNames() : fpb.getInputParamNames();
 			boundInputs = boundInputs2;
 		}
 		
 		//5. call the function
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(null, funcName,
-			boundInputs, boundInputNames, fpb.getInputParamNames(), boundOutputNames, "eval func");
+			boundInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 
 		//6. convert the result to matrix
 		Data newOutput = ec.getVariable(output);
-		if (newOutput instanceof MatrixObject) {
-			return;
+		if (!(newOutput instanceof MatrixObject)) {
+			MatrixBlock mb = null;
+			if (newOutput instanceof ScalarObject) {
+				//convert scalar to matrix
+				mb = new MatrixBlock(((ScalarObject) newOutput).getDoubleValue());
+			} else if (newOutput instanceof FrameObject) {
+				//convert frame to matrix
+				mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
+				ec.cleanupCacheableData((FrameObject) newOutput);
+			}
+			outputMO.acquireModify(mb);
+			outputMO.release();
+			ec.setVariable(output.getName(), outputMO);
 		}
-		MatrixBlock mb = null;
-		if (newOutput instanceof ScalarObject) {
-			//convert scalar to matrix
-			mb = new MatrixBlock(((ScalarObject) newOutput).getDoubleValue());
-		} else if (newOutput instanceof FrameObject) {
-			//convert frame to matrix
-			mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
-			ec.cleanupCacheableData((FrameObject) newOutput);
-		}
-		outputMO.acquireModify(mb);
-		outputMO.release();
-		ec.setVariable(output.getName(), outputMO);
 		
 		//7. cleanup of variable expanded from list
 		if( boundInputs2 != null ) {

@@ -1649,6 +1649,8 @@ public abstract class AutomatedTestBase {
 	}
 
 	protected String getRScript() {
+		if(fullRScriptName != null)
+			return fullRScriptName;
 		return sourceDirectory + selectedTest + ".R";
 	}
 

@@ -27,12 +27,12 @@ if [ $curFolder != "docs" ]; then
     exit
 else
     echo "creating API docs"
-
+    rm -r api/java
     ## JAVA Docs
     cd ..
-    mvn package -P distribution
+    mvn javadoc:javadoc -P distribution
     mkdir -p docs/api/java
-    cp -r target/apidocs/* docs/api/java
+    cp -r target/site/apidocs/* docs/api/java
     cd docs
 
     ## Python Docs

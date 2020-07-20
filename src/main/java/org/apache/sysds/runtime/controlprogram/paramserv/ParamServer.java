@@ -104,12 +104,10 @@ public abstract class ParamServer
 		CPOperand[] boundInputs = inputs.stream()
 			.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
 			.toArray(CPOperand[]::new);
-		ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
-			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
 		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs,
-			inputNames, func.getInputParamNames(), outputNames, "aggregate function");
+			func.getInputParamNames(), outputNames, "aggregate function");
 	}
 
 	public abstract void push(int workerID, ListObject value);

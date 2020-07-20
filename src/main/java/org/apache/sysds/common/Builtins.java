@@ -96,6 +96,7 @@ public enum Builtins {
 	GLM("glm", true),
 	GNMF("gnmf", true),
 	GRID_SEARCH("gridSearch", true),
+	HYPERBAND("hyperband", true),
 	IFELSE("ifelse", false),
 	IMG_MIRROR("img_mirror", true),
 	IMG_BRIGHTNESS("img_brightness", true),

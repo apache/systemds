@@ -19,8 +19,12 @@
 #
 #-------------------------------------------------------------
 
-F1 = federated(type="frame", addresses=list($1, $2), ranges=list(list(0,0), list($3, $4), list(0,$4), list($3,$5)));
-jspec = read($6, data_type="scalar", value_type="string");
+F1 = federated(type="frame", addresses=list($in_AU, $in_AL, $in_BU, $in_BL), ranges=
+  list(list(0,0), list($rows / 2, $cols / 2), # AUpper range
+    list($rows / 2, 0), list($rows, $cols / 2), # ALower range
+    list(0, $cols / 2), list($rows / 2, $cols), # BUpper range
+    list($rows / 2, $cols / 2), list($rows, $cols))); # BLower range
+jspec = read($spec_file, data_type="scalar", value_type="string");
 
 [X, M] = transformencode(target=F1, spec=jspec);
 
@@ -29,5 +33,5 @@ Ag = cbind(A, seq(1,nrow(A)));
 
 F2 = transformdecode(target=Ag, spec=jspec, meta=M);
 
-write(F2, $7, format=$8);
+write(F2, $out, format=$format);
 

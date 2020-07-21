@@ -102,20 +102,28 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			// generate and write input data
 			// A is the data that will be aggregated and not recoded
 			double[][] A = TestUtils.round(getRandomMatrix(rows, cols / 2, 1, 15, sparse ? sparsity2 : sparsity1, 7));
-			writeInputFrameWithMTD("A", A, false, schema, format);
+			double[][] AUpper = Arrays.copyOf(A, rows / 2);
+			double[][] ALower = Arrays.copyOfRange(A, rows / 2, rows);
+			writeInputFrameWithMTD("AU", AUpper, false, schema, format);
+			writeInputFrameWithMTD("AL", ALower, false, schema, format);
 
 			// B will be recoded and will be the column that will be grouped by
 			Arrays.fill(schema, Types.ValueType.STRING);
 			// we set sparsity to 1.0 to ensure all the string labels exist
 			double[][] B = TestUtils.round(getRandomMatrix(rows, cols / 2, 1, 15, 1.0, 8));
-			writeInputFrameWithMTD("B", B, false, schema, format);
+			double[][] BUpper = Arrays.copyOf(B, rows / 2);
+			double[][] BLower = Arrays.copyOfRange(B, rows / 2, rows);
+			writeInputFrameWithMTD("BU", BUpper, false, schema, format);
+			writeInputFrameWithMTD("BL", BLower, false, schema, format);
 
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME1 + ".dml";
 
-			programArgs = new String[] {"-args", TestUtils.federatedAddress("localhost", port1, input("A")),
-				TestUtils.federatedAddress("localhost", port1, input("B")), Integer.toString(rows),
-				Integer.toString(cols / 2), Integer.toString(cols), SCRIPT_DIR + TEST_DIR + SPEC, output("FO"),
-				format.toString()};
+			programArgs = new String[] {"-nvargs",
+				"in_AU=" + TestUtils.federatedAddress("localhost", port1, input("AU")),
+				"in_AL=" + TestUtils.federatedAddress("localhost", port1, input("AL")),
+				"in_BU=" + TestUtils.federatedAddress("localhost", port1, input("BU")),
+				"in_BL=" + TestUtils.federatedAddress("localhost", port1, input("BL")), "rows=" + rows, "cols=" + cols,
+				"spec_file=" + SCRIPT_DIR + TEST_DIR + SPEC, "out=" + output("FO"), "format=" + format.toString()};
 
 			// run test
 			runTest(true, false, null, -1);

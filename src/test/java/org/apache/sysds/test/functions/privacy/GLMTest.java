@@ -55,6 +55,7 @@ public class GLMTest extends AutomatedTestBase
 	protected double distParam, linkPower, intercept, logFeatureVarianceDisbalance, avgLinearForm, stdevLinearForm, dispersion;
 
 	protected GLMType glmType;
+	protected final static boolean runAll = false;
 
 	public enum GLMType {
 		Gaussianlog,
@@ -176,7 +177,10 @@ public class GLMTest extends AutomatedTestBase
 			{  10000,  100,  2,  1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  2.5, GLMType.Binomialcloglog },   // Binomial two-column.cloglog
 			{  20000,  100,  2,  1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Binomialcauchit },   // Binomial two-column.cauchit
 		};
-		return Arrays.asList(data);
+		if ( runAll )
+			return Arrays.asList(data);
+		else 
+			return Arrays.asList( new Object[][]{data[0]} );
 	}
 
 	@Override

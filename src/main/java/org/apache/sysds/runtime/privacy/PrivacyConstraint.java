@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import org.apache.sysds.runtime.privacy.FineGrained.DataRange;
 import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacy;
 import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyList;
 
@@ -94,6 +95,34 @@ public class PrivacyConstraint
 	 */
 	public FineGrainedPrivacy getFineGrainedPrivacy(){
 		return fineGrainedPrivacy;
+	}
+
+	/**
+	 * Return true if any of the elements has privacy level private
+	 * @return true if any element has privacy level private
+	 */
+	public boolean hasPrivateElements(){
+		if (privacyLevel == PrivacyLevel.Private) return true;
+		if ( hasFineGrainedConstraints() ){
+			DataRange[] dataRanges = fineGrainedPrivacy.getDataRangesOfPrivacyLevel(PrivacyLevel.Private);
+			return dataRanges != null && dataRanges.length > 0;
+		} else return false;
+	}
+
+	/**
+	 * Return true if any constraints have level Private or PrivateAggregate.
+	 * @return true if any constraints have level Private or PrivateAggregate
+	 */
+	public boolean hasConstraints(){
+		if ( privacyLevel != null && 
+			(privacyLevel == PrivacyLevel.Private || privacyLevel == PrivacyLevel.PrivateAggregation) )
+			return true;
+		else if ( hasFineGrainedConstraints() ){
+			DataRange[] privateRanges = fineGrainedPrivacy.getDataRangesOfPrivacyLevel(PrivacyLevel.Private);
+			DataRange[] aggregateRanges = fineGrainedPrivacy.getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation);
+			return (privateRanges != null && privateRanges.length > 0) 
+				|| (aggregateRanges != null && aggregateRanges.length > 0);
+		} else return false;
 	}
 
 }

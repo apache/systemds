@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties;
@@ -56,6 +55,7 @@ public class BuiltinGLMTest extends AutomatedTestBase
 
 	protected int numRecords, numFeatures, distFamilyType, linkType, intercept;
 	protected double distParam, linkPower, logFeatureVarianceDisbalance, avgLinearForm, stdevLinearForm, dispersion;
+	protected final static boolean runAll = false;
 
 	public BuiltinGLMTest(int numRecords_, int numFeatures_, int distFamilyType_, double distParam_,
 			int linkType_, double linkPower_, double logFeatureVarianceDisbalance_,
@@ -229,6 +229,9 @@ public class BuiltinGLMTest extends AutomatedTestBase
 				{  1000,  100,  2,  1.0,  2,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.logit
 				{  2000,  100,  2,  1.0,  3,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
 		};
-		return Arrays.asList(data);
+		if ( runAll )
+			return Arrays.asList(data);
+		else
+			return Arrays.asList(new Object[][]{data[0]});
 	}
 }

@@ -31,7 +31,7 @@
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
-	<url>https://github.com/apache/systemml</url>
+	<url>https://github.com/apache/systemds</url>
 	<description>Declarative End-to-End Data Science</description>
 	<licenses>
 		<license>
@@ -52,7 +52,7 @@
 		<jcuda.version>10.2.0</jcuda.version>
 		<!-->Testing settings<!-->
 		<skipTests>true</skipTests>
-		<argLine>-Xms4g -Xmx4g</argLine>
+		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
 	</properties>
 
 	<repositories>
@@ -66,7 +66,7 @@
 	</repositories>
 
 	<scm>
-		<developerConnection>scm:git:https://github.com/apache/systemml.git</developerConnection>
+		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
 	</scm>
 
 	<build>
@@ -292,7 +292,7 @@
 					<execution>
 						<!-- remove antlr tokens files during initialize phase so antlr4 -->
 						<!-- plugin can regenerate them during generate-sources phase -->
-						<id>remove-antlr-tokens-files</id>
+						<!-- <id>remove-antlr-tokens-files</id>
 						<phase>initialize</phase>
 						<goals>
 							<goal>clean</goal>
@@ -306,7 +306,7 @@
 									</includes>
 								</fileset>
 							</filesets>
-						</configuration>
+						</configuration> -->
 					</execution>
 				</executions>
 			</plugin>
@@ -354,6 +354,16 @@
 				<groupId>org.eluder.coveralls</groupId>
 				<artifactId>coveralls-maven-plugin</artifactId>
 				<version>4.3.0</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<quiet>true</quiet>
+					<skip>true</skip>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -562,15 +572,6 @@
 		</profile>
 
 		<profile>
-			<!-- Can be used to ignore doclint javadoc issues -->
-			<id>ignore-doclint</id>
-			<!-- <activation> <jdk>[1.8,)</jdk> </activation> -->
-			<properties>
-				<javadoc.opts>-Xdoclint:none</javadoc.opts>
-			</properties>
-		</profile>
-
-		<profile>
 			<!-- Profile to create binary distributions. Execute with `mvn clean package 
 				-P distribution` -->
 			<id>distribution</id>
@@ -670,9 +671,15 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.1.1</version>
+						<version>3.2.0</version>
 						<configuration>
-							<excludePackageNames>org.apache.systeds.protobuf.*</excludePackageNames>
+							<!-- https://maven.apache.org/plugins/maven-javadoc-plugin/javadoc-mojo.html -->
+							<excludePackageNames>*.protobuf</excludePackageNames>
+							<notimestamp>true</notimestamp>
+							<failOnWarnings>true</failOnWarnings>
+							<quiet>true</quiet>
+							<skip>false</skip>
+							<show>public</show>
 						</configuration>
 						<executions>
 							<execution>
@@ -1028,7 +1035,7 @@
 		<dependency>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-javadoc-plugin</artifactId>
-			<version>3.1.1</version>
+			<version>3.2.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->

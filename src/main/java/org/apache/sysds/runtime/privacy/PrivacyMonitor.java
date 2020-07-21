@@ -30,7 +30,7 @@ public class PrivacyMonitor
 	private static EnumMap<PrivacyLevel,LongAdder> checkedConstraints;
 
 	static {
-		checkedConstraints = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
+		checkedConstraints = new EnumMap<>(PrivacyLevel.class);
 		for ( PrivacyLevel level : PrivacyLevel.values() ){
 			checkedConstraints.put(level, new LongAdder());
 		}

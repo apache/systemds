@@ -37,7 +37,7 @@ We have provided at profile for java located in [Codestyle File ./docs/CodeStyle
 
 ## License
 
-Each file in the project has a header license, when adding files remember to add an appropriate comment for that filetype containing the license. One Example is this file: [RAW Link](https://raw.githubusercontent.com/apache/systemml/master/CONTRIBUTING.md). The specific type of commenting `\** *\` or `# ...` varies depending on filetype, but the content is the same.
+Each file in the project has a header license, when adding files remember to add an appropriate comment for that filetype containing the license. One Example is this file: [RAW Link](https://raw.githubusercontent.com/apache/systemds/master/CONTRIBUTING.md). The specific type of commenting `\** *\` or `# ...` varies depending on filetype, but the content is the same.
 
 ```code
 Licensed to the Apache Software Foundation (ASF) under one or more

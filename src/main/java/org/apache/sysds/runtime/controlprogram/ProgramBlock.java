@@ -247,7 +247,7 @@ public abstract class ProgramBlock implements ParseInfo
 				tmp.processInstruction(ec);
 				
 				// cache result
-				LineageCache.putValue(tmp, ec, System.nanoTime()-et0);
+				LineageCache.putValue(tmp, ec, et0);
 				
 				// post-process instruction (debug)
 				tmp.postprocessInstruction( ec );

@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.util.LocalFileUtils;
@@ -93,6 +94,7 @@ public class DMLScript
 	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                 // whether compute lineage trace
 	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;     // whether deduplicate lineage items
 	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
+	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy; // lineage cache eviction policy
 	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution 
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
@@ -194,6 +196,7 @@ public class DMLScript
 			LINEAGE             = dmlOptions.lineage;
 			LINEAGE_DEDUP       = dmlOptions.lineage_dedup;
 			LINEAGE_REUSE       = dmlOptions.linReuseType;
+			LINEAGE_POLICY      = dmlOptions.linCachePolicy;
 			CHECK_PRIVACY       = dmlOptions.checkPrivacy;
 
 			String fnameOptConfig = dmlOptions.configFile;
@@ -219,6 +222,7 @@ public class DMLScript
 			}
 			
 			LineageCacheConfig.setConfig(LINEAGE_REUSE);
+			LineageCacheConfig.setCachePolicy(LINEAGE_POLICY);
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;

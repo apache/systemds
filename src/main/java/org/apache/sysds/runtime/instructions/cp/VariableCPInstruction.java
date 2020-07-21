@@ -115,6 +115,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private final CPOperand output;
 	private final MetaData metadata;
 	private final UpdateType _updateType;
+	private final boolean _containsPreadPrefix;
 	
 	// Frame related members
 	private final String _schema;
@@ -135,6 +136,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		_formatProperties = fprops;
 		_schema = schema;
 		_updateType = utype;
+		_containsPreadPrefix = in1 != null && in1.getName()
+			.contains(org.apache.sysds.lops.Data.PREAD_PREFIX);
 	}
 	
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
@@ -534,7 +537,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			
 		case RemoveVariable:
 			for( CPOperand input : inputs )
-				processRemoveVariableInstruction(ec, input.getName());
+				processRmvarInstruction(ec, input.getName());
 			break;
 			
 		case RemoveVariableAndFile:
@@ -593,7 +596,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		//PRE: for robustness we cleanup existing variables, because a setVariable
 		//would  cause a buffer pool memory leak as these objects would never be removed
 		if(ec.containsVariable(getInput1()))
-			processRemoveVariableInstruction(ec, getInput1().getName());
+			processRmvarInstruction(ec, getInput1().getName());
 		
 		switch(getInput1().getDataType()) {
 			case MATRIX: {
@@ -986,7 +989,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 * @param varname variable name
 	 */
-	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) {
+	public static void processRmvarInstruction( ExecutionContext ec, String varname ) {
 		// remove variable from symbol table
 		Data dat = ec.removeVariable(varname);
 		//cleanup matrix data on fs/hdfs (if necessary)
@@ -1256,7 +1259,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		LineageItem li = null;
 		switch (getVariableOpcode()) {
 			case CreateVariable:
-				if (!getInput1().getName().contains(org.apache.sysds.lops.Data.PREAD_PREFIX))
+				if (!_containsPreadPrefix)
 					break; //otherwise fall through
 			
 			case Read: {

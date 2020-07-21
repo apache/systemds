@@ -144,6 +144,8 @@ public class ProgramRewriter
 			_dagRuleSet.add( new RewriteRemoveUnnecessaryCasts()             );
 		if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
 			_dagRuleSet.add( new RewriteCommonSubexpressionElimination(true) );
+		if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
+			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 		_sbRuleSet.add(  new RewriteRemoveEmptyBasicBlocks()                 );
 	}
 	

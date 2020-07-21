@@ -32,7 +32,7 @@ Start Federated worker
 To start a federated worker, you first have to setup your environment variables.
 A simple guide to do this is in the SystemDS Repository_.
 
-.. _Repository: https://github.com/apache/systemml/tree/master/bin/
+.. _Repository: https://github.com/apache/systemds/tree/master/bin/
 
 If that is setup correctly simply start a worker using the following command.
 Here the ``8001`` refer to the port used by the worker.::

@@ -217,10 +217,14 @@ public class TestUtils
 
 				readValuesFromFileStreamAndPut(outIn, actualValues);
 			}
-			
+
+			Set<CellIndex> allKeys = new HashSet<>();
+			allKeys.addAll(expectedValues.keySet());
+			if(expectedValues.size() != actualValues.size())
+				allKeys.addAll(actualValues.keySet());
 
 			int countErrors = 0;
-			for (CellIndex index : expectedValues.keySet()) {
+			for (CellIndex index : allKeys) {
 				Double expectedValue = expectedValues.get(index);
 				Double actualValue = actualValues.get(index);
 				if (expectedValue == null)
@@ -346,8 +350,12 @@ public class TestUtils
 
 		readActualAndExpectedFile(null, expectedFile, actualDir, expectedValues, actualValues);
 
+		Set<CellIndex> allKeys = new HashSet<>();
+		allKeys.addAll(expectedValues.keySet());
+		if(expectedValues.size() != actualValues.size())
+			allKeys.addAll(actualValues.keySet());
 		int countErrors = 0;
-		for(CellIndex index : expectedValues.keySet()) {
+		for(CellIndex index : allKeys) {
 			Double expectedValue = (Double) expectedValues.get(index);
 			Double actualValue = (Double) actualValues.get(index);
 			if(expectedValue == null)
@@ -383,8 +391,12 @@ public class TestUtils
 
 		readActualAndExpectedFile(schema, expectedFile, actualDir, expectedValues, actualValues);
 
+		Set<CellIndex> allKeys = new HashSet<>();
+		allKeys.addAll(expectedValues.keySet());
+		if(expectedValues.size() != actualValues.size())
+			allKeys.addAll(actualValues.keySet());
 		int countErrors = 0;
-		for(CellIndex index : expectedValues.keySet()) {
+		for(CellIndex index : allKeys) {
 			Object expectedValue = expectedValues.get(index);
 			Object actualValue = actualValues.get(index);
 
@@ -1107,9 +1119,13 @@ public class TestUtils
 				FSDataInputStream fsout = fs.open(file.getPath());
 				readValuesFromFileStream(fsout, actualValues);
 			}
+			Set<CellIndex> allKeys = new HashSet<>();
+			allKeys.addAll(expectedValues.keySet());
+			if(expectedValues.size() != actualValues.size())
+				allKeys.addAll(actualValues.keySet());
 
 			int countErrors = 0;
-			for (CellIndex index : expectedValues.keySet()) {
+			for (CellIndex index : allKeys) {
 				Double expectedValue = expectedValues.get(index);
 				Double actualValue = actualValues.get(index);
 				if (expectedValue == null)

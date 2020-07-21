@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.sysds.api.DMLScript;
@@ -36,7 +37,7 @@ public class LineageCacheEviction
 {
 	private static long _cachesize = 0;
 	private static long CACHE_LIMIT; //limit in bytes
-	protected static final HashSet<LineageItem> _removelist = new HashSet<>();
+	protected static final Set<LineageItem> _removelist = new HashSet<>();
 	private static final Map<LineageItem, SpilledItem> _spillList = new HashMap<>();
 	private static String _outdir = null;
 	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
@@ -79,7 +80,7 @@ public class LineageCacheEviction
 	
 	protected static void getEntry(LineageCacheEntry entry) {
 		// Reset the timestamp to maintain the LRU component of the scoring function
-		if (!LineageCacheConfig.isLRU()) 
+		if (!LineageCacheConfig.isTimeBased()) 
 			return;
 		
 		if (weightedQueue.remove(entry)) {
@@ -202,8 +203,6 @@ public class LineageCacheEviction
 				//TODO: Graceful handling of status.
 			}
 
-			double exectime = ((double) e._computeTime) / 1000000; // in milliseconds
-
 			if (!e.isMatrixValue()) {
 				// No spilling for scalar entries. Just delete those.
 				// Note: scalar entries with higher computation time are pinned.
@@ -213,6 +212,7 @@ public class LineageCacheEviction
 
 			// Estimate time to write to FS + read from FS.
 			double spilltime = getDiskSpillEstimate(e) * 1000; // in milliseconds
+			double exectime = ((double) e._computeTime) / 1000000; // in milliseconds
 
 			if (LineageCache.DEBUG) {
 				if (exectime > LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
@@ -227,19 +227,13 @@ public class LineageCacheEviction
 			if (spilltime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
 				// Can't trust the estimate if less than 100ms.
 				// Spill if it takes longer to recompute.
-				if (exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE)
-					//spillToLocalFS(e);
-					removeOrSpillEntry(cache, e, true);  //spill
-				else
-					removeOrSpillEntry(cache, e, false); //delete
+				removeOrSpillEntry(cache, e, //spill or delete
+					exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE);
 			}
 			else {
 				// Spill if it takes longer to recompute than spilling.
-				if (exectime > spilltime)
-					//spillToLocalFS(e);
-					removeOrSpillEntry(cache, e, true);  //spill
-				else
-					removeOrSpillEntry(cache, e, false); //delete
+				removeOrSpillEntry(cache, e, //spill or delete
+					exectime > spilltime);
 			}
 		}
 	}

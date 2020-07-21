@@ -671,7 +671,7 @@ public class HopRewriteUtils
 		return auop;
 	}
 	
-	public static AggBinaryOp createTSMM(Hop input, boolean left) {
+	public static AggBinaryOp createTsmm(Hop input, boolean left) {
 		Hop trans = createTranspose(input);
 		return createMatrixMultiply(
 			left ? trans : input, left ? input : trans);
@@ -702,6 +702,10 @@ public class HopRewriteUtils
 		LiteralOp row = new LiteralOp(rix);
 		LiteralOp col = new LiteralOp(cix);
 		return createIndexingOp(input, row, row, col, col);
+	}
+	
+	public static IndexingOp createIndexingOp(Hop input, long rl, long ru, long cl, long cu) {
+		return createIndexingOp(input, new LiteralOp(rl), new LiteralOp(ru), new LiteralOp(cl), new LiteralOp(cu));
 	}
 	
 	public static IndexingOp createIndexingOp(Hop input, Hop rl, Hop ru, Hop cl, Hop cu) {
@@ -1425,6 +1429,23 @@ public class HopRewriteUtils
 		
 		root.setVisited();
 		return ret;
+	}
+	
+	public static Hop createPartialTsmmCbind(Hop X, Hop deltaX, Hop tsmmIn1) {
+		//partial rewrite to rewrite tsmm(cbind(in1, in2)) into form that can reuse tsmm(in1)
+		// cell bottomLeft = t(lastCol) %*% oldMatrix
+		ReorgOp tLastCol = HopRewriteUtils.createTranspose(deltaX);
+		AggBinaryOp bottomLeft = HopRewriteUtils.createMatrixMultiply(tLastCol, X);
+		// cell topRight = t(oldMatrix) %*% lastCol = t(bottomLeft)
+		ReorgOp topRight = HopRewriteUtils.createTranspose(bottomLeft);
+		// bottomRight = t(lastCol) %*% lastCol
+		AggBinaryOp bottomRight = HopRewriteUtils.createMatrixMultiply(tLastCol, deltaX);
+		// rowOne = cbind(lastRes, topRight)
+		BinaryOp rowOne = HopRewriteUtils.createBinary(tsmmIn1, topRight, OpOp2.CBIND);
+		// rowTwo = cbind(bottomLeft, bottomRight)
+		BinaryOp rowTwo = HopRewriteUtils.createBinary(bottomLeft, bottomRight, OpOp2.CBIND);
+		// rbind(rowOne, rowTwo)
+		return HopRewriteUtils.createBinary(rowOne, rowTwo, OpOp2.RBIND);
 	}
 	
 	//////////////////////////////////////

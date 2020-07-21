@@ -39,7 +39,7 @@ public class LineageCacheConfig
 		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof",
 		"uamean", "max", "min", "ifelse", "-", "sqrt", ">", "uak+", "<=",
 		"^", "uamax", "uark+", "uacmean", "eigen", "ctableexpand", "replace",
-		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+"
+		"^2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax"
 		//TODO: Reuse everything. 
 	};
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -99,7 +99,7 @@ public class LineageCacheConfig
 
 	private static LineageCachePolicy _cachepolicy = null;
 	// Weights for scoring components (computeTime/size, LRU timestamp)
-	private static double[] WEIGHTS = {0, 1};
+	protected static double[] WEIGHTS = {0, 1};
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
@@ -116,19 +116,14 @@ public class LineageCacheConfig
 	
 	public enum LineageCachePolicy {
 		LRU,
-		WEIGHTED,
+		COSTNSIZE,
 		HYBRID;
 	}
 	
 	protected static Comparator<LineageCacheEntry> LineageCacheComparator = (e1, e2) -> {
-		// Gather the weights for scoring components
-		double w1 = LineageCacheConfig.WEIGHTS[0];
-		double w2 = LineageCacheConfig.WEIGHTS[1];
-		// Generate scores
-		double score1 = w1*(((double)e1._computeTime)/e1.getSize()) + w2*e1.getTimestamp();
-		double score2 = w1*((double)e2._computeTime)/e2.getSize() + w2*e2.getTimestamp();
-		// Generate order. If scores are same, order by LineageItem ID.
-		return score1 == score2 ? Long.compare(e1._key.getId(), e2._key.getId()) : score1 < score2 ? -1 : 1;
+		return e1.score == e2.score ?
+			Long.compare(e1._key.getId(), e2._key.getId()) :
+			e1.score < e2.score ? -1 : 1;
 	};
 
 	//----------------------------------------------------------------//
@@ -224,11 +219,11 @@ public class LineageCacheConfig
 			case LRU:
 				WEIGHTS[0] = 0; WEIGHTS[1] = 1;
 				break;
-			case WEIGHTED:
+			case COSTNSIZE:
 				WEIGHTS[0] = 1; WEIGHTS[1] = 0;
 				break;
 			case HYBRID:
-				WEIGHTS[0] = 1; WEIGHTS[1] = 1;
+				WEIGHTS[0] = 1; WEIGHTS[1] = 0.0033;
 				break;
 		}
 		_cachepolicy = policy;
@@ -238,9 +233,9 @@ public class LineageCacheConfig
 		return _cachepolicy;
 	}
 	
-	public static boolean isLRU() {
+	public static boolean isTimeBased() {
 		// Check the LRU component of weights array.
-		return (WEIGHTS[1] == 1);
+		return (WEIGHTS[1] > 0);
 	}
 
 	public static void setSpill(boolean toSpill) {

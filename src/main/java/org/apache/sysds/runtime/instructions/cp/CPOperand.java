@@ -164,7 +164,7 @@ public class CPOperand
 	public String getLineageLiteral() {
 		return InstructionUtils.concatOperandParts(
 			getName(), getDataType().name(),
-			getValueType().name(),  String.valueOf(isLiteral()));
+			getValueType().name(), String.valueOf(isLiteral()));
 	}
 	
 	public String getLineageLiteral(ScalarObject so) {

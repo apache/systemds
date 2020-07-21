@@ -92,7 +92,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response){
+	private static void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response){
 		if ( request.checkPrivacy() )
 			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
 	}

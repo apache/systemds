@@ -659,6 +659,10 @@ public class LineageItemUtils {
 	/**
 	 * Non-recursive equivalent of {@link #rReplace(LineageItem, LineageItem, LineageItem)} 
 	 * for robustness with regard to stack overflow errors.
+	 * 
+	 * @param current Current lineage item
+	 * @param liOld Old lineage item
+	 * @param liNew New Lineage item.
 	 */
 	public static void rReplaceNR(LineageItem current, LineageItem liOld, LineageItem liNew) {
 		Stack<LineageItem> q = new Stack<>();

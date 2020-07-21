@@ -2459,6 +2459,10 @@ public class TestUtils
 		}
 	}
 	
+	public static String federatedAddress(int port, String input) {
+		return federatedAddress("localhost", port, input);
+	}
+	
 	public static String federatedAddress(String host, int port, String input) {
 		return host + ':' + port + '/' + input;
 	}

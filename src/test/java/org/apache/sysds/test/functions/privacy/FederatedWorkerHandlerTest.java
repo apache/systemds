@@ -48,8 +48,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 	private static final int FEDERATED_WORKER_PORT = 1222;
 
 	private final static int blocksize = 1024;
-	private int rows = 10;
-	private int cols = 10;
+	private final int rows = 10;
+	private final int cols = 10;
 
 	@Override
 	public void setUp() {
@@ -106,9 +106,6 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		try {
 			// we need the reference file to not be written to hdfs, so we get the correct format
 			rtplatform = Types.ExecMode.SINGLE_NODE;
-			if (rtplatform == Types.ExecMode.SPARK) {
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			}
 			programArgs = new String[] {"-w", Integer.toString(FEDERATED_WORKER_PORT)};
 			t = new Thread(() -> runTest(true, false, null, -1));
 			t.start();
@@ -155,7 +152,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t = null;
+		Thread t;
 
 		getAndLoadTestConfiguration("aggregation");
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -225,7 +222,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t = null;
+		Thread t;
 
 		getAndLoadTestConfiguration("transfer");
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -327,10 +324,10 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + MATVECMULT_TEST_NAME + ".dml";
 		programArgs = new String[] {"-checkPrivacy", 
 			"-nvargs",
-			"X1=" + TestUtils.federatedAddress("localhost", port1, input("X1")),
-			"X2=" + TestUtils.federatedAddress("localhost", port2, input("X2")),
-			"Y1=" + TestUtils.federatedAddress("localhost", port1, input("Y1")),
-			"Y2=" + TestUtils.federatedAddress("localhost", port2, input("Y2")), "r=" + rows, "c=" + cols,
+			"X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols,
 			"hr=" + halfRows, "Z=" + output("Z")};
 		runTest(true, (expectedException != null), expectedException, -1);
 

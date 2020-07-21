@@ -41,17 +41,14 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedRCBindTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
-	private int rows, cols;
-
-	public FederatedRCBindTest(int rows, int cols) {
-		this.rows = rows;
-		this.cols = cols;
-	}
+	@Parameterized.Parameter()
+	public int rows;
+	@Parameterized.Parameter(1)
+	public int cols;
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] {{1, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}};
-		return Arrays.asList(data);
+		return Arrays.asList(new Object[][] {{1, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}});
 	}
 
 	@Override
@@ -74,7 +71,7 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t = null;
+		Thread t;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -100,8 +97,8 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
-			Integer.toString(cols), output("R"), output("C")};
+		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
+			"cols=" + cols, "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, false, null, -1);
 

@@ -19,9 +19,9 @@
 #
 #-------------------------------------------------------------
 
-A = federated(addresses=list($1), ranges=list(list(0, 0), list($2, $3)))
-B = federated(addresses=list($1), ranges=list(list(0, 0), list($2, $3)))
+A = federated(addresses=list($in), ranges=list(list(0, 0), list($rows, $cols)))
+B = federated(addresses=list($in), ranges=list(list(0, 0), list($rows, $cols)))
 R = rbind(A, B)
 C = cbind(A, B)
-write(R, $4)
-write(C, $5)
+write(R, $out_R)
+write(C, $out_C)

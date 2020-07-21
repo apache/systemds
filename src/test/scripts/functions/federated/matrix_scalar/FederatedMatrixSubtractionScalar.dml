@@ -22,7 +22,7 @@
 # junit test class: org.apache.sysds.test.integration.functions.federated.FederatedMatrixScalarOperationsTest.java
 
 
-M = federated(addresses=list($1), ranges=list(list(0, 0), list($2, $3)))
-S = $4
+M = federated(addresses=list($in), ranges=list(list(0, 0), list($rows, $cols)))
+S = $scalar
 R = M - S
-write(R, $5)
+write(R, $out)

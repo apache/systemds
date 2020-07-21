@@ -19,6 +19,12 @@
 
 package org.apache.sysds.hops;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
@@ -39,17 +45,14 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
-
 
 /**
  * Defines the HOP for calling an internal function (with custom parameters) from a DML script. 
  * 
  */
-public class ParameterizedBuiltinOp extends MultiThreadedHop
-{
+public class ParameterizedBuiltinOp extends MultiThreadedHop {
+	private static final Log LOG = LogFactory.getLog(ParameterizedBuiltinOp.class.getName());
+
 	public static boolean FORCE_DIST_RM_EMPTY = false;
 
 	//operator type
@@ -950,7 +953,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			}
 		}
 		catch(Exception ex) {
-			LOG.warn(ex.getMessage());
+			LOG.warn("Non Zero Replace Arguments exception: " + ex.getMessage());
 		}
 		
 		return ret;

@@ -19,6 +19,13 @@
 
 package org.apache.sysds.runtime.instructions.spark.utils;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
@@ -61,13 +68,8 @@ import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.FastStringTokenizer;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import scala.Tuple2;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import scala.Tuple2;
 
 
 
@@ -80,7 +82,7 @@ public class FrameRDDConverterUtils
 
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 		JavaPairRDD<LongWritable, Text> input, DataCharacteristics mc, ValueType[] schema,
-		boolean hasHeader, String delim, boolean fill, double fillValue)
+		boolean hasHeader, String delim, boolean fill, double fillValue, Set<String> naStrings)
 	{
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown() ) { //nnz irrelevant here
@@ -105,21 +107,21 @@ public class FrameRDDConverterUtils
 
 		//convert csv rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<Long, FrameBlock> out = prepinput.mapPartitionsToPair(
-				new CSVToBinaryBlockFunction(mc, schema, hasHeader, delim));
+				new CSVToBinaryBlockFunction(mc, schema, hasHeader, delim, naStrings));
 		
 		return out;
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 		JavaRDD<String> input, DataCharacteristics mcOut, ValueType[] schema,
-		boolean hasHeader, String delim, boolean fill, double fillValue)
+		boolean hasHeader, String delim, boolean fill, double fillValue, Set<String> naStrings)
 	{
 		//convert string rdd to serializable longwritable/text
 		JavaPairRDD<LongWritable, Text> prepinput =
 				input.mapToPair(new StringToSerTextFunction());
 		
 		//convert to binary block
-		return csvToBinaryBlock(sc, prepinput, mcOut, schema, hasHeader, delim, fill, fillValue);
+		return csvToBinaryBlock(sc, prepinput, mcOut, schema, hasHeader, delim, fill, fillValue, naStrings);
 	}
 
 	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in,
@@ -549,13 +551,15 @@ public class FrameRDDConverterUtils
 		private String[] _colnames = null;
 		private List<String> _mvMeta = null; //missing value meta data
 		private List<String> _ndMeta = null; //num distinct meta data
+		private Set<String> _naStrings;
 		
-		public CSVToBinaryBlockFunction(DataCharacteristics mc, ValueType[] schema, boolean hasHeader, String delim) {
+		public CSVToBinaryBlockFunction(DataCharacteristics mc, ValueType[] schema, boolean hasHeader, String delim, Set<String> naStrings) {
 			_clen = mc.getCols();
 			_schema = schema;
 			_hasHeader = hasHeader;
 			_delim = delim;
 			_maxRowsPerBlock = Math.max((int) (FrameBlock.BUFFER_SIZE/_clen), 1);
+			_naStrings = naStrings;
 		}
 
 		@Override
@@ -597,7 +601,7 @@ public class FrameRDDConverterUtils
 				}
 				
 				//split and process row data 
-				fb.appendRow(IOUtilFunctions.splitCSV(row, _delim, tmprow));
+				fb.appendRow(IOUtilFunctions.splitCSV(row, _delim, tmprow, _naStrings));
 			}
 		
 			//flush last blocks

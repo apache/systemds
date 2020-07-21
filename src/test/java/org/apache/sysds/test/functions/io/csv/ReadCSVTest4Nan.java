@@ -31,28 +31,28 @@ public class ReadCSVTest4Nan extends ReadCSVTest {
 	private final static String TEST_NAME = "ReadCSVTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ReadCSVTest4Nan.class.getSimpleName() + "/";
 
-    @Override
-    protected int getId() {
-        return 4;
-    }
+	@Override
+	protected int getId() {
+		return 4;
+	}
 
-    @Override
-    protected String getTestClassDir() {
+	@Override
+	protected String getTestClassDir() {
 		return TEST_CLASS_DIR;
-    }
+	}
 
-    @Override
-    protected String getTestName() {
-        return TEST_NAME;
-    }
+	@Override
+	protected String getTestName() {
+		return TEST_NAME;
+	}
 
-    @Override
-    protected String getInputCSVFileName() {
+	@Override
+	protected String getInputCSVFileName() {
 		return "nan_integers_" + getId();
 	}
 
-    @Override
-    protected void runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
+	@Override
+	protected String runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 
@@ -61,7 +61,7 @@ public class ReadCSVTest4Nan extends ReadCSVTest {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
-
+		String output;
 		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
@@ -77,14 +77,14 @@ public class ReadCSVTest4Nan extends ReadCSVTest {
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
 			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
 
-			String std = runTest(true, false, null, -1).toString();
-			LOG.debug(std);
-			assertTrue(std.contains("NaN"));
+			output = runTest(true, false, null, -1).toString();
+			assertTrue(output.contains("NaN"));
 		}
 		finally {
 			rtplatform = oldPlatform;
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
+		return output;
 	}
 }

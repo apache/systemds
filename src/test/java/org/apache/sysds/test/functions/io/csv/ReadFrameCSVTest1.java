@@ -19,18 +19,40 @@
 
 package org.apache.sysds.test.functions.io.csv;
 
+import static org.junit.Assert.assertTrue;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-public abstract class ReadCSVTest extends CSVTestBase {
+public class ReadFrameCSVTest1 extends CSVTestBase {
 
-	protected abstract int getId();
+	private final static String TEST_NAME = "ReadFrameTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadFrameCSVTest1.class.getSimpleName() + "/";
+	private final static String[] expectedStrings = new String[] {"goodbye 2 four new york"};
+
 	protected String getInputCSVFileName() {
-		return "transfusion_" + getId();
+		return "frame_" + getId();
+	}
+
+	protected int getId() {
+		return 1;
+	}
+
+	@Override
+	protected String getTestClassDir() {
+		return TEST_CLASS_DIR;
+	}
+
+	@Override
+	protected String getTestName() {
+		return TEST_NAME;
+	}
+
+	protected String[] getExpectedStrings() {
+		return expectedStrings;
 	}
 
 	// @Test
@@ -58,7 +80,7 @@ public abstract class ReadCSVTest extends CSVTestBase {
 		runCSVTest(getId(), ExecMode.SPARK, false);
 	}
 
-	protected String runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
+	protected void runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 
@@ -67,7 +89,6 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
-
 		String output;
 		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
@@ -80,27 +101,21 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			String inputMatrixNameNoExtension = HOME + INPUT_DIR + getInputCSVFileName();
 			String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".csv";
 			String dmlOutput = output("dml.scalar");
-			String rOutput = output("R.scalar");
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
 			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
 
-			fullRScriptName = HOME + "csv_verify2.R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixNameNoExtension + ".single.csv " + rOutput;
-
 			output = runTest(true, false, null, -1).toString();
-			runRScript(true);
 
-			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
-			double rScalar = TestUtils.readRScalar(rOutput);
-
-			TestUtils.compareScalars(dmlScalar, rScalar, eps);
 		}
 		finally {
 			rtplatform = oldPlatform;
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-		return output;
+
+		for(String str : getExpectedStrings()) {
+			assertTrue("\nout: " + output + "\n expected: " + str, output.contains(str));
+		}
 	}
 }

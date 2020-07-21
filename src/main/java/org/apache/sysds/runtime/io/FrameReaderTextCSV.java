@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -119,6 +120,7 @@ public class FrameReaderTextCSV extends FrameReader {
 		boolean isFill = _props.isFill();
 		double dfillValue = _props.getFillValue();
 		String sfillValue = String.valueOf(_props.getFillValue());
+		Set<String> naValues = _props.getNAStrings();
 		String delim = _props.getDelim();
 
 		// create record reader
@@ -158,7 +160,7 @@ public class FrameReaderTextCSV extends FrameReader {
 				for(String part : parts) // foreach cell
 				{
 					part = part.trim();
-					if(part.isEmpty()) {
+					if(part.isEmpty() || naValues.contains(part)) {
 						if(isFill && dfillValue != 0)
 							dest.set(row, col, UtilFunctions.stringToObject(schema[col], sfillValue));
 						emptyValuesFound = true;

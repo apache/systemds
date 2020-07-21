@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,27 +17,26 @@
  * under the License.
  */
 
-package org.apache.sysds.test.applications;
+package org.apache.sysds.test.functions.io.csv;
 
-import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
-import static org.junit.Assert.assertTrue;
+public class ReadCSVTest6Nan extends ReadCSVTest5Nan {
 
-import org.junit.Test;
-import org.apache.sysds.api.mlcontext.Script;
-import org.apache.sysds.test.functions.mlcontext.MLContextTestBase;
+	private final static String TEST_NAME = "ReadCSVTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadCSVTest6Nan.class.getSimpleName() + "/";
 
-/**
- * Test the SystemDS deep learning library, `nn`.
- */
-public class NNTest extends MLContextTestBase {
-
-	private static final String TEST_SCRIPT = "scripts/nn/test/run_tests.dml";
-	private static final String ERROR_STRING = "ERROR:";
-
-	@Test
-	public void testNNLibrary() {
-		Script script = dmlFromFile(TEST_SCRIPT);
-		String stdOut = ExecuteAndCaptureStdOut(ml, script).getRight();
-		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
+	@Override
+	protected int getId() {
+		return 6;
 	}
+
+	@Override
+	protected String getTestClassDir() {
+		return TEST_CLASS_DIR;
+	}
+
+	@Override
+	protected String getTestName() {
+		return TEST_NAME;
+	}
+
 }

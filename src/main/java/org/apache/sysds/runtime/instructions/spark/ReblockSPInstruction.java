@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -50,6 +54,8 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.Statistics;
 
 public class ReblockSPInstruction extends UnarySPInstruction {
+	private static final Log LOG = LogFactory.getLog(ReblockSPInstruction.class.getName());
+	
 	private int blen;
 	private boolean outputEmptyBlocks;
 
@@ -141,6 +147,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			String delim = ",";
 			boolean fill = false;
 			double fillValue = 0;
+			Set<String> naStrings = null;
 			if(mo.getFileFormatProperties() instanceof FileFormatPropertiesCSV
 			   && mo.getFileFormatProperties() != null )
 			{
@@ -149,9 +156,10 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				delim = props.getDelim();
 				fill = props.isFill();
 				fillValue = props.getFillValue();
+				naStrings = props.getNAStrings();
 			}
 			
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
 			csvInstruction.processInstruction(sec);
 			return;
 		}
@@ -214,6 +222,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			String delim = ",";
 			boolean fill = false;
 			double fillValue = 0;
+			Set<String> naStrings = null;
 			if(fo.getFileFormatProperties() instanceof FileFormatPropertiesCSV
 				&& fo.getFileFormatProperties() != null )
 			{
@@ -222,9 +231,10 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				delim = props.getDelim();
 				fill = props.isFill();
 				fillValue = props.getFillValue();
+				naStrings = props.getNAStrings();
 			}
 			
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString);
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
 			csvInstruction.processInstruction(sec);
 		}
 		else {

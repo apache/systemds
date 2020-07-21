@@ -31,23 +31,23 @@ public class ReadCSVTest5Nan extends ReadCSVTest4Nan {
 	private final static String TEST_NAME = "ReadCSVTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ReadCSVTest5Nan.class.getSimpleName() + "/";
 
-    @Override
-    protected int getId() {
-        return 5;
-    }
+	@Override
+	protected int getId() {
+		return 5;
+	}
 
-    @Override
-    protected String getTestClassDir() {
+	@Override
+	protected String getTestClassDir() {
 		return TEST_CLASS_DIR;
-    }
+	}
 
-    @Override
-    protected String getTestName() {
-        return TEST_NAME;
-    }
+	@Override
+	protected String getTestName() {
+		return TEST_NAME;
+	}
 
-    @Override
-    protected void runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
+	@Override
+	protected String runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 
@@ -57,6 +57,7 @@ public class ReadCSVTest5Nan extends ReadCSVTest4Nan {
 
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
+		String output;
 		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
@@ -72,16 +73,16 @@ public class ReadCSVTest5Nan extends ReadCSVTest4Nan {
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
 			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
 
-			String output = runTest(true, false, null, -1).toString();
+			output = runTest(true, false, null, -1).toString();
 			String expected = "NaN 8.000 NaN NaN";
-			// LOG.error(output);
-			assertTrue("\nout: " +output + "\n expected: " + expected, output.contains(expected));
-			
+			assertTrue("\nout: " + output + "\n expected: " + expected, output.contains(expected));
+
 		}
 		finally {
 			rtplatform = oldPlatform;
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
+		return output;
 	}
 }

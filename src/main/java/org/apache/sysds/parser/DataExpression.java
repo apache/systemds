@@ -966,6 +966,8 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			
+			boolean isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.CSV.toString()));
+			
 			if (shouldReadMTD){
 				configObject = readMetadataFile(mtdFileName, conditional);
 				// if the MTD file exists, check the values specified in read statement match values in metadata MTD file
@@ -974,11 +976,12 @@ public class DataExpression extends DataIdentifier
 					inferredFormatType = true;
 				}
 				else {
-					LOG.warn("Metadata file: " + new Path(mtdFileName) + " not provided");
+					if(!isCSV){
+						LOG.warn("Metadata file: " + new Path(mtdFileName) + " not provided");
+					}
 				}
 			}
 			
-			boolean isCSV = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.CSV.toString()));
 			if (isCSV){
 
 				// there should be no MTD file for delimited file format

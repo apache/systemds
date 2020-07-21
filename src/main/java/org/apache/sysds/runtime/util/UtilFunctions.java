@@ -25,6 +25,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -44,8 +45,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
-public class UtilFunctions 
-{
+public class UtilFunctions {
+	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
+
 	//for accurate cast of double values to int and long 
 	//IEEE754: binary64 (double precision) eps = 2^(-53) = 1.11 * 10^(-16)
 	//(same epsilon as used for matrix index cast in R)
@@ -358,10 +360,11 @@ public class UtilFunctions
 	 * environments because Double.parseDouble relied on a synchronized cache
 	 * (which was replaced with thread-local caches in JDK8).
 	 * 
-	 * @param str string to parse to double
+	 * @param str   string to parse to double
+	 * @param isNan collection of Nan string which if encountered should be parsed to nan value
 	 * @return double value
 	 */
-	public static double parseToDouble(String str, HashSet<String> isNan ) {
+	public static double parseToDouble(String str, Set<String> isNan ) {
 		return isNan.contains(str) ?
 			Double.NaN :
 			Double.parseDouble(str);

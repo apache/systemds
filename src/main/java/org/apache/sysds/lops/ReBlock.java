@@ -20,18 +20,21 @@
 package org.apache.sysds.lops;
 
  
-import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 
 /**
  * Lop to perform reblock operation
  */
-public class ReBlock extends Lop 
-{
+public class ReBlock extends Lop {
+	private static final Log LOG = LogFactory.getLog(ReBlock.class.getName());
+	
 	public static final String OPCODE = "rblk"; 
 	
 	private boolean _outputEmptyBlocks = true;
@@ -60,13 +63,15 @@ public class ReBlock extends Lop
 
 	@Override
 	public String getInstructions(String input1, String output) {
-		return InstructionUtils.concatOperands(
+		String instruction = InstructionUtils.concatOperands(
 			getExecType().name(),
 			"rblk",
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output),
 			String.valueOf(_blocksize),
 			String.valueOf(_outputEmptyBlocks));
+		LOG.debug(instruction);
+		return instruction;
 	}
 	
 	// This function is replicated in Dag.java

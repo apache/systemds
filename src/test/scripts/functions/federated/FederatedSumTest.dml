@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
-A = federated(addresses=list($1, $1), ranges=list(list(0, 0), list($2, $3), list($2, 0), list($4, $3)))
+A = federated(addresses=list($in, $in), ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
 s = sum(A)
 r = rowSums(A)
 c = colSums(A)
-write(s, $5)
-write(r, $6)
-write(c, $7)
+write(s, $out_S)
+write(r, $out_R)
+write(c, $out_C)

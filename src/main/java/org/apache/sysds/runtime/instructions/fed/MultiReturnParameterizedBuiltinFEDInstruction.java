@@ -20,8 +20,8 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -85,12 +85,9 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		Map<FederatedRange, FederatedData> fedMapping = fin.getFedMapping();
 
-		// add the encoder types we support in a federated environment
-		List<Encoder> encoderList = new ArrayList<>();
-		encoderList.add(new EncoderRecode());
-		encoderList.add(new EncoderPassThrough());
 		// the encoder in which the complete encoding information will be aggregated
-		EncoderComposite globalEncoder = new EncoderComposite(encoderList);
+		EncoderComposite globalEncoder = new EncoderComposite(
+			Arrays.asList(new EncoderRecode(), new EncoderPassThrough()));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
 		CommonThreadPool pool = new CommonThreadPool(CommonThreadPool.get(fedMapping.size()));

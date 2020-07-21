@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
@@ -115,8 +116,12 @@ public class PrivacyPropagator
 	public static Instruction preprocessCPInstructionFineGrained(CPInstruction inst, ExecutionContext ec){
 		switch ( inst.getCPInstructionType() ){
 			case AggregateBinary:
-				// This can only be a matrix multiplication and it does not count as an aggregation in terms of privacy.
-				return preprocessAggregateBinaryCPInstruction((AggregateBinaryCPInstruction)inst, ec);
+				if ( inst instanceof AggregateBinaryCPInstruction ){
+					// This can only be a matrix multiplication and it does not count as an aggregation in terms of privacy.
+					return preprocessAggregateBinaryCPInstruction((AggregateBinaryCPInstruction)inst, ec);
+				} else if ( inst instanceof CovarianceCPInstruction ){
+					return preprocessCovarianceCPInstruction((CovarianceCPInstruction)inst, ec);
+				} else preprocessInstructionSimple(inst, ec);
 			case AggregateTernary:
 				//TODO: Support propagation of fine-grained privacy constraints
 				return preprocessTernaryCPInstruction((ComputationCPInstruction) inst, ec);
@@ -231,6 +236,23 @@ public class PrivacyPropagator
 			default:
 				return preprocessInstructionSimple(inst, ec);
 		}
+	}
+
+	/**
+	 * Throw exception if privacy constraint activated for instruction or for input to instruction.
+	 * @param inst covariance instruction
+	 * @param ec execution context
+	 * @return input instruction if privacy constraints are not activated
+	 */
+	private static Instruction preprocessCovarianceCPInstruction(CovarianceCPInstruction inst, ExecutionContext ec){
+		throwExceptionIfPrivacyActivated(inst, ec);
+		for ( CPOperand input : inst.getInputs() ){
+			PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
+			if ( privacyConstraint != null){
+				throw new DMLPrivacyException("Input of instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
+			}
+		}
+		return inst;
 	}
 
 	private static Instruction preprocessAggregateBinaryCPInstruction(AggregateBinaryCPInstruction inst, ExecutionContext ec){

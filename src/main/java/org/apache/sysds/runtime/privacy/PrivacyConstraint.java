@@ -49,6 +49,7 @@ public class PrivacyConstraint
 	/**
 	 * Constructor with the option to choose between 
 	 * different fine-grained collection implementations.
+	 * @param fineGrainedPrivacyCollection the instance in which fine-grained constraints are stored
 	 */
 	public PrivacyConstraint(FineGrainedPrivacy fineGrainedPrivacyCollection){
 		setFineGrainedPrivacyConstraints(fineGrainedPrivacyCollection);

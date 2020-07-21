@@ -257,7 +257,9 @@ public class PrivacyPropagator
 	 * Return the merged fine-grained privacy constraint of a matrix multiplication with the given privacy constraints.
 	 * The current implementation has a tendency to create small ranges of privacy level private. These ranges could be merged
 	 * to create fewer ranges spanning the same elements.
+	 * @param input1 first input matrix block
 	 * @param privacyConstraint1 privacy constraint of the first matrix
+	 * @param input2 second input matrix block
 	 * @param privacyConstraint2 privacy constraint of the second matrix
 	 * @return merged privacy constraint
 	 */

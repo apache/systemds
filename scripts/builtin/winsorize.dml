@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-m_winsorize = function(Matrix[Double] X, Boolean verbose) return (Matrix[Double] Y) {
+m_winsorize = function(Matrix[Double] X) return (Matrix[Double] Y) {
   Y = matrix(0, nrow(X), ncol(X))
   parfor(i in 1:ncol(X))
     Y[,i] = fixOutliersWinsorize(X[,i])

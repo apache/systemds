@@ -101,7 +101,7 @@ public class FederatedResponse implements Serializable {
 	 */
 	public void setCheckedConstraints(Map<PrivacyLevel,LongAdder> checkedConstraints){
 		if ( checkedConstraints != null && !checkedConstraints.isEmpty() ){
-			this.checkedConstraints = new EnumMap<>(PrivacyLevel.class);
+			this.checkedConstraints = new EnumMap<PrivacyLevel, LongAdder>(PrivacyLevel.class);
 			this.checkedConstraints.putAll(checkedConstraints);
 		}	
 	}

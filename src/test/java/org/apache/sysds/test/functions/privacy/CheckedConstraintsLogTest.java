@@ -79,7 +79,7 @@ public class CheckedConstraintsLogTest extends AutomatedTestBase {
 		    && CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.PrivateAggregation).longValue() == 150);
 	}
 
-	private static EnumMap<PrivacyLevel,LongAdder> getMap(PrivacyLevel level, long value){
+	private EnumMap<PrivacyLevel,LongAdder> getMap(PrivacyLevel level, long value){
 		EnumMap<PrivacyLevel,LongAdder> checked = new EnumMap<>(PrivacyLevel.class);
 		LongAdder valueAdder = new LongAdder();
 		valueAdder.add(value);

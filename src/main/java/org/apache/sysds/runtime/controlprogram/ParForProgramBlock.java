@@ -652,7 +652,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		for( String var : _variablesDPOriginal.keySet() ) {
 			//cleanup partitioned matrix (if not reused)
 			if( !_variablesDPReuse.keySet().contains(var) )
-				VariableCPInstruction.processRmvarInstruction(ec, var); 
+				VariableCPInstruction.processRemoveVariableInstruction(ec, var); 
 			//reset to original matrix
 			MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
 			ec.setVariable(var, mo); 

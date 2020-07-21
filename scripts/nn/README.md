@@ -19,7 +19,7 @@ limitations under the License.
 
 # SystemDS-NN
 
-### A deep learning library for [Apache SystemDS](https://github.com/apache/systemds).
+### A deep learning library for [Apache SystemDS](https://github.com/apache/systemml).
 
 ## Examples:
 #### Please see the [`examples`](examples) folder for more detailed examples, or view the following two quick examples.

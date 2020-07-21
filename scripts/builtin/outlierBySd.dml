@@ -63,11 +63,9 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
 
 		if(sum(outlierFilter) > 1 & sumNext != 0 & sumPrevious != sumNext) {
       #TODO why is the check with sumPrevious and sumNext necessary
-      temp = replace(target=X, pattern = NaN, replacement = 0)
-      sumPrevious = sum(temp)
+      sumPrevious = sum(X * !is.nan(X))
       X = fix_outliers_sd(X, outlierFilter, repairMethod)
-      temp = replace(target=X, pattern = NaN, replacement = 0)
-      sumNext = sum(temp)
+      sumNext = sum(X * !is.nan(X))
     }
     else
       max_iterations = - 1;

@@ -30,12 +30,12 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
  * Class counting the checked privacy constraints and the loaded privacy constraints. 
  */
 public class CheckedConstraintsLog {
-	private static Map<PrivacyLevel,LongAdder> loadedConstraintsTotal = new EnumMap<>(PrivacyLevel.class);
+	private static Map<PrivacyLevel,LongAdder> loadedConstraintsTotal = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
 	static {
 		for ( PrivacyLevel level : PrivacyLevel.values() )
 			loadedConstraintsTotal.put(level, new LongAdder());
 	}
-	private static Map<PrivacyLevel,LongAdder> checkedConstraintsTotal = new EnumMap<>(PrivacyLevel.class);
+	private static Map<PrivacyLevel,LongAdder> checkedConstraintsTotal = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
 	private static BiFunction<LongAdder, LongAdder, LongAdder> mergeLongAdders = (v1, v2) -> {
 		v1.add(v2.longValue() );
 		return v1;

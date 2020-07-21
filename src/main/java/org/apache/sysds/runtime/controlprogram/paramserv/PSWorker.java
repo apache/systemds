@@ -77,10 +77,12 @@ public abstract class PSWorker implements Serializable
 		CPOperand[] boundInputs = inputs.stream()
 			.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
 			.toArray(CPOperand[]::new);
+		ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
+			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
 		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs,
-			func.getInputParamNames(), outputNames, "update function");
+			inputNames, func.getInputParamNames(), outputNames, "update function");
 
 		// Check the inputs of the update function
 		checkInput(false, inputs, DataType.MATRIX, Statement.PS_FEATURES);

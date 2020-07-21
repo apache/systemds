@@ -77,9 +77,6 @@ public class LineageItem {
 		_opcode = opcode;
 		_data = data;
 		_inputs = inputs;
-		// materialize hash on construction 
-		// (constant time operation if input hashes constructed)
-		_hash = hashCode();
 	}
 	
 	public LineageItem[] getInputs() {
@@ -150,8 +147,8 @@ public class LineageItem {
 		
 		boolean ret = _opcode.equals(that._opcode);
 		ret &= _data.equals(that._data);
-		ret &= (hashCode() == that.hashCode());
-		if( ret && _inputs != null && _inputs.length == that._inputs.length )
+		
+		if (_inputs != null && ret && (_inputs.length == that._inputs.length))
 			for (int i = 0; i < _inputs.length; i++)
 				ret &= _inputs[i].equalsLI(that._inputs[i]);
 		
@@ -163,12 +160,11 @@ public class LineageItem {
 	public int hashCode() {
 		if (_hash == 0) {
 			//compute hash over opcode and all inputs
-			int h = UtilFunctions.intHashCode(
-				_opcode.hashCode(), _data.hashCode());
+			int h = _opcode.hashCode();
 			if (_inputs != null)
 				for (LineageItem li : _inputs)
-					h = UtilFunctions.intHashCodeRobust(li.hashCode(), h);
-			_hash = h;
+					h = UtilFunctions.intHashCode(h, li.hashCode());
+			_hash = UtilFunctions.intHashCode(h, _data.hashCode());
 		}
 		return _hash;
 	}

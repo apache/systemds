@@ -186,15 +186,14 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 		}
 	}
 
-	private static ArrayList<Integer> getBadIndexes(int length) {
-		ArrayList<Integer> list = new ArrayList<>();
+	private ArrayList<Integer> getBadIndexes(int length) {
+		ArrayList<Integer> list = new ArrayList();
 		for(int i =0; i<length; i++)
 		{
 			int r = ThreadLocalRandom.current().nextInt(0, rows);
 			list.add(r);
 		}
-		return (ArrayList<Integer>) list.stream()
-			.distinct().collect(Collectors.toList());
+		return (ArrayList) list.stream().distinct().collect(Collectors.toList());
 	}
 
 	public static void initFrameDataString(FrameBlock frame1, double[][] data, Types.ValueType[] lschema) {

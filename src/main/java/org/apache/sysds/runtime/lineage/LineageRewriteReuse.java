@@ -60,7 +60,6 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -150,8 +149,8 @@ public class LineageRewriteReuse
 			return null;
 		
 		// Create a transient read op over the cached tsmm result
-		MatrixObject cachedEntry = toMatrixObject(inCache.get("lastMatrix"));
-		lrwec.setVariable("cachedEntry", cachedEntry);
+		MatrixBlock cachedEntry = inCache.get("lastMatrix");
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		// Create rightIndex op to find the last matrix
 		// TODO: For now assumption is that a single column is being appended in a loop
@@ -159,28 +158,39 @@ public class LineageRewriteReuse
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
 		lrwec.setVariable("oldMatrix", mo);
 		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
-		
-		// Use X from cache, or create rightIndex
-		Hop oldMatrix = inCache.containsKey("X") ?
-			setupTReadCachedInput("X", inCache, lrwec) :
-			HopRewriteUtils.createIndexingOp(newMatrix, 1L, mo.getNumRows(), 1L, mo.getNumColumns()-1);
-		
+		IndexingOp oldMatrix = HopRewriteUtils.createIndexingOp(newMatrix, new LiteralOp(1), 
+			new LiteralOp(mo.getNumRows()), new LiteralOp(1), new LiteralOp(mo.getNumColumns()-1));
+		Hop lastCol;
 		// Use deltaX from cache, or create rightIndex
-		Hop lastCol = inCache.containsKey("deltaX") ?
-			setupTReadCachedInput("deltaX", inCache, lrwec) :
-			HopRewriteUtils.createIndexingOp(newMatrix, 1L, mo.getNumRows(), mo.getNumColumns(), mo.getNumColumns());
-		
-		Hop lrwHop = HopRewriteUtils.createPartialTsmmCbind(oldMatrix, lastCol, lastRes);
+		if (inCache.containsKey("deltaX")) {
+			MatrixBlock cachedRI = inCache.get("deltaX");
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
+			lastCol = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
+		}
+		else
+			lastCol = HopRewriteUtils.createIndexingOp(newMatrix, new LiteralOp(1), new LiteralOp(mo.getNumRows()), 
+				new LiteralOp(mo.getNumColumns()), new LiteralOp(mo.getNumColumns()));
+		// cell topRight = t(oldMatrix) %*% lastCol
+		ReorgOp tOldM = HopRewriteUtils.createTranspose(oldMatrix);
+		AggBinaryOp topRight = HopRewriteUtils.createMatrixMultiply(tOldM, lastCol);
+		// cell bottomLeft = t(lastCol) %*% oldMatrix = t(topRight)
+		ReorgOp bottomLeft = HopRewriteUtils.createTranspose(topRight);
+		// bottomRight = t(lastCol) %*% lastCol
+		ReorgOp tLastCol = HopRewriteUtils.createTranspose(lastCol);
+		AggBinaryOp bottomRight = HopRewriteUtils.createMatrixMultiply(tLastCol, lastCol);
+		// rowOne = cbind(lastRes, topRight)
+		BinaryOp rowOne = HopRewriteUtils.createBinary(lastRes, topRight, OpOp2.CBIND);
+		// rowTwo = cbind(bottomLeft, bottomRight)
+		BinaryOp rowTwo = HopRewriteUtils.createBinary(bottomLeft, bottomRight, OpOp2.CBIND);
+		// rbind(rowOne, rowTwo)
+		BinaryOp lrwHop= HopRewriteUtils.createBinary(rowOne, rowTwo, OpOp2.RBIND);
 		DataOp lrwWrite = HopRewriteUtils.createTransientWrite(LR_VAR, lrwHop);
 
 		// generate runtime instructions
 		if (LOG.isDebugEnabled())
 			LOG.debug("LINEAGE REWRITE rewriteTsmmCbind APPLIED");
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
-		
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "X", "deltaX");
-		
+
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -197,7 +207,7 @@ public class LineageRewriteReuse
 		
 		// Create a transient read op over the cached tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		// Create a transient read op over current input
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
@@ -221,9 +231,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -238,7 +245,7 @@ public class LineageRewriteReuse
 		
 		// Create a transient read op over the last tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		//TODO: support for block of rows
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
@@ -248,7 +255,7 @@ public class LineageRewriteReuse
 		// Use deltaX from cache, or create rightIndex
 		if (inCache.containsKey("deltaX")) {
 			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
 			lastRow = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
 		}
 		else
@@ -266,9 +273,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaX");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -283,7 +287,7 @@ public class LineageRewriteReuse
 
 		// Create a transient read op over the last tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		MatrixObject newmo = toMatrixObject(cachedEntry);
+		MatrixObject newmo = convMBtoMO(cachedEntry);
 		lrwec.setVariable("cachedEntry", newmo);
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
@@ -295,7 +299,7 @@ public class LineageRewriteReuse
 		// Use deltaX from cache, or create rightIndex
 		if (inCache.containsKey("deltaX")) {
 			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
 			lastCol = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
 		}
 		else
@@ -330,9 +334,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaX");
-		
 		if (DMLScript.STATISTICS) 
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -351,7 +352,7 @@ public class LineageRewriteReuse
 
 		// Create a transient read op over the last tsmm result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		MatrixObject newmo = toMatrixObject(cachedEntry);
+		MatrixObject newmo = convMBtoMO(cachedEntry);
 		lrwec.setVariable("cachedEntry", newmo);
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 
@@ -365,7 +366,7 @@ public class LineageRewriteReuse
 		// Use deltaX from cache, or create rightIndex
 		if (inCache.containsKey("deltaX")) {
 			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
 			lastCol = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
 		}
 		else
@@ -401,9 +402,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaX");
-		
 		if (DMLScript.STATISTICS) 
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -418,7 +416,7 @@ public class LineageRewriteReuse
 
 		// Create a transient read op over the last ba+* result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		//TODO: support for block of rows
 		MatrixObject moL = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
@@ -431,7 +429,7 @@ public class LineageRewriteReuse
 		// Use deltaX from cache, or create rightIndex
 		if (inCache.containsKey("deltaX")) {
 			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
 			lastRow = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
 		}
 		lastRow = HopRewriteUtils.createIndexingOp(leftMatrix, new LiteralOp(moL.getNumRows()), 
@@ -447,9 +445,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaX");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -464,7 +459,7 @@ public class LineageRewriteReuse
 
 		// Create a transient read op over the last ba+* result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		//TODO: support for block of rows
 		MatrixObject moL = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
@@ -477,7 +472,7 @@ public class LineageRewriteReuse
 		// Use deltaY from cache, or create rightIndex
 		if (inCache.containsKey("deltaY")) {
 			MatrixBlock cachedRI = inCache.get("deltaY");
-			lrwec.setVariable("deltaY", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaY", convMBtoMO(cachedRI));
 			lastCol = HopRewriteUtils.createTransientRead("deltaY", cachedRI);
 		}
 		lastCol = HopRewriteUtils.createIndexingOp(rightMatrix, new LiteralOp(1), new LiteralOp(moR.getNumRows()), 
@@ -493,9 +488,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaY");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -512,7 +504,7 @@ public class LineageRewriteReuse
 
 		// Create a transient read op over the last ba+* result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		MatrixObject moL = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
 		lrwec.setVariable("leftMatrix", moL);
@@ -528,9 +520,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -545,14 +534,14 @@ public class LineageRewriteReuse
 
 		// Create a transient read op over the last * result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		//TODO: support for block of rows
 		Hop lastRowL, lastRowR;
 		// Use deltaX and deltaY from cache, or create rightIndices
 		if (inCache.containsKey("deltaX")) {
 			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
 			lastRowL = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
 		}
 		else {
@@ -564,7 +553,7 @@ public class LineageRewriteReuse
 		}
 		if (inCache.containsKey("deltaY")) {
 			MatrixBlock cachedRI = inCache.get("deltaY");
-			lrwec.setVariable("deltaY", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaY", convMBtoMO(cachedRI));
 			lastRowR = HopRewriteUtils.createTransientRead("deltaY", cachedRI);
 		}
 		else {
@@ -585,9 +574,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaX", "deltaY");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -602,14 +588,14 @@ public class LineageRewriteReuse
 
 		// Create a transient read op over the last * result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		//TODO: support for block of rows
 		Hop lastColL, lastColR;
 		// Use deltaX and deltaY from cache, or create rightIndices
 		if (inCache.containsKey("deltaX")) {
 			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
 			lastColL = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
 		}
 		else {
@@ -621,7 +607,7 @@ public class LineageRewriteReuse
 		}
 		if (inCache.containsKey("deltaY")) {
 			MatrixBlock cachedRI = inCache.get("deltaY");
-			lrwec.setVariable("deltaY", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaY", convMBtoMO(cachedRI));
 			lastColR = HopRewriteUtils.createTransientRead("deltaY", cachedRI);
 		}
 		else {
@@ -642,9 +628,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaX", "deltaY");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -659,7 +642,7 @@ public class LineageRewriteReuse
 		
 		// Create a transient read op over the last * result
 		MatrixBlock cachedEntry = inCache.get("lastMatrix");
-		lrwec.setVariable("cachedEntry", toMatrixObject(cachedEntry));
+		lrwec.setVariable("cachedEntry", convMBtoMO(cachedEntry));
 		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 		//TODO: support for block of rows
 		HashMap<String, String> params = ((ParameterizedBuiltinCPInstruction)curr).getParameterMap();
@@ -676,7 +659,7 @@ public class LineageRewriteReuse
 		// Use deltaX from cache, or create rightIndex
 		if (inCache.containsKey("deltaX")) {
 			MatrixBlock cachedRI = inCache.get("deltaX");
-			lrwec.setVariable("deltaX", toMatrixObject(cachedRI));
+			lrwec.setVariable("deltaX", convMBtoMO(cachedRI));
 			lastCol = HopRewriteUtils.createTransientRead("deltaX", cachedRI);
 		}
 		else
@@ -699,9 +682,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "deltaX");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -724,14 +704,14 @@ public class LineageRewriteReuse
 		
 		// Create a transient read op over the input to rightIndex
 		MatrixBlock indexSource = inCache.get("indexSource");
-		lrwec.setVariable("indexSource", toMatrixObject(indexSource));
+		lrwec.setVariable("indexSource", convMBtoMO(indexSource));
 		DataOp input2Index = HopRewriteUtils.createTransientRead("indexSource", indexSource);
 		// Create or read the matrix multiplication
 		Hop matMultRes;
 		MatrixObject moL = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
 		if (inCache.containsKey("BigMatMult")) {
-			MatrixObject BigMatMult = toMatrixObject(inCache.get("BigMatMult"));
-			lrwec.setVariable("BigMatMult", BigMatMult);
+			MatrixBlock BigMatMult = inCache.get("BigMatMult");
+			lrwec.setVariable("BigMatMult", convMBtoMO(BigMatMult));
 			matMultRes = HopRewriteUtils.createTransientRead("BigMatMult", BigMatMult);
 		}
 		else {
@@ -753,9 +733,6 @@ public class LineageRewriteReuse
 		// Keep reuse enabled
 		_disableReuse = false;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "indexSource", "BigMatMult");
-		
 		if (DMLScript.STATISTICS)
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -768,9 +745,10 @@ public class LineageRewriteReuse
 			return null;
 
 		// Create a transient read op over the last tsmm result
-		MatrixObject newmo = toMatrixObject(inCache.get("lastMatrix"));
+		MatrixBlock cachedEntry = inCache.get("lastMatrix");
+		MatrixObject newmo = convMBtoMO(cachedEntry);
 		lrwec.setVariable("cachedEntry", newmo);
-		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", newmo);
+		DataOp lastRes = HopRewriteUtils.createTransientRead("cachedEntry", cachedEntry);
 
 		// Create a transient read op over this tsmm's input 
 		MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction)curr).input1);
@@ -778,7 +756,8 @@ public class LineageRewriteReuse
 		DataOp newMatrix = HopRewriteUtils.createTransientRead("oldMatrix", mo);
 		
 		// Index out the added column from the projected matrix
-		MatrixObject projmo = toMatrixObject(inCache.get("projected"));
+		MatrixBlock projected = inCache.get("projected");
+		MatrixObject projmo = convMBtoMO(projected);
 		lrwec.setVariable("projected", projmo);
 		DataOp projRes = HopRewriteUtils.createTransientRead("projected", projmo);
 		IndexingOp lastCol = HopRewriteUtils.createIndexingOp(projRes, new LiteralOp(1), new LiteralOp(projmo.getNumRows()), 
@@ -813,9 +792,6 @@ public class LineageRewriteReuse
 		ArrayList<Instruction> inst = genInst(lrwWrite, lrwec);
 		_disableReuse = true;
 
-		// cleanup buffer pool
-		addRmvarInstructions(inst, lrwec, "cachedEntry", "projected");
-		
 		if (DMLScript.STATISTICS) 
 			LineageCacheStatistics.incrementPRewrites();
 		return inst;
@@ -834,14 +810,12 @@ public class LineageRewriteReuse
 		if (curr.getOpcode().equalsIgnoreCase("tsmm")) {
 			LineageItem source = item.getInputs()[0];
 			if (source.getOpcode().equalsIgnoreCase("cbind")) {
+				//for (LineageItem input : source.getInputs()) {
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
-				// look for the old matrix in cache
-				if( LineageCache.probe(input1) )
-					inCache.put("X", LineageCache.getMatrix(input1));
 				// look for the appended column in cache
 				if (LineageCache.probe(source.getInputs()[1])) 
 					inCache.put("deltaX", LineageCache.getMatrix(source.getInputs()[1]));
@@ -872,8 +846,6 @@ public class LineageRewriteReuse
 				// create tsmm lineage on top of the input of last append
 				LineageItem input1 = source.getInputs()[0];
 				LineageItem tmp = new LineageItem(curr.getOpcode(), new LineageItem[] {input1});
-				if( LineageCache.probe(input1) )
-					inCache.put("X", LineageCache.getMatrix(input1));
 				if (LineageCache.probe(tmp)) 
 					inCache.put("lastMatrix", LineageCache.getMatrix(tmp));
 			}
@@ -1206,12 +1178,6 @@ public class LineageRewriteReuse
 		return newInst;
 	}
 	
-	private static DataOp setupTReadCachedInput(String name, Map<String, MatrixBlock> inCache, ExecutionContext ec) {
-		MatrixBlock cachedRI = inCache.get(name);
-		ec.setVariable(name, toMatrixObject(cachedRI));
-		return HopRewriteUtils.createTransientRead(name, cachedRI);
-	}
-	
 	private static void executeInst (ArrayList<Instruction> newInst, ExecutionContext lrwec)
 	{  
 		// Disable explain not to print unnecessary logs
@@ -1236,21 +1202,12 @@ public class LineageRewriteReuse
 
 	/*-------------------------------UTILITY METHODS----------------------------------*/
 	
-	private static MatrixObject toMatrixObject(MatrixBlock mb) {
-		MetaData md = new MetaData(mb.getDataCharacteristics());
-		MatrixObject mo = new MatrixObject(ValueType.FP64, null, md);
-		mo.acquireModify(mb);
+	private static MatrixObject convMBtoMO (MatrixBlock cachedEntry) {
+		MetaData md = new MetaData(cachedEntry.getDataCharacteristics());
+		MatrixObject mo = new MatrixObject(ValueType.FP64, "cachedEntry", md);
+		mo.acquireModify(cachedEntry);
 		mo.release();
 		return mo;
-	}
-	
-	private static void addRmvarInstructions(ArrayList<Instruction> inst, ExecutionContext ec, String... varnames) {
-		//note: we can't directly call rmvar because the instructions are not executed yet
-		ArrayList<String> tmp = new ArrayList<>();
-		for(String varname : varnames)
-			if(ec.containsVariable(varname))
-				tmp.add(varname);
-		inst.add(VariableCPInstruction.prepareRemoveInstruction(tmp.toArray(new String[0])));
 	}
 	
 	private static LineageItem reduceColByOne(LineageItem cu) {

@@ -83,7 +83,7 @@ public class TfMetaUtils
 	 *
 	 * @param spec transform specification as json string
 	 * @param colnames column names
-	 * @param group ?
+	 * @param group attribute name in json class
 	 * @return list of column ids
 	 * @throws JSONException if JSONException occurs
 	 */
@@ -94,11 +94,11 @@ public class TfMetaUtils
 	}
 	
 	/**
-	 * TODO consolidate external and internal json spec definitions
-	 * 
 	 * @param spec transform specification as json string
 	 * @param colnames column names
-	 * @param group ?
+	 * @param group attribute name in json class
+	 * @param minCol start of columns to ignore (1-based, inclusive, if -1 not used)
+	 * @param maxCol end of columns to ignore (1-based, exclusive, if -1 not used)
 	 * @return list of column ids
 	 * @throws JSONException if JSONException occurs
 	 */

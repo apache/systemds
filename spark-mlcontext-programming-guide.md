@@ -407,10 +407,10 @@ meanOut = mean(Xin)
 "
 
 scala> val mm = new MatrixMetadata(numRows, numCols)
-mm: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 10000, columns: 100, non-zeros: None, rows per block: None, columns per block: None
+mm: org.apache.sysds.api.mlcontext.MatrixMetadata = rows: 10000, columns: 100, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val minMaxMeanScript = dml(minMaxMean).in("Xin", df, mm).out("minOut", "maxOut", "meanOut")
-minMaxMeanScript: org.apache.sysml.api.mlcontext.Script =
+minMaxMeanScript: org.apache.sysds.api.mlcontext.Script =
 Inputs:
   [1] (DataFrame) Xin: [C0: double, C1: double, C2: double, C3: double, C4: double, C5: double, C6: double, C7: double, ...
 
@@ -536,7 +536,7 @@ if (s1 > s2) {
 scala> scala.tools.nsc.io.File("sums.dml").writeAll(sums)
 
 scala> val sumScript = dmlFromFile("sums.dml").in(Map("m1"-> rdd1, "m2"-> rdd2)).out("s1", "s2", "message")
-sumScript: org.apache.sysml.api.mlcontext.Script =
+sumScript: org.apache.sysds.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m1: ParallelCollectionRDD[42] at parallelize at <console>:38
   [2] (RDD) m2: ParallelCollectionRDD[43] at parallelize at <console>:38
@@ -547,7 +547,7 @@ Outputs:
   [3] message
 
 scala> val sumResults = ml.execute(sumScript)
-sumResults: org.apache.sysml.api.mlcontext.MLResults =
+sumResults: org.apache.sysds.api.mlcontext.MLResults =
   [1] (Double) s1: 10.0
   [2] (Double) s2: 26.0
   [3] (String) message: s2 is greater
@@ -650,13 +650,13 @@ val (firstSum, secondSum, sumMessage) = ml.execute(sumScript).getTuple[Double, D
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val rdd1Metadata = new MatrixMetadata(2, 2)
-rdd1Metadata: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 2, columns: 2, non-zeros: None, rows per block: None, columns per block: None
+rdd1Metadata: org.apache.sysds.api.mlcontext.MatrixMetadata = rows: 2, columns: 2, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val rdd2Metadata = new MatrixMetadata(2, 2)
-rdd2Metadata: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 2, columns: 2, non-zeros: None, rows per block: None, columns per block: None
+rdd2Metadata: org.apache.sysds.api.mlcontext.MatrixMetadata = rows: 2, columns: 2, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val sumScript = dmlFromFile("sums.dml").in(Seq(("m1", rdd1, rdd1Metadata), ("m2", rdd2, rdd2Metadata))).out("s1", "s2", "message")
-sumScript: org.apache.sysml.api.mlcontext.Script =
+sumScript: org.apache.sysds.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m1: ParallelCollectionRDD[42] at parallelize at <console>:38
   [2] (RDD) m2: ParallelCollectionRDD[43] at parallelize at <console>:38
@@ -694,7 +694,7 @@ val (firstSum, secondSum, sumMessage) = ml.execute(sumScript).getTuple[Double, D
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val sumScript = dmlFromFile("sums.dml").in("m1", rdd1, rdd1Metadata).in("m2", rdd2, rdd2Metadata).out("s1").out("s2").out("message")
-sumScript: org.apache.sysml.api.mlcontext.Script =
+sumScript: org.apache.sysds.api.mlcontext.Script =
 Inputs:
   [1] (RDD) m1: ParallelCollectionRDD[42] at parallelize at <console>:38
   [2] (RDD) m2: ParallelCollectionRDD[43] at parallelize at <console>:38
@@ -930,19 +930,19 @@ scala> val habermanRDD = sc.parallelize(habermanList)
 habermanRDD: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[159] at parallelize at <console>:43
 
 scala> val habermanMetadata = new MatrixMetadata(306, 4)
-habermanMetadata: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 306, columns: 4, non-zeros: None, rows per block: None, columns per block: None
+habermanMetadata: org.apache.sysds.api.mlcontext.MatrixMetadata = rows: 306, columns: 4, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val typesRDD = sc.parallelize(Array("1.0,1.0,1.0,2.0"))
 typesRDD: org.apache.spark.rdd.RDD[String] = ParallelCollectionRDD[160] at parallelize at <console>:39
 
 scala> val typesMetadata = new MatrixMetadata(1, 4)
-typesMetadata: org.apache.sysml.api.mlcontext.MatrixMetadata = rows: 1, columns: 4, non-zeros: None, rows per block: None, columns per block: None
+typesMetadata: org.apache.sysds.api.mlcontext.MatrixMetadata = rows: 1, columns: 4, non-zeros: None, rows per block: None, columns per block: None
 
 scala> val scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml"
 scriptUrl: String = https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml
 
 scala> val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).in("$CONSOLE_OUTPUT", true)
-uni: org.apache.sysml.api.mlcontext.Script =
+uni: org.apache.sysds.api.mlcontext.Script =
 Inputs:
   [1] (RDD) A: ParallelCollectionRDD[159] at parallelize at <console>:43
   [2] (RDD) K: ParallelCollectionRDD[160] at parallelize at <console>:39
@@ -1007,7 +1007,7 @@ Feature [4]: Categorical (Nominal)
  (15) Num of categories   | 2
  (16) Mode                | 1
  (17) Num of modes        | 1
-res23: org.apache.sysml.api.mlcontext.MLResults =
+res23: org.apache.sysds.api.mlcontext.MLResults =
 None
 
 {% endhighlight %}
@@ -1137,7 +1137,7 @@ scala> val scriptUrl = "https://raw.githubusercontent.com/apache/systemml/master
 scriptUrl: String = https://raw.githubusercontent.com/apache/systemml/master/scripts/algorithms/Univar-Stats.dml
 
 scala> val uni = dmlFromUrl(scriptUrl).in("A", new java.net.URL(habermanUrl)).in("K", typesRDD).in("$CONSOLE_OUTPUT", true)
-uni: org.apache.sysml.api.mlcontext.Script =
+uni: org.apache.sysds.api.mlcontext.Script =
 Inputs:
   [1] (URL) A: http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
   [2] (RDD) K: ParallelCollectionRDD[50] at parallelize at <console>:33
@@ -1295,7 +1295,7 @@ SystemDS Statistics:
 Total execution time:		0.211 sec.
 Number of executed Spark inst:	8.
 
-res1: org.apache.sysml.api.mlcontext.MLResults =
+res1: org.apache.sysds.api.mlcontext.MLResults =
 None
 
 
@@ -1365,7 +1365,7 @@ baseStats.toRDDStringIJV.collect.slice(0,9).foreach(println)
 <div data-lang="Spark Shell" markdown="1">
 {% highlight scala %}
 scala> val uni = dmlFromUrl(scriptUrl).in("A", habermanRDD, habermanMetadata).in("K", typesRDD, typesMetadata).out("baseStats")
-uni: org.apache.sysml.api.mlcontext.Script =
+uni: org.apache.sysds.api.mlcontext.Script =
 Inputs:
   [1] (RDD) A: ParallelCollectionRDD[159] at parallelize at <console>:43
   [2] (RDD) K: ParallelCollectionRDD[160] at parallelize at <console>:39
@@ -1376,7 +1376,7 @@ Outputs:
 
 scala> val baseStats = ml.execute(uni).getMatrix("baseStats")
 ...
-baseStats: org.apache.sysml.api.mlcontext.Matrix = Matrix: scratch_space/_p12059_9.31.117.12/parfor/4_resultmerge1, [17 x 4, nnz=44, blocks (1000 x 1000)], binaryblock, dirty
+baseStats: org.apache.sysds.api.mlcontext.Matrix = Matrix: scratch_space/_p12059_9.31.117.12/parfor/4_resultmerge1, [17 x 4, nnz=44, blocks (1000 x 1000)], binaryblock, dirty
 
 scala> baseStats.toRDDStringIJV.collect.slice(0,9).foreach(println)
 1 1 30.0

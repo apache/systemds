@@ -167,6 +167,7 @@ public class DMLScript
 	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
+	 * @throws IOException If an internal IO Exception happened.
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
 		throws  IOException, ParseException, DMLScriptException

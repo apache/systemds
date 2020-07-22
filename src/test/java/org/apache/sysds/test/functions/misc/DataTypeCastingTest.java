@@ -85,10 +85,10 @@ public class DataTypeCastingTest extends AutomatedTestBase
 	 * @param cfc
 	 * @param vt
 	 */
-	private void runTest( String testName, boolean matrixInput, Class<?> exceptionExpected ) 
+	private void runTest( String testName, boolean matrixInput, Class<?> exceptionClass ) 
 	{
 		String TEST_NAME = testName;
-		int numVals = (exceptionExpected != null ? 7 : 1);
+		int numVals = (exceptionClass != null ? 7 : 1);
 		
 		try
 		{		
@@ -112,9 +112,9 @@ public class DataTypeCastingTest extends AutomatedTestBase
 			}
 			
 			//run tests
-	        runTest(true, exceptionExpected != null, exceptionExpected, -1);
+	        runTest(true, exceptionClass != null, exceptionClass, -1);
 	        
-	        if( exceptionExpected == null ){
+	        if( exceptionClass == null ){
 		        //read output
 		        double ret = -1;
 		        if( testName.equals(TEST_NAME2) ){

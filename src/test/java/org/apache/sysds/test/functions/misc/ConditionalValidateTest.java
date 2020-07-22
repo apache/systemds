@@ -100,7 +100,7 @@ public class ConditionalValidateTest extends AutomatedTestBase
 		runTest( TEST_NAME4, null, false ); 
 	}
 	
-	private void runTest( String testName, Class<?> exceptionExpected, boolean fileExists )
+	private void runTest( String testName, Class<?> exceptionClass, boolean fileExists )
 	{
 		String TEST_NAME = testName;
 
@@ -124,7 +124,7 @@ public class ConditionalValidateTest extends AutomatedTestBase
 			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.FP64, mc, FileFormat.TEXT);
 			
 			//run tests
-			runTest(true, exceptionExpected != null, exceptionExpected, -1);
+			runTest(true, exceptionClass != null, exceptionClass, -1);
 
 			//cleanup
 			HDFSTool.deleteFileIfExistOnHDFS(input);

@@ -39,7 +39,6 @@ import org.apache.sysds.test.TestUtils;
  */
 public class FullVectorVectorCellwiseOperationTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "FullVectorVectorCellwiseOperation";
 	private final static String TEST_DIR = "functions/binary/matrix_full_cellwise/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullVectorVectorCellwiseOperationTest.class.getSimpleName() + "/";
@@ -572,7 +571,7 @@ public class FullVectorVectorCellwiseOperationTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "recompile_runtime", "-args",
+			programArgs = new String[]{"-args",
 				input("A"), input("B"), opcode, output("C") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";

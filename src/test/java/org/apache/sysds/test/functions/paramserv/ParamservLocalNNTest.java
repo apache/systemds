@@ -75,7 +75,7 @@ public class ParamservLocalNNTest extends AutomatedTestBase {
 	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme) {
 		TestConfiguration config = getTestConfiguration(ParamservLocalNNTest.TEST_NAME);
 		loadTestConfiguration(config);
-		programArgs = new String[] { "-explain", "-stats", "-nvargs", "mode=LOCAL", "epochs=" + epochs,
+		programArgs = new String[] { "-stats", "-nvargs", "mode=LOCAL", "epochs=" + epochs,
 			"workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize,
 			"scheme=" + scheme };
 		String HOME = SCRIPT_DIR + TEST_DIR;

@@ -59,7 +59,7 @@ public class BuiltinHyperbandTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 	
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", input("X"), input("y"), output("R")};
+			programArgs = new String[] {"-stats","-args", input("X"), input("y"), output("R")};
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, 3);
 			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, 7);
 			writeInputMatrixWithMTD("X", X, true);

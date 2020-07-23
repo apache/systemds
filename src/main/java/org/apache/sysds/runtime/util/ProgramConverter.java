@@ -402,9 +402,11 @@ public class ProgramConverter
 		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 		
-		//put 
-		prog.addFunctionProgramBlock(namespace, fnameNew, copy);
-		fnCreated.add(DMLProgram.constructFunctionKey(namespace, fnameNew));
+		//put if not existing (recursive processing might have added it)
+		if( !prog.getFunctionProgramBlocks().containsKey(fnameNewKey) ) {
+			prog.addFunctionProgramBlock(namespace, fnameNew, copy);
+			fnCreated.add(DMLProgram.constructFunctionKey(namespace, fnameNew));
+		}
 	}
 
 	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated) 

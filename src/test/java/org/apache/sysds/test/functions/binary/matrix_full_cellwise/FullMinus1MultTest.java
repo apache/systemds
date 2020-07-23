@@ -33,12 +33,8 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-/**
- * 
- * 
- */
 public class FullMinus1MultTest extends AutomatedTestBase 
-{	
+{
 	private final static String TEST_NAME = "Minus1MultTest";
 	private final static String TEST_DIR = "functions/binary/matrix_full_cellwise/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullMinus1MultTest.class.getSimpleName() + "/";

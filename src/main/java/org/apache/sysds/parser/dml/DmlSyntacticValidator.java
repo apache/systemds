@@ -1151,14 +1151,16 @@ public class DmlSyntacticValidator implements DmlListener {
 	protected void setupContextInfo(StatementInfo info, String namespace, 
 		String filePath, String filePath2, DMLProgram prog ) {
 		info.namespaces = new HashMap<>();
-		info.namespaces.put(getQualifiedNamespace(namespace), prog.getDefaultFunctionDictionary());
-		for( Entry<String, FunctionDictionary<FunctionStatementBlock>> e : prog.getNamespaces().entrySet() )
-			info.namespaces.put(getQualifiedNamespace(e.getKey()), e.getValue());
-		ImportStatement istmt = new ImportStatement();
-		istmt.setCompletePath(filePath);
-		istmt.setFilename(filePath2);
-		istmt.setNamespace(namespace);
-		info.stmt = istmt;
+		if(prog != null) {
+			info.namespaces.put(getQualifiedNamespace(namespace), prog.getDefaultFunctionDictionary());
+			for( Entry<String, FunctionDictionary<FunctionStatementBlock>> e : prog.getNamespaces().entrySet() )
+				info.namespaces.put(getQualifiedNamespace(e.getKey()), e.getValue());
+			ImportStatement istmt = new ImportStatement();
+			istmt.setCompletePath(filePath);
+			istmt.setFilename(filePath2);
+			istmt.setNamespace(namespace);
+			info.stmt = istmt;
+		}
 	}
 
 	protected void setFileLineColumn(Expression expr, ParserRuleContext ctx) {

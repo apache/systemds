@@ -477,7 +477,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				case StringInit: //sinit
 					return d3m * d3n * DEFAULT_NFLOP_CP;
 					
-				case External: //opcodes: extfunct
+				case FCall: //opcodes: fcall
 					//note: should be invoked independently for multiple outputs
 					return d1m * d1n * d1s * DEFAULT_NFLOP_UNKNOWN;
 				

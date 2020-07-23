@@ -48,11 +48,12 @@ public class FunctionOp extends Hop
 		UNKNOWN
 	}
 	
-	public static final String OPSTRING = "extfunct";
+	public static final String OPCODE = "fcall";
 	
 	private FunctionType _type = null;
 	private String _fnamespace = null;
-	private String _fname = null; 
+	private String _fname = null;
+	private boolean _opt = true; //call to optimized/unoptimized
 	
 	private String[] _inputNames = null;  // A,B in C = foo(A=X, B=Y)
 	private String[] _outputNames = null; // C in C = foo(A=X, B=Y)
@@ -131,6 +132,10 @@ public class FunctionOp extends Hop
 	
 	public FunctionType getFunctionType() {
 		return _type;
+	}
+	
+	public void setCallOptimized(boolean opt) {
+		_opt = opt;
 	}
 
 	@Override
@@ -281,7 +286,7 @@ public class FunctionOp extends Hop
 			tmp.add( in.constructLops() );
 		
 		//construct function call
-		Lop fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et);
+		Lop fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, _opt, et);
 		setLineNumbers(fcall);
 		setLops(fcall);
 		
@@ -291,9 +296,8 @@ public class FunctionOp extends Hop
 	}
 
 	@Override
-	public String getOpString() 
-	{
-		return OPSTRING;
+	public String getOpString() {
+		return OPCODE;
 	}
 
 	@Override
@@ -358,6 +362,7 @@ public class FunctionOp extends Hop
 		ret._type = _type;
 		ret._fnamespace = _fnamespace;
 		ret._fname = _fname;
+		ret._opt = _opt;
 		ret._inputNames = (_inputNames!=null) ? _inputNames.clone() : null;
 		ret._outputNames = _outputNames.clone();
 		if( _outputHops != null )

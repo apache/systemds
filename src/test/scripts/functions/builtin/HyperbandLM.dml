@@ -58,6 +58,6 @@ B2 = lmCG(X=X_train, y=y_train, verbose=FALSE);
 
 l1 = l2norm(X_test, y_test, B1);
 l2 = l2norm(X_test, y_test, B2);
-R = as.scalar(l1 <= l2);
+R = as.scalar(l1 < l2);
 
 write(R, $3)

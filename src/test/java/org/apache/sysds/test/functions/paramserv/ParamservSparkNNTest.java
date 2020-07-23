@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.paramserv;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
@@ -28,6 +29,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
 @net.jcip.annotations.NotThreadSafe
+@Ignore
 public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "paramserv-test";

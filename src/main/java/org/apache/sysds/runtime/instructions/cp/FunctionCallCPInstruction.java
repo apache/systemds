@@ -51,16 +51,18 @@ import org.apache.sysds.utils.Statistics;
 public class FunctionCallCPInstruction extends CPInstruction {
 	private final String _functionName;
 	private final String _namespace;
+	private final boolean _opt;
 	private final CPOperand[] _boundInputs;
 	private final List<String> _boundInputNames;
 	private final List<String> _funArgNames;
 	private final List<String> _boundOutputNames;
 
-	public FunctionCallCPInstruction(String namespace, String functName, CPOperand[] boundInputs,
-			List<String> funArgNames, List<String> boundOutputNames, String istr) {
-		super(CPType.External, null, functName, istr);
+	public FunctionCallCPInstruction(String namespace, String functName, boolean opt,
+		CPOperand[] boundInputs, List<String> funArgNames, List<String> boundOutputNames, String istr) {
+		super(CPType.FCall, null, functName, istr);
 		_functionName = functName;
 		_namespace = namespace;
+		_opt = opt;
 		_boundInputs = boundInputs;
 		_boundInputNames = Arrays.stream(boundInputs).map(i -> i.getName())
 			.collect(Collectors.toCollection(ArrayList::new));
@@ -77,24 +79,25 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 	
 	public static FunctionCallCPInstruction parseInstruction(String str) {
-		//schema: extfunct, fname, num inputs, num outputs, inputs (name-value pairs), outputs
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
+		//schema: fcall, fnamespace, fname, opt, num inputs, num outputs, inputs (name-value pairs), outputs
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType (str);
 		String namespace = parts[1];
 		String functionName = parts[2];
-		int numInputs = Integer.valueOf(parts[3]);
-		int numOutputs = Integer.valueOf(parts[4]);
+		boolean opt = Boolean.parseBoolean(parts[3]);
+		int numInputs = Integer.valueOf(parts[4]);
+		int numOutputs = Integer.valueOf(parts[5]);
 		CPOperand[] boundInputs = new CPOperand[numInputs];
 		List<String> funArgNames = new ArrayList<>();
 		List<String> boundOutputNames = new ArrayList<>();
 		for (int i = 0; i < numInputs; i++) {
-			String[] nameValue = IOUtilFunctions.splitByFirst(parts[5 + i], "=");
+			String[] nameValue = IOUtilFunctions.splitByFirst(parts[6 + i], "=");
 			boundInputs[i] = new CPOperand(nameValue[1]);
 			funArgNames.add(nameValue[0]);
 		}
 		for (int i = 0; i < numOutputs; i++)
-			boundOutputNames.add(parts[5 + numInputs + i]);
+			boundOutputNames.add(parts[6 + numInputs + i]);
 		return new FunctionCallCPInstruction ( namespace, functionName,
-			boundInputs, funArgNames, boundOutputNames, str );
+			opt, boundInputs, funArgNames, boundOutputNames, str );
 	}
 	
 	@Override
@@ -109,11 +112,12 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			LOG.trace("Executing instruction : " + toString());
 		}
 		// get the function program block (stored in the Program object)
-		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);
+		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName, _opt);
 		
 		// sanity check number of function parameters
 		if( _boundInputs.length < fpb.getInputParams().size() ) {
-			throw new DMLRuntimeException("Number of bound input parameters does not match the function signature "
+			throw new DMLRuntimeException("fcall "+_functionName+": "
+				+ "Number of bound input parameters does not match the function signature "
 				+ "("+_boundInputs.length+", but "+fpb.getInputParams().size()+" expected)");
 		}
 		
@@ -138,7 +142,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			String argName = _funArgNames.get(i);
 			DataIdentifier currFormalParam = fpb.getInputParam(argName);
 			if( currFormalParam == null ) {
-				throw new DMLRuntimeException("Non-existing named "
+				throw new DMLRuntimeException("fcall "+_functionName+": Non-existing named "
 					+ "function argument: '"+argName+"' (line "+getLineNum()+").");
 			}
 			
@@ -216,7 +220,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			String retVarName = fpb.getOutputParams().get(i).getName();
 			Data boundValue = retVars.get(retVarName);
 			if (boundValue == null)
-				throw new DMLRuntimeException(boundVarName + " was not assigned a return value");
+				throw new DMLRuntimeException("fcall "+_functionName+": "
+					+boundVarName + " was not assigned a return value");
 
 			//cleanup existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);

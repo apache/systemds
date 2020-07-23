@@ -336,8 +336,12 @@ public class FunctionCallGraph
 	}
 	
 	private boolean constructFunctionCallGraph(DMLProgram prog) {
-		if( !prog.hasFunctionStatementBlocks() )
-			return false; //early abort if prog without functions
+		if( !prog.hasFunctionStatementBlocks() ) {
+			boolean ret = false;
+			for( StatementBlock sb : prog.getStatementBlocks() )
+				ret |= rAnalyzeSecondOrderCall(sb);
+			return ret; //early abort if prog without functions
+		}
 		
 		boolean ret = false;
 		try {
@@ -455,6 +459,36 @@ public class FunctionCallGraph
 			}
 		}
 		
+		return ret;
+	}
+
+	private boolean rAnalyzeSecondOrderCall(StatementBlock sb) {
+		boolean ret = false;
+		if (sb instanceof WhileStatementBlock) {
+			WhileStatement ws = (WhileStatement)sb.getStatement(0);
+			for (StatementBlock current : ws.getBody())
+				ret |= rAnalyzeSecondOrderCall(current);
+		}
+		else if (sb instanceof IfStatementBlock) {
+			IfStatement ifs = (IfStatement) sb.getStatement(0);
+			for (StatementBlock current : ifs.getIfBody())
+				ret |= rAnalyzeSecondOrderCall(current);
+			for (StatementBlock current : ifs.getElseBody())
+				ret |= rAnalyzeSecondOrderCall(current);
+		}
+		else if (sb instanceof ForStatementBlock) {
+			ForStatement fs = (ForStatement)sb.getStatement(0);
+			for (StatementBlock current : fs.getBody())
+				ret |= rAnalyzeSecondOrderCall(current);
+		}
+		else {
+			// For generic StatementBlock
+			ArrayList<Hop> hopsDAG = sb.getHops();
+			if( hopsDAG == null || hopsDAG.isEmpty() ) 
+				return false; //nothing to do
+			//function ops can only occur as root nodes of the dag
+			ret = HopRewriteUtils.containsSecondOrderBuiltin(hopsDAG);
+		}
 		return ret;
 	}
 	

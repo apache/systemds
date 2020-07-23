@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -649,7 +650,7 @@ public class OptTreeConverter
 			_hlMap.replaceMapping(pbNew, n);
 	}
 
-	public static void replaceProgramBlock(ArrayList<ProgramBlock> pbs, ProgramBlock pbOld, ProgramBlock pbNew)
+	public static void replaceProgramBlock(List<ProgramBlock> pbs, ProgramBlock pbOld, ProgramBlock pbNew)
 	{
 		int len = pbs.size();
 		for( int i=0; i<len; i++ )

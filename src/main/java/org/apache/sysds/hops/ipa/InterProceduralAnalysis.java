@@ -185,6 +185,10 @@ public class InterProceduralAnalysis
 			if( LOG.isDebugEnabled() )
 				LOG.debug("IPA: Initial FunctionCallSummary: \n" + fcallSizes);
 			
+			//step 0: retain original unoptimized functions for eval()
+			if( _fgraph.containsSecondOrderCall() && i==0 ) //on first call
+				_prog.copyOriginalFunctions();
+			
 			//step 1: intra- and inter-procedural 
 			if( INTRA_PROCEDURAL_ANALYSIS ) {
 				//get unary dimension-preserving non-candidate functions

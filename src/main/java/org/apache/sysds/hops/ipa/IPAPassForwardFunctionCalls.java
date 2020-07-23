@@ -79,7 +79,8 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 				reconcileFunctionInputsInPlace(call1, call2);
 				//step 5: update function call graph (old, new)
 				fgraph.replaceFunctionCalls(fkey, call2.getFunctionKey());
-				prog.removeFunctionStatementBlock(fkey);
+				if( !fgraph.containsSecondOrderCall() )
+					prog.removeFunctionStatementBlock(fkey);
 				
 				if( LOG.isDebugEnabled() )
 					LOG.debug("IPA: Forward-function-call: replaced '"

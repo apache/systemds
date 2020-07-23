@@ -41,6 +41,7 @@ import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.DnnOp;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
@@ -57,11 +58,15 @@ import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
 import org.apache.sysds.parser.IfStatementBlock;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -1575,5 +1580,35 @@ public class HopRewriteUtils
 		return HopRewriteUtils.isNary(hop, OpOpN.EVAL)
 			|| HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.PARAMSERV)
 			|| hop.getInput().stream().anyMatch(c -> containsSecondOrderBuiltin(c));
+	}
+
+	public static void setUnoptimizedFunctionCalls(StatementBlock sb) {
+		if( sb instanceof FunctionStatementBlock ) {
+			FunctionStatement fstmt = (FunctionStatement) sb.getStatement(0);
+			for( StatementBlock c : fstmt.getBody() )
+				setUnoptimizedFunctionCalls(c);
+		}
+		else if( sb instanceof IfStatementBlock ) {
+			IfStatement stmt = (IfStatement) sb.getStatement(0);
+			for( StatementBlock c : stmt.getIfBody() )
+				setUnoptimizedFunctionCalls(c);
+			for( StatementBlock c : stmt.getElseBody() )
+				setUnoptimizedFunctionCalls(c);
+		}
+		else if( sb instanceof WhileStatementBlock ) {
+			WhileStatement stmt = (WhileStatement) sb.getStatement(0);
+			for( StatementBlock c : stmt.getBody() )
+				setUnoptimizedFunctionCalls(c);
+		}
+		else if( sb instanceof ForStatementBlock ) { //incl parfor
+			ForStatement stmt = (ForStatement) sb.getStatement(0);
+			for( StatementBlock c : stmt.getBody() )
+				setUnoptimizedFunctionCalls(c);
+		}
+		else {
+			for( Hop root : sb.getHops() )
+				if( root instanceof FunctionOp )
+					((FunctionOp)root).setCallOptimized(false);
+		}
 	}
 }

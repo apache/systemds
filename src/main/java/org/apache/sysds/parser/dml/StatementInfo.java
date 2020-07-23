@@ -21,7 +21,8 @@ package org.apache.sysds.parser.dml;
 
 import java.util.HashMap;
 
-import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.FunctionDictionary;
+import org.apache.sysds.parser.FunctionStatementBlock;
 import org.apache.sysds.parser.Statement;
 
 /**
@@ -37,7 +38,7 @@ public class StatementInfo {
 	public Statement stmt = null;
 	
 	// Valid only for import statements
-	public HashMap<String,DMLProgram> namespaces = null;
+	public HashMap<String,FunctionDictionary<FunctionStatementBlock>> namespaces = null;
 	
 	// Valid only for function statement
 	public String functionName = "";

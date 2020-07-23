@@ -100,8 +100,8 @@ m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
         # prone depending on the order of the list. hyper parameters to optimize
         # are taken from args, as there they are reordered to be invariant to the
         # order used at calling hyperband
-        weights = lmCG(X=X_train, y=y_train, tol=as.scalar(args[1]),
-          reg=as.scalar(args[2]), maxi=r_i, verbose=FALSE);
+        weights = eval("lmCG", list(X=X_train, y=y_train, icpt=0, 
+          tol=as.scalar(args[1]), reg=as.scalar(args[2]), maxi=r_i, verbose=FALSE));
         
         candidateWeights[curCandidate] = t(weights)
         preds = lmpredict(X=X_val, w=weights);

@@ -271,13 +271,20 @@ public class Explain
 			}
 
 			//show individual functions
-			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() )
-			{
+			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() ) {
 				String fkey = e.getKey();
 				FunctionProgramBlock fpb = e.getValue();
+				//explain optimized function
 				sb.append("----FUNCTION "+fkey+" [recompile="+fpb.isRecompileOnce()+"]\n");
 				for( ProgramBlock pb : fpb.getChildBlocks() )
 					sb.append( explainProgramBlock(pb,3) );
+				//explain unoptimized function
+				if( rtprog.containsFunctionProgramBlock(fkey, false) ) {
+					FunctionProgramBlock fpb2 = rtprog.getFunctionProgramBlock(fkey, false);
+					sb.append("----FUNCTION "+fkey+" (unoptimized) [recompile="+fpb2.isRecompileOnce()+"]\n");
+					for( ProgramBlock pb : fpb2.getChildBlocks() )
+						sb.append( explainProgramBlock(pb,3) );
+				}
 			}
 		}
 

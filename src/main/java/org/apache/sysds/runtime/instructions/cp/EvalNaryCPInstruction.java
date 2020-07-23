@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DMLProgram;
@@ -82,9 +83,11 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			funcName = funcName2;
 		}
 		
+		//obtain function block (but unoptimized version of existing functions for correctness)
+		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, funcName, false);
+		
 		//4. expand list arguments if needed
 		CPOperand[] boundInputs2 = null;
-		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, funcName);
 		if( boundInputs.length == 1 && boundInputs[0].getDataType().isList()
 			&& fpb.getInputParams().size() > 1 && !fpb.getInputParams().get(0).getDataType().isList()) 
 		{
@@ -104,7 +107,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		
 		//5. call the function
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(null, funcName,
-			boundInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
+			false, boundInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 
 		//6. convert the result to matrix
@@ -144,8 +147,9 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		DMLProgram dmlp = (prog.getDMLProg() != null) ? prog.getDMLProg() :
 			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-			if( !dmlp.containsFunctionStatementBlock(fsb.getKey()) )
+			if( !dmlp.getDefaultFunctionDictionary().containsFunction(fsb.getKey()) ) {
 				dmlp.addFunctionStatementBlock(fsb.getKey(), fsb.getValue());
+			}
 			fsb.getValue().setDMLProg(dmlp);
 		}
 		DMLTranslator dmlt = new DMLTranslator(dmlp);
@@ -159,6 +163,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		}
 		
 		// compile hop dags, rewrite hop dags and compile lop dags
+		// incl change of function calls to unoptimized functions calls
 		for( FunctionStatementBlock fsb : fsbs.values() ) {
 			dmlt.constructHops(fsb);
 			rewriter.rewriteHopDAGsFunction(fsb, false); //rewrite and merge
@@ -167,15 +172,20 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			DMLTranslator.resetHopsDAGVisitStatus(fsb);
 			rewriter2.rewriteHopDAGsFunction(fsb, true);
 			DMLTranslator.resetHopsDAGVisitStatus(fsb);
+			HopRewriteUtils.setUnoptimizedFunctionCalls(fsb);
+			DMLTranslator.resetHopsDAGVisitStatus(fsb);
 			DMLTranslator.refreshMemEstimates(fsb);
 			dmlt.constructLops(fsb);
 		}
 		
 		// compile runtime program
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-			FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
-				.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
-			prog.addFunctionProgramBlock(null, fsb.getKey(), fpb);
+			if( !prog.containsFunctionProgramBlock(null, fsb.getKey(), false) ) {
+				FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
+					.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
+				//prog.addFunctionProgramBlock(null, fsb.getKey(), fpb, true); // optimized
+				prog.addFunctionProgramBlock(null, fsb.getKey(), fpb, false);    // unoptimized -> eval
+			}
 		}
 	}
 	

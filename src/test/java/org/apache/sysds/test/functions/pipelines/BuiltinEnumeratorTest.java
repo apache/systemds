@@ -32,11 +32,11 @@ public class BuiltinEnumeratorTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "pipelines/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinEnumeratorTest.class.getSimpleName() + "/";
 	protected static final String SCRIPT_DIR = "./scripts/staging/";
-	private final static String logicalFile = SCRIPT_DIR+TEST_DIR+"logical.csv";
-	private final static String outlierPrimitives = SCRIPT_DIR+TEST_DIR+"outlierPrimitives.csv";
-	private final static String mviPrimitives = SCRIPT_DIR+TEST_DIR+"mviPrimitives.csv";
-	private final static String parameters = SCRIPT_DIR+TEST_DIR+"properties.csv";
-	private final static String DATASET = SCRIPT_DIR+TEST_DIR+"airbnb.csv";
+	private final static String logicalFile = SCRIPT_DIR+TEST_DIR + "logical.csv";
+	private final static String outlierPrimitives = SCRIPT_DIR+TEST_DIR + "outlierPrimitives.csv";
+	private final static String mviPrimitives = SCRIPT_DIR+TEST_DIR + "mviPrimitives.csv";
+	private final static String parameters = SCRIPT_DIR+TEST_DIR + "properties.csv";
+	private final static String DATASET = SCRIPT_DIR+TEST_DIR + "airbnb.csv";
 
 	@Override
 	public void setUp() {
@@ -57,7 +57,7 @@ public class BuiltinEnumeratorTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats","-args", DATASET, logicalFile, outlierPrimitives, mviPrimitives, parameters, output("A")};
+			programArgs = new String[]{"-stats", "-args", DATASET, logicalFile, outlierPrimitives, mviPrimitives, parameters, output("A")};
 
 			runTest(true, false, null, -1);
 

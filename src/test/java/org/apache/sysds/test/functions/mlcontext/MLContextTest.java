@@ -1904,5 +1904,17 @@ public class MLContextTest extends MLContextTestBase {
 		Assert.assertEquals(true, c);
 		Assert.assertEquals("yes it's TRUE", d);
 	}
-
+	
+	@Test
+	public void testNNImport() {
+		System.out.println("MLContextTest - NN import");
+		String s =    "source(\"scripts/nn/layers/relu.dml\") as relu;\n"
+					+ "X = rand(rows=100, cols=10, min=-1, max=1);\n"
+					+ "R1 = relu::forward(X);\n"
+					+ "R2 = max(X, 0);\n"
+					+ "R = sum(R1==R2);\n";
+		double ret = ml.execute(dml(s).out("R"))
+			.getScalarObject("R").getDoubleValue();
+		Assert.assertEquals(1000, ret, 1e-20);
+	}
 }

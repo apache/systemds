@@ -136,19 +136,17 @@ public class CustomErrorListener extends BaseErrorListener {
 	 * Syntax error occurred. Add the error to the list of parse issues.
 	 */
 	@Override
-	public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine,
-			String msg, RecognitionException e) {
+	public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
+		int line, int charPositionInLine, String msg, RecognitionException e)
+	{
+		msg = msg + " ("+offendingSymbol.toString()+")";
 		parseIssues.add(new ParseIssue(line, charPositionInLine, msg, currentFileName, ParseIssueType.SYNTAX_ERROR));
 		try {
 			setAtLeastOneError(true);
-			// Print error messages with file name
-			if (currentFileName == null)
-				log.error("line " + line + ":" + charPositionInLine + " " + msg);
-			else {
-				String fileName = currentFileName;
-				log.error(fileName + " line " + line + ":" + charPositionInLine + " " + msg);
-			}
-		} catch (Exception e1) {
+			String out = (currentFileName != null) ? (currentFileName + ", ") : "";
+			log.error(out + "line " + line + ":" + charPositionInLine + " " + msg);
+		}
+		catch (Exception e1) {
 			log.error("ERROR: while customizing error message:" + e1);
 		}
 	}

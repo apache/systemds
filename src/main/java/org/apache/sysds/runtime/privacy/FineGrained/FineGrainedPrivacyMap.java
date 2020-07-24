@@ -71,5 +71,20 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 	public boolean hasConstraints() {
 		return !constraintCollection.isEmpty();
 	}
-	
+
+	@Override
+	public Map<String, long[][][]> getAllConstraints() {
+		ArrayList<long[][]> privateRanges = new ArrayList<>();
+		ArrayList<long[][]> aggregateRanges = new ArrayList<>();
+		constraintCollection.forEach((range, privacylevel) -> {
+			if ( privacylevel == PrivacyLevel.Private )
+				privateRanges.add(new long[][]{range.getBeginDims(), range.getEndDims()});
+			else if ( privacylevel == PrivacyLevel.PrivateAggregation )
+				aggregateRanges.add(new long[][]{range.getBeginDims(), range.getEndDims()});
+		});
+		Map<String, long[][][]> constraintMap = new LinkedHashMap<>();
+		constraintMap.put(PrivacyLevel.Private.name(), privateRanges.toArray(new long[0][][]));
+		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), privateRanges.toArray(new long[0][][]));
+		return constraintMap;
+	}
 }

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.privacy.FineGrained;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * A DataRange instance marks a part of a CachableData data object.
@@ -95,5 +96,10 @@ public class DataRange implements Serializable {
 	private boolean dimensionOutOfRange(long[] dataRangeBegin, long[] dataRangeEnd, int i){
 		return (_beginDims[i] < dataRangeBegin[i] && _endDims[i] < dataRangeBegin[i]) 
 				|| (_beginDims[i] > dataRangeBegin[i] && _beginDims[i] > dataRangeEnd[i] );
+	}
+
+	@Override
+	public String toString(){
+		return Arrays.toString(new String[]{Arrays.toString(_beginDims), Arrays.toString(_endDims)});
 	}
 }

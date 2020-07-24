@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.privacy.FineGrained;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -75,5 +76,20 @@ public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 	public boolean hasConstraints() {
 		return !constraintCollection.isEmpty();
 	}
-	
+
+	@Override
+	public Map<String, long[][][]> getAllConstraints() {
+		ArrayList<long[][]> privateRanges = new ArrayList<>();
+		ArrayList<long[][]> aggregateRanges = new ArrayList<>();
+		constraintCollection.forEach(constraint -> {
+			if ( constraint.getValue() == PrivacyLevel.Private )
+				privateRanges.add(new long[][]{constraint.getKey().getBeginDims(), constraint.getKey().getEndDims()});
+			else if ( constraint.getValue() == PrivacyLevel.PrivateAggregation )
+				aggregateRanges.add(new long[][]{constraint.getKey().getBeginDims(), constraint.getKey().getEndDims()});
+		});
+		Map<String, long[][][]> constraintMap = new HashMap<>();
+		constraintMap.put(PrivacyLevel.Private.name(), privateRanges.toArray(new long[0][][]));
+		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), privateRanges.toArray(new long[0][][]));
+		return constraintMap;
+	}
 }

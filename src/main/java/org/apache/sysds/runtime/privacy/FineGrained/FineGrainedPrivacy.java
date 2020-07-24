@@ -63,5 +63,12 @@ public interface FineGrainedPrivacy {
 	 * @return true if any fine-grained constraint is set
 	 */
 	public boolean hasConstraints();
+
+	/**
+	 * Get all fine-grained constraints as a map from privacy level to 
+	 * an array of data ranges represented as two-dimensional long arrays.
+	 * @return map from privacy level to array of data ranges
+	 */
+	public Map<String, long[][][]> getAllConstraints();
 	
 }

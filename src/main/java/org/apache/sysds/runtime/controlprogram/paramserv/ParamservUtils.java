@@ -218,10 +218,11 @@ public class ParamservUtils {
 	{
 		Program prog = ec.getProgram();
 
-		// 1. Recompile the internal program blocks
+		// 1. Recompile the internal program blocks 
 		recompileProgramBlocks(k, prog.getProgramBlocks());
 		// 2. Recompile the imported function blocks
-		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
+		prog.getFunctionProgramBlocks(false)
+			.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
 		// 3. Copy all functions 
 		return ExecutionContextFactory.createContext(
@@ -247,7 +248,7 @@ public class ParamservUtils {
 		return newProg;
 	}
 
-	private static void recompileProgramBlocks(int k, List<ProgramBlock> pbs) {
+	public static void recompileProgramBlocks(int k, List<ProgramBlock> pbs) {
 		// Reset the visit status from root
 		for (ProgramBlock pb : pbs)
 			DMLTranslator.resetHopsDAGVisitStatus(pb.getStatementBlock());

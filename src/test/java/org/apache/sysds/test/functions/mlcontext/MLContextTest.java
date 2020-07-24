@@ -1494,6 +1494,26 @@ public class MLContextTest extends MLContextTestBase {
 		setExpectedStdOut("3 15.000000");
 		ml.execute(script);
 	}
+	
+	@Test
+	public void testErrorHandlingTwoIdentifiers() {
+		try {
+			System.out.println("MLContextTest - error handling two identifiers");
+			Script script = dml("foo bar");
+			ml.execute(script);
+		}
+		catch(Exception ex) {
+			Throwable t = ex;
+			while( t.getCause() != null )
+				t = t.getCause();
+			System.out.println(t.getMessage());
+			Assert.assertTrue(t.getMessage().contains("foo bar"));
+			//unfortunately, the generated antlr parser creates the concatenated msg
+			//we do a best effort error reporting here, by adding the offending symbol
+			//Assert.assertFalse(t.getMessage().contains("foobar"));
+			Assert.assertTrue(t.getMessage().contains("'bar'"));
+		}
+	}
 
 	@Test
 	public void testInputVariablesAddLongsDML() {

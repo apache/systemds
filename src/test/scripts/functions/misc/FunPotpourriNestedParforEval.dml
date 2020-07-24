@@ -1,0 +1,36 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+foo1 = function(Matrix[Double] A, Matrix[Double] B) return (Matrix[Double] C) {
+  while(FALSE){} # no inlining
+  C = A %*% B + 7;
+}
+
+X1 = matrix(1.1, 100, 100)
+X2 = matrix(1.2, 100, 100)
+f = "foo1";
+
+R = matrix(0, 100, 100)
+parfor(i in 1:nrow(R) )
+  parfor(j in 1:ncol(R) )
+    R[i,j] = sum(eval(f, list(A=X1, B=X2)));
+
+print("out: " + sum(R))

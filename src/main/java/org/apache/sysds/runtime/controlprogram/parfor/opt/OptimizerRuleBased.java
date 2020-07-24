@@ -23,6 +23,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggBinaryOp.MMultMethod;
@@ -66,6 +67,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.ExcludeType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
@@ -1247,7 +1249,7 @@ public class OptimizerRuleBased extends Optimizer
 					long id = c.getID();
 					c.setK(tmpK);
 					ParForProgramBlock pfpb = (ParForProgramBlock) 
-						OptTreeConverter.getAbstractPlanMapping().getMappedProg(id)[1];
+						OptTreeConverter.getAbstractPlanMapping().getMappedProgramBlock(id);
 					pfpb.setDegreeOfParallelism(tmpK);
 					
 					//distribute remaining parallelism
@@ -1275,6 +1277,13 @@ public class OptimizerRuleBased extends Optimizer
 						mhop.setMaxNumThreads(1); //set max constraint in hop
 						c.setK(1); //set optnode k (for explain)
 					}
+					
+					//if parfor contains eval call, make unoptimized functions single-threaded
+					if( HopRewriteUtils.isNary(h, OpOpN.EVAL) ) {
+						ProgramBlock pb = OptTreeConverter.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
+						pb.getProgram().getFunctionProgramBlocks(false)
+							.forEach((fname, fvalue) -> ParamservUtils.recompileProgramBlocks(1, fvalue.getChildBlocks()));
+					}
 				}
 				else
 					rAssignRemainingParallelism(c, parforK, opsK);
@@ -1284,7 +1293,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( recompileSB ) {
 				try {
 					//guaranteed to be a last-level block (see hop change)
-					ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+					ProgramBlock pb = OptTreeConverter.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
 					Recompiler.recompileProgramBlockInstructions(pb);
 				}
 				catch(Exception ex){
@@ -1356,7 +1365,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		// modify rtprog
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-                                     .getAbstractPlanMapping().getMappedProg(id)[1];
+			.getAbstractPlanMapping().getMappedProgramBlock(id);
 		pfpb.setTaskPartitioner(partitioner);
 		
 		// modify plan
@@ -2403,10 +2412,9 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		boolean ret = false;
 		
-		if( n.getNodeType() == NodeType.PARFOR )
-		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		    						.getAbstractPlanMapping().getMappedProg(n.getID())[1];	
+		if( n.getNodeType() == NodeType.PARFOR ) {
+			ProgramBlock pfpb = OptTreeConverter
+				.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
 			ret = (parfor == pfpb);
 		}
 		
@@ -2425,7 +2433,7 @@ public class OptimizerRuleBased extends Optimizer
 		if( n.getNodeType()==NodeType.PARFOR )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-									.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+				.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
 			pbs.add(pfpb);
 		}
 		

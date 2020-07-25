@@ -521,7 +521,7 @@ public class ProgramConverter
 			IfStatement origstmt = (IfStatement) orig.getStatement(0);
 			IfStatement istmt = new IfStatement(); //only shallow
 			istmt.setConditionalPredicate(origstmt.getConditionalPredicate());
-			isb.setStatements(UtilFunctions.asArrayList(istmt));
+			isb.setStatements(CollectionUtils.asArrayList(istmt));
 			for( StatementBlock c : origstmt.getIfBody() )
 				istmt.addStatementBlockIfBody(rCreateDeepCopyStatementBlock(c));
 			for( StatementBlock c : origstmt.getElseBody() )
@@ -534,7 +534,7 @@ public class ProgramConverter
 			WhileStatement origstmt = (WhileStatement) orig.getStatement(0);
 			WhileStatement wstmt = new WhileStatement(); //only shallow
 			wstmt.setPredicate(origstmt.getConditionalPredicate());
-			wsb.setStatements(UtilFunctions.asArrayList(wstmt));
+			wsb.setStatements(CollectionUtils.asArrayList(wstmt));
 			for( StatementBlock c : origstmt.getBody() )
 				wstmt.addStatementBlock(rCreateDeepCopyStatementBlock(c));
 			ret = wsb;
@@ -545,7 +545,7 @@ public class ProgramConverter
 			ForStatement origstmt = (ForStatement) orig.getStatement(0);
 			ForStatement fstmt = new ForStatement(); //only shallow
 			fstmt.setPredicate(origstmt.getIterablePredicate());
-			fsb.setStatements(UtilFunctions.asArrayList(fstmt));
+			fsb.setStatements(CollectionUtils.asArrayList(fstmt));
 			for( StatementBlock c : origstmt.getBody() )
 				fstmt.addStatementBlock(rCreateDeepCopyStatementBlock(c));
 			ret = fsb;

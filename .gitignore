@@ -56,8 +56,6 @@ src/main/python/tests/onnx_systemds/test_models/*.onnx
 
 # User configuration files
 conf/SystemDS-config.xml
-conf/log4j.properties
-conf/systemds-env.sh
 
 # Documentation artifacts
 docs/_site

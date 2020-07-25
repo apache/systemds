@@ -41,6 +41,7 @@ import org.apache.sysds.hops.codegen.opt.InterestingPoint;
 import org.apache.sysds.hops.codegen.opt.PlanSelection;
 import org.apache.sysds.hops.codegen.template.TemplateBase.CloseType;
 import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CPlanMemoTable 
@@ -49,20 +50,20 @@ public class CPlanMemoTable
 	
 	protected HashMap<Long, List<MemoTableEntry>> _plans;
 	protected HashMap<Long, Hop> _hopRefs;
-	protected HashSet<Long> _plansBlacklist;
+	protected HashSet<Long> _plansExcludeList;
 	
 	public CPlanMemoTable() {
 		_plans = new HashMap<>();
 		_hopRefs = new HashMap<>();
-		_plansBlacklist = new HashSet<>();
+		_plansExcludeList = new HashSet<>();
 	}
 	
 	public HashMap<Long, List<MemoTableEntry>> getPlans() {
 		return _plans;
 	}
 	
-	public HashSet<Long> getPlansBlacklisted() {
-		return _plansBlacklist;
+	public HashSet<Long> getPlansExcludeListed() {
+		return _plansExcludeList;
 	}
 	
 	public HashMap<Long, Hop> getHopRefs() {
@@ -95,7 +96,7 @@ public class CPlanMemoTable
 	public boolean contains(long hopID, boolean checkClose, TemplateType... type) {
 		if( !checkClose && type.length==1 )
 			return contains(hopID, type[0]);
-		Set<TemplateType> probe = UtilFunctions.asSet(type);
+		Set<TemplateType> probe = CollectionUtils.asSet(type);
 		return contains(hopID) && get(hopID).stream()
 			.anyMatch(p -> (!checkClose||!p.isClosed()) && probe.contains(p.type));
 	}
@@ -126,7 +127,7 @@ public class CPlanMemoTable
 	}
 	
 	public boolean containsTopLevel(long hopID) {
-		return !_plansBlacklist.contains(hopID)
+		return !_plansExcludeList.contains(hopID)
 			&& getBest(hopID) != null;
 	}
 	
@@ -161,9 +162,9 @@ public class CPlanMemoTable
 		_plans.get(hop.getHopID()).addAll(P.plans);
 	}
 	
-	public void remove(Hop hop, Set<MemoTableEntry> blackList) {
+	public void remove(Hop hop, Set<MemoTableEntry> excludeList) {
 		_plans.get(hop.getHopID())
-			.removeIf(p -> blackList.contains(p));
+			.removeIf(p -> excludeList.contains(p));
 	}
 	
 	public void remove(Hop hop, TemplateType type) {
@@ -252,14 +253,14 @@ public class CPlanMemoTable
 		}
 		
 		//prune dominated plans (e.g., plan referenced by other plan and this
-		//other plan is single consumer) by marking it as blacklisted because
+		//other plan is single consumer) by marking it as exclude-listed because
 		//the chain of entries is still required for cplan construction
 		if( SpoofCompiler.PLAN_SEL_POLICY.isHeuristic() ) {
 			for( Entry<Long, List<MemoTableEntry>> e : _plans.entrySet() )
 				for( MemoTableEntry me : e.getValue() ) {
 					for( int i=0; i<=2; i++ )
 						if( me.isPlanRef(i) && _hopRefs.get(me.input(i)).getParent().size()==1 )
-							_plansBlacklist.add(me.input(i));
+							_plansExcludeList.add(me.input(i));
 				}
 		}
 		
@@ -367,8 +368,8 @@ public class CPlanMemoTable
 			sb.append(Arrays.toString(e.getValue().toArray(new MemoTableEntry[0]))+"\n");
 		}
 		sb.append("----------------------------------\n");
-		sb.append("Blacklisted Plans: ");
-		sb.append(Arrays.toString(_plansBlacklist.toArray(new Long[0]))+"\n");
+		sb.append("ExcludeListed Plans: ");
+		sb.append(Arrays.toString(_plansExcludeList.toArray(new Long[0]))+"\n");
 		sb.append("----------------------------------\n");
 		return sb.toString();	
 	}

@@ -39,14 +39,9 @@ import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class UtilFunctions 
 {
@@ -760,52 +755,6 @@ public class UtilFunctions
 		return false;
 	}
 	
-	@SafeVarargs
-	public static <T> List<T> asList(List<T>... inputs) {
-		List<T> ret = new ArrayList<>();
-		for( List<T> list : inputs )
-			ret.addAll(list);
-		return ret;
-	}
-	
-	@SafeVarargs
-	public static <T> ArrayList<T> asArrayList(T... inputs) {
-		ArrayList<T> ret = new ArrayList<>();
-		for( T list : inputs )
-			ret.add(list);
-		return ret;
-	}
-	
-	@SafeVarargs
-	public static <T> Set<T> asSet(List<T>... inputs) {
-		Set<T> ret = new HashSet<>();
-		for( List<T> list : inputs )
-			ret.addAll(list);
-		return ret;
-	}
-	
-	@SafeVarargs
-	public static <T> Set<T> asSet(T[]... inputs) {
-		Set<T> ret = new HashSet<>();
-		for( T[] input : inputs )
-			for( T element : input )
-				ret.add(element);
-		return ret;
-	}
-	
-	@SafeVarargs
-	public static <T> Set<T> asSet(T... inputs) {
-		Set<T> ret = new HashSet<>();
-		for( T element : inputs )
-			ret.add(element);
-		return ret;
-	}
-	
-	public static <T> Stream<T> getStream(Iterator<T> iter) {
-		Iterable<T> iterable = () -> iter;
-		return StreamSupport.stream(iterable.spliterator(), false);
-	}
-
 	public static long prod(long[] arr) {
 		long ret = 1;
 		for(int i=0; i<arr.length; i++)

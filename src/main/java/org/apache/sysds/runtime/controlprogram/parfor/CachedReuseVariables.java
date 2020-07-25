@@ -46,7 +46,7 @@ public class CachedReuseVariables
 	}
 	
 	@SuppressWarnings("unused")
-	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> blacklist, Map<String, Broadcast<CacheBlock>> _brInputs, boolean cleanCache) {
+	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> excludeList, Map<String, Broadcast<CacheBlock>> _brInputs, boolean cleanCache) {
 
 		//fetch the broadcast variables
 		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS && !containsVars(pfid)) {
@@ -63,8 +63,8 @@ public class CachedReuseVariables
 			if( cleanCache )
 				_data.clear();
 			tmp = new LocalVariableMap(vars);
-			tmp.removeAllIn((blacklist instanceof HashSet) ?
-				(HashSet<String>)blacklist : new HashSet<>(blacklist));
+			tmp.removeAllIn((excludeList instanceof HashSet) ?
+				(HashSet<String>)excludeList : new HashSet<>(excludeList));
 			_data.put(pfid, new SoftReference<>(tmp));
 		}
 		//reuse existing reuse map

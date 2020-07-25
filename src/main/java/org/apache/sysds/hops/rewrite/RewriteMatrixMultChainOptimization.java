@@ -22,13 +22,13 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.utils.Explain;
 
 /**

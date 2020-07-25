@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -57,6 +56,7 @@ import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
 
@@ -330,11 +330,11 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
 			if( me.type == TemplateType.ROW && memo.contains(hopID, TemplateType.CELL)
 				&& isRowTemplateWithoutAgg(memo, memo.getHopRefs().get(hopID), new HashSet<Long>())) {
-				List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW); 
-				memo.remove(memo.getHopRefs().get(hopID), new HashSet<>(blacklist));
+				List<MemoTableEntry> excludeList = memo.get(hopID, TemplateType.ROW); 
+				memo.remove(memo.getHopRefs().get(hopID), new HashSet<>(excludeList));
 				if( LOG.isTraceEnabled() ) {
 					LOG.trace("Removed row memo table entries w/o aggregation: "
-						+ Arrays.toString(blacklist.toArray(new MemoTableEntry[0])));
+						+ Arrays.toString(excludeList.toArray(new MemoTableEntry[0])));
 				}
 			}
 		}
@@ -350,7 +350,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				MemoTableEntry rmEntry = TemplateOuterProduct.dropAlternativePlan(memo, me1, me2);
 				if( rmEntry != null ) {
 					memo.remove(memo.getHopRefs().get(hopID), Collections.singleton(rmEntry));
-					memo.getPlansBlacklisted().remove(rmEntry.input(rmEntry.getPlanRefIndex()));
+					memo.getPlansExcludeListed().remove(rmEntry.input(rmEntry.getPlanRefIndex()));
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed dominated outer product memo table entry: " + rmEntry);
 				}
@@ -838,8 +838,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			for( Long hopID : _aggregates.keySet() )
 				ret &= !that._inputAggs.contains(hopID);
 			//check partial shared reads
-			ret &= !CollectionUtils.intersection(
-				_fusedInputs, that._fusedInputs).isEmpty();
+			ret &= CollectionUtils.containsAny(_fusedInputs, that._fusedInputs);
 			//check consistent sizes (result correctness)
 			Hop in1 = _aggregates.values().iterator().next();
 			Hop in2 = that._aggregates.values().iterator().next();

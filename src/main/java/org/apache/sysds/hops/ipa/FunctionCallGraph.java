@@ -273,14 +273,14 @@ public class FunctionCallGraph
 	/**
 	 * Returns all functions that are reachable either directly or indirectly
 	 * form the main program, except the main program itself and the given 
-	 * blacklist of function names.
+	 * exclude-list of function names.
 	 * 
-	 * @param blacklist list of function keys to exclude
+	 * @param excludeList list of function keys to exclude
 	 * @return set of function keys (namespace and name)
 	 */
-	public Set<String> getReachableFunctions(Set<String> blacklist) {
+	public Set<String> getReachableFunctions(Set<String> excludeList) {
 		return _fGraph.keySet().stream()
-			.filter(p -> !blacklist.contains(p) && !MAIN_FUNCTION_KEY.equals(p))
+			.filter(p -> !excludeList.contains(p) && !MAIN_FUNCTION_KEY.equals(p))
 			.collect(Collectors.toSet());
 	}
 	

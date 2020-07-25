@@ -22,10 +22,10 @@ package org.apache.sysds.hops.codegen.cplan;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeMultiAgg extends CNodeTpl
@@ -181,7 +181,7 @@ public class CNodeMultiAgg extends CNodeTpl
 			return false;
 		CNodeMultiAgg that = (CNodeMultiAgg)o;
 		return super.equals(o)
-			&& CollectionUtils.isEqualCollection(_aggOps, that._aggOps)	
+			&& CollectionUtils.equals(_aggOps, that._aggOps)
 			&& equalInputReferences(
 				_outputs, that._outputs, _inputs, that._inputs);
 	}

@@ -128,7 +128,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			int nrows = subset ? 4 : 13;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain", "-stats","-args", 
+			programArgs = new String[]{"-stats","-args", 
 				HOME + "input/" + DATASET, String.valueOf(nrows), output("R") };
 			
 			runTest(true, false, null, -1); 

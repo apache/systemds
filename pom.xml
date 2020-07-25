@@ -979,12 +979,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>commons-collections</groupId>
-			<artifactId>commons-collections</artifactId>
-			<version>3.2.1</version>
-		</dependency>
-
 		<!-- fast java compiler for codegen, consistent version w/ spark -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>

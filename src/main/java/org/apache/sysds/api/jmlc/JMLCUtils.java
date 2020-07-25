@@ -51,16 +51,16 @@ public class JMLCUtils
 	 */
 	public static void cleanupRuntimeProgram( Program prog, String[] outputs) {
 		Map<String, FunctionProgramBlock> funcMap = prog.getFunctionProgramBlocks();
-		HashSet<String> blacklist = new HashSet<>(Arrays.asList(outputs));
+		HashSet<String> excludeList = new HashSet<>(Arrays.asList(outputs));
 		if( funcMap != null && !funcMap.isEmpty() ) {
 			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() ) {
 				FunctionProgramBlock fpb = e.getValue();
 				for( ProgramBlock pb : fpb.getChildBlocks() )
-					rCleanupRuntimeProgram(pb, blacklist);
+					rCleanupRuntimeProgram(pb, excludeList);
 			}
 		}
 		for( ProgramBlock pb : prog.getProgramBlocks() )
-			rCleanupRuntimeProgram(pb, blacklist);
+			rCleanupRuntimeProgram(pb, excludeList);
 	}
 	
 	/**

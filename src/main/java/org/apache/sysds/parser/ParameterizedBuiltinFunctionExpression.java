@@ -35,7 +35,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
-import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.runtime.util.CollectionUtils;
 
 
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 
@@ -286,7 +286,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Should provide more arguments for function " + fname, false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		//check for invalid parameters
-		Set<String> valid = UtilFunctions.asSet(Statement.PS_MODEL, Statement.PS_FEATURES, Statement.PS_LABELS, Statement.PS_VAL_FEATURES, Statement.PS_VAL_LABELS, Statement.PS_UPDATE_FUN, Statement.PS_AGGREGATION_FUN, Statement.PS_MODE, Statement.PS_UPDATE_TYPE, Statement.PS_FREQUENCY, Statement.PS_EPOCHS, Statement.PS_BATCH_SIZE, Statement.PS_PARALLELISM, Statement.PS_SCHEME, Statement.PS_HYPER_PARAMS, Statement.PS_CHECKPOINTING);
+		Set<String> valid = CollectionUtils.asSet(Statement.PS_MODEL, Statement.PS_FEATURES, Statement.PS_LABELS, Statement.PS_VAL_FEATURES, Statement.PS_VAL_LABELS, Statement.PS_UPDATE_FUN, Statement.PS_AGGREGATION_FUN, Statement.PS_MODE, Statement.PS_UPDATE_TYPE, Statement.PS_FREQUENCY, Statement.PS_EPOCHS, Statement.PS_BATCH_SIZE, Statement.PS_PARALLELISM, Statement.PS_SCHEME, Statement.PS_HYPER_PARAMS, Statement.PS_CHECKPOINTING);
 		checkInvalidParameters(getOpCode(), getVarParams(), valid);
 
 		// check existence and correctness of parameters
@@ -429,7 +429,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateExtractTriangular(DataIdentifier output,  Builtins op, boolean conditional) {
 		
 		//check for invalid parameters
-		Set<String> valid = UtilFunctions.asSet("target", "diag", "values");
+		Set<String> valid = CollectionUtils.asSet("target", "diag", "values");
 		checkInvalidParameters(op, getVarParams(), valid);
 		
 		//check existence and correctness of arguments
@@ -524,7 +524,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateRemoveEmpty(DataIdentifier output, boolean conditional) {
 		
 		//check for invalid parameters
-		Set<String> valid = UtilFunctions.asSet("target", "margin", "select", "empty.return");
+		Set<String> valid = CollectionUtils.asSet("target", "margin", "select", "empty.return");
 		Set<String> invalid = _varParams.keySet().stream()
 			.filter(k -> !valid.contains(k)).collect(Collectors.toSet());
 		if( !invalid.isEmpty() )

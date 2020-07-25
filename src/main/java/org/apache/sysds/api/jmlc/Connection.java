@@ -63,8 +63,8 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.DataConverter;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Interaction with SystemDS using the JMLC (Java Machine Learning Connector) API is initiated with
@@ -241,7 +241,7 @@ public class Connection implements Closeable
 			throw new LanguageException("Invalid argument names: "+Arrays.toString(invalidArgs));
 		
 		//check for valid names of input and output variables
-		String[] invalidVars = UtilFunctions.asSet(inputs, outputs).stream()
+		String[] invalidVars = CollectionUtils.asSet(inputs, outputs).stream()
 			.filter(k -> k==null || k.startsWith("$")).toArray(String[]::new);
 		if( invalidVars.length > 0 )
 			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));

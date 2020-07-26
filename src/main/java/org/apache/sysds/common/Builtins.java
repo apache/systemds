@@ -31,7 +31,7 @@ import org.apache.sysds.common.Types.ReturnType;
  * case of DML script, these functions are loaded during parsing. As
  * always, user-defined DML-bodied functions take precedence over all
  * builtin functions.
- * 
+ *
  * To add a new builtin script function, simply add the definition here
  * as well as a dml file in scripts/builtin with a matching name. On 
  * building SystemDS, these scripts are packaged into the jar as well.
@@ -82,11 +82,14 @@ public enum Builtins {
 	CUMSUM("cumsum", false),
 	CUMSUMPROD("cumsumprod", false),
 	CONFUSIONMATRIX("confusionMatrix", true),
+	CORRELATIONMATRIX("correlationMatrix", true),
+	DBSCAN("dbscan", true),
 	DETECTSCHEMA("detectSchema", false),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
+	EDM("edm", true),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
 	EXISTS("exists", false),
 	EXP("exp", false),
@@ -184,7 +187,7 @@ public enum Builtins {
 	VAR("var", false),
 	XOR("xor", false),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
-	
+
 	//parameterized builtin functions
 	CDF("cdf", false, true),
 	GROUPEDAGG("aggregate", "groupedAggregate", false, true),
@@ -215,27 +218,27 @@ public enum Builtins {
 	TRANSFORMENCODE("transformencode", false, true),
 	TRANSFORMMETA("transformmeta", false, true),
 	UPPER_TRI("upper.tri", false, true);
-	
+
 	Builtins(String name, boolean script) {
 		this(name, null, script, false, ReturnType.SINGLE_RETURN);
 	}
-	
+
 	Builtins(String name, boolean script, ReturnType retType) {
 		this(name, null, script, false, retType);
 	}
-	
+
 	Builtins(String name, boolean script, boolean parameterized) {
 		this(name, null, script, parameterized, ReturnType.SINGLE_RETURN);
 	}
-	
+
 	Builtins(String name, String alias, boolean script) {
 		this(name, alias, script, false, ReturnType.SINGLE_RETURN);
 	}
-	
+
 	Builtins(String name, String alias, boolean script, boolean parameterized) {
 		this(name, alias, script, parameterized, ReturnType.SINGLE_RETURN);
 	}
-	
+
 	Builtins(String name, String alias, boolean script, boolean parameterized, ReturnType retType) {
 		_name = name;
 		_alias = alias;
@@ -243,10 +246,10 @@ public enum Builtins {
 		_parameterized = parameterized;
 		_retType = retType;
 	}
-	
+
 	private final static String BUILTIN_DIR = "scripts/builtin/";
 	private final static HashMap<String, Builtins> _map = new HashMap<>();
-	
+
 	static {
 		//materialize lookup map for all builtin names
 		for( Builtins b : EnumSet.allOf(Builtins.class) ) {
@@ -255,52 +258,52 @@ public enum Builtins {
 				_map.put(b.getAlias(), b);
 		}
 	}
-	
+
 	private final String _name;
 	private final String _alias;
 	private final boolean _script;
 	private final boolean _parameterized;
 	private final ReturnType _retType;
-	
+
 	public String getName() {
 		return _name;
 	}
-	
+
 	public String getAlias() {
 		return _alias;
 	}
-	
+
 	public boolean isScript() {
 		return _script;
 	}
-	
+
 	public boolean isParameterized() {
 		return _parameterized;
 	}
-	
+
 	public boolean isMultiReturn() {
 		return _retType == ReturnType.MULTI_RETURN;
 	}
-	
+
 	public static boolean contains(String name, boolean script, boolean parameterized) {
 		Builtins tmp = get(name);
 		return tmp != null && script == tmp.isScript()
 			&& parameterized == tmp.isParameterized();
 	}
-	
+
 	public static Builtins get(String name) {
 		if( name.equals("list") )
 			return LIST; //unparameterized
 		return _map.get(name);
 	}
-	
+
 	public static Builtins get(String name, boolean params) {
 		if( name.equals("list") )
 			return params ? LISTNV : LIST;
 		Builtins tmp = get(name);
 		return tmp != null && (params == tmp.isParameterized()) ? tmp : null;
 	}
-	
+
 	public static String getFilePath(String name) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(BUILTIN_DIR);
@@ -308,7 +311,7 @@ public enum Builtins {
 		sb.append(".dml");
 		return sb.toString();
 	}
-	
+
 	public static String getInternalFName(String name, DataType dt) {
 		return (dt.isMatrix() ? "m_" : "s_") + name;
 	}

@@ -19,13 +19,12 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import static org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -68,21 +67,19 @@ public abstract class PSWorker implements Serializable
 
 	protected void setupUpdateFunction(String updFunc, ExecutionContext ec) {
 		// Get the update function
-		String[] cfn = ParamservUtils.getCompleteFuncName(updFunc, PS_FUNC_PREFIX);
+		String[] cfn = DMLProgram.splitFunctionKey(updFunc);
 		String ns = cfn[0];
 		String fname = cfn[1];
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname);
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, false);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 		CPOperand[] boundInputs = inputs.stream()
 			.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
 			.toArray(CPOperand[]::new);
-		ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
-			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs,
-			inputNames, func.getInputParamNames(), outputNames, "update function");
+		_inst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
+			func.getInputParamNames(), outputNames, "update function");
 
 		// Check the inputs of the update function
 		checkInput(false, inputs, DataType.MATRIX, Statement.PS_FEATURES);

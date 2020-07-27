@@ -153,17 +153,11 @@ public class DMLScript
 	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
 	public static void main(String[] args)
-		throws IOException
+		throws IOException, ParseException, DMLScriptException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		try {
-			DMLScript.executeScript(conf, otherArgs);
-		}
-		catch (ParseException | DMLScriptException e) {
-			// In case of DMLScriptException, simply print the error message.
-			System.err.println(e.getMessage());
-		}
+		DMLScript.executeScript(conf, otherArgs);
 	}
 
 	/**
@@ -173,19 +167,35 @@ public class DMLScript
 	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
+	 * @throws IOException If an internal IO Exception happened.
 	 */
-	@SuppressWarnings("null")
-	public static boolean executeScript( Configuration conf, String[] args ) {
+	public static boolean executeScript( Configuration conf, String[] args ) 
+		throws  IOException, ParseException, DMLScriptException
+	{
 		//parse arguments and set execution properties
 		ExecMode oldrtplatform  = EXEC_MODE;  //keep old rtplatform
 		ExplainType oldexplain  = EXPLAIN;     //keep old explain
 
 		DMLOptions dmlOptions = null;
 		
+		try{
+			dmlOptions = DMLOptions.parseCLArguments(args);
+		}
+		catch(AlreadySelectedException e) {
+			LOG.error("Mutually exclusive options were selected. " + e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			return false;
+		}
+		catch(org.apache.commons.cli.ParseException e) {
+			LOG.error("Parsing Exception " + e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			return false;
+		}
+
 		try
 		{
-			dmlOptions = DMLOptions.parseCLArguments(args);
-			
 			STATISTICS          = dmlOptions.stats;
 			STATISTICS_COUNT    = dmlOptions.statsCount;
 			JMLC_MEM_STATISTICS = dmlOptions.memStats;
@@ -232,24 +242,6 @@ public class DMLScript
 			//Step 3: invoke dml script
 			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
 			execute(dmlScriptStr, fnameOptConfig, argVals, args);
-		}
-		catch(AlreadySelectedException e) {
-			System.err.println("Mutually exclusive options were selected. " + e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", dmlOptions.options );
-			return false;
-		}
-		catch(org.apache.commons.cli.ParseException e) {
-			System.err.println(e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", dmlOptions.options );
-		}
-		catch (ParseException | DMLScriptException e) {
-			throw e;
-		}
-		catch(Exception ex) {
-			LOG.error("Failed to execute DML script.", ex);
-			throw new DMLException(ex);
 		}
 		finally {
 			//reset runtime platform and visualize flag

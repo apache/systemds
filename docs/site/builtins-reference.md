@@ -32,6 +32,7 @@ limitations under the License.
     * [`discoverFD`-Function](#discoverFD-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
+    * [`hyperband`-Function](#hyperband-function)
     * [`img_brightness`-Function](#img_brightness-function)
     * [`img_crop`-Function](#img_crop-function)
     * [`img_mirror`-Function](#img_mirror-function)
@@ -301,6 +302,55 @@ paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
 [B, opt]= gridSearch(X=X, y=y, train="lm", predict="lmPredict", params=params, paramValues=paramRanges, verbose = TRUE)
 ```
 
+## `hyperband`-Function
+
+The `hyperband`-function is used for hyper parameter optimization and is based on multi-armed bandits and early elimination. 
+Through multiple parallel brackets and consecutive trials it will return the hyper parameter combination which performed best
+on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions with given ranges; Those
+make up the candidates for `hyperband`.
+Notes: 
+* `hyperband` is hard-coded for `lmCG`, and uses `lmpredict` for validation
+* `hyperband` is hard-coded to use the number of iterations as a resource 
+* `hyperband` can only optimize continuous hyperparameters
+
+### Usage
+```r
+hyperband(X_train, y_train, X_val, y_val, params, paramRanges, R, eta, verbose)
+```
+
+### Arguments
+| Name         | Type           | Default  | Description |
+| :------      | :------------- | -------- | :---------- |
+| X_train      | Matrix[Double] | required | Input Matrix of training vectors. |
+| y_train      | Matrix[Double] | required | Labels for training vectors. |
+| X_val        | Matrix[Double] | required | Input Matrix of validation vectors. |
+| y_val        | Matrix[Double] | required | Labels for validation vectors. |
+| params       | List[String]   | required | List of parameters to optimize. |
+| paramRanges  | Matrix[Double] | required | The min and max values for the uniform distributions to draw from. One row per hyper parameter, first column specifies min, second column max value. |
+| R            | Scalar[int]    | 81       | Controls number of candidates evaluated. |
+| eta          | Scalar[int]    | 3        | Determines fraction of candidates to keep after each trial. |
+| verbose      | Boolean        | `TRUE`   | If `TRUE` print messages are activated. |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | 1-column matrix of weights of best performing candidate |
+| Frame[Unknown] | hyper parameters of best performing candidate |
+
+### Example
+```r
+X_train = rand(rows=50, cols=10);
+y_train = rowSums(X_train) + rand(rows=50, cols=1);
+X_val = rand(rows=50, cols=10);
+y_val = rowSums(X_val) + rand(rows=50, cols=1);
+
+params = list("reg");
+paramRanges = matrix("0 20", rows=1, cols=2);
+
+[bestWeights, optHyperParams] = hyperband(X_train=X_train, y_train=y_train, 
+    X_val=X_val, y_val=y_val, params=params, paramRanges=paramRanges);
+```
+
 ## `img_brightness`-Function
 
 The `img_brightness`-function is an image data augumentation function.
@@ -435,6 +485,11 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 | String | The mapping of records to centroids |
 | String | The output matrix with the centroids |
 
+### Example
+```r
+X = rand (rows = 3972, cols = 972)
+kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50)
+```
 
 ## `lm`-Function
 

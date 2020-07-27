@@ -19,15 +19,17 @@
 
 package org.apache.sysds.test.functions.paramserv;
 
+import org.junit.Ignore;
 import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.parser.Statement;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
 @net.jcip.annotations.NotThreadSafe
+@Ignore
 public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "paramserv-test";
@@ -66,16 +68,16 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservWorkerFailed() {
-		runDMLTest(TEST_NAME2, true, DMLException.class, "Invalid indexing by name in unnamed list: worker_err.");
+		runDMLTest(TEST_NAME2, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: worker_err.");
 	}
 
 	@Test
 	public void testParamservAggServiceFailed() {
-		runDMLTest(TEST_NAME3, true, DMLException.class, "Invalid indexing by name in unnamed list: agg_service_err.");
+		runDMLTest(TEST_NAME3, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: agg_service_err.");
 	}
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException, String errMessage) {
-		programArgs = new String[] { "-explain" };
+		programArgs = new String[] {};
 		internalRunDMLTest(testname, exceptionExpected, expectedException, errMessage);
 	}
 
@@ -99,7 +101,7 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 	}
 
 	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme) {
-		programArgs = new String[] { "-explain", "-nvargs", "mode=REMOTE_SPARK", "epochs=" + epochs, "workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize, "scheme=" + scheme};
+		programArgs = new String[] { "-nvargs", "mode=REMOTE_SPARK", "epochs=" + epochs, "workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize, "scheme=" + scheme};
 		internalRunDMLTest(TEST_NAME1, false, null, null);
 	}
 }

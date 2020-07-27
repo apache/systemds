@@ -23,9 +23,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -36,6 +33,8 @@ import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * GENERAL NOTE
@@ -67,99 +66,99 @@ public class DataTypeChangeTest extends AutomatedTestBase
 	
 	//if conditional type changes
 	@Test
-	public void testDataTypeChangeValidate1a() { runTest("dt_change_1a", false); }
+	public void testDataTypeChangeValidate1a() { runTest("dt_change_1a", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate1b() { runTest("dt_change_1b", false); }
+	public void testDataTypeChangeValidate1b() { runTest("dt_change_1b", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate1c() { runTest("dt_change_1c", true); }
+	public void testDataTypeChangeValidate1c() { runTest("dt_change_1c", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate1d() { runTest("dt_change_1d", true); }
+	public void testDataTypeChangeValidate1d() { runTest("dt_change_1d", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate1e() { runTest("dt_change_1e", true); }
+	public void testDataTypeChangeValidate1e() { runTest("dt_change_1e", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate1f() { runTest("dt_change_1f", true); }
+	public void testDataTypeChangeValidate1f() { runTest("dt_change_1f", LanguageException.class); }
 
 	@Test
-	public void testDataTypeChangeValidate1g() { runTest("dt_change_1g", true); }
+	public void testDataTypeChangeValidate1g() { runTest("dt_change_1g", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate1h() { runTest("dt_change_1h", true); }
+	public void testDataTypeChangeValidate1h() { runTest("dt_change_1h", LanguageException.class); }
 	
 	//for conditional type changes
 	@Test
-	public void testDataTypeChangeValidate2a() { runTest("dt_change_2a", false); }
+	public void testDataTypeChangeValidate2a() { runTest("dt_change_2a", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate2b() { runTest("dt_change_2b", false); }
+	public void testDataTypeChangeValidate2b() { runTest("dt_change_2b", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate2c() { runTest("dt_change_2c", true); }
+	public void testDataTypeChangeValidate2c() { runTest("dt_change_2c", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate2d() { runTest("dt_change_2d", true); }
+	public void testDataTypeChangeValidate2d() { runTest("dt_change_2d", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate2e() { runTest("dt_change_2e", true); }
+	public void testDataTypeChangeValidate2e() { runTest("dt_change_2e", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate2f() { runTest("dt_change_2f", true); }
+	public void testDataTypeChangeValidate2f() { runTest("dt_change_2f", LanguageException.class); }
 	
 	//while conditional type changes
 	@Test
-	public void testDataTypeChangeValidate3a() { runTest("dt_change_3a", false); }
+	public void testDataTypeChangeValidate3a() { runTest("dt_change_3a", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate3b() { runTest("dt_change_3b", false); }
+	public void testDataTypeChangeValidate3b() { runTest("dt_change_3b", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate3c() { runTest("dt_change_3c", true); }
+	public void testDataTypeChangeValidate3c() { runTest("dt_change_3c", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate3d() { runTest("dt_change_3d", true); }
+	public void testDataTypeChangeValidate3d() { runTest("dt_change_3d", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate3e() { runTest("dt_change_3e", true); }
+	public void testDataTypeChangeValidate3e() { runTest("dt_change_3e", LanguageException.class); }
 	
 	@Test
-	public void testDataTypeChangeValidate3f() { runTest("dt_change_3f", true); }
+	public void testDataTypeChangeValidate3f() { runTest("dt_change_3f", LanguageException.class); }
 	
 	//sequence conditional type changes
 	@Test
-	public void testDataTypeChangeValidate4a() { runTest("dt_change_4a", false); }
+	public void testDataTypeChangeValidate4a() { runTest("dt_change_4a", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate4b() { runTest("dt_change_4b", false); }
+	public void testDataTypeChangeValidate4b() { runTest("dt_change_4b", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate4c() { runTest("dt_change_4c", false); }
+	public void testDataTypeChangeValidate4c() { runTest("dt_change_4c", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate4d() { runTest("dt_change_4d", false); }
+	public void testDataTypeChangeValidate4d() { runTest("dt_change_4d", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate4e() { runTest("dt_change_4e", false); }
+	public void testDataTypeChangeValidate4e() { runTest("dt_change_4e", null); }
 	
 	@Test
-	public void testDataTypeChangeValidate4f() { runTest("dt_change_4f", false); }
+	public void testDataTypeChangeValidate4f() { runTest("dt_change_4f", null); }
 	
 	
 
-	private void runTest( String testName, boolean exceptionExpected ) 
+	private void runTest( String testName, Class<?> exceptionExpected ) 
 	{
         String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + testName + ".dml";
 		programArgs = new String[]{};
 		
 		//validate test only
-		runValidateTest(fullDMLScriptName, exceptionExpected);
+		runValidateTest(fullDMLScriptName, exceptionExpected != null);
 		
 		//integration test from outside SystemDS
-		runTest(true, exceptionExpected, DMLException.class, -1);
+		runTest(true, exceptionExpected != null, exceptionExpected, -1);
 	}
 	
 

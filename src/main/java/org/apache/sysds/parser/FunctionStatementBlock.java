@@ -19,17 +19,19 @@
 
 package org.apache.sysds.parser;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysds.hops.FunctionOp.FunctionType;
+import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.common.Types.ValueType;
 
 
-public class FunctionStatementBlock extends StatementBlock 
+public class FunctionStatementBlock extends StatementBlock implements FunctionBlock
 {
-		
 	private boolean _recompileOnce = false;
 	private boolean _nondeterministic = false;
 	
@@ -51,7 +53,7 @@ public class FunctionStatementBlock extends StatementBlock
 		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
 			
 		// validate all function input parameters
-		ArrayList<DataIdentifier> inputValues = fstmt.getInputParams();
+		List<DataIdentifier> inputValues = fstmt.getInputParams();
 		for( DataIdentifier inputValue : inputValues ) {
 			//check all input matrices have value type double
 			if( inputValue.getDataType()==DataType.MATRIX && inputValue.getValueType()!=ValueType.FP64 ) {
@@ -76,7 +78,7 @@ public class FunctionStatementBlock extends StatementBlock
 		
 		// for each return value, check variable is defined and validate the return type
 		// if returnValue type known incorrect, then throw exception
-		ArrayList<DataIdentifier> returnValues = fstmt.getOutputParams();
+		List<DataIdentifier> returnValues = fstmt.getOutputParams();
 		for (DataIdentifier returnValue : returnValues){
 			DataIdentifier curr = ids.getVariable(returnValue.getName());
 			if (curr == null){
@@ -162,7 +164,7 @@ public class FunctionStatementBlock extends StatementBlock
 				// IF the variable is NOT set in the while loop PRIOR to this stmt block, 
 				// THEN needs to be generated
 				if (!_kill.getVariableNames().contains(varName)){
-					_gen.addVariable(varName, sb._gen.getVariable(varName));	
+					_gen.addVariable(varName, sb._gen.getVariable(varName));
 				}
 			}
 			
@@ -249,5 +251,11 @@ public class FunctionStatementBlock extends StatementBlock
 	
 	public boolean isNondeterministic() {
 		return _nondeterministic;
+	}
+
+	@Override
+	public FunctionBlock cloneFunctionBlock() {
+		return ProgramConverter
+			.createDeepCopyFunctionStatementBlock(this, new HashSet<>(), new HashSet<>());
 	}
 }

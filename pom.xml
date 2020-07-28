@@ -176,8 +176,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<!-- Include signature files so that recent versions of Java will run 
-						the resulting jar without complaining about "Invalid signature file digest 
+					<!-- Include signature files so that recent versions of Java will run
+						the resulting jar without complaining about "Invalid signature file digest
 						for Manifest main attributes".
 						Furthermore, the excluded notice and license files will be explicitly
 						added by the resource transformers above -->
@@ -250,7 +250,7 @@
 				</executions>
 			</plugin>
 
-			
+
 			<plugin> <!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -521,6 +521,7 @@
 								<exclude>src/main/python/docs/build/**/*</exclude>
 								<exclude>docs/api/**/*</exclude>
 								<exclude>docs/_site/**/*</exclude>
+								<exclude>docs/site/run_issues.md</exclude>
 								<exclude>docs/.jekyll-cache/**/*</exclude>
 								<exclude>docs/css/bootstrap.min.css</exclude>
 								<exclude>docs/css/pygments-default.css</exclude>
@@ -573,7 +574,7 @@
 		</profile>
 
 		<profile>
-			<!-- Profile to create binary distributions. Execute with `mvn clean package 
+			<!-- Profile to create binary distributions. Execute with `mvn clean package
 				-P distribution` -->
 			<id>distribution</id>
 			<build>
@@ -710,7 +711,7 @@
 			</build>
 		</profile>
 	</profiles>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>org.jcuda</groupId>
@@ -970,7 +971,7 @@
 			<version>0.10</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<!--Used for annotations in tests to execute tests in thread safe manner-->
 			<groupId>com.github.stephenc.jcip</groupId>

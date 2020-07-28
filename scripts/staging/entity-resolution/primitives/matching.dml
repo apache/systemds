@@ -1,0 +1,108 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Calculates the cosine similarity between rows of the given matrix X.
+# WARNING: Division by zero will occur for zero rows.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X              matrix  ---       Numeric matrix.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# score         matrix   Symmetric matrix of cosine similarity between rows of X.
+# --------------------------------------------------------------------------------------------
+cosine = function(Matrix[Double] X) return (Matrix[Double] COS) {
+  Row_norm = sqrt(rowSums(X ^ 2));
+  NORM = Row_norm %*% t(Row_norm);
+  DOT = X %*% t(X);
+  COS = DOT / NORM;
+}
+
+# Calculates the cosine similarity between rows of X and rows of Y.
+# Uses an epsilon value for the euclidean norm of zero rows in order to avoid division by zero.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X              matrix  ---       Numeric matrix. ncols must match Y.
+# Y              matrix  ---       Numeric matrix. ncols must match X.
+# epsilon        double  ---       The value to replace the norm of zero rows with.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# COS           matrix   nrows(X) by nrows(Y) matrix of cosine similarity between rows of X and Y.
+# --------------------------------------------------------------------------------------------
+cosine2_eps = function(Matrix[Double] X, Matrix[Double] Y, Double epsilon) return (Matrix[Double] COS) {
+  X_row_norm = sqrt(rowSums(X ^ 2));
+  X_row_norm = X_row_norm + (X_row_norm < epsilon) * epsilon
+  Y_row_norm = sqrt(rowSums(Y ^ 2));
+  Y_row_norm = Y_row_norm + (Y_row_norm < epsilon) * epsilon
+  NORM = X_row_norm %*% t(Y_row_norm);
+  DOT = X %*% t(Y);
+  COS = DOT / NORM;
+}
+
+# Calculates the cosine similarity between rows of X and rows of Y.
+# Uses an epsilon value for the euclidean norm of zero rows in order to avoid division by zero.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X              matrix  ---       Numeric matrix. ncols must match Y.
+# Y              matrix  ---       Numeric matrix. ncols must match X.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# COS           matrix   nrows(X) by nrows(Y) matrix of cosine similarity between rows of X and Y.
+# --------------------------------------------------------------------------------------------
+cosine2 = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] COS) {
+  COS = cosine2_eps(X, Y, 1e-6)
+}
+
+# Sets values of the given matrix that are below the given threshold to zero.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X              matrix  ---       Numeric matrix.
+# threshold      double  ---       Values in X below this value are set to 0.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# THRES          matrix   X with values below threshold set to 0.
+# --------------------------------------------------------------------------------------------
+tresholding = function(Matrix[Double] X, Double threshold) return (Matrix[Double] THRES) {
+  THRES = (X > threshold) * X;
+}

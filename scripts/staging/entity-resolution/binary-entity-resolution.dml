@@ -1,0 +1,102 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# THIS SCRIPT PERFORMS AN ENTITY RESOLUTION PIPELINE FOR BINARY MATCHING ON TWO FILES
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME           TYPE   DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# FX              String  ---     Location to read the frame of tokens in bow format for the first dataset
+#                                 Each line contains comma separated list of id, token and value
+# FY              String  ---     Location to read the frame of tokens in bow format for the second dataset
+#                                 Each line contains comma separated list of id, token and value
+# OUT             String  ---     Location to save the output of maching pairs
+#                                 Each line contains comma separated ids of one matched pair
+#                                 First column is for the first dataset, while second columns is the id of the second one
+#                                 Third column provides the similarity score
+# threshold       Double  0.9     Threshold to be considered as a match
+# num_hashtables  Int     6       Number of hashtables for LSH blocking.
+# num_hyperplanes Int     4       Number of hyperplanes for LSH blocking.
+# use_tokens      Boolean TRUE    Whether to use the tokens of FX and FY to generate predictions
+# use_embeddings  Boolean FALSE   Whether to use the embeddings of XE and YE to generate predictions
+# XE              String  ---     Location to read the frame of embedding matrix for the first dataset
+#                                 Required if use_embeddings is set to TRUE
+# YE              String  ---     Location to read the frame of embedding matrix for the second dataset
+#                                Required if use_embeddings is set to TRUE
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: frame of maching pairs
+# ---------------------------------------------------------------------------------------------
+
+source("./scripts/staging/entity-resolution/primitives/postprocessing.dml") as post;
+source("./scripts/staging/entity-resolution/primitives/preprocessing.dml") as pre;
+source("./scripts/staging/entity-resolution/primitives/pipeline.dml") as pipe;
+
+# Command Line Arguments
+fileFX = $FX;
+fileFY = $FY;
+fileOUT = $OUT;
+
+threshold = ifdef($threshold, 0.9);
+num_hashtables = ifdef($num_hashtables, 6);
+num_hyperplanes = ifdef($num_hyperplanes, 4);
+
+use_tokens = ifdef($use_tokens, TRUE);
+use_embeddings = ifdef($use_embeddings, FALSE);
+# file XE and YE is only required if using embeddings
+fileXE = ifdef($XE, "");
+fileYE = ifdef($YE, "");
+
+# Read data
+FX = read(fileFX);
+FY = read(fileFY);
+if (use_embeddings) {
+  if (fileXE == "" | fileYE == "") {
+    print("You need to specify file XE and XY when use_embeddings is set to TRUE");
+  } else {
+    X_embeddings = read(fileXE);
+    Y_embeddings = read(fileYE);
+  }
+}
+
+# Convert data
+[X, Y, M_tokens, MX_ids, MY_ids] = pre::convert_frame_tokens_to_matrix_bow_2(FX,FY);
+if (use_tokens & use_embeddings) {
+  X = cbind(X, X_embeddings);
+  Y = cbind(Y, Y_embeddings);
+} else if (use_tokens) {
+  # Nothing to do in this case, since X already contains tokens
+} else if (use_embeddings) {
+  X = X_embeddings;
+  Y = Y_embeddings;
+} else {
+  print("Either use_tokens or use_embeddings needs to be TRUE, using tokens only as default.");
+}
+# Perform matching
+THRES = pipe::binary_entity_resolution_pipeline_lsh(X, Y, num_hashtables, num_hyperplanes, threshold);
+sparse = post::untable(THRES);
+
+# Write results
+X_dec = transformdecode(target=sparse[,1], meta=MX_ids[,1], spec="{recode:[C1]}");
+Y_dec = transformdecode(target=sparse[,2], meta=MY_ids[,1], spec="{recode:[C1]}");
+output = cbind(cbind(X_dec, Y_dec), as.frame(sparse[,3]));
+write(output, fileOUT, sep=",", sparse=FALSE, format="csv");

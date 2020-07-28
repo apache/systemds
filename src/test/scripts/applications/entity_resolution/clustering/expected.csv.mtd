@@ -1,0 +1,7 @@
+{
+  "data_type": "frame",
+  "schema": "STRING,STRING,FP64,",
+  "rows": 6,
+  "cols": 3,
+  "format": "csv"
+}

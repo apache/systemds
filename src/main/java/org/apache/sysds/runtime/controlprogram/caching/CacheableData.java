@@ -335,6 +335,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _metaData.getDataCharacteristics();
 	}
 
+	public long getNumRows() {
+		return getDataCharacteristics().getRows();
+	}
+
+	public long getNumColumns() {
+		return getDataCharacteristics().getCols();
+	}
+	
 	public abstract void refreshMetaData();
 
 	/**

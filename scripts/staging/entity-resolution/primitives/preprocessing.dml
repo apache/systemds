@@ -1,0 +1,85 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Converts a dataframe with form (id, token, weight) into a contingency table bag-of-words
+# representation.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME              TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# FX                frame  ---       A dataframe with form (id, token, weight).
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X             matrix  ---       A contingency table. Shape is (num_unique_ids, num_unique_tokens).
+# MX            frame   ---       The recoding meta-information for ids and tokens that is needed
+#                                  to convert indices in the X matrix back to their original
+#                                  id/token.
+# --------------------------------------------------------------------------------------------
+convert_frame_tokens_to_matrix_bow = function(Frame[Unknown] FX) return (Matrix[Double] X, Frame[String] MX) {
+  jspecx = "{recode:[C1,C2]}";
+  [X0, MX] = transformencode(target=FX, spec=jspecx);
+  X = table(X0[,1], X0[,2], X0[,3]);
+}
+
+# Converts two dataframes with form (id, token, weight) into contingency table bag-of-words
+# representations. Makes sure both contingency tables are using the same vocabulary.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME              TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# FX                frame  ---       A dataframe with form (id, token, weight).
+# FY                frame  ---       A dataframe with form (id, token, weight).
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# X             matrix  ---       The contingency table for FX.
+#                                  Shape is (X_num_unique_ids, XY_num_unique_tokens).
+#                                  Uses same token order and encoding as Y.
+# Y             matrix  ---       The contingency table for FY.
+#                                  Shape is (Y_num_unique_ids, XY_num_unique_tokens).
+#                                  Uses same token order and encoding as X.
+# M_tokens      frame   ---       The recoding meta-information for tokens that is needed
+#                                  to convert column indices in the contingency tables back
+#                                  to their token strings.
+# MX_ids        frame   ---       The recoding meta-information for X ids that is needed
+#                                  to convert row indices in X back to ids for FX.
+# MY_ids        frame   ---       The recoding meta-information for Y ids that is needed
+#                                  to convert row indices in Y back to ids for FY.
+# --------------------------------------------------------------------------------------------
+convert_frame_tokens_to_matrix_bow_2 = function(Frame[Unknown] FX, Frame[Unknown] FY) return (Matrix[Double] X, Matrix[Double] Y, Frame[String] M_tokens, Frame[String] MX_ids, Frame[String] MY_ids) {
+  [E_tokens, M_tokens] = transformencode(target=rbind(FX[,2], FY[,2]), spec="{recode:[C1]}");
+  [Y_ids, MY_ids] = transformencode(target=FY[,1], spec="{recode:[C1]}");
+  [X_ids, MX_ids] = transformencode(target=FX[,1], spec="{recode:[C1]}");
+
+  X_tokens = E_tokens[1:nrow(FX),];
+  Y_tokens = E_tokens[nrow(FX):nrow(E_tokens),];
+
+  ncols = max(max(X_tokens), max(Y_tokens));
+  X = table(X_ids[,1], X_tokens[,1], as.matrix(FX[,3]), nrow(X_ids), ncols);
+  Y = table(Y_ids[,1], Y_tokens[,1], as.matrix(FY[,3]), nrow(Y_ids), ncols);
+}

@@ -102,4 +102,12 @@ public class DataRange implements Serializable {
 	public String toString(){
 		return Arrays.toString(new String[]{Arrays.toString(_beginDims), Arrays.toString(_endDims)});
 	}
+
+	@Override
+	public boolean equals(Object other){
+		if ( other instanceof DataRange ){
+			DataRange otherRange = (DataRange)other;
+			return Arrays.equals(_beginDims,otherRange.getBeginDims()) && Arrays.equals(_endDims,otherRange.getEndDims());
+		} else return false;
+	}
 }

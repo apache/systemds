@@ -19,15 +19,29 @@
 
 package org.apache.sysds.runtime.privacy;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.privacy.FineGrained.DataRange;
 import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacy;
 import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacyList;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
+import org.apache.wink.json4j.OrderedJSONObject;
 
 /**
  * PrivacyConstraint holds all privacy constraints for data in the system at
  * compile time and runtime.
  */
-public class PrivacyConstraint
+public class PrivacyConstraint implements Externalizable
 {
 	public enum PrivacyLevel {
 		None,               // No data exchange constraints. Data can be shared with anyone.
@@ -124,6 +138,67 @@ public class PrivacyConstraint
 			return (privateRanges != null && privateRanges.length > 0) 
 				|| (aggregateRanges != null && aggregateRanges.length > 0);
 		} else return false;
+	}
+
+	/**
+	 * Get privacy constraints and put them into JSON object. 
+	 * @param json JSON object in which the privacy constraints are put
+	 * @return JSON object including the privacy constraints
+	 * @throws JSONException
+	 */
+	public JSONObject toJson(JSONObject json) throws JSONException {
+		if ( getPrivacyLevel() != null && getPrivacyLevel() != PrivacyLevel.None )
+			json.put(DataExpression.PRIVACY, getPrivacyLevel().name());
+		if ( hasFineGrainedConstraints() ) {
+			DataRange[] privateRanges = getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.Private);
+			JSONArray privateRangesJson = getJsonArray(privateRanges);
+			
+			DataRange[] aggregateRanges = getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation);
+			JSONArray aggregateRangesJson = getJsonArray(aggregateRanges);
+			
+			OrderedJSONObject rangesJson = new OrderedJSONObject();
+			rangesJson.put(PrivacyLevel.Private.name(), privateRangesJson);
+			rangesJson.put(PrivacyLevel.PrivateAggregation.name(), aggregateRangesJson);
+			json.put(DataExpression.FINE_GRAINED_PRIVACY, rangesJson);
+		}
+		return json;
+	}
+
+	private JSONArray getJsonArray(DataRange[] ranges) throws JSONException {
+		JSONArray rangeObjects = new JSONArray();
+		for ( DataRange range : ranges ){
+			List<Long> rangeBegin = Arrays.stream(range.getBeginDims()).boxed().collect(Collectors.toList());
+			List<Long> rangeEnd = Arrays.stream(range.getEndDims()).boxed().collect(Collectors.toList());
+			JSONArray beginJson = new JSONArray(rangeBegin);
+			JSONArray endJson = new JSONArray(rangeEnd);
+			JSONArray rangeObject = new JSONArray();
+			rangeObject.put(beginJson);
+			rangeObject.put(endJson);
+			rangeObjects.add(rangeObject);
+		}
+		return rangeObjects;
+	}
+
+	@Override
+	public void readExternal(ObjectInput is) throws IOException {
+		privacyLevel = PrivacyLevel.values()[is.readInt()];
+		try {
+			Object fineGrainedObject = is.readObject();
+			if ( fineGrainedObject != null )
+				fineGrainedPrivacy = (FineGrainedPrivacy) fineGrainedObject;
+		} catch (ClassNotFoundException exception){
+			throw new DMLException(exception);
+		}
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput objectOutput) throws IOException {
+		objectOutput.writeInt(getPrivacyLevel().ordinal());
+		if (fineGrainedPrivacy != null && fineGrainedPrivacy.hasConstraints())
+			objectOutput.writeObject(fineGrainedPrivacy);
+		else
+			objectOutput.writeObject(null);
+
 	}
 
 }

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.privacy.FineGrained;
 
+import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +32,12 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
  * Simple implementation of retrieving fine-grained privacy constraints
  * based on pairs in an ArrayList.
  */
-public class FineGrainedPrivacyList implements FineGrainedPrivacy {
+public class FineGrainedPrivacyList implements FineGrainedPrivacy, Serializable {
 
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 4542440774374226842L;
 	private ArrayList<Map.Entry<DataRange, PrivacyLevel>> constraintCollection = new ArrayList<>();
 
 	@Override
@@ -91,5 +96,34 @@ public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 		constraintMap.put(PrivacyLevel.Private.name(), privateRanges.toArray(new long[0][][]));
 		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), privateRanges.toArray(new long[0][][]));
 		return constraintMap;
+	}
+
+	/**
+	 * Return all fine-grained privacy constraints as an arraylist. 
+	 * @return all constraints
+	 */
+	public ArrayList<Map.Entry<DataRange, PrivacyLevel>> getAllConstraintsList() {
+		return constraintCollection;
+	}
+
+	@Override
+	public boolean equals(Object other){
+		if ( other instanceof FineGrainedPrivacyList ){
+			FineGrainedPrivacyList otherFGP = (FineGrainedPrivacyList) other;
+			if ( !otherFGP.hasConstraints() && !hasConstraints() ) return true;
+			if ( !otherFGP.hasConstraints() || !hasConstraints() ) return false;
+
+			return otherFGP.getAllConstraintsList().equals(constraintCollection);
+			
+		} else return false;
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder stringBuilder = new StringBuilder();
+		for ( Map.Entry<DataRange,PrivacyLevel> entry : constraintCollection ){
+			stringBuilder.append(entry.getKey().toString() + " : " + entry.getValue().name());
+		}
+		return stringBuilder.toString();
 	}
 }

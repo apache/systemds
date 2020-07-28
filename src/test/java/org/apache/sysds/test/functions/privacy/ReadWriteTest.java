@@ -19,7 +19,14 @@
 
 package org.apache.sysds.test.functions.privacy;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -46,6 +53,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 			new TestConfiguration(TEST_CLASS_DIR, "ReadWriteTest", new String[]{}));
 		addTestConfiguration("ReadWriteTest2",
 			new TestConfiguration(TEST_CLASS_DIR, "ReadWriteTest2", new String[]{"b"}));
+		addTestConfiguration("serialize",
+			new TestConfiguration(TEST_CLASS_DIR, "serialize", new String[]{}));
 	}
 
 
@@ -92,6 +101,73 @@ public class ReadWriteTest extends AutomatedTestBase {
 		MatrixCharacteristics dataCharacteristics = new MatrixCharacteristics(m,n,k,k);
 		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
 		return a;
+	}
+
+	@Test
+	public void serializeTest() throws IOException {
+		serializeBaseTest(PrivacyLevel.Private, null);
+	}
+
+	@Test
+	public void serializeFineGrainedTest() throws IOException {
+		FineGrainedPrivacy fineGrained = new FineGrainedPrivacyList();
+		fineGrained.put(new DataRange(new long[]{1,2,3}, new long[]{4,5,6}), PrivacyLevel.Private);
+		serializeBaseTest(PrivacyLevel.PrivateAggregation, fineGrained);
+	}
+
+	@Test
+	public void serializeFineGrainedTest2() throws IOException {
+		FineGrainedPrivacy fineGrained = new FineGrainedPrivacyList();
+		fineGrained.put(new DataRange(new long[]{1,2,3}, new long[]{4,5,6}), PrivacyLevel.Private);
+		fineGrained.put(new DataRange(new long[]{7,8,9}, new long[]{10,11,12}), PrivacyLevel.Private);
+		serializeBaseTest(PrivacyLevel.PrivateAggregation, fineGrained);
+	}
+
+	@Test
+	public void serializeFineGrainedTest3() throws IOException {
+		FineGrainedPrivacy fineGrained = new FineGrainedPrivacyList();
+		fineGrained.put(new DataRange(new long[]{1,2,3}, new long[]{4,5,6}), PrivacyLevel.Private);
+		fineGrained.put(new DataRange(new long[]{7,8,9}, new long[]{10,11,12}), PrivacyLevel.Private);
+		serializeBaseTest(PrivacyLevel.None, fineGrained);
+	}
+
+	@Test
+	public void serializeFineGrainedTest4() throws IOException {
+		FineGrainedPrivacy fineGrained = new FineGrainedPrivacyList();
+		fineGrained.put(new DataRange(new long[]{1,2,3}, new long[]{4,5,6}), PrivacyLevel.PrivateAggregation);
+		fineGrained.put(new DataRange(new long[]{7,8,9}, new long[]{10,11,12}), PrivacyLevel.PrivateAggregation);
+		serializeBaseTest(PrivacyLevel.PrivateAggregation, fineGrained);
+	}
+
+	@Test
+	public void serializeFineGrainedTest5() throws IOException {
+		FineGrainedPrivacy fineGrained = new FineGrainedPrivacyList();
+		fineGrained.put(new DataRange(new long[]{1,2,3}, new long[]{4,5,6}), PrivacyLevel.PrivateAggregation);
+		fineGrained.put(new DataRange(new long[]{7,8,9}, new long[]{10,11,12}), PrivacyLevel.Private);
+		serializeBaseTest(PrivacyLevel.None, fineGrained);
+	}
+
+	private void serializeBaseTest(PrivacyLevel privacyLevel, FineGrainedPrivacy fineGrainedPrivacy) throws IOException {
+		TestConfiguration config = availableTestConfigurations.get("serialize");
+		loadTestConfiguration(config);
+
+		//Writing
+		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacyLevel);
+		if ( fineGrainedPrivacy != null )
+			privacyConstraint.setFineGrainedPrivacyConstraints(fineGrainedPrivacy);
+		String outputPath = baseDirectory + INPUT_DIR + "serialize";
+		FileOutputStream fileOutput = new FileOutputStream(outputPath);
+		ObjectOutputStream outputStream = new ObjectOutputStream(fileOutput);
+		privacyConstraint.writeExternal(outputStream);
+
+		//Reading
+		PrivacyConstraint loadedConstraint = new PrivacyConstraint();
+		ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(outputPath));
+		loadedConstraint.readExternal(inputStream);
+
+		//Comparing
+		assertEquals(privacyConstraint.getPrivacyLevel(), loadedConstraint.getPrivacyLevel());
+		assertEquals(privacyConstraint.getFineGrainedPrivacy(), loadedConstraint.getFineGrainedPrivacy());
 	}
 	
 }

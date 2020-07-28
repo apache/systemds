@@ -31,7 +31,6 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.OrderedJSONObject;
 import org.apache.sysds.common.Types.DataType;
@@ -49,8 +48,6 @@ import org.apache.sysds.runtime.io.MatrixReaderFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.runtime.privacy.FineGrained.DataRange;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -59,10 +56,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class HDFSTool 
@@ -474,38 +468,10 @@ public class HDFSTool
 
 		//add privacy constraints
 		if ( privacyConstraint != null ){
-			if ( privacyConstraint.getPrivacyLevel() != null && privacyConstraint.getPrivacyLevel() != PrivacyLevel.None )
-				mtd.put(DataExpression.PRIVACY, privacyConstraint.getPrivacyLevel().name());
-			if ( privacyConstraint.hasFineGrainedConstraints() ) {
-				DataRange[] privateRanges = privacyConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.Private);
-				JSONArray privateRangesJson = getJsonArray(privateRanges);
-				
-				DataRange[] aggregateRanges = privacyConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation);
-				JSONArray aggregateRangesJson = getJsonArray(aggregateRanges);
-				
-				OrderedJSONObject rangesJson = new OrderedJSONObject();
-				rangesJson.put(PrivacyLevel.Private.name(), privateRangesJson);
-				rangesJson.put(PrivacyLevel.PrivateAggregation.name(), aggregateRangesJson);
-				mtd.put(DataExpression.FINE_GRAINED_PRIVACY, rangesJson);
-			}
+			privacyConstraint.toJson(mtd);
 		}
 
 		return mtd.toString(4); // indent with 4 spaces	
-	}
-
-	private static JSONArray getJsonArray(DataRange[] ranges) throws JSONException {
-		JSONArray rangeObjects = new JSONArray();
-		for ( DataRange range : ranges ){
-			List<Long> rangeBegin = Arrays.stream(range.getBeginDims()).boxed().collect(Collectors.toList());
-			List<Long> rangeEnd = Arrays.stream(range.getEndDims()).boxed().collect(Collectors.toList());
-			JSONArray beginJson = new JSONArray(rangeBegin);
-			JSONArray endJson = new JSONArray(rangeEnd);
-			JSONArray rangeObject = new JSONArray();
-			rangeObject.put(beginJson);
-			rangeObject.put(endJson);
-			rangeObjects.add(rangeObject);
-		}
-		return rangeObjects;
 	}
 
 	public static double[][] readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)

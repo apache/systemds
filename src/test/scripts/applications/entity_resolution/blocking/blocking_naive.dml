@@ -19,31 +19,8 @@
 #
 #-------------------------------------------------------------
 
-name: Application Test
+source("scripts/staging/entity-resolution/primitives/blocking.dml") as blocking;
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
-
-jobs:
-  applicationsTests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        tests: [A,B,C,E,G,H,I,L,M,N,O,P,S,U,W]
-        os: [ubuntu-latest]
-    name:  Ap Test ${{ matrix.tests }} 
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-
-    - name: Run all tests starting with "${{ matrix.tests }}"
-      uses: ./.github/action/
-      id: test
-      with:
-        test-to-run: org.apache.sysds.test.applications.${{ matrix.tests }}**
+A = read($inFile);
+B = blocking::naive_blocking(A, $targetNumBlocks);
+write(B, $outFile);

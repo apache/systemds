@@ -52,13 +52,14 @@ public class Lineage {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
-		if (_activeDedupBlock == null)
+		if (_activeDedupBlock == null || !_activeDedupBlock.isAllPathsTaken())
 			_map.trace(inst, ec);
 	}
 	
 	public void traceCurrentDedupPath() {
 		if( _activeDedupBlock != null ) {
 			long lpath = _activeDedupBlock.getPath();
+			LineageDedupUtils.setDedupMap(_activeDedupBlock, lpath);
 			LineageMap lm = _activeDedupBlock.getMap(lpath);
 			if (lm != null)
 				_map.processDedupItem(lm, lpath);
@@ -80,6 +81,14 @@ public class Lineage {
 	
 	public LineageItem get(String varName) {
 		return _map.get(varName);
+	}
+	
+	public void setDedupBlock(LineageDedupBlock ldb) {
+		_activeDedupBlock = ldb;
+	}
+	
+	public LineageMap getLineageMap() {
+		return _map;
 	}
 	
 	public void set(String varName, LineageItem li) {
@@ -120,9 +129,30 @@ public class Lineage {
 		}
 		_activeDedupBlock = _dedupBlocks.get(pb); //null if invalid
 	}
+
+	public void initializeDedupBlock(ProgramBlock pb, ExecutionContext ec) {
+		if( !(pb instanceof ForProgramBlock || pb instanceof WhileProgramBlock) )
+			throw new DMLRuntimeException("Invalid deduplication block: "+ pb.getClass().getSimpleName());
+		if (!_dedupBlocks.containsKey(pb)) {
+			// valid only if doesn't contain a nested loop
+			boolean valid = LineageDedupUtils.isValidDedupBlock(pb, false);
+			// count distinct paths and store in the dedupblock
+			_dedupBlocks.put(pb, valid? LineageDedupUtils.initializeDedupBlock(pb, ec) : null);
+		}
+		_activeDedupBlock = _dedupBlocks.get(pb); //null if invalid
+	}
+	
+	public void createDedupPatch(ProgramBlock pb, ExecutionContext ec) {
+		if (_activeDedupBlock != null)
+			LineageDedupUtils.setNewDedupPatch(_activeDedupBlock, pb, ec);
+	}
 	
 	public void clearDedupBlock() {
 		_activeDedupBlock = null;
+	}
+	
+	public void clearLineageMap() {
+		_map.resetLineageMaps();
 	}
 	
 	public Map<String,String> serialize() {

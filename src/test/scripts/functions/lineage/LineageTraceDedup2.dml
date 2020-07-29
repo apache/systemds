@@ -22,7 +22,7 @@
 X = read($1);
 
 R = X;
-for(i in 1:2){ #10
+for(i in 1:5){ #10
   if(i %% 2 == 1)
     R = R + 1 / 2;
   else
@@ -37,5 +37,9 @@ for(i in 1:2){ #10
 }
 
 R = R * 3;
+
+for (j in 1:2) {
+  R = R * 4;
+}
 
 write(R, $2, format="text");

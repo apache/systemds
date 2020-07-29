@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
@@ -640,6 +641,9 @@ public class LineageItemUtils {
 					if( !tmp.isLiteral() && tmp.getName().equals(name) )
 						item.getInputs()[i] = dedupInput;
 				}
+				if (li.getType() == LineageItemType.Creation) {
+					item.getInputs()[i] = dedupInput;
+				}
 				
 				rSetDedupInputOntoOutput(name, li, dedupInput);
 			}
@@ -817,7 +821,7 @@ public class LineageItemUtils {
 	}
 	
 	public static LineageItem[] getLineageItemInputstoSB(ArrayList<String> inputs, ExecutionContext ec) {
-		if (ReuseCacheType.isNone())
+		if (ReuseCacheType.isNone() && !DMLScript.LINEAGE_DEDUP)
 			return null;
 		
 		ArrayList<CPOperand> CPOpInputs = inputs.size() > 0 ? new ArrayList<>() : null;

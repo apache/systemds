@@ -238,8 +238,10 @@ public class LineageMap {
 		
 		if (DMLScript.LINEAGE_DEDUP) {
 			LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage.dedup");
-			li = LineageItemUtils.rDecompress(li);
+			//li = LineageItemUtils.rDecompress(li);
+			// TODO:gracefully serialize the dedup maps without decompressing
 		}
-		LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage");
+		else
+			LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage");
 	}
 }

@@ -45,7 +45,7 @@ m_dbscan = function (Matrix[double] X, double eps = 0.5, int minPts = 5)
     neighbours = edm(X);
 
     # find similar points
-    corrMatrix = correlationMatrix(t(X));
+    corrMatrix = cor(t(X));
     corrMatrix = replace(target=corrMatrix, pattern=0/0, replacement=0);
     sim = ((neighbours == 0) & (corrMatrix == 1)) - diag(diag(corrMatrix));
 

@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.FunctionDictionary;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -35,12 +36,11 @@ public class Program
 	
 	private DMLProgram _prog;
 	private ArrayList<ProgramBlock> _programBlocks;
-
-	private HashMap<String, HashMap<String,FunctionProgramBlock>> _namespaceFunctions;
+	private HashMap<String, FunctionDictionary<FunctionProgramBlock>> _namespaces;
 	
 	public Program() {
-		_namespaceFunctions = new HashMap<>();
-		_namespaceFunctions.put(DMLProgram.DEFAULT_NAMESPACE, new HashMap<>());
+		_namespaces = new HashMap<>();
+		_namespaces.put(DMLProgram.DEFAULT_NAMESPACE, new FunctionDictionary<>());
 		_programBlocks = new ArrayList<>();
 	}
 	
@@ -58,58 +58,79 @@ public class Program
 	}
 	
 	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb) {
+		addFunctionProgramBlock(namespace, fname, fpb, true);
+	}
+	
+	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb, boolean opt) {
 		if( fpb == null )
 			throw new DMLRuntimeException("Invalid null function program block.");
-		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
-		HashMap<String,FunctionProgramBlock> namespaceBlocks = _namespaceFunctions.get(namespace);
-		if (namespaceBlocks == null){
-			namespaceBlocks = new HashMap<>();
-			_namespaceFunctions.put(namespace,namespaceBlocks);
-		}
-		namespaceBlocks.put(fname,fpb);
+		namespace = getSafeNamespace(namespace);
+		FunctionDictionary<FunctionProgramBlock> dict = _namespaces.get(namespace);
+		if (dict == null)
+			_namespaces.put(namespace, dict = new FunctionDictionary<>());
+		dict.addFunction(fname, fpb, opt);
 	}
 
 	public synchronized void removeFunctionProgramBlock(String namespace, String fname) {
-		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
-		HashMap<String,FunctionProgramBlock> namespaceBlocks = null;
-		if( _namespaceFunctions.containsKey(namespace) ){
-			namespaceBlocks = _namespaceFunctions.get(namespace);
-			if( namespaceBlocks.containsKey(fname) )
-				namespaceBlocks.remove(fname);
+		namespace = getSafeNamespace(namespace);
+		FunctionDictionary<?> dict = null;
+		if( _namespaces.containsKey(namespace) ){
+			dict = _namespaces.get(namespace);
+			if( dict.containsFunction(fname) )
+				dict.removeFunction(fname);
 		}
 	}
 
-	public synchronized HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(){
+	public HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(){
+		return getFunctionProgramBlocks(true);
+	}
+	
+	public synchronized HashMap<String,FunctionProgramBlock> getFunctionProgramBlocks(boolean opt){
 		HashMap<String,FunctionProgramBlock> retVal = new HashMap<>();
-		
-		//create copy of function program blocks
-		for (String namespace : _namespaceFunctions.keySet()){
-			HashMap<String,FunctionProgramBlock> namespaceFSB = _namespaceFunctions.get(namespace);
-			for( Entry<String, FunctionProgramBlock> e: namespaceFSB.entrySet() ){
-				String fname = e.getKey(); 
-				FunctionProgramBlock fpb = e.getValue();
-				String fKey = DMLProgram.constructFunctionKey(namespace, fname);
-				retVal.put(fKey, fpb);
-			}
+		for (Entry<String,FunctionDictionary<FunctionProgramBlock>> namespace : _namespaces.entrySet()){
+			if( namespace.getValue().getFunctions(opt) != null )
+				for( Entry<String, FunctionProgramBlock> e2 : namespace.getValue().getFunctions(opt).entrySet() ){
+					String fKey = DMLProgram.constructFunctionKey(namespace.getKey(), e2.getKey());
+					retVal.put(fKey, e2.getValue());
+				}
 		}
-		
 		return retVal;
 	}
 	
 	public synchronized boolean containsFunctionProgramBlock(String namespace, String fname) {
-		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
-		return _namespaceFunctions.containsKey(namespace)
-			&& _namespaceFunctions.get(namespace).containsKey(fname);
+		namespace = getSafeNamespace(namespace);
+		return _namespaces.containsKey(namespace)
+			&& _namespaces.get(namespace).containsFunction(fname);
+	}
+	
+	public synchronized boolean containsFunctionProgramBlock(String fkey, boolean opt) {
+		String[] parts = DMLProgram.splitFunctionKey(fkey);
+		return containsFunctionProgramBlock(parts[0], parts[1], opt);
+	}
+	
+	public synchronized boolean containsFunctionProgramBlock(String namespace, String fname, boolean opt) {
+		namespace = getSafeNamespace(namespace);
+		return _namespaces.containsKey(namespace)
+			&& _namespaces.get(namespace).containsFunction(fname, opt);
 	}
 	
 	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) {
-		namespace = (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
-		HashMap<String,FunctionProgramBlock> namespaceFunctBlocks = _namespaceFunctions.get(namespace);
-		if (namespaceFunctBlocks == null)
+		return getFunctionProgramBlock(namespace, fname, true);
+	}
+	
+	public synchronized FunctionProgramBlock getFunctionProgramBlock(String fkey, boolean opt) {
+		String[] parts = DMLProgram.splitFunctionKey(fkey);
+		return getFunctionProgramBlock(parts[0], parts[1], opt);
+	}
+	
+	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname, boolean opt) {
+		namespace = getSafeNamespace(namespace);
+		FunctionDictionary<FunctionProgramBlock> dict = _namespaces.get(namespace);
+		if (dict == null)
 			throw new DMLRuntimeException("namespace " + namespace + " is undefined.");
-		FunctionProgramBlock retVal = namespaceFunctBlocks.get(fname);
+		FunctionProgramBlock retVal = dict.getFunction(fname, opt);
 		if (retVal == null)
-			throw new DMLRuntimeException("function " + fname + " is undefined in namespace " + namespace);
+			throw new DMLRuntimeException("function " + fname + " ("+opt+") is undefined in namespace " + namespace);
 		
 		return retVal;
 	}
@@ -143,16 +164,18 @@ public class Program
 		ret._programBlocks.addAll(_programBlocks);
 		//shallow copy of all functions, except external 
 		//functions, which require a deep copy
-		for( Entry<String, HashMap<String, FunctionProgramBlock>> e1 : _namespaceFunctions.entrySet() )
-			for( Entry<String, FunctionProgramBlock> e2 : e1.getValue().entrySet() ) {
-				FunctionProgramBlock fpb = e2.getValue();
-				ret.addFunctionProgramBlock(e1.getKey(), e2.getKey(), fpb);
-			}
+		for( Entry<String, FunctionDictionary<FunctionProgramBlock>> e1 : _namespaces.entrySet() )
+			for( Entry<String, FunctionProgramBlock> e2 : e1.getValue().getFunctions().entrySet() )
+				ret.addFunctionProgramBlock(e1.getKey(), e2.getKey(), e2.getValue());
 		return ret;
 	}
 	
 	@Override
 	public Object clone() {
 		return clone(true);
+	}
+	
+	private static String getSafeNamespace(String namespace) {
+		return (namespace == null) ? DMLProgram.DEFAULT_NAMESPACE : namespace;
 	}
 }

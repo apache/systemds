@@ -542,4 +542,9 @@ public class Types
 			}
 		}
 	}
+	
+	/** Common type for both function statement blocks and function program blocks **/
+	public static interface FunctionBlock {
+		public FunctionBlock cloneFunctionBlock();
+	} 
 }

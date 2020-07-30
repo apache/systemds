@@ -19,13 +19,14 @@
 
 package org.apache.sysds.test.functions.misc;
 
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class FunctionPotpourriTest extends AutomatedTestBase 
 {
@@ -48,6 +49,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME17 = "FunPotpourriNamedArgsQuotedAssign";
 	private final static String TEST_NAME18 = "FunPotpourriMultiReturnBuiltin1";
 	private final static String TEST_NAME19 = "FunPotpourriMultiReturnBuiltin2";
+	private final static String TEST_NAME20 = "FunPotpourriNestedParforEval";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -74,124 +76,132 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME17, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME17, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME18, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME18, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME19, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME19, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME20, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME20, new String[] { "R" }) );
 	}
 
 	@Test
 	public void testFunctionNoReturn() {
-		runFunctionTest( TEST_NAME1, false );
+		runFunctionTest( TEST_NAME1, null );
 	}
 	
 	@Test
 	public void testFunctionComments() {
-		runFunctionTest( TEST_NAME2, false );
+		runFunctionTest( TEST_NAME2, null );
 	}
 	
 	@Test
 	public void testFunctionNoReturnSpec() {
-		runFunctionTest( TEST_NAME3, false );
+		runFunctionTest( TEST_NAME3, null );
 	}
 	
 	@Test
 	public void testFunctionEval() {
-		runFunctionTest( TEST_NAME4, false );
+		runFunctionTest( TEST_NAME4, null );
 	}
 	
 	@Test
 	public void testFunctionSubsetReturn() {
-		runFunctionTest( TEST_NAME5, false );
+		runFunctionTest( TEST_NAME5, null );
 	}
 	
 	@Test
 	public void testFunctionSubsetReturnDead() {
-		runFunctionTest( TEST_NAME6, false );
+		runFunctionTest( TEST_NAME6, null );
 	}
 	
 	@Test
+	@Ignore
 	public void testFunctionNamedArgsSingle() {
-		runFunctionTest( TEST_NAME7, false );
+		runFunctionTest( TEST_NAME7, ParseException.class );
 	}
 	
 	@Test
 	public void testFunctionNamedArgsSingleErr() {
-		runFunctionTest( TEST_NAME7, true );
+		runFunctionTest( TEST_NAME7, ParseException.class );
 	}
 	
 	@Test
+	@Ignore
 	public void testFunctionNamedArgsMulti() {
-		runFunctionTest( TEST_NAME8, false );
+		runFunctionTest( TEST_NAME8, ParseException.class);
 	}
 	
 	@Test
 	public void testFunctionNamedArgsMultiErr() {
-		runFunctionTest( TEST_NAME8, true );
+		runFunctionTest( TEST_NAME8, ParseException.class );
 	}
-	
+
 	@Test
 	public void testFunctionNamedArgsPartial() {
-		runFunctionTest( TEST_NAME9, true );
+		runFunctionTest( TEST_NAME9, LanguageException.class );
 	}
 	
 	@Test
 	public void testFunctionNamedArgsUnkown1() {
-		runFunctionTest( TEST_NAME10, true );
+		runFunctionTest( TEST_NAME10, LanguageException.class );
 	}
 	
 	@Test
 	public void testFunctionNamedArgsUnkown2() {
-		runFunctionTest( TEST_NAME11, true );
+		runFunctionTest( TEST_NAME11, NullPointerException.class );
 	}
 	
 	@Test
 	public void testFunctionNamedArgsIPA() {
-		runFunctionTest( TEST_NAME12, false );
+		runFunctionTest( TEST_NAME12, null );
 	}
 	
 	@Test
 	public void testFunctionDefaultArgsScalar() {
-		runFunctionTest( TEST_NAME13, false );
+		runFunctionTest( TEST_NAME13, null );
 	}
 	
 	@Test
 	public void testFunctionDefaultArgsMatrix() {
-		runFunctionTest( TEST_NAME14, false );
+		runFunctionTest( TEST_NAME14, null );
 	}
 	
 	@Test
 	public void testFunctionDefaultArgsScalarMatrix1() {
-		runFunctionTest( TEST_NAME15, false );
+		runFunctionTest( TEST_NAME15, null );
 	}
 	
 	@Test
 	public void testFunctionDefaultArgsScalarMatrix2() {
-		runFunctionTest( TEST_NAME16, false );
+		runFunctionTest( TEST_NAME16, null );
 	}
 	
 	@Test
 	public void testFunctionNamedArgsQuotedAssign() {
-		runFunctionTest( TEST_NAME17, false );
+		runFunctionTest( TEST_NAME17, null );
 	}
 	
 	@Test
 	public void testFunctionMultiReturnBuiltin1() {
-		runFunctionTest( TEST_NAME18, false );
+		runFunctionTest( TEST_NAME18, null );
 	}
 	
 	@Test
 	public void testFunctionMultiReturnBuiltin2() {
-		runFunctionTest( TEST_NAME19, false );
+		runFunctionTest( TEST_NAME19, null );
 	}
 	
-	private void runFunctionTest(String testName, boolean error) {
+	@Test
+	public void testFunctionNestedParforEval() {
+		runFunctionTest( TEST_NAME20, null );
+	}
+	
+	private void runFunctionTest(String testName, Class<?> error) {
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-explain","hops", "-stats",
+		programArgs = new String[]{"-explain", "hops", "-stats",
 			"-args", String.valueOf(error).toUpperCase()};
-		
-		//run script and compare output
-		runTest(true, error, DMLException.class, -1);
+
+		runTest(true, error != null, error, -1);
+
 		if( testName.equals(TEST_NAME18) )
 			Assert.assertTrue(heavyHittersContainsString("print"));
 	}

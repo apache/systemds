@@ -40,6 +40,7 @@ import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -310,7 +311,7 @@ public class LiteralReplacement
 			
 			if(    data instanceof DataOp && vars.keySet().contains(data.getName())
 				&& isIntValueDataLiteral(rl, vars) && isIntValueDataLiteral(ru, vars) 
-				&& isIntValueDataLiteral(cl, vars) && isIntValueDataLiteral(cu, vars)  ) 
+				&& isIntValueDataLiteral(cl, vars) && isIntValueDataLiteral(cu, vars)  )
 			{
 				long rlval = getIntValueDataLiteral(rl, vars);
 				long ruval = getIntValueDataLiteral(ru, vars);
@@ -435,10 +436,10 @@ public class LiteralReplacement
 
 	private static boolean isIntValueDataLiteral(Hop h, LocalVariableMap vars)
 	{
-		return (  (h instanceof DataOp && vars.keySet().contains(h.getName())) 
-				|| h instanceof LiteralOp
-				||(h instanceof UnaryOp && (((UnaryOp)h).getOp()==OpOp1.NROW || ((UnaryOp)h).getOp()==OpOp1.NCOL)
-				   && h.getInput().get(0) instanceof DataOp && vars.keySet().contains(h.getInput().get(0).getName())) );
+		return ( (h instanceof DataOp && vars.keySet().contains(h.getName())) 
+			|| h instanceof LiteralOp
+			||(h instanceof UnaryOp && (((UnaryOp)h).getOp()==OpOp1.NROW || ((UnaryOp)h).getOp()==OpOp1.NCOL)
+				&& h.getInput().get(0) instanceof DataOp && vars.keySet().contains(h.getInput().get(0).getName())) );
 	}
 	
 	private static long getIntValueDataLiteral(Hop hop, LocalVariableMap vars)
@@ -447,26 +448,22 @@ public class LiteralReplacement
 		
 		try 
 		{
-			if( hop instanceof LiteralOp )
-			{
+			if( hop instanceof LiteralOp ) {
 				value = HopRewriteUtils.getIntValue((LiteralOp)hop);
 			}
-			else if( hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.NROW )
-			{
+			else if( hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.NROW ) {
 				//get the dimension information from the matrix object because the hop
 				//dimensions might not have been updated during recompile
-				MatrixObject mo = (MatrixObject)vars.get(hop.getInput().get(0).getName());
+				CacheableData<?> mo = (CacheableData<?>)vars.get(hop.getInput().get(0).getName());
 				value = mo.getNumRows();
 			}
-			else if( hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.NCOL )
-			{
+			else if( hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.NCOL ) {
 				//get the dimension information from the matrix object because the hop
 				//dimensions might not have been updated during recompile
-				MatrixObject mo = (MatrixObject)vars.get(hop.getInput().get(0).getName());
+				CacheableData<?> mo = (CacheableData<?>)vars.get(hop.getInput().get(0).getName());
 				value = mo.getNumColumns();
 			}
-			else
-			{
+			else {
 				ScalarObject sdat = (ScalarObject) vars.get(hop.getName());
 				value = sdat.getLongValue();
 			}
@@ -522,5 +519,4 @@ public class LiteralReplacement
 		
 		return val;
 	}
-
 }

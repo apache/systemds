@@ -38,7 +38,7 @@ public abstract class CPInstruction extends Instruction
 		AggregateUnary, AggregateBinary, AggregateTernary,
 		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
 		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
-		Builtin, Reorg, Variable, External, Append, Rand, QSort, QPick,
+		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, Reshape, Partition, Compression, SpoofFused,
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql }
 

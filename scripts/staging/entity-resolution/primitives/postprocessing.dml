@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Inverse operation of table. Converts a contingency table/adjacency matrix to a list of tuples
+# in the form (id1, id2, value) representing edges in the case of an adjacency matrix.
+#
+# The offsets can be used in order to restore the original ids in case the input to table was
+# concatenated from two datasets.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME              TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X                 matrix  ---       A contingency table/adjacency matrix.
+# row_offset        Integer ---       The number of rows of the first concatenated dataset.
+#                                      Use 0 for the default case.
+# col_offset        Integer ---       The number of columns of the first concatenated dataset.
+#                                      Use 0 for the default case.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# SPARSE        matrix  ---       List of tuples in the form (id1, id2, value).
+# --------------------------------------------------------------------------------------------
+untable_offset = function(Matrix[Double] X, Integer row_offset, Integer col_offset) return (Matrix[Double] SPARSE) {
+  n_row = nrow(X);
+  n_col = ncol(X);
+  n = n_row * n_col;
+
+  mat1 = seq(1+row_offset,n_row+row_offset) %*% matrix(1, rows=1, cols=n_col);
+  col1 = matrix(mat1, rows=n, cols=1, byrow=TRUE);
+  # col1 is a vector of indices repeated like 111 222 333 ...
+
+  mat2 = seq(1+col_offset,n_col+col_offset) %*% matrix(1, rows=1, cols=n_row);
+  col2 = matrix(mat2, rows=n, cols=1, byrow=FALSE);
+  # col2 is a vector of indices repeated like 123 123 123 ...
+
+  col3 = matrix(X, rows=n, cols=1, byrow=TRUE);
+  dense = cbind(col1, col2, col3);
+
+  SPARSE = removeEmpty(target=dense, margin="rows", select=dense[,3]);
+}
+
+# Inverse operation of table. Converts a contingency table/adjacency matrix to a list of tuples
+# in the form (id1, id2, value) representing edges in the case of an adjacency matrix.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME              TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# X                 matrix  ---       A contingency table/adjacency matrix.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# SPARSE        matrix  ---       List of tuples in the form (id1, id2, value).
+# --------------------------------------------------------------------------------------------
+untable = function(Matrix[Double] X) return (Matrix[Double] SPARSE) {
+  SPARSE = untable_offset(X, 0, 0);
+}

@@ -1,0 +1,117 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# THIS SCRIPT PERFORMS AN ENTITY RESOLUTION PIPELINE FOR CLUSTERING ON A SINGLE FILE
+# CONSISTS OF BLOCKING, MATCHING, AND CLUSTERING
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME           TYPE   DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# FX              String  ---     Location to read the frame of tokens in bow format
+#                                 Each line contains comma separated list of id, token and value
+# OUT             String  ---     Location to save the output of maching pairs
+#                                 Each line contains comma separated ids of one matched pair
+#                                 Third column provides the similarity score
+# threshold       Double  0.9     Threshold to be considered as a match
+# blocking_method String  naive   Possible values: ["naive", "lsh"].
+# num_blocks      Int     1       Number of blocks for naive blocking
+# num_hashtables  Int     6       Number of hashtables for LSH blocking.
+# num_hyperplanes Int     4       Number of hyperplanes for LSH blocking.
+
+# use_tokens      Boolean TRUE    Whether to use the tokens of FX to generate predictions
+# use_embeddings  Boolean FALSE   Whether to use the embeddings of XE to generate predictions
+# XE              String  ---     Location to read the frame of embedding matrix
+#                                 Required if use_embeddings is set to TRUE
+# store_mapping   Boolean FALSE   Whether to store the mapping of transformencode
+# MX              String  ---     Location to write the frame of mapping
+#                                Required if store_mapping is set to TRUE
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: frame of maching pairs
+# ---------------------------------------------------------------------------------------------
+
+source("./scripts/staging/entity-resolution/primitives/preprocessing.dml") as pre;
+source("./scripts/staging/entity-resolution/primitives/postprocessing.dml") as post;
+source("./scripts/staging/entity-resolution/primitives/pipeline.dml") as pipe;
+
+# Command Line Arguments
+fileFX = $FX;
+fileOUT = $OUT;
+
+threshold = ifdef($threshold, 0.9);
+blocking_method = ifdef($blocking_method, "lsh");
+num_blocks = ifdef($num_blocks, 1);
+num_hyperplanes = ifdef($num_hyperplanes, 4);
+num_hashtables = ifdef($num_hashtables, 6);
+use_tokens = ifdef($use_tokens, TRUE);
+use_embeddings = ifdef($use_embeddings, FALSE);
+# file XE is only required if using embeddings
+fileXE = ifdef($XE, "");
+# mapping file is required for evaluation
+store_mapping = ifdef($store_mapping, FALSE);
+fileMX = ifdef($MX, "");
+
+if (!(blocking_method == "naive" | blocking_method == "lsh")) {
+  print("ERROR: blocking method must be in ['naive', 'lsh']");
+}
+
+# Read data
+FX = read(fileFX);
+if (use_embeddings) {
+  if (fileXE == "")
+    print("You need to specify file XE when use_embeddings is set to TRUE");
+  else
+    X_embeddings = read(fileXE);
+}
+
+# Convert data
+[X, MX] = pre::convert_frame_tokens_to_matrix_bow(FX);
+if (use_tokens & use_embeddings) {
+  X = cbind(X, X_embeddings);
+} else if (use_tokens) {
+  # Nothing to do in this case, since X already contains tokens
+} else if (use_embeddings) {
+  X = X_embeddings;
+} else {
+  print("Either use_tokens or use_embeddings needs to be TRUE, using tokens only as default.");
+}
+
+if (store_mapping) {
+  if (fileMX == "")
+    print("You need to specify file MX when store_mapping is set to TRUE.");
+  else 
+    write(MX, fileMX);
+}
+
+# Perform clustering
+if (blocking_method == "naive") {
+  CLUSTER = pipe::entity_clustering_pipeline(X, num_blocks, threshold);
+} else if (blocking_method == "lsh") {
+  CLUSTER = pipe::entity_clustering_pipeline_lsh(X, num_hashtables, num_hyperplanes, threshold);
+}
+MATCH = (CLUSTER > 0);
+
+# Write results
+sparse = post::untable(CLUSTER);
+dec = transformdecode(target=sparse, meta=cbind(MX[,1],MX[,1]), spec="{recode:[C1,C2]}");
+output = cbind(dec, as.frame(sparse[,3]));
+write(output, fileOUT, sep=",", sparse=FALSE, format="csv");

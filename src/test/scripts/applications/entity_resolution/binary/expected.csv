@@ -1,0 +1,6 @@
+itemA,itemC,1.0
+itemA,itemD,1.0
+itemC,itemA,1.0
+itemC,itemD,1.0
+itemD,itemA,1.0
+itemD,itemC,1.0

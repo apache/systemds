@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Types.ValueType;
@@ -32,7 +31,8 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
+import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 public class DecoderFactory 
 {
@@ -40,7 +40,6 @@ public class DecoderFactory
 		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns());
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int clen) 
 	{
 		Decoder decoder = null;
@@ -56,10 +55,9 @@ public class DecoderFactory
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString())));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString()))); 
-			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
+			rcIDs = unionDistinct(rcIDs, dcIDs);
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
-			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils
-				.subtract(UtilFunctions.getSeqList(1, len, 1), rcIDs));
+			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, len, 1), rcIDs);
 			
 			//create default schema if unspecified (with double columns for pass-through)
 			if( schema == null ) {

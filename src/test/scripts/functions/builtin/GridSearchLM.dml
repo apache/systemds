@@ -39,6 +39,6 @@ B2 = lm(X=Xtrain, y=ytrain, verbose=FALSE);
 
 l1 = l2norm(Xtest, ytest, B1);
 l2 = l2norm(Xtest, ytest, B2);
-R = as.scalar(l1 <= l2);
+R = as.scalar(l1 < l2);
 
 write(R, $3)

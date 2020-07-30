@@ -39,8 +39,8 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.ProgramConverter;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 import scala.Tuple2;
 
@@ -134,9 +134,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 
 		//reuse shared inputs (to read shared inputs once per process instead of once per core; 
 		//we reuse everything except result variables and partitioned input matrices)
-		Collection<String> blacklist = UtilFunctions.asSet(_resultVars.stream()
+		Collection<String> excludeList = CollectionUtils.asSet(_resultVars.stream()
 			.map(v -> v._name).collect(Collectors.toList()), _ec.getVarListPartitioned());
-		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist, _brInputs, _cleanCache);
+		reuseVars.reuseVariables(_jobid, _ec.getVariables(), excludeList, _brInputs, _cleanCache);
 		
 		//setup the buffer pool
 		RemoteParForUtils.setupBufferPool(_workerID);

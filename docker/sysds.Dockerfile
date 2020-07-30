@@ -39,7 +39,7 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
 # Install Extras
 RUN apk add --no-cache git bash
 
-RUN git clone https://github.com/apache/systemml.git systemds
+RUN git clone https://github.com/apache/systemds.git systemds
 
 WORKDIR /usr/src/systemds/
 

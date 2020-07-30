@@ -133,6 +133,7 @@ public class LineageReuseAlg extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			Lineage.resetInternalState();
 			Lineage.setLinReuseFull();
+			setOutputBuffering(false);
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromHDFS("X");
 			

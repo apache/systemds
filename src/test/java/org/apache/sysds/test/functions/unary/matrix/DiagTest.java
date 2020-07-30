@@ -19,10 +19,10 @@
 
 package org.apache.sysds.test.functions.unary.matrix;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 
 
@@ -101,7 +101,7 @@ public class DiagTest extends AutomatedTestBase
 		
 		createRandomMatrix("a", rows, cols, -1, 1, 0.5, -1);
 		
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 
 }

@@ -29,7 +29,7 @@ Prerequisites
 to run onnx-systemds you need to:
 
 - install `onnx <https://github.com/onnx/onnx>`_: `Installation instructions <https://github.com/onnx/onnx#installation>`_
-- `set up the environment <https://github.com/apache/systemml/blob/master/bin/README.md>`_
+- `set up the environment <https://github.com/apache/systemds/blob/master/bin/README.md>`_
 
 Usage
 ------

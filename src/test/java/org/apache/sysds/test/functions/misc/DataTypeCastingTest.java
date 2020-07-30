@@ -21,14 +21,14 @@ package org.apache.sysds.test.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *   
@@ -52,31 +52,31 @@ public class DataTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testMatrixToScalar() 
 	{ 
-		runTest( TEST_NAME1, true, false ); 
+		runTest( TEST_NAME1, true, null ); 
 	}
 	
 	@Test
 	public void testMatrixToScalarWrongSize() 
 	{ 
-		runTest( TEST_NAME1, true, true ); 
+		runTest( TEST_NAME1, true, LanguageException.class ); 
 	}
 	
 	@Test
 	public void testScalarToScalar() 
 	{ 
-		runTest( TEST_NAME1, false, true ); 
+		runTest( TEST_NAME1, false, LanguageException.class ); 
 	}
 	
 	@Test
 	public void testScalarToMatrix() 
 	{ 
-		runTest( TEST_NAME2, false, false ); 
+		runTest( TEST_NAME2, false, null ); 
 	}
 	
 	@Test
 	public void testMatrixToMatrix() 
 	{ 
-		runTest( TEST_NAME2, true, true ); 
+		runTest( TEST_NAME2, true, LanguageException.class ); 
 	}
 	
 	
@@ -85,10 +85,10 @@ public class DataTypeCastingTest extends AutomatedTestBase
 	 * @param cfc
 	 * @param vt
 	 */
-	private void runTest( String testName, boolean matrixInput, boolean exceptionExpected ) 
+	private void runTest( String testName, boolean matrixInput, Class<?> exceptionClass ) 
 	{
 		String TEST_NAME = testName;
-		int numVals = (exceptionExpected ? 7 : 1);
+		int numVals = (exceptionClass != null ? 7 : 1);
 		
 		try
 		{		
@@ -112,9 +112,9 @@ public class DataTypeCastingTest extends AutomatedTestBase
 			}
 			
 			//run tests
-	        runTest(true, exceptionExpected, DMLException.class, -1);
+	        runTest(true, exceptionClass != null, exceptionClass, -1);
 	        
-	        if( !exceptionExpected ){
+	        if( exceptionClass == null ){
 		        //read output
 		        double ret = -1;
 		        if( testName.equals(TEST_NAME2) ){

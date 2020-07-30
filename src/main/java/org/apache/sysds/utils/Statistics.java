@@ -557,21 +557,19 @@ public class Statistics
 	{
 		String opcode = null;
 		
-		if( inst instanceof SPInstruction )
-		{
+		if( inst instanceof SPInstruction ) {
 			opcode = "SP_"+InstructionUtils.getOpCode(inst.toString());
 			if( inst instanceof FunctionCallCPInstruction ) {
 				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
 				opcode = extfunct.getFunctionName();
-			}	
+			}
 		}
-		else //CPInstructions
-		{
+		else { //CPInstructions
 			opcode = InstructionUtils.getOpCode(inst.toString());
 			if( inst instanceof FunctionCallCPInstruction ) {
 				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
 				opcode = extfunct.getFunctionName();
-			}		
+			}
 		}
 		
 		return opcode;

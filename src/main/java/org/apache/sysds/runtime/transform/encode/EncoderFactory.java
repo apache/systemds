@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.common.Types.ValueType;
@@ -33,6 +32,9 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
+
 
 public class EncoderFactory 
 {
@@ -45,7 +47,6 @@ public class EncoderFactory
 		return createEncoder(spec, colnames, lschema, meta);
 	}
 	
-	@SuppressWarnings("unchecked")
 	public static Encoder createEncoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
 		Encoder encoder = null;
 		int clen = schema.length;
@@ -64,11 +65,9 @@ public class EncoderFactory
 				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString())));
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames);
 			//note: any dummycode column requires recode as preparation, unless it follows binning
-			rcIDs = new ArrayList<Integer>(CollectionUtils.subtract(
-				CollectionUtils.union(rcIDs, CollectionUtils.subtract(dcIDs, binIDs)), haIDs));
-			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils.subtract(
-				CollectionUtils.subtract(UtilFunctions.getSeqList(1, clen, 1),
-					CollectionUtils.union(rcIDs,haIDs)), binIDs));
+			rcIDs = except(unionDistinct(rcIDs, except(dcIDs, binIDs)), haIDs);
+			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1),
+				unionDistinct(rcIDs,haIDs)), binIDs);
 			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString())));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(

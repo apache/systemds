@@ -25,13 +25,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
@@ -46,6 +44,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.decode.DecoderRecode;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -336,7 +335,6 @@ public class TfMetaUtils
 	 * @return list of column ids
 	 * @throws IOException if IOException occurs
 	 */
-	@SuppressWarnings("unchecked")
 	private static List<Integer> parseRecodeColIDs(String spec, String[] colnames) 
 		throws IOException 
 	{	
@@ -352,7 +350,7 @@ public class TfMetaUtils
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString())));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString()))); 
-			specRecodeIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
+			specRecodeIDs = CollectionUtils.unionDistinct(rcIDs, dcIDs);
 		}
 		catch(Exception ex) {
 			throw new IOException(ex);

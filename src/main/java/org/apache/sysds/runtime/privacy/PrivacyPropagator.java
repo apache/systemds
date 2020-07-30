@@ -123,7 +123,7 @@ public class PrivacyPropagator
 			case BuiltinNary:
 			case Builtin:
 				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
-			case External:
+			case FCall:
 				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
 			case Ctable: 
 			case MultiReturnParameterizedBuiltin:

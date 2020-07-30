@@ -30,7 +30,7 @@
 # minPts Int     ---    Minimum number of points within eps
 #
 
-m_dbscan = function (Matrix[double] X, double eps, int minPts)
+m_dbscan = function (Matrix[double] X, double eps = 0.5, int minPts = 5)
     return (Matrix[double] clusterMembers)
 {
     UNASSIGNED = 0;
@@ -43,31 +43,48 @@ m_dbscan = function (Matrix[double] X, double eps, int minPts)
     if (minPts <= 0) {print("Incorrect minPts.");}
 
     neighbours = edm(X);
-    inEpsNeighbours = (neighbours <= eps) * (0 < neighbours);
 
-    # matrix with only neighbour distances
+    # find similar points
+    corrMatrix = correlationMatrix(t(X));
+    corrMatrix = replace(target=corrMatrix, pattern=0/0, replacement=0);
+    sim = ((neighbours == 0) & (corrMatrix == 1)) - diag(diag(corrMatrix));
+
+    #neigbours within eps
+    inEpsNeighbours = ((neighbours <= eps) * (0 < neighbours)) + sim;
+
+    # only distances within eps
     neighbours = neighbours * inEpsNeighbours;
 
-    # assign core points
+    # assign CORE pts
     corePts = rowSums(inEpsNeighbours) >= minPts - 1;
 
-    # assign border pts
-    for (i in 1:num_records) {
-        for (j in i:num_features) {
-            if (as.scalar(corePts[i,1]) == 0) {
-                if (as.scalar(neighbours[i,j]) != 0) {
-                    if (as.scalar(corePts[j, 1]) == 1) {
-                        corePts[i, 1] = BORDER;
-                    }
+    clusterMembers = matrix(UNASSIGNED, num_records, 1);
+
+    # assign BORDER pts and to clusters
+    if (sum(corePts) != 0) {
+        # assign border pts
+        for (i in 1:num_records) {
+            for (j in (i+1):num_features) {
+                if ((as.scalar(corePts[i,1]) == 0) & (as.scalar(neighbours[i,j]) != 0) & (as.scalar(corePts[j, 1]) == 1)) {
+                    corePts[i, 1] = BORDER;
                 }
             }
         }
+        neighbours = neighbours * corePts;
+        assign_to_clusters(neighbours, clusterMembers);
     }
-    neighbours = neighbours * corePts;
+}
+
+
+assign_to_clusters = function (Matrix[double] neighbours, Matrix[double] clusterMembers)
+    return (Matrix[double] clusterMembers)
+{
+    UNASSIGNED = 0;
+
+    num_records = nrow(clusterMembers);
 
     cluster = 1;
     clusterNeighbours = 1;
-    clusterMembers = matrix(UNASSIGNED, num_records, 1);
 
     for (i in 1:num_records) {
         s = rowSums(neighbours);
@@ -82,7 +99,7 @@ m_dbscan = function (Matrix[double] X, double eps, int minPts)
                 clusterN = as.scalar(clusterMembers[i,1]);
             }
 
-            for (j in i:num_records) {
+            for (j in (i+1):num_records) {
                 if (as.scalar(neighbours[i, j]) != 0) {
                     clusterMembers[j,1] = clusterN;
                 }

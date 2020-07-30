@@ -26,6 +26,6 @@ library("dbscan")
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")));
 eps = as.double(args[2]);
 minPts = as.integer(args[3]);
-Ys = dbscan(X, 0.3, 10);
+Ys = dbscan(X, 2.5, 5);
 Y = as.matrix(Ys$cluster, FALSE);
 writeMM(as(Y, "CsparseMatrix"), paste(args[2], "B", sep=""));

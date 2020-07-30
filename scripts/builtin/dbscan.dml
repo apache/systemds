@@ -44,13 +44,12 @@ m_dbscan = function (Matrix[double] X, double eps = 0.5, int minPts = 5)
 
     neighbours = edm(X);
 
-    # find similar points
-    corrMatrix = correlationMatrix(t(X));
-    corrMatrix = replace(target=corrMatrix, pattern=0/0, replacement=0);
-    sim = ((neighbours == 0) & (corrMatrix == 1)) - diag(diag(corrMatrix));
+    #find similar pts
+    neighbours = replace(target=neighbours, pattern=0, replacement=eps);
+    neighbours = neighbours - diag(diag(neighbours));
 
-    #neigbours within eps
-    inEpsNeighbours = ((neighbours <= eps) * (0 < neighbours)) + sim;
+    # neigbours within eps
+    inEpsNeighbours = ((neighbours <= eps) * (0 < neighbours));
 
     # only distances within eps
     neighbours = neighbours * inEpsNeighbours;
@@ -64,14 +63,14 @@ m_dbscan = function (Matrix[double] X, double eps = 0.5, int minPts = 5)
     if (sum(corePts) != 0) {
         # assign border pts
         for (i in 1:num_records) {
-            for (j in (i+1):num_features) {
+            for (j in i:num_features) {
                 if ((as.scalar(corePts[i,1]) == 0) & (as.scalar(neighbours[i,j]) != 0) & (as.scalar(corePts[j, 1]) == 1)) {
                     corePts[i, 1] = BORDER;
                 }
             }
         }
         neighbours = neighbours * corePts;
-        assign_to_clusters(neighbours, clusterMembers);
+        clusterMembers = assign_to_clusters(neighbours, clusterMembers);
     }
 }
 
@@ -99,7 +98,7 @@ assign_to_clusters = function (Matrix[double] neighbours, Matrix[double] cluster
                 clusterN = as.scalar(clusterMembers[i,1]);
             }
 
-            for (j in (i+1):num_records) {
+            for (j in 1:num_records) {
                 if (as.scalar(neighbours[i, j]) != 0) {
                     clusterMembers[j,1] = clusterN;
                 }

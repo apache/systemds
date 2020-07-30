@@ -50,9 +50,9 @@ public class BuiltinDBSCANTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDBSCANDefaultSP() {
-		runDBSCAN(true, ExecType.SPARK);
-	}
+//	public void testDBSCANDefaultSP() {
+//		runDBSCAN(true, ExecType.SPARK);
+//	}
 
 	private void runDBSCAN(boolean defaultProb, ExecType instType)
 	{

@@ -1830,6 +1830,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return fb;
 	}
 
+	/**
+	 * Drop the cell value which does not confirms to the data type of its column
+	 * @param schema of the frame
+	 * @return original frame where invalid values are replaced with null
+	 */
 	public FrameBlock dropInvalid(FrameBlock schema) {
 		//sanity checks
 		if(this.getNumColumns() != schema.getNumColumns())
@@ -1863,6 +1868,38 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			}
 		}
 		return this;
+	}
+
+	/**
+	 *  This method validates the frame data against an attribute length constrain
+	 *  if data value in any cell is greater than the specified threshold of that attribute
+	 *  the output frame will store a null on that cell position, thus removing the length-violating values.
+	 * 
+	 *  @param feaLen vector of valid lengths
+	 *  @return FrameBlock with invalid values converted into missing values (null)
+	 */
+	public FrameBlock invalidByLength(MatrixBlock feaLen) {
+		//sanity checks
+		if(this.getNumColumns() != feaLen.getNumColumns())
+			throw new DMLException("mismatch in number of columns in frame and corresponding feature-length vector");
+
+		FrameBlock outBlock = new FrameBlock(this);
+		for (int i = 0; i < this.getNumColumns(); i++) {
+			if(feaLen.quickGetValue(0, i) == -1)
+				continue;
+			int validLength = (int)feaLen.quickGetValue(0, i);
+			Array obj = this.getColumn(i);
+			for (int j = 0; j < obj._size; j++)
+			{
+				if(obj.get(j) == null)
+					continue;
+				String dataValue = obj.get(j).toString();
+				if(dataValue.length() > validLength)
+					outBlock.set(j, i, null);
+			}
+		}
+
+		return outBlock;
 	}
 
 	public static FrameBlock mergeSchema(FrameBlock temp1, FrameBlock temp2) {

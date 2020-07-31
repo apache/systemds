@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 
 /**
  * This class captures all statistics.
@@ -556,21 +557,19 @@ public class Statistics
 	{
 		String opcode = null;
 		
-		if( inst instanceof SPInstruction )
-		{
+		if( inst instanceof SPInstruction ) {
 			opcode = "SP_"+InstructionUtils.getOpCode(inst.toString());
 			if( inst instanceof FunctionCallCPInstruction ) {
 				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
 				opcode = extfunct.getFunctionName();
-			}	
+			}
 		}
-		else //CPInstructions
-		{
+		else { //CPInstructions
 			opcode = InstructionUtils.getOpCode(inst.toString());
 			if( inst instanceof FunctionCallCPInstruction ) {
 				FunctionCallCPInstruction extfunct = (FunctionCallCPInstruction)inst;
 				opcode = extfunct.getFunctionName();
-			}		
+			}
 		}
 		
 		return opcode;
@@ -948,9 +947,7 @@ public class Statistics
 				sb.append("LinCache MultiLevel (Ins/SB/Fn):" + LineageCacheStatistics.displayMultiLevelHits() + ".\n");
 				sb.append("LinCache writes (Mem/FS/Del): \t" + LineageCacheStatistics.displayWtrites() + ".\n");
 				sb.append("LinCache FStimes (Rd/Wr): \t" + LineageCacheStatistics.displayTime() + " sec.\n");
-				sb.append("LinCache costing time:  \t" + LineageCacheStatistics.displayCostingTime() + " sec.\n");
 				sb.append("LinCache Rewrites:    \t\t" + LineageCacheStatistics.displayRewrites() + ".\n");
-				sb.append("LinCache RWtime (Com/Ex): \t" + LineageCacheStatistics.displayRewriteTime() + " sec.\n");
 			}
 			if( ConfigurationManager.isCodegenEnabled() ) {
 				sb.append("Codegen compile (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"
@@ -998,6 +995,9 @@ public class Statistics
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
 		}
+
+		if (DMLScript.CHECK_PRIVACY)
+			sb.append(CheckedConstraintsLog.display());
 
 		return sb.toString();
 	}

@@ -1,0 +1,495 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Operation Node &mdash; SystemDS 2.0.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../static/documentation_options.js"></script>
+        <script src="../../static/jquery.js"></script>
+        <script src="../../static/underscore.js"></script>
+        <script src="../../static/doctools.js"></script>
+        <script src="../../static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Convert" href="../onnx_systemds/convert.html" />
+    <link rel="prev" title="Federated" href="../matrix/federated.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> SystemDS
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/install.html">Install SystemDS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/simple_examples.html">QuickStart</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms.html">Built-in Algorithms</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../onnx_systemds/onnx_systemds.html">QuickStart Onnx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../onnx_systemds/onnx_systemds_design.html">Design</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../context/systemds_context.html">SystemDSContext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../matrix/data_gen.html">Data Generators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../matrix/matrix.html">Matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../matrix/federated.html">Federated</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Operation Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/convert.html">Convert</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/onnx_helper.html">Onnx Helper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/operator_gen.html">Operator Gen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../onnx_systemds/util.html">Util</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Internals API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../script_building/dag.html">Dag</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../script_building/script.html">Script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/converters.html">Converters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/helpers.html">Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SystemDS</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Operation Node</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../sources/api/operator/operation_node.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="operation-node">
+<h1>Operation Node<a class="headerlink" href="#operation-node" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div></div></blockquote>
+<p>An <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code> represents an operation that executes in SystemDS.
+Most methods are overloaded for <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code>.
+This means that they return an <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code>.</p>
+<p>To get the result from an <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code> you simply call <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> on it, thereby getting the numpy equivalent result.
+Even comparisons like <code class="docutils literal notranslate"><span class="pre">__eq__</span></code>, <code class="docutils literal notranslate"><span class="pre">__lt__</span></code> etc. return <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All operations are lazily evaluated, meaning before calling <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> nothing will be executed in SystemDS.
+Therefore errors will not immediately be recognized while constructing an sequence of operators.</p>
+</div>
+<dl class="py class">
+<dt id="systemds.operator.OperationNode">
+<em class="property">class </em><code class="sig-prename descclassname">systemds.operator.</code><code class="sig-name descname">OperationNode</code><span class="sig-paren">(</span><em class="sig-param">sds_context: SystemDSContext</em>, <em class="sig-param">operation: str</em>, <em class="sig-param">unnamed_input_nodes: Iterable[Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">named_input_nodes: Dict[str</em>, <em class="sig-param">Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">output_type: systemds.script_building.dag.OutputType = &lt;OutputType.MATRIX: 1&gt;</em>, <em class="sig-param">is_python_local_data: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.OperationNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Node representing an operation in SystemDS</p>
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">sds_context: SystemDSContext</em>, <em class="sig-param">operation: str</em>, <em class="sig-param">unnamed_input_nodes: Iterable[Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">named_input_nodes: Dict[str</em>, <em class="sig-param">Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">output_type: systemds.script_building.dag.OutputType = &lt;OutputType.MATRIX: 1&gt;</em>, <em class="sig-param">is_python_local_data: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.OperationNode.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create general <cite>OperationNode</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sds_context</strong> – The SystemDS context for performing the operations</p></li>
+<li><p><strong>operation</strong> – The name of the DML function to execute</p></li>
+<li><p><strong>unnamed_input_nodes</strong> – inputs identified by their position, not name</p></li>
+<li><p><strong>named_input_nodes</strong> – inputs with their respective parameter name</p></li>
+<li><p><strong>output_type</strong> – type of the output in DML (double, matrix etc.)</p></li>
+<li><p><strong>is_python_local_data</strong> – if the data is local in python e.g. numpy arrays</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.abs">
+<code class="sig-name descname">abs</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate absolute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.acos">
+<code class="sig-name descname">acos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.acos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate arccos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.asin">
+<code class="sig-name descname">asin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.asin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate arcsin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.atan">
+<code class="sig-name descname">atan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.atan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate arctan.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.code_line">
+<code class="sig-name descname">code_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">unnamed_input_vars</span><span class="p">:</span> <span class="n">Sequence<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">named_input_vars</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#systemds.operator.OperationNode.code_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the DML code line equal to the intended action of this node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var_name</strong> – Name of DML-variable this nodes result should be saved in</p></li>
+<li><p><strong>unnamed_input_vars</strong> – all strings representing the unnamed parameters</p></li>
+<li><p><strong>named_input_vars</strong> – all strings representing the named parameters (name value pairs)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the DML code line that is equal to this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.compute">
+<code class="sig-name descname">compute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">lineage</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; Union<span class="p">[</span>float<span class="p">, </span>numpy.array<span class="p">, </span>Tuple<span class="p">[</span>Union<span class="p">[</span>float<span class="p">, </span>numpy.array<span class="p">]</span><span class="p">, </span>str<span class="p">]</span><span class="p">]</span><a class="headerlink" href="#systemds.operator.OperationNode.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
+all operations are only building the DAG without actually executing (lazy evaluation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>verbose</strong> – Can be activated to print additional information such as created DML-Script</p></li>
+<li><p><strong>lineage</strong> – Can be activated to print lineage trace till this node</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the output as an python builtin data type or numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.cos">
+<code class="sig-name descname">cos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate cos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.cosh">
+<code class="sig-name descname">cosh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cosh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate cos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.get_lineage_trace">
+<code class="sig-name descname">get_lineage_trace</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#systemds.operator.OperationNode.get_lineage_trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the lineage trace for this node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Lineage trace</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.mean">
+<code class="sig-name descname">mean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate mean of matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>axis</strong> – can be 0 or 1 to do either row or column means</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.pass_python_data_to_prepared_script">
+<code class="sig-name descname">pass_python_data_to_prepared_script</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jvm</span><span class="p">:</span> <span class="n">py4j.java_gateway.JVMView</span></em>, <em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prepared_script</span><span class="p">:</span> <span class="n">py4j.java_gateway.JavaObject</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.operator.OperationNode.pass_python_data_to_prepared_script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Passes data from python to the prepared script object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>jvm</strong> – the java virtual machine object</p></li>
+<li><p><strong>var_name</strong> – the variable name the data should get in java</p></li>
+<li><p><strong>prepared_script</strong> – the prepared script</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.sin">
+<code class="sig-name descname">sin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate sin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.sinh">
+<code class="sig-name descname">sinh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sinh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate sin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.sum">
+<code class="sig-name descname">sum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate sum of matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>axis</strong> – can be 0 or 1 to do either row or column sums</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.tan">
+<code class="sig-name descname">tan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.tan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate tan.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.tanh">
+<code class="sig-name descname">tanh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.tanh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate tan.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.OperationNode.var">
+<code class="sig-name descname">var</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate variance of matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>axis</strong> – can be 0 or 1 to do either row or column vars</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><cite>OperationNode</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../onnx_systemds/convert.html" class="btn btn-neutral float-right" title="Convert" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../matrix/federated.html" class="btn btn-neutral float-left" title="Federated" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Apache SystemDS
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

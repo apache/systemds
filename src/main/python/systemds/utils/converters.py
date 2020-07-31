@@ -22,9 +22,13 @@
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 
-
 def numpy_to_matrix_block(jvm: JVMView, np_arr: np.array):
-    assert (np_arr.ndim <= 2)
+    """Converts a given numpy array, to internal matrix block representation.
+    
+    :param jvm: The current JVM instance running systemds.
+    :param np_arr: the numpy array to convert to matrixblock.
+    """
+    assert (np_arr.ndim <= 2), "np_arr invalid, because it has more than 2 dimensions"
     rows = np_arr.shape[0]
     cols = np_arr.shape[1] if np_arr.ndim == 2 else 1
     if not isinstance(np_arr, np.ndarray):
@@ -39,12 +43,16 @@ def numpy_to_matrix_block(jvm: JVMView, np_arr: np.array):
         arr = np_arr.ravel().astype(np.float64)
         value_type = jvm.org.apache.sysds.common.Types.ValueType.FP64
     buf = bytearray(arr.tostring())
-    convert_method = jvm.org.apache.sysds.runtime.compress.utils.Py4jConverterUtils.convertPy4JArrayToMB
+    convert_method = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertPy4JArrayToMB
     return convert_method(buf, rows, cols, value_type)
 
-
 def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
+    """Converts a MatrixBlock object in the JVM to a numpy array.
+    
+    :param jvm: The current JVM instance running systemds.
+    :param mb: A pointer to the JVM's MatrixBlock object.
+    """
     num_ros = mb.getNumRows()
     num_cols = mb.getNumColumns()
-    buf = jvm.org.apache.sysds.runtime.compress.utils.Py4jConverterUtils.convertMBtoPy4JDenseArr(mb)
+    buf = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertMBtoPy4JDenseArr(mb)
     return np.frombuffer(buf, count=num_ros * num_cols, dtype=np.float64).reshape((num_ros, num_cols))

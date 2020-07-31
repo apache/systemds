@@ -27,11 +27,11 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.apache.sysds</groupId>
-	<version>0.3.0-SNAPSHOT</version>
+	<version>2.0.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
-	<url>https://github.com/apache/systemml</url>
+	<url>https://github.com/apache/systemds</url>
 	<description>Declarative End-to-End Data Science</description>
 	<licenses>
 		<license>
@@ -50,7 +50,9 @@
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.2.0</jcuda.version>
+		<!-->Testing settings<!-->
 		<skipTests>true</skipTests>
+		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
 	</properties>
 
 	<repositories>
@@ -64,7 +66,7 @@
 	</repositories>
 
 	<scm>
-		<developerConnection>scm:git:https://github.com/apache/systemml.git</developerConnection>
+		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
 	</scm>
 
 	<build>
@@ -174,8 +176,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<!-- Include signature files so that recent versions of Java will run 
-						the resulting jar without complaining about "Invalid signature file digest 
+					<!-- Include signature files so that recent versions of Java will run
+						the resulting jar without complaining about "Invalid signature file digest
 						for Manifest main attributes".
 						Furthermore, the excluded notice and license files will be explicitly
 						added by the resource transformers above -->
@@ -248,7 +250,7 @@
 				</executions>
 			</plugin>
 
-			
+
 			<plugin> <!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -260,10 +262,10 @@
 					<threadCount>12</threadCount>
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>1C</forkCount>
-					<argLine>-Xms4g -Xmx4g</argLine>
 					<reuseForks>false</reuseForks>
 					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
+					<rerunFailingTestsCount>2</rerunFailingTestsCount>
 				</configuration>
 			</plugin>
 
@@ -291,7 +293,7 @@
 					<execution>
 						<!-- remove antlr tokens files during initialize phase so antlr4 -->
 						<!-- plugin can regenerate them during generate-sources phase -->
-						<id>remove-antlr-tokens-files</id>
+						<!-- <id>remove-antlr-tokens-files</id>
 						<phase>initialize</phase>
 						<goals>
 							<goal>clean</goal>
@@ -305,7 +307,7 @@
 									</includes>
 								</fileset>
 							</filesets>
-						</configuration>
+						</configuration> -->
 					</execution>
 				</executions>
 			</plugin>
@@ -332,12 +334,18 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.7.6.201602180812</version>
+				<version>0.8.5</version>
 				<executions>
 					<execution>
-						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>generate-code-coverage-report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -347,6 +355,16 @@
 				<groupId>org.eluder.coveralls</groupId>
 				<artifactId>coveralls-maven-plugin</artifactId>
 				<version>4.3.0</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<quiet>true</quiet>
+					<skip>true</skip>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -500,14 +518,23 @@
 								<exclude>.settings</exclude>
 								<exclude>.classpath</exclude>
 								<exclude>.project</exclude>
-								<exclude>docs</exclude>
-								<exclude>**/docs/**</exclude>
+								<exclude>src/main/python/docs/build/**/*</exclude>
+								<exclude>docs/api/**/*</exclude>
+								<exclude>docs/_site/**/*</exclude>
+								<exclude>docs/site/run_issues.md</exclude>
+								<exclude>docs/.jekyll-cache/**/*</exclude>
+								<exclude>docs/css/bootstrap.min.css</exclude>
+								<exclude>docs/css/pygments-default.css</exclude>
+								<exclude>docs/js/vendor/**/*</exclude>
+								<exclude>**/*.lock</exclude>
 								<exclude>**/*.csv</exclude>
 								<exclude>**/*.ijv</exclude>
 								<exclude>**/*.json</exclude>
 								<exclude>**/*.libsvm</exclude>
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>
+								<exclude>**/*.out</exclude>
+								<exclude>**/__pycache__/**</exclude>
 								<exclude>**/part-*</exclude>
 								<exclude>**/*.keep</exclude>
 								<exclude>**/target/**</exclude>
@@ -547,16 +574,7 @@
 		</profile>
 
 		<profile>
-			<!-- Can be used to ignore doclint javadoc issues -->
-			<id>ignore-doclint</id>
-			<!-- <activation> <jdk>[1.8,)</jdk> </activation> -->
-			<properties>
-				<javadoc.opts>-Xdoclint:none</javadoc.opts>
-			</properties>
-		</profile>
-
-		<profile>
-			<!-- Profile to create binary distributions. Execute with `mvn clean package 
+			<!-- Profile to create binary distributions. Execute with `mvn clean package
 				-P distribution` -->
 			<id>distribution</id>
 			<build>
@@ -655,7 +673,16 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.1.1</version>
+						<version>3.2.0</version>
+						<configuration>
+							<!-- https://maven.apache.org/plugins/maven-javadoc-plugin/javadoc-mojo.html -->
+							<excludePackageNames>*.protobuf</excludePackageNames>
+							<notimestamp>true</notimestamp>
+							<failOnWarnings>true</failOnWarnings>
+							<quiet>true</quiet>
+							<skip>false</skip>
+							<show>public</show>
+						</configuration>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -684,7 +711,7 @@
 			</build>
 		</profile>
 	</profiles>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>org.jcuda</groupId>
@@ -944,19 +971,13 @@
 			<version>0.10</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<!--Used for annotations in tests to execute tests in thread safe manner-->
 			<groupId>com.github.stephenc.jcip</groupId>
 			<artifactId>jcip-annotations</artifactId>
 			<version>1.0-1</version>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>commons-collections</groupId>
-			<artifactId>commons-collections</artifactId>
-			<version>3.2.1</version>
 		</dependency>
 
 		<!-- fast java compiler for codegen, consistent version w/ spark -->
@@ -1010,7 +1031,7 @@
 		<dependency>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-javadoc-plugin</artifactId>
-			<version>3.1.1</version>
+			<version>3.2.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
@@ -1019,6 +1040,18 @@
 			<artifactId>maven-gpg-plugin</artifactId>
 			<version>1.6</version>
 		</dependency>
-  
+
+		<!-- https://github.com/protocolbuffers/protobuf/tree/master/java -->
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>3.12.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java-util</artifactId>
+			<version>3.12.2</version>
+		</dependency>
 	</dependencies>
 </project>

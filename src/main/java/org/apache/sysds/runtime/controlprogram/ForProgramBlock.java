@@ -35,7 +35,6 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.Lineage;
-import org.apache.sysds.runtime.lineage.LineagePath;
 
 public class ForProgramBlock extends ProgramBlock
 {
@@ -110,29 +109,21 @@ public class ForProgramBlock extends ProgramBlock
 			throw new DMLRuntimeException(printBlockErrorLocation() +  "Expression for increment "
 				+ "of variable '" + _iterPredVar + "' must evaluate to a non-zero value.");
 		
-		int currentDedupBlock = 0;
-		LineagePath currentLineagePath = new LineagePath();
-		
 		// execute for loop
 		try
 		{
 			// prepare update in-place variables
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
-			// observe all distinct paths, compute a LineageDedupBlock and stores them globally
-			if (DMLScript.LINEAGE_DEDUP) {
+			// compute lineage patches for all distinct paths, and store globally
+			if (DMLScript.LINEAGE_DEDUP)
 				ec.getLineage().computeDedupBlock(this, ec);
-				currentLineagePath = ec.getLineagePath();
-				ec.getLineagePath().initLastBranch();
-			}
 			
 			// run for loop body for each instance of predicate sequence 
 			SequenceIterator seqIter = new SequenceIterator(from, to, incr);
 			for (IntObject iterVar : seqIter) {
-				if (DMLScript.LINEAGE_DEDUP) {
-					ec.getLineagePath().clearLastBranch();
-					currentDedupBlock = 0;
-				}
+				if (DMLScript.LINEAGE_DEDUP)
+					ec.getLineage().resetDedupPath();
 				
 				//set iteration variable
 				ec.setVariable(_iterPredVar, iterVar);
@@ -144,21 +135,15 @@ public class ForProgramBlock extends ProgramBlock
 				//execute all child blocks
 				for (int i = 0; i < _childBlocks.size(); i++) {
 					_childBlocks.get(i).execute(ec);
-					
-					if (DMLScript.LINEAGE_DEDUP && (
-						// Current ProgramBlock is last or next ProgramBlock is ForProgramBlock
-						i + 1 == _childBlocks.size() || _childBlocks.get(i + 1) instanceof ForProgramBlock)) {
-						ec.getLineage().tracePath(currentDedupBlock++, ec.getLineagePath().getLastBranch());
-						ec.getLineagePath().clearLastBranch();
-					}
 				}
+				
+				if( DMLScript.LINEAGE_DEDUP )
+					ec.getLineage().traceCurrentDedupPath();
 			}
 			
 			// clear current LineageDedupBlock
-			if (DMLScript.LINEAGE_DEDUP) {
+			if (DMLScript.LINEAGE_DEDUP)
 				ec.getLineage().clearDedupBlock();
-				ec.setLineagePath(currentLineagePath);
-			}
 			
 			// reset update-in-place variables
 			resetUpdateInPlaceVariableFlags(ec, flags);

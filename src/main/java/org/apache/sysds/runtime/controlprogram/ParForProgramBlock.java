@@ -83,6 +83,7 @@ import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
@@ -652,7 +653,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		for( String var : _variablesDPOriginal.keySet() ) {
 			//cleanup partitioned matrix (if not reused)
 			if( !_variablesDPReuse.keySet().contains(var) )
-				VariableCPInstruction.processRemoveVariableInstruction(ec, var); 
+				VariableCPInstruction.processRmvarInstruction(ec, var); 
 			//reset to original matrix
 			MatrixObject mo = (MatrixObject) _variablesDPOriginal.get( var );
 			ec.setVariable(var, mo); 
@@ -1104,10 +1105,10 @@ public class ParForProgramBlock extends ForProgramBlock
 			}
 	}
 
-	private void exportMatricesToHDFS(ExecutionContext ec, String... blacklistNames) 
+	private void exportMatricesToHDFS(ExecutionContext ec, String... excludeListNames) 
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-		Set<String> blacklist = UtilFunctions.asSet(blacklistNames);
+		Set<String> excludeList = CollectionUtils.asSet(excludeListNames);
 		
 		if( LIVEVAR_AWARE_EXPORT && sb != null)
 		{
@@ -1115,7 +1116,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			//export only variables that are read in the body
 			VariableSet varsRead = sb.variablesRead();
 			for (String key : ec.getVariables().keySet() ) {
-				if( varsRead.containsVariable(key) && !blacklist.contains(key) ) {
+				if( varsRead.containsVariable(key) && !excludeList.contains(key) ) {
 					Data d = ec.getVariable(key);
 					if( d.getDataType() == DataType.MATRIX )
 						((MatrixObject)d).exportData(_replicationExport);
@@ -1126,7 +1127,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		{
 			//export all matrices in symbol table
 			for (String key : ec.getVariables().keySet() ) {
-				if( !blacklist.contains(key) ) {
+				if( !excludeList.contains(key) ) {
 					Data d = ec.getVariable(key);
 					if( d.getDataType() == DataType.MATRIX )
 						((MatrixObject)d).exportData(_replicationExport);
@@ -1351,7 +1352,10 @@ public class ParForProgramBlock extends ForProgramBlock
 			LineageItem current = lineages[0].get(var._name);
 			for( int i=1; i<lineages.length; i++ ) {
 				LineageItem next = lineages[i].get(var._name);
-				current = LineageItemUtils.replace(next, retIn, current);
+				if( next != null ) { //robustness for cond. control flow
+					current = (current == null) ? next :
+						LineageItemUtils.replace(next, retIn, current);
+				}
 			}
 			ec.getLineage().set(var._name, current);
 		}

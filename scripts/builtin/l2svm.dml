@@ -27,12 +27,15 @@
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
 # X               Double  ---         matrix X of feature vectors
-# Y               Double  ---         matrix Y of class labels
+# Y               Double  ---         matrix Y of class labels have to be a single column
 # intercept       Boolean False       No Intercept ( If set to TRUE then a constant bias column is added to X)
 # epsilon         Double  0.001       Procedure terminates early if the reduction in objective function 
 #                      value is less than epsilon (tolerance) times the initial objective function value.
 # lambda          Double  1.0         Regularization parameter (lambda) for L2 regularization
 # maxiterations   Int     100         Maximum number of conjugate gradient iterations
+# verbose         Boolean False       Set to true if one wants print statements updating on loss.
+# column_id       Int     -1          The column Id used if one wants to add a ID to the print statement, 
+#                                     Specificly usefull when L2SVM is used in MSVM.
 # ---------------------------------------------------------------------------------------------
  
 
@@ -44,65 +47,70 @@
 
 
 m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
-Double epsilon = 0.001, Double lambda = 1, Integer maxiterations = 100, Boolean verbose = FALSE)
-    return(Matrix[Double] model)
+    Double epsilon = 0.001, Double lambda = 1, Integer maxIterations = 100, 
+    Boolean verbose = FALSE, Integer columnId = -1)
+  return(Matrix[Double] model)
 {
-
   #check input parameter assertions
   if(nrow(X) < 2)
-    stop("Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
+    stop("L2SVM: Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
   if(epsilon < 0)
-    stop("Stopping due to invalid argument: Tolerance (tol) must be non-negative")
+    stop("L2SVM: Stopping due to invalid argument: Tolerance (tol) must be non-negative")
   if(lambda < 0)
-    stop("Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
-  if(maxiterations < 1)
-    stop("Stopping due to invalid argument: Maximum iterations should be a positive integer")
-  
+    stop("L2SVM: Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
+  if(maxIterations < 1)
+    stop("L2SVM: Stopping due to invalid argument: Maximum iterations should be a positive integer")
+  if(ncol(Y) < 1)
+    stop("L2SVM: Stopping due to invalid multiple label columns, maybe use MSVM instead?")
+
   #check input lables and transform into -1/1
   check_min = min(Y)
   check_max = max(Y)
-  
+
   num_min = sum(Y == check_min)
   num_max = sum(Y == check_max)
-  
-  
-  if(num_min + num_max != nrow(Y)) print("please check Y, it should contain only 2 labels")
-  else{
-    if(check_min != -1 | check_max != +1)
-      Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
-  }
-  
-  if(verbose) print('running L2-SVM ');
-  
+
+  # TODO make this a stop condition for l2svm instead of just printing.
+  if(num_min + num_max != nrow(Y))
+    print("L2SVM: WARNING invalid number of labels in Y: "+num_min+" "+num_max)
+
+  # Scale inputs to -1 for negative, and 1 for positive classification
+  if(check_min != -1 | check_max != +1)
+    Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
+    
+  # If column_id is -1 then we assume that the fundamental algorithm is MSVM, 
+  # Therefore don't print message.
+  if(verbose & columnId == -1)
+    print('Running L2-SVM ')
+
   num_samples = nrow(X)
-  dimensions = ncol(X)
+  num_classes = ncol(Y)
   
+  # Add Bias 
+  num_rows_in_w = ncol(X)
   if (intercept) {
     ones  = matrix(1, rows=num_samples, cols=1)
     X = cbind(X, ones);
+    num_rows_in_w += 1
   }
   
-  num_rows_in_w = dimensions
-  if(intercept){
-    num_rows_in_w = num_rows_in_w + 1
-  }
   w = matrix(0, rows=num_rows_in_w, cols=1)
-  
+
   g_old = t(X) %*% Y
   s = g_old
-  
+
   Xw = matrix(0, rows=nrow(X), cols=1)
-  
+
   iter = 0
-  continue = 1
-  while(continue == 1 & iter < maxiterations)  {
+  continue = TRUE
+  while(continue & iter < maxIterations)  {
     # minimizing primal obj along direction s
     step_sz = 0
     Xd = X %*% s
     wd = lambda * sum(w * s)
     dd = lambda * sum(s * s)
-    continue1 = 1
-    while(continue1 == 1){
+    continue1 = TRUE
+    while(continue1){
       tmp_Xw = Xw + step_sz*Xd
       out = 1 - Y * (tmp_Xw)
       sv = (out > 0)
@@ -112,32 +120,31 @@ Double epsilon = 0.001, Double lambda = 1, Integer maxiterations = 100, Boolean 
       step_sz = step_sz - g/h
       continue1 = (g*g/h >= epsilon)
     }
-  
+
     #update weights
     w = w + step_sz*s
     Xw = Xw + step_sz*Xd
-  
+
     out = 1 - Y * Xw
     sv = (out > 0)
     out = sv * out
     obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
     g_new = t(X) %*% (out * Y) - lambda * w
-  
-    
-    if(verbose) print("Iter, Obj "+ iter + ", "+obj)
-  
-    tmp = sum(s * g_old)
-    if(step_sz*tmp < epsilon*obj){
-      continue = 0
+
+    if(verbose) {
+      colstr = ifelse(columnId!=-1, ", Col:"+columnId + " ,", " ,")
+      print("Iter:" + toString(iter) + colstr + " Obj:" + obj)
     }
-  
+
+    tmp = sum(s * g_old)
+    continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
+
     #non-linear CG step
     be = sum(g_new * g_new)/sum(g_old * g_old)
     s = be * s + g_new
     g_old = g_new
-  
+
     iter = iter + 1
   }
-
   model = w
 }

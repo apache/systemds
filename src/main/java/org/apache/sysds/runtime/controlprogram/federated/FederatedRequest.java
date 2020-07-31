@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.sysds.api.DMLScript;
+
 public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
 	
@@ -33,20 +35,24 @@ public class FederatedRequest implements Serializable {
 	
 	private FedMethod _method;
 	private List<Object> _data;
+	private boolean _checkPrivacy;
 	
 	public FederatedRequest(FedMethod method, List<Object> data) {
 		_method = method;
 		_data = data;
+		setCheckPrivacy();
 	}
 	
 	public FederatedRequest(FedMethod method, Object ... datas) {
 		_method = method;
 		_data = Arrays.asList(datas);
+		setCheckPrivacy();
 	}
 	
 	public FederatedRequest(FedMethod method) {
 		_method = method;
 		_data = new ArrayList<>();
+		setCheckPrivacy();
 	}
 	
 	public FedMethod getMethod() {
@@ -73,5 +79,17 @@ public class FederatedRequest implements Serializable {
 	
 	public FederatedRequest deepClone() {
 		return new FederatedRequest(_method, new ArrayList<>(_data));
+	}
+
+	public void setCheckPrivacy(boolean checkPrivacy){
+		this._checkPrivacy = checkPrivacy;
+	}
+
+	public void setCheckPrivacy(){
+		setCheckPrivacy(DMLScript.CHECK_PRIVACY);
+	}
+
+	public boolean checkPrivacy(){
+		return _checkPrivacy;
 	}
 }

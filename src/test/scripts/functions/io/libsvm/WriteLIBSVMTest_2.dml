@@ -22,10 +22,8 @@
 # DML script that tests read/write libsvm
 
 A = read($1, format="libsvm", rows=1605, cols=124);
-print(toString(A));
 A = A + 1;
 x = sum(A);
-print(x);
 write(x, $2);
 A = A - 1;
 

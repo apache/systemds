@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Partitioner;
@@ -71,6 +70,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -213,29 +213,16 @@ public class ParamservUtils {
 			new MatrixBlock(numEntries, numEntries, true));
 	}
 
-	/**
-	 * Get the namespace and function name of a given physical func name
-	 * @param funcName physical func name (e.g., "ns:func")
-	 * @param prefix prefix
-	 * @return an string array of size 2 where array[0] is namespace and array[1] is name
-	 */
-	public static String[] getCompleteFuncName(String funcName, String prefix) {
-		String[] keys = DMLProgram.splitFunctionKey(funcName);
-		String ns = (keys.length==2) ? keys[0] : null;
-		String name = (keys.length==2) ? keys[1] : keys[0];
-		return StringUtils.isEmpty(prefix) ? 
-			new String[]{ns, name} : new String[]{ns, name};
-	}
-
 	public static ExecutionContext createExecutionContext(ExecutionContext ec,
 		LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
 	{
 		Program prog = ec.getProgram();
 
-		// 1. Recompile the internal program blocks
+		// 1. Recompile the internal program blocks 
 		recompileProgramBlocks(k, prog.getProgramBlocks());
 		// 2. Recompile the imported function blocks
-		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
+		prog.getFunctionProgramBlocks(false)
+			.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
 		// 3. Copy all functions 
 		return ExecutionContextFactory.createContext(
@@ -252,25 +239,16 @@ public class ParamservUtils {
 	
 	private static Program copyProgramFunctions(Program prog) {
 		Program newProg = new Program(prog.getDMLProg());
-		prog.getFunctionProgramBlocks()
-			.forEach((func, pb) -> putFunction(newProg, copyFunction(func, pb)));
+		for( Entry<String, FunctionProgramBlock> e : prog.getFunctionProgramBlocks(false).entrySet() ) {
+			String[] parts = DMLProgram.splitFunctionKey(e.getKey());
+			FunctionProgramBlock fpb = ProgramConverter
+				.createDeepCopyFunctionProgramBlock(e.getValue(), new HashSet<>(), new HashSet<>());
+			newProg.addFunctionProgramBlock(parts[0], parts[1], fpb, false);
+		}
 		return newProg;
 	}
 
-	private static FunctionProgramBlock copyFunction(String funcName, FunctionProgramBlock fpb) {
-		FunctionProgramBlock copiedFunc = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>());
-		String[] cfn = getCompleteFuncName(funcName, ParamservUtils.PS_FUNC_PREFIX);
-		copiedFunc._namespace = cfn[0];
-		copiedFunc._functionName = cfn[1];
-		return copiedFunc;
-	}
-
-	private static void putFunction(Program prog, FunctionProgramBlock fpb) {
-		prog.addFunctionProgramBlock(fpb._namespace, fpb._functionName, fpb);
-		prog.addProgramBlock(fpb);
-	}
-
-	private static void recompileProgramBlocks(int k, ArrayList<ProgramBlock> pbs) {
+	public static void recompileProgramBlocks(int k, List<ProgramBlock> pbs) {
 		// Reset the visit status from root
 		for (ProgramBlock pb : pbs)
 			DMLTranslator.resetHopsDAGVisitStatus(pb.getStatementBlock());
@@ -284,7 +262,7 @@ public class ParamservUtils {
 		}
 	}
 
-	private static boolean rAssignParallelism(ArrayList<ProgramBlock> pbs, int k, boolean recompiled) throws IOException {
+	private static boolean rAssignParallelism(List<ProgramBlock> pbs, int k, boolean recompiled) throws IOException {
 		for (ProgramBlock pb : pbs) {
 			if (pb instanceof ParForProgramBlock) {
 				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
@@ -334,7 +312,7 @@ public class ParamservUtils {
 
 	@SuppressWarnings("unused")
 	private static FunctionProgramBlock getFunctionBlock(ExecutionContext ec, String funcName) {
-		String[] cfn = getCompleteFuncName(funcName, null);
+		String[] cfn = DMLProgram.splitFunctionKey(funcName);
 		String ns = cfn[0];
 		String fname = cfn[1];
 		return ec.getProgram().getFunctionProgramBlock(ns, fname);

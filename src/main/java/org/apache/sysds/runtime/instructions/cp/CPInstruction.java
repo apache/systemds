@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 
 public abstract class CPInstruction extends Instruction 
 {
@@ -37,7 +38,7 @@ public abstract class CPInstruction extends Instruction
 		AggregateUnary, AggregateBinary, AggregateTernary,
 		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable,
 		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
-		Builtin, Reorg, Variable, External, Append, Rand, QSort, QPick,
+		Builtin, Reorg, Variable, FCall, Append, Rand, QSort, QPick,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, Reshape, Partition, Compression, SpoofFused,
 		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn, Sql }
 
@@ -95,6 +96,8 @@ public abstract class CPInstruction extends Instruction
 		
 		//robustness federated instructions (runtime assignment)
 		tmp = FEDInstructionUtils.checkAndReplaceCP(tmp, ec);
+
+		tmp = PrivacyPropagator.preprocessInstruction(tmp, ec);
 		
 		return tmp;
 	}

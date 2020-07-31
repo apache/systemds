@@ -198,7 +198,7 @@ public class Conv2DBackwardTest extends AutomatedTestBase
 			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", 
+			programArgs = new String[]{"-args", 
 				String.valueOf(imgSize), String.valueOf(numImg), 
 				String.valueOf(numChannels), String.valueOf(numFilters), 
 				String.valueOf(filterSize), String.valueOf(stride), String.valueOf(pad), 

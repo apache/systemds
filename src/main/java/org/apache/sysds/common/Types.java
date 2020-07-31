@@ -175,7 +175,9 @@ public class Types
 		PROD, SUM_PROD,
 		MIN, MAX,
 		TRACE, MEAN, VAR,
-		MAXINDEX, MININDEX;
+		MAXINDEX, MININDEX,
+		COUNT_DISTINCT,
+		COUNT_DISTINCT_APPROX;
 		
 		@Override
 		public String toString() {
@@ -205,6 +207,15 @@ public class Types
 		//low-level operators //TODO used?
 		MULT2, MINUS1_MULT, MINUS_RIGHT, 
 		POW2, SUBTRACT_NZ;
+		
+
+		public boolean isScalarOutput() {
+			return this == CAST_AS_SCALAR
+				|| this == NROW || this == NCOL
+				|| this == LENGTH || this == EXISTS
+				|| this == IQM || this == LINEAGE
+				|| this == MEDIAN;
+		}
 		
 		@Override
 		public String toString() {
@@ -244,7 +255,7 @@ public class Types
 				case "ucumk+":  return CUMSUM;
 				case "ucumk+*": return CUMSUMPROD;
 				case "*2":      return MULT2;
-				case "!":       return OpOp1.NOT;
+				case "!":       return NOT;
 				case "^2":      return POW2;
 				default:        return valueOf(opcode.toUpperCase());
 			}
@@ -255,7 +266,8 @@ public class Types
 	public enum OpOp2 {
 		AND(true), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
-		DROP_INVALID(false), EQUAL(true), GREATER(true), GREATEREQUAL(true),
+		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false),
+		EQUAL(true), GREATER(true), GREATEREQUAL(true),
 		INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true), LESSEQUAL(true),
 		LOG(true), MAX(true), MEDIAN(false), MIN(true), MINUS(true), MODULUS(true),
 		MOMENT(false), MULT(true), NOTEQUAL(true), OR(true), PLUS(true), POW(true),
@@ -302,7 +314,8 @@ public class Types
 				case BITWXOR:      return "bitwXor";
 				case BITWSHIFTL:   return "bitwShiftL";
 				case BITWSHIFTR:   return "bitwShiftR";
-				case DROP_INVALID: return "dropInvalid";
+				case DROP_INVALID_TYPE: return "dropInvalidType";
+				case DROP_INVALID_LENGTH: return "dropInvalidLength";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -334,7 +347,8 @@ public class Types
 				case "bitwXor":     return BITWXOR;
 				case "bitwShiftL":  return BITWSHIFTL;
 				case "bitwShiftR":  return BITWSHIFTR;
-				case "dropInvalid": return DROP_INVALID;
+				case "dropInvalidType": return DROP_INVALID_TYPE;
+				case "dropInvalidLength": return DROP_INVALID_LENGTH;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}
@@ -354,12 +368,12 @@ public class Types
 			}
 		}
 		
-		public static OpOp3 valueOfCode(String code) {
-			switch(code) {
-				case "cm": return OpOp3.MOMENT;
-				case "+*": return OpOp3.PLUS_MULT;
-				case "-*": return OpOp3.MINUS_MULT;
-				default:   return OpOp3.valueOf(code);
+		public static OpOp3 valueOfByOpcode(String opcode) {
+			switch(opcode) {
+				case "cm": return MOMENT;
+				case "+*": return PLUS_MULT;
+				case "-*": return MINUS_MULT;
+				default:   return valueOf(opcode.toUpperCase());
 			}
 		}
 	}
@@ -394,9 +408,19 @@ public class Types
 		@Override
 		public String toString() {
 			switch(this) {
-				case TRANS:   return "t";
+				case DIAG:    return "rdiag";
+				case TRANS:   return "r'";
 				case RESHAPE: return "rshape";
 				default:      return name().toLowerCase();
+			}
+		}
+		
+		public static ReOrgOp valueOfByOpcode(String opcode) {
+			switch(opcode) {
+				case "rdiag":  return DIAG;
+				case "r'":     return TRANS;
+				case "rshape": return RESHAPE;
+				default:       return valueOf(opcode.toUpperCase());
 			}
 		}
 	}
@@ -462,7 +486,8 @@ public class Types
 		CSV,    // text dense representation
 		LIBSVM, // text libsvm sparse row representation
 		JSONL,  // text nested JSON (Line) representation
-		BINARY; // binary block representation (dense/sparse/ultra-sparse) 
+		BINARY, // binary block representation (dense/sparse/ultra-sparse)
+		PROTO;  // protocol buffer representation
 		
 		public boolean isIJVFormat() {
 			return this == TEXT || this == MM;
@@ -517,4 +542,9 @@ public class Types
 			}
 		}
 	}
+	
+	/** Common type for both function statement blocks and function program blocks **/
+	public static interface FunctionBlock {
+		public FunctionBlock cloneFunctionBlock();
+	} 
 }

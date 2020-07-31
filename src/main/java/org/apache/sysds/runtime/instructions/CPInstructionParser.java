@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions;
 
 import java.util.HashMap;
 
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.lops.Append;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.LeftIndex;
@@ -107,6 +108,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "length"  ,CPType.AggregateUnary);
 		String2CPInstructionType.put( "exists"  ,CPType.AggregateUnary);
 		String2CPInstructionType.put( "lineage" ,CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacd"    , CPType.AggregateUnary);
+		String2CPInstructionType.put( "uacdap"  , CPType.AggregateUnary);
 
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
 		
@@ -149,7 +152,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "solve"  , CPType.Binary);
 		String2CPInstructionType.put( "max"  , CPType.Binary);
 		String2CPInstructionType.put( "min"  , CPType.Binary);
-		String2CPInstructionType.put( "dropInvalid"  , CPType.Binary);
+		String2CPInstructionType.put( "dropInvalidType"  , CPType.Binary);
+		String2CPInstructionType.put( "dropInvalidLength"  , CPType.Binary);
 
 		String2CPInstructionType.put( "nmax", CPType.BuiltinNary);
 		String2CPInstructionType.put( "nmin", CPType.BuiltinNary);
@@ -267,9 +271,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "wumm",     CPType.Quaternary);
 		
 		// User-defined function Opcodes
-		String2CPInstructionType.put( "extfunct", CPType.External);
+		String2CPInstructionType.put(FunctionOp.OPCODE, CPType.FCall);
 
-		String2CPInstructionType.put( Append.OPCODE, CPType.Append);
+		String2CPInstructionType.put(Append.OPCODE, CPType.Append);
 		String2CPInstructionType.put( "remove",      CPType.Append);
 		
 		// data generation opcodes
@@ -376,7 +380,7 @@ public class CPInstructionParser extends InstructionParser
 			case StringInit:
 				return StringInitCPInstruction.parseInstruction(str);
 				
-			case External:
+			case FCall:
 				return FunctionCallCPInstruction.parseInstruction(str);
 
 			case ParameterizedBuiltin:
@@ -388,13 +392,13 @@ public class CPInstructionParser extends InstructionParser
 			case MultiReturnBuiltin:
 				return MultiReturnBuiltinCPInstruction.parseInstruction(str);
 				
-			case QSort: 
+			case QSort:
 				return QuantileSortCPInstruction.parseInstruction(str);
 			
-			case QPick: 
+			case QPick:
 				return QuantilePickCPInstruction.parseInstruction(str);
 			
-			case MatrixIndexing: 
+			case MatrixIndexing:
 				execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
 				if( execType == ExecType.CP )
 					return IndexingCPInstruction.parseInstruction(str);

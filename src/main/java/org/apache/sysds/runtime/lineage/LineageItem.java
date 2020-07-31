@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import java.util.Stack;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -28,7 +30,6 @@ public class LineageItem {
 	
 	private final long _id;
 	private final String _opcode;
-	private String _name;
 	private final String _data;
 	private final LineageItem[] _inputs;
 	private int _hash = 0;
@@ -39,56 +40,55 @@ public class LineageItem {
 	public enum LineageItemType {Literal, Creation, Instruction, Dedup}
 	public static final String dedupItemOpcode = "dedup";
 	
-	public LineageItem(long id, String name, String data) { this(id, name, data, "", null); }
+	public LineageItem() {
+		this("");
+	}
 	
-	public LineageItem(long id, String name,  String opcode, LineageItem[] inputs) { this(id, name, "", opcode ,inputs); }
-	
-	public LineageItem(String name) { this(_idSeq.getNextID(), name, name, "", null); }
-	
-	public LineageItem(String name, String data) { this(_idSeq.getNextID(), name, data, "", null); }
-	
-	public LineageItem(String name, String data, String opcode) { this(_idSeq.getNextID(), name, data, opcode, null); }
-	
-	public LineageItem(String name, String opcode, LineageItem[] inputs) { this(_idSeq.getNextID(), name, "", opcode, inputs); }
+	public LineageItem(String data) {
+		this(_idSeq.getNextID(), data);
+	}
 
-	public LineageItem(String name, String data, String opcode, LineageItem[] inputs) { this(_idSeq.getNextID(), name, data, opcode, inputs); }
+	public LineageItem(long id, String data) {
+		this(id, data, "", null);
+	}
 	
-	public LineageItem(long id, String name, String data, String opcode, LineageItem[] inputs) {
-		_id = id;
-		_opcode = opcode;
-		_name = name;
-		_data = data;
-		_inputs = inputs;
+	public LineageItem(String data, String opcode) {
+		this(_idSeq.getNextID(), data, opcode, null);
+	}
+	
+	public LineageItem(String opcode, LineageItem[] inputs) { 
+		this(_idSeq.getNextID(), "", opcode, inputs);
+	}
+
+	public LineageItem(String data, String opcode, LineageItem[] inputs) {
+		this(_idSeq.getNextID(), data, opcode, inputs);
+	}
+	
+	public LineageItem(LineageItem li) {
+		this(_idSeq.getNextID(), li);
 	}
 	
 	public LineageItem(long id, LineageItem li) {
-		_id = id;
-		_opcode = li._opcode;
-		_name = li._name;
-		_data = li._data;
-		_inputs = li._inputs;
+		this(id, li._data, li._opcode, li._inputs);
 	}
 	
-	public LineageItem(LineageItem other) {
-		_id = _idSeq.getNextID();
-		_opcode = other._opcode;
-		_name = other._name;
-		_data = other._data;
-		_visited = other._visited;
-		_hash = other._hash;
-		_inputs = other._inputs;
+	public LineageItem(long id, String data, String opcode, LineageItem[] inputs) {
+		_id = id;
+		_opcode = opcode;
+		_data = data;
+		_inputs = inputs;
+		// materialize hash on construction 
+		// (constant time operation if input hashes constructed)
+		_hash = hashCode();
 	}
 	
 	public LineageItem[] getInputs() {
 		return _inputs;
 	}
 	
-	public String getName() {
-		return _name;
-	}
-	
-	public void setName(String name) {
-		_name = name;
+	public void setInput(int i, LineageItem item) {
+		_inputs[i] = item;
+		_hash = 0; //reset hash
 	}
 	
 	public String getData() {
@@ -138,9 +138,9 @@ public class LineageItem {
 		if (!(o instanceof LineageItem))
 			return false;
 		
-		resetVisitStatus();
+		resetVisitStatusNR();
 		boolean ret = equalsLI((LineageItem) o);
-		resetVisitStatus();
+		resetVisitStatusNR();
 		return ret;
 	}
 	
@@ -149,16 +149,9 @@ public class LineageItem {
 			return true;
 		
 		boolean ret = _opcode.equals(that._opcode);
-		
-		//If this is LineageItemType.Creation, remove _name in _data
-		if (getType() == LineageItemType.Creation) {
-			String this_data = _data.replace(_name, "");
-			String that_data = that._data.replace(that._name, "");
-			ret &= this_data.equals(that_data);
-		} else
-			ret &= _data.equals(that._data);
-		
-		if (_inputs != null && ret && (_inputs.length == that._inputs.length))
+		ret &= _data.equals(that._data);
+		ret &= (hashCode() == that.hashCode());
+		if( ret && _inputs != null && _inputs.length == that._inputs.length )
 			for (int i = 0; i < _inputs.length; i++)
 				ret &= _inputs[i].equalsLI(that._inputs[i]);
 		
@@ -170,15 +163,12 @@ public class LineageItem {
 	public int hashCode() {
 		if (_hash == 0) {
 			//compute hash over opcode and all inputs
-			int h = _opcode.hashCode();
+			int h = UtilFunctions.intHashCode(
+				_opcode.hashCode(), _data.hashCode());
 			if (_inputs != null)
 				for (LineageItem li : _inputs)
-					h = UtilFunctions.intHashCode(h, li.hashCode());
-			
-			//if Creation type, remove _name in _data
-			_hash = UtilFunctions.intHashCode(h, 
-				((getType() == LineageItemType.Creation) ?
-				_data.replace(_name, "") : _data).hashCode());
+					h = UtilFunctions.intHashCodeRobust(li.hashCode(), h);
+			_hash = h;
 		}
 		return _hash;
 	}
@@ -190,7 +180,7 @@ public class LineageItem {
 		LineageItem[] copyInputs = new LineageItem[getInputs().length];
 		for (int i=0; i<_inputs.length; i++) 
 			copyInputs[i] = _inputs[i].deepCopy();
-		return new LineageItem(_name, _opcode, copyInputs);
+		return new LineageItem(_opcode, copyInputs);
 	}
 	
 	public boolean isLeaf() {
@@ -201,16 +191,47 @@ public class LineageItem {
 		return !_opcode.isEmpty();
 	}
 	
-	public LineageItem resetVisitStatus() {
+	/**
+	 * Non-recursive equivalent of {@link #resetVisitStatus()} 
+	 * for robustness with regard to stack overflow errors.
+	 */
+	public void resetVisitStatusNR() {
+		Stack<LineageItem> q = new Stack<>();
+		q.push(this);
+		while( !q.empty() ) {
+			LineageItem tmp = q.pop();
+			if( !tmp.isVisited() )
+				continue;
+			if (tmp.getInputs() != null)
+				for (LineageItem li : tmp.getInputs())
+					q.push(li);
+			tmp.setVisited(false);
+		}
+	}
+	
+	/**
+	 * Non-recursive equivalent of {@link #resetVisitStatus(LineageItem[])} 
+	 * for robustness with regard to stack overflow errors.
+	 * 
+	 * @param lis root lineage items
+	 */
+	public static void resetVisitStatusNR(LineageItem[] lis) {
+		if (lis != null)
+			for (LineageItem liRoot : lis)
+				liRoot.resetVisitStatusNR();
+	}
+	
+	@Deprecated
+	public void resetVisitStatus() {
 		if (!isVisited())
-			return this;
+			return;
 		if (_inputs != null)
 			for (LineageItem li : getInputs())
 				li.resetVisitStatus();
 		setVisited(false);
-		return this;
 	}
 	
+	@Deprecated
 	public static void resetVisitStatus(LineageItem[] lis) {
 		if (lis != null)
 			for (LineageItem liRoot : lis)

@@ -31,6 +31,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -60,9 +61,11 @@ public class DMLOptions {
 	public boolean              help          = false;            // whether to print the usage option
 	public boolean              lineage       = false;            // whether compute lineage trace
 	public boolean              lineage_dedup = false;            // whether deduplicate lineage items
-	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE;
+	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE; // reuse type (full, partial, hybrid)
+	public LineageCachePolicy   linCachePolicy= LineageCachePolicy.HYBRID; // lineage cache eviction policy
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
+	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
 	
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -126,6 +129,12 @@ public class DMLOptions {
 							dmlOptions.linReuseType = ReuseCacheType.REUSE_HYBRID;
 						else if (lineageType.equalsIgnoreCase("none"))
 							dmlOptions.linReuseType = ReuseCacheType.NONE;
+						else if (lineageType.equalsIgnoreCase("policy_lru"))
+							dmlOptions.linCachePolicy = LineageCachePolicy.LRU;
+						else if (lineageType.equalsIgnoreCase("policy_costnsize"))
+							dmlOptions.linCachePolicy = LineageCachePolicy.COSTNSIZE;
+						else if (lineageType.equalsIgnoreCase("policy_hybrid"))
+							dmlOptions.linCachePolicy = LineageCachePolicy.HYBRID;
 						else
 							throw new org.apache.commons.cli.ParseException(
 								"Invalid argument specified for -lineage option: " + lineageType);
@@ -226,6 +235,8 @@ public class DMLOptions {
 			}
 		}
 
+		dmlOptions.checkPrivacy = line.hasOption("checkPrivacy");
+
 		return dmlOptions;
 	}
 	
@@ -273,6 +284,9 @@ public class DMLOptions {
 			.hasOptionalArgs().create("lineage");
 		Option fedOpt = OptionBuilder.withDescription("starts a federated worker with the given argument as the port.")
 			.hasOptionalArg().create("w");
+		Option checkPrivacy = OptionBuilder
+			.withDescription("Check which privacy constraints are loaded and checked during federated execution")
+			.create("checkPrivacy");
 		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
@@ -285,6 +299,7 @@ public class DMLOptions {
 		options.addOption(pythonOpt);
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
+		options.addOption(checkPrivacy);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

@@ -92,6 +92,8 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 				else
 					return new BinaryMatrixMatrixSPInstruction(operator, in1, in2, out, opcode, str);
 			}
+			else if(dt1 == DataType.FRAME && dt2 == DataType.MATRIX)
+				return  new BinaryFrameMatrixSPInstruction(operator, in1, in2, out, opcode, str);
 			else
 				return new BinaryMatrixScalarSPInstruction(operator, in1, in2, out, opcode, str);
 		}
@@ -106,7 +108,9 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 				throw new DMLRuntimeException("Tensor binary operation not yet implemented for tensor-scalar, or tensor-matrix");
 		}
 		else if( dt1 == DataType.FRAME || dt2 == DataType.FRAME ) {
-			return BinaryFrameFrameSPInstruction.parseInstruction(str);
+			if(dt1 == DataType.FRAME && dt2 == DataType.FRAME)
+				return BinaryFrameFrameSPInstruction.parseInstruction(str);
+
 		}
 
 		return null;
@@ -459,7 +463,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		}
 		
 		if( checkAligned ) {
-			if( mc1.getCols() % mc1.getBlocksize() != 0 )
+			if( (cbind ? mc1.getCols() : mc1.getRows()) % mc1.getBlocksize() != 0 )
 				throw new DMLRuntimeException("Input matrices are not aligned to blocksize boundaries. Wrong append selected");
 		}
 	}

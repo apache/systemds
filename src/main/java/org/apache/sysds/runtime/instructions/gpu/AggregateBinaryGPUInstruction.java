@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCuMatMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.utils.GPUStatistics;
@@ -64,8 +63,7 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 		CPOperand out = new CPOperand(parts[3]);
 		boolean isLeftTransposed = Boolean.parseBoolean(parts[4]);
 		boolean isRightTransposed = Boolean.parseBoolean(parts[5]);
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, 1);
+		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
 		return new AggregateBinaryGPUInstruction(aggbin, in1, in2, out, opcode, str, isLeftTransposed, isRightTransposed);	
 	}
 

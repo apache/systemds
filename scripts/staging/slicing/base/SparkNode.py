@@ -17,8 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# -------------------------------------------------------------
-
+#-------------------------------------------------------------
 
 class SparkNode:
     error: float

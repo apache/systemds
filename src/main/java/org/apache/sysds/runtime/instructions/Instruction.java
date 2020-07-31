@@ -21,8 +21,6 @@ package org.apache.sysds.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DataIdentifier;
@@ -41,15 +39,6 @@ public abstract class Instruction
 	
 	protected static final Log LOG = LogFactory.getLog(Instruction.class.getName());
 
-	// local flag for debug output
-	private static final boolean LTRACE = false;
-	static {
-		// for internal debugging only
-		if( LTRACE ) {
-			Logger.getLogger("org.apache.sysds.runtime.instructions.Instruction").setLevel(Level.TRACE);
-		}
-	}
-
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;
 	public static final String VALUETYPE_PREFIX = Lop.VALUETYPE_PREFIX;
@@ -57,6 +46,7 @@ public abstract class Instruction
 	public static final String INSTRUCTION_DELIM = Lop.INSTRUCTION_DELIMITOR;
 	public static final String SP_INST_PREFIX = "sp_";
 	public static final String GPU_INST_PREFIX = "gpu_";
+	public static final String FEDERATED_INST_PREFIX = "fed_";
 	
 	//basic instruction meta data
 	protected String instString = null;
@@ -138,6 +128,10 @@ public abstract class Instruction
 		privacyConstraint = lop.getPrivacyConstraint();
 	}
 
+	public void setPrivacyConstraint(PrivacyConstraint pc){
+		privacyConstraint = pc;
+	}
+
 	public PrivacyConstraint getPrivacyConstraint(){
 		return privacyConstraint;
 	}
@@ -193,6 +187,8 @@ public abstract class Instruction
 				extendedOpcode = SP_INST_PREFIX + getOpcode();
 			else if( getType() == IType.GPU )
 				extendedOpcode = GPU_INST_PREFIX + getOpcode();
+			else if( getType() == IType.FEDERATED)
+				extendedOpcode = FEDERATED_INST_PREFIX + getOpcode();
 			else
 				extendedOpcode = getOpcode();
 		}

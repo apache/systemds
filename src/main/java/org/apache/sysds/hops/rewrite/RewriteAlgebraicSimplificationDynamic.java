@@ -498,7 +498,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			List<Hop> inputs = hi.getInput().get(1).getInput();
 			if( HopRewriteUtils.checkAvgRowsGteCols(inputs) ) {
 				Hop[] tsmms = inputs.stream()
-					.map(h -> HopRewriteUtils.createTSMM(h, true)).toArray(Hop[]::new);
+					.map(h -> HopRewriteUtils.createTsmm(h, true)).toArray(Hop[]::new);
 				hnew = HopRewriteUtils.createNary(OpOpN.PLUS, tsmms);
 				//cleanup parent references from rbind
 				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(1));
@@ -526,6 +526,19 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(0).getInput().get(0));
 				//HopRewriteUtils.removeAllChildReferences(hi.getInput().get(1));
 				branch = 2;
+			}
+		}
+		//pattern 3: X = t(cbind(A, B)) %*% cbind(A, B), w/ one cbind consumer (twice in tsmm)
+		else if( HopRewriteUtils.isTsmm(hi) && hi.getInput().get(1).getParent().size()==2
+			&& HopRewriteUtils.isTransposeOperation(hi.getInput().get(0))
+			&& HopRewriteUtils.isBinary(hi.getInput().get(1), OpOp2.CBIND) )
+		{
+			Hop input1 = hi.getInput().get(1).getInput().get(0);
+			Hop input2 = hi.getInput().get(1).getInput().get(1);
+			if( input1.getDim1() > input1.getDim2() && input2.getDim2() == 1 ) {
+				hnew = HopRewriteUtils.createPartialTsmmCbind(
+					input1, input2, HopRewriteUtils.createTsmm(input1, true));
+				branch = 3;
 			}
 		}
 		
@@ -2285,7 +2298,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
 				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
-						left : HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.PLUS_MULT);
+						left : HopRewriteUtils.createTernary(left, smid, mright, OpOp3.PLUS_MULT);
 				LOG.debug("Applied fuseAxpyBinaryOperationChain1. (line " +hi.getBeginLine()+")");
 			}
 			//pattern (b) s*Y + X -> X +* sY
@@ -2297,7 +2310,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				Hop smid = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = left.getInput().get( (left.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
 				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
-						right : HopRewriteUtils.createTernaryOp(right, smid, mright, OpOp3.PLUS_MULT);
+						right : HopRewriteUtils.createTernary(right, smid, mright, OpOp3.PLUS_MULT);
 				LOG.debug("Applied fuseAxpyBinaryOperationChain2. (line " +hi.getBeginLine()+")");
 			}
 			//pattern (c) X - s*Y -> X -* sY
@@ -2309,7 +2322,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				Hop smid = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 0 : 1); 
 				Hop mright = right.getInput().get( (right.getInput().get(0).getDataType()==DataType.SCALAR) ? 1 : 0);
 				ternop = (smid instanceof LiteralOp && HopRewriteUtils.getDoubleValueSafe((LiteralOp)smid)==0) ? 
-						left : HopRewriteUtils.createTernaryOp(left, smid, mright, OpOp3.MINUS_MULT);
+						left : HopRewriteUtils.createTernary(left, smid, mright, OpOp3.MINUS_MULT);
 				LOG.debug("Applied fuseAxpyBinaryOperationChain3. (line " +hi.getBeginLine()+")");
 			}
 			

@@ -36,6 +36,7 @@ public class IfProgramBlock extends ProgramBlock
 	private ArrayList<Instruction> _predicate;
 	private ArrayList<ProgramBlock> _childBlocksIfBody;
 	private ArrayList<ProgramBlock> _childBlocksElseBody;
+	private int _lineagePathPos = -1;
 	
 	public IfProgramBlock(Program prog, ArrayList<Instruction> predicate) {
 		super(prog);
@@ -86,19 +87,21 @@ public class IfProgramBlock extends ProgramBlock
 		return true;
 	}
 	
+	public void setLineageDedupPathPos(int pos) {
+		_lineagePathPos = pos;
+	}
+	
 	@Override
 	public void execute(ExecutionContext ec) 
 	{
 		BooleanObject predResult = executePredicate(ec);
 	
 		if (DMLScript.LINEAGE_DEDUP)
-			ec.getLineagePath().setBranchPredicateValue(predResult.getBooleanValue());
-			
+			ec.getLineage().setDedupPathBranch(_lineagePathPos, predResult.getBooleanValue());
+		
 		//execute if statement
-		if(predResult.getBooleanValue())
-		{	
-			try 
-			{	
+		if(predResult.getBooleanValue()) {
+			try  {
 				for (int i=0 ; i < _childBlocksIfBody.size() ; i++) {
 					_childBlocksIfBody.get(i).execute(ec);
 				}
@@ -106,13 +109,11 @@ public class IfProgramBlock extends ProgramBlock
 			catch(DMLScriptException e) {
 				throw e;
 			}
-			catch(Exception e)
-			{
+			catch(Exception e) {
 				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating if statement body ", e);
 			}
 		}
-		else
-		{
+		else {
 			try {
 				for (int i=0 ; i < _childBlocksElseBody.size() ; i++) {
 					_childBlocksElseBody.get(i).execute(ec);

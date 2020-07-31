@@ -29,7 +29,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [
+          ubuntu-latest, 
+          # macOS-latest, 
+          windows-latest
+          ]
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -48,4 +52,4 @@ jobs:
           ${{ runner.os }}-maven-
 
     - name: Build
-      run: mvn package
+      run: mvn package -P rat

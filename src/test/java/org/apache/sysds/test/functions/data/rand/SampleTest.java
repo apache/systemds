@@ -22,15 +22,16 @@ package org.apache.sysds.test.functions.data.rand;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.apache.sysds.api.DMLException;
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
 
 /**
  * Tests if Rand produces the same output, for a given set of parameters, across different (CP vs. MR) runtime platforms.   
@@ -118,15 +119,12 @@ public class SampleTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(TEST_NAME);
 
 	 	String HOME = SCRIPT_DIR + TEST_DIR;
-		boolean exceptionExpected = false;
-
-		if (test_type == TEST_TYPE.ERROR)
-			exceptionExpected = true;
+		Class<?> expectedException = null;
 
 		switch (test_type) {
 		case TWO_INPUTS:
 			if (_range < _size)
-				exceptionExpected = true;
+				expectedException = DMLRuntimeException.class;
 			fullDMLScriptName = HOME + TEST_NAME + "2" + ".dml";
 			programArgs = new String[] { "-args", Long.toString(_range),
 					Long.toString(_size), output("A") };
@@ -140,15 +138,16 @@ public class SampleTest extends AutomatedTestBase
 			break;
 		case THREE_INPUTS2:
 			if (_range < _size)
-				exceptionExpected = true;
+				expectedException = LanguageException.class;
 			fullDMLScriptName = HOME + TEST_NAME + "3" + ".dml";
 			programArgs = new String[] { "-args", Long.toString(_range),
 					Long.toString(_size), Long.toString(_seed),
 					output("A") };
 			break;
 
-		case FOUR_INPUTS:
 		case ERROR:
+			expectedException = LanguageException.class;
+		case FOUR_INPUTS:
 			fullDMLScriptName = HOME + TEST_NAME + "4" + ".dml";
 			programArgs = new String[] { "-args", Long.toString(_range),
 					Long.toString(_size), (_replace ? "TRUE" : "FALSE"),
@@ -156,8 +155,7 @@ public class SampleTest extends AutomatedTestBase
 			break;
 		}
 
-		runTest(true, exceptionExpected,
-				(exceptionExpected ? DMLException.class : null), -1);
+		runTest(expectedException);
 
 	}
 	

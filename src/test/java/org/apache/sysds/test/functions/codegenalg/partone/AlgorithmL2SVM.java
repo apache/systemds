@@ -34,21 +34,21 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
 public class AlgorithmL2SVM extends AutomatedTestBase 
-{	
+{
 	private final static String TEST_NAME1 = "Algorithm_L2SVM";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmL2SVM.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-5;
 	
-	private final static int rows = 3468;
+	private final static int rows = 2468;
 	private final static int cols1 = 1007;
 	private final static int cols2 = 987;
 	
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
 	
-	private final static int intercept = 0;
+	private final static boolean intercept = false;
 	private final static double epsilon = 0.000000001;
 	private final static double maxiter = 10;
 	
@@ -162,11 +162,11 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			
 			fullDMLScriptName = "scripts/algorithms/l2-svm.dml";
 			programArgs = new String[]{ "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
-				"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
-				"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
+				"icpt="+String.valueOf(intercept).toUpperCase(), "tol="+String.valueOf(epsilon),
+				"reg=0.001", "maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
 
-			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
-				String.valueOf(maxiter), expectedDir());
+			rCmd = getRCmd(inputDir(), String.valueOf(intercept).toUpperCase(),
+				String.valueOf(epsilon), String.valueOf(maxiter), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			

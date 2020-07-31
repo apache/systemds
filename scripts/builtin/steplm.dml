@@ -60,170 +60,144 @@
 # STDEV_TOT_Y           Standard Deviation of the response value Y
 # AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
 
-m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
-return(Matrix[Double] C, Matrix[Double] S) {
+m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, 
+  Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
+  return(Matrix[Double] B, Matrix[Double] S)
+{
+  if( icpt!=0 & icpt!=1 & icpt!=2 )
+    stop("Invalid steplm invocation with icpt="+icpt+" (valid values: 0,1,2).");
 
-  # currently only the forward selection strategy in supported: start
-  # from one feature and iteratively add features until AIC improves
-  dir = "forward";
+  # NOTE: currently only the forward selection strategy in supported:
+  # start from one feature and iteratively add features until AIC improves
   thr = 0.001;
 
-  print("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
-  print("Reading X and Y...");
+	if(verbose)
+    print("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
   X_orig = X;
   n = nrow(X_orig);
   m_orig = ncol(X_orig);
 
   # BEGIN STEPWISE LINEAR REGRESSION
-  if (dir == "forward") {
-    continue = TRUE
-    columns_fixed = matrix(0, 1, m_orig);
-    columns_fixed_ordered = matrix(0, 1, 1);
-    
-		# X_global stores the best model found at each step
-    X_global = matrix(0, n, 1);
-    
-		if (icpt == 1 | icpt == 2) {
-      beta = mean(y);
-      AIC_best = 2 + n * log(sum((beta - y) ^ 2) / n);
-    } else {
-      beta = 0.0;
-      AIC_best = n * log(sum(y ^ 2) / n);
-    }
-    AICs = matrix(AIC_best, 1, m_orig);
-    print("Best AIC without any features: " + AIC_best);
-    boa_ncol = ncol(X_orig);
-    if (icpt != 0) {
-      boa_ncol = boa_ncol + 1
-    }
-    beta_out_all = matrix(0, boa_ncol, m_orig * 1);
-    y_ncol = 1;
-    column_best = 0;
+  columns_fixed = matrix(0, 1, m_orig);
+  columns_fixed_ordered = matrix(0, 1, 1);
+  
+  # X_global stores the best model found at each step
+  X_global = matrix(0, n, 1);
+  
+  if (icpt == 1 | icpt == 2) {
+    beta = mean(y);
+    AIC_best_orig = 2 + n * log(sum((beta - y) ^ 2) / n);
+  } else {
+    beta = 0.0;
+    AIC_best_orig = n * log(sum(y ^ 2) / n);
+  }
+  if(verbose)
+	  print("Best AIC without any features: " + AIC_best_orig);
+  boa_ncol = ncol(X_orig) + as.integer(icpt!=0);
+  beta_out_all = matrix(0, boa_ncol, m_orig);
 
-    # First pass to examine single features
-    for (i in 1:m_orig, check = 0) {
-      columns_fixed_ordered_1 = as.matrix(i);
-      [AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, icpt);
+  # First pass to examine single features
+  AICs = matrix(0, 1, m_orig);
+  parfor (i in 1:m_orig) {
+    [AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, icpt, reg, tol, maxi, verbose);
+    AICs[1, i] = AIC_1;
+    beta_out_all[1:nrow(beta_out_i), i] = beta_out_i;
+  }
+  AIC_best = min(min(AICs), AIC_best_orig);
+  AIC_check = checkAIC(AIC_best, AIC_best_orig, thr);
+  column_best = ifelse(AIC_check, as.scalar(rowIndexMin(AICs)), 0);
 
-      AICs[1, i] = AIC_1;
-      AIC_cur = as.scalar(AICs[1, i]);
-      if ((AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs(thr * AIC_best))) {
-        column_best = i;
-        AIC_best = AIC_cur;
-      }
-      beta_out_all[1:nrow(beta_out_i), ((i - 1) * y_ncol + 1):(i * y_ncol)] = beta_out_i[, 1];
-    }
-		
-    # beta best so far
-    beta_best = beta_out_all[, (column_best - 1) * y_ncol + 1:column_best * y_ncol];
-    if (column_best == 0) {
-      print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
-      Selected = matrix(0, 1, 1);
-      if (icpt == 0) {
-        B = matrix(beta, m_orig, 1);
-      } else {
-        B_tmp = matrix(0, m_orig + 1, 1);
-        B_tmp[m_orig + 1,] = beta;
-        B = B_tmp;
-      }
-      beta_out = B;
-      S = Selected;
-      C = beta_out;
-    } else {
-
+  # beta best so far
+  beta_best = beta_out_all[, column_best];
+  if (column_best == 0) {
+    if(verbose)
+		  print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
+    B = matrix(0, m_orig, 1);
+    if (icpt != 0)
+      B = rbind(B, as.matrix(beta));
+    S = matrix(0, 1, 1);
+  }
+  else {
+		if(verbose)
       print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
 
-      columns_fixed[1, column_best] = 1;
-      columns_fixed_ordered[1, 1] = column_best;
-      X_global = X_orig[, column_best];
+    columns_fixed[1, column_best] = 1;
+    columns_fixed_ordered[1, 1] = column_best;
+    X_global = X_orig[, column_best];
 
-      while (continue) {
-        # Subsequent passes over the features
-        beta_out_all_2 = matrix(0, boa_ncol, m_orig * 1);
-        for (i in 1:m_orig, check = 0) {
-          if (as.scalar(columns_fixed[1, i]) == 0) {
-            # Construct the feature matrix
-            X = cbind(X_global, X_orig[, i]);
-            tmp = as.matrix(0);
-            tmp[1, 1] = i;
-            columns_fixed_ordered_2 = append(columns_fixed_ordered, tmp);
-            [AIC_2, beta_out_i] = linear_regression(X, y, icpt);
-            beta_out_all_2[1:nrow(beta_out_i), (i - 1) * y_ncol + 1:i * y_ncol] = beta_out_i[, 1:1];
-            AICs[1, i] = AIC_2;
-            AIC_cur = as.scalar(AICs[1, i]);
-            if ((AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs(thr * AIC_best)) &
-            (as.scalar(columns_fixed[1, i]) == 0)) {
-              column_best = i;
-              AIC_best = as.scalar(AICs[1, i]);
-            }
-          }
+    continue = TRUE
+    while (continue) {
+      # Subsequent passes over the features
+      beta_out_all_2 = matrix(0, boa_ncol, m_orig * 1);
+      AICs_2 = matrix(0, 1, m_orig); # full overwrite
+      parfor (i in 1:m_orig) {
+        if (as.scalar(columns_fixed[1, i]) == 0) {
+          # Construct the feature matrix
+          Xi = cbind(X_global, X_orig[, i]);
+          [AIC_2, beta_out_i2] = linear_regression(Xi, y, icpt, reg, tol, maxi, verbose);
+          AICs_2[1, i] = AIC_2;
+          beta_out_all_2[1:nrow(beta_out_i2), i] = beta_out_i2;
         }
+        else {
+          AICs_2[1,i] = Inf;
+        }
+      }
 
-        # have the best beta store in the matrix
-        beta_best = beta_out_all_2[, (column_best - 1) * y_ncol + 1:column_best * y_ncol];
+      # Determine the best AIC
+      AIC_best_orig = AIC_best;
+      AIC_best = min(min(AICs_2), AIC_best_orig);
+      AIC_check = checkAIC(AIC_best, AIC_best_orig, thr);
+      column_best = ifelse(AIC_check, as.scalar(rowIndexMin(AICs_2)), column_best);
 
-        # Append best found features (i.e., columns) to X_global
-        if (as.scalar(columns_fixed[1, column_best]) == 0) {
-          # new best feature found
-          print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
-          columns_fixed[1, column_best] = 1;
-          columns_fixed_ordered = cbind(columns_fixed_ordered, as.matrix(column_best));
-          if (ncol(columns_fixed_ordered) == m_orig) {
-            # all features examined
-            X_global = cbind(X_global, X_orig[, column_best]);
-            continue = FALSE;
-          } else {
-            X_global = cbind(X_global, X_orig[, column_best]);
-          }
-        } else {
+      # have the best beta store in the matrix
+      beta_best = beta_out_all_2[, column_best];
+
+      # Append best found features (i.e., columns) to X_global
+      if (as.scalar(columns_fixed[1, column_best]) == 0) {
+        # new best feature found
+        if(verbose)
+				  print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+        columns_fixed[1, column_best] = 1;
+        columns_fixed_ordered = cbind(columns_fixed_ordered, as.matrix(column_best));
+        if (ncol(columns_fixed_ordered) == m_orig) {
+          # all features examined
+          X_global = cbind(X_global, X_orig[, column_best]);
           continue = FALSE;
+        } else {
+          X_global = cbind(X_global, X_orig[, column_best]);
         }
+      } else {
+        continue = FALSE;
       }
-      # run linear regression with selected set of features
-      print("Running linear regression with selected features...");
-      [AIC, beta_out] = linear_regression(X_global, y, icpt);
-      Selected = columns_fixed_ordered;
-      if (icpt != 0) {
-        Selected = cbind(Selected, matrix(boa_ncol, 1, 1))
-      }
-      beta_out = reorder_matrix(boa_ncol, beta_out, Selected);
-      S = Selected;
-      C = beta_out;
     }
-  } else {
-    stop("Currently only forward selection strategy is supported!");
+    # run linear regression with selected set of features
+    if( verbose )
+		  print("Running linear regression with selected features...");
+    [AIC, beta_out] = linear_regression(X_global, y, icpt, reg, tol, maxi, verbose);
+    S = columns_fixed_ordered;
+    if (icpt != 0)
+      S = cbind(S, matrix(boa_ncol, 1, 1))
+    B = reorder_matrix(boa_ncol, beta_out, S);
   }
 }
 
 # Computes linear regression using lm and outputs AIC.
-linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0)
-  return(Double AIC, Matrix[Double] beta) {
-  n = nrow(X);
-  m = ncol(X);
-
-  # Introduce the intercept, shift and rescale the columns of X if needed
-  if (icpt == 1 | icpt == 2) {
-    # add the intercept column
-    ones_n = matrix(1, n, 1);
-    X = cbind(X, ones_n);
-    m = m - 1;
-  }
-
-  m_ext = ncol(X);
-
+linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt, 
+  Double reg, Double tol, Integer maxi, Boolean verbose)
+  return(Double AIC, Matrix[Double] beta)
+{
   # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
-  beta = lm(X = X, y = y, verbose=FALSE);
-  m_ext = ncol(X);
+  beta = lm(X = X, y = y, icpt = icpt, reg=reg, tol=tol, maxi=maxi, verbose=FALSE);
+  
+  # PREPARE X for SCORING
+  if( icpt != 0 )
+    X = cbind(X, matrix(1,nrow(X),1))
+
   # COMPUTE AIC
+  n = nrow(X);
   y_residual = y - X %*% beta;
   ss_res = sum(y_residual ^ 2);
-  eq_deg_of_freedom = m_ext;
-  AIC = (2 * eq_deg_of_freedom) + n * log(ss_res / n);
-
-  # TODO IMP NOTE: with the fix in PR-22, we have not accounted for
-  # intercept=2 and # the code before # was not matching so we have removed it
-  # for now. Pl see the git revision history and diff to see the changes.
-  # in future we will have this feature. For now it is disabled
+  AIC = (2 * ncol(X)) + n * log(ss_res / n);
 }
 
 reorder_matrix = function(
@@ -249,4 +223,8 @@ reorder_matrix = function(
   seqS = seq(1, nrow(S0));
   P = table(seqS, S0, ncolX, ncolX);
   Y = t(P) %*% B;
+}
+
+checkAIC = function(Double AIC_cur, Double AIC_best, Double thr) return (Boolean R) {
+  R = (AIC_cur < AIC_best) & (AIC_best-AIC_cur > abs(thr * AIC_best))
 }

@@ -1,0 +1,65 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Imports
+source("staging/NCF.dml") as NCF
+
+# prepare input data
+
+data_loc = "scripts/nn/examples/data/ml-latest-small/ml-latest-small/"
+
+# - read user/items integer-encoded vectors
+train = read(data_loc + "sampled-train.csv", format="csv", header=FALSE, sep=",");
+val = read(data_loc + "sampled-test.csv", format="csv", header=FALSE, sep=",");
+
+users_train_int_encoded = train[, 1];
+items_train_int_encoded = train[, 2];
+targets_train = train[, 3];
+
+users_val_int_encoded = val[, 1];
+items_val_int_encoded = val[, 2];
+targets_val = val[, 3];
+
+N = max(max(items_train_int_encoded), max(items_val_int_encoded)); # number items
+M = max(max(users_train_int_encoded), max(users_val_int_encoded)); # number users
+
+print("Done reading.");
+
+# - create user/items matrices by applying one-hot-encoding
+items_train = toOneHot(items_train_int_encoded, N);
+items_val = toOneHot(items_val_int_encoded, N);
+users_train = toOneHot(users_train_int_encoded, M);
+users_val = toOneHot(users_val_int_encoded, M);
+
+print("Done encoding.");
+
+# Train
+
+epochs = 20;
+batch_size = 16;
+
+# layer dimensions
+E = 8; # embedding
+D1 = 64; # dense layer 1
+D2 = 32; # dense layer 2
+D3 = 16; # dense layer 3
+
+[biases, weights] = NCF::train(users_train, items_train, targets_train, users_val, items_val, targets_val, epochs, batch_size, E, D1, D2, D3);

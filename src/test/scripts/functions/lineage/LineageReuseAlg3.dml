@@ -23,7 +23,7 @@ findBetas = function(Matrix[double] X, Matrix[double] y)
              return (Matrix[double] all_betas)
 {
   R = matrix(0, rows=10*(ncol(X)+1), cols=5);
-  for (lamda in 20:25) {
+  for (lamda in 20:39) {
     #betas = multiLogReg(X=X, Y=y, maxii=0, verbose=FALSE);
     betas = multiLogReg(X=X, Y=y, icpt=2, tol=0.000001,
                         reg=lamda, maxi=100, maxii=0, verbose=FALSE);
@@ -36,7 +36,7 @@ findIcpt = function(Matrix[double] X, Matrix[double] y)
            return (Matrix[double] all_betas)
 {
   R = matrix(0, rows=12*(ncol(X)+2), cols=5);
-  for (lamda in 20:22) {
+  for (lamda in 20:29) {
     for (icpt in 1:2) {
       #Function level reuse of 3 out of 6 calls.
       betas = multiLogReg(X=X, Y=y, icpt=icpt, tol=0.000001,

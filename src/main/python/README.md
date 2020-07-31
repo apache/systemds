@@ -16,9 +16,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 {% end comment %}
 -->
+
 # SystemDS
 
-![Python Test](https://github.com/apache/systemml/workflows/Python%20Test/badge.svg)
+![Python Test](https://github.com/apache/systemds/workflows/Python%20Test/badge.svg)
 
 This package provides a Pythonic interface for working with SystemDS.
 

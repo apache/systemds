@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -628,8 +629,8 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
-		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
-			LineageItemUtils.getLineage(ec, input1,input2,input3,rowLower,rowUpper,colLower,colUpper))};
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		return Pair.of(output.getName(), new LineageItem(getOpcode(),
+			LineageItemUtils.getLineage(ec, input1,input2,input3,rowLower,rowUpper,colLower,colUpper)));
 	}
 }

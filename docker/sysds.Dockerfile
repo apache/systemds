@@ -39,11 +39,11 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
 # Install Extras
 RUN apk add --no-cache git bash
 
-RUN git clone https://github.com/apache/systemml.git
+RUN git clone https://github.com/apache/systemds.git systemds
 
 WORKDIR /usr/src/systemds/
 
-RUN mvn package
+RUN mvn clean package -P distribution
 
 # Remove Maven since it is not needed for running the system
 RUN rm -r /usr/lib/mvn

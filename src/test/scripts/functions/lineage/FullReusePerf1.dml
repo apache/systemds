@@ -24,12 +24,12 @@ tmp = X[,1];
 
 for(i in 2:ncol(X)){
     A = t(tmp) %*% tmp;
-    while(FALSE) {}
-    print(sum(A));
+    if(sum(A) == NaN)
+		  print(sum(A));
     tmp = cbind(tmp, X[,i]);
     A = t(tmp) %*% tmp;
-    while(FALSE) {}
-    print(sum(A));
+    if(sum(A) == NaN)
+		  print(sum(A));
 }
 
 # repeat the loop to test read from local FS
@@ -38,12 +38,12 @@ tmp = X[,1];
 
 for(i in 2:ncol(X)){
     A = t(tmp) %*% tmp;
-    while(FALSE) {}
-    print(sum(A));
+    if(sum(A) == NaN)
+		  print(sum(A));
     tmp = cbind(tmp, X[,i]);
     A = t(tmp) %*% tmp;
-    while(FALSE) {}
-    print(sum(A));
+    if(sum(A) == NaN)
+		  print(sum(A));
 }
 
 write(A, $2, format="text");

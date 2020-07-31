@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.fs.FileSystem;
@@ -163,11 +164,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 	}
 
 	public long getRows() {
-		return rows.isLiteral() ? Long.parseLong(rows.getName()) : -1;
+		return rows.isLiteral() ? UtilFunctions.parseToLong(rows.getName()) : -1;
 	}
 
 	public long getCols() {
-		return cols.isLiteral() ? Long.parseLong(cols.getName()) : -1;
+		return cols.isLiteral() ? UtilFunctions.parseToLong(cols.getName()) : -1;
 	}
 
 	public int getBlocksize() {
@@ -402,8 +403,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 		if(!mcOut.dimsKnown(true)) {
 			//note: we cannot compute the nnz from sparsity because this would not reflect the
 			//actual number of non-zeros, except for extreme values of sparsity equals 0 or 1.
+			//However, in all cases we keep this information for more coarse-grained decisions.
 			long lnnz = (sparsity==0 || sparsity==1) ? (long) (sparsity*lrows*lcols) : -1;
 			mcOut.set(lrows, lcols, blocksize, lnnz);
+			if( !mcOut.nnzKnown() )
+				mcOut.setNonZerosBound((long) (sparsity*lrows*lcols));
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
@@ -999,7 +1003,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String tmpInstStr = instString;
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
 			//generate pseudo-random seed (because not specified)
@@ -1010,7 +1014,13 @@ public class RandSPInstruction extends UnarySPInstruction {
 				(_method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(
 				tmpInstStr, position, String.valueOf(runtimeSeed));
+			if( !rows.isLiteral() )
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 2,
+					new CPOperand(ec.getScalarInput(rows)).getLineageLiteral());
+			if( !cols.isLiteral() )
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 3,
+					new CPOperand(ec.getScalarInput(cols)).getLineageLiteral());
 		}
-		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
+		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
 	}
 }

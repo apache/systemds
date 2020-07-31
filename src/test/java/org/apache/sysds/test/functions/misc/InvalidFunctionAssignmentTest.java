@@ -19,10 +19,10 @@
 
 package org.apache.sysds.test.functions.misc;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 public class InvalidFunctionAssignmentTest extends AutomatedTestBase
 {
@@ -69,6 +69,6 @@ public class InvalidFunctionAssignmentTest extends AutomatedTestBase
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[]{};
-		runTest(true, exceptionExpected, DMLException.class, -1);
+		runTest(true, exceptionExpected, LanguageException.class, -1);
 	}
 }

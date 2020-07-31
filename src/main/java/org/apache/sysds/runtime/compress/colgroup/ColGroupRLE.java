@@ -98,6 +98,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			final int blksz = 128 * 1024;
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
+			final double[] values = getValues();
 
 			// position and start offset arrays
 			int[] astart = new int[numVals];
@@ -116,8 +117,8 @@ public class ColGroupRLE extends ColGroupOffset {
 						int len = _data[boff + bix + 1];
 						for(int i = Math.max(rl, start); i < Math.min(start + len, ru); i++)
 							for(int j = 0; j < numCols; j++)
-								if(_values[off + j] != 0)
-									target.appendValue(i, _colIndexes[j], _values[off + j]);
+								if(values[off + j] != 0)
+									target.appendValue(i, _colIndexes[j], values[off + j]);
 						start += len;
 					}
 					apos[k] = bix;
@@ -138,6 +139,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			final int numCols = getNumCols();
 			final int numVals = getNumValues();
 			final int n = getNumRows();
+			final double[] values = getValues();
 
 			// position and start offset arrays
 			int[] apos = new int[numVals];
@@ -163,8 +165,8 @@ public class ColGroupRLE extends ColGroupOffset {
 						int len = _data[boff + bix + 1];
 						for(int i = start; i < start + len; i++)
 							for(int j = 0; j < numCols; j++)
-								if(_values[off + j] != 0)
-									target.appendValue(i, cix[j], _values[off + j]);
+								if(values[off + j] != 0)
+									target.appendValue(i, cix[j], values[off + j]);
 						start += len;
 					}
 					apos[k] = bix;
@@ -185,6 +187,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		final int numVals = getNumValues();
 		final int n = getNumRows();
 		double[] c = target.getDenseBlockValues();
+		final double[] values = getValues();
 
 		// position and start offset arrays
 		int[] astart = new int[numVals];
@@ -205,7 +208,7 @@ public class ColGroupRLE extends ColGroupOffset {
 				for(; bix < blen & start < bimax; bix += 2) {
 					start += _data[boff + bix];
 					int len = _data[boff + bix + 1];
-					Arrays.fill(c, start, start + len, _values[off + colpos]);
+					Arrays.fill(c, start, start + len, values[off + colpos]);
 					nnz += len;
 					start += len;
 				}
@@ -358,6 +361,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int n = getNumRows();
+		final double[] values = getValues();
 
 		if(numVals > 1 && _numRows > BitmapEncoder.BITMAP_BLOCK_SZ) {
 			final int blksz = ColGroupOffset.READ_CACHE_BLKSZ;
@@ -397,7 +401,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			// step 3: scale partial results by values and write to global output
 			for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols)
 				for(int j = 0; j < numCols; j++)
-					c[_colIndexes[j]] += cvals[k] * _values[valOff + j];
+					c[_colIndexes[j]] += cvals[k] * values[valOff + j];
 
 		}
 		else {
@@ -417,7 +421,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 				// scale partial results by values and write results
 				for(int j = 0; j < numCols; j++)
-					c[_colIndexes[j]] += vsum * _values[valOff + j];
+					c[_colIndexes[j]] += vsum * values[valOff + j];
 			}
 		}
 	}
@@ -428,6 +432,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 
 		// iterate over all values and their bitmaps
 		for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols) {
@@ -446,7 +451,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 			// scale partial results by values and write results
 			for(int j = 0; j < numCols; j++)
-				c[_colIndexes[j]] += vsum * _values[valOff + j];
+				c[_colIndexes[j]] += vsum * values[valOff + j];
 		}
 	}
 
@@ -484,6 +489,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
@@ -499,7 +505,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 			// scale counts by all values
 			for(int j = 0; j < numCols; j++)
-				kplus.execute3(kbuff, _values[valOff + j], count);
+				kplus.execute3(kbuff, values[valOff + j], count);
 		}
 
 		result.quickSetValue(0, 0, kbuff._sum);
@@ -596,6 +602,7 @@ public class ColGroupRLE extends ColGroupOffset {
 
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
+		final double[] values = getValues();
 
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
@@ -612,7 +619,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			// scale counts by all values
 			for(int j = 0; j < numCols; j++) {
 				kbuff.set(result.quickGetValue(0, _colIndexes[j]), result.quickGetValue(1, _colIndexes[j]));
-				kplus.execute3(kbuff, _values[valOff + j], count);
+				kplus.execute3(kbuff, values[valOff + j], count);
 				result.quickSetValue(0, _colIndexes[j], kbuff._sum);
 				result.quickSetValue(1, _colIndexes[j], kbuff._correction);
 			}
@@ -839,8 +846,9 @@ public class ColGroupRLE extends ColGroupOffset {
 			final int vcode = _vcodes[segIx];
 			if(vcode >= 0) {
 				// copy entire value tuple if necessary
+				final double[] values = getValues();
 				for(int j = 0, off = vcode * clen; j < clen; j++)
-					buff[_colIndexes[j]] = _values[off + j];
+					buff[_colIndexes[j]] = values[off + j];
 				// reset vcode to avoid scan on next segment
 				_vcodes[segIx] = -1;
 			}

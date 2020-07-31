@@ -50,15 +50,17 @@ src/main/python/NOTICE
 src/main/python/dist
 src/main/python/docs/build
 src/main/python/docs/source/_build
+src/main/python/tests/onnx_systemds/output_test
+src/main/python/tests/onnx_systemds/dml_output
+src/main/python/tests/onnx_systemds/test_models/*.onnx
 
 # User configuration files
 conf/SystemDS-config.xml
-conf/log4j.properties
-conf/systemds-env.sh
 
 # Documentation artifacts
 docs/_site
-docs/api
+# TODO Make the API auto generate and relocate into this api folder for webpage
+# docs/api
 
 # Test Artifacts
 src/test/scripts/**/*.dmlt

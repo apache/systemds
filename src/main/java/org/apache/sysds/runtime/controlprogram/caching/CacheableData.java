@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
@@ -215,7 +216,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	protected CacheableData(DataType dt, ValueType vt) {
 		super (dt, vt);
-		_uniqueID = isCachingActive() ? _seq.getNextID() : -1;
+		_uniqueID = _seq.getNextID();
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
 		_gpuObjects = DMLScript.USE_ACCELERATOR ? new HashMap<>() : null;
@@ -270,6 +271,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public String getFileName() {
 		return _hdfsFileName;
 	}
+	
+	public long getUniqueID() {
+		return _uniqueID;
+	}
 
 	public synchronized void setFileName( String file ) {
 		if( _hdfsFileName!=null && !_hdfsFileName.equals(file) )
@@ -318,6 +323,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	public void setPrivacyConstraints(PrivacyConstraint pc) {
 		_privacyConstraint = pc;
+		if ( DMLScript.CHECK_PRIVACY && pc != null )
+			CheckedConstraintsLog.addLoadedConstraint(pc.getPrivacyLevel());
 	}
 
 	public PrivacyConstraint getPrivacyConstraint() {
@@ -328,6 +335,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _metaData.getDataCharacteristics();
 	}
 
+	public long getNumRows() {
+		return getDataCharacteristics().getRows();
+	}
+
+	public long getNumColumns() {
+		return getDataCharacteristics().getCols();
+	}
+	
 	public abstract void refreshMetaData();
 
 	/**

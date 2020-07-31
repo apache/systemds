@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -96,6 +97,10 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		}
 
 	}
+	
+	public int getNumOutputs() {
+		return _outputs.size();
+	}
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) {
@@ -111,11 +116,17 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems(ExecutionContext ec) {
+	public boolean hasSingleLineage() {
+		return false;
+	}
+	
+	@Override
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	public Pair[] getLineageItems(ExecutionContext ec) {
 		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1,input2,input3);
-		ArrayList<LineageItem> items = new ArrayList<>();
+		ArrayList<Pair> items = new ArrayList<>();
 		for (CPOperand out : _outputs)
-			items.add(new LineageItem(out.getName(), getOpcode(), inputLineage));
-		return items.toArray(new LineageItem[items.size()]);
+			items.add(Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage)));
+		return items.toArray(new Pair[items.size()]);
 	}
 }

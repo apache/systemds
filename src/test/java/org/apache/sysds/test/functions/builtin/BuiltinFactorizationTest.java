@@ -37,8 +37,8 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinFactorizationTest.class.getSimpleName() + "/";
 
-	private final static int rows = 3210;
-	private final static int cols = 4012;
+	private final static int rows = 1210;
+	private final static int cols = 2012;
 	private final static int rank = 50;
 	private final static double sparsity = 0.01;
 	private final static double max_iter = 10;
@@ -104,14 +104,14 @@ public class BuiltinFactorizationTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{ "-explain", "-stats",
+			programArgs = new String[]{ "-stats",
 				"-args", input("X"), output("W"), output("H"),
 				String.valueOf(rank), String.valueOf(max_iter)};
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
 			//generate input and write incl meta data
-			double[][] Xa = TestUtils.generateTestMatrix(rows, cols, 1, 10, sparsity, 7);
+			double[][] Xa = TestUtils.generateTestMatrix(rows, cols, 1.0, 10.0, sparsity, 7);
 			writeInputMatrixWithMTD("X", Xa, true);
 			
 			//run test case

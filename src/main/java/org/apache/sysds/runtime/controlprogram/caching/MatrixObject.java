@@ -19,6 +19,13 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
+
+import java.io.IOException;
+import java.lang.ref.SoftReference;
+import java.util.List;
+import java.util.concurrent.Future;
+
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
@@ -44,13 +51,6 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.IndexRange;
-
-import java.io.IOException;
-import java.lang.ref.SoftReference;
-import java.util.List;
-import java.util.concurrent.Future;
-
-import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
 
 /**
  * Represents a matrix in control program. This class contains method to read
@@ -175,14 +175,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		DataCharacteristics mc = _metaData.getDataCharacteristics();
 		mc.setDimension( _data.getNumRows(), _data.getNumColumns() );
 		mc.setNonZeros( _data.getNonZeros() );
-	}
-
-	public long getNumRows() {
-		return getDataCharacteristics().getRows();
-	}
-
-	public long getNumColumns() {
-		return getDataCharacteristics().getCols();
 	}
 
 	public long getBlocksize() {
@@ -421,8 +413,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				// add result
 				int[] beginDimsInt = range.getBeginDimsInt();
 				int[] endDimsInt = range.getEndDimsInt();
-				if( !response.isSuccessful() )
-					throw new DMLRuntimeException("Federated matrix read failed: " + response.getErrorMessage());
 				MatrixBlock multRes = (MatrixBlock) response.getData()[0];
 				result.copy(beginDimsInt[0], endDimsInt[0] - 1,
 					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);

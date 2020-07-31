@@ -62,6 +62,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	private ArrayList<String> _updateInPlaceVars = null;
 	private boolean _requiresRecompile = false;
 	private boolean _splitDag = false;
+	private boolean _nondeterministic = false;
 
 	public StatementBlock() {
 		_ID = getNextSBID();
@@ -83,6 +84,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		this();
 		setParseInfo(sb);
 		_dmlProg = sb._dmlProg;
+		_nondeterministic = sb.isNondeterministic();
 	}
 
 	public void setDMLProg(DMLProgram dmlProg){
@@ -325,7 +327,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return ret;
 	}
 
-	public static ArrayList<StatementBlock> mergeFunctionCalls(ArrayList<StatementBlock> body, DMLProgram dmlProg) 
+	public static ArrayList<StatementBlock> mergeFunctionCalls(List<StatementBlock> body, DMLProgram dmlProg) 
 	{
 		for(int i = 0; i <body.size(); i++){
 
@@ -433,7 +435,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return outputs;
 	}
 
-	public static ArrayList<StatementBlock> mergeStatementBlocks(ArrayList<StatementBlock> sb){
+	public static ArrayList<StatementBlock> mergeStatementBlocks(List<StatementBlock> sb){
 		if (sb == null || sb.isEmpty())
 			return new ArrayList<>();
 
@@ -603,13 +605,15 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				tmp.add(new AssignmentStatement(di, fexpr, di));
 				//add hoisted dml-bodied builtin function to program (if not already loaded)
 				if( Builtins.contains(fexpr.getName(), true, false)
-					&& !prog.containsFunctionStatementBlock(Builtins.getInternalFName(fexpr.getName(), DataType.SCALAR))
-					&& !prog.containsFunctionStatementBlock(Builtins.getInternalFName(fexpr.getName(), DataType.MATRIX))) {
+					&& !prog.getDefaultFunctionDictionary().containsFunction(
+						Builtins.getInternalFName(fexpr.getName(), DataType.SCALAR))
+					&& !prog.getDefaultFunctionDictionary().containsFunction(
+						Builtins.getInternalFName(fexpr.getName(), DataType.MATRIX))) {
 					Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
 						.loadAndParseBuiltinFunction(fexpr.getName(), fexpr.getNamespace());
 					for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-						if( !prog.containsFunctionStatementBlock(fsb.getKey()) )
-							prog.addFunctionStatementBlock(fsb.getKey(), fsb.getValue());
+						if( !prog.getDefaultFunctionDictionary().containsFunction(fsb.getKey()) )
+							prog.getDefaultFunctionDictionary().addFunction(fsb.getKey(), fsb.getValue());
 						fsb.getValue().setDMLProg(prog);
 					}
 				}
@@ -1332,5 +1336,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	public void setUpdateInPlaceVars( ArrayList<String> vars ) {
 		_updateInPlaceVars = vars;
+	}
+	
+	public void setNondeterministic(boolean flag) {
+		_nondeterministic = flag;
+	}
+	
+	public boolean isNondeterministic() {
+		return _nondeterministic;
 	}
 }

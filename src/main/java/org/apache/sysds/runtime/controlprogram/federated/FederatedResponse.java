@@ -20,6 +20,14 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.Serializable;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class FederatedResponse implements Serializable {
 	private static final long serialVersionUID = 3142180026498695091L;
@@ -32,6 +40,7 @@ public class FederatedResponse implements Serializable {
 	
 	private FederatedResponse.Type _status;
 	private Object[] _data;
+	private Map<PrivacyLevel,LongAdder> checkedConstraints;
 	
 	public FederatedResponse(FederatedResponse.Type status) {
 		this(status, null);
@@ -56,10 +65,49 @@ public class FederatedResponse implements Serializable {
 	}
 	
 	public String getErrorMessage() {
-		return (String) _data[0];
+		if (_data[0] instanceof Throwable )
+			return ExceptionUtils.getFullStackTrace( (Throwable) _data[0] );
+		else if (_data[0] instanceof String)
+			return (String) _data[0];
+		else return "No readable error message";
 	}
 	
-	public Object[] getData() {
+	public Object[] getData() throws Exception {
+		updateCheckedConstraintsLog();
+		if ( !isSuccessful() )
+			throwExceptionFromResponse(); 
 		return _data;
+	}
+
+	/**
+	 * Checks the data object array for exceptions that occurred in the federated worker
+	 * during handling of request. 
+	 * @throws Exception the exception retrieved from the data object array 
+	 *  or DMLRuntimeException if no exception is provided by the federated worker.
+	 */
+	public void throwExceptionFromResponse() throws Exception {
+		for ( Object potentialException : _data){
+			if (potentialException != null && (potentialException instanceof Exception) ){
+				throw (Exception) potentialException;
+			}
+		}
+		throw new DMLRuntimeException("Unknown runtime exception in handling of federated request by federated worker.");
+	}
+
+	/**
+	 * Set checked privacy constraints in response if the provided map is not empty.
+	 * If the map is empty, it means that no privacy constraints were found.
+	 * @param checkedConstraints map of checked constraints from the PrivacyMonitor
+	 */
+	public void setCheckedConstraints(Map<PrivacyLevel,LongAdder> checkedConstraints){
+		if ( checkedConstraints != null && !checkedConstraints.isEmpty() ){
+			this.checkedConstraints = new EnumMap<>(PrivacyLevel.class);
+			this.checkedConstraints.putAll(checkedConstraints);
+		}	
+	}
+
+	public void updateCheckedConstraintsLog(){
+		if ( checkedConstraints != null && !checkedConstraints.isEmpty() )
+			CheckedConstraintsLog.addCheckedConstraints(checkedConstraints);
 	}
 }

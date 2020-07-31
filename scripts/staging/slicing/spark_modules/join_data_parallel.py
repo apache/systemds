@@ -29,8 +29,7 @@ from slicing.spark_modules.spark_utils import approved_join_slice
 
 
 def rows_mapper(row, buckets, loss_type):
-    # filtered = dict(filter(lambda bucket: all(attr in row[1] for attr in bucket[1].attributes), buckets.items()))
-    filtered = dict(filter(lambda bucket: all(attr in row for attr in bucket[1].attributes), buckets.items()))
+    filtered = dict(filter(lambda bucket: all(attr in row[1] for attr in bucket[1].attributes), buckets.items()))
     for item in filtered:
         filtered[item].update_metrics(row, loss_type)
     return filtered

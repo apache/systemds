@@ -23,15 +23,15 @@ X = read($1);
 
 sum = 0;
 tmp = X[,1];
-tmp1 = matrix(0, rows=nrow(X), cols=1);
+tmp1 = matrix(0, rows=nrow(X), cols=0);
 R = matrix(0, 1, ncol(X));
 
-for (i in 2:ncol(X)) {
-  Res1 = t(tmp1) %*% tmp1;
+for (i in 1:ncol(X)) {
   tmp = cbind(tmp, X[,i]);
-  while(FALSE) {};
   ones_n = matrix(1, rows=nrow(X), cols=1);
   tmp1 = cbind(tmp, ones_n);
+  Res1 = t(tmp1) %*% tmp1;
+  while(FALSE) {};
   R[1,i] = sum(Res1);
   sum = sum + sum(Res1);
 }

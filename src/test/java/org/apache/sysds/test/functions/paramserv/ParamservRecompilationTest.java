@@ -45,7 +45,7 @@ public class ParamservRecompilationTest extends AutomatedTestBase {
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
-		programArgs = new String[] { "-explain" };
+		programArgs = new String[] { "-explain", "-stats" };
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, exceptionExpected, exceptionClass, errmsg, -1);
 	}

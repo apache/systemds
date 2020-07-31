@@ -21,5 +21,5 @@
 
 X = read($X)
 Y = read($Y)
-model= l2svm(X=X,  Y=Y, intercept = $inc, epsilon = $eps, lambda = $lam, maxiterations = $max )
+model= l2svm(X=X,  Y=Y, intercept = $inc, epsilon = $eps, lambda = $lam, maxIterations = $max )
 write(model, $model)

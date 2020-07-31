@@ -21,10 +21,6 @@
 
 # Implements binary-class SVM with squared slack variables
 #
-# Example Usage:
-# Assume L2SVM_HOME is set to the home of the dml script
-# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# Assume epsilon = 0.001, lambda = 1, maxiterations = 100
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
@@ -40,121 +36,41 @@
 # maxiter   Int     100         Maximum number of conjugate gradient iterations
 # model     String  ---         Location to write model
 # fmt       String  "text"      The output format of the output, such as "text" or "csv"
-# Log       String  ---         [OPTIONAL] Location to write the log file
 # ---------------------------------------------------------------------------------------------
 
-# hadoop jar SystemDS.jar -f $L2SVM_HOME/l2-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y \
-#   icpt=0 tol=0.001 reg=1 maxiter=100 model=$OUPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
-#
+# Example Execution:
+# systemds -f $SYSTEMDS_ROOT/scripts/algorithms/l2-svm.dml \
+#   -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y \
+#   icpt=FALSE tol=0.001 reg=1 maxiter=100 \
+#   model=$OUPUT_DIR/w fmt="text"
+
 # Note about inputs: 
 # Assumes that labels (entries in Y) are set to either -1 or +1 or non-negative integers
 
 fmt = ifdef($fmt, "text")
-intercept = ifdef($icpt, 0)
+intercept = ifdef($icpt, FALSE)
 epsilon = ifdef($tol, 0.001)
 lambda = ifdef($reg, 1.0)
-maxiterations = ifdef($maxiter, 100)
+maxIterations = ifdef($maxiter, 100)
+verbose = ifdef($verbose, FALSE)
 
 X = read($X)
 Y = read($Y)
 
-#check input parameter assertions
-if(nrow(X) < 2)
-  stop("Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
-if(intercept != 0 & intercept != 1)
-  stop("Stopping due to invalid argument: Currently supported intercept options are 0 and 1")
-if(epsilon < 0)
-  stop("Stopping due to invalid argument: Tolerance (tol) must be non-negative")
-if(lambda < 0)
-  stop("Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
-if(maxiterations < 1)
-  stop("Stopping due to invalid argument: Maximum iterations should be a positive integer")
-
-#check input lables and transform into -1/1
-check_min = min(Y)
-check_max = max(Y)
-num_min = sum(Y == check_min)
-num_max = sum(Y == check_max)
-if(check_min == check_max)
-  stop("Stopping due to invalid inputs: Y seems to contain exactly one label")
-if(num_min + num_max != nrow(Y))
-  stop("Stopping due to invalid inputs: Y seems to contain more than 2 labels")
-if(check_min != -1 | check_max != 1)
-  Y = 2/(check_max - check_min)*Y - (check_min + check_max)/(check_max - check_min)
-
-positive_label = check_max
-negative_label = check_min
-num_samples = nrow(X)
+positive_label = max(Y)
+negative_label = min(Y)
 dimensions = ncol(X)
-num_rows_in_w = dimensions
 
-if (intercept == 1) {
-  ones = matrix(1, rows=num_samples, cols=1)
-  X = cbind(X, ones);
-  num_rows_in_w += 1
-}
-
-w = matrix(0, num_rows_in_w, 1)
-Xw = matrix(0, rows=nrow(X), cols=1)
-g_old = t(X) %*% Y
-s = g_old
-
-debug_str = "# Iter, Obj"
-iter = 0
-continue = TRUE
-
-while(continue & iter < maxiterations) {
-  # minimizing primal obj along direction s
-  step_sz = 0
-  Xd = X %*% s
-  wd = lambda * sum(w * s)
-  dd = lambda * sum(s * s)
-  
-  continue1 = TRUE
-  while(continue1) {
-    tmp_Xw = Xw + step_sz*Xd
-    out = 1 - Y * tmp_Xw
-    sv = out > 0
-    out = out * sv
-    g = wd + step_sz*dd - sum(out * Y * Xd)
-    h = dd + sum(Xd * sv * Xd)
-    step_sz = step_sz - g/h
-    continue1 = (g*g/h >= 0.0000000001);
-  }
-
-  #update weights
-  w += step_sz * s
-  Xw += step_sz * Xd
-  
-  out = 1 - Y * Xw
-  sv = out > 0
-  out = sv * out
-  obj = 0.5 * sum(out * out) + lambda/2 * sum(w * w)
-  g_new = t(X) %*% (out * Y) - lambda * w
-  
-  print("ITER " + iter + ": OBJ=" + obj)
-  debug_str = append(debug_str, iter + "," + obj)
-  
-  tmp = sum(s * g_old)
-  
-  #non-linear CG step
-  be = sum(g_new * g_new)/sum(g_old * g_old)
-  s = be * s + g_new
-  g_old = g_new
-  
-  continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
-  iter = iter + 1
-}
+w = l2svm(X=X, Y=Y, intercept=intercept, 
+  epsilon=epsilon, lambda=lambda, 
+  maxIterations=maxIterations,
+  verbose=verbose)
 
 extra_model_params = matrix(0, 4, 1)
 extra_model_params[1,1] = positive_label
 extra_model_params[2,1] = negative_label
-extra_model_params[3,1] = intercept
+extra_model_params[3,1] = as.double(intercept)
 extra_model_params[4,1] = dimensions
 
 w = rbind(w, extra_model_params)
 write(w, $model, format=fmt)
-
-logFile = $Log
-if(logFile != " ")
-  write(debug_str, logFile)

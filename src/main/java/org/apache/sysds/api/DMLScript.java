@@ -64,7 +64,9 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.Explain;
@@ -92,6 +94,8 @@ public class DMLScript
 	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                 // whether compute lineage trace
 	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;     // whether deduplicate lineage items
 	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
+	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy; // lineage cache eviction policy
+	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution 
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
 	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
@@ -111,8 +115,6 @@ public class DMLScript
 
 	public static String _uuid = IDHandler.createDistributedUniqueID();
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
-
-	private static FileSystem fs = null;
 
 	///////////////////////////////
 	// public external interface
@@ -151,17 +153,11 @@ public class DMLScript
 	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
 	public static void main(String[] args)
-		throws IOException
+		throws IOException, ParseException, DMLScriptException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		try {
-			DMLScript.executeScript(conf, otherArgs);
-		}
-		catch (ParseException | DMLScriptException e) {
-			// In case of DMLScriptException, simply print the error message.
-			System.err.println(e.getMessage());
-		}
+		DMLScript.executeScript(conf, otherArgs);
 	}
 
 	/**
@@ -171,19 +167,35 @@ public class DMLScript
 	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
+	 * @throws IOException If an internal IO Exception happened.
 	 */
-	@SuppressWarnings("null")
-	public static boolean executeScript( Configuration conf, String[] args ) {
+	public static boolean executeScript( Configuration conf, String[] args ) 
+		throws  IOException, ParseException, DMLScriptException
+	{
 		//parse arguments and set execution properties
 		ExecMode oldrtplatform  = EXEC_MODE;  //keep old rtplatform
 		ExplainType oldexplain  = EXPLAIN;     //keep old explain
 
 		DMLOptions dmlOptions = null;
 		
+		try{
+			dmlOptions = DMLOptions.parseCLArguments(args);
+		}
+		catch(AlreadySelectedException e) {
+			LOG.error("Mutually exclusive options were selected. " + e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			return false;
+		}
+		catch(org.apache.commons.cli.ParseException e) {
+			LOG.error("Parsing Exception " + e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp( "systemds", DMLOptions.defaultOptions.options );
+			return false;
+		}
+
 		try
 		{
-			dmlOptions = DMLOptions.parseCLArguments(args);
-			
 			STATISTICS          = dmlOptions.stats;
 			STATISTICS_COUNT    = dmlOptions.statsCount;
 			JMLC_MEM_STATISTICS = dmlOptions.memStats;
@@ -194,6 +206,8 @@ public class DMLScript
 			LINEAGE             = dmlOptions.lineage;
 			LINEAGE_DEDUP       = dmlOptions.lineage_dedup;
 			LINEAGE_REUSE       = dmlOptions.linReuseType;
+			LINEAGE_POLICY      = dmlOptions.linCachePolicy;
+			CHECK_PRIVACY       = dmlOptions.checkPrivacy;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -218,6 +232,7 @@ public class DMLScript
 			}
 			
 			LineageCacheConfig.setConfig(LINEAGE_REUSE);
+			LineageCacheConfig.setCachePolicy(LINEAGE_POLICY);
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;
@@ -227,24 +242,6 @@ public class DMLScript
 			//Step 3: invoke dml script
 			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
 			execute(dmlScriptStr, fnameOptConfig, argVals, args);
-		}
-		catch(AlreadySelectedException e) {
-			System.err.println("Mutually exclusive options were selected. " + e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", dmlOptions.options );
-			return false;
-		}
-		catch(org.apache.commons.cli.ParseException e) {
-			System.err.println(e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp( "systemds", dmlOptions.options );
-		}
-		catch (ParseException | DMLScriptException e) {
-			throw e;
-		}
-		catch(Exception ex) {
-			LOG.error("Failed to execute DML script.", ex);
-			throw new DMLException(ex);
 		}
 		finally {
 			//reset runtime platform and visualize flag
@@ -283,7 +280,7 @@ public class DMLScript
 					|| IOUtilFunctions.isObjectStoreFileScheme(new Path(fileName)) )
 				{ 
 					Path scriptPath = new Path(fileName);
-					fs = IOUtilFunctions.getFileSystem(scriptPath);
+					FileSystem fs = IOUtilFunctions.getFileSystem(scriptPath);
 					in = new BufferedReader(new InputStreamReader(fs.open(scriptPath)));
 				}
 				// from local file system
@@ -303,8 +300,6 @@ public class DMLScript
 				throw ex;
 			}
 			finally {
-				if(fs != null)
-					fs.close();
 				IOUtilFunctions.closeSilently(in);
 			}
 			
@@ -468,6 +463,8 @@ public class DMLScript
 		Statistics.resetNoOfExecutedJobs();
 		if( STATISTICS )
 			Statistics.reset();
+		if ( CHECK_PRIVACY )
+			CheckedConstraintsLog.reset();
 	}
 	
 	public static void cleanupHadoopExecution( DMLConfig config ) 

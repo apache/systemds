@@ -247,7 +247,7 @@ public abstract class ProgramBlock implements ParseInfo
 				tmp.processInstruction(ec);
 				
 				// cache result
-				LineageCache.putValue(tmp, ec, System.nanoTime()-et0);
+				LineageCache.putValue(tmp, ec, et0);
 				
 				// post-process instruction (debug)
 				tmp.postprocessInstruction( ec );
@@ -272,11 +272,11 @@ public abstract class ProgramBlock implements ParseInfo
 				checkSparsity( tmp, ec.getVariables() );
 			}
 		}
+		catch (DMLScriptException e){
+			throw e;
+		}
 		catch (Exception e) {
-			if ( e instanceof DMLScriptException)
-				throw (DMLScriptException)e;
-			else
-				throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
+			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
 		}
 	}
 	

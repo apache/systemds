@@ -37,7 +37,7 @@ public class AlgorithmDatagen extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmDatagen.class.getSimpleName() + "/";
 
-	private final static int rows = 2468;
+	private final static int rows = 1468;
 	private final static int cols = 200;
 	
 	private final static double sparsity1 = 0.9; //dense

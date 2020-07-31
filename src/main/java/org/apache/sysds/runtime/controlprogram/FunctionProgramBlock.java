@@ -20,10 +20,12 @@
 package org.apache.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
@@ -32,10 +34,11 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
 
 
-public class FunctionProgramBlock extends ProgramBlock 
+public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 {
 	public String _functionName;
 	public String _namespace;
@@ -44,8 +47,9 @@ public class FunctionProgramBlock extends ProgramBlock
 	protected ArrayList<DataIdentifier> _outputParams;
 	
 	private boolean _recompileOnce = false;
+	private boolean _nondeterministic = false;
 	
-	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) {
+	public FunctionProgramBlock( Program prog, List<DataIdentifier> inputParams, List<DataIdentifier> outputParams) {
 		super(prog);
 		_childBlocks = new ArrayList<>();
 		_inputParams = new ArrayList<>();
@@ -78,7 +82,7 @@ public class FunctionProgramBlock extends ProgramBlock
 		_childBlocks.add(childBlock);
 	}
 	
-	public void setChildBlocks( ArrayList<ProgramBlock> pbs) {
+	public void setChildBlocks(ArrayList<ProgramBlock> pbs) {
 		_childBlocks = pbs;
 	}
 	
@@ -159,6 +163,20 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	public boolean isRecompileOnce() {
 		return _recompileOnce;
+	}
+
+	public void setNondeterministic(boolean flag) {
+		_nondeterministic = flag;
+	}
+	
+	public boolean isNondeterministic() {
+		return _nondeterministic;
+	}
+	
+	@Override
+	public FunctionBlock cloneFunctionBlock() {
+		return ProgramConverter
+			.createDeepCopyFunctionProgramBlock(this, new HashSet<>(), new HashSet<>());
 	}
 	
 	@Override

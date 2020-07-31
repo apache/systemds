@@ -41,6 +41,8 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.MLContextProxy;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -386,11 +388,32 @@ public class MLContext implements ConfigurableAPI
 	 * to standard output.
 	 *
 	 * @param explain
-	 *            {@code true} if explanation should be output, {@code false}
-	 *            otherwise
+	 *     {@code true} if explanation should be output, {@code false} otherwise
 	 */
 	public void setExplain(boolean explain) {
 		this.explain = explain;
+	}
+
+	/**
+	 * Set whether or not lineage should be traced
+	 * 
+	 * @param lineage
+	 *     {@code true} if lineage should be traced, {@code false} otherwise
+	 */
+	public void setLineage(boolean lineage) {
+		DMLScript.LINEAGE = lineage;
+	}
+	
+	/**
+	 *  Set type of lineage-based reuse caching and enable lineage tracing
+	 * 
+	 * @param reuse
+	 *     reuse cache type to use
+	 */
+	public void setLineage(ReuseCacheType reuse) {
+		DMLScript.LINEAGE_REUSE = reuse;
+		setLineage(true);
+		LineageCacheConfig.setConfig(reuse);
 	}
 
 	/**

@@ -79,7 +79,6 @@ public class LineageTraceEqualsTest extends AutomatedTestBase {
 			
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-//			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(input("M"));
 			proArgs.add(output("X"));

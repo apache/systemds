@@ -19,15 +19,46 @@
 
 package org.apache.sysds.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.StringTokenizer;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
-import org.junit.Assert;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.data.TensorBlock;
@@ -42,12 +73,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.io.*;
-import java.text.NumberFormat;
-import java.util.*;
-
-import static org.junit.Assert.*;
+import org.junit.Assert;
 
 
 /**
@@ -64,7 +90,9 @@ import static org.junit.Assert.*;
  */
 public class TestUtils 
 {
-	
+
+	private static final Log LOG = LogFactory.getLog(TestUtils.class.getName());
+
 	/** job configuration used for file system access */
 	public static Configuration conf = new Configuration();
 
@@ -206,21 +234,25 @@ public class TestUtils
 				String[] rcn = line.split(" ");
 				
 				if (Integer.parseInt(expRcn[0]) != Integer.parseInt(rcn[0])) {
-					System.out.println(" Rows mismatch: expected " + Integer.parseInt(expRcn[0]) + ", actual " + Integer.parseInt(rcn[0]));
+					LOG.warn(" Rows mismatch: expected " + Integer.parseInt(expRcn[0]) + ", actual " + Integer.parseInt(rcn[0]));
 				}
 				else if (Integer.parseInt(expRcn[1]) != Integer.parseInt(rcn[1])) {
-					System.out.println(" Cols mismatch: expected " + Integer.parseInt(expRcn[1]) + ", actual " + Integer.parseInt(rcn[1]));
+					LOG.warn(" Cols mismatch: expected " + Integer.parseInt(expRcn[1]) + ", actual " + Integer.parseInt(rcn[1]));
 				}
 				else if (Integer.parseInt(expRcn[2]) != Integer.parseInt(rcn[2])) {
-					System.out.println(" Nnz mismatch: expected " + Integer.parseInt(expRcn[2]) + ", actual " + Integer.parseInt(rcn[2]));
+					LOG.warn(" Nnz mismatch: expected " + Integer.parseInt(expRcn[2]) + ", actual " + Integer.parseInt(rcn[2]));
 				}
 
 				readValuesFromFileStreamAndPut(outIn, actualValues);
 			}
-			
+
+			Set<CellIndex> allKeys = new HashSet<>();
+			allKeys.addAll(expectedValues.keySet());
+			if(expectedValues.size() != actualValues.size())
+				allKeys.addAll(actualValues.keySet());
 
 			int countErrors = 0;
-			for (CellIndex index : expectedValues.keySet()) {
+			for (CellIndex index : allKeys) {
 				Double expectedValue = expectedValues.get(index);
 				Double actualValue = actualValues.get(index);
 				if (expectedValue == null)
@@ -346,8 +378,12 @@ public class TestUtils
 
 		readActualAndExpectedFile(null, expectedFile, actualDir, expectedValues, actualValues);
 
+		Set<CellIndex> allKeys = new HashSet<>();
+		allKeys.addAll(expectedValues.keySet());
+		if(expectedValues.size() != actualValues.size())
+			allKeys.addAll(actualValues.keySet());
 		int countErrors = 0;
-		for(CellIndex index : expectedValues.keySet()) {
+		for(CellIndex index : allKeys) {
 			Double expectedValue = (Double) expectedValues.get(index);
 			Double actualValue = (Double) actualValues.get(index);
 			if(expectedValue == null)
@@ -383,8 +419,12 @@ public class TestUtils
 
 		readActualAndExpectedFile(schema, expectedFile, actualDir, expectedValues, actualValues);
 
+		Set<CellIndex> allKeys = new HashSet<>();
+		allKeys.addAll(expectedValues.keySet());
+		if(expectedValues.size() != actualValues.size())
+			allKeys.addAll(actualValues.keySet());
 		int countErrors = 0;
-		for(CellIndex index : expectedValues.keySet()) {
+		for(CellIndex index : allKeys) {
 			Object expectedValue = expectedValues.get(index);
 			Object actualValue = actualValues.get(index);
 
@@ -779,7 +819,7 @@ public class TestUtils
 	 * 
 	 * @param d1 The expected value.
 	 * @param d2 The actual value.
-	 * @return Whether they are equal or not.
+	 * @return Whether distance in bits
 	 */
 	public static long compareScalarBits(double d1, double d2) {
 		long expectedBits = Double.doubleToLongBits(d1) < 0 ? 0x8000000000000000L - Double.doubleToLongBits(d1) : Double.doubleToLongBits(d1);
@@ -814,6 +854,12 @@ public class TestUtils
 	
 	public static void compareMatrices(HashMap<CellIndex, Double> m1, MatrixBlock m2, double tolerance) {
 		double[][] ret1 = convertHashMapToDoubleArray(m1);
+		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
+		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance);
+	}
+	
+	public static void compareMatrices(MatrixBlock m1, MatrixBlock m2, double tolerance) {
+		double[][] ret1 = DataConverter.convertToDoubleMatrix(m1);
 		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
 		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance);
 	}
@@ -1101,9 +1147,13 @@ public class TestUtils
 				FSDataInputStream fsout = fs.open(file.getPath());
 				readValuesFromFileStream(fsout, actualValues);
 			}
+			Set<CellIndex> allKeys = new HashSet<>();
+			allKeys.addAll(expectedValues.keySet());
+			if(expectedValues.size() != actualValues.size())
+				allKeys.addAll(actualValues.keySet());
 
 			int countErrors = 0;
-			for (CellIndex index : expectedValues.keySet()) {
+			for (CellIndex index : allKeys) {
 				Double expectedValue = expectedValues.get(index);
 				Double actualValue = actualValues.get(index);
 				if (expectedValue == null)
@@ -1379,6 +1429,42 @@ public class TestUtils
 				if (random.nextDouble() > sparsity)
 					continue;
 				matrix[i][j] = (random.nextDouble() * (max - min) + min);
+			}
+		}
+
+		return matrix;
+	}
+
+	/**
+	 * 
+	 * Generates a test matrix, but only containing real numbers, in the range specified.
+	 * 
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value whole number
+	 * @param max maximum value whole number
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @return random matrix containing whole numbers in the range specified.
+	 */
+	public static int[][] generateTestMatrixIntV(int rows, int cols, int min, int max, double sparsity, long seed) {
+		int[][] matrix = new int[rows][cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		if (max - min != 0){
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					if (random.nextDouble() > sparsity)
+						continue;
+					matrix[i][j] = (random.nextInt((max - min)) + min);
+				}
+			}
+		} else{
+			for (int i = 0; i < rows; i++) {
+				for (int j = 0; j < cols; j++) {
+					if (random.nextDouble() > sparsity)
+						continue;
+					matrix[i][j] = max;
+				}
 			}
 		}
 
@@ -2399,6 +2485,10 @@ public class TestUtils
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public static String federatedAddress(int port, String input) {
+		return federatedAddress("localhost", port, input);
 	}
 	
 	public static String federatedAddress(String host, int port, String input) {

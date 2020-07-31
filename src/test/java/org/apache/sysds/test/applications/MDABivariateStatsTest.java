@@ -25,20 +25,22 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class MDABivariateStatsTest extends AutomatedTestBase 
 {
-
+	private static final Log LOG = LogFactory.getLog(MDABivariateStatsTest.class.getName());
 	protected final static String TEST_DIR = "applications/mdabivar/";
 	protected final static String TEST_NAME = "MDABivariateStats";
 	protected String TEST_CLASS_DIR = TEST_DIR + MDABivariateStatsTest.class.getSimpleName() + "/";
@@ -51,15 +53,15 @@ public class MDABivariateStatsTest extends AutomatedTestBase
 		this.label_index = li;
 		this.label_measurement_level = lml;
 	}
-	
+
 	@Parameters
-	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { { 10000, 100, 1, 1 }, { 10000, 100, 100, 0}, 
-			                              { 100000, 100, 1, 1 }, { 100000, 100, 100, 0}
-			   							  };
-	   return Arrays.asList(data);
-	 }
-	 
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] {
+			{ 1000, 100, 1, 1 }, { 1000, 100, 100, 0}, 
+			{ 10000, 100, 1, 1 }, { 10000, 100, 100, 0}};
+		return Arrays.asList(data);
+	}
+
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
@@ -67,8 +69,8 @@ public class MDABivariateStatsTest extends AutomatedTestBase
 	
 	@Test
 	public void testMDABivariateStats() {
-		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + n + ", " + m
-				+ ", " + label_index + ", " + label_measurement_level + "} ------------");
+		LOG.debug(" BEGIN " + TEST_NAME + " TEST WITH {" + n + ", " + m
+				+ ", " + label_index + ", " + label_measurement_level + "}");
 		
 		getAndLoadTestConfiguration(TEST_NAME);
 		

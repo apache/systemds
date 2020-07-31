@@ -21,17 +21,11 @@ package org.apache.sysds.runtime.instructions;
 
 import java.util.StringTokenizer;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.lops.AppendM;
-import org.apache.sysds.lops.BinaryM;
-import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.MapMult;
-import org.apache.sysds.lops.MapMultChain;
-import org.apache.sysds.lops.PMMJ;
-import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.WeightedCrossEntropy;
 import org.apache.sysds.lops.WeightedCrossEntropyR;
 import org.apache.sysds.lops.WeightedDivMM;
@@ -239,36 +233,12 @@ public class InstructionUtils
 		Builtin.BuiltinCode bfc = Builtin.String2BuiltinCode.get(opcode);
 		return (bfc != null);
 	}
-
-	/**
-	 * Evaluates if at least one instruction of the given instruction set
-	 * used the distributed cache; this call can also be used for individual
-	 * instructions. 
-	 * 
-	 * @param str instruction set
-	 * @return true if at least one instruction uses distributed cache
-	 */
-	public static boolean isDistributedCacheUsed(String str) 
-	{	
-		String[] parts = str.split(Instruction.INSTRUCTION_DELIM);
-		for(String inst : parts) 
-		{
-			String opcode = getOpCode(inst);
-			if(  opcode.equalsIgnoreCase(AppendM.OPCODE)  
-			   || opcode.equalsIgnoreCase(MapMult.OPCODE)
-			   || opcode.equalsIgnoreCase(MapMultChain.OPCODE)
-			   || opcode.equalsIgnoreCase(PMMJ.OPCODE)
-			   || opcode.equalsIgnoreCase(UAggOuterChain.OPCODE)
-			   || opcode.equalsIgnoreCase(GroupedAggregateM.OPCODE)
-			   || isDistQuaternaryOpcode( opcode ) //multiple quaternary opcodes
-			   || BinaryM.isOpcode( opcode ) ) //multiple binary opcodes	
-			{
-				return true;
-			}
-		}
-		return false;
+	
+	public static boolean isUnaryMetadata(String opcode) {
+		return opcode != null 
+			&& (opcode.equals("nrow") || opcode.equals("ncol"));
 	}
-
+	
 	public static AggregateUnaryOperator parseBasicAggregateUnaryOperator(String opcode) {
 		return parseBasicAggregateUnaryOperator(opcode, 1);
 	}
@@ -516,7 +486,7 @@ public class InstructionUtils
 	}
 	
 	public static Operator parseExtendedBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) {
-		boolean matrixScalar = (in1.getDataType() != in2.getDataType());
+		boolean matrixScalar = (in1.getDataType() != in2.getDataType() && (in1.getDataType() != Types.DataType.FRAME && in2.getDataType() != Types.DataType.FRAME));
 		return Builtin.isBuiltinFnObject(opcode) ?
 			(matrixScalar ? new RightScalarOperator( Builtin.getBuiltinFnObject(opcode), 0) :
 				new BinaryOperator( Builtin.getBuiltinFnObject(opcode))) :
@@ -579,9 +549,11 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		else if ( opcode.equalsIgnoreCase("min") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		else if( opcode.equalsIgnoreCase("dropInvalid"))
-			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalid"));
-		
+		else if( opcode.equalsIgnoreCase("dropInvalidType"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidType"));
+		else if( opcode.equalsIgnoreCase("dropInvalidLength"))
+			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
+
 		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}
 	
@@ -808,6 +780,8 @@ public class InstructionUtils
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 		else if ( opcode.equalsIgnoreCase("min") || opcode.equalsIgnoreCase("mapmin") ) 
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
+		else if ( opcode.equalsIgnoreCase("dropInvalidLength") || opcode.equalsIgnoreCase("mapdropInvalidLength") )
+			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}
@@ -986,26 +960,45 @@ public class InstructionUtils
 		if( operand >= parts.length )
 			throw new DMLRuntimeException("Operand position "
 				+ operand + " exceeds the length of the instruction.");
-		
 		//replace and reconstruct string
 		parts[operand] = newValue;
-		StringBuilder sb = new StringBuilder(instStr.length());
-		sb.append(parts[0]);
-		for( int i=1; i<parts.length; i++ ) {
-			sb.append(Lop.OPERAND_DELIMITOR);
-			sb.append(parts[i]);
-		}
-		return sb.toString();
+		return concatOperands(parts);
+	}
+
+	public static String replaceOperandName(String instStr) {
+		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
+		String oldName = parts[parts.length-1];
+		String[] Nameparts = oldName.split(Instruction.VALUETYPE_PREFIX);
+		Nameparts[0] = "xxx";
+		String newName = concatOperandParts(Nameparts);
+		parts[parts.length-1] = newName;
+		return concatOperands(parts);
 	}
 	
 	public static String concatOperands(String... inputs) {
+		return concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
+	}
+	
+	public static String concatOperandParts(String... inputs) {
+		return concatOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
+	}
+	
+	private static String concatOperandsWithDelim(String delim, String... inputs) {
 		StringBuilder sb = _strBuilders.get();
 		sb.setLength(0); //reuse allocated space
 		for( int i=0; i<inputs.length-1; i++ ) {
 			sb.append(inputs[i]);
-			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(delim);
 		}
 		sb.append(inputs[inputs.length-1]);
+		return sb.toString();
+	}
+	
+	public static String concatStrings(String... inputs) {
+		StringBuilder sb = _strBuilders.get();
+		sb.setLength(0); //reuse allocated space
+		for( int i=0; i<inputs.length; i++ )
+			sb.append(inputs[i]);
 		return sb.toString();
 	}
 }

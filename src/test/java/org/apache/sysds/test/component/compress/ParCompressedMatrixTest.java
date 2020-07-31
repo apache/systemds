@@ -24,11 +24,9 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
@@ -160,8 +158,7 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 1, 1, 1.0, 3));
 
 			// matrix-vector uncompressed
-			AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aop, k);
+			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(k);
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(mb, vector, new MatrixBlock(), abop);
 
 			// matrix-vector compressed
@@ -188,8 +185,7 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 				.convertToMatrixBlock(TestUtils.generateTestMatrix(1, rows, 1, 1, 1.0, 3));
 
 			// Make Operator
-			AggregateOperator aop = new AggregateOperator(0, Plus.getPlusFnObject());
-			AggregateBinaryOperator abop = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), aop, k);
+			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(k);
 
 			// vector-matrix uncompressed
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(vector, mb, new MatrixBlock(), abop);

@@ -42,7 +42,7 @@ public class FunctionFullReuseTest extends AutomatedTestBase
 {
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "FunctionFullReuse";
-	protected static final int TEST_VARIANTS = 7;
+	protected static final int TEST_VARIANTS = 8;
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + FunctionFullReuseTest.class.getSimpleName() + "/";
 	
@@ -82,6 +82,11 @@ public class FunctionFullReuseTest extends AutomatedTestBase
 	public void testParforIssue2() {
 		testLineageTrace(TEST_NAME+"7");
 	}
+
+	@Test
+	public void testCompilerAssistedNondeterminism() {
+		testLineageTrace(TEST_NAME+"8");
+	}
 	
 	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -101,7 +106,6 @@ public class FunctionFullReuseTest extends AutomatedTestBase
 			List<String> proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);

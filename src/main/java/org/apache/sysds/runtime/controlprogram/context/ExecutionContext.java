@@ -43,7 +43,6 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineagePath;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -71,7 +70,6 @@ public class ExecutionContext {
 
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
-	protected LineagePath _lineagePath = new LineagePath();
 
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
@@ -118,14 +116,6 @@ public class ExecutionContext {
 
 	public void setLineage(Lineage lineage) {
 		_lineage = lineage;
-	}
-
-	public LineagePath getLineagePath(){
-		return _lineagePath;
-	}
-
-	public void setLineagePath(LineagePath lp){
-		_lineagePath = lp;
 	}
 
 	/**

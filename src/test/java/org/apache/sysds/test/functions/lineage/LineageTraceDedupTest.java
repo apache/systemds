@@ -35,15 +35,20 @@ import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 
-public class LineageTraceDedupTest extends AutomatedTestBase {
-	
+public class LineageTraceDedupTest extends AutomatedTestBase
+{
 	protected static final String TEST_DIR = "functions/lineage/";
+	protected static final String TEST_NAME = "LineageTraceDedup";
 	protected static final String TEST_NAME1 = "LineageTraceDedup1";
 	protected static final String TEST_NAME2 = "LineageTraceDedup2";
 	protected static final String TEST_NAME3 = "LineageTraceDedup3";
 	protected static final String TEST_NAME4 = "LineageTraceDedup4";
 	protected static final String TEST_NAME5 = "LineageTraceDedup5";
 	protected static final String TEST_NAME6 = "LineageTraceDedup6";
+	protected static final String TEST_NAME7 = "LineageTraceDedup7"; //nested if-else branches
+	protected static final String TEST_NAME8 = "LineageTraceDedup8"; //while loop
+	protected static final String TEST_NAME9 = "LineageTraceDedup9"; //while loop w/ if
+	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceDedupTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
@@ -53,12 +58,8 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6));
+		for(int i=0; i<10; i++)
+			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
 	
 	@Test
@@ -91,6 +92,20 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 		testLineageTrace(TEST_NAME6);
 	}
 	
+	@Test
+	public void testLineageTrace7() {
+		testLineageTrace(TEST_NAME7);
+	}
+	
+	@Test
+	public void testLineageTrace8() {
+		testLineageTrace(TEST_NAME8);
+	}
+	
+	@Test
+	public void testLineageTrace9() {
+		testLineageTrace(TEST_NAME9);
+	}
 	
 	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -134,7 +149,6 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("dedup");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(input("X"));
 			proArgs.add(output("R"));
@@ -145,6 +159,8 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 			
 			String dedup_trace = readDMLLineageFromHDFS("R");
 			LineageItem dedup_li = LineageParser.parseLineageTrace(dedup_trace);
+			
+			//check lineage DAG
 			assertEquals(dedup_li, li);
 		}
 		finally {

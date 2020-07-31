@@ -85,7 +85,7 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + dml_test_name + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"), input("B"), output("C"), output("S")};
+			programArgs = new String[]{"-args", input("A"), input("B"), output("C"), output("S")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 

@@ -1,0 +1,42 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+highlighter: rouge
+markdown: kramdown
+
+kramdown:
+  entity_output: numeric
+
+include:
+  - img
+  - api/python/
+
+exclude:
+  - README.md
+  - updateAPI.sh
+
+# These allow the documentation to be updated with newer releases
+SYSTEMDS_VERSION: 2.0.0-SNAPSHOT
+
+# if 'analytics_on' is true, analytics section will be rendered on the HTML pages
+analytics_on: true
+analytics_provider: google_universal
+analytics_google_universal_tracking_id : UA-71553733-1

@@ -72,7 +72,7 @@ def make_first_level(features, predictions, loss, top_k, w, loss_type):
     return first_level
 
 
-def process_node(node_i, level, loss, predictions, cur_lvl, top_k, alpha, loss_type, w, debug, enumerator):
+def process_node(node_i, level, loss, predictions, cur_lvl, top_k, alpha, loss_type, w, debug, enumerator, cur_min):
     cur_enum_nodes = []
     for node_j in level:
         if enumerator == "join":
@@ -96,18 +96,18 @@ def process_node(node_i, level, loss, predictions, cur_lvl, top_k, alpha, loss_t
             if to_slice:
                 new_node.process_slice(loss_type)
                 new_node.score = opt_fun(new_node.loss, new_node.size, loss, len(predictions), w)
-                if new_node.check_constraint(top_k, len(predictions), alpha):
-                    cur_enum_nodes.append(new_node)
+                cur_enum_nodes.append(new_node)
             if debug:
                 new_node.print_debug(top_k, cur_lvl)
     return cur_enum_nodes
 
 
-def nodes_enum(nodes, level, predictions, loss, top_k, alpha, k, w, loss_type, cur_lvl, debug, enumerator):
+def nodes_enum(nodes, level, predictions, loss, top_k, alpha, k, w, loss_type, cur_lvl, debug, enumerator, cur_min):
     cur_enum_nodes = []
     for node_i in nodes:
-        partial_nodes = process_node(node_i, level, loss, predictions, cur_lvl, top_k, alpha,
-                                     loss_type, w, debug, enumerator)
+        partial = process_node(node_i, level, loss, predictions, cur_lvl, top_k, alpha,
+                                     loss_type, w, debug, enumerator, cur_min)
+        partial_nodes = partial
         cur_enum_nodes.append(partial_nodes)
     return cur_enum_nodes
 
@@ -120,10 +120,10 @@ def init_top_k(first_level, top_k, alpha, predictions):
             top_k.add_new_top_slice(sliced[1])
 
 
-def update_top_k(new_slices, top_k, alpha, predictions):
+def update_top_k(new_slices, top_k, alpha, predictions, cur_min):
     # driver updates topK
     for sliced in new_slices.values():
-        if sliced.check_constraint(top_k, len(predictions), alpha):
+        if sliced.check_constraint(top_k, len(predictions), alpha, cur_min):
             # this method updates top k slices if needed
             top_k.add_new_top_slice(sliced)
 

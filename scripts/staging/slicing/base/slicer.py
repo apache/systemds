@@ -68,7 +68,7 @@ def make_first_level(all_features, complete_x, loss, x_size, y_test, errors, los
         first_level.append(new_node)
         new_node.print_debug(top_k, 0)
         # constraints for 1st level nodes to be problematic candidates
-        if new_node.check_constraint(top_k, x_size, alpha):
+        if new_node.check_constraint(top_k, x_size, alpha, 1):
             # this method updates top k slices if needed
             top_k.add_new_top_slice(new_node)
         counter = counter + 1
@@ -79,7 +79,7 @@ def join_enum(node_i, prev_lvl, complete_x, loss, x_size, y_test, errors, debug,
               all_nodes, top_k, cur_lvl_nodes):
     for node_j in range(len(prev_lvl)):
         flag = slice_name_nonsense(prev_lvl[node_i], prev_lvl[node_j], cur_lvl)
-        if flag and prev_lvl[node_j].key[0] > prev_lvl[node_i].key[0]:
+        if flag:
             new_node = Node(complete_x, loss, x_size, y_test, errors)
             parents_set = set(new_node.parents)
             parents_set.add(prev_lvl[node_i])
@@ -104,16 +104,16 @@ def join_enum(node_i, prev_lvl, complete_x, loss, x_size, y_test, errors, debug,
                     new_node.update_bounds(s_upper, s_lower, e_upper, e_max_upper, w)
             else:
                 new_node.calc_bounds(cur_lvl, w)
-                all_nodes[new_node.key[1]] = new_node
+                all_nodes[new_node.key[0]] = new_node
                 # check if concrete data should be extracted or not (only for those that have score upper
                 # big enough and if size of subset is big enough
-                to_slice = new_node.check_bounds(top_k, x_size, alpha)
+                to_slice = new_node.check_bounds(x_size, alpha, top_k.min_score)
                 if to_slice:
                     new_node.process_slice(loss_type)
                     new_node.score = opt_fun(new_node.loss, new_node.size, loss, x_size, w)
                     # we decide to add node to current level nodes (in order to make new combinations
                     # on the next one or not basing on its score value
-                    if new_node.check_constraint(top_k, x_size, alpha) and new_node.key not in top_k.keys:
+                    if new_node.check_constraint(top_k, x_size, alpha, top_k.min_score) and new_node.key not in top_k.keys:
                         top_k.add_new_top_slice(new_node)
                     cur_lvl_nodes.append(new_node)
                 if debug:
@@ -136,7 +136,8 @@ def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha
     # cur_lvl - index of current level, correlates with number of slice forming features
     cur_lvl = 1  # currently filled level after first init iteration
     # currently for debug
-    print("Level 1 had " + str(len(all_features)) + " candidates")
+    print("Level 1 had " + str(len(all_features)) + " candidates but after pruning only " + str(len(first_level)) +
+          " go to the next level")
     print()
     print("Current topk are: ")
     top_k.print_topk()
@@ -154,7 +155,8 @@ def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha
         top_k.print_topk()
         print("Level " + str(cur_lvl) + " had " + str(len(prev_lvl) * (len(prev_lvl) - 1)) +
               " candidates but after pruning only " + str(len(cur_lvl_nodes)) + " go to the next level")
-    print("Program stopped at level " + str(cur_lvl + 1))
+    print("Program stopped at level " + str(cur_lvl))
     print()
     print("Selected slices are: ")
     top_k.print_topk()
+    return top_k

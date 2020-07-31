@@ -47,6 +47,7 @@ class SparkNode:
         self.size = 0
         self.score = 0
         self.loss = 0
+        self.s_upper = 0
         self.s_lower = 1
         self.key = ''
 
@@ -148,8 +149,8 @@ class SparkNode:
     def make_key(self):
         return self.name
 
-    def check_constraint(self, top_k, x_size, alpha):
-        return self.score >= top_k.min_score and self.size >= x_size / alpha
+    def check_constraint(self, top_k, x_size, alpha, cur_min):
+        return self.score >= cur_min and self.size >= x_size / alpha
 
     def check_bounds(self, top_k, x_size, alpha):
         return self.s_upper >= x_size / alpha and self.c_upper >= top_k.min_score

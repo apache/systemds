@@ -670,28 +670,24 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void processMoveInstruction(ExecutionContext ec) {
 		
 		if ( getInput3() == null ) {
-			// example: mvvar tempA A
+			// example: mvvar tempA A (note that mvvar does not carry the data types)
 			
-			// get source variable 
-			Data srcData = ec.getVariable(getInput1().getName());
+			// get and remove source variable 
+			Data srcData = ec.removeVariable(getInput1().getName());
 			
 			if ( srcData == null ) {
 				throw new DMLRuntimeException("Unexpected error: could not find a data object "
 					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
 			}
 			
-			if( getInput2().getDataType().isMatrix() || getInput2().getDataType().isFrame() ) {
-				// remove existing variable bound to target name
-				Data tgt = ec.removeVariable(getInput2().getName());
-				
-				//cleanup matrix data on fs/hdfs (if necessary)
-				if( tgt != null )
-					ec.cleanupDataObject(tgt);
-			}
+			// remove existing variable bound to target name and
+			// cleanup matrix/frame/list data if necessary
+			Data tgt = ec.removeVariable(getInput2().getName());
+			if( tgt != null)
+				ec.cleanupDataObject(tgt);
 			
 			// do the actual move
 			ec.setVariable(getInput2().getName(), srcData);
-			ec.removeVariable(getInput1().getName());
 		}
 		else {
 			// example instruction: mvvar <srcVar> <destFile> <format>

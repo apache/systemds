@@ -1196,6 +1196,8 @@ public abstract class AutomatedTestBase {
 				fail("expected exception which has not been raised: " + expectedException);
 		}
 		catch(Exception e) {
+			if( !outputBuffering )
+				e.printStackTrace();
 			if(errMessage != null && !errMessage.equals("")) {
 				boolean result = rCompareException(exceptionExpected, errMessage, e, false);
 				if(exceptionExpected && !result) {

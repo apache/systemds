@@ -264,6 +264,7 @@ public class GLMTest extends AutomatedTestBase
 		
 		int expectedNumberOfJobs = -1; // 31;
 
+		setOutputBuffering(false);
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
 
 		double max_abs_beta = 0.0;

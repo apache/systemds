@@ -682,9 +682,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			
 			// remove existing variable bound to target name and
 			// cleanup matrix/frame/list data if necessary
-			Data tgt = ec.removeVariable(getInput2().getName());
-			if( tgt != null)
-				ec.cleanupDataObject(tgt);
+			if( srcData.getDataType().isMatrix() || srcData.getDataType().isFrame() ) {
+				Data tgtData = ec.removeVariable(getInput2().getName());
+				if( tgtData != null && srcData != tgtData )
+					ec.cleanupDataObject(tgtData);
+			}
 			
 			// do the actual move
 			ec.setVariable(getInput2().getName(), srcData);

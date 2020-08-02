@@ -31,7 +31,7 @@ let's make sure the changes are consistent with the guidelines and coding style.
 
 #### General Guidelines and Philosophy for contribution
 
-*   Inclusion of unit tests when contributing new features, as they help to
+*   Inclusion of unit tests when contributing new features, will help
     1. prove that the code works correctly, and
     2. guard against future breaking changes.
 *   Bug fixes may or may not require unit tests, because the presence of bugs usually
@@ -42,7 +42,7 @@ let's make sure the changes are consistent with the guidelines and coding style.
     live in [scripts/staging](./scripts/staging) or its equivalent folder for specific
     feature to get some airtime and sufficient testing before a decision is made regarding
     whether they are to migrated to the top-level.
-*   When a new contribution is made to SystemDS, the maintenace burden is (by default)
+*   When a new contribution is made to SystemDS, the maintenance burden is (by default)
     transferred to the SystemDS team. The benefit of the contribution is to be compared
     against the cost of maintaining the feature.
 

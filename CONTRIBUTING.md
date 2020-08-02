@@ -24,8 +24,9 @@ Thanks for taking the time to contribute to SystemDS!
 The following are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
 ___
+## Contribution Guidelines and standards
 
-## Code Style
+#### Code Style
 
 Before contributing a pull request, we highly suggest applying a code formatter to the written code.
 
@@ -35,26 +36,21 @@ We have provided at profile for java located in [Codestyle File ./docs/CodeStyle
 - [IntelliJ](https://imagej.net/Eclipse_code_style_profiles_and_IntelliJ)
 - [Visual Studio Code](https://stackoverflow.com/questions/46030629/need-to-import-eclipse-java-formatter-profile-in-visual-studio-code)
 
-## License
+#### License
 
-Each file in the project has a header license, when adding files remember to add an appropriate comment for that filetype containing the license. One Example is this file: [RAW Link](https://raw.githubusercontent.com/apache/systemds/master/CONTRIBUTING.md). The specific type of commenting `\** *\` or `# ...` varies depending on filetype, but the content is the same.
+Including a license at the top of new files helps validate the consistency of license.
 
-```code
-Licensed to the Apache Software Foundation (ASF) under one or more
-contributor license agreements.  See the NOTICE file distributed with
-this work for additional information regarding copyright ownership.
-The ASF licenses this file to you under the Apache License, Version 2.0
-(the "License"); you may not use this file except in compliance with
-the License.  You may obtain a copy of the License at
+Examples:
 
-http://www.apache.org/licenses/LICENSE-2.0
+- [C/C++/cmake/cuda](./src/main/cpp/libmatrixdnn.h#L1-L18)
+- [Python](./src/main/python/create_python_dist.py#L1-L21)
+- [Java](./src/main/java/org/apache/sysds/api/ConfigurableAPI.java#L1-L18)
+- [Bash](./src/main/bash/sparkDML2.sh#L2-L21)
+- [XML/HTML](./src/assembly/bin.xml#L2-L19)
+- [dml/R](./scripts/algorithms/ALS-CG.dml#L1-L20)
+- [Makefile/.proto](./src/main/cpp/kernels/Makefile#L1-L18)
+- Markdown - refer to the top of this file!
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
 
 ___
 

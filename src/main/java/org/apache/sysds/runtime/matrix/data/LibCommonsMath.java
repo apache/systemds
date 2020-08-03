@@ -39,7 +39,9 @@ import org.apache.sysds.runtime.util.DataConverter;
  * matrix inverse, matrix decompositions (QR, LU, Eigen), solve 
  */
 public class LibCommonsMath 
-{	
+{
+	static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-10;
+
 	private LibCommonsMath() {
 		//prevent instantiation via private constructor
 	}
@@ -260,7 +262,7 @@ public class LibCommonsMath
 	private static MatrixBlock computeCholesky(Array2DRowRealMatrix in) {
 		if ( !in.isSquare() )
 			throw new DMLRuntimeException("Input to cholesky() must be square matrix -- given: a " + in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
-		CholeskyDecomposition cholesky = new CholeskyDecomposition(in, 1e-14,
+		CholeskyDecomposition cholesky = new CholeskyDecomposition(in, RELATIVE_SYMMETRY_THRESHOLD,
 			CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
 		RealMatrix rmL = cholesky.getL();
 		return DataConverter.convertToMatrixBlock(rmL.getData());

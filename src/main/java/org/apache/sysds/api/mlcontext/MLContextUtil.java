@@ -949,25 +949,6 @@ public final class MLContextUtil {
 		return sb.toString();
 	}
 
-	// /**
-	//  * The SystemDS welcome message
-	//  *
-	//  * @return the SystemDS welcome message
-	//  */
-	// public static String welcomeMessage() {
-	// 	StringBuilder sb = new StringBuilder();
-	// 	sb.append("\nWelcome to Apache SystemDS!\n");
-	// 	try {
-	// 		ProjectInfo info = ProjectInfo.getProjectInfo();
-	// 		if (info.version() != null) {
-	// 			sb.append("Version ");
-	// 			sb.append(info.version());
-	// 		}
-	// 	} catch (MLContextException e) {
-	// 	}
-	// 	return sb.toString();
-	// }
-
 	/**
 	 * Obtain the Spark Context
 	 *

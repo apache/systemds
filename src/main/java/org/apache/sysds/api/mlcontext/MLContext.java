@@ -262,10 +262,6 @@ public class MLContext implements ConfigurableAPI
 			}
 		}
 
-		// if (activeMLContext == null) {
-		// 	System.out.println(MLContextUtil.welcomeMessage());
-		// }
-
 		this.spark = spark;
 		DMLScript.setGlobalExecMode(executionType.getExecMode());
 

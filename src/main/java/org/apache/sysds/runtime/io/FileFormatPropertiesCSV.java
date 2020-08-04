@@ -71,6 +71,7 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.header = hasHeader;
 		this.delim = delim;
 		this.sparse = sparse;
+		this.naStrings = UtilFunctions.defaultNaString;
 		if(LOG.isDebugEnabled()){
 			LOG.debug("FileFormatPropertiesCSV medium settings: " + this.toString());
 		}

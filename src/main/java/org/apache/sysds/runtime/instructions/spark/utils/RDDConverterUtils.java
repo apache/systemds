@@ -673,7 +673,7 @@ public class RDDConverterUtils {
 			_delim = delim;
 			_fill = fill;
 			_fillValue = fillValue;
-			_naStrings = _naStrings == null ? UtilFunctions.defaultNaString : naStrings;
+			_naStrings = naStrings == null ? UtilFunctions.defaultNaString : naStrings;
 		}
 
 		@Override

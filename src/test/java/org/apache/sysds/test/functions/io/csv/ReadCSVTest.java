@@ -33,25 +33,25 @@ public abstract class ReadCSVTest extends CSVTestBase {
 		return "transfusion_" + getId();
 	}
 
-	// @Test
-	// public void testCSV_Sequential_CP1() {
-	// 	runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
-	// }
+	 @Test
+	 public void testCSV_Sequential_CP1() {
+	 	runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
+	 }
 
-	// @Test
-	// public void testCSV_Parallel_CP1() {
-	// 	runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
-	// }
+	 @Test
+	 public void testCSV_Parallel_CP1() {
+	 	runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
+	 }
 
-	// @Test
-	// public void testCSV_Sequential_CP() {
-	// 	runCSVTest(getId(), ExecMode.HYBRID, false);
-	// }
+	 @Test
+	 public void testCSV_Sequential_CP() {
+	 	runCSVTest(getId(), ExecMode.HYBRID, false);
+	 }
 
-	// @Test
-	// public void testCSV_Parallel_CP() {
-	// 	runCSVTest(getId(), ExecMode.HYBRID, true);
-	// }
+	 @Test
+	 public void testCSV_Parallel_CP() {
+	 	runCSVTest(getId(), ExecMode.HYBRID, true);
+	 }
 
 	@Test
 	public void testCSV_SP() {

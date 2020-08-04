@@ -34,6 +34,8 @@ heterogeneous and nested schema.
 
 **Python Documentation** [Python SystemDS Documentation](https://apache.github.io/systemds/api/python/index.html)
 
+**Issue Tracker** [Jira Dashboard](https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852)
+
 **Status and Build:** SystemDS is still in pre-alpha status. The original code base was forked from Apache SystemML 1.2 in 
 September 2018. We will continue to support linear algebra  programs over matrices, while replacing the underlying data model 
 and compiler, as well as substantially extending the  supported functionalities. Until the first release, you can build your own 

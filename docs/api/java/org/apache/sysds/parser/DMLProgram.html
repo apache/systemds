@@ -193,36 +193,36 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname)</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#containsFunctionStatementBlock-java.lang.String-">containsFunctionStatementBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#copyOriginalFunctions--">copyOriginalFunctions</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/sysds/parser/FunctionDictionary.html" title="class in org.apache.sysds.parser">FunctionDictionary</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getDefaultFunctionDictionary--">getDefaultFunctionDictionary</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getFunctionStatementBlock-java.lang.String-">getFunctionStatementBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fkey)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getFunctionStatementBlock-java.lang.String-java.lang.String-">getFunctionStatementBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespaceKey,
                          <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;functionName)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getFunctionStatementBlocks--">getFunctionStatementBlocks</a></span>()</code>&nbsp;</td>
-</tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getFunctionStatementBlocks-java.lang.String-">getFunctionStatementBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespaceKey)</code>&nbsp;</td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getFunctionStatementBlocks--">getFunctionStatementBlocks</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getNamedFunctionStatementBlocks--">getNamedFunctionStatementBlocks</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getFunctionStatementBlocks-java.lang.String-">getFunctionStatementBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespaceKey)</code>&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getNamedNSFunctionStatementBlocks--">getNamedNSFunctionStatementBlocks</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&gt;</code></td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionDictionary.html" title="class in org.apache.sysds.parser">FunctionDictionary</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/DMLProgram.html#getNamespaces--">getNamespaces</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i12" class="altColor">
@@ -358,7 +358,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getNamespaces</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&gt;&nbsp;getNamespaces()</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionDictionary.html" title="class in org.apache.sysds.parser">FunctionDictionary</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&gt;&nbsp;getNamespaces()</pre>
 </li>
 </ul>
 <a name="addStatementBlock-org.apache.sysds.parser.StatementBlock-">
@@ -430,7 +430,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getFunctionStatementBlocks</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&nbsp;getFunctionStatementBlocks(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespaceKey)</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&nbsp;getFunctionStatementBlocks(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespaceKey)</pre>
 </li>
 </ul>
 <a name="hasFunctionStatementBlocks--">
@@ -448,7 +448,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getFunctionStatementBlocks</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&nbsp;getFunctionStatementBlocks()</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&nbsp;getFunctionStatementBlocks()</pre>
 </li>
 </ul>
 <a name="getNamedNSFunctionStatementBlocks--">
@@ -460,22 +460,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&nbsp;getNamedNSFunctionStatementBlocks()</pre>
 </li>
 </ul>
-<a name="getNamedFunctionStatementBlocks--">
+<a name="getDefaultFunctionDictionary--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getNamedFunctionStatementBlocks</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&nbsp;getNamedFunctionStatementBlocks()</pre>
-</li>
-</ul>
-<a name="containsFunctionStatementBlock-java.lang.String-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>containsFunctionStatementBlock</h4>
-<pre>public&nbsp;boolean&nbsp;containsFunctionStatementBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</pre>
+<h4>getDefaultFunctionDictionary</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/sysds/parser/FunctionDictionary.html" title="class in org.apache.sysds.parser">FunctionDictionary</a>&lt;<a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&gt;&nbsp;getDefaultFunctionDictionary()</pre>
 </li>
 </ul>
 <a name="addFunctionStatementBlock-java.lang.String-org.apache.sysds.parser.FunctionStatementBlock-">
@@ -497,6 +488,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;void&nbsp;addFunctionStatementBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
                                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                                       <a href="../../../../org/apache/sysds/parser/FunctionStatementBlock.html" title="class in org.apache.sysds.parser">FunctionStatementBlock</a>&nbsp;fsb)</pre>
+</li>
+</ul>
+<a name="copyOriginalFunctions--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>copyOriginalFunctions</h4>
+<pre>public&nbsp;void&nbsp;copyOriginalFunctions()</pre>
 </li>
 </ul>
 <a name="getStatementBlocks--">

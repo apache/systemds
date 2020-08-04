@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -243,85 +243,77 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getNnz--">getNnz</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getNumColumns--">getNumColumns</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code>long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getNumRows--">getNumRows</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getPartitionFileName-org.apache.sysds.runtime.util.IndexRange-int-">getPartitionFileName</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;pred,
                     int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/ParForProgramBlock.PDataPartitionFormat.html" title="enum in org.apache.sysds.runtime.controlprogram">ParForProgramBlock.PDataPartitionFormat</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getPartitionFormat--">getPartitionFormat</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getPartitionSize--">getPartitionSize</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getSparsity--">getSparsity</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.UpdateType.html" title="enum in org.apache.sysds.runtime.controlprogram.caching">MatrixObject.UpdateType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#getUpdateType--">getUpdateType</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#isDiag--">isDiag</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#isMarked--">isMarked</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#isPartitioned--">isPartitioned</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#readMatrixPartition-org.apache.sysds.runtime.util.IndexRange-">readMatrixPartition</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;pred)</code>
 <div class="block">NOTE: for reading matrix partitions, we could cache (in its real sense) the read block
  with soft references (no need for eviction, as partitioning only applied for read-only matrices).</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#refreshMetaData--">refreshMetaData</a></span>()</code>
 <div class="block">Make the matrix metadata consistent with the in-memory matrix data</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#setDiag-boolean-">setDiag</a></span>(boolean&nbsp;diag)</code>&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#setInMemoryPartition-org.apache.sysds.runtime.matrix.data.MatrixBlock-">setInMemoryPartition</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;block)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#setMarkForLinCache-boolean-">setMarkForLinCache</a></span>(boolean&nbsp;mark)</code>&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#setPartitioned-org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat-int-">setPartitioned</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ParForProgramBlock.PDataPartitionFormat.html" title="enum in org.apache.sysds.runtime.controlprogram">ParForProgramBlock.PDataPartitionFormat</a>&nbsp;format,
               int&nbsp;n)</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#setUpdateType-org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType-">setUpdateType</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.UpdateType.html" title="enum in org.apache.sysds.runtime.controlprogram.caching">MatrixObject.UpdateType</a>&nbsp;flag)</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#unsetPartitioned--">unsetPartitioned</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html#updateDataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-">updateDataCharacteristics</a></span>(<a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;dc)</code>&nbsp;</td>
 </tr>
@@ -331,7 +323,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.controlprogram.caching.<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#acquireModify-T-">acquireModify</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#acquireReadAndRelease--">acquireReadAndRelease</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#addBroadcastSize-long-">addBroadcastSize</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#cleanupCacheDir--">cleanupCacheDir</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#cleanupCacheDir-boolean-">cleanupCacheDir</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#clearData--">clearData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#disableCaching--">disableCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#enableCaching--">enableCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#enableCleanup-boolean-">enableCleanup</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData--">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-int-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-org.apache.sysds.runtime.io.FileFormatProperties-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-int-org.apache.sysds.runtime.io.FileFormatProperties-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-int-org.apache.sysds.runtime.io.FileFormatProperties-java.lang.String-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#freeEvictedBlob--">freeEvictedBlob</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getBroadcastHandle--">getBroadcastHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getBroadcastSize--">getBroadcastSize</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getDataCharacteristics--">getDataCharacteristics</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getDataSize--">getDataSize</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getDebugName--">getDebugName</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getFedMapping--">getFedMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getFileFormatProperties--">getFileFormatProperties</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getFileName--">getFileName</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getGPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUContext-">getGPUObject</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getMetaData--">getMetaData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getPrivacyConstraint--">getPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getRDDHandle--">getRDDHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getStatus--">getStatus</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getUniqueID--">getUniqueID</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#initCaching--">initCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#initCaching-java.lang.String-">initCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isCached-boolean-">isCached</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isCachingActive--">isCachingActive</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isCleanupEnabled--">isCleanupEnabled</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isDirty--">isDirty</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isFederated--">isFederated</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isHDFSFileExists--">isHDFSFileExists</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#moveData-java.lang.String-java.lang.String-">moveData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#release--">release</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#removeMetaData--">removeMetaData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setBroadcastHandle-org.apache.sysds.runtime.instructions.spark.data.BroadcastObject-">setBroadcastHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setDirty-boolean-">setDirty</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setEmptyStatus--">setEmptyStatus</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setFedMapping-java.util.Map-">setFedMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setFileFormatProperties-org.apache.sysds.runtime.io.FileFormatProperties-">setFileFormatProperties</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setFileName-java.lang.String-">setFileName</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setGPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUContext-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-">setGPUObject</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setHDFSFileExists-boolean-">setHDFSFileExists</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setMetaData-org.apache.sysds.runtime.meta.MetaData-">setMetaData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setPrivacyConstraints-org.apache.sysds.runtime.privacy.PrivacyConstraint-">setPrivacyConstraints</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setRDDHandle-org.apache.sysds.runtime.instructions.spark.data.RDDObject-">setRDDHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#toString--">toString</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#acquireModify-T-">acquireModify</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#acquireReadAndRelease--">acquireReadAndRelease</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#addBroadcastSize-long-">addBroadcastSize</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#cleanupCacheDir--">cleanupCacheDir</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#cleanupCacheDir-boolean-">cleanupCacheDir</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#clearData--">clearData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#disableCaching--">disableCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#enableCaching--">enableCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#enableCleanup-boolean-">enableCleanup</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData--">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-int-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-org.apache.sysds.runtime.io.FileFormatProperties-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-int-org.apache.sysds.runtime.io.FileFormatProperties-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#exportData-java.lang.String-java.lang.String-int-org.apache.sysds.runtime.io.FileFormatProperties-java.lang.String-">exportData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#freeEvictedBlob--">freeEvictedBlob</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getBroadcastHandle--">getBroadcastHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getBroadcastSize--">getBroadcastSize</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getDataCharacteristics--">getDataCharacteristics</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getDataSize--">getDataSize</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getDebugName--">getDebugName</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getFedMapping--">getFedMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getFileFormatProperties--">getFileFormatProperties</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getFileName--">getFileName</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getGPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUContext-">getGPUObject</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getMetaData--">getMetaData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getNumColumns--">getNumColumns</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getNumRows--">getNumRows</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getPrivacyConstraint--">getPrivacyConstraint</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getRDDHandle--">getRDDHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getStatus--">getStatus</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#getUniqueID--">getUniqueID</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#initCaching--">initCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#initCaching-java.lang.String-">initCaching</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isCached-boolean-">isCached</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isCachingActive--">isCachingActive</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isCleanupEnabled--">isCleanupEnabled</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isDirty--">isDirty</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isFederated--">isFederated</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#isHDFSFileExists--">isHDFSFileExists</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#moveData-java.lang.String-java.lang.String-">moveData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#release--">release</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#removeMetaData--">removeMetaData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setBroadcastHandle-org.apache.sysds.runtime.instructions.spark.data.BroadcastObject-">setBroadcastHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setDirty-boolean-">setDirty</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setEmptyStatus--">setEmptyStatus</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setFedMapping-java.util.Map-">setFedMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setFileFormatProperties-org.apache.sysds.runtime.io.FileFormatProperties-">setFileFormatProperties</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setFileName-java.lang.String-">setFileName</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setGPUObject-org.apache.sysds.runtime.instructions.gpu.context.GPUContext-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-">setGPUObject</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setHDFSFileExists-boolean-">setHDFSFileExists</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setMetaData-org.apache.sysds.runtime.meta.MetaData-">setMetaData</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setPrivacyConstraints-org.apache.sysds.runtime.privacy.PrivacyConstraint-">setPrivacyConstraints</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#setRDDHandle-org.apache.sysds.runtime.instructions.spark.data.RDDObject-">setRDDHandle</a>, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#toString--">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.instructions.cp.Data">
@@ -496,24 +488,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html#refreshMetaData--">refreshMetaData</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></dd>
 </dl>
-</li>
-</ul>
-<a name="getNumRows--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getNumRows</h4>
-<pre>public&nbsp;long&nbsp;getNumRows()</pre>
-</li>
-</ul>
-<a name="getNumColumns--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getNumColumns</h4>
-<pre>public&nbsp;long&nbsp;getNumColumns()</pre>
 </li>
 </ul>
 <a name="getBlocksize--">

@@ -1382,7 +1382,7 @@
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">CPlanMemoTable.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.html#remove-org.apache.sysds.hops.Hop-java.util.Set-">remove</a></span>(<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
-      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.MemoTableEntry.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable.MemoTableEntry</a>&gt;&nbsp;blackList)</code>&nbsp;</td>
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.MemoTableEntry.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable.MemoTableEntry</a>&gt;&nbsp;excludeList)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -2930,12 +2930,13 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/FunctionCallCP.html#FunctionCallCP-java.util.ArrayList-java.lang.String-java.lang.String-java.lang.String:A-java.lang.String:A-java.util.ArrayList-org.apache.sysds.lops.LopProperties.ExecType-">FunctionCallCP</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/FunctionCallCP.html#FunctionCallCP-java.util.ArrayList-java.lang.String-java.lang.String-java.lang.String:A-java.lang.String:A-java.util.ArrayList-boolean-org.apache.sysds.lops.LopProperties.ExecType-">FunctionCallCP</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputs,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fnamespace,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;inputNames,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;outputNames,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;outputHops,
+              boolean&nbsp;opt,
               <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
 </tbody>

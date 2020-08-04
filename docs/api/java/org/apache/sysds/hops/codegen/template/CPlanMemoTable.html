@@ -310,7 +310,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.html#getPlansBlacklisted--">getPlansBlacklisted</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.html#getPlansExcludeListed--">getPlansExcludeListed</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i29" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
@@ -331,7 +331,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.html#remove-org.apache.sysds.hops.Hop-java.util.Set-">remove</a></span>(<a href="../../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
-      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.MemoTableEntry.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable.MemoTableEntry</a>&gt;&nbsp;blackList)</code>&nbsp;</td>
+      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.MemoTableEntry.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable.MemoTableEntry</a>&gt;&nbsp;excludeList)</code>&nbsp;</td>
 </tr>
 <tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -408,13 +408,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.MemoTableEntry.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable.MemoTableEntry</a>&gt;&gt;&nbsp;getPlans()</pre>
 </li>
 </ul>
-<a name="getPlansBlacklisted--">
+<a name="getPlansExcludeListed--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getPlansBlacklisted</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;getPlansBlacklisted()</pre>
+<h4>getPlansExcludeListed</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;getPlansExcludeListed()</pre>
 </li>
 </ul>
 <a name="getHopRefs--">
@@ -608,7 +608,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>remove</h4>
 <pre>public&nbsp;void&nbsp;remove(<a href="../../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
-                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.MemoTableEntry.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable.MemoTableEntry</a>&gt;&nbsp;blackList)</pre>
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="../../../../../../org/apache/sysds/hops/codegen/template/CPlanMemoTable.MemoTableEntry.html" title="class in org.apache.sysds.hops.codegen.template">CPlanMemoTable.MemoTableEntry</a>&gt;&nbsp;excludeList)</pre>
 </li>
 </ul>
 <a name="remove-org.apache.sysds.hops.Hop-org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType-">

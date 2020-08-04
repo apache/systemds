@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -164,26 +164,30 @@ extends <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/pa
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptTreePlanMappingAbstract.html#getMappedProg-long-">getMappedProg</a></span>(long&nbsp;id)</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptTreePlanMappingAbstract.html#getMappedProgramBlock-long-">getMappedProgramBlock</a></span>(long&nbsp;id)</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptTreePlanMappingAbstract.html#getRootProgram--">getRootProgram</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptTreePlanMappingAbstract.html#putHopMapping-org.apache.sysds.hops.Hop-org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode-">putHopMapping</a></span>(<a href="../../../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hops,
              <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptNode.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptNode</a>&nbsp;n)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptTreePlanMappingAbstract.html#putProgMapping-org.apache.sysds.parser.StatementBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode-">putProgMapping</a></span>(<a href="../../../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
               <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
               <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptNode.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptNode</a>&nbsp;n)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptTreePlanMappingAbstract.html#putRootProgram-org.apache.sysds.parser.DMLProgram-org.apache.sysds.runtime.controlprogram.Program-">putRootProgram</a></span>(<a href="../../../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
               <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/Program.html" title="class in org.apache.sysds.runtime.controlprogram">Program</a>&nbsp;rtprog)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptTreePlanMappingAbstract.html#replaceMapping-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode-">replaceMapping</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
               <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/opt/OptNode.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptNode</a>&nbsp;n)</code>&nbsp;</td>
@@ -290,6 +294,15 @@ extends <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/pa
 <li class="blockList">
 <h4>getMappedProg</h4>
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>[]&nbsp;getMappedProg(long&nbsp;id)</pre>
+</li>
+</ul>
+<a name="getMappedProgramBlock-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getMappedProgramBlock</h4>
+<pre>public&nbsp;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;getMappedProgramBlock(long&nbsp;id)</pre>
 </li>
 </ul>
 <a name="replaceMapping-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode-">

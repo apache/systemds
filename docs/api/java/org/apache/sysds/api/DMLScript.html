@@ -664,12 +664,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>main</h4>
 <pre>public static&nbsp;void&nbsp;main(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;args)
-                 throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+                 throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
+                        <a href="../../../../org/apache/sysds/parser/ParseException.html" title="class in org.apache.sysds.parser">ParseException</a>,
+                        <a href="../../../../org/apache/sysds/runtime/DMLScriptException.html" title="class in org.apache.sysds.runtime">DMLScriptException</a></pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>args</code> - command-line arguments</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if an IOException occurs in the hadoop GenericOptionsParser</dd>
+<dd><code><a href="../../../../org/apache/sysds/parser/ParseException.html" title="class in org.apache.sysds.parser">ParseException</a></code></dd>
+<dd><code><a href="../../../../org/apache/sysds/runtime/DMLScriptException.html" title="class in org.apache.sysds.runtime">DMLScriptException</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -680,7 +684,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>executeScript</h4>
 <pre>public static&nbsp;boolean&nbsp;executeScript(org.apache.hadoop.conf.Configuration&nbsp;conf,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;args)</pre>
+                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;args)
+                             throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
+                                    <a href="../../../../org/apache/sysds/parser/ParseException.html" title="class in org.apache.sysds.parser">ParseException</a>,
+                                    <a href="../../../../org/apache/sysds/runtime/DMLScriptException.html" title="class in org.apache.sysds.runtime">DMLScriptException</a></pre>
 <div class="block">Single entry point for all public invocation alternatives (e.g.,
  main, executeScript, JaqlUdf etc)</div>
 <dl>
@@ -689,6 +696,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code>args</code> - arguments</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if success, false otherwise</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - If an internal IO Exception happened.</dd>
+<dd><code><a href="../../../../org/apache/sysds/parser/ParseException.html" title="class in org.apache.sysds.parser">ParseException</a></code></dd>
+<dd><code><a href="../../../../org/apache/sysds/runtime/DMLScriptException.html" title="class in org.apache.sysds.runtime">DMLScriptException</a></code></dd>
 </dl>
 </li>
 </ul>

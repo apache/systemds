@@ -1593,10 +1593,6 @@ public class DMLTranslator
 			throw e;
 		}
 		catch ( Exception e ) {
-			//print exception stacktrace for fatal exceptions w/o messages 
-			//to allow for error analysis other than ('no parse issue message')
-			// if( e.getMessage() == null )
-				// e.printStackTrace();
 			throw new ParseException("An Parsing exception occured", e);
 		}
 	}

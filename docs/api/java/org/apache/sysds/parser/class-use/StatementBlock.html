@@ -531,6 +531,10 @@
 <td class="colLast"><span class="typeNameLabel">ProgramRewriter.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriter.html#rRewriteStatementBlockHopDAGs-org.apache.sysds.parser.StatementBlock-org.apache.sysds.hops.rewrite.ProgramRewriteStatus-">rRewriteStatementBlockHopDAGs</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;current,
                              <a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;state)</code>&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">HopRewriteUtils.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/rewrite/HopRewriteUtils.html#setUnoptimizedFunctionCalls-org.apache.sysds.parser.StatementBlock-">setUnoptimizedFunctionCalls</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb)</code>&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
@@ -720,12 +724,12 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeFunctionCalls-java.util.ArrayList-org.apache.sysds.parser.DMLProgram-">mergeFunctionCalls</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;body,
+<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeFunctionCalls-java.util.List-org.apache.sysds.parser.DMLProgram-">mergeFunctionCalls</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;body,
                   <a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;dmlProg)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeStatementBlocks-java.util.ArrayList-">mergeStatementBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;sb)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeStatementBlocks-java.util.List-">mergeStatementBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;sb)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
@@ -816,12 +820,12 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeFunctionCalls-java.util.ArrayList-org.apache.sysds.parser.DMLProgram-">mergeFunctionCalls</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;body,
+<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeFunctionCalls-java.util.List-org.apache.sysds.parser.DMLProgram-">mergeFunctionCalls</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;body,
                   <a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;dmlProg)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeStatementBlocks-java.util.ArrayList-">mergeStatementBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;sb)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">StatementBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/StatementBlock.html#mergeStatementBlocks-java.util.List-">mergeStatementBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;sb)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -989,6 +993,10 @@
                         boolean&nbsp;plain,
                         boolean&nbsp;forceDeepCopy)</code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ProgramConverter.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/ProgramConverter.html#rCreateDeepCopyStatementBlock-org.apache.sysds.parser.StatementBlock-">rCreateDeepCopyStatementBlock</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb)</code>&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
@@ -1004,6 +1012,10 @@
                         long&nbsp;pid,
                         boolean&nbsp;plain,
                         boolean&nbsp;forceDeepCopy)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ProgramConverter.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/ProgramConverter.html#rCreateDeepCopyStatementBlock-org.apache.sysds.parser.StatementBlock-">rCreateDeepCopyStatementBlock</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

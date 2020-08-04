@@ -740,7 +740,9 @@ The output F will have exactly 10 rows and 1 column. F may be a truncated or pad
 #### Probability Distribution Functions
 
 
-##### `p = cdf(target=q, dist=fn, ..., lower.tail=TRUE)`
+```
+`p = cdf(target=q, dist=fn, ..., lower.tail=TRUE)`
+```
 
 This computes the cumulative probability at the given quantile i.e., P[X&lt;=q], where X is random variable whose distribution is specified via string argument fn.
 
@@ -753,8 +755,9 @@ This computes the cumulative probability at the given quantile i.e., P[X&lt;=q],
     * For `dist="exp"`, valid parameter is rate that specifies the rate at which events occur. Note that the mean of exponential distribution is 1.0/rate. The default value is 1.0.
   * `Lower.tail`: a Boolean value with default set to TRUE. cdf() computes P[X&lt;=q] when lower.tail=TRUE and it computes P[X&gt;q] when lower.tail=FALSE. In other words, a complement of the cumulative distribution is computed when lower.tail=FALSE.
 
-
-##### `q = icdf(target=p, dist=fn, ...)`
+```
+`q = icdf(target=p, dist=fn, ...)`
+```
 
 This computes the inverse cumulative probability i.e., it computes a quantile q such that the given probability p = P[X&lt;=q], where X is random variable whose distribution is specified via string argument fn.
 

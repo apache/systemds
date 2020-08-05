@@ -264,10 +264,11 @@ public abstract class ColGroup implements Serializable {
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
 	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
 	 * 
-	 * @param vector row vector
-	 * @param result matrix block result
+	 * @param vector  row vector
+	 * @param result  matrix block result
+	 * @param numVals The Number of values contained in the Column.
 	 */
-	public abstract void leftMultByRowVector(MatrixBlock vector, MatrixBlock result);
+	public abstract void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual
@@ -277,6 +278,8 @@ public abstract class ColGroup implements Serializable {
 	 * @return version of this column group with the operation applied
 	 */
 	public abstract ColGroup scalarOperation(ScalarOperator op);
+
+	// public abstract ColGroup binaryMVR(MatrixBlock m2, BinaryOperator op);
 
 	/**
 	 * Unary Aggregate operator, since aggregate operators require new object output, the output becomes an uncompressed

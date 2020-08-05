@@ -358,11 +358,11 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
+	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
 		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int numCols = getNumCols();
-		final int numVals = getNumValues();
+		// final int numVals = getNumValues();
 		final double[] values = getValues();
 
 		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {

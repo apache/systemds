@@ -379,12 +379,12 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
+	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
 		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
-		final int numVals = getNumValues();
+		// final int numVals = getNumValues();
 		final double[] values = getValues();
 
 		if(numVals >= 1 && _numRows > blksz) {
@@ -633,7 +633,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		int[] ret = allocIVector(numVals, rl == 0);
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 
-		if(rl > 0) { // rl aligned with blksz
+		if(rl > 0 && _skipList != null) { // rl aligned with blksz
 			int rskip = (_numRows / 2 / blksz) * blksz;
 
 			for(int k = 0; k < numVals; k++) {

@@ -34,8 +34,6 @@ let's make sure the changes are consistent with the guidelines and coding style.
 *   Inclusion of unit tests when contributing new features, will help
     1. prove that the code works correctly, and
     2. guard against future breaking changes.
-*   Bug fixes may or may not require unit tests, because the presence of bugs usually
-    indicates insufficient test coverage.
 *   Formatting changes can be handled in a separate PR.
     Example [`bf4ba16b`](https://github.com/apache/systemds/commit/bf4ba16b9aaa9afee20a3f1c03b0ff49c5346a9d)
 *   New features (e.g., a new cutting edge machine learning algorithm) typically will

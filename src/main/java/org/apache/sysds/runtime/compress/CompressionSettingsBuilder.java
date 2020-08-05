@@ -33,7 +33,7 @@ public class CompressionSettingsBuilder {
 	private double samplingRatio = 1.0;
 	private boolean allowSharedDictionary = false;
 	private boolean transposeInput = true;
-	private boolean skipList = true;
+	private boolean skipList = false;
 	private int seed = -1;
 	private boolean investigateEstimate = false;
 	private boolean lossy = false;

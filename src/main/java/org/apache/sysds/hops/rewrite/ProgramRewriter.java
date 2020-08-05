@@ -52,7 +52,6 @@ public class ProgramRewriter
 	
 	private ArrayList<HopRewriteRule> _dagRuleSet = null;
 	private ArrayList<StatementBlockRewriteRule> _sbRuleSet = null;
-
 	public ProgramRewriter() {
 		// by default which is used during initial compile 
 		// apply all (static and dynamic) rewrites

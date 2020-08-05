@@ -274,7 +274,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
+	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
 		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
 		LibMatrixMult.matrixMult(vector, _data, pret);
 
@@ -292,18 +292,18 @@ public class ColGroupUncompressed extends ColGroup {
 	// 	throw new NotImplementedException();
 	// }
 
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int k) {
-		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
-		LibMatrixMult.matrixMult(vector, _data, pret, k);
+	// public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
+	// 	MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
+	// 	LibMatrixMult.matrixMult(vector, _data, pret, k);
 
-		// copying partialResult to the proper indices of the result
-		if(!pret.isEmptyBlock(false)) {
-			double[] rsltArr = result.getDenseBlockValues();
-			for(int colIx = 0; colIx < _colIndexes.length; colIx++)
-				rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
-			result.recomputeNonZeros();
-		}
-	}
+	// 	// copying partialResult to the proper indices of the result
+	// 	if(!pret.isEmptyBlock(false)) {
+	// 		double[] rsltArr = result.getDenseBlockValues();
+	// 		for(int colIx = 0; colIx < _colIndexes.length; colIx++)
+	// 			rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
+	// 		result.recomputeNonZeros();
+	// 	}
+	// }
 
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {

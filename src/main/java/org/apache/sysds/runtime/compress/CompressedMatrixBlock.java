@@ -34,6 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -60,12 +62,15 @@ import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
+import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -73,6 +78,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -412,6 +418,42 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 	}
 
+	protected void binaryMV(MatrixBlock m2, CompressedMatrixBlock ret, BinaryOperator op, BinaryAccessType aType ){
+		if(aType == BinaryAccessType.MATRIX_COL_VECTOR){
+			throw new NotImplementedException("Binary Matrix Col Vector operations are not implemented CLA");
+		}else if(aType== BinaryAccessType.MATRIX_ROW_VECTOR){
+			// Apply the operation to each of the column groups.
+			// Most implementations will only modify metadata.
+			ArrayList<ColGroup> newColGroups = new ArrayList<>();
+
+			for(ColGroup grp : _colGroups) {
+				if(grp instanceof ColGroupUncompressed){
+					LOG.error("NOT HANDLING UNCOMPRESSED IN BINARY MV");
+				}else{
+
+					if(grp.getNumCols() == 1){
+						ScalarOperator sop = new LeftScalarOperator(op.fn, m2.getValue(0, grp.getColIndices()[0]),1);
+						newColGroups.add(grp.scalarOperation(sop));
+					}else{
+						throw new NotImplementedException("Cocoded columns (nr cols:" + grp.getNumCols() + ") groupType: not implemented for Binary Matrix Row Vector operations");
+					}
+				}
+				// newColGroups.add(grp.binaryMVR(m2, op));
+			}
+			ret._colGroups = newColGroups;
+			// ret.setNonZeros(rlen * clen);
+			// throw new NotImplementedException("Binary Matrix Row Vector operations are not implemented CLA");
+		}
+	}
+
+	protected void binaryVV(MatrixBlock m2, CompressedMatrixBlock ret, BinaryOperator op, BinaryAccessType aType ){
+		throw new NotImplementedException("Binary Vector Vector operations are not implemented");
+	}
+
+	protected void binaryMM(MatrixBlock m2, CompressedMatrixBlock ret, BinaryOperator op){
+		throw new NotImplementedException("Binary Matrix Matrix operations are not implemented");
+	}
+
 	@Override
 	public MatrixBlock append(MatrixBlock that, MatrixBlock ret) {
 
@@ -621,9 +663,6 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			}
 		}
 
-		if(LOG.isDebugEnabled())
-			LOG.debug("Compressed MM in " + time.stop());
-
 		return ret;
 	}
 
@@ -757,6 +796,21 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			for(int i = 0; i < rlen; i++)
 				if(rnnz[i] < clen)
 					ret.quickSetValue(i, 0, builtin.execute(ret.quickGetValue(i, 0), 0));
+		}
+
+		// special handling of mean
+		if(op.aggOp.increOp.fn instanceof Mean) {
+			if(op.indexFn instanceof ReduceAll)
+				ret.quickSetValue(0, 0, ret.quickGetValue(0, 0) / (getNumColumns() * getNumRows()));
+			else if(op.indexFn instanceof ReduceCol) {
+				for(int i = 0; i < getNumRows(); i++) {
+					ret.quickSetValue(i, 0, ret.quickGetValue(i, 0) / getNumColumns());
+				}
+			}
+			else if(op.indexFn instanceof ReduceRow)
+				for(int i = 0; i < getNumColumns(); i++) {
+					ret.quickSetValue(0, i, ret.quickGetValue(0, i) / getNumRows());
+				}
 		}
 
 		// drop correction if necessary
@@ -946,7 +1000,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	}
 
 	private static void rightMultByVector(List<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru) {
-		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups));
+		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups).getLeft());
 
 		// boolean cacheDDC1 = ru - rl > CompressionSettings.BITMAP_BLOCK_SZ * 2;
 
@@ -992,6 +1046,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
 		boolean doTranspose, boolean allocTmp) {
 		// transpose vector if required
+		LOG.debug("Left Mult vector Transpose " + vector.getClass());
 		MatrixBlock rowVector = vector;
 		if(doTranspose) {
 			rowVector = new MatrixBlock(1, vector.getNumRows(), false);
@@ -1003,13 +1058,21 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		result.allocateDenseBlock();
 
 		// setup memory pool for reuse
-		if(allocTmp)
-			ColGroupValue.setupThreadLocalMemory(getMaxNumValues(colGroups));
+		if(allocTmp){
+			Pair<Integer, List<Integer>> v = getMaxNumValues(colGroups);
+			ColGroupValue.setupThreadLocalMemory(v.getLeft());
+			for(int i = 0; i< colGroups.size(); i++){
+				colGroups.get(i).leftMultByRowVector(rowVector, result, v.getRight().get(i));
+			}
+		}
+		else
+		{
+			for(ColGroup grp : colGroups) {
+				grp.leftMultByRowVector(rowVector, result, -1);
+			}
+		}
 
 		// delegate matrix-vector operation to each column group
-		for(ColGroup grp : colGroups) {
-			grp.leftMultByRowVector(rowVector, result);
-		}
 
 		// post-processing
 		if(allocTmp)
@@ -1092,7 +1155,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		tmpret.allocateDenseBlock();
 
 		// setup memory pool for reuse
-		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups));
+		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups).getLeft());
 
 		// approach: for each colgroup, extract uncompressed columns one at-a-time
 		// vector-matrix multiplies against remaining col groups
@@ -1154,12 +1217,19 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		return grpParts;
 	}
 
-	private static int getMaxNumValues(List<ColGroup> groups) {
+	private static Pair<Integer, List<Integer>> getMaxNumValues(List<ColGroup> groups) {
 		int numVals = 1;
+		List<Integer> numValues = new ArrayList<>(groups.size());
+		int nr;
 		for(ColGroup grp : groups)
-			if(grp instanceof ColGroupValue)
-				numVals = Math.max(numVals, ((ColGroupValue) grp).getNumValues());
-		return numVals;
+			if(grp instanceof ColGroupValue){
+				nr = ((ColGroupValue) grp).getNumValues();
+				numValues.add(nr);
+				numVals = Math.max(numVals, nr);
+			} else{
+				numValues.add(-1);
+			}
+		return new ImmutablePair<>(numVals, numValues);
 	}
 
 	public boolean hasUncompressedColGroup() {
@@ -1189,10 +1259,11 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		public Object call() {
 			// setup memory pool for reuse
 			try {
-				ColGroupValue.setupThreadLocalMemory(getMaxNumValues(_groups));
-				// delegate matrix-vector operation to each column group
-				for(ColGroup grp : _groups)
-					grp.leftMultByRowVector(_vect, _ret);
+				Pair<Integer, List<Integer>> v = getMaxNumValues(_groups);
+				ColGroupValue.setupThreadLocalMemory(v.getLeft());
+				for(int i = 0; i< _groups.size(); i++){
+					_groups.get(i).leftMultByRowVector(_vect, _ret, v.getRight().get(i));
+				}
 
 				ColGroupValue.cleanupThreadLocalMemory();
 			}

@@ -173,9 +173,9 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		}
 	}
 
-	protected final void postScaling(double[] vals, double[] c) {
+	protected final void postScaling(double[] vals, double[] c, int numVals) {
 		final int ncol = getNumCols();
-		final int numVals = getNumValues();
+		// final int numVals = getNumValues();
 
 		if(_dict instanceof QDictionary) {
 			QDictionary d = (QDictionary) _dict;
@@ -248,10 +248,10 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
+	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
 		double[] a = ColGroupConverter.getDenseVector(vector);
 		double[] c = result.getDenseBlockValues();
-		final int numVals = getNumValues();
+		numVals = (numVals == -1) ? getNumValues(): numVals;
 
 		if(8 * numVals < _numRows) {
 			// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
@@ -263,7 +263,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 					vals[index] += a[i];
 				}
 			}
-			postScaling(vals, c);
+			postScaling(vals, c, numVals);
 		}
 		else {
 			// iterate over codes, compute all, and add to the result

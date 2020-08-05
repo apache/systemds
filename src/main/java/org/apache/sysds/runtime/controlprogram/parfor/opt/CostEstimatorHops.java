@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelTyp
 
 public class CostEstimatorHops extends CostEstimator
 {
+	
 	public static final double DEFAULT_MEM_SP = 20*1024*1024;
 	
 	private OptTreePlanMappingAbstract _map = null;

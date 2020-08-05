@@ -38,7 +38,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
  */
 public abstract class Optimizer 
 {
-	protected static final Log LOG = LogFactory.getLog(Optimizer.class.getName());
+	private static final Log LOG = LogFactory.getLog(Optimizer.class.getName());
 	
 	protected long _numTotalPlans     = -1;
 	protected long _numEvaluatedPlans = -1;

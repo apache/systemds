@@ -19,26 +19,58 @@
 #
 #-------------------------------------------------------------
 
-X = read($X, data_type="frame", format="csv");
-M = read($Mask)
-[dataset, singleSet]= mice(F=X, cMask=M, iter=$iteration, complete=$com, verbose = FALSE)
+# read data frame
+F = read($X, data_type="frame", format="csv");
+# the mask for identifying categorical columns
+Mask = read($Mask)
 
-if(sum(M) == ncol(X))
+# Test cases
+# case 1: if all columns are categorical
+if(sum(Mask) == ncol(F))
 {
-  c = as.matrix(singleSet[,3:4]) # comparing only selected columns with R results because dataset is continuos and
-  write(c, $dataC)               # for categorical imputation R polyreg only support upto 50 distinct items (50 categories/feature)
+  scat = seq(1, ncol(Mask))
+  s = "1";
+  for(i in 2:ncol(F))
+    s = s + "," + i;
+  # encoding categorical columns using recode transformation
+  jspecR = "{ids:true, recode:["+s+"]}";
+  [X, M] = transformencode(target=F, spec=jspecR);
+  # call mice
+  dataset = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  # decode data back to original format
+  output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
+  # cherry picking columns to compare with R results
+  output = output[, 3:4]
+  write(output, $dataC)
 }
-else if (sum(M) == 0)
-{
-  n = as.matrix(dataset) * (1-M)
-  n = removeEmpty(target=n, margin = "cols")
-  write(n, $dataN)
+# case 2: if all data is numeric
+else if(sum(Mask) == 0){
+  # no transformation is required, cast the frame into matrix and call mice
+  # as.matrix() will convert the null values into zeros, so explicitly replace zeros with NaN
+  X = replace(target = as.matrix(F), pattern = 0, replacement = NaN)
+  output = mice(X=X, cMask=Mask, iter=$iteration, verbose = FALSE )
+  write(output, $dataN)
 }
+# case 3: if the data is combination of numeric and categorical columns
 else
 {
-  c = as.matrix(dataset) * (M)
+  scat = seq(1, ncol(Mask))
+  cat = removeEmpty(target=scat, margin="rows", select=t(Mask))
+  s = "" + as.integer(as.scalar(cat[1, 1]))
+  for(i in 2:nrow(cat))
+    s = s + "," + as.integer(as.scalar(cat[i, 1]));
+
+  # encoding categorical columns using recode transformation
+  jspecR = "{ids:true, recode:["+s+"]}";
+  [X, M] = transformencode(target=F, spec=jspecR);
+  # call mice
+  dataset = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  # decode data into original format
+  output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
+  # below lines are only for testing purpose  
+  c = output * (Mask)
   c = removeEmpty(target=c, margin = "cols")
-  n = as.matrix(dataset) * (1-M)
+  n = output * (1-Mask)
   n = removeEmpty(target=n, margin = "cols")
   write(n, $dataN)
   write(c, $dataC)

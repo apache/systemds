@@ -26,34 +26,23 @@ library(dplyr)
 
 d <- read.csv(args[1], header=FALSE )
 mass <- as.matrix(readMM(paste(args[2], "M.mtx", sep="")));
-
 if(sum(mass) == ncol(d))
 {
-d = d[,3:4]
-mass = mass[1,3:4]
-meth=""
-  for(i in 1: 2) {
-      d[[names(d)[i]]] =  as.factor(d[[names(d)[i]]]); 
-      meth = c(meth, "polyreg")
-    }
-  
-  meth=meth[-1]
-
+  d = d[,3:4]
+  d[] <- lapply(d, factor)
+  d
+  mass = mass[1,3:4]
+  meth = meth= rep("polyreg", ncol(d))
   #impute
   imputeD <- mice(d,where = is.na(d), method = meth, m=3)
-  R = data.frame(complete(imputeD,3))
-  c = select_if(R, is.factor)
-
-  # convert factor into numeric before casting to matrix
-  c =  sapply(c, function(x) as.numeric(as.character(x)))
-  writeMM(as(as.matrix(c), "CsparseMatrix"), paste(args[3], "C", sep=""));
-} else if (sum(mass) == 0)
+  imputeD
+  R = as.matrix(complete(imputeD,3))
+  writeMM(as(R, "CsparseMatrix"), paste(args[3], "C", sep=""));
+ } else if (sum(mass) == 0)
 {
-  print("Generating R witout cat")
   imputeD <- mice(d,where = is.na(d), method = "norm.predict", m=3)
-  R = data.frame(complete(imputeD,3))
-  n = select_if(R, is.numeric)
-  writeMM(as(as.matrix(n), "CsparseMatrix"), paste(args[3], "N", sep=""));  
+  R = as.matrix(complete(imputeD,3))
+  writeMM(as(as.matrix(R), "CsparseMatrix"), paste(args[3], "N", sep=""));  
 } else {
   meth=""
   for(i in 1: ncol(mass)) {
@@ -80,8 +69,8 @@ meth=""
   pred[names(d)[3], names(d)[4]] = 1
   pred[names(d)[4], names(d)[3]] = 1
 
-
-#impute
+  
+  #impute
   imputeD <- mice(d,where = is.na(d), method = meth, m=3,  pred = pred)
   R = data.frame(complete(imputeD,3))
   c = select_if(R, is.factor)

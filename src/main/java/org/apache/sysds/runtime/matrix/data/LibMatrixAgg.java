@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
@@ -51,7 +52,6 @@ import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceDiag;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
@@ -59,9 +59,9 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -87,6 +87,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  */
 public class LibMatrixAgg 
 {
+	// private static final Log LOG = LogFactory.getLog(LibMatrixAgg.class.getName());
+
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
 	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*1024; //Min 1M elements
@@ -198,7 +200,7 @@ public class LibMatrixAgg
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) {
-		//prepare meta data 
+
 		AggType aggtype = getAggType(uaop);
 		final int m = in.rlen;
 		final int m2 = out.rlen;
@@ -224,8 +226,6 @@ public class LibMatrixAgg
 		//cleanup output and change representation (if necessary)
 		out.recomputeNonZeros();
 		out.examSparsity();
-		
-		//System.out.println("uagg ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {
@@ -254,7 +254,7 @@ public class LibMatrixAgg
 			out.reset(m2, n2, false); //always dense
 			out.allocateDenseBlock();
 		}
-		
+
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
 		try {

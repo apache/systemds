@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
@@ -30,8 +32,8 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.CostEstimator.TestMeas
  * 
  *  
  */
-public class OptimizerHeuristic extends OptimizerRuleBased
-{
+public class OptimizerHeuristic extends OptimizerRuleBased {
+	private static final Log LOG = LogFactory.getLog(OptimizerHeuristic.class.getName());
 	public static final double EXEC_TIME_THRESHOLD = 30000; //in ms
 			
 	@Override

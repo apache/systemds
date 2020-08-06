@@ -19,10 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import static org.apache.sysds.parser.Statement.PSFrequency;
-import static org.apache.sysds.parser.Statement.PSModeType;
-import static org.apache.sysds.parser.Statement.PSScheme;
-import static org.apache.sysds.parser.Statement.PSUpdateType;
 import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
 import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
 import static org.apache.sysds.parser.Statement.PS_EPOCHS;
@@ -49,13 +45,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.parser.Statement.PSFrequency;
+import org.apache.sysds.parser.Statement.PSModeType;
+import org.apache.sysds.parser.Statement.PSScheme;
+import org.apache.sysds.parser.Statement.PSUpdateType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -77,23 +77,13 @@ import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
-
+	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
+	
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
-
-	//internal local debug level
-	private static final boolean LDEBUG = false;
-
-	static {
-		// for internal debugging only
-		if (LDEBUG) {
-			Logger.getLogger("org.apache.sysds.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
-			Logger.getLogger(ParamservBuiltinCPInstruction.class.getName()).setLevel(Level.DEBUG);
-		}
-	}
 
 	public ParamservBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) {
 		super(op, paramsMap, out, opcode, istr);

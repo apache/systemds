@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ValueType;
@@ -41,7 +43,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 
 public class DataGenCPInstruction extends UnaryCPInstruction {
-
+	private static final Log LOG = LogFactory.getLog(DataGenCPInstruction.class.getName());
 	private OpOpDG method;
 
 	private final CPOperand rows, cols, dims;

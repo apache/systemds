@@ -71,23 +71,18 @@ import org.apache.sysds.utils.Statistics;
  */
 public class OptimizationWrapper 
 {
-	
 	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(OptimizationWrapper.class.getName());
 	
 	//internal parameters
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
-	private static final boolean CHECK_PLAN_CORRECTNESS = false; 
-	
-	static
-	{
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
-				.setLevel(Level.DEBUG);
-		}
-	}
+	private static final boolean CHECK_PLAN_CORRECTNESS = false;
 
+	static {
+		if( LDEBUG )
+			setLogLevel(Level.DEBUG);
+	}
+	
 	/**
 	 * Called once per top-level parfor (during runtime, on parfor execute)
 	 * in order to optimize the specific parfor program block.
@@ -122,12 +117,9 @@ public class OptimizationWrapper
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
 
-	public static void setLogLevel( Level optLogLevel )
-	{
-		if( !LDEBUG ){ //set log level if not overwritten by internal flag
-			Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
+	public static void setLogLevel( Level optLogLevel ) {
+		Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
 				.setLevel( optLogLevel );
-		}
 	}
 
 	@SuppressWarnings("unused")

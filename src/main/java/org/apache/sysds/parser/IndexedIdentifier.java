@@ -22,10 +22,14 @@ package org.apache.sysds.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class IndexedIdentifier extends DataIdentifier 
 {
+
+	private static final Log LOG = LogFactory.getLog(DataExpression.class.getName());
 	
 	// stores the expressions containing the ranges for the 
 	private Expression 	_rowLowerBound = null, _rowUpperBound = null, _colLowerBound = null, _colUpperBound = null;

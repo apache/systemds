@@ -20,6 +20,9 @@
 package org.apache.sysds.test.functions.data.misc;
 
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
+
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -56,9 +59,10 @@ public class TimeTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			//programArgs = new String[]{"-explain", "hops", "-stats", "2", "-args", output("B") };
-			programArgs = new String[]{"-explain", "-args", output("B") };
+			programArgs = new String[]{"-args", output("B") };
 			
-			runTest(true, false, null, -1);
+			String out = runTest(null).toString();
+			assertTrue("stdout:" + out, out.contains("time diff : "));
 		}
 		finally {
 			rtplatform = platformOld;

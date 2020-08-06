@@ -19,7 +19,17 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Random;
+
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.fs.FileSystem;
@@ -35,11 +45,11 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -64,18 +74,12 @@ import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
+
 import scala.Array;
 import scala.Tuple2;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Random;
-
 public class RandSPInstruction extends UnarySPInstruction {
+	private static final Log LOG = LogFactory.getLog(RandSPInstruction.class.getName());
 	// internal configuration
 	private static final long INMEMORY_NUMBLOCKS_THRESHOLD = 1024 * 1024;
 

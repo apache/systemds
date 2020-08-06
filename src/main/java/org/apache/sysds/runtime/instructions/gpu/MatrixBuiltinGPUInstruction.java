@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -30,7 +32,8 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.utils.GPUStatistics;
 
 public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
-
+	private static final Log LOG = LogFactory.getLog(MatrixBuiltinGPUInstruction.class.getName());
+	
 	protected MatrixBuiltinGPUInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(op, in, out, 1, opcode, instr);
 		_gputype = GPUINSTRUCTION_TYPE.BuiltinUnary;

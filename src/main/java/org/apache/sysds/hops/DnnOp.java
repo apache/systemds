@@ -19,6 +19,10 @@
 
 package org.apache.sysds.hops;
 
+import java.util.ArrayList;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp2;
@@ -34,10 +38,9 @@ import org.apache.sysds.runtime.matrix.data.DnnParameters;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-import java.util.ArrayList;
+public class DnnOp extends MultiThreadedHop {
+	private static final Log LOG =  LogFactory.getLog(DnnOp.class.getName());
 
-public class DnnOp extends MultiThreadedHop
-{
 	// -------------------------------------------------------------------------
 	// This flag allows us to compile plans with less unknowns and also serves as future tensorblock integration.
 	// By default, these flags are turned on.

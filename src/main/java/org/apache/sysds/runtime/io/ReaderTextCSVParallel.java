@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -100,7 +101,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 		// Second Read Pass (read, parse strings, append to matrix block)
 		readCSVMatrixFromHDFS(splits, path, job, ret, rlen, clen, blen,
 				_props.hasHeader(), _props.getDelim(), _props.isFill(),
-				_props.getFillValue());
+				_props.getFillValue(), _props.getNAStrings());
 		
 		//post-processing (representation-specific, change of sparse/dense block representation)
 		// - no sorting required for CSV because it is read in sorted order per row
@@ -126,7 +127,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 	
 	private void readCSVMatrixFromHDFS(InputSplit[] splits, Path path, JobConf job, 
 			MatrixBlock dest, long rlen, long clen, int blen, 
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
+			boolean hasHeader, String delim, boolean fill, double fillValue, HashSet<String> naStrings) 
 		throws IOException 
 	{
 		FileInputFormat.addInputPath(job, path);
@@ -142,7 +143,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 			int splitCount = 0;
 			for (InputSplit split : splits) {
 				tasks.add( new CSVReadTask(split, _offsets, informat, job, dest, 
-					rlen, clen, hasHeader, delim, fill, fillValue, splitCount++) );
+					rlen, clen, hasHeader, delim, fill, fillValue, splitCount++, naStrings) );
 			}
 			pool.invokeAll(tasks);
 			pool.shutdown();
@@ -283,11 +284,12 @@ public class ReaderTextCSVParallel extends MatrixReader
 		private boolean _rc = true;
 		private Exception _exception = null;
 		private long _nnz;
+		private HashSet<String> _naStrings;
 		
 		public CSVReadTask(InputSplit split, SplitOffsetInfos offsets,
 				TextInputFormat informat, JobConf job, MatrixBlock dest,
 				long rlen, long clen, boolean hasHeader, String delim,
-				boolean fill, double fillValue, int splitCount) 
+				boolean fill, double fillValue, int splitCount, HashSet<String> naStrings) 
 		{
 			_split = split;
 			_splitoffsets = offsets; // new SplitOffsetInfos(offsets);
@@ -304,6 +306,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 			_delim = delim;
 			_rc = true;
 			_splitCount = splitCount;
+			_naStrings = naStrings;
 		}
 
 		public boolean getReturnCode() {
@@ -358,7 +361,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 									cellValue = _fillValue;
 								} 
 								else {
-									cellValue = UtilFunctions.parseToDouble(part);
+									cellValue = UtilFunctions.parseToDouble(part,_naStrings);
 								}
 
 								if( cellValue != 0 ) {
@@ -389,7 +392,7 @@ public class ReaderTextCSVParallel extends MatrixReader
 									cellValue = _fillValue;
 								} 
 								else {
-									cellValue = UtilFunctions.parseToDouble(part);
+									cellValue = UtilFunctions.parseToDouble(part,_naStrings);
 								}
 								if( cellValue != 0 ) {
 									a.set(row, col, cellValue);

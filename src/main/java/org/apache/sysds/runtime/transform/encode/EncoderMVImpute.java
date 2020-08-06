@@ -240,7 +240,7 @@ public class EncoderMVImpute extends Encoder
 					boolean computeMean = (_mvMethodList[i] == MVMethod.GLOBAL_MEAN || _isMVScaled.get(i) );
 					if(computeMean) {
 						// global_mean
-						double d = UtilFunctions.parseToDouble(w);
+						double d = UtilFunctions.parseToDouble(w, UtilFunctions.defaultNaString);
 						_meanFn.execute2(_meanList[i], d, _countList[i]);
 						
 						if (_isMVScaled.get(i) && _mvscMethodList[i] == MVMethod.GLOBAL_MODE)
@@ -263,7 +263,7 @@ public class EncoderMVImpute extends Encoder
 			{
 				int colID = _scnomvList[i];
 				w = UtilFunctions.unquote(words[colID-1].trim());
-				double d = UtilFunctions.parseToDouble(w);
+				double d = UtilFunctions.parseToDouble(w, UtilFunctions.defaultNaString);
 				_scnomvCountList[i]++; 		// not required, this is always equal to total #records processed
 				_meanFn.execute2(_scnomvMeanList[i], d, _scnomvCountList[i]);
 				if(_scnomvMethodList[i] == MVMethod.GLOBAL_MODE)

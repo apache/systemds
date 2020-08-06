@@ -408,7 +408,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				JavaPairRDD<LongWritable,Text> rddIn = (JavaPairRDD<LongWritable,Text>) sc
 					.hadoopFile(fnameIn, iinfo.inputFormatClass, iinfo.keyClass, iinfo.valueClass);
 				JavaPairRDD<LongWritable, FrameBlock> rddOut = FrameRDDConverterUtils
-						.csvToBinaryBlock(sc, rddIn, mc, null, false, separator, false, 0)
+						.csvToBinaryBlock(sc, rddIn, mc, null, false, separator, false, 0, UtilFunctions.defaultNaString)
 						.mapToPair(new LongFrameToLongWritableFrameFunction());
 				rddOut.saveAsHadoopFile(fnameOut, LongWritable.class, FrameBlock.class, oinfo.outputFormatClass);
 				break;

@@ -19,19 +19,17 @@
 
 package org.apache.sysds.lops;
 
- 
-import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 
 /**
  * Lop to perform reblock operation
  */
-public class ReBlock extends Lop 
-{
+public class ReBlock extends Lop {
 	public static final String OPCODE = "rblk"; 
 	
 	private boolean _outputEmptyBlocks = true;

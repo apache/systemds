@@ -41,7 +41,7 @@
 
 A = read($INPUT);
 K = ifdef($K, ncol(A));
-ofmt = ifdef($OFMT, "CSV");
+ofmt = ifdef($OFMT, "TEXT");
 projectData = ifdef($PROJDATA,0);
 model = ifdef($MODEL,"");
 center = ifdef($CENTER,0);
@@ -88,13 +88,13 @@ if (model != "") {
 	
 	# the square root of eigenvalues
 	eval_stdev_dominant = sqrt(eval_dominant);
-	
-	write(eval_stdev_dominant, model+"/dominant.eigen.standard.deviations", format=ofmt);
-	write(eval_dominant, model+"/dominant.eigen.values", format=ofmt);
-	write(evec_dominant, model+"/dominant.eigen.vectors", format=ofmt);
+
+	write(eval_stdev_dominant, model+"dominant.eigen.standard.deviations", format=ofmt);
+	write(eval_dominant, model+"dominant.eigen.values", format=ofmt);
+	write(evec_dominant, model+"dominant.eigen.vectors", format=ofmt);
 }
 if (projectData == 1 | model != ""){
 	# Construct new data set by treating computed dominant eigenvectors as the basis vectors
 	newA = A %*% evec_dominant;
-	write(newA, output+"/projected.data", format=ofmt);
+	write(newA, output+"projected.data", format=ofmt);
 }

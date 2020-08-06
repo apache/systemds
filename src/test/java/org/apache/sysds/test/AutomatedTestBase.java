@@ -905,7 +905,9 @@ public abstract class AutomatedTestBase {
 	 */
 	protected void runRScript(boolean newWay) {
 
-		String executionFile = sourceDirectory + selectedTest + ".R";
+		String executionFile = sourceDirectory + selectedTest + ".R";;
+		if(fullRScriptName != null)
+			executionFile = fullRScriptName;
 
 		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 		// Some of the R scripts will fail if the "expected" directory doesn't exist.

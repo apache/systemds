@@ -19,6 +19,11 @@
 
 package org.apache.sysds.hops;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpData;
@@ -36,15 +41,12 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
-import java.util.HashMap;
-import java.util.Map.Entry;
-
 /**
  *  A DataOp can be either a persistent read/write or transient read/write - writes will always have at least one input,
  *  but all types can have parameters (e.g., for csv literals of delimiter, header, etc).
  */
-public class DataOp extends Hop 
-{
+public class DataOp extends Hop {
+	private static final Log LOG =  LogFactory.getLog(DataOp.class.getName());
 	private OpOpData _op;
 	private String _fileName = null;
 	
@@ -123,6 +125,9 @@ public class DataOp extends Hop
 			String s = e.getKey();
 			Hop input = e.getValue();
 			getInput().add(input);
+			if (LOG.isDebugEnabled()){
+				LOG.debug(String.format("%15s - %s",s,input));
+			}
 			input.getParent().add(this);
 
 			_paramIndexMap.put(s, index);

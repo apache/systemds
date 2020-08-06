@@ -41,8 +41,9 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.utils.Explain;
 
-public class AggregateUnaryCPInstruction extends UnaryCPInstruction
-{
+public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
+	// private static final Log LOG = LogFactory.getLog(AggregateUnaryCPInstruction.class.getName());
+
 	public enum AUType {
 		NROW, NCOL, LENGTH, EXISTS, LINEAGE, 
 		COUNT_DISTINCT, COUNT_DISTINCT_APPROX,

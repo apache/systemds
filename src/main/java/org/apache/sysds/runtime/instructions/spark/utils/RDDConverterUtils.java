@@ -19,6 +19,13 @@
 
 package org.apache.sysds.runtime.instructions.spark.utils;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
@@ -66,16 +73,12 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.FastStringTokenizer;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
 import scala.Tuple2;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+public class RDDConverterUtils {
+	// private static final Log LOG = LogFactory.getLog(RDDConverterUtils.class.getName());
 
-public class RDDConverterUtils 
-{
 	public static final String DF_ID_COLUMN = "__INDEX";
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,
@@ -164,7 +167,8 @@ public class RDDConverterUtils
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, DataCharacteristics mc,
-			boolean hasHeader, String delim, boolean fill, double fillValue) {
+			boolean hasHeader, String delim, boolean fill, double fillValue, Set<String> naStrings) {
+		
 		//determine unknown dimensions and sparsity if required
 		//(w/ robustness for mistakenly counted header in nnz)
 		if( !mc.dimsKnown(true) ) {
@@ -185,7 +189,7 @@ public class RDDConverterUtils
 		boolean sparse = requiresSparseAllocation(prepinput, mc);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
 			prepinput.mapPartitionsToPair(new CSVToBinaryBlockFunction(
-				mc, sparse, hasHeader, delim, fill, fillValue));
+				mc, sparse, hasHeader, delim, fill, fillValue, naStrings));
 		
 		//aggregate partial matrix blocks (w/ preferred number of output 
 		//partitions as the data is likely smaller in binary block format,
@@ -196,14 +200,14 @@ public class RDDConverterUtils
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, DataCharacteristics mcOut,
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
+			boolean hasHeader, String delim, boolean fill, double fillValue, Set<String> naStrings) 
 	{
 		//convert string rdd to serializable longwritable/text
 		JavaPairRDD<LongWritable, Text> prepinput =
 			input.mapToPair(new StringToSerTextFunction());
 		
 		//convert to binary block
-		return csvToBinaryBlock(sc, prepinput, mcOut, hasHeader, delim, fill, fillValue);
+		return csvToBinaryBlock(sc, prepinput, mcOut, hasHeader, delim, fill, fillValue, naStrings);
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
@@ -656,8 +660,9 @@ public class RDDConverterUtils
 		private String _delim = null;
 		private boolean _fill = false;
 		private double _fillValue = 0;
+		private Set<String> _naStrings;
 		
-		public CSVToBinaryBlockFunction(DataCharacteristics mc, boolean sparse, boolean hasHeader, String delim, boolean fill, double fillValue)
+		public CSVToBinaryBlockFunction(DataCharacteristics mc, boolean sparse, boolean hasHeader, String delim, boolean fill, double fillValue, Set<String> naStrings)
 		{
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
@@ -668,20 +673,19 @@ public class RDDConverterUtils
 			_delim = delim;
 			_fill = fill;
 			_fillValue = fillValue;
+			_naStrings = naStrings == null ? UtilFunctions.defaultNaString : naStrings;
 		}
 
 		@Override
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<Text,Long>> arg0) 
-			throws Exception 
-		{
+			throws Exception {
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 
 			int ncblks = (int)Math.ceil((double)_clen/_blen);
 			MatrixIndexes[] ix = new MatrixIndexes[ncblks];
 			MatrixBlock[] mb = new MatrixBlock[ncblks];
-			
-			while( arg0.hasNext() )
-			{
+
+			while(arg0.hasNext()){
 				Tuple2<Text,Long> tmp = arg0.next();
 				String row = tmp._1().toString();
 				long rowix = tmp._2() + (_header ? 0 : 1);
@@ -713,10 +717,10 @@ public class RDDConverterUtils
 						mb[cix-1].getSparseBlock().allocate(pos, lnnz);
 					}
 					for( int j=0; j<lclen; j++ ) {
-						String part = parts[pix++];
+						String part = parts[pix++].trim();
 						emptyFound |= part.isEmpty() && !_fill;
 						double val = (part.isEmpty() && _fill) ?
-							_fillValue : UtilFunctions.parseToDouble(part);
+							_fillValue : UtilFunctions.parseToDouble(part, _naStrings);
 						mb[cix-1].appendValue(pos, j, val);
 					}
 				}

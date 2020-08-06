@@ -70,7 +70,7 @@ public abstract class Expression implements ParseInfo
 		INTERNAL, EXTERNAL
 	}
 	
-	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
+	private static final Log LOG = LogFactory.getLog(Expression.class.getName());
 	
 	private static final IDSequence _tempId = new IDSequence();
 	protected Identifier[] _outputs;

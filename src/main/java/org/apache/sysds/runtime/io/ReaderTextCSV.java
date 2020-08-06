@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +42,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ReaderTextCSV extends MatrixReader
 {
-	private FileFormatPropertiesCSV _props = null;
+	private final FileFormatPropertiesCSV _props;
 	
 	public ReaderTextCSV(FileFormatPropertiesCSV props) {
 		_props = props;
@@ -66,7 +67,7 @@ public class ReaderTextCSV extends MatrixReader
 	
 		//core read 
 		ret = readCSVMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen, 
-			_props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue() );
+			_props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue(), _props.getNAStrings() );
 		
 		//finally check if change of sparse/dense block representation required
 		//(nnz explicitly maintained during read)
@@ -84,7 +85,7 @@ public class ReaderTextCSV extends MatrixReader
 		
 		//core read 
 		long lnnz = readCSVMatrixFromInputStream(is, "external inputstream", ret, new MutableInt(0), rlen, clen, 
-			blen, _props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue(), true);
+			blen, _props.hasHeader(), _props.getDelim(), _props.isFill(), _props.getFillValue(), true, _props.getNAStrings());
 				
 		//finally check if change of sparse/dense block representation required
 		ret.setNonZeros( lnnz );
@@ -95,7 +96,7 @@ public class ReaderTextCSV extends MatrixReader
 	
 	@SuppressWarnings("unchecked")
 	private static MatrixBlock readCSVMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, 
-			long rlen, long clen, int blen, boolean hasHeader, String delim, boolean fill, double fillValue )
+			long rlen, long clen, int blen, boolean hasHeader, String delim, boolean fill, double fillValue, HashSet<String> naStrings )
 		throws IOException, DMLRuntimeException
 	{
 		//prepare file paths in alphanumeric order
@@ -119,7 +120,7 @@ public class ReaderTextCSV extends MatrixReader
 		MutableInt row = new MutableInt(0);
 		for(int fileNo=0; fileNo<files.size(); fileNo++) {
 			lnnz += readCSVMatrixFromInputStream(fs.open(files.get(fileNo)), path.toString(), dest, 
-				row, rlen, clen, blen, hasHeader, delim, fill, fillValue, fileNo==0);
+				row, rlen, clen, blen, hasHeader, delim, fill, fillValue, fileNo==0, naStrings);
 		}
 		
 		//post processing
@@ -129,7 +130,7 @@ public class ReaderTextCSV extends MatrixReader
 	}
 	
 	private static long readCSVMatrixFromInputStream( InputStream is, String srcInfo, MatrixBlock dest, MutableInt rowPos, 
-			long rlen, long clen, int blen, boolean hasHeader, String delim, boolean fill, double fillValue, boolean first )
+			long rlen, long clen, int blen, boolean hasHeader, String delim, boolean fill, double fillValue, boolean first, HashSet<String> naStrings )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
@@ -163,7 +164,7 @@ public class ReaderTextCSV extends MatrixReader
 							cellValue = fillValue;
 						}
 						else {
-							cellValue = UtilFunctions.parseToDouble(part);
+							cellValue = UtilFunctions.parseToDouble(part, naStrings);
 						}
 						if ( cellValue != 0 ) {
 							dest.appendValue(row, col, cellValue);
@@ -193,7 +194,7 @@ public class ReaderTextCSV extends MatrixReader
 							cellValue = fillValue;
 						}
 						else {
-							cellValue = UtilFunctions.parseToDouble(part);
+							cellValue = UtilFunctions.parseToDouble(part, naStrings);
 						}
 						if ( cellValue != 0 ) {
 							a.set(row, col, cellValue);

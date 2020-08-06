@@ -24,11 +24,10 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public final class MatrixAppendCPInstruction extends AppendCPInstruction implements LineageTraceable {
+public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 
 	protected MatrixAppendCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			AppendType type, String opcode, String istr) {

@@ -19,6 +19,13 @@
 
 package org.apache.sysds.api.mlcontext;
 
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -58,15 +65,9 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
 import scala.collection.JavaConversions;
 import scala.reflect.ClassTag;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Utility class containing methods to perform data conversions.
@@ -623,13 +624,10 @@ public class MLContextConversionUtil {
 				new MetaDataFormat(mc, FileFormat.BINARY),
 				frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]));
 		JavaPairRDD<Long, FrameBlock> rdd;
-		try {
-			rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc(), javaPairRDDText, mc, frameObject.getSchema(), false,
-					",", false, -1);
-		} catch (DMLRuntimeException e) {
-			e.printStackTrace();
-			return null;
-		}
+		
+		rdd = FrameRDDConverterUtils.csvToBinaryBlock(jsc(), javaPairRDDText, mc, frameObject.getSchema(), false,
+			",", false, -1, UtilFunctions.defaultNaString);
+		
 		frameObject.setRDDHandle(new RDDObject(rdd));
 		return frameObject;
 	}

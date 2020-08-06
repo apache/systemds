@@ -25,11 +25,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
-import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
@@ -49,6 +51,7 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.utils.Statistics;
 
 public class FunctionCallCPInstruction extends CPInstruction {
+	private static final Log LOG = LogFactory.getLog(FunctionCallCPInstruction.class.getName());
 	private final String _functionName;
 	private final String _namespace;
 	private final boolean _opt;

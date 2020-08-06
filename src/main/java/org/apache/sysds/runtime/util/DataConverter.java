@@ -19,6 +19,17 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.StringTokenizer;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
@@ -27,12 +38,15 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.data.BasicTensorBlock;
+import org.apache.sysds.runtime.data.DataTensorBlock;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.DataTensorBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.BasicTensorBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -55,17 +69,6 @@ import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.StringTokenizer;
 
 
 /**
@@ -1214,6 +1217,47 @@ public class DataConverter
 			sb.append(lineseparator);
 		}
 		
+		return sb.toString();
+	}
+
+	public static String toString(ListObject list,int rows, int cols, boolean sparse, String separator, String lineSeparator, int rowsToPrint, int colsToPrint, int decimal)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("List containing:\n");
+		sb.append("[");
+		for(Data x : list.getData()){
+			if( x instanceof MatrixObject) {
+				sb.append("\nMatrix:\n");
+				MatrixObject dat = (MatrixObject) x;
+				MatrixBlock matrix = (MatrixBlock) dat.acquireRead();
+				sb.append(DataConverter.toString(matrix, sparse, separator, lineSeparator, rows, cols, decimal));
+				dat.release();
+			}
+			else if( x instanceof TensorObject ) {
+				sb.append("\n");
+				TensorObject dat = (TensorObject) x;
+				TensorBlock tensor = (TensorBlock) dat.acquireRead();
+				sb.append(DataConverter.toString(tensor, sparse, separator,
+					lineSeparator, "[", "]", rows, cols, decimal));
+				dat.release();
+			}
+			else if( x instanceof FrameObject ) {
+				sb.append("\n");
+				FrameObject dat = (FrameObject) x;
+				FrameBlock frame = (FrameBlock) dat.acquireRead();
+				sb.append(DataConverter.toString(frame, sparse, separator, lineSeparator, rows, cols, decimal));
+				dat.release();
+			}
+			else if (x instanceof ListObject){
+				ListObject dat = (ListObject) x;
+				sb.append(DataConverter.toString(dat, cols, rows,sparse, separator, lineSeparator, rows, cols, decimal));
+			}else{
+				sb.append(x.toString());
+			}
+			sb.append(", ");
+		}
+		sb.delete(sb.length() -2, sb.length());
+		sb.append("]");
 		return sb.toString();
 	}
 

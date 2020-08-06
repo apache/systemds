@@ -58,7 +58,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 public class ExecutionContext {
 	protected static final Log LOG = LogFactory.getLog(ExecutionContext.class.getName());
 
@@ -737,5 +736,18 @@ public class ExecutionContext {
 	
 	private static String getNonExistingVarError(String varname) {
 		return "Variable '" + varname + "' does not exist in the symbol table.";
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		if(_prog != null)
+			sb.append("\nProgram: " + _prog.toString());
+		if(_variables != null)
+			sb.append("\nLocalVariableMap: " + _variables.toString());
+		if(_lineage != null)
+			sb.append("\nLineage: " + _lineage.toString());
+		return sb.toString();
 	}
 }

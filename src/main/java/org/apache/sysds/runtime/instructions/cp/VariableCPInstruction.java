@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
@@ -65,12 +69,7 @@ import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class VariableCPInstruction extends CPInstruction implements LineageTraceable {
-
 	/*
 	 * Supported Operations
 	 * --------------------
@@ -420,7 +419,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					boolean hasHeader = Boolean.parseBoolean(parts[curPos]);
 					String delim = parts[curPos+1];
 					boolean fill = Boolean.parseBoolean(parts[curPos+2]);
-					double fillValue = UtilFunctions.parseToDouble(parts[curPos+3]);
+					double fillValue = UtilFunctions.parseToDouble(parts[curPos+3],UtilFunctions.defaultNaString);
 					String naStrings = null;
 					if ( parts.length == 16+extSchema )
 						naStrings = parts[curPos+4];

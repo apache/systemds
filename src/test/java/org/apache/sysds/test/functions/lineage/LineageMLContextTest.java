@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.lineage;
 
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +50,10 @@ public class LineageMLContextTest extends MLContextTestBase {
 			 "print('sum: '+sum(M+M));"
 			+ "print(lineage(M+M));"
 			).in("M", javaRDD, mm);
-		setExpectedStdOut("sum: 30.0");
 		
 		ml.setLineage(ReuseCacheType.NONE);
+		String out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		assertTrue(out.contains("sum: 30.0"));
 		ml.execute(script);
 	}
 	
@@ -71,11 +73,12 @@ public class LineageMLContextTest extends MLContextTestBase {
 			+ "s = lineage(M+M);"
 			+"if( sum(M) < 0 )  print(s);"
 			).in("M", javaRDD, mm);
-		setExpectedStdOut("sum: 30.0");
 		
 		ml.setLineage(ReuseCacheType.REUSE_FULL);
-		ml.execute(script);
-		ml.execute(script); //w/ reuse
+		String out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		assertTrue(out.contains("sum: 30.0"));
+		out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		assertTrue(out.contains("sum: 30.0"));
 	}
 	
 	@Test
@@ -97,15 +100,15 @@ public class LineageMLContextTest extends MLContextTestBase {
 		
 		ml.setLineage(ReuseCacheType.REUSE_FULL);
 		
-		setExpectedStdOut("sum: 30.0");
-		ml.execute(script);
+		String out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		assertTrue(out.contains("sum: 30.0"));
 		
 		list.add("4 4 5");
 		JavaRDD<String> javaRDD2 = sc.parallelize(list);
 		MatrixMetadata mm2 = new MatrixMetadata(MatrixFormat.IJV, 4, 4);
 		script.in("M", javaRDD2, mm2);
 		
-		setExpectedStdOut("sum: 40.0");
-		ml.execute(script); //w/o reuse
+		out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		assertTrue(out.contains("sum: 40.0"));
 	}
 }

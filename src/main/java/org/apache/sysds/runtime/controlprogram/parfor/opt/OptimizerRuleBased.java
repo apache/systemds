@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
@@ -137,8 +139,9 @@ import java.util.stream.Collectors;
  * TODO blockwise partitioning
  *  
  */
-public class OptimizerRuleBased extends Optimizer
-{
+public class OptimizerRuleBased extends Optimizer {
+	private static final Log LOG = LogFactory.getLog(OptimizerRuleBased.class.getName());
+
 	public static final double PROB_SIZE_THRESHOLD_REMOTE = 100; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_PARTITIONING = 2; //wrt # top-level iterations (min)
 	public static final double PROB_SIZE_THRESHOLD_MB = 256*1024*1024; //wrt overall memory consumption (min)

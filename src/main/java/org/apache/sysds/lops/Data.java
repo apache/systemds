@@ -21,20 +21,17 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
-import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
-
-
+import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.parser.DataExpression;
 
 /**
  * Lop to represent data objects. Data objects represent matrices, vectors, 
  * variables, literals. Can be for both input and output. 
  */
-
 public class Data extends Lop
 {
 	public static final String PREAD_PREFIX = "pREAD";
@@ -412,7 +409,6 @@ public class Data extends Lop
 				sb.append( OPERAND_DELIMITOR );
 				sb.append( (schema!=null) ? schema.prepScalarLabel() : "*" );
 			}
-			
 			return sb.toString();
 		}
 		else {
@@ -433,7 +429,7 @@ public class Data extends Lop
 			Data delimLop = (Data) getNamedInputLop(DataExpression.DELIM_DELIMITER);
 			Data fillLop = (Data) getNamedInputLop(DataExpression.DELIM_FILL); 
 			Data fillValueLop = (Data) getNamedInputLop(DataExpression.DELIM_FILL_VALUE);
-			Data naLop = (Data) getNamedInputLop(DataExpression.DELIM_NA_STRINGS);
+			Lop naLop = getNamedInputLop(DataExpression.DELIM_NA_STRINGS);
 			
 			sb.append(headerLop.getBooleanValue());
 			sb.append(OPERAND_DELIMITOR);
@@ -444,7 +440,16 @@ public class Data extends Lop
 			sb.append(fillValueLop.getDoubleValue());
 			if ( naLop != null ) {
 				sb.append(OPERAND_DELIMITOR);
-				sb.append(naLop.getStringValue());
+				if(naLop instanceof Nary){
+					Nary naLops = (Nary) naLop;
+					for(Lop na : naLops.getInputs()){
+						sb.append(((Data)na).getStringValue());
+						sb.append(DataExpression.DELIM_NA_STRING_SEP);
+					}
+				} else if (naLop instanceof Data){
+
+					sb.append(((Data)naLop).getStringValue());
+				}
 			}
 		}
 		else { // (operation == OperationTypes.WRITE) 

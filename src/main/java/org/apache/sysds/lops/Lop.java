@@ -21,13 +21,11 @@ package org.apache.sysds.lops;
 
 import java.util.ArrayList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ValueType;
 
 
 /**
@@ -75,9 +73,6 @@ public abstract class Lop
 	public enum VisitStatus {
 		DONE, NOTVISITED
 	}
-	
-
-	protected static final Log LOG =  LogFactory.getLog(Lop.class.getName());
 	
 	public static final String FILE_SEPARATOR = "/";
 	public static final String PROCESS_PREFIX = "_p";

@@ -19,6 +19,15 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -36,15 +45,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
+public class UtilFunctions {
+	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
-public class UtilFunctions 
-{
 	//for accurate cast of double values to int and long 
 	//IEEE754: binary64 (double precision) eps = 2^(-53) = 1.11 * 10^(-16)
 	//(same epsilon as used for matrix index cast in R)
@@ -54,6 +57,12 @@ public class UtilFunctions
 	//because it determines the max hash domain size
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
+	
+	public static final HashSet<String> defaultNaString = new HashSet<>();
+
+	static{
+		defaultNaString.add("NA");
+	}
 
 	public static int intHashCode(int key1, int key2) {
 		return 31 * (31 + key1) + key2;
@@ -351,11 +360,12 @@ public class UtilFunctions
 	 * environments because Double.parseDouble relied on a synchronized cache
 	 * (which was replaced with thread-local caches in JDK8).
 	 * 
-	 * @param str string to parse to double
+	 * @param str   string to parse to double
+	 * @param isNan collection of Nan string which if encountered should be parsed to nan value
 	 * @return double value
 	 */
-	public static double parseToDouble(String str) {
-		return "NA".equals(str) ?
+	public static double parseToDouble(String str, Set<String> isNan ) {
+		return isNan.contains(str) ?
 			Double.NaN :
 			Double.parseDouble(str);
 	}

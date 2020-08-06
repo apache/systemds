@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.parser.ParForStatementBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
@@ -38,8 +36,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
  */
 public abstract class Optimizer 
 {
-	protected static final Log LOG = LogFactory.getLog(Optimizer.class.getName());
-	
 	protected long _numTotalPlans     = -1;
 	protected long _numEvaluatedPlans = -1;
 	

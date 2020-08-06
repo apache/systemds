@@ -1,0 +1,13 @@
+{
+    "data_type": "frame",
+    "format": "csv",
+    "header": true,
+    "description": {
+        "author": "SystemDS"
+    },
+    "naStrings": [
+        "hi",
+        "goodbye",
+        ""
+    ]
+}

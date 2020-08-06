@@ -58,9 +58,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public abstract class Hop implements ParseInfo
-{
-	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
+public abstract class Hop implements ParseInfo {
+	private static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
 	public static final long CPThreshold = 2000;
 
@@ -725,7 +724,6 @@ public abstract class Hop implements ParseInfo
 
 		if (LOG.isDebugEnabled()){
 			String s = String.format("  %c %-5s %-8s (%s,%s)  %s", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
-			//System.out.println(s);
 			LOG.debug(s);
 		}
 		

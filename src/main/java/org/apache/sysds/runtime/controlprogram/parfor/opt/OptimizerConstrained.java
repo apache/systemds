@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.controlprogram.parfor.opt;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties;
@@ -57,8 +59,8 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
  * - 11) rewrite set result merge
  *
  */
-public class OptimizerConstrained extends OptimizerRuleBased
-{
+public class OptimizerConstrained extends OptimizerRuleBased {
+	private static final Log LOG = LogFactory.getLog(OptimizerConstrained.class.getName());
 
 	@Override
 	public POptMode getOptMode() {

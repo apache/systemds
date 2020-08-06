@@ -1574,16 +1574,27 @@ public class DMLTranslator
 			} 
 			else if (source instanceof DataIdentifier)
 				return hops.get(((DataIdentifier) source).getName());
+			else if (source instanceof ExpressionList){
+				ExpressionList sourceList = (ExpressionList) source;
+				List<Expression> expressions = sourceList.getValue();
+				Hop[] listHops = new Hop[expressions.size()];
+				int idx = 0;
+				for( Expression ex : expressions){
+					listHops[idx++] = processExpression(ex, null, hops);
+				}
+				Hop currBuiltinOp = HopRewriteUtils.createNary(OpOpN.LIST,listHops );
+				return currBuiltinOp;
+			}
+			else{
+				throw new ParseException("Unhandled instance of source type: " + source.getClass());
+			}
 		} 
-		catch ( Exception e ) {
-			//print exception stacktrace for fatal exceptions w/o messages 
-			//to allow for error analysis other than ('no parse issue message')
-			if( e.getMessage() == null )
-				e.printStackTrace();
-			throw new ParseException(e.getMessage());
+		catch(ParseException e ){
+			throw e;
 		}
-		
-		return null;
+		catch ( Exception e ) {
+			throw new ParseException("An Parsing exception occured", e);
+		}
 	}
 
 	private static DataIdentifier createTarget(Expression source) {
@@ -2220,7 +2231,10 @@ public class DMLTranslator
 	 */
 	private Hop processBuiltinFunctionExpression(BuiltinFunctionExpression source, DataIdentifier target,
 			HashMap<String, Hop> hops) {
-		Hop expr = processExpression(source.getFirstExpr(), null, hops);
+		Hop expr = null;
+		if(source.getFirstExpr() != null){
+			expr = processExpression(source.getFirstExpr(), null, hops);
+		}
 		Hop expr2 = null;
 		if (source.getSecondExpr() != null) {
 			expr2 = processExpression(source.getSecondExpr(), null, hops);

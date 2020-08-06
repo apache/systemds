@@ -19,12 +19,12 @@
 
 package org.apache.sysds.test.functions.mlcontext;
 
-import static org.junit.Assert.assertTrue;
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromInputStream;
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromLocalFile;
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromUrl;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -55,8 +57,6 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.api.mlcontext.MLContextConversionUtil;
 import org.apache.sysds.api.mlcontext.MLContextException;
 import org.apache.sysds.api.mlcontext.MLContextUtil;
@@ -73,6 +73,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
 
 import scala.Tuple1;
 import scala.Tuple2;
@@ -84,90 +86,92 @@ import scala.collection.Seq;
 
 public class MLContextTest extends MLContextTestBase {
 
+	private static final Log LOG = LogFactory.getLog(MLContextTest.class.getName());
+
 	@Test
 	public void testBuiltinConstantsTest() {
-		System.out.println("MLContextTest - basic builtin constants test");
+		LOG.debug("MLContextTest - basic builtin constants test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "builtin-constants-test.dml");
-		ml.execute(script);
+		executeAndCaptureStdOut(script);
 		Assert.assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
 	}
-	
+
 	@Test
 	public void testBasicExecuteEvalTest() {
-		System.out.println("MLContextTest - basic eval test");
-		setExpectedStdOut("10");
+		LOG.debug("MLContextTest - basic eval test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval-test.dml");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("10"));
 	}
-	
+
 	@Test
 	public void testRewriteExecuteEvalTest() {
-		System.out.println("MLContextTest - eval rewrite test");
+		LOG.debug("MLContextTest - eval rewrite test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval2-test.dml");
-		ml.execute(script);
+		executeAndCaptureStdOut(script);
 		Assert.assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
 	}
-	
+
 	@Test
 	public void testExecuteEvalBuiltinTest() {
-		System.out.println("MLContextTest - eval builtin test");
-		setExpectedStdOut("TRUE");
-		ml.setExplain(true);
+		LOG.debug("MLContextTest - eval builtin test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval3-builtin-test.dml");
-		ml.execute(script);
+		ml.setExplain(true);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("TRUE"));
 		ml.setExplain(false);
 	}
-	
+
 	@Test
 	public void testExecuteEvalNestedBuiltinTest() {
-		System.out.println("MLContextTest - eval builtin test");
-		setExpectedStdOut("TRUE");
-		ml.setExplain(true);
+		LOG.debug("MLContextTest - eval builtin test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval4-nested_builtin-test.dml");
-		ml.execute(script);
+		ml.setExplain(true);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("TRUE"));
 		ml.setExplain(false);
 	}
 
 	@Test
 	public void testCreateDMLScriptBasedOnStringAndExecute() {
-		System.out.println("MLContextTest - create DML script based on string and execute");
+		LOG.debug("MLContextTest - create DML script based on string and execute");
 		String testString = "Create DML script based on string and execute";
-		setExpectedStdOut(testString);
 		Script script = dml("print('" + testString + "');");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains(testString));
 	}
 
 	@Test
 	public void testCreateDMLScriptBasedOnFileAndExecute() {
-		System.out.println("MLContextTest - create DML script based on file and execute");
-		setExpectedStdOut("hello world");
+		LOG.debug("MLContextTest - create DML script based on file and execute");
 		Script script = dmlFromFile(baseDirectory + File.separator + "hello-world.dml");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hello world"));
 	}
 
 	@Test
 	public void testCreateDMLScriptBasedOnInputStreamAndExecute() throws IOException {
-		System.out.println("MLContextTest - create DML script based on InputStream and execute");
-		setExpectedStdOut("hello world");
+		LOG.debug("MLContextTest - create DML script based on InputStream and execute");
 		File file = new File(baseDirectory + File.separator + "hello-world.dml");
-		try( InputStream is = new FileInputStream(file) ) {
+		try(InputStream is = new FileInputStream(file)) {
 			Script script = dmlFromInputStream(is);
-			ml.execute(script);
+			String out = executeAndCaptureStdOut(ml, script).getRight();
+			assertTrue(out.contains("hello world"));
 		}
 	}
 
 	@Test
 	public void testCreateDMLScriptBasedOnLocalFileAndExecute() {
-		System.out.println("MLContextTest - create DML script based on local file and execute");
-		setExpectedStdOut("hello world");
+		LOG.debug("MLContextTest - create DML script based on local file and execute");
 		File file = new File(baseDirectory + File.separator + "hello-world.dml");
 		Script script = dmlFromLocalFile(file);
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hello world"));
 	}
 
 	@Test
 	public void testCreateDMLScriptBasedOnURL() throws MalformedURLException {
-		System.out.println("MLContextTest - create DML script based on URL");
+		LOG.debug("MLContextTest - create DML script based on URL");
 		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
 		URL url = new URL(urlString);
 		Script script = dmlFromUrl(url);
@@ -178,7 +182,7 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testCreateDMLScriptBasedOnURLString() {
-		System.out.println("MLContextTest - create DML script based on URL string");
+		LOG.debug("MLContextTest - create DML script based on URL string");
 		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
 		Script script = dmlFromUrl(urlString);
 		String expectedContent = "Licensed to the Apache Software Foundation";
@@ -188,26 +192,26 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testExecuteDMLScript() {
-		System.out.println("MLContextTest - execute DML script");
+		LOG.debug("MLContextTest - execute DML script");
 		String testString = "hello dml world!";
-		setExpectedStdOut(testString);
 		Script script = new Script("print('" + testString + "');");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains(testString));
 	}
 
 	@Test
 	public void testInputParametersAddDML() {
-		System.out.println("MLContextTest - input parameters add DML");
+		LOG.debug("MLContextTest - input parameters add DML");
 
 		String s = "x = $X; y = $Y; print('x + y = ' + (x + y));";
 		Script script = dml(s).in("$X", 3).in("$Y", 4);
-		setExpectedStdOut("x + y = 7");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("x + y = 7"));
 	}
 
 	@Test
 	public void testJavaRDDCSVSumDML() {
-		System.out.println("MLContextTest - JavaRDD<String> CSV sum DML");
+		LOG.debug("MLContextTest - JavaRDD<String> CSV sum DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
@@ -216,13 +220,13 @@ public class MLContextTest extends MLContextTestBase {
 		JavaRDD<String> javaRDD = sc.parallelize(list);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", javaRDD);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	@Test
 	public void testJavaRDDIJVSumDML() {
-		System.out.println("MLContextTest - JavaRDD<String> IJV sum DML");
+		LOG.debug("MLContextTest - JavaRDD<String> IJV sum DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1 1 5");
@@ -233,13 +237,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 3, 3);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", javaRDD, mm);
-		setExpectedStdOut("sum: 15.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 15.0"));
 	}
 
 	@Test
 	public void testJavaRDDAndInputParameterDML() {
-		System.out.println("MLContextTest - JavaRDD<String> and input parameter DML");
+		LOG.debug("MLContextTest - JavaRDD<String> and input parameter DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,2");
@@ -248,13 +252,13 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = M + $X; print('sum: ' + sum(M));";
 		Script script = dml(s).in("M", javaRDD).in("$X", 1);
-		setExpectedStdOut("sum: 14.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 14.0"));
 	}
 
 	@Test
 	public void testInputMapDML() {
-		System.out.println("MLContextTest - input map DML");
+		LOG.debug("MLContextTest - input map DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("10,20");
@@ -271,27 +275,28 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = M + $X; print('sum: ' + sum(M));";
 		Script script = dml(s).in(inputs);
-		setExpectedStdOut("sum: 108.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 108.0"));
 	}
 
 	@Test
 	public void testCustomExecutionStepDML() {
-		System.out.println("MLContextTest - custom execution step DML");
+		LOG.debug("MLContextTest - custom execution step DML");
 		String testString = "custom execution step";
-		setExpectedStdOut(testString);
 		Script script = new Script("print('" + testString + "');");
 
 		ScriptExecutor scriptExecutor = new ScriptExecutor() {
 			@Override
-			protected void showExplanation() {}
+			protected void showExplanation() {
+			}
 		};
-		ml.execute(script, scriptExecutor);
+		String out = executeAndCaptureStdOut(ml, script, scriptExecutor).getRight();
+		assertTrue(out.contains(testString));
 	}
 
 	@Test
 	public void testRDDSumCSVDML() {
-		System.out.println("MLContextTest - RDD<String> CSV sum DML");
+		LOG.debug("MLContextTest - RDD<String> CSV sum DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,1,1");
@@ -301,13 +306,13 @@ public class MLContextTest extends MLContextTestBase {
 		RDD<String> rdd = JavaRDD.toRDD(javaRDD);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", rdd);
-		setExpectedStdOut("sum: 18.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 18.0"));
 	}
 
 	@Test
 	public void testRDDSumIJVDML() {
-		System.out.println("MLContextTest - RDD<String> IJV sum DML");
+		LOG.debug("MLContextTest - RDD<String> IJV sum DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1 1 1");
@@ -320,13 +325,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 3, 3);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", rdd, mm);
-		setExpectedStdOut("sum: 10.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 10.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLDoublesWithNoIDColumn() {
-		System.out.println("MLContextTest - DataFrame sum DML, doubles with no ID column");
+		LOG.debug("MLContextTest - DataFrame sum DML, doubles with no ID column");
 
 		List<String> list = new ArrayList<>();
 		list.add("10,20,30");
@@ -345,13 +350,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		setExpectedStdOut("sum: 450.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 450.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLDoublesWithIDColumn() {
-		System.out.println("MLContextTest - DataFrame sum DML, doubles with ID column");
+		LOG.debug("MLContextTest - DataFrame sum DML, doubles with ID column");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,1,2,3");
@@ -371,13 +376,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES_WITH_INDEX);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLDoublesWithIDColumnSortCheck() {
-		System.out.println("MLContextTest - DataFrame sum DML, doubles with ID column sort check");
+		LOG.debug("MLContextTest - DataFrame sum DML, doubles with ID column sort check");
 
 		List<String> list = new ArrayList<>();
 		list.add("3,7,8,9");
@@ -397,13 +402,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_DOUBLES_WITH_INDEX);
 
 		Script script = dml("print('M[1,1]: ' + as.scalar(M[1,1]));").in("M", dataFrame, mm);
-		setExpectedStdOut("M[1,1]: 1.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("M[1,1]: 1.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLVectorWithIDColumn() {
-		System.out.println("MLContextTest - DataFrame sum DML, vector with ID column");
+		LOG.debug("MLContextTest - DataFrame sum DML, vector with ID column");
 
 		List<Tuple2<Double, Vector>> list = new ArrayList<>();
 		list.add(new Tuple2<>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
@@ -421,13 +426,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR_WITH_INDEX);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLMllibVectorWithIDColumn() {
-		System.out.println("MLContextTest - DataFrame sum DML, mllib vector with ID column");
+		LOG.debug("MLContextTest - DataFrame sum DML, mllib vector with ID column");
 
 		List<Tuple2<Double, org.apache.spark.mllib.linalg.Vector>> list = new ArrayList<>();
 		list.add(new Tuple2<>(1.0, org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0)));
@@ -445,13 +450,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR_WITH_INDEX);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLVectorWithNoIDColumn() {
-		System.out.println("MLContextTest - DataFrame sum DML, vector with no ID column");
+		LOG.debug("MLContextTest - DataFrame sum DML, vector with no ID column");
 
 		List<Vector> list = new ArrayList<>();
 		list.add(Vectors.dense(1.0, 2.0, 3.0));
@@ -468,13 +473,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLMllibVectorWithNoIDColumn() {
-		System.out.println("MLContextTest - DataFrame sum DML, mllib vector with no ID column");
+		LOG.debug("MLContextTest - DataFrame sum DML, mllib vector with no ID column");
 
 		List<org.apache.spark.mllib.linalg.Vector> list = new ArrayList<>();
 		list.add(org.apache.spark.mllib.linalg.Vectors.dense(1.0, 2.0, 3.0));
@@ -491,8 +496,8 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.DF_VECTOR);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	static class DoubleVectorRow implements Function<Tuple2<Double, Vector>, Row> {
@@ -552,7 +557,7 @@ public class MLContextTest extends MLContextTestBase {
 		public Row call(String str) throws Exception {
 			String[] strings = str.split(",");
 			Double[] doubles = new Double[strings.length];
-			for (int i = 0; i < strings.length; i++) {
+			for(int i = 0; i < strings.length; i++) {
 				doubles[i] = Double.parseDouble(strings[i]);
 			}
 			return RowFactory.create((Object[]) doubles);
@@ -561,47 +566,48 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testCSVMatrixFileInputParameterSumDML() {
-		System.out.println("MLContextTest - CSV matrix file input parameter sum DML");
+		LOG.debug("MLContextTest - CSV matrix file input parameter sum DML");
 
 		String s = "M = read($Min); print('sum: ' + sum(M));";
 		String csvFile = baseDirectory + File.separator + "1234.csv";
-		setExpectedStdOut("sum: 10.0");
-		ml.execute(dml(s).in("$Min", csvFile));
+		String out = executeAndCaptureStdOut(ml, dml(s).in("$Min", csvFile)).getRight();
+		assertTrue(out.contains("sum: 10.0"));
+
 	}
 
 	@Test
 	public void testCSVMatrixFileInputVariableSumDML() {
-		System.out.println("MLContextTest - CSV matrix file input variable sum DML");
+		LOG.debug("MLContextTest - CSV matrix file input variable sum DML");
 
 		String s = "M = read($Min); print('sum: ' + sum(M));";
 		String csvFile = baseDirectory + File.separator + "1234.csv";
-		setExpectedStdOut("sum: 10.0");
-		ml.execute(dml(s).in("$Min", csvFile));
+		String out = executeAndCaptureStdOut(ml, dml(s).in("$Min", csvFile)).getRight();
+		assertTrue(out.contains("sum: 10.0"));
 	}
 
 	@Test
 	public void test2DDoubleSumDML() {
-		System.out.println("MLContextTest - two-dimensional double array sum DML");
+		LOG.debug("MLContextTest - two-dimensional double array sum DML");
 
-		double[][] matrix = new double[][] { { 10.0, 20.0 }, { 30.0, 40.0 } };
+		double[][] matrix = new double[][] {{10.0, 20.0}, {30.0, 40.0}};
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", matrix);
-		setExpectedStdOut("sum: 100.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 100.0"));
 	}
 
 	@Test
 	public void testAddScalarIntegerInputsDML() {
-		System.out.println("MLContextTest - add scalar integer inputs DML");
+		LOG.debug("MLContextTest - add scalar integer inputs DML");
 		String s = "total = in1 + in2; print('total: ' + total);";
 		Script script = dml(s).in("in1", 1).in("in2", 2);
-		setExpectedStdOut("total: 3");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("total: 3"));
 	}
 
 	@Test
 	public void testInputScalaMapDML() {
-		System.out.println("MLContextTest - input Scala map DML");
+		LOG.debug("MLContextTest - input Scala map DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("10,20");
@@ -620,15 +626,15 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = M + $X; print('sum: ' + sum(M));";
 		Script script = dml(s).in(scalaMap);
-		setExpectedStdOut("sum: 108.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 108.0"));
 	}
 
 	@Test
 	public void testOutputDoubleArrayMatrixDML() {
-		System.out.println("MLContextTest - output double array matrix DML");
+		LOG.debug("MLContextTest - output double array matrix DML");
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
-		double[][] matrix = ml.execute(dml(s).out("M")).getMatrixAs2DDoubleArray("M");
+		double[][] matrix = executeAndCaptureStdOut(dml(s).out("M")).getLeft().getMatrixAs2DDoubleArray("M");
 		Assert.assertEquals(1.0, matrix[0][0], 0);
 		Assert.assertEquals(2.0, matrix[0][1], 0);
 		Assert.assertEquals(3.0, matrix[1][0], 0);
@@ -637,54 +643,54 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputScalarLongDML() {
-		System.out.println("MLContextTest - output scalar long DML");
+		LOG.debug("MLContextTest - output scalar long DML");
 		String s = "m = 5;";
-		long result = ml.execute(dml(s).out("m")).getLong("m");
+		long result = executeAndCaptureStdOut(dml(s).out("m")).getLeft().getLong("m");
 		Assert.assertEquals(5, result);
 	}
 
 	@Test
 	public void testOutputScalarDoubleDML() {
-		System.out.println("MLContextTest - output scalar double DML");
+		LOG.debug("MLContextTest - output scalar double DML");
 		String s = "m = 1.23";
-		double result = ml.execute(dml(s).out("m")).getDouble("m");
+		double result = executeAndCaptureStdOut(dml(s).out("m")).getLeft().getDouble("m");
 		Assert.assertEquals(1.23, result, 0);
 	}
 
 	@Test
 	public void testOutputScalarBooleanDML() {
-		System.out.println("MLContextTest - output scalar boolean DML");
+		LOG.debug("MLContextTest - output scalar boolean DML");
 		String s = "m = FALSE;";
-		boolean result = ml.execute(dml(s).out("m")).getBoolean("m");
+		boolean result = executeAndCaptureStdOut(dml(s).out("m")).getLeft().getBoolean("m");
 		Assert.assertEquals(false, result);
 	}
 
 	@Test
 	public void testOutputScalarStringDML() {
-		System.out.println("MLContextTest - output scalar string DML");
+		LOG.debug("MLContextTest - output scalar string DML");
 		String s = "m = 'hello';";
-		String result = ml.execute(dml(s).out("m")).getString("m");
+		String result = executeAndCaptureStdOut(dml(s).out("m")).getLeft().getString("m");
 		Assert.assertEquals("hello", result);
 	}
 
 	@Test
 	public void testInputFrameDML() {
-		System.out.println("MLContextTest - input frame DML");
+		LOG.debug("MLContextTest - input frame DML");
 
 		String s = "M = read($Min, data_type='frame', format='csv'); print(toString(M));";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
 		Script script = dml(s).in("$Min", csvFile);
-		setExpectedStdOut("one");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("one"));
 	}
 
 	@Test
 	public void testOutputJavaRDDStringIJVDML() {
-		System.out.println("MLContextTest - output Java RDD String IJV DML");
+		LOG.debug("MLContextTest - output Java RDD String IJV DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("M");
 		List<String> lines = javaRDDStringIJV.collect();
 		Assert.assertEquals("1 1 1.0", lines.get(0));
@@ -695,11 +701,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputJavaRDDStringCSVDenseDML() {
-		System.out.println("MLContextTest - output Java RDD String CSV Dense DML");
+		LOG.debug("MLContextTest - output Java RDD String CSV Dense DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2); print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
 		Assert.assertEquals("1.0,2.0", lines.get(0));
@@ -707,16 +713,16 @@ public class MLContextTest extends MLContextTestBase {
 	}
 
 	/**
-	 * Reading from dense and sparse matrices is handled differently, so we have
-	 * tests for both dense and sparse matrices.
+	 * Reading from dense and sparse matrices is handled differently, so we have tests for both dense and sparse
+	 * matrices.
 	 */
 	@Test
 	public void testOutputJavaRDDStringCSVSparseDML() {
-		System.out.println("MLContextTest - output Java RDD String CSV Sparse DML");
+		LOG.debug("MLContextTest - output Java RDD String CSV Sparse DML");
 
 		String s = "M = matrix(0, rows=10, cols=10); M[1,1]=1; M[1,2]=2; M[2,1]=3; M[2,2]=4; print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
 		Assert.assertEquals("1.0,2.0", lines.get(0));
@@ -725,11 +731,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputRDDStringIJVDML() {
-		System.out.println("MLContextTest - output RDD String IJV DML");
+		LOG.debug("MLContextTest - output RDD String IJV DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		RDD<String> rddStringIJV = results.getRDDStringIJV("M");
 		Iterator<String> iterator = rddStringIJV.toLocalIterator();
 		Assert.assertEquals("1 1 1.0", iterator.next());
@@ -740,11 +746,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputRDDStringCSVDenseDML() {
-		System.out.println("MLContextTest - output RDD String CSV Dense DML");
+		LOG.debug("MLContextTest - output RDD String CSV Dense DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2); print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0", iterator.next());
@@ -753,11 +759,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputRDDStringCSVSparseDML() {
-		System.out.println("MLContextTest - output RDD String CSV Sparse DML");
+		LOG.debug("MLContextTest - output RDD String CSV Sparse DML");
 
 		String s = "M = matrix(0, rows=10, cols=10); M[1,1]=1; M[1,2]=2; M[2,1]=3; M[2,2]=4; print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0", iterator.next());
@@ -766,11 +772,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputDataFrameDML() {
-		System.out.println("MLContextTest - output DataFrame DML");
+		LOG.debug("MLContextTest - output DataFrame DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Dataset<Row> dataFrame = results.getDataFrame("M");
 		List<Row> list = dataFrame.collectAsList();
 		Row row1 = list.get(0);
@@ -786,47 +792,47 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputDataFrameDMLVectorWithIDColumn() {
-		System.out.println("MLContextTest - output DataFrame DML, vector with ID column");
+		LOG.debug("MLContextTest - output DataFrame DML, vector with ID column");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Dataset<Row> dataFrame = results.getDataFrameVectorWithIDColumn("M");
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
 		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(1)).toArray(), 0.0);
+		Assert.assertArrayEquals(new double[] {1.0, 2.0}, ((Vector) row1.get(1)).toArray(), 0.0);
 
 		Row row2 = list.get(1);
 		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(1)).toArray(), 0.0);
+		Assert.assertArrayEquals(new double[] {3.0, 4.0}, ((Vector) row2.get(1)).toArray(), 0.0);
 	}
 
 	@Test
 	public void testOutputDataFrameDMLVectorNoIDColumn() {
-		System.out.println("MLContextTest - output DataFrame DML, vector no ID column");
+		LOG.debug("MLContextTest - output DataFrame DML, vector no ID column");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Dataset<Row> dataFrame = results.getDataFrameVectorNoIDColumn("M");
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(0)).toArray(), 0.0);
+		Assert.assertArrayEquals(new double[] {1.0, 2.0}, ((Vector) row1.get(0)).toArray(), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(0)).toArray(), 0.0);
+		Assert.assertArrayEquals(new double[] {3.0, 4.0}, ((Vector) row2.get(0)).toArray(), 0.0);
 	}
 
 	@Test
 	public void testOutputDataFrameDMLDoublesWithIDColumn() {
-		System.out.println("MLContextTest - output DataFrame DML, doubles with ID column");
+		LOG.debug("MLContextTest - output DataFrame DML, doubles with ID column");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Dataset<Row> dataFrame = results.getDataFrameDoubleWithIDColumn("M");
 		List<Row> list = dataFrame.collectAsList();
 
@@ -843,11 +849,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputDataFrameDMLDoublesNoIDColumn() {
-		System.out.println("MLContextTest - output DataFrame DML, doubles no ID column");
+		LOG.debug("MLContextTest - output DataFrame DML, doubles no ID column");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Dataset<Row> dataFrame = results.getDataFrameDoubleNoIDColumn("M");
 		List<Row> list = dataFrame.collectAsList();
 
@@ -862,55 +868,55 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testTwoScriptsDML() {
-		System.out.println("MLContextTest - two scripts with inputs and outputs DML");
+		LOG.debug("MLContextTest - two scripts with inputs and outputs DML");
 
-		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
+		double[][] m1 = new double[][] {{1.0, 2.0}, {3.0, 4.0}};
 		String s1 = "sum1 = sum(m1);";
-		double sum1 = ml.execute(dml(s1).in("m1", m1).out("sum1")).getDouble("sum1");
+		double sum1 = executeAndCaptureStdOut(dml(s1).in("m1", m1).out("sum1")).getLeft().getDouble("sum1");
 		Assert.assertEquals(10.0, sum1, 0.0);
 
-		double[][] m2 = new double[][] { { 5.0, 6.0 }, { 7.0, 8.0 } };
+		double[][] m2 = new double[][] {{5.0, 6.0}, {7.0, 8.0}};
 		String s2 = "sum2 = sum(m2);";
-		double sum2 = ml.execute(dml(s2).in("m2", m2).out("sum2")).getDouble("sum2");
+		double sum2 = executeAndCaptureStdOut(dml(s2).in("m2", m2).out("sum2")).getLeft().getDouble("sum2");
 		Assert.assertEquals(26.0, sum2, 0.0);
 	}
 
 	@Test
 	public void testOneScriptTwoExecutionsDML() {
-		System.out.println("MLContextTest - one script with two executions DML");
+		LOG.debug("MLContextTest - one script with two executions DML");
 
 		Script script = new Script();
 
-		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
+		double[][] m1 = new double[][] {{1.0, 2.0}, {3.0, 4.0}};
 		script.setScriptString("sum1 = sum(m1);").in("m1", m1).out("sum1");
-		ml.execute(script);
+		executeAndCaptureStdOut(script);
 		Assert.assertEquals(10.0, script.results().getDouble("sum1"), 0.0);
 
 		script.clearAll();
 
-		double[][] m2 = new double[][] { { 5.0, 6.0 }, { 7.0, 8.0 } };
+		double[][] m2 = new double[][] {{5.0, 6.0}, {7.0, 8.0}};
 		script.setScriptString("sum2 = sum(m2);").in("m2", m2).out("sum2");
-		ml.execute(script);
+		executeAndCaptureStdOut(script);
 		Assert.assertEquals(26.0, script.results().getDouble("sum2"), 0.0);
 	}
 
 	@Test
 	public void testInputParameterBooleanDML() {
-		System.out.println("MLContextTest - input parameter boolean DML");
+		LOG.debug("MLContextTest - input parameter boolean DML");
 
 		String s = "x = $X; if (x == TRUE) { print('yes'); }";
 		Script script = dml(s).in("$X", true);
-		setExpectedStdOut("yes");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("yes"));
 	}
 
 	@Test
 	public void testMultipleOutDML() {
-		System.out.println("MLContextTest - multiple out DML");
+		LOG.debug("MLContextTest - multiple out DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2); N = sum(M)";
 		// alternative to .out("M").out("N")
-		MLResults results = ml.execute(dml(s).out("M", "N"));
+		MLResults results = executeAndCaptureStdOut(dml(s).out("M", "N")).getLeft();
 		double[][] matrix = results.getMatrixAs2DDoubleArray("M");
 		double sum = results.getDouble("N");
 		Assert.assertEquals(1.0, matrix[0][0], 0);
@@ -922,9 +928,9 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputMatrixObjectDML() {
-		System.out.println("MLContextTest - output matrix object DML");
+		LOG.debug("MLContextTest - output matrix object DML");
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
-		MatrixObject mo = ml.execute(dml(s).out("M")).getMatrixObject("M");
+		MatrixObject mo = executeAndCaptureStdOut(dml(s).out("M")).getLeft().getMatrixObject("M");
 		RDD<String> rddStringCSV = MLContextConversionUtil.matrixObjectToRDDStringCSV(mo);
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0", iterator.next());
@@ -933,7 +939,7 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testInputMatrixBlockDML() {
-		System.out.println("MLContextTest - input MatrixBlock DML");
+		LOG.debug("MLContextTest - input MatrixBlock DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("10,20,30");
@@ -952,15 +958,15 @@ public class MLContextTest extends MLContextTestBase {
 		Matrix m = new Matrix(dataFrame);
 		MatrixBlock matrixBlock = m.toMatrixBlock();
 		Script script = dml("avg = avg(M);").in("M", matrixBlock).out("avg");
-		double avg = ml.execute(script).getDouble("avg");
+		double avg = executeAndCaptureStdOut(script).getLeft().getDouble("avg");
 		Assert.assertEquals(50.0, avg, 0.0);
 	}
 
 	@Test
 	public void testOutputBinaryBlocksDML() {
-		System.out.println("MLContextTest - output binary blocks DML");
+		LOG.debug("MLContextTest - output binary blocks DML");
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
-		MLResults results = ml.execute(dml(s).out("M"));
+		MLResults results = executeAndCaptureStdOut(dml(s).out("M")).getLeft();
 		Matrix m = results.getMatrix("M");
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = m.toBinaryBlocks();
 		MatrixMetadata mm = m.getMatrixMetadata();
@@ -976,11 +982,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputListStringCSVDenseDML() {
-		System.out.println("MLContextTest - output List String CSV Dense DML");
+		LOG.debug("MLContextTest - output List String CSV Dense DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2); print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringCSV(mo);
 		Assert.assertEquals("1.0,2.0", lines.get(0));
@@ -989,11 +995,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputListStringCSVSparseDML() {
-		System.out.println("MLContextTest - output List String CSV Sparse DML");
+		LOG.debug("MLContextTest - output List String CSV Sparse DML");
 
 		String s = "M = matrix(0, rows=10, cols=10); M[1,1]=1; M[1,2]=2; M[2,1]=3; M[2,2]=4; print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringCSV(mo);
 		Assert.assertEquals("1.0,2.0", lines.get(0));
@@ -1002,11 +1008,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputListStringIJVDenseDML() {
-		System.out.println("MLContextTest - output List String IJV Dense DML");
+		LOG.debug("MLContextTest - output List String IJV Dense DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2); print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringIJV(mo);
 		Assert.assertEquals("1 1 1.0", lines.get(0));
@@ -1017,11 +1023,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputListStringIJVSparseDML() {
-		System.out.println("MLContextTest - output List String IJV Sparse DML");
+		LOG.debug("MLContextTest - output List String IJV Sparse DML");
 
 		String s = "M = matrix(0, rows=10, cols=10); M[1,1]=1; M[1,2]=2; M[2,1]=3; M[2,2]=4; print(toString(M));";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringIJV(mo);
 		Assert.assertEquals("1 1 1.0", lines.get(0));
@@ -1032,7 +1038,7 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testJavaRDDGoodMetadataDML() {
-		System.out.println("MLContextTest - JavaRDD<String> good metadata DML");
+		LOG.debug("MLContextTest - JavaRDD<String> good metadata DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
@@ -1043,13 +1049,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(3, 3, 9);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", javaRDD, mm);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
-	@Test(expected = MLContextException.class)
+	@Test
 	public void testJavaRDDBadMetadataDML() {
-		System.out.println("MLContextTest - JavaRDD<String> bad metadata DML");
+		LOG.debug("MLContextTest - JavaRDD<String> bad metadata DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
@@ -1060,12 +1066,12 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(1, 1, 9);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", javaRDD, mm);
-		ml.execute(script);
+		executeAndCaptureStdOut(script, MLContextException.class);
 	}
 
 	@Test
 	public void testRDDGoodMetadataDML() {
-		System.out.println("MLContextTest - RDD<String> good metadata DML");
+		LOG.debug("MLContextTest - RDD<String> good metadata DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,1,1");
@@ -1077,13 +1083,13 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(3, 3, 9);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", rdd, mm);
-		setExpectedStdOut("sum: 18.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 18.0"));
 	}
 
 	@Test
 	public void testDataFrameGoodMetadataDML() {
-		System.out.println("MLContextTest - DataFrame good metadata DML");
+		LOG.debug("MLContextTest - DataFrame good metadata DML");
 
 		List<String> list = new ArrayList<>();
 		list.add("10,20,30");
@@ -1102,14 +1108,14 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixMetadata mm = new MatrixMetadata(3, 3, 9);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame, mm);
-		setExpectedStdOut("sum: 450.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 450.0"));
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testInputTupleSeqNoMetadataDML() {
-		System.out.println("MLContextTest - Tuple sequence no metadata DML");
+		LOG.debug("MLContextTest - Tuple sequence no metadata DML");
 
 		List<String> list1 = new ArrayList<>();
 		list1.add("1,2");
@@ -1131,14 +1137,15 @@ public class MLContextTest extends MLContextTestBase {
 		Seq seq = JavaConversions.asScalaBuffer(tupleList).toSeq();
 
 		Script script = dml("print('sums: ' + sum(m1) + ' ' + sum(m2));").in(seq);
-		setExpectedStdOut("sums: 10.0 26.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sums: 10.0 26.0"));
+		executeAndCaptureStdOut(script);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testInputTupleSeqWithMetadataDML() {
-		System.out.println("MLContextTest - Tuple sequence with metadata DML");
+		LOG.debug("MLContextTest - Tuple sequence with metadata DML");
 
 		List<String> list1 = new ArrayList<>();
 		list1.add("1,2");
@@ -1163,34 +1170,34 @@ public class MLContextTest extends MLContextTestBase {
 		Seq seq = JavaConversions.asScalaBuffer(tupleList).toSeq();
 
 		Script script = dml("print('sums: ' + sum(m1) + ' ' + sum(m2));").in(seq);
-		setExpectedStdOut("sums: 10.0 26.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sums: 10.0 26.0"));
 	}
 
 	@Test
 	public void testCSVMatrixFromURLSumDML() throws MalformedURLException {
-		System.out.println("MLContextTest - CSV matrix from URL sum DML");
+		LOG.debug("MLContextTest - CSV matrix from URL sum DML");
 		String csv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/functions/mlcontext/1234.csv";
 		URL url = new URL(csv);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url);
-		setExpectedStdOut("sum: 10.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 10.0"));
 	}
 
 	@Test
 	public void testIJVMatrixFromURLSumDML() throws MalformedURLException {
-		System.out.println("MLContextTest - IJV matrix from URL sum DML");
+		LOG.debug("MLContextTest - IJV matrix from URL sum DML");
 		String ijv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/functions/mlcontext/1234.ijv";
 		URL url = new URL(ijv);
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url, mm);
-		setExpectedStdOut("sum: 10.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 10.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLDoublesWithNoIDColumnNoFormatSpecified() {
-		System.out.println("MLContextTest - DataFrame sum DML, doubles with no ID column, no format specified");
+		LOG.debug("MLContextTest - DataFrame sum DML, doubles with no ID column, no format specified");
 
 		List<String> list = new ArrayList<>();
 		list.add("2,2,2");
@@ -1207,13 +1214,13 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		setExpectedStdOut("sum: 27.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 27.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLDoublesWithIDColumnNoFormatSpecified() {
-		System.out.println("MLContextTest - DataFrame sum DML, doubles with ID column, no format specified");
+		LOG.debug("MLContextTest - DataFrame sum DML, doubles with ID column, no format specified");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,2,2,2");
@@ -1231,13 +1238,13 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		setExpectedStdOut("sum: 27.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 27.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLVectorWithIDColumnNoFormatSpecified() {
-		System.out.println("MLContextTest - DataFrame sum DML, vector with ID column, no format specified");
+		LOG.debug("MLContextTest - DataFrame sum DML, vector with ID column, no format specified");
 
 		List<Tuple2<Double, Vector>> list = new ArrayList<>();
 		list.add(new Tuple2<>(1.0, Vectors.dense(1.0, 2.0, 3.0)));
@@ -1253,13 +1260,13 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	@Test
 	public void testDataFrameSumDMLVectorWithNoIDColumnNoFormatSpecified() {
-		System.out.println("MLContextTest - DataFrame sum DML, vector with no ID column, no format specified");
+		LOG.debug("MLContextTest - DataFrame sum DML, vector with no ID column, no format specified");
 
 		List<Vector> list = new ArrayList<>();
 		list.add(Vectors.dense(1.0, 2.0, 3.0));
@@ -1274,225 +1281,225 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("print('sum: ' + sum(M));").in("M", dataFrame);
-		setExpectedStdOut("sum: 45.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("sum: 45.0"));
 	}
 
 	@Test
 	public void testDisplayBooleanDML() {
-		System.out.println("MLContextTest - display boolean DML");
+		LOG.debug("MLContextTest - display boolean DML");
 		String s = "print(b);";
 		Script script = dml(s).in("b", true);
-		setExpectedStdOut("TRUE");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("TRUE"));
 	}
 
 	@Test
 	public void testDisplayBooleanNotDML() {
-		System.out.println("MLContextTest - display boolean 'not' DML");
+		LOG.debug("MLContextTest - display boolean 'not' DML");
 		String s = "print(!b);";
 		Script script = dml(s).in("b", true);
-		setExpectedStdOut("FALSE");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("FALSE"));
 	}
 
 	@Test
 	public void testDisplayIntegerAddDML() {
-		System.out.println("MLContextTest - display integer add DML");
+		LOG.debug("MLContextTest - display integer add DML");
 		String s = "print(i+j);";
 		Script script = dml(s).in("i", 5).in("j", 6);
-		setExpectedStdOut("11");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("11"));
 	}
 
 	@Test
 	public void testDisplayStringConcatenationDML() {
-		System.out.println("MLContextTest - display string concatenation DML");
+		LOG.debug("MLContextTest - display string concatenation DML");
 		String s = "print(str1+str2);";
 		Script script = dml(s).in("str1", "hello").in("str2", "goodbye");
-		setExpectedStdOut("hellogoodbye");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hellogoodbye"));
 	}
 
 	@Test
 	public void testDisplayDoubleAddDML() {
-		System.out.println("MLContextTest - display double add DML");
+		LOG.debug("MLContextTest - display double add DML");
 		String s = "print(i+j);";
 		Script script = dml(s).in("i", 5.1).in("j", 6.2);
-		setExpectedStdOut("11.3");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("11.3"));
 	}
 
 	@Test
 	public void testPrintFormattingStringSubstitution() {
-		System.out.println("MLContextTest - print formatting string substitution");
+		LOG.debug("MLContextTest - print formatting string substitution");
 		Script script = dml("print('hello %s', 'world');");
-		setExpectedStdOut("hello world");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hello world"));
 	}
 
 	@Test
 	public void testPrintFormattingStringSubstitutions() {
-		System.out.println("MLContextTest - print formatting string substitutions");
+		LOG.debug("MLContextTest - print formatting string substitutions");
 		Script script = dml("print('%s %s', 'hello', 'world');");
-		setExpectedStdOut("hello world");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hello world"));
 	}
 
 	@Test
 	public void testPrintFormattingStringSubstitutionAlignment() {
-		System.out.println("MLContextTest - print formatting string substitution alignment");
+		LOG.debug("MLContextTest - print formatting string substitution alignment");
 		Script script = dml("print(\"'%10s' '%-10s'\", \"hello\", \"world\");");
-		setExpectedStdOut("'     hello' 'world     '");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("'     hello' 'world     '"));
 	}
 
 	@Test
 	public void testPrintFormattingStringSubstitutionVariables() {
-		System.out.println("MLContextTest - print formatting string substitution variables");
+		LOG.debug("MLContextTest - print formatting string substitution variables");
 		Script script = dml("a='hello'; b='world'; print('%s %s', a, b);");
-		setExpectedStdOut("hello world");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hello world"));
 	}
 
 	@Test
 	public void testPrintFormattingIntegerSubstitution() {
-		System.out.println("MLContextTest - print formatting integer substitution");
+		LOG.debug("MLContextTest - print formatting integer substitution");
 		Script script = dml("print('int %d', 42);");
-		setExpectedStdOut("int 42");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("int 42"));
 	}
 
 	@Test
 	public void testPrintFormattingIntegerSubstitutions() {
-		System.out.println("MLContextTest - print formatting integer substitutions");
+		LOG.debug("MLContextTest - print formatting integer substitutions");
 		Script script = dml("print('%d %d', 42, 43);");
-		setExpectedStdOut("42 43");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("42 43"));
 	}
 
 	@Test
 	public void testPrintFormattingIntegerSubstitutionAlignment() {
-		System.out.println("MLContextTest - print formatting integer substitution alignment");
+		LOG.debug("MLContextTest - print formatting integer substitution alignment");
 		Script script = dml("print(\"'%10d' '%-10d'\", 42, 43);");
-		setExpectedStdOut("'        42' '43        '");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("'        42' '43        '"));
 	}
 
 	@Test
 	public void testPrintFormattingIntegerSubstitutionVariables() {
-		System.out.println("MLContextTest - print formatting integer substitution variables");
+		LOG.debug("MLContextTest - print formatting integer substitution variables");
 		Script script = dml("a=42; b=43; print('%d %d', a, b);");
-		setExpectedStdOut("42 43");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("42 43"));
 	}
 
 	@Test
 	public void testPrintFormattingDoubleSubstitution() {
-		System.out.println("MLContextTest - print formatting double substitution");
+		LOG.debug("MLContextTest - print formatting double substitution");
 		Script script = dml("print('double %f', 42.0);");
-		setExpectedStdOut("double 42.000000");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("double 42.000000"));
 	}
 
 	@Test
 	public void testPrintFormattingDoubleSubstitutions() {
-		System.out.println("MLContextTest - print formatting double substitutions");
+		LOG.debug("MLContextTest - print formatting double substitutions");
 		Script script = dml("print('%f %f', 42.42, 43.43);");
-		setExpectedStdOut("42.420000 43.430000");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("42.420000 43.430000"));
 	}
 
 	@Test
 	public void testPrintFormattingDoubleSubstitutionAlignment() {
-		System.out.println("MLContextTest - print formatting double substitution alignment");
+		LOG.debug("MLContextTest - print formatting double substitution alignment");
 		Script script = dml("print(\"'%10.2f' '%-10.2f'\", 42.53, 43.54);");
-		setExpectedStdOut("'     42.53' '43.54     '");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("'     42.53' '43.54     '"));
 	}
 
 	@Test
 	public void testPrintFormattingDoubleSubstitutionVariables() {
-		System.out.println("MLContextTest - print formatting double substitution variables");
+		LOG.debug("MLContextTest - print formatting double substitution variables");
 		Script script = dml("a=12.34; b=56.78; print('%f %f', a, b);");
-		setExpectedStdOut("12.340000 56.780000");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("12.340000 56.780000"));
 	}
 
 	@Test
 	public void testPrintFormattingBooleanSubstitution() {
-		System.out.println("MLContextTest - print formatting boolean substitution");
+		LOG.debug("MLContextTest - print formatting boolean substitution");
 		Script script = dml("print('boolean %b', TRUE);");
-		setExpectedStdOut("boolean true");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("boolean true"));
 	}
 
 	@Test
 	public void testPrintFormattingBooleanSubstitutions() {
-		System.out.println("MLContextTest - print formatting boolean substitutions");
+		LOG.debug("MLContextTest - print formatting boolean substitutions");
 		Script script = dml("print('%b %b', TRUE, FALSE);");
-		setExpectedStdOut("true false");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("true false"));
 	}
 
 	@Test
 	public void testPrintFormattingBooleanSubstitutionAlignment() {
-		System.out.println("MLContextTest - print formatting boolean substitution alignment");
+		LOG.debug("MLContextTest - print formatting boolean substitution alignment");
 		Script script = dml("print(\"'%10b' '%-10b'\", TRUE, FALSE);");
-		setExpectedStdOut("'      true' 'false     '");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("'      true' 'false     '"));
 	}
 
 	@Test
 	public void testPrintFormattingBooleanSubstitutionVariables() {
-		System.out.println("MLContextTest - print formatting boolean substitution variables");
+		LOG.debug("MLContextTest - print formatting boolean substitution variables");
 		Script script = dml("a=TRUE; b=FALSE; print('%b %b', a, b);");
-		setExpectedStdOut("true false");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("true false"));
 	}
 
 	@Test
 	public void testPrintFormattingMultipleTypes() {
-		System.out.println("MLContextTest - print formatting multiple types");
+		LOG.debug("MLContextTest - print formatting multiple types");
 		Script script = dml("a='hello'; b=3; c=4.5; d=TRUE; print('%s %d %f %b', a, b, c, d);");
-		setExpectedStdOut("hello 3 4.500000 true");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hello 3 4.500000 true"));
 	}
 
 	@Test
 	public void testPrintFormattingMultipleExpressions() {
-		System.out.println("MLContextTest - print formatting multiple expressions");
+		LOG.debug("MLContextTest - print formatting multiple expressions");
 		Script script = dml(
-				"a='hello'; b='goodbye'; c=4; d=3; e=3.0; f=5.0; g=FALSE; print('%s %d %f %b', (a+b), (c-d), (e*f), !g);");
-		setExpectedStdOut("hellogoodbye 1 15.000000 true");
-		ml.execute(script);
+			"a='hello'; b='goodbye'; c=4; d=3; e=3.0; f=5.0; g=FALSE; print('%s %d %f %b', (a+b), (c-d), (e*f), !g);");
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("hellogoodbye 1 15.000000 true"));
 	}
 
 	@Test
 	public void testPrintFormattingForLoop() {
-		System.out.println("MLContextTest - print formatting for loop");
+		LOG.debug("MLContextTest - print formatting for loop");
 		Script script = dml("for (i in 1:3) { print('int value %d', i); }");
 		// check that one of the lines is returned
-		setExpectedStdOut("int value 3");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("int value 3"));
 	}
 
 	@Test
 	public void testPrintFormattingParforLoop() {
-		System.out.println("MLContextTest - print formatting parfor loop");
+		LOG.debug("MLContextTest - print formatting parfor loop");
 		Script script = dml("parfor (i in 1:3) { print('int value %d', i); }");
 		// check that one of the lines is returned
-		setExpectedStdOut("int value 3");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("int value 3"));
 	}
 
 	@Test
 	public void testPrintFormattingForLoopMultiply() {
-		System.out.println("MLContextTest - print formatting for loop multiply");
+		LOG.debug("MLContextTest - print formatting for loop multiply");
 		Script script = dml("a = 5.0; for (i in 1:3) { print('%d %f', i, a * i); }");
 		// check that one of the lines is returned
-		setExpectedStdOut("3 15.000000");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("3 15.000000"));
 	}
 	
 	@Test
@@ -1517,95 +1524,95 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testInputVariablesAddLongsDML() {
-		System.out.println("MLContextTest - input variables add longs DML");
+		LOG.debug("MLContextTest - input variables add longs DML");
 
 		String s = "print('x + y = ' + (x + y));";
 		Script script = dml(s).in("x", 3L).in("y", 4L);
-		setExpectedStdOut("x + y = 7");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("x + y = 7"));
 	}
 
 	@Test
 	public void testInputVariablesAddFloatsDML() {
-		System.out.println("MLContextTest - input variables add floats DML");
+		LOG.debug("MLContextTest - input variables add floats DML");
 
 		String s = "print('x + y = ' + (x + y));";
 		Script script = dml(s).in("x", 3F).in("y", 4F);
-		setExpectedStdOut("x + y = 7.0");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("x + y = 7.0"));
 	}
 
 	@Test
 	public void testFunctionNoReturnValueDML() {
-		System.out.println("MLContextTest - function with no return value DML");
+		LOG.debug("MLContextTest - function with no return value DML");
 
 		String s = "hello=function(){print('no return value')}\nhello();";
 		Script script = dml(s);
-		setExpectedStdOut("no return value");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("no return value"));
 	}
 
 	@Test
 	public void testFunctionNoReturnValueForceFunctionCallDML() {
-		System.out.println("MLContextTest - function with no return value, force function call DML");
+		LOG.debug("MLContextTest - function with no return value, force function call DML");
 
 		String s = "hello=function(){\nwhile(FALSE){};\nprint('no return value, force function call');\n}\nhello();";
 		Script script = dml(s);
-		setExpectedStdOut("no return value, force function call");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("no return value, force function call"));
 	}
 
 	@Test
 	public void testFunctionReturnValueDML() {
-		System.out.println("MLContextTest - function with return value DML");
+		LOG.debug("MLContextTest - function with return value DML");
 
 		String s = "hello=function()return(string s){s='return value'}\na=hello();\nprint(a);";
 		Script script = dml(s);
-		setExpectedStdOut("return value");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("return value"));
 	}
 
 	@Test
 	public void testFunctionTwoReturnValuesDML() {
-		System.out.println("MLContextTest - function with two return values DML");
+		LOG.debug("MLContextTest - function with two return values DML");
 
 		String s = "hello=function()return(string s1,string s2){s1='return'; s2='values'}\n[a,b]=hello();\nprint(a+' '+b);";
 		Script script = dml(s);
-		setExpectedStdOut("return values");
-		ml.execute(script);
+		String out = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(out.contains("return values"));
 	}
 
 	@Test
 	public void testOutputListDML() {
-		System.out.println("MLContextTest - output specified as List DML");
+		LOG.debug("MLContextTest - output specified as List DML");
 
 		List<String> outputs = Arrays.asList("x", "y");
 		Script script = dml("a=1;x=a+1;y=x+1").out(outputs);
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Assert.assertEquals(2, results.getLong("x"));
 		Assert.assertEquals(3, results.getLong("y"));
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	@Test
 	public void testOutputScalaSeqDML() {
-		System.out.println("MLContextTest - output specified as Scala Seq DML");
+		LOG.debug("MLContextTest - output specified as Scala Seq DML");
 
 		List outputs = Arrays.asList("x", "y");
 		Seq seq = JavaConversions.asScalaBuffer(outputs).toSeq();
 		Script script = dml("a=1;x=a+1;y=x+1").out(seq);
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Assert.assertEquals(2, results.getLong("x"));
 		Assert.assertEquals(3, results.getLong("y"));
 	}
 
 	@Test
 	public void testOutputDataFrameOfVectorsDML() {
-		System.out.println("MLContextTest - output DataFrame of vectors DML");
+		LOG.debug("MLContextTest - output DataFrame of vectors DML");
 
 		String s = "m=matrix('1 2 3 4',rows=2,cols=2);";
 		Script script = dml(s).out("m");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		Dataset<Row> df = results.getDataFrame("m", true);
 		Dataset<Row> sortedDF = df.sort(RDDConverterUtils.DF_ID_COLUMN);
 
@@ -1623,21 +1630,21 @@ public class MLContextTest extends MLContextTestBase {
 		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
 		Vector v1 = (DenseVector) row1.get(1);
 		double[] arr1 = v1.toArray();
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, arr1, 0.0);
+		Assert.assertArrayEquals(new double[] {1.0, 2.0}, arr1, 0.0);
 
 		Row row2 = list.get(1);
 		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
 		Vector v2 = (DenseVector) row2.get(1);
 		double[] arr2 = v2.toArray();
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, arr2, 0.0);
+		Assert.assertArrayEquals(new double[] {3.0, 4.0}, arr2, 0.0);
 	}
 
 	@Test
 	public void testOutputDoubleArrayFromMatrixDML() {
-		System.out.println("MLContextTest - output double array from matrix DML");
+		LOG.debug("MLContextTest - output double array from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
-		double[][] matrix = ml.execute(dml(s).out("M")).getMatrix("M").to2DDoubleArray();
+		double[][] matrix = executeAndCaptureStdOut(dml(s).out("M")).getLeft().getMatrix("M").to2DDoubleArray();
 		Assert.assertEquals(1.0, matrix[0][0], 0);
 		Assert.assertEquals(2.0, matrix[0][1], 0);
 		Assert.assertEquals(3.0, matrix[1][0], 0);
@@ -1646,11 +1653,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputDataFrameFromMatrixDML() {
-		System.out.println("MLContextTest - output DataFrame from matrix DML");
+		LOG.debug("MLContextTest - output DataFrame from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		Dataset<Row> df = ml.execute(script).getMatrix("M").toDF();
+		Dataset<Row> df = executeAndCaptureStdOut(script).getLeft().getMatrix("M").toDF();
 		Dataset<Row> sortedDF = df.sort(RDDConverterUtils.DF_ID_COLUMN);
 		List<Row> list = sortedDF.collectAsList();
 		Row row1 = list.get(0);
@@ -1666,11 +1673,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputDataFrameDoublesNoIDColumnFromMatrixDML() {
-		System.out.println("MLContextTest - output DataFrame of doubles with no ID column from matrix DML");
+		LOG.debug("MLContextTest - output DataFrame of doubles with no ID column from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=1, cols=4);";
 		Script script = dml(s).out("M");
-		Dataset<Row> df = ml.execute(script).getMatrix("M").toDFDoubleNoIDColumn();
+		Dataset<Row> df = executeAndCaptureStdOut(script).getLeft().getMatrix("M").toDFDoubleNoIDColumn();
 		List<Row> list = df.collectAsList();
 
 		Row row = list.get(0);
@@ -1682,11 +1689,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputDataFrameDoublesWithIDColumnFromMatrixDML() {
-		System.out.println("MLContextTest - output DataFrame of doubles with ID column from matrix DML");
+		LOG.debug("MLContextTest - output DataFrame of doubles with ID column from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		Dataset<Row> df = ml.execute(script).getMatrix("M").toDFDoubleWithIDColumn();
+		Dataset<Row> df = executeAndCaptureStdOut(script).getLeft().getMatrix("M").toDFDoubleWithIDColumn();
 		Dataset<Row> sortedDF = df.sort(RDDConverterUtils.DF_ID_COLUMN);
 		List<Row> list = sortedDF.collectAsList();
 
@@ -1703,49 +1710,50 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputDataFrameVectorsNoIDColumnFromMatrixDML() {
-		System.out.println("MLContextTest - output DataFrame of vectors with no ID column from matrix DML");
+		LOG.debug("MLContextTest - output DataFrame of vectors with no ID column from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=1, cols=4);";
 		Script script = dml(s).out("M");
-		Dataset<Row> df = ml.execute(script).getMatrix("M").toDFVectorNoIDColumn();
+		Dataset<Row> df = executeAndCaptureStdOut(script).getLeft().getMatrix("M").toDFVectorNoIDColumn();
 		List<Row> list = df.collectAsList();
 
 		Row row = list.get(0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0, 3.0, 4.0 }, ((Vector) row.get(0)).toArray(), 0.0);
+		Assert.assertArrayEquals(new double[] {1.0, 2.0, 3.0, 4.0}, ((Vector) row.get(0)).toArray(), 0.0);
 	}
 
 	@Test
 	public void testOutputDataFrameVectorsWithIDColumnFromMatrixDML() {
-		System.out.println("MLContextTest - output DataFrame of vectors with ID column from matrix DML");
+		LOG.debug("MLContextTest - output DataFrame of vectors with ID column from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=1, cols=4);";
 		Script script = dml(s).out("M");
-		Dataset<Row> df = ml.execute(script).getMatrix("M").toDFVectorWithIDColumn();
+		Dataset<Row> df = executeAndCaptureStdOut(script).getLeft().getMatrix("M").toDFVectorWithIDColumn();
 		List<Row> list = df.collectAsList();
 
 		Row row = list.get(0);
 		Assert.assertEquals(1.0, row.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0, 3.0, 4.0 }, ((Vector) row.get(1)).toArray(), 0.0);
+		Assert.assertArrayEquals(new double[] {1.0, 2.0, 3.0, 4.0}, ((Vector) row.get(1)).toArray(), 0.0);
 	}
 
 	@Test
 	public void testOutputJavaRDDStringCSVFromMatrixDML() {
-		System.out.println("MLContextTest - output Java RDD String CSV from matrix DML");
+		LOG.debug("MLContextTest - output Java RDD String CSV from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=1, cols=4);";
 		Script script = dml(s).out("M");
-		JavaRDD<String> javaRDDStringCSV = ml.execute(script).getMatrix("M").toJavaRDDStringCSV();
+		JavaRDD<String> javaRDDStringCSV = executeAndCaptureStdOut(script).getLeft().getMatrix("M")
+			.toJavaRDDStringCSV();
 		List<String> lines = javaRDDStringCSV.collect();
 		Assert.assertEquals("1.0,2.0,3.0,4.0", lines.get(0));
 	}
 
 	@Test
 	public void testOutputJavaRDDStringIJVFromMatrixDML() {
-		System.out.println("MLContextTest - output Java RDD String IJV from matrix DML");
+		LOG.debug("MLContextTest - output Java RDD String IJV from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		MLResults results = ml.execute(script);
+		MLResults results = executeAndCaptureStdOut(script).getLeft();
 		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("M");
 		List<String> lines = javaRDDStringIJV.sortBy(row -> row, true, 1).collect();
 		Assert.assertEquals("1 1 1.0", lines.get(0));
@@ -1756,22 +1764,22 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testOutputRDDStringCSVFromMatrixDML() {
-		System.out.println("MLContextTest - output RDD String CSV from matrix DML");
+		LOG.debug("MLContextTest - output RDD String CSV from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=1, cols=4);";
 		Script script = dml(s).out("M");
-		RDD<String> rddStringCSV = ml.execute(script).getMatrix("M").toRDDStringCSV();
+		RDD<String> rddStringCSV = executeAndCaptureStdOut(script).getLeft().getMatrix("M").toRDDStringCSV();
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
 		Assert.assertEquals("1.0,2.0,3.0,4.0", iterator.next());
 	}
 
 	@Test
 	public void testOutputRDDStringIJVFromMatrixDML() {
-		System.out.println("MLContextTest - output RDD String IJV from matrix DML");
+		LOG.debug("MLContextTest - output RDD String IJV from matrix DML");
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		Script script = dml(s).out("M");
-		RDD<String> rddStringIJV = ml.execute(script).getMatrix("M").toRDDStringIJV();
+		RDD<String> rddStringIJV = executeAndCaptureStdOut(script).getLeft().getMatrix("M").toRDDStringIJV();
 		String[] rows = (String[]) rddStringIJV.collect();
 		Arrays.sort(rows);
 		Assert.assertEquals("1 1 1.0", rows[0]);
@@ -1782,7 +1790,7 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testMLContextVersionMessage() {
-		System.out.println("MLContextTest - version message");
+		LOG.debug("MLContextTest - version message");
 
 		String version = ml.version();
 		// not available until jar built
@@ -1791,7 +1799,7 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testMLContextBuildTimeMessage() {
-		System.out.println("MLContextTest - build time message");
+		LOG.debug("MLContextTest - build time message");
 
 		String buildTime = ml.buildTime();
 		// not available until jar built
@@ -1802,12 +1810,12 @@ public class MLContextTest extends MLContextTestBase {
 	public void testMLContextCreateAndClose() {
 		// MLContext created by the @BeforeClass method in MLContextTestBase
 		// MLContext closed by the @AfterClass method in MLContextTestBase
-		System.out.println("MLContextTest - create MLContext and close (without script execution)");
+		LOG.debug("MLContextTest - create MLContext and close (without script execution)");
 	}
 
 	@Test
 	public void testDataFrameToBinaryBlocks() {
-		System.out.println("MLContextTest - DataFrame to binary blocks");
+		LOG.debug("MLContextTest - DataFrame to binary blocks");
 
 		List<String> list = new ArrayList<>();
 		list.add("1,2,3");
@@ -1824,20 +1832,20 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = spark.createDataFrame(javaRddRow, schema);
 
 		JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = MLContextConversionUtil
-				.dataFrameToMatrixBinaryBlocks(dataFrame);
+			.dataFrameToMatrixBinaryBlocks(dataFrame);
 		Tuple2<MatrixIndexes, MatrixBlock> first = binaryBlocks.first();
 		MatrixBlock mb = first._2();
 		double[][] matrix = DataConverter.convertToDoubleMatrix(mb);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0, 3.0 }, matrix[0], 0.0);
-		Assert.assertArrayEquals(new double[] { 4.0, 5.0, 6.0 }, matrix[1], 0.0);
-		Assert.assertArrayEquals(new double[] { 7.0, 8.0, 9.0 }, matrix[2], 0.0);
+		Assert.assertArrayEquals(new double[] {1.0, 2.0, 3.0}, matrix[0], 0.0);
+		Assert.assertArrayEquals(new double[] {4.0, 5.0, 6.0}, matrix[1], 0.0);
+		Assert.assertArrayEquals(new double[] {7.0, 8.0, 9.0}, matrix[2], 0.0);
 	}
 
 	@Test
 	public void testGetTuple1DML() {
-		System.out.println("MLContextTest - Get Tuple1<Matrix> DML");
+		LOG.debug("MLContextTest - Get Tuple1<Matrix> DML");
 		JavaRDD<String> javaRddString = sc
-				.parallelize(Stream.of("1,2,3", "4,5,6", "7,8,9").collect(Collectors.toList()));
+			.parallelize(Stream.of("1,2,3", "4,5,6", "7,8,9").collect(Collectors.toList()));
 		JavaRDD<Row> javaRddRow = javaRddString.map(new CommaSeparatedValueStringToDoubleArrayRow());
 		List<StructField> fields = new ArrayList<>();
 		fields.add(DataTypes.createStructField("C1", DataTypes.DoubleType, true));
@@ -1847,7 +1855,7 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> df = spark.createDataFrame(javaRddRow, schema);
 
 		Script script = dml("N=M*2").in("M", df).out("N");
-		Tuple1<Matrix> tuple = ml.execute(script).getTuple("N");
+		Tuple1<Matrix> tuple = executeAndCaptureStdOut(script).getLeft().getTuple("N");
 		double[][] n = tuple._1().to2DDoubleArray();
 		Assert.assertEquals(2.0, n[0][0], 0);
 		Assert.assertEquals(4.0, n[0][1], 0);
@@ -1862,25 +1870,25 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testGetTuple2DML() {
-		System.out.println("MLContextTest - Get Tuple2<Matrix,Double> DML");
+		LOG.debug("MLContextTest - Get Tuple2<Matrix,Double> DML");
 
-		double[][] m = new double[][] { { 1, 2 }, { 3, 4 } };
+		double[][] m = new double[][] {{1, 2}, {3, 4}};
 
 		Script script = dml("N=M*2;s=sum(N)").in("M", m).out("N", "s");
-		Tuple2<Matrix, Double> tuple = ml.execute(script).getTuple("N", "s");
+		Tuple2<Matrix, Double> tuple = executeAndCaptureStdOut(script).getLeft().getTuple("N", "s");
 		double[][] n = tuple._1().to2DDoubleArray();
 		double s = tuple._2();
-		Assert.assertArrayEquals(new double[] { 2, 4 }, n[0], 0.0);
-		Assert.assertArrayEquals(new double[] { 6, 8 }, n[1], 0.0);
+		Assert.assertArrayEquals(new double[] {2, 4}, n[0], 0.0);
+		Assert.assertArrayEquals(new double[] {6, 8}, n[1], 0.0);
 		Assert.assertEquals(20.0, s, 0.0);
 	}
 
 	@Test
 	public void testGetTuple3DML() {
-		System.out.println("MLContextTest - Get Tuple3<Long,Double,Boolean> DML");
+		LOG.debug("MLContextTest - Get Tuple3<Long,Double,Boolean> DML");
 
 		Script script = dml("a=1+2;b=a+0.5;c=TRUE;").out("a", "b", "c");
-		Tuple3<Long, Double, Boolean> tuple = ml.execute(script).getTuple("a", "b", "c");
+		Tuple3<Long, Double, Boolean> tuple = executeAndCaptureStdOut(script).getLeft().getTuple("a", "b", "c");
 		long a = tuple._1();
 		double b = tuple._2();
 		boolean c = tuple._3();
@@ -1891,10 +1899,11 @@ public class MLContextTest extends MLContextTestBase {
 
 	@Test
 	public void testGetTuple4DML() {
-		System.out.println("MLContextTest - Get Tuple4<Long,Double,Boolean,String> DML");
+		LOG.debug("MLContextTest - Get Tuple4<Long,Double,Boolean,String> DML");
 
 		Script script = dml("a=1+2;b=a+0.5;c=TRUE;d=\"yes it's \"+c").out("a", "b", "c", "d");
-		Tuple4<Long, Double, Boolean, String> tuple = ml.execute(script).getTuple("a", "b", "c", "d");
+		Tuple4<Long, Double, Boolean, String> tuple = executeAndCaptureStdOut(script).getLeft()
+			.getTuple("a", "b", "c", "d");
 		long a = tuple._1();
 		double b = tuple._2();
 		boolean c = tuple._3();

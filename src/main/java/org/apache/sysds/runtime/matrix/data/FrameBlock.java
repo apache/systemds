@@ -19,6 +19,22 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Serializable;
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
@@ -30,13 +46,8 @@ import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-import java.io.*;
-import java.lang.ref.SoftReference;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements Writable, CacheBlock, Externalizable  
+public class FrameBlock implements CacheBlock, Externalizable  
 {
 	private static final long serialVersionUID = -3993450030207130665L;
 	

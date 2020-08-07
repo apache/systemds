@@ -1955,7 +1955,7 @@ public class FrameBlock implements CacheBlock, Externalizable
 	 *  if the values in both frames are equal, not equal, less than, greater than, less than/greater than and equal to
 	 *  the output frame will store boolean value for each each comparision
 	 *
-	 *  @param this and that frameblocks of m * n dimensions and object of BinaryOperator
+	 *  @param that and this frameblocks of m * n dimensions and object of BinaryOperator
 	 *  @return a boolean frameBlock
 	 */
 	public FrameBlock compareFrames(FrameBlock that, BinaryOperator dop)

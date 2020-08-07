@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.privacy.FineGrained;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -70,5 +71,11 @@ public interface FineGrainedPrivacy {
 	 * @return map from privacy level to array of data ranges
 	 */
 	public Map<String, long[][][]> getAllConstraints();
+
+	/**
+	 * Return all fine-grained privacy constraints as an arraylist. 
+	 * @return all constraints
+	 */
+	public ArrayList<Map.Entry<DataRange, PrivacyLevel>> getAllConstraintsList();
 	
 }

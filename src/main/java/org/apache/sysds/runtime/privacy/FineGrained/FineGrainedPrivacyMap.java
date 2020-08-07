@@ -19,9 +19,11 @@
 
 package org.apache.sysds.runtime.privacy.FineGrained;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
@@ -39,7 +41,7 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 	}
 
 	@Override
-	public Map<DataRange,PrivacyLevel> getPrivacyLevel(DataRange searchRange) {
+	public Map<DataRange, PrivacyLevel> getPrivacyLevel(DataRange searchRange) {
 		Map<DataRange, PrivacyLevel> matches = new LinkedHashMap<>();
 		constraintCollection.forEach((range, level) -> {
 			if (range.overlaps(searchRange))
@@ -49,16 +51,22 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 	}
 
 	@Override
-	public Map<DataRange,PrivacyLevel> getPrivacyLevelOfElement(long[] searchIndex) {
+	public Map<DataRange, PrivacyLevel> getPrivacyLevelOfElement(long[] searchIndex) {
 		Map<DataRange, PrivacyLevel> matches = new LinkedHashMap<>();
-		constraintCollection.forEach((range,level) -> { if (range.contains(searchIndex)) matches.put(range, level); } );
+		constraintCollection.forEach((range, level) -> {
+			if (range.contains(searchIndex))
+				matches.put(range, level);
+		});
 		return matches;
 	}
 
 	@Override
 	public DataRange[] getDataRangesOfPrivacyLevel(PrivacyLevel privacyLevel) {
 		ArrayList<DataRange> matches = new ArrayList<>();
-		constraintCollection.forEach((k,v) -> { if (v == privacyLevel) matches.add(k); } );
+		constraintCollection.forEach((k, v) -> {
+			if (v == privacyLevel)
+				matches.add(k);
+		});
 		return matches.toArray(new DataRange[0]);
 	}
 
@@ -77,14 +85,21 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 		ArrayList<long[][]> privateRanges = new ArrayList<>();
 		ArrayList<long[][]> aggregateRanges = new ArrayList<>();
 		constraintCollection.forEach((range, privacylevel) -> {
-			if ( privacylevel == PrivacyLevel.Private )
-				privateRanges.add(new long[][]{range.getBeginDims(), range.getEndDims()});
-			else if ( privacylevel == PrivacyLevel.PrivateAggregation )
-				aggregateRanges.add(new long[][]{range.getBeginDims(), range.getEndDims()});
+			if (privacylevel == PrivacyLevel.Private)
+				privateRanges.add(new long[][] { range.getBeginDims(), range.getEndDims() });
+			else if (privacylevel == PrivacyLevel.PrivateAggregation)
+				aggregateRanges.add(new long[][] { range.getBeginDims(), range.getEndDims() });
 		});
 		Map<String, long[][][]> constraintMap = new LinkedHashMap<>();
 		constraintMap.put(PrivacyLevel.Private.name(), privateRanges.toArray(new long[0][][]));
 		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), privateRanges.toArray(new long[0][][]));
 		return constraintMap;
+	}
+
+	@Override
+	public ArrayList<Entry<DataRange, PrivacyLevel>> getAllConstraintsList() {
+		ArrayList<Map.Entry<DataRange, PrivacyLevel>> outputList = new ArrayList<>();
+		constraintCollection.forEach((k,v)->outputList.add(new AbstractMap.SimpleEntry<DataRange, PrivacyLevel>(k,v)));
+		return outputList;
 	}
 }

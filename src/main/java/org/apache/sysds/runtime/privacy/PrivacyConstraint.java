@@ -25,9 +25,9 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.privacy.FineGrained.DataRange;
 import org.apache.sysds.runtime.privacy.FineGrained.FineGrainedPrivacy;
@@ -181,24 +181,76 @@ public class PrivacyConstraint implements Externalizable
 
 	@Override
 	public void readExternal(ObjectInput is) throws IOException {
-		privacyLevel = PrivacyLevel.values()[is.readInt()];
-		try {
-			Object fineGrainedObject = is.readObject();
-			if ( fineGrainedObject != null )
-				fineGrainedPrivacy = (FineGrainedPrivacy) fineGrainedObject;
-		} catch (ClassNotFoundException exception){
-			throw new DMLException(exception);
+		this.privacyLevel = PrivacyLevel.values()[is.readInt()];
+		int fineGrainedConstraintLength = is.readInt();
+		if ( fineGrainedConstraintLength > 0 ){
+			for (int i = 0; i < fineGrainedConstraintLength; i++){
+				Integer levelIndex = (Integer) is.readInt();
+				PrivacyLevel rangePrivacy = PrivacyLevel.values()[levelIndex];
+				DataRange dataRange = readExternalDataRangeObject(is);
+				fineGrainedPrivacy.put(dataRange, rangePrivacy);
+			}
 		}
 	}
 
 	@Override
 	public void writeExternal(ObjectOutput objectOutput) throws IOException {
 		objectOutput.writeInt(getPrivacyLevel().ordinal());
-		if (fineGrainedPrivacy != null && fineGrainedPrivacy.hasConstraints())
-			objectOutput.writeObject(fineGrainedPrivacy);
-		else
-			objectOutput.writeObject(null);
+		
+		if (fineGrainedPrivacy != null && fineGrainedPrivacy.hasConstraints()){
+			List<Entry<DataRange,PrivacyLevel>> finegrainedConstraints = fineGrainedPrivacy.getAllConstraintsList();
+			objectOutput.writeInt(finegrainedConstraints.size());
+			for ( Entry<DataRange,PrivacyLevel> constraint : finegrainedConstraints ) {
+				objectOutput.writeInt(constraint.getValue().ordinal());
+				DataRange dataRange = constraint.getKey();
+				objectOutput.writeInt(dataRange.getBeginDims().length);
+				writeExternalRangeDim(objectOutput, dataRange.getBeginDims());
+				writeExternalRangeDim(objectOutput, dataRange.getEndDims());
+			}
+		}
+		else {
+			objectOutput.writeInt(0);
+		}
+	}
 
+	/**
+	 * Reads a DataRange from ObjectInput. 
+	 * @param is ObjectInput from which the DataRange is read
+	 * @return DataRange from ObjectInput
+	 * @throws IOException
+	 */
+	private DataRange readExternalDataRangeObject(ObjectInput is) throws IOException {
+		int dimLength = is.readInt();
+		long[] beginDims = readExternalDataRangeDim(is, dimLength);
+		long[] endDims = readExternalDataRangeDim(is, dimLength);
+		return new DataRange(beginDims, endDims);
+	}
+
+	/**
+	 * Read a long array of the specified length from object input. 
+	 * @param is ObjectInput from which the long array is read
+	 * @param dimLength length of input long array
+	 * @return the input array as a long array
+	 * @throws IOException
+	 */
+	private long[] readExternalDataRangeDim(ObjectInput is, int dimLength) throws IOException {
+		long[] dims = new long[dimLength];
+		for(int i = 0; i < dimLength; i++){
+			dims[i] = is.readLong();
+		}
+		return dims;
+	}
+
+	/**
+	 * Write the long array to ObjectOutput.
+	 * @param objectOutput ObjectOutput in which the long array is written.
+	 * @param rangeDim long array to write in ObjectOutput. 
+	 * @throws IOException
+	 */
+	private void writeExternalRangeDim(ObjectOutput objectOutput, long[] rangeDim) throws IOException {
+		for ( long beginIndex : rangeDim ){
+			objectOutput.writeLong(beginIndex);
+		}
 	}
 
 }

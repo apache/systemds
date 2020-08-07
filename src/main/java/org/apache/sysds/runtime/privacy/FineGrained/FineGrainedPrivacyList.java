@@ -32,12 +32,8 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
  * Simple implementation of retrieving fine-grained privacy constraints
  * based on pairs in an ArrayList.
  */
-public class FineGrainedPrivacyList implements FineGrainedPrivacy, Serializable {
+public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 4542440774374226842L;
 	private ArrayList<Map.Entry<DataRange, PrivacyLevel>> constraintCollection = new ArrayList<>();
 
 	@Override
@@ -98,10 +94,7 @@ public class FineGrainedPrivacyList implements FineGrainedPrivacy, Serializable 
 		return constraintMap;
 	}
 
-	/**
-	 * Return all fine-grained privacy constraints as an arraylist. 
-	 * @return all constraints
-	 */
+	@Override
 	public ArrayList<Map.Entry<DataRange, PrivacyLevel>> getAllConstraintsList() {
 		return constraintCollection;
 	}

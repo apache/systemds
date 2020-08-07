@@ -155,16 +155,21 @@ public class ReadWriteTest extends AutomatedTestBase {
 		PrivacyConstraint privacyConstraint = new PrivacyConstraint(privacyLevel);
 		if ( fineGrainedPrivacy != null )
 			privacyConstraint.setFineGrainedPrivacyConstraints(fineGrainedPrivacy);
-		String outputPath = baseDirectory + INPUT_DIR + "serialize";
-		FileOutputStream fileOutput = new FileOutputStream(outputPath);
-		ObjectOutputStream outputStream = new ObjectOutputStream(fileOutput);
-		privacyConstraint.writeExternal(outputStream);
-
+		String outputPath = baseDirectory + INPUT_DIR + "serialize.ser";
+		try (FileOutputStream fileOutput = new FileOutputStream(outputPath)){
+			try (ObjectOutputStream outputStream = new ObjectOutputStream(fileOutput)){
+				privacyConstraint.writeExternal(outputStream);
+			}
+		}
+		
 		//Reading
 		PrivacyConstraint loadedConstraint = new PrivacyConstraint();
-		ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(outputPath));
-		loadedConstraint.readExternal(inputStream);
-
+		try (FileInputStream fileInput = new FileInputStream(outputPath)){
+			try (ObjectInputStream inputStream = new ObjectInputStream(fileInput)){
+				loadedConstraint.readExternal(inputStream);
+			}
+		}
+		
 		//Comparing
 		assertEquals(privacyConstraint.getPrivacyLevel(), loadedConstraint.getPrivacyLevel());
 		assertEquals(privacyConstraint.getFineGrainedPrivacy(), loadedConstraint.getFineGrainedPrivacy());

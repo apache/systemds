@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.privacy.FineGrained;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -29,8 +28,7 @@ import java.util.Arrays;
  * DataRange is very similar to org.apache.sysds.runtime.util.IndexRange, 
  * except that DataRange supports more than two dimensions. 
  */
-public class DataRange implements Serializable {
-	private static final long serialVersionUID = 1960411049423395600L;
+public class DataRange {
 
 	private long[] _beginDims;
 	private long[] _endDims;

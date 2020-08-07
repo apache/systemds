@@ -20,7 +20,9 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
@@ -32,16 +34,37 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		// Read input matrices
-		FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
-		FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
 
-		// Perform computation using input frames, and produce the result frame
-		FrameBlock retBlock = inBlock1.dropInvalid(inBlock2);
-		// Release the memory occupied by input frames
-		ec.releaseFrameInput(input1.getName());
-		ec.releaseFrameInput(input2.getName());
-		// Attach result frame with FrameBlock associated with output_name
-		ec.setFrameOutput(output.getName(), retBlock);
+		if(getOpcode().equals("dropInvalidType"))
+		{
+			// Read input frames
+			FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
+			FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
+
+			// Perform computation using input frames, and produce the result frame
+			FrameBlock retBlock = inBlock1.dropInvalid(inBlock2);
+			// Release the memory occupied by input frames
+			ec.releaseFrameInput(input1.getName());
+			ec.releaseFrameInput(input2.getName());
+			// Attach result frame with FrameBlock associated with output_name
+			ec.setFrameOutput(output.getName(), retBlock);
+		}
+		else {
+
+			// Read input frames
+			FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
+			FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
+			// create output frame
+			FrameBlock outBlock = null;
+			// check for binary operations
+			BinaryOperator dop = (BinaryOperator) _optr;
+			if( dop.fn instanceof ValueComparisonFunction)
+				outBlock = inBlock1.compareFrames(inBlock2, dop);
+			// Release the memory occupied by input frames
+			ec.releaseFrameInput(input1.getName());
+			ec.releaseFrameInput(input2.getName());
+			// Attach result frame with FrameBlock associated with output_name
+			ec.setFrameOutput(output.getName(), outBlock);
+		}
 	}
 }

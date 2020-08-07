@@ -26,10 +26,13 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import scala.Tuple2;
 
 public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 	protected BinaryFrameFrameSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
@@ -55,16 +58,34 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		// Get input RDDs
-		JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
-		// get schema frame-block
-		Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
-		JavaPairRDD<Long, FrameBlock> out = in1.mapValues(new isCorrectbySchema(fb.getValue()));
-		//release input frame
-		sec.releaseFrameInput(input2.getName());
-		//set output RDD
-		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), input1.getName());
+		if(getOpcode().equals("dropInvalidType")) {
+			// Get input RDDs
+			JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
+			// get schema frame-block
+			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
+			JavaPairRDD<Long, FrameBlock> out = in1.mapValues(new isCorrectbySchema(fb.getValue()));
+			//release input frame
+			sec.releaseFrameInput(input2.getName());
+			//set output RDD
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+		}
+		else
+		{
+			// Read input frames
+			JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
+			JavaPairRDD<Long, FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable(input2.getName());
+			// create output frame
+			BinaryOperator dop = (BinaryOperator) _optr;
+			JavaPairRDD<Long, FrameBlock> out = null;
+			// check for binary operations
+			if( dop.fn instanceof ValueComparisonFunction)
+				out = in1.join(in2).mapValues(new FrameComparisions(dop));
+
+			// Attach result frame with FrameBlock associated with output_name
+			sec.setRDDHandleForVariable(output.getName(), out);
+
+		}
 	}
 
 	private static class isCorrectbySchema implements Function<FrameBlock,FrameBlock> {
@@ -79,6 +100,16 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		@Override
 		public FrameBlock call(FrameBlock arg0) throws Exception {
 			return arg0.dropInvalid(schema_frame);
+		}
+	}
+
+	private static class FrameComparisions implements Function<Tuple2<FrameBlock, FrameBlock>, FrameBlock>  {
+		private static final long serialVersionUID = 5850400295183766401L;
+		BinaryOperator bop;
+		FrameComparisions(BinaryOperator op){ bop = op; }
+
+		@Override public FrameBlock call(Tuple2<FrameBlock, FrameBlock> arg0) throws Exception {
+			return arg0._1().compareFrames(arg0._2(), bop);
 		}
 	}
 }

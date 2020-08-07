@@ -1956,6 +1956,7 @@ public class FrameBlock implements CacheBlock, Externalizable
 	 *  the output frame will store boolean value for each each comparision
 	 *
 	 *  @param that and this frameblocks of m * n dimensions and object of BinaryOperator
+	 *  @param dop binary operator   
 	 *  @return a boolean frameBlock
 	 */
 	public FrameBlock compareFrames(FrameBlock that, BinaryOperator dop)

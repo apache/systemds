@@ -1,3 +1,4 @@
+#/bin/bash 
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,4 +20,7 @@
 #
 #-------------------------------------------------------------
 
-FROM systemds/testingsysds:latest
+
+docker push systemds/sysds:latest
+docker push systemds/testingsysds:latest
+docker push systemds/pythonsysds:latest

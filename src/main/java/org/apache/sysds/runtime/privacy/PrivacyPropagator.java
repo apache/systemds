@@ -19,10 +19,8 @@
 
 package org.apache.sysds.runtime.privacy;
 
-
-import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
@@ -32,7 +30,11 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
@@ -45,7 +47,7 @@ import org.apache.wink.json4j.JSONObject;
  */
 public class PrivacyPropagator
 {
-	public static CacheableData<?> parseAndSetPrivacyConstraint(CacheableData<?> cd, JSONObject mtd)
+	public static Data parseAndSetPrivacyConstraint(Data cd, JSONObject mtd)
 		throws JSONException
 	{
 		if ( mtd.containsKey(DataExpression.PRIVACY) ) {
@@ -125,10 +127,12 @@ public class PrivacyPropagator
 				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
 			case FCall:
 				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
-			case Ctable: 
+			case MultiReturnBuiltin:
 			case MultiReturnParameterizedBuiltin:
-			case MultiReturnBuiltin:  
+				return preprocessMultiReturn((ComputationCPInstruction)inst, ec);
 			case ParameterizedBuiltin:
+				return preprocessParameterizedBuiltin((ParameterizedBuiltinCPInstruction) inst, ec);
+			case Ctable:   
 			default:
 				return preprocessInstructionSimple(inst, ec);
 		}
@@ -153,6 +157,18 @@ public class PrivacyPropagator
 			inst.getInputs(), 
 			inst.getBoundOutputParamNames().toArray(new String[0])
 		);
+	}
+
+	public static Instruction preprocessMultiReturn(ComputationCPInstruction inst, ExecutionContext ec){
+		if ( inst instanceof MultiReturnBuiltinCPInstruction )
+			return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), ((MultiReturnBuiltinCPInstruction) inst).getOutputNames() );
+		else if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
+			return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputNames() );
+		else throw new DMLRuntimeException("ComputationCPInstruction not recognized as either MultiReturnBuiltinCPInstruction or MultiReturnParameterizedBuiltinCPInstruction");
+	}
+
+	public static Instruction preprocessParameterizedBuiltin(ParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), new String[]{inst.getOutputVariableName()} );
 	}
 
 	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, String[] outputNames){
@@ -189,19 +205,13 @@ public class PrivacyPropagator
 	}
 
 	public static Instruction preprocessTernaryCPInstruction(ComputationCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(
-			inst, 
-			ec, 
-			new CPOperand[]{inst.input1, inst.input2, inst.input3}, 
-			inst.output
-		);
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.output);
 	}
 
 	public static Instruction preprocessBinaryCPInstruction(BinaryCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint privacyConstraint1 = getInputPrivacyConstraint(ec, inst.input1);
 		PrivacyConstraint privacyConstraint2 = getInputPrivacyConstraint(ec, inst.input2);
-		if ( privacyConstraint1 != null || privacyConstraint2 != null)
-		{
+		if ( privacyConstraint1 != null || privacyConstraint2 != null) {
 			PrivacyConstraint mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
 			inst.setPrivacyConstraint(mergedPrivacyConstraint);
 			setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.output);
@@ -214,8 +224,7 @@ public class PrivacyPropagator
 	}
 
 	public static Instruction preprocessVariableCPInstruction(VariableCPInstruction inst, ExecutionContext ec){
-		switch ( inst.getVariableOpcode() )
-		{
+		switch ( inst.getVariableOpcode() ) {
 			case CreateVariable:
 				return propagateSecondInputPrivacy(inst, ec);
 			case AssignVariable:
@@ -256,14 +265,14 @@ public class PrivacyPropagator
 	}
 
 	/**
-	 * Propagate privacy from first input and throw exception if privacy is activated.
+	 * Propagate privacy from first input.
 	 * @param inst Instruction
 	 * @param ec execution context
 	 * @return instruction with or without privacy constraints
 	 */
 	private static Instruction propagateCastAsScalarVariablePrivacy(VariableCPInstruction inst, ExecutionContext ec){
 		inst = (VariableCPInstruction) propagateFirstInputPrivacy(inst, ec); 
-		return preprocessInstructionSimple(inst, ec);
+		return inst;
 	}
 
 	/**
@@ -274,11 +283,7 @@ public class PrivacyPropagator
 	 */
 	private static Instruction propagateAllInputPrivacy(VariableCPInstruction inst, ExecutionContext ec){
 		return mergePrivacyConstraintsFromInput(
-			inst, 
-			ec, 
-			inst.getInputs().toArray(new CPOperand[0]), 
-			inst.getOutput()
-		);
+			inst, ec, inst.getInputs().toArray(new CPOperand[0]), inst.getOutput());
 	}
 
 	/**
@@ -325,11 +330,17 @@ public class PrivacyPropagator
 		return inst;
 	}
 
+	/**
+	 * Get privacy constraint of input data variable from execution context.
+	 * @param ec execution context from which the data variable is retrieved
+	 * @param input data variable from which the privacy constraint is retrieved
+	 * @return privacy constraint of variable or null if privacy constraint is not set
+	 */
 	private static PrivacyConstraint getInputPrivacyConstraint(ExecutionContext ec, CPOperand input){
 		if ( input != null && input.getName() != null){
 			Data dd = ec.getVariable(input.getName());
-			if ( dd != null && dd instanceof CacheableData)
-				return ((CacheableData<?>) dd).getPrivacyConstraint();
+			if ( dd != null )
+				return dd.getPrivacyConstraint();
 		}
 		return null;
 	}
@@ -354,15 +365,53 @@ public class PrivacyPropagator
 		setOutputPrivacyConstraint(ec, privacyConstraint, output.getName());
 	}
 
+	/**
+	 * Set privacy constraint of data variable with outputName 
+	 * if the variable exists and the privacy constraint is not null.
+	 * @param ec execution context from which the data variable is retrieved
+	 * @param privacyConstraint privacy constraint which the variable should have
+	 * @param outputName name of variable that is retrieved from the execution context
+	 */
 	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, String outputName){
-		Data dd = ec.getVariable(outputName);
-		if ( dd != null && privacyConstraint != null ){
-			if ( dd instanceof CacheableData ){
-				((CacheableData<?>) dd).setPrivacyConstraints(privacyConstraint);
+		if ( privacyConstraint != null ){
+			Data dd = ec.getVariable(outputName);
+			if ( dd != null ){
+				dd.setPrivacyConstraints(privacyConstraint);
 				ec.setVariable(outputName, dd);
-			} else if ( privacyConstraint.privacyLevel == PrivacyLevel.Private || !(dd.getDataType() == DataType.SCALAR) )
-				throw new DMLPrivacyException("Privacy constraint of " + outputName + " cannot be set since it is not an instance of CacheableData and it is not a scalar with privacy level " + PrivacyLevel.PrivateAggregation.name() );
-			// if privacy level is PrivateAggregation and data is scalar, the call should pass without propagating any constraints
+			}
 		}
+	}
+
+	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
+		PrivacyConstraint instructionPrivacyConstraint = inst.getPrivacyConstraint();
+		if ( privacyConstraintActivated(instructionPrivacyConstraint) )
+		{
+			String[] instructionOutputNames = getOutputVariableName(inst);
+			if ( instructionOutputNames != null && instructionOutputNames.length > 0 )
+				for ( String instructionOutputName : instructionOutputNames )
+					setOutputPrivacyConstraint(ec, instructionPrivacyConstraint, instructionOutputName);
+		}
+	}
+
+	private static boolean privacyConstraintActivated(PrivacyConstraint instructionPrivacyConstraint){
+		return instructionPrivacyConstraint != null && 
+			(instructionPrivacyConstraint.privacyLevel == PrivacyLevel.Private 
+			|| instructionPrivacyConstraint.privacyLevel == PrivacyLevel.PrivateAggregation);
+	}
+
+	private static String[] getOutputVariableName(Instruction inst){
+		String[] instructionOutputNames = null;
+		// The order of the following statements is important
+		if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
+			instructionOutputNames = ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputNames();
+		else if ( inst instanceof MultiReturnBuiltinCPInstruction )
+			instructionOutputNames = ((MultiReturnBuiltinCPInstruction) inst).getOutputNames();
+		else if ( inst instanceof ComputationCPInstruction )
+			instructionOutputNames = new String[]{((ComputationCPInstruction) inst).getOutputVariableName()};
+		else if ( inst instanceof VariableCPInstruction )
+			instructionOutputNames = new String[]{((VariableCPInstruction) inst).getOutputVariableName()};
+		else if ( inst instanceof SqlCPInstruction )
+			instructionOutputNames = new String[]{((SqlCPInstruction) inst).getOutputVariableName()};
+		return instructionOutputNames;
 	}
 }

@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -62,7 +61,7 @@ public class GLMTest extends AutomatedTestBase
 		Gaussianid,
 		Gaussianinverse,
 		Poissonlog1,
-		Poissonlog2		,	 
+		Poissonlog2,
 		Poissonsqrt,
 		Poissonid,
 		Gammalog,
@@ -71,7 +70,6 @@ public class GLMTest extends AutomatedTestBase
 		InvGaussianinverse,
 		InvGaussianlog,
 		InvGaussianid,
-
 		Bernoullilog,
 		Bernoulliid,
 		Bernoullisqrt,
@@ -141,41 +139,20 @@ public class GLMTest extends AutomatedTestBase
 		// SCHEMA: 
 		// #RECORDS, #FEATURES, DISTRIBUTION_FAMILY, VARIANCE_POWER or BERNOULLI_NO, LINK_TYPE, LINK_POWER, 
 		//	 INTERCEPT, LOG_FEATURE_VARIANCE_DISBALANCE, AVG_LINEAR_FORM, ST_DEV_LINEAR_FORM, DISPERSION, GLMTYPE
-		Object[][] data = new Object[][] { 			
+		Object[][] data = new Object[][] {
 		
 		// THIS IS TO TEST "INTERCEPT AND SHIFT/SCALE" OPTION ("icpt=2"):
-			{ 200000,   50,  1,  0.0,  1,  0.0,  0.01, 3.0,  10.0,  2.0,  2.5, GLMType.Gaussianlog },   	// Gaussian.log	 // CHECK DEVIANCE !!!
-			{  10000,  100,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Gaussianid },   		// Gaussian.id
-			{  20000,  100,  1,  0.0,  1, -1.0,  0.01, 0.0,   0.2,  0.03, 2.5, GLMType.Gaussianinverse },   // Gaussian.inverse
-			{  10000,  100,  1,  1.0,  1,  0.0,  0.01, 3.0,   0.0,  1.0,  2.5, GLMType.Poissonlog1 },   	// Poisson.log
-			{ 100000,   10,  1,  1.0,  1,  0.0,  0.01, 3.0,   0.0, 50.0,  2.5, GLMType.Poissonlog2 },   	// Poisson.log			 // Pr[0|x] gets near 1
-			{  20000,  100,  1,  1.0,  1,  0.5,  0.01, 3.0,  10.0,  2.0,  2.5, GLMType.Poissonsqrt },   	// Poisson.sqrt
-			{  10000,  100,  1,  1.0,  1,  1.0,  0.01, 3.0,  50.0, 10.0,  2.5, GLMType.Poissonid },   		// Poisson.id
-			{  50000,  100,  1,  2.0,  1,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Gammalog },   		// Gamma.log
-			{  10000,  100,  1,  2.0,  1, -1.0,  0.01, 3.0,   2.0,  0.3,  2.0, GLMType.Gammainverse },   	// Gamma.inverse
-			{  10000,  100,  1,  3.0,  1, -2.0,  1.0,  3.0,  50.0,  7.0,  1.7, GLMType.InvGaussian1mu },   	// InvGaussian.1/mu^2
-			{  10000,  100,  1,  3.0,  1, -1.0,  0.01, 3.0,  10.0,  2.0,  2.5, GLMType.InvGaussianinverse },// InvGaussian.inverse
-			{ 100000,   50,  1,  3.0,  1,  0.0,  0.5,  3.0,  -2.0,  1.0,  2.5, GLMType.InvGaussianlog },   	// InvGaussian.log
-			{ 100000,  100,  1,  3.0,  1,  1.0,  0.01, 3.0,   0.2,  0.03, 2.5, GLMType.InvGaussianid },   	// InvGaussian.id
-
-			{ 100000,   50,  2, -1.0,  1,  0.0,  0.01, 3.0,  -5.0,  1.0,  1.0, GLMType.Bernoullilog },   	// Bernoulli {-1, 1}.log	 // Note: Y is sparse
-			{ 100000,   50,  2, -1.0,  1,  1.0,  0.01, 3.0,   0.4,  0.1,  1.0, GLMType.Bernoulliid },   	// Bernoulli {-1, 1}.id
-			{ 100000,   40,  2, -1.0,  1,  0.5,  0.1,  3.0,   0.4,  0.1,  1.0, GLMType.Bernoullisqrt },   	// Bernoulli {-1, 1}.sqrt
-			{  10000,  100,  2, -1.0,  2,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0, GLMType.Bernoullilogit1 },   // Bernoulli {-1, 1}.logit
-			{  10000,  100,  2, -1.0,  2,  0.0,  0.01, 3.0,   0.0, 50.0,  1.0, GLMType.Bernoullilogit2 },   // Bernoulli {-1, 1}.logit   // Pr[y|x] near 0, 1
-			{  20000,  100,  2, -1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0, GLMType.Bernoulliprobit1 },  // Bernoulli {-1, 1}.probit
-			{ 100000,   10,  2, -1.0,  3,  0.0,  0.01, 3.0,   0.0, 50.0,  1.0, GLMType.Bernoulliprobit2 },  // Bernoulli {-1, 1}.probit  // Pr[y|x] near 0, 1
-			{  10000,  100,  2, -1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  1.0, GLMType.Bernoullicloglog1 }, // Bernoulli {-1, 1}.cloglog
-			{  50000,   20,  2, -1.0,  4,  0.0,  0.01, 3.0,  -2.0, 50.0,  1.0, GLMType.Bernoullicloglog2 }, // Bernoulli {-1, 1}.cloglog // Pr[y|x] near 0, 1
-			{  20000,  100,  2, -1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0, GLMType.Bernoullicauchit },  // Bernoulli {-1, 1}.cauchit
-		
-			{  50000,  100,  2,  1.0,  1,  0.0,  0.01, 3.0,  -5.0,  1.0,  2.5, GLMType.Binomiallog },   	// Binomial two-column.log   // Note: Y is sparse
-			{  10000,  100,  2,  1.0,  1,  1.0,  0.0,  0.0,   0.4,  0.05, 2.5, GLMType.Binomialid },   		// Binomial two-column.id
-			{ 100000,  100,  2,  1.0,  1,  0.5,  0.1,  3.0,   0.4,  0.05, 2.5, GLMType.Binomialsqrt },   	// Binomial two-column.sqrt
-			{  10000,  100,  2,  1.0,  2,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Binomiallogit },   	// Binomial two-column.logit
-			{  20000,  100,  2,  1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Binomialprobit },   	// Binomial two-column.probit
-			{  10000,  100,  2,  1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  2.5, GLMType.Binomialcloglog },   // Binomial two-column.cloglog
-			{  20000,  100,  2,  1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Binomialcauchit },   // Binomial two-column.cauchit
+			{ 2000,  50,  1,  0.0,  1,  0.0,  0.01, 3.0,  10.0,  2.0,  2.5, GLMType.Gaussianlog },   	// Gaussian.log	 // CHECK DEVIANCE !!!
+			{  100,  10,  1,  0.0,  1,  1.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Gaussianid },   		// Gaussian.id
+			{  100,  10,  1,  1.0,  1,  0.0,  0.01, 3.0,   0.0,  1.0,  2.5, GLMType.Poissonlog1 },   	// Poisson.log
+			{ 1000,  10,  1,  1.0,  1,  0.0,  0.01, 3.0,   0.0, 50.0,  2.5, GLMType.Poissonlog2 },   	// Poisson.log			 // Pr[0|x] gets near 1
+			{  500,  10,  1,  2.0,  1,  0.0,  0.01, 3.0,   0.0,  2.0,  2.5, GLMType.Gammalog },   		// Gamma.log
+			{ 1000,  50,  1,  3.0,  1,  0.0,  0.5,  3.0,  -2.0,  1.0,  2.5, GLMType.InvGaussianlog },   	// InvGaussian.log
+			
+			{  100,  10,  2, -1.0,  2,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0, GLMType.Bernoullilogit1 },   // Bernoulli {-1, 1}.logit
+			{  200,  10,  2, -1.0,  3,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0, GLMType.Bernoulliprobit1 },  // Bernoulli {-1, 1}.probit
+			{  100,  10,  2, -1.0,  4,  0.0,  0.01, 3.0,  -2.0,  1.0,  1.0, GLMType.Bernoullicloglog1 }, // Bernoulli {-1, 1}.cloglog
+			{  200,  10,  2, -1.0,  5,  0.0,  0.01, 3.0,   0.0,  2.0,  1.0, GLMType.Bernoullicauchit },  // Bernoulli {-1, 1}.cauchit
 		};
 		return Arrays.asList(data);
 	}
@@ -189,7 +166,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMPrivateX(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		Class<?> expectedException = DMLException.class; 
+		Class<?> expectedException = null; 
 		testGLM(pc, null, expectedException);
 	}
 
@@ -210,7 +187,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMPrivateY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		Class<?> expectedException = DMLException.class;
+		Class<?> expectedException = null;
 		testGLM(null, pc, expectedException);
 	}
 
@@ -231,7 +208,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMPrivateXY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		testGLM(pc, pc, DMLException.class);
+		testGLM(pc, pc, null);
 	}
 
 	@Test
@@ -244,7 +221,7 @@ public class GLMTest extends AutomatedTestBase
 	@Test
 	public void TestGLMNonePrivateXY(){
 		PrivacyConstraint pc = new PrivacyConstraint(PrivacyLevel.Private);
-		testGLM(pc, pc, DMLException.class);
+		testGLM(pc, pc, null);
 	}
 	
 	public void testGLM(PrivacyConstraint privacyX, PrivacyConstraint privacyY, Class<?> expectedException)
@@ -334,7 +311,7 @@ public class GLMTest extends AutomatedTestBase
 
 			HashMap<CellIndex, Double> wR   = readRMatrixFromFS ("betas_R");
 			
-			double eps = 0.000001;
+			double eps = 0.0001;
 			if( (distParam==0 && linkType==1) ) { // Gaussian.*
 				//NOTE MB: Gaussian.log was the only test failing when we introduced multi-threaded
 				//matrix multplications (mmchain). After discussions with Sasha, we decided to change the eps

@@ -26,6 +26,7 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
+import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 
 public abstract class Instruction 
 {
@@ -241,6 +242,6 @@ public abstract class Instruction
 	 * @param ec execution context
 	 */
 	public void postprocessInstruction(ExecutionContext ec) {
-		//do nothing
+		PrivacyPropagator.postProcessInstruction(this, ec);
 	}
 }

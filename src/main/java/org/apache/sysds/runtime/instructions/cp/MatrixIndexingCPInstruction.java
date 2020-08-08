@@ -115,7 +115,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			resultBlock.examSparsity();
 			
 			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock, updateType, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), resultBlock, updateType);
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");

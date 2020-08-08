@@ -35,6 +35,7 @@ import io.netty.util.concurrent.Promise;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
@@ -83,51 +84,15 @@ public class FederatedData {
 		return _varID != -1;
 	}
 	
-	public synchronized Future<FederatedResponse> initFederatedData() {
+	public synchronized Future<FederatedResponse> initFederatedData(long id) {
 		if(isInitialized())
 			throw new DMLRuntimeException("Tried to init already initialized data");
-		FederatedRequest.FedMethod fedMethod;
-		switch(_dataType) {
-			case MATRIX:
-				fedMethod = FederatedRequest.FedMethod.READ_MATRIX;
-				break;
-			case FRAME:
-				fedMethod = FederatedRequest.FedMethod.READ_FRAME;
-				break;
-			default:
-				throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
-		}
-		FederatedRequest request = new FederatedRequest(fedMethod);
+		if(!_dataType.isMatrix() && !_dataType.isFrame())
+			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
+		_varID = id;
+		FederatedRequest request = new FederatedRequest(RequestType.READ_VAR, id);
 		request.appendParam(_filepath);
-		return executeFederatedOperation(request);
-	}
-	
-	/**
-	 * Executes an federated operation on a federated worker and default variable.
-	 *
-	 * @param request the requested operation
-	 * @param withVarID true if we should add the default varID (initialized) or false if we should not
-	 * @return the response
-	 */
-	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest request, boolean withVarID) {
-		if (withVarID) {
-			if( !isInitialized() )
-				throw new DMLRuntimeException("Tried to execute federated operation on data non initialized federated data.");
-			return executeFederatedOperation(request, _varID);
-		}
-		return executeFederatedOperation(request);
-	}
-	
-	/**
-	 * Executes an federated operation on a federated worker.
-	 *
-	 * @param request the requested operation
-	 * @param varID variable ID
-	 * @return the response
-	 */
-	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest request, long varID) {
-		request = request.deepClone();
-		request.appendParam(varID);
+		request.appendParam(_dataType.name());
 		return executeFederatedOperation(request);
 	}
 	
@@ -137,7 +102,7 @@ public class FederatedData {
 	 * @param request the requested operation
 	 * @return the response
 	 */
-	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest request) {
+	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
 		// Careful with the number of threads. Each thread opens connections to multiple files making resulting in 
 		// java.io.IOException: Too many open files
 		EventLoopGroup workerGroup = new NioEventLoopGroup(_nrThreads);
@@ -148,9 +113,9 @@ public class FederatedData {
 				@Override
 				public void initChannel(SocketChannel ch) {
 					ch.pipeline().addLast("ObjectDecoder",
-							new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
-							.addLast("FederatedOperationHandler", handler)
-							.addLast("ObjectEncoder", new ObjectEncoder());
+						new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
+						.addLast("FederatedOperationHandler", handler)
+						.addLast("ObjectEncoder", new ObjectEncoder());
 				}
 			});
 			

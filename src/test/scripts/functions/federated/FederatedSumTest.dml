@@ -23,6 +23,7 @@ A = federated(addresses=list($in, $in), ranges=list(list(0, 0), list($rows / 2, 
 s = sum(A)
 r = rowSums(A)
 c = colSums(A)
+
 write(s, $out_S)
 write(r, $out_R)
 write(c, $out_C)

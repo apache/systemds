@@ -32,36 +32,36 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 public class FederatedResponse implements Serializable {
 	private static final long serialVersionUID = 3142180026498695091L;
 	
-	public enum Type {
+	public enum ResponseType {
 		SUCCESS,
 		SUCCESS_EMPTY,
 		ERROR,
 	}
 	
-	private FederatedResponse.Type _status;
+	private ResponseType _status;
 	private Object[] _data;
 	private Map<PrivacyLevel,LongAdder> checkedConstraints;
 	
-	public FederatedResponse(FederatedResponse.Type status) {
+	public FederatedResponse(ResponseType status) {
 		this(status, null);
 	}
 	
-	public FederatedResponse(FederatedResponse.Type status, Object[] data) {
+	public FederatedResponse(ResponseType status, Object[] data) {
 		_status = status;
 		_data = data;
-		if( _status == FederatedResponse.Type.SUCCESS && data == null )
-			_status = FederatedResponse.Type.SUCCESS_EMPTY;
+		if( _status == ResponseType.SUCCESS && data == null )
+			_status = ResponseType.SUCCESS_EMPTY;
 	}
 	
-	public FederatedResponse(FederatedResponse.Type status, Object data) {
+	public FederatedResponse(FederatedResponse.ResponseType status, Object data) {
 		_status = status;
 		_data = new Object[] {data};
-		if(_status == FederatedResponse.Type.SUCCESS && data == null)
-			_status = FederatedResponse.Type.SUCCESS_EMPTY;
+		if(_status == ResponseType.SUCCESS && data == null)
+			_status = ResponseType.SUCCESS_EMPTY;
 	}
 	
 	public boolean isSuccessful() {
-		return _status != FederatedResponse.Type.ERROR;
+		return _status != ResponseType.ERROR;
 	}
 	
 	public String getErrorMessage() {
@@ -103,7 +103,7 @@ public class FederatedResponse implements Serializable {
 		if ( checkedConstraints != null && !checkedConstraints.isEmpty() ){
 			this.checkedConstraints = new EnumMap<>(PrivacyLevel.class);
 			this.checkedConstraints.putAll(checkedConstraints);
-		}	
+		}
 	}
 
 	public void updateCheckedConstraintsLog(){

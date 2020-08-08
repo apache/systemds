@@ -381,14 +381,14 @@ public class SparkExecutionContext extends ExecutionContext
 			rdd = mo.getRDDHandle().getRDD();
 		}
 		//CASE 2: dirty in memory data or cached result of rdd operations
-		else if( mo.isDirty() || mo.isCached(false) )
+		else if( mo.isDirty() || mo.isCached(false) || mo.isFederated() )
 		{
 			//get in-memory matrix block and parallelize it
 			//w/ guarded parallelize (fallback to export, rdd from file if too large)
 			DataCharacteristics dc = mo.getDataCharacteristics();
 			boolean fromFile = false;
-			if( !OptimizerUtils.checkSparkCollectMemoryBudget(dc, 0) || !_parRDDs.reserve(
-					OptimizerUtils.estimatePartitionedSizeExactSparsity(dc))) {
+			if( !mo.isFederated() && (!OptimizerUtils.checkSparkCollectMemoryBudget(dc, 0)
+				|| !_parRDDs.reserve(OptimizerUtils.estimatePartitionedSizeExactSparsity(dc)))) {
 				if( mo.isDirty() || !mo.isHDFSFileExists() ) //write if necessary
 					mo.exportData();
 				rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.keyClass, inputInfo.valueClass);

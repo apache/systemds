@@ -26,6 +26,8 @@ import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Or;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
 
 
 public class AggregateUnaryOperator  extends Operator 
@@ -57,5 +59,13 @@ public class AggregateUnaryOperator  extends Operator
 	
 	public int getNumThreads(){
 		return k;
+	}
+	
+	public boolean isRowAggregate() {
+		return indexFn instanceof ReduceCol;
+	}
+	
+	public boolean isColAggregate() {
+		return indexFn instanceof ReduceRow;
 	}
 }

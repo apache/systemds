@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -1100,6 +1101,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		} catch (IOException e) {
 			throw new DMLRuntimeException(e);
 		}
+	}
+	
+	public static Instruction prepareRemoveInstruction(long... varName) {
+		String[] tmp = new String[varName.length];
+		Arrays.setAll(tmp, i -> String.valueOf(varName[i]));
+		return prepareRemoveInstruction(tmp);
 	}
 	
 	public static Instruction prepareRemoveInstruction(String... varNames) {

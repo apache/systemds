@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
@@ -169,7 +168,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		FrameBlock result = new FrameBlock(_schema);
 		// provide long support?
 		result.ensureAllocatedColumns((int) _metaData.getDataCharacteristics().getRows());
-		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = requestFederatedData(_fedMapping);
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = _fedMapping.requestFederatedData();
 		try {
 			for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
 				FederatedRange range = readResponse.getLeft();

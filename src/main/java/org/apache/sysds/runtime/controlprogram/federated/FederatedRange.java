@@ -92,4 +92,14 @@ public class FederatedRange implements Comparable<FederatedRange> {
 	public String toString() {
 		return Arrays.toString(_beginDims) + " - " + Arrays.toString(_endDims);
 	}
+
+	public FederatedRange shift(long rshift, long cshift) {
+		//row shift
+		_beginDims[0] += rshift;
+		_endDims[0] += rshift;
+		//column shift
+		_beginDims[1] += cshift;
+		_endDims[1] += cshift;
+		return this;
+	}
 }

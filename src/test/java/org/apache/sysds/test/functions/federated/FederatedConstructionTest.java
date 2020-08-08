@@ -117,12 +117,10 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t;
-
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		int port = getRandomAvailablePort();
-		t = startLocalFedWorker(port);
+		Thread t = startLocalFedWorker(port);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);

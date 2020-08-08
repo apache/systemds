@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
-
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.List;
@@ -405,7 +403,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		long[] dims = getDataCharacteristics().getDims();
 		// TODO sparse optimization
 		MatrixBlock result = new MatrixBlock((int) dims[0], (int) dims[1], false);
-		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = requestFederatedData(_fedMapping);
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = _fedMapping.requestFederatedData();
 		try {
 			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
 				FederatedRange range = readResponse.getLeft();

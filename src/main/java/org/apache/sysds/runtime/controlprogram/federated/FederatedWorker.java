@@ -32,29 +32,29 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysds.runtime.instructions.cp.Data;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 
 	private int _port;
-	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
-	private IDSequence _seq = new IDSequence();
-	private Map<Long, Data> _vars = new HashMap<>();
-
+	private final ExecutionContext _ec;
+	private final BasicProgramBlock _pb;
+	
 	public FederatedWorker(int port) {
+		_ec = ExecutionContextFactory.createContext();
+		_ec.setAutoCreateVars(true); //w/o createvar inst
+		_pb = new BasicProgramBlock(null);
 		_port = (port == -1) ?
 			Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT) : port;
 	}
 
 	public void run() {
 		log.info("Setting up Federated Worker");
-		EventLoopGroup bossGroup = new NioEventLoopGroup(_nrThreads);
-		EventLoopGroup workerGroup = new NioEventLoopGroup(_nrThreads);
+		EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+		EventLoopGroup workerGroup = new NioEventLoopGroup(1);
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
 			.childHandler(new ChannelInitializer<SocketChannel>() {
@@ -65,7 +65,7 @@ public class FederatedWorker {
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
 						.addLast("ObjectEncoder", new ObjectEncoder())
-						.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_seq, _vars));
+						.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_ec, _pb));
 				}
 			}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 		try {

@@ -37,4 +37,8 @@ public class FederatedWorkerHandlerException extends RuntimeException {
 	public FederatedWorkerHandlerException(String msg) {
 		super(msg);
 	}
+	
+	public FederatedWorkerHandlerException(String msg, Throwable t) {
+		super(msg, t);
+	}
 }

@@ -1200,7 +1200,7 @@ public abstract class AutomatedTestBase {
 			if(exceptionExpected)
 				fail("expected exception which has not been raised: " + expectedException);
 		}
-		catch(Exception e) {
+		catch(Exception | Error e) {
 			if( !outputBuffering )
 				e.printStackTrace();
 			if(errMessage != null && !errMessage.equals("")) {

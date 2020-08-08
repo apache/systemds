@@ -39,8 +39,8 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	private final static double tol = 1e-3;
 	private final static double tol1 = 1e-4;
 	private final static double tol2 = 1e-5;
-	private final static int rows = 100;
-	private final static double spDense = 0.99;
+	//private final static int rows = 100;
+	//private final static double spDense = 0.99;
 	private final static String DATASET = SCRIPT_DIR + "functions/transform/input/iris/iris.csv";
 
 	@Override

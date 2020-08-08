@@ -33,8 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
-
 public class LineageTraceDedupTest extends AutomatedTestBase
 {
 	protected static final String TEST_DIR = "functions/lineage/";

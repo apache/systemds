@@ -761,6 +761,23 @@ public abstract class AutomatedTestBase {
 		return meta.get(key).toString();
 	}
 
+	/**
+	 * Call readDMLMetaDataValue but fail test in case of JSONException or NullPointerException. 
+	 * @param fileName of metadata file
+	 * @param outputDir directory of metadata file
+	 * @param key key to find in metadata
+	 * @return value retrieved from metadata for the given key
+	 */
+	public static String readDMLMetaDataValueCatchException(String fileName, String outputDir, String key){
+		try {
+			return readDMLMetaDataValue(fileName, outputDir, key);
+		} catch (JSONException | NullPointerException e){
+			fail("Privacy constraint not written to output metadata file:\n" + e);
+			return null;
+		}
+	}
+
+
 	public static ValueType readDMLMetaDataValueType(String fileName) {
 		try {
 			JSONObject meta = getMetaDataJSON(fileName);

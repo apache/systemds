@@ -128,4 +128,8 @@ public class SqlCPInstruction extends CPInstruction {
 		}
 		return schema;
 	}
+
+	public String getOutputVariableName(){
+		return _output.getName();
+	}
 }

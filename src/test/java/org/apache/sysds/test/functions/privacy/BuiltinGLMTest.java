@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LopProperties;
@@ -89,7 +88,7 @@ public class BuiltinGLMTest extends AutomatedTestBase
 	@Test
 	public void glmTestIntercept_0_CP_Private() {
 		setIntercept(0);
-		runtestGLM(new PrivacyConstraint(PrivacyLevel.Private), DMLException.class);
+		runtestGLM(new PrivacyConstraint(PrivacyLevel.Private), null);
 	}
 
 	// PrivateAggregation
@@ -217,17 +216,17 @@ public class BuiltinGLMTest extends AutomatedTestBase
 		Object[][] data = new Object[][] {
 				// #RECS  #FTRS DFM VPOW  LNK LPOW   LFVD  AVGLT STDLT  DISP
 				// Both DML and R work and compute close results:
-				{ 10000,   50,  1,  0.0,  1,  0.0,   3.0,  10.0,  2.0,  2.5 },   // Gaussian.log
-				{  1000,  100,  1,  1.0,  1,  0.0,   3.0,   0.0,  1.0,  2.5 },   // Poisson.log
-				{ 10000,   50,  1,  2.0,  1,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Gamma.log
+				{ 1000,   50,  1,  0.0,  1,  0.0,   3.0,  10.0,  2.0,  2.5 },   // Gaussian.log
+				{  100,   10,  1,  1.0,  1,  0.0,   3.0,   0.0,  1.0,  2.5 },   // Poisson.log
+				{ 1000,   50,  1,  2.0,  1,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Gamma.log
 
-				{ 10000,   50,  2, -1.0,  1,  0.0,  3.0,  -5.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.log     // Note: Y is sparse
-				{  1000,  100,  2, -1.0,  2,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.logit
-				{  2000,  100,  2, -1.0,  3,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.probit
+				//{ 1000,   50,  2, -1.0,  1,  0.0,  3.0,  -5.0,  1.0,  1.0 },   // Bernoulli {-1, 1}.log     // Note: Y is sparse
+				{  100,   10,  2, -1.0,  2,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.logit
+				{  200,   10,  2, -1.0,  3,  0.0,  3.0,   0.0,  2.0,  1.0 },   // Bernoulli {-1, 1}.probit
 
-				{ 10000,   50,  2,  1.0,  1,  0.0,  3.0,  -5.0,  1.0,  2.5 },   // Binomial two-column.log   // Note: Y is sparse
-				{  1000,  100,  2,  1.0,  2,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.logit
-				{  2000,  100,  2,  1.0,  3,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
+				{ 1000,   50,  2,  1.0,  1,  0.0,  3.0,  -5.0,  1.0,  2.5 },   // Binomial two-column.log   // Note: Y is sparse
+				{  100,   10,  2,  1.0,  2,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.logit
+				{  200,   10,  2,  1.0,  3,  0.0,  3.0,   0.0,  2.0,  2.5 },   // Binomial two-column.probit
 		};
 		return Arrays.asList(data);
 	}

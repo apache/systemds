@@ -59,6 +59,10 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 		return output.getName();
 	}
 
+	public CPOperand[] getInputs(){
+		return new CPOperand[]{input1, input2, input3};
+	}
+
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock out ) {
 		return checkGuardedRepresentationChange(in1, null, out);
 	}

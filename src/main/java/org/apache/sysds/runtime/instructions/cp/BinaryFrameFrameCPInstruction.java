@@ -36,10 +36,10 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
 		// get input frames
 		FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
 		FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
-		
+
 		if(getOpcode().equals("dropInvalidType")) {
 			// Perform computation using input frames, and produce the result frame
-			FrameBlock retBlock = inBlock1.dropInvalid(inBlock2);
+			FrameBlock retBlock = inBlock1.dropInvalidType(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
@@ -50,7 +50,7 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), outBlock);
 		}
-		
+
 		// Release the memory occupied by input frames
 		ec.releaseFrameInput(input1.getName());
 		ec.releaseFrameInput(input2.getName());

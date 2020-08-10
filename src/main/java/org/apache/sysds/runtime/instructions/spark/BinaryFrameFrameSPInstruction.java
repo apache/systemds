@@ -80,9 +80,7 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		//set output RDD and maintain dependencies
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		if( getOpcode().equals("dropInvalidType") )
-			sec.addLineageBroadcast(output.getName(), input2.getName());
-		else
+		if( !getOpcode().equals("dropInvalidType") )
 			sec.addLineageRDD(output.getName(), input2.getName());
 	}
 

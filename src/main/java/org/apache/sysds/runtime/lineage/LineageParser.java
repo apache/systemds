@@ -89,11 +89,18 @@ public class LineageParser
 	}
 	
 	private static LineageItem parseLineageInstruction(Long id, String str, Map<Long, LineageItem> map, String name) {
-		ArrayList<LineageItem> inputs = new ArrayList<>();
 		String[] tokens = str.split(" ");
 		if (tokens.length < 2)
 			throw new ParseException("Invalid length ot lineage item "+tokens.length+".");
 		String opcode = tokens[0];
+
+		if (opcode.startsWith(LineageItemUtils.LPLACEHOLDER)) {
+			// Convert this to a leaf node (creation type)
+			String data = opcode;
+			return new LineageItem(id, data, "Create"+opcode);
+		}
+
+		ArrayList<LineageItem> inputs = new ArrayList<>();
 		for( int i=1; i<tokens.length; i++ ) {
 			String token = tokens[i];
 			if (token.startsWith("(") && token.endsWith(")")) {
@@ -103,5 +110,28 @@ public class LineageParser
 				throw new ParseException("Invalid format for LineageItem reference");
 		}
 		return new LineageItem(id, "", opcode, inputs.toArray(new LineageItem[0]));
+	}
+	
+	public static LineageItem parseLineageTraceDedup(String str) {
+		LineageItem li = null;
+		Map<Long, Map<String, LineageItem>> patchLiMap = new HashMap<>();
+		str.replaceAll("\r\n", "\n");
+		String[] allPatches = str.split("\n\n");
+		for (String patch : allPatches) {
+			String[] headBody = patch.split("\r\n|\r|\n", 2);
+			// Parse the header
+			String[] parts = headBody[0].split(LineageItemUtils.DEDUP_DELIM);
+			// e.g. patch_R_SB15_1
+			// Deserialize the patch
+			LineageItem patchLi = parseLineageTrace(headBody[1]);
+			Long pathId = Long.parseLong(parts[3]);
+			// Map the pathID and the DAG root name to the deserialized DAG.
+			if (!patchLiMap.containsKey(pathId)) {
+				patchLiMap.put(pathId, new HashMap<>());
+			}
+			patchLiMap.get(pathId).put(parts[1], patchLi);
+			// TODO: handle multiple loops
+		}
+		return li;
 	}
 }

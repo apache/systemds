@@ -67,6 +67,7 @@ import org.apache.sysds.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 
 public class Explain
 {
@@ -621,6 +622,8 @@ public class Explain
 			}
 			//check ascent condition - append item
 			else if( tmpItem.getInputs() == null 
+				|| tmpItem.getOpcode().startsWith(LineageItemUtils.LPLACEHOLDER)
+				// don't trace beyond if a placeholder is found
 				|| tmpItem.getInputs().length <= tmpPos.intValue() ) {
 				sb.append(createOffset(level));
 				sb.append(tmpItem.toString());

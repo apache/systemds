@@ -51,6 +51,10 @@ public class LineageDedupBlock {
 		return _distinctPaths.containsKey(path) ? _distinctPaths.get(path) : null;
 	}
 	
+	public Map<Long, LineageMap> getPathMaps() {
+		return _distinctPaths;
+	}
+	
 	public void setMap(Long takenPath, LineageMap tracedMap) {
 		_distinctPaths.put(takenPath, new LineageMap(tracedMap));
 	}

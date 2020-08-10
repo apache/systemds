@@ -120,7 +120,7 @@ public class WhileProgramBlock extends ProgramBlock
 				if (DMLScript.LINEAGE_DEDUP) {
 					LineageDedupUtils.replaceLineage(ec);
 					// hook the dedup map to the main lineage trace
-					ec.getLineage().traceCurrentDedupPath();
+					ec.getLineage().traceCurrentDedupPath(this, ec);
 				}
 			}
 			

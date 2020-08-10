@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,14 +57,15 @@ public class Lineage {
 			_map.trace(inst, ec);
 	}
 	
-	public void traceCurrentDedupPath() {
+	public void traceCurrentDedupPath(ProgramBlock pb, ExecutionContext ec) {
 		if( _activeDedupBlock != null ) {
+			ArrayList<String> inputnames = pb.getStatementBlock().getInputstoSB();
+			LineageItem[] liinputs = LineageItemUtils.getLineageItemInputstoSB(inputnames, ec);
 			long lpath = _activeDedupBlock.getPath();
 			LineageDedupUtils.setDedupMap(_activeDedupBlock, lpath);
 			LineageMap lm = _activeDedupBlock.getMap(lpath);
 			if (lm != null)
-				_map.processDedupItem(lm, lpath);
-			
+				_map.processDedupItem(lm, lpath, liinputs, pb.getStatementBlock().getName());
 		}
 	}
 	
@@ -89,6 +91,10 @@ public class Lineage {
 	
 	public LineageMap getLineageMap() {
 		return _map;
+	}
+	
+	public Map<ProgramBlock, LineageDedupBlock> getDedupBlocks() {
+		return _dedupBlocks;
 	}
 	
 	public void set(String varName, LineageItem li) {

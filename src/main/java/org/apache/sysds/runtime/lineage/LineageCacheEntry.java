@@ -35,6 +35,7 @@ public class LineageCacheEntry {
 	protected LineageCacheStatus _status;
 	protected LineageCacheEntry _nextEntry;
 	protected LineageItem _origItem;
+	private String _outfile = null;
 	protected double score;
 	
 	public LineageCacheEntry(LineageItem key, DataType dt, MatrixBlock Mval, ScalarObject Sval, long computetime) {
@@ -122,8 +123,18 @@ public class LineageCacheEntry {
 		_status = LineageCacheStatus.EMPTY;
 	}
 	
+	protected synchronized void setOutfile(String outfile) {
+		_outfile = outfile;
+	}
+	
+	protected synchronized String getOutfile() {
+		return _outfile;
+	}
+	
 	protected synchronized void setTimestamp() {
-		_timestamp = System.currentTimeMillis();
+		_timestamp =  System.currentTimeMillis() - LineageCacheEviction.getStartTimestamp();
+		if (_timestamp < 0)
+			throw new DMLRuntimeException ("Execution timestamp shouldn't be -ve. Key: "+_key);
 		recomputeScore();
 	}
 	

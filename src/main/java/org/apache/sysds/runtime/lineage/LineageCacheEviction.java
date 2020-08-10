@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.lineage;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -37,8 +36,8 @@ public class LineageCacheEviction
 {
 	private static long _cachesize = 0;
 	private static long CACHE_LIMIT; //limit in bytes
+	private static long _startTimestamp = 0;
 	protected static final Set<LineageItem> _removelist = new HashSet<>();
-	private static final Map<LineageItem, SpilledItem> _spillList = new HashMap<>();
 	private static String _outdir = null;
 	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
 	
@@ -46,7 +45,6 @@ public class LineageCacheEviction
 		// reset cache size, otherwise the cache clear leads to unusable 
 		// space which means evictions could run into endless loops
 		_cachesize = 0;
-		_spillList.clear();
 		weightedQueue.clear();
 		_outdir = null;
 		if (DMLScript.STATISTICS)
@@ -240,6 +238,14 @@ public class LineageCacheEviction
 
 	//---------------- COSTING RELATED METHODS -----------------
 
+	protected static void setStartTimestamp() {
+		_startTimestamp = System.currentTimeMillis();
+	}
+	
+	protected static long getStartTimestamp() {
+		return _startTimestamp;
+	}
+
 	private static double getDiskSpillEstimate(LineageCacheEntry e) {
 		if (!e.isMatrixValue() || e.isNullVal())
 			return 0;
@@ -299,6 +305,15 @@ public class LineageCacheEviction
 		if (entry.isNullVal())
 			throw new DMLRuntimeException ("Cannot spill null value to disk. Key: "+entry._key);
 		
+		// Do nothing if the entry is already spilled before.
+		if (entry._origItem == null && entry.getOutfile() != null)
+			return;
+		if (entry._origItem != null) {
+			LineageCacheEntry tmp = cache.get(entry._origItem); //head
+			if (tmp.getOutfile() != null)
+				return;
+		}
+		
 		long t0 = System.nanoTime();
 		if (_outdir == null) {
 			_outdir = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_LINEAGE);
@@ -316,12 +331,12 @@ public class LineageCacheEviction
 		
 		// Add all the entries associated with this matrix to spillList.
 		if (entry._origItem == null) {
-			_spillList.put(entry._key, new SpilledItem(outfile));
+			entry.setOutfile(outfile);
 		}
 		else {
 			LineageCacheEntry h = cache.get(entry._origItem); //head
 			while (h != null) {
-				_spillList.put(h._key, new SpilledItem(outfile));
+				h.setOutfile(outfile);
 				h = h._nextEntry;
 			}
 		}
@@ -336,19 +351,20 @@ public class LineageCacheEviction
 		if (cache.get(key) == null)
 			throw new DMLRuntimeException ("Spilled item should present in cache. Key: "+key);
 
+		LineageCacheEntry e = cache.get(key);
 		long t0 = System.nanoTime();
 		MatrixBlock mb = null;
 		// Read from local FS
 		try {
-			mb = LocalFileUtils.readMatrixBlockFromLocal(_spillList.get(key)._outfile);
-		} catch (IOException e) {
-			throw new DMLRuntimeException ("Read from " + _spillList.get(key)._outfile + " failed.", e);
+			mb = LocalFileUtils.readMatrixBlockFromLocal(e.getOutfile());
+		} catch (IOException exp) {
+			throw new DMLRuntimeException ("Read from " + e.getOutfile() + " failed.", exp);
 		}
-		LocalFileUtils.deleteFileIfExists(_spillList.get(key)._outfile, true);
+		// Keep the entry in disk to save re-spilling.
+		//LocalFileUtils.deleteFileIfExists(_spillList.get(key)._outfile, true);
 		long t1 = System.nanoTime();
 
 		// Restore to cache
-		LineageCacheEntry e = cache.get(key);
 		e.setValue(mb);
 		if (e._origItem != null) {
 			// Restore to all the entries having the same data.
@@ -365,30 +381,10 @@ public class LineageCacheEviction
 		// Adjust disk reading speed
 		adjustReadWriteSpeed(e, ((double)(t1-t0))/1000000000, true);
 		// TODO: set cache status as RELOADED for this entry
-		_spillList.remove(key);
 		if (DMLScript.STATISTICS) {
 			LineageCacheStatistics.incrementFSReadTime(t1-t0);
 			LineageCacheStatistics.incrementFSHits();
 		}
 		return cache.get(key);
-	}
-	
-	protected static boolean spillListContains(LineageItem key) {
-		return _spillList.containsKey(key);
-	}
-
-	// ---------------- INTERNAL DATA STRUCTURES FOR EVICTION -----------------
-
-	// TODO: Remove this class, and add outfile to LineageCacheEntry.
-	private static class SpilledItem {
-		String _outfile;
-		//long _computeTime;
-		//protected LineageItem _origItem;
-
-		public SpilledItem(String outfile) {
-			_outfile = outfile;
-			//_computeTime = computetime;
-			//_origItem = origItem;
-		}
 	}
 }

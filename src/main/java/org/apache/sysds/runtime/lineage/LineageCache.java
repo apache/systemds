@@ -62,6 +62,7 @@ public class LineageCache
 	static {
 		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		LineageCacheEviction.setCacheLimit((long)(CACHE_FRAC * maxMem));
+		LineageCacheEviction.setStartTimestamp();
 	}
 	
 	// Cache Synchronization Approach:
@@ -220,7 +221,7 @@ public class LineageCache
 	
 	public static boolean probe(LineageItem key) {
 		//TODO problematic as after probe the matrix might be kicked out of cache
-		boolean p = (_cache.containsKey(key) || LineageCacheEviction.spillListContains(key));
+		boolean p = _cache.containsKey(key);  // in cache or in disk
 		if (!p && DMLScript.STATISTICS && LineageCacheEviction._removelist.contains(key))
 			// The sought entry was in cache but removed later 
 			LineageCacheStatistics.incrementDelHits();

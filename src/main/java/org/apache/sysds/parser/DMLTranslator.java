@@ -1812,6 +1812,10 @@ public class DMLTranslator
 				target.setDataType(DataType.MATRIX);
 				target.setValueType(ValueType.FP64);
 			}
+			else if(left.getDataType() == DataType.FRAME || right.getDataType() == DataType.FRAME) {
+				target.setDataType(DataType.FRAME);
+				target.setValueType(ValueType.BOOLEAN);
+			}
 			else {
 				// Added to support scalar relational comparison
 				target.setDataType(DataType.SCALAR);

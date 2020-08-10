@@ -224,6 +224,11 @@ public class LineageCacheConfig
 				break;
 			case HYBRID:
 				WEIGHTS[0] = 1; WEIGHTS[1] = 0.0033;
+				// FIXME: Relative timestamp fix reduces the absolute
+				// value of the timestamp component of the scoring function
+				// to a comparatively much smaller number. W[1] needs to be
+				// re-tuned accordingly.
+				// TODO: Automatic tuning of weights.
 				break;
 		}
 		_cachepolicy = policy;

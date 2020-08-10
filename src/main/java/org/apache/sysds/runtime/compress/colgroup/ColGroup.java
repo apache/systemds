@@ -268,7 +268,45 @@ public abstract class ColGroup implements Serializable {
 	 * @param result  matrix block result
 	 * @param numVals The Number of values contained in the Column.
 	 */
-	public abstract void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals);
+	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals);
+
+	/**
+	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
+	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	 * 
+	 * @param vector  row vector
+	 * @param result  matrix block result
+	 * @param numVals The Number of values contained in the Column.
+	 * @param values  The materialized list of values contained in the dictionary.
+	 */
+	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values);	
+	
+	// /**
+	//  * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
+	//  * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	//  * 
+	//  * @param vector  row vector
+	//  * @param result  matrix block result
+	//  * @param numVals The Number of values contained in the Column.
+	//  * @param values  The materialized list of values contained in the dictionary.
+	//  */
+	// public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, byte[] values);
+
+	/**
+	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
+	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	 * 
+	 * @param matrix  row vector
+	 * @param result  matrix block result
+	 * @param numVals The Number of values contained in the Column.
+	 * @param values  The materialized list of values contained in the dictionary.
+	 * @param numRows The number of rows in the matrix input
+	 * @param numCols The number of columns in the colGroups parent matrix.
+	 * 
+	 */
+	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int numRows, int numCols, int rl, int ru);	
+	
+
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual

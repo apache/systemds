@@ -113,6 +113,10 @@ public abstract class ColGroupValue extends ColGroup {
 		return _dict.getValues();
 	}
 
+	public byte[] getByteValues() {
+		return ((QDictionary)_dict).getValuesByte();
+	}
+
 	@Override
 	public MatrixBlock getValuesAsBlock() {
 		final double[] values = getValues();

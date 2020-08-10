@@ -43,7 +43,8 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	enum AggType {
-		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN, MEAN
+		ROWSUMS, COLSUMS, SUM, ROWSUMSSQ, COLSUMSSQ, SUMSQ, ROWMAXS, COLMAXS, MAX, ROWMINS, COLMINS, MIN, MEAN, COLMEAN,
+		ROWMEAN
 	}
 
 	@Test
@@ -106,11 +107,18 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 		testUnaryOperators(AggType.MIN);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void testUnaryOperator_MEAN() {
-		// if Input was not compressed then just pass test
-		if(!(cmb instanceof CompressedMatrixBlock))
-			throw new NotImplementedException("Test Passed");
+		testUnaryOperators(AggType.MEAN);
+	}
+
+	@Test
+	public void testUnaryOperator_COLMEAN() {
+		testUnaryOperators(AggType.MEAN);
+	}
+
+	@Test
+	public void testUnaryOperator_ROWMEAN() {
 		testUnaryOperators(AggType.MEAN);
 	}
 
@@ -142,6 +150,10 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", threads);
 			case MEAN:
 				return InstructionUtils.parseBasicAggregateUnaryOperator("uamean", threads);
+			case ROWMEAN:
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uarmean", threads);
+			case COLMEAN:
+				return InstructionUtils.parseBasicAggregateUnaryOperator("uacmean", threads);
 			default:
 				throw new NotImplementedException("Not Supported Aggregate Unary operator in test");
 		}
@@ -181,15 +193,25 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 				}
 				else if(aggType == AggType.SUM) {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * cols * rows, css);
-
+				}
+				else if(aggType == AggType.MEAN) {
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * cols * rows, css);
+				}
+				else if(aggType == AggType.ROWMEAN) {
+					TestUtils.compareMatrices(d1, d2, lossyTolerance, css);
 				}
 				else {
 					boolean ignoreZero = true;
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.1, 0.9, css, ignoreZero);
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, ignoreZero);
 				}
 			}
 			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 30, css);
+				if(aggType == AggType.ROWMEAN) {
+					TestUtils.compareMatrices(d1, d2, 0.0001, css);
+				}
+				else {
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 30, css);
+				}
 			}
 		}
 		catch(NotImplementedException e) {

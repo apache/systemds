@@ -274,6 +274,25 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
+	public void leftMultByRowVector(double[] vector, double[] c, int numVals) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] vector, double[] c, int numVals, double[] values) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, byte[] values) {
+	// 	throw new NotImplementedException("Should not be called use other matrix function");
+	// }
+
+	@Override
+	public void leftMultByMatrix(double[] vector, double[] c, int numVals, double[] values, int numRows, int numCols, int rl, int ru) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
 	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
 		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
 		LibMatrixMult.matrixMult(vector, _data, pret);

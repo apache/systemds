@@ -358,12 +358,15 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
-		double[] a = ColGroupConverter.getDenseVector(vector);
-		double[] c = result.getDenseBlockValues();
-		final int numCols = getNumCols();
-		// final int numVals = getNumValues();
+	public void leftMultByRowVector(double[] a, double[] c, int numVals) {
+		numVals = (numVals == -1) ? getNumValues() : numVals;
 		final double[] values = getValues();
+		leftMultByRowVector(a, c, numVals, values);
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
+		final int numCols = getNumCols();
 
 		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
 			final int blksz = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
@@ -427,6 +430,89 @@ public class ColGroupRLE extends ColGroupOffset {
 			}
 		}
 	}
+
+	@Override
+	public void leftMultByMatrix(double[] a, double[] c, int numVals, double[] values, int numRows, int numCols, int rl,
+		int ru) {
+		// throw new NotImplementedException();
+		final int thisNumCols = getNumCols();
+
+		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
+			final int blksz = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
+
+			// double[] aRow = new double[a.length / numRows];
+			// step 1: prepare position and value arrays
+			int[] astart = new int[numVals];
+			for(int i = rl, off =0; i < ru; i++, off += _numRows) {
+				// System.arraycopy(a, (a.length / numRows) * i, aRow, 0, a.length / numRows);
+				// current pos per OLs / output values
+				int[] apos = allocIVector(numVals, true);
+				double[] cvals = allocDVector(numVals, true);
+
+				// step 2: cache conscious matrix-vector via horizontal scans
+				for(int ai = 0; ai < _numRows; ai += blksz) {
+					int aimax = Math.min(ai + blksz, _numRows);
+
+					// horizontal scan, incl pos maintenance
+					for(int k = 0; k < numVals; k++) {
+						int boff = _ptr[k];
+						int blen = len(k);
+						int bix = apos[k];
+						int start = astart[k];
+
+						// compute partial results, not aligned
+						while(bix < blen & start < aimax) {
+							start += _data[boff + bix];
+							int len = _data[boff + bix + 1];
+							cvals[k] += LinearAlgebraUtils.vectSum(a, start + off, len);
+							start += len;
+							bix += 2;
+						}
+
+						apos[k] = bix;
+						astart[k] = start;
+					}
+				}
+
+				// step 3: scale partial results by values and write to global output
+				for(int k = 0, valOff = 0; k < numVals; k++, valOff += thisNumCols)
+					for(int j = 0; j < thisNumCols; j++){
+
+						int colIx = _colIndexes[j] + i * numCols;
+						c[colIx] += cvals[k] * values[valOff + j];
+					}
+			}
+		}
+		else {
+			// iterate over all values and their bitmaps
+			for(int i = rl, off = 0; i < ru; i++, off += _numRows) {
+				for(int k = 0, valOff = 0; k < numVals; k++, valOff += thisNumCols) {
+					int boff = _ptr[k];
+					int blen = len(k);
+
+					double vsum = 0;
+					int curRunEnd = 0;
+					for(int bix = 0; bix < blen; bix += 2) {
+						int curRunStartOff = curRunEnd + _data[boff + bix];
+						int curRunLen = _data[boff + bix + 1];
+						vsum += LinearAlgebraUtils.vectSum(a, curRunStartOff + off, curRunLen);
+						curRunEnd = curRunStartOff + curRunLen;
+					}
+
+					for(int j = 0; j < thisNumCols; j++) {
+						int colIx = _colIndexes[j] + i * numCols;
+						// scale partial results by values and write results
+						c[colIx] += vsum * values[valOff + j];
+					}
+				}
+			}
+		}
+	}
+
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, byte[] values) {
+	// throw new NotImplementedException("Not Implemented Byte fore OLE");
+	// }
 
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {
@@ -525,7 +611,11 @@ public class ColGroupRLE extends ColGroupOffset {
 						curRunStartOff = curRunEnd + _data[boff + bix];
 						curRunEnd = curRunStartOff + _data[boff + bix + 1];
 						for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++) {
+<<<<<<< HEAD
 							setandExecute(c, kbuff, kplus2, val, rix * 2);
+=======
+							setandExecute(c, kbuff, kplus2, val, rix * (2 + (mean ? 1 : 0)));
+>>>>>>> a678aed12... Different parallelization scheme
 						}
 					}
 				}

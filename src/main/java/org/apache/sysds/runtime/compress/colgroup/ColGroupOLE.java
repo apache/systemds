@@ -379,13 +379,16 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
-		double[] a = ColGroupConverter.getDenseVector(vector);
-		double[] c = result.getDenseBlockValues();
+	public void leftMultByRowVector(double[] a, double[] c, int numVals) {
+		numVals = (numVals == -1) ? getNumValues() : numVals;
+		final double[] values = getValues();
+		leftMultByRowVector(a, c, numVals, values);
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
-		// final int numVals = getNumValues();
-		final double[] values = getValues();
 
 		if(numVals >= 1 && _numRows > blksz) {
 			// cache blocking config (see matrix-vector mult for explanation)
@@ -445,6 +448,87 @@ public class ColGroupOLE extends ColGroupOffset {
 			}
 		}
 	}
+
+	@Override
+	public void leftMultByMatrix(double[] a, double[] c, int numVals, double[] values, int numRows, int numCols, int rl,
+		int ru) {
+		// throw new NotImplementedException();
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int thisNumCols = getNumCols();
+
+		if(numVals >= 1 && _numRows > blksz) {
+
+			// cache blocking config (see matrix-vector mult for explanation)
+			final int blksz2 = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
+
+			// step 1: prepare position and value arrays
+
+			// current pos per OLs / output values
+			int[] apos = allocIVector(numVals, true);
+			double[] cvals = allocDVector(numVals, true);
+
+			for(int i = rl, off = 0; i < ru; i++, off += _numRows) {
+				// step 2: cache conscious matrix-vector via horizontal scans
+				for(int ai = 0; ai < _numRows; ai += blksz2) {
+					int aimax = Math.min(ai + blksz2, _numRows);
+
+					// horizontal segment scan, incl pos maintenance
+					for(int k = 0; k < numVals; k++) {
+						int boff = _ptr[k];
+						int blen = len(k);
+						int bix = apos[k];
+						double vsum = 0;
+
+						for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
+							// prepare length, start, and end pos
+							int len = _data[boff + bix];
+							int pos = boff + bix + 1;
+
+							// iterate over bitmap blocks and compute partial results (a[i]*1)
+							vsum += LinearAlgebraUtils.vectSum(a, _data, ii+ off, pos, len);
+							bix += len + 1;
+						}
+
+						apos[k] = bix;
+						cvals[k] += vsum;
+					}
+				}
+
+				// step 3: scale partial results by values and write to global output
+				for(int k = 0, valOff = 0; k < numVals; k++, valOff += thisNumCols)
+					for(int j = 0; j < thisNumCols; j++){
+						int colIx = _colIndexes[j] + i * numCols;
+						c[colIx] += cvals[k] * values[valOff + j];
+					}
+			}
+		}
+		else {
+
+			for(int i = rl, offR = 0; i < ru; i++, offR += _numRows) {
+				for(int k = 0, valOff = 0; k < numVals; k++, valOff += thisNumCols) {
+					int boff = _ptr[k];
+					int blen = len(k);
+
+					// iterate over bitmap blocks and add partial results
+					double vsum = 0;
+					for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
+						vsum += LinearAlgebraUtils.vectSum(a, _data, off + offR, boff + bix + 1, _data[boff + bix]);
+
+					// scale partial results by values and write results
+
+					for(int j = 0; j < thisNumCols; j++) {
+						int colIx = _colIndexes[j] + i * numCols;
+						c[colIx] += vsum * values[valOff + j];
+					}
+				}
+			}
+		}
+	}
+
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, byte[] values) {
+	// throw new NotImplementedException("Not Implemented Byte fore OLE");
+	// }
 
 	@Override
 	protected final void computeSum(double[] c, KahanFunction kplus) {

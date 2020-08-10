@@ -140,7 +140,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru) {
+	protected void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean) {
 		final int numVals = getNumValues();
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
@@ -150,7 +150,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		for(int rix = rl; rix < ru; rix++) {
 			int index = getIndex(rix);
 			if(index != numVals) {
-				setandExecute(c, kbuff, kplus2, vals[index], rix * 2);
+				setandExecute(c, kbuff, kplus2, vals[index], rix * (2 + (mean ? 1 : 0)));
 			}
 		}
 	}
@@ -173,36 +173,19 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		}
 	}
 
-	protected final void postScaling(double[] vals, double[] c, int numVals) {
-		final int ncol = getNumCols();
-		// final int numVals = getNumValues();
+	public void postScaling(double[] values, double[] vals, double[] c, int numVals) {
+		postScaling(values, vals, c, numVals, 0, 0);
+	}
 
-		if(_dict instanceof QDictionary) {
-			QDictionary d = (QDictionary) _dict;
-			byte[] values = d.getValuesByte();
+	public void postScaling(double[] values, double[] vals, double[] c, int numVals, int i, int totalCols) {
+		final int ncol = getNumCols();
+
+		for(int j = 0; j < ncol; j++) {
+			int colIx = _colIndexes[j] + i * totalCols;
 			for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol) {
 				double aval = vals[k];
 				if(valOff != numVals) {
-					for(int j = 0; j < ncol; j++) {
-						int colIx = _colIndexes[j];
-						c[colIx] += aval * values[valOff + j];
-					}
-				}
-			}
-			for(int j = 0; j < ncol; j++) {
-				int colIx = _colIndexes[j];
-				c[colIx] = c[colIx] * d._scale;
-			}
-		}
-		else {
-			double[] values = getValues();
-			for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol) {
-				double aval = vals[k];
-				if(valOff != numVals) {
-					for(int j = 0; j < ncol; j++) {
-						int colIx = _colIndexes[j];
-						c[colIx] += aval * values[valOff + j];
-					}
+					c[colIx] += aval * values[valOff + j];
 				}
 			}
 		}
@@ -248,34 +231,101 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
-		double[] a = ColGroupConverter.getDenseVector(vector);
-		double[] c = result.getDenseBlockValues();
-		numVals = (numVals == -1) ? getNumValues(): numVals;
+	public void leftMultByMatrix(double[] a, double[] c, int numVals, double[] values, int numRows, int numCols, int rl,
+		int ru, int voff) {
+		numVals = (numVals == -1) ? getNumValues() : numVals;
 
-		if(8 * numVals < _numRows) {
-			// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
-			// temporary array also avoids false sharing in multi-threaded environments
-			double[] vals = allocDVector(numVals, true);
+		for(int i = rl, j = voff; i < ru; i++, j++) {
+			if(8 * numVals < _numRows) {
+				// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
+				// temporary array also avoids false sharing in multi-threaded environments
+				double[] vals = preAggregate(a, numVals, j);
+				postScaling(values, vals, c, numVals, i, numCols);
+			}
+			else {
+				for(int k = 0, aOff = j  *_numRows; k < _numRows; k++, aOff++) {
+					double aval = a[aOff];
+					if(aval != 0) {
+						int valOff = getIndex(k) * _colIndexes.length;
+						if(valOff != numVals) {
+							for(int h = 0; h < _colIndexes.length; h++) {
+								int colIx = _colIndexes[h] + i * numCols;
+								c[colIx] += aval * values[valOff + h];
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] a, double[] result, int numVals) {
+		numVals = (numVals == -1) ? getNumValues() : numVals;
+		double[] values = getValues();
+
+		leftMultByRowVector(a, result, numVals, values);
+
+	}
+
+	public double[] preAggregate(double[] a, int numVals) {
+		return preAggregate(a, numVals, 0);
+	}
+
+	/**
+	 * Pre aggregates a specific row from the input a which can be a row or a matrix.
+	 * 
+	 * @param a       the input vector or matrix to multiply with
+	 * @param numVals the number of values contained in the dictionary
+	 * @param aRows   the row index from a
+	 * @return the pre-aggregated values.
+	 */
+	public double[] preAggregate(double[] a, int numVals, int aRows) {
+		double[] vals;
+		if(aRows > 0) {
+			vals = allocDVector(numVals, true);
+			// int off = _numRows * aRows;
+			for(int i = 0, off = _numRows * aRows; i < _numRows; i++, off++) {
+				int index = getIndex(i);
+				if(index != numVals) { // Since we know that multiplying with 0 is .. 0 don't begin to aggregate.
+					vals[index] += a[off];
+				}
+			}
+		}
+		else {
+			vals = allocDVector(numVals, true);
 			for(int i = 0; i < _numRows; i++) {
 				int index = getIndex(i);
 				if(index != numVals) { // Since we know that multiplying with 0 is .. 0 don't begin to aggregate.
 					vals[index] += a[i];
 				}
 			}
-			postScaling(vals, c, numVals);
+		}
+		return vals;
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
+		// double[] c = result.getDenseBlockValues();
+		numVals = (numVals == -1) ? getNumValues() : numVals;
+
+		if(8 * numVals < _numRows) {
+			// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
+			// temporary array also avoids false sharing in multi-threaded environments
+			double[] vals = preAggregate(a, numVals);
+			postScaling(values, vals, c, numVals);
 		}
 		else {
 			// iterate over codes, compute all, and add to the result
-			double[] values = getValues();
 			for(int i = 0; i < _numRows; i++) {
 				double aval = a[i];
 				if(aval != 0)
 					for(int j = 0, valOff = getIndex(i) * _colIndexes.length; j < _colIndexes.length; j++)
-						c[_colIndexes[j]] += aval * values[valOff + j];
+						if(valOff != numVals) {
+							c[_colIndexes[j]] += aval * values[valOff + j];
+						}
 			}
 		}
-
 	}
 
 	@Override

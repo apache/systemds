@@ -111,7 +111,7 @@ public class CompressedMatrixBlockFactory {
 		LOG.debug("--compression phase 1: " + _stats.getLastTimePhase());
 
 		if(sizeInfos.colsC.isEmpty()) {
-			LOG.warn("Abort block compression because all columns are incompressible.");
+			LOG.info("Abort block compression because all columns are incompressible.");
 			return new ImmutablePair<>(new MatrixBlock().copyShallow(mb), _stats);
 		}
 		// --------------------------------------------------
@@ -168,7 +168,7 @@ public class CompressedMatrixBlockFactory {
 		_stats.ratio = _stats.originalSize / (double) _stats.size;
 
 		if(_stats.ratio < 1) {
-			LOG.warn("Abort block compression because compression ratio is less than 1.");
+			LOG.info("Abort block compression because compression ratio is less than 1.");
 			return new ImmutablePair<>(new MatrixBlock().copyShallow(mb), _stats);
 		}
 
@@ -179,7 +179,7 @@ public class CompressedMatrixBlockFactory {
 		_stats.setNextTimePhase(time.stop());
 		_stats.setColGroupsCounts(colGroupList);
 
-		LOG.info("--num col groups: " + colGroupList.size() + ", -- num input cols: " + numCols);
+		LOG.debug("--num col groups: " + colGroupList.size() + ", -- num input cols: " + numCols);
 		LOG.debug("--compression phase 5: " + _stats.getLastTimePhase());
 		LOG.debug("--col groups types " + _stats.getGroupsTypesString());
 		LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());

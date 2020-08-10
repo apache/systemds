@@ -100,8 +100,15 @@ public class LineageDedupUtils {
 		ArrayList<String> inputnames = fpb.getStatementBlock().getInputstoSB();
 		LineageItem[] liinputs = LineageItemUtils.getLineageItemInputstoSB(inputnames, ec);
 		// TODO: find the inputs from the ProgramBlock instead of StatementBlock
-		for (int i=0; i<liinputs.length; i++)
-			_tmpLineage.set(inputnames.get(i), liinputs[i]);
+		String ph = LineageItemUtils.LPLACEHOLDER;
+		for (int i=0; i<liinputs.length; i++) {
+			// Wrap the inputs with order-preserving placeholders.
+			// An alternative way would be to replace the non-literal leaves with 
+			// placeholders after each iteration, but that requires a full DAG
+			// traversal after each iteration.
+			LineageItem phInput = new LineageItem(ph+String.valueOf(i), new LineageItem[] {liinputs[i]});
+			_tmpLineage.set(inputnames.get(i), phInput);
+		}
 		// also copy the dedupblock to trace the taken path (bitset)
 		_tmpLineage.setDedupBlock(ldb);
 		// attach the lineage object to the execution context

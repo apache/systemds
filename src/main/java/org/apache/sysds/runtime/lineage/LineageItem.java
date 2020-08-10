@@ -71,6 +71,10 @@ public class LineageItem {
 	public LineageItem(long id, LineageItem li) {
 		this(id, li._data, li._opcode, li._inputs);
 	}
+
+	public LineageItem(long id, String data, String opcode) {
+		this(id, data, opcode, null);
+	}
 	
 	public LineageItem(long id, String data, String opcode, LineageItem[] inputs) {
 		_id = id;

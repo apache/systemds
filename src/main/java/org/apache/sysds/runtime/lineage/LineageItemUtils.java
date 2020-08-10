@@ -65,6 +65,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
@@ -80,6 +81,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.Explain;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,7 +98,8 @@ import java.util.stream.Collectors;
 public class LineageItemUtils {
 	
 	private static final String LVARPREFIX = "lvar";
-	private static final String LPLACEHOLDER = "IN#";
+	public static final String LPLACEHOLDER = "IN#";
+	public static final String DEDUP_DELIM = "_";
 	
 	public static LineageItemType getType(String str) {
 		if (str.length() == 1) {
@@ -649,6 +652,36 @@ public class LineageItemUtils {
 			}
 		
 		item.setVisited();
+	}
+	
+	public static String mergeExplainDedupBlocks(ExecutionContext ec) {
+		Map<ProgramBlock, LineageDedupBlock> dedupBlocks = ec.getLineage().getDedupBlocks();
+		StringBuilder sb = new StringBuilder();
+		// Gather all the DAG roots of all the paths in all the loops.
+		for (Map.Entry<ProgramBlock, LineageDedupBlock> dblock : dedupBlocks.entrySet()) {
+			if (dblock.getValue() != null) {
+				String forKey = dblock.getKey().getStatementBlock().getName();
+				LineageDedupBlock dedup = dblock.getValue();
+				for (Map.Entry<Long, LineageMap> patch : dedup.getPathMaps().entrySet()) {
+					for (Map.Entry<String, LineageItem> root : patch.getValue().getTraces().entrySet()) {
+						// Encode all the information in the headers that're
+						// needed by the deserialization logic.
+						sb.append("patch");
+						sb.append(DEDUP_DELIM);
+						sb.append(root.getKey());
+						sb.append(DEDUP_DELIM);
+						sb.append(forKey);
+						sb.append(DEDUP_DELIM);
+						sb.append(patch.getKey());
+						sb.append("\n");
+						sb.append(Explain.explain(root.getValue()));
+						sb.append("\n");
+						
+					}
+				}
+			}
+		}
+		return sb.toString();
 	}
 	
 	public static LineageItem replace(LineageItem root, LineageItem liOld, LineageItem liNew) {

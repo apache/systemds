@@ -274,9 +274,23 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int numVals) {
-		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
-		LibMatrixMult.matrixMult(vector, _data, pret);
+	public void leftMultByRowVector(double[] vector, double[] c, int numVals) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
+	@Override
+	public void leftMultByRowVector(double[] vector, double[] c, int numVals, double[] values) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
+	@Override
+	public void leftMultByMatrix(double[] vector, double[] c, int numVals, double[] values, int numRows, int numCols, int rl, int ru, int vOff) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result) {
+		MatrixBlock pret = new MatrixBlock(matrix.getNumRows(), _colIndexes.length, false);
+		LibMatrixMult.matrixMult(matrix, _data, pret);
 
 		// copying partialResult to the proper indices of the result
 		if(!pret.isEmptyBlock(false)) {
@@ -286,24 +300,6 @@ public class ColGroupUncompressed extends ColGroup {
 			result.recomputeNonZeros();
 		}
 	}
-
-	// @Override
-	// public void leftMultByRowVector(ColGroupDDC vector, MatrixBlock result) {
-	// 	throw new NotImplementedException();
-	// }
-
-	// public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
-	// 	MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
-	// 	LibMatrixMult.matrixMult(vector, _data, pret, k);
-
-	// 	// copying partialResult to the proper indices of the result
-	// 	if(!pret.isEmptyBlock(false)) {
-	// 		double[] rsltArr = result.getDenseBlockValues();
-	// 		for(int colIx = 0; colIx < _colIndexes.length; colIx++)
-	// 			rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
-	// 		result.recomputeNonZeros();
-	// 	}
-	// }
 
 	@Override
 	public ColGroup scalarOperation(ScalarOperator op) {

@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
@@ -111,6 +112,10 @@ public abstract class ColGroupValue extends ColGroup {
 	@Override
 	public double[] getValues() {
 		return _dict.getValues();
+	}
+
+	public byte[] getByteValues() {
+		return ((QDictionary)_dict).getValuesByte();
 	}
 
 	@Override
@@ -263,14 +268,15 @@ public abstract class ColGroupValue extends ColGroup {
 	@Override
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
 		// sum and sumsq (reduceall/reducerow over tuples and counts)
-		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq) {
-			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus) ? KahanPlus
+		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq || op.aggOp.increOp.fn  instanceof Mean) {
+			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof Mean) ? KahanPlus
 				.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
+			boolean mean = op.aggOp.increOp.fn  instanceof Mean;
 
 			if(op.indexFn instanceof ReduceAll)
 				computeSum(c, kplus);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, kplus, rl, ru);
+				computeRowSums(c, kplus, rl, ru, mean);
 			else if(op.indexFn instanceof ReduceRow)
 				computeColSums(c, kplus);
 		}
@@ -406,7 +412,7 @@ public abstract class ColGroupValue extends ColGroup {
 
 	protected abstract void computeSum(double[] c, KahanFunction kplus);
 
-	protected abstract void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru);
+	protected abstract void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean);
 
 	protected abstract void computeColSums(double[] c, KahanFunction kplus);
 

@@ -41,7 +41,10 @@ import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
+import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -277,6 +280,7 @@ public class FrameBlock implements CacheBlock, Externalizable
 				case BOOLEAN: _coldata[j] = new BooleanArray(new boolean[numRows]); break;
 				case INT32:   _coldata[j] = new IntegerArray(new int[numRows]); break;
 				case INT64:   _coldata[j] = new LongArray(new long[numRows]); break;
+				case FP32:   _coldata[j] = new FloatArray(new float[numRows]); break;
 				case FP64:   _coldata[j] = new DoubleArray(new double[numRows]); break;
 				default: throw new RuntimeException("Unsupported value type: "+_schema[j]);
 			}
@@ -702,6 +706,8 @@ public class FrameBlock implements CacheBlock, Externalizable
 				case BOOLEAN: arr = new BooleanArray(new boolean[_numRows]); break;
 				case INT64:     arr = new LongArray(new long[_numRows]); break;
 				case FP64:  arr = new DoubleArray(new double[_numRows]); break;
+				case INT32: arr = new IntegerArray(new int[_numRows]); break;
+				case FP32:  arr = new FloatArray(new float[_numRows]); break;
 				default: throw new IOException("Unsupported value type: "+vt);
 			}
 			arr.readFields(in);
@@ -835,6 +841,79 @@ public class FrameBlock implements CacheBlock, Externalizable
 			return 0;
 		return 16 + 4 + 8 //object, hash, array ref
 			+ 32 + value.length();     //char array 
+	}
+	
+	/**
+	 *  This method performs the value comparison on two frames
+	 *  if the values in both frames are equal, not equal, less than, greater than, less than/greater than and equal to
+	 *  the output frame will store boolean value for each each comparison
+	 *
+	 *  @param bop binary operator
+	 *  @param that frame block of rhs of m * n dimensions
+	 *  @param out output frame block
+	 *  @return a boolean frameBlock
+	 */
+	public FrameBlock binaryOperations(BinaryOperator bop, FrameBlock that, FrameBlock out) {
+		if(getNumColumns() != that.getNumColumns() && getNumRows() != that.getNumColumns())
+			throw new DMLRuntimeException("Frame dimension mismatch "+getNumRows()+" * "+getNumColumns()+
+				" != "+that.getNumRows()+" * "+that.getNumColumns());
+		String[][] outputData = new String[getNumRows()][getNumColumns()];
+
+		//compare output value, incl implicit type promotion if necessary
+		if( !(bop.fn instanceof ValueComparisonFunction) )
+			throw new DMLRuntimeException("Unsupported binary operation on frames (only comparisons supported)");
+		ValueComparisonFunction vcomp = (ValueComparisonFunction) bop.fn;
+
+		for (int i = 0; i < getNumColumns(); i++) {
+			if (getSchema()[i] == ValueType.STRING || that.getSchema()[i] == ValueType.STRING) {
+				for (int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(this, that, outputData, j, i))
+						continue;
+					String v1 = UtilFunctions.objectToString(get(j, i));
+					String v2 = UtilFunctions.objectToString(that.get(j, i));
+					outputData[j][i] = String.valueOf(vcomp.compare(v1, v2));
+				}
+			}
+			else if (getSchema()[i] == ValueType.FP64 || that.getSchema()[i] == ValueType.FP64 ||
+					getSchema()[i] == ValueType.FP32 || that.getSchema()[i] == ValueType.FP32) {
+				for (int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(this, that, outputData, j, i))
+						continue;
+					ScalarObject so1 = new DoubleObject(Double.parseDouble(get(j, i).toString()));
+					ScalarObject so2 = new DoubleObject(Double.parseDouble(that.get(j, i).toString()));
+					outputData[j][i] = String.valueOf(vcomp.compare(so1.getDoubleValue(), so2.getDoubleValue()));
+				}
+			}
+			else if (getSchema()[i] == ValueType.INT64 || that.getSchema()[i] == ValueType.INT64 ||
+					getSchema()[i] == ValueType.INT32 || that.getSchema()[i] == ValueType.INT32) {
+				for (int j = 0; j < this.getNumRows(); j++) {
+					if(checkAndSetEmpty(this, that, outputData, j, i))
+						continue;
+					ScalarObject so1 = new IntObject(Integer.parseInt(get(j, i).toString()));
+					ScalarObject so2 = new IntObject(Integer.parseInt(that.get(j, i).toString()));
+					outputData[j][i]  = String.valueOf(vcomp.compare(so1.getLongValue(), so2.getLongValue()));
+				}
+			}
+			else {
+				for (int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(this, that, outputData, j, i))
+						continue;
+					ScalarObject so1 = new BooleanObject( Boolean.parseBoolean(get(j, i).toString()));
+					ScalarObject so2 = new BooleanObject( Boolean.parseBoolean(that.get(j, i).toString()));
+					outputData[j][i] = String.valueOf(vcomp.compare(so1.getBooleanValue(), so2.getBooleanValue()));
+				}
+			}
+		}
+
+		return new FrameBlock(UtilFunctions.nCopies(this.getNumColumns(), ValueType.BOOLEAN), outputData);
+	}
+	
+	private static boolean checkAndSetEmpty(FrameBlock fb1, FrameBlock fb2, String[][] out, int r, int c) {
+		if(fb1.get(r, c) == null || fb2.get(r, c) == null) {
+			out[r][c] = (fb1.get(r, c) == null && fb2.get(r, c) == null) ? "true" : "false";
+			return true;
+		}
+		return false;
 	}
 	
 	///////

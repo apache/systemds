@@ -140,7 +140,9 @@ public class RelationalExpression extends Expression
 		output.setParseInfo(this);
 		
 		boolean isLeftMatrix = (_left.getOutput() != null && _left.getOutput().getDataType() == DataType.MATRIX);
-		boolean isRightMatrix = (_right.getOutput() != null && _right.getOutput().getDataType() == DataType.MATRIX); 
+		boolean isRightMatrix = (_right.getOutput() != null && _right.getOutput().getDataType() == DataType.MATRIX);
+		boolean isLeftFrame = (_left.getOutput() != null && _left.getOutput().getDataType() == DataType.FRAME);
+		boolean isRightFrame = (_right.getOutput() != null && _right.getOutput().getDataType() == DataType.FRAME);
 		if(isLeftMatrix || isRightMatrix) {
 			// Added to support matrix relational comparison
 			if(isLeftMatrix && isRightMatrix) {
@@ -154,6 +156,15 @@ public class RelationalExpression extends Expression
 			//since SystemDS only supports double matrices, the value type is forced to
 			//double; once we support boolean matrices this needs to change
 			output.setValueType(ValueType.FP64);
+		}
+		else if(isLeftFrame && isRightFrame) {
+			output.setDataType(DataType.FRAME);
+			output.setDimensions(_left.getOutput().getDim1(), _left.getOutput().getDim2());
+			output.setValueType(ValueType.BOOLEAN);
+		}
+		else if( isLeftFrame || isRightFrame ) {
+			raiseValidateError("Unsupported relational expression for mixed types "
+				+_left.getOutput().getDataType().name()+" "+_right.getOutput().getDataType().name());
 		}
 		else {
 			output.setBooleanProperties();

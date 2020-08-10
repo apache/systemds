@@ -293,18 +293,6 @@ public abstract class ColGroupOffset extends ColGroupValue {
 
 	protected abstract boolean[] computeZeroIndicatorVector();
 
-	// protected boolean findZeros(){
-		// boolean[] lind = computeZeroIndicatorVector();
-		// _zeros = false;
-		// for(boolean x : lind){
-		// 	if(x){
-		// 		_zeros = true;
-		// 		break;
-		// 	}
-		// }
-		// return _zeros;
-	// }
-
 	@Override
 	public Iterator<IJV> getIterator(int rl, int ru, boolean inclZeros, boolean rowMajor) {
 		if(rowMajor)

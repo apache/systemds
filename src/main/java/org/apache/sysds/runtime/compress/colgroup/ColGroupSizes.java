@@ -51,16 +51,12 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeDDC(int nrCols, int uniqueVals, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrCols, uniqueVals, lossy);
-		// if(!zeros){
-		// 	size += -nrCols * 8;
-		// }
 		return size;
 	}
 
 	public static long estimateInMemorySizeDDC1(int nrCols, int uniqueVals, int dataLength, boolean lossy) {
 		if(uniqueVals > 255)
 			return Long.MAX_VALUE;
-		// LOG.debug("DD1C: " + nrCols + " nr unique: " + uniqueVals + " DataLength: " + dataLength);
 		long size = estimateInMemorySizeDDC(nrCols, uniqueVals, lossy);
 		size += MemoryEstimates.byteArrayCost(dataLength);
 		return size;
@@ -69,14 +65,12 @@ public class ColGroupSizes {
 	public static long estimateInMemorySizeDDC2(int nrCols, int uniqueVals, int dataLength, boolean lossy) {
 		if(uniqueVals > Character.MAX_VALUE)
 			return Long.MAX_VALUE;
-		// LOG.debug("DD2C: " + nrCols + "nr unique: " + uniqueVals +" datalen: "+ dataLength);
 		long size = estimateInMemorySizeDDC(nrCols, uniqueVals, lossy);
 		size += MemoryEstimates.charArrayCost(dataLength);
 		return size;
 	}
 
 	public static long estimateInMemorySizeOffset(int nrColumns, int nrValues, int pointers, int offsetLength, boolean lossy) {
-		// LOG.debug("OFFSET list: nrC " + nrColumns +"\tnrV " + nrValues + "\tpl "+pointers +"\tdl "+ offsetLength);
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
 		size += MemoryEstimates.intArrayCost(pointers);
 		size += MemoryEstimates.charArrayCost(offsetLength);
@@ -87,8 +81,6 @@ public class ColGroupSizes {
 		nrColumns = nrColumns > 0 ? nrColumns : 1;
 		offsetLength += (nrRows / CompressionSettings.BITMAP_BLOCK_SZ) * 2;
 		long size = 0;
-		// LOG.debug("OLE cols: " + nrColumns + " vals: " + nrValues + " pointers: " + (nrValues / nrColumns + 1)
-		// + " offsetLength: " + (offsetLength) + " runs: " + nrValues / nrColumns);
 		size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues / nrColumns) + 1, offsetLength, lossy);
 		if (nrRows > CompressionSettings.BITMAP_BLOCK_SZ * 2){
 			size += MemoryEstimates.intArrayCost((int) nrValues / nrColumns);
@@ -99,7 +91,6 @@ public class ColGroupSizes {
 	public static long estimateInMemorySizeRLE(int nrColumns, int nrValues, int nrRuns, int nrRows, boolean lossy) {
 		nrColumns = nrColumns > 0 ? nrColumns : 1;
 		int offsetLength = (nrRuns) * 2;
-		// LOG.debug("\n\tRLE cols: " + nrColumns + " vals: " + nrValues + " offsetLength: " + offsetLength);
 		long size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues / nrColumns) + 1, offsetLength, lossy);
 
 		return size;

@@ -24,7 +24,7 @@ package org.apache.sysds.test.component.compress;
  */
 public class TestConstants {
 
-	private static final int rows[] = {4, 2008, 1283, 5, 1, 251, 5000, 100000, 3123};
+	private static final int rows[] = {4, 2008, 1283, 5, 1, 251, 5000, 70000, 3123};
 	private static final int cols[] = {20, 20, 13, 998, 321, 1, 8, 10, 1};
 	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
 

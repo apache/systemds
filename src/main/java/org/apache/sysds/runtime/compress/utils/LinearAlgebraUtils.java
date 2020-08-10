@@ -51,6 +51,7 @@ public class LinearAlgebraUtils {
 		LibMatrixMult.vectAdd(a, c, ai, ci, len);
 	}
 
+
 	public static void vectAdd(final double aval, double[] c, char[] bix, final int bi, final int ci, final int len) {
 		final int bn = len % 8;
 
@@ -69,6 +70,7 @@ public class LinearAlgebraUtils {
 			c[ci + bix[j + 6]] += aval;
 			c[ci + bix[j + 7]] += aval;
 		}
+
 	}
 
 	public static void vectAdd(final double aval, double[] c, final int ci, final int len) {

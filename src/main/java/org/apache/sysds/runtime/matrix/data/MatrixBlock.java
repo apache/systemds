@@ -207,6 +207,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 	
+	public MatrixBlock(int rl, int cl, DenseBlock dBlock){
+		rlen = rl;
+		clen = cl;
+		sparse = false;
+		denseBlock = dBlock;
+	}
+
 	////////
 	// Initialization methods
 	// (reset, init, allocate, etc)

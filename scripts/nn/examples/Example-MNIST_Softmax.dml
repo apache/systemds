@@ -1,0 +1,70 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+* The MNIST Data can be downloaded as follows:
+* mkdir -p data/mnist/
+* cd data/mnist/
+* curl -O https://pjreddie.com/media/files/mnist_train.csv
+* curl -O https://pjreddie.com/media/files/mnist_test.csv
+*/
+
+source("nn/examples/mnist_softmax.dml") as mnist_softmax
+
+# Read training data
+data = read("mnist_data/mnist_train.csv", format="csv")
+n = nrow(data)
+
+# Extract images and labels
+images = data[,2:ncol(data)]
+labels = data[,1]
+
+# Scale images to [0,1], and one-hot encode the labels
+images = images / 255.0
+labels = table(seq(1, n), labels+1, n, 10)
+
+# Split into training (55,000 examples) and validation (5,000 examples)
+X = images[5001:nrow(images),]
+X_val = images[1:5000,]
+y = labels[5001:nrow(images),]
+y_val = labels[1:5000,]
+
+# Train
+epochs = 1
+[W, b] = mnist_softmax::train(X, y, X_val, y_val, epochs)
+
+# Read test data
+data = read("mnist_data/mnist_test.csv", format="csv")
+n = nrow(data)
+
+# Extract images and labels
+X_test = data[,2:ncol(data)]
+y_test = data[,1]
+
+# Scale images to [0,1], and one-hot encode the labels
+X_test = X_test / 255.0
+y_test = table(seq(1, n), y_test+1, n, 10)
+
+# Eval on test set
+probs = mnist_softmax::predict(X_test, W, b)
+[loss, accuracy] = mnist_softmax::eval(probs, y_test)
+
+print("Test Accuracy: " + accuracy)

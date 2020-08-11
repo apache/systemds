@@ -38,6 +38,7 @@ public class NNTest extends MLContextTestBase {
 	public void testNNLibrary() {
 		Script script = dmlFromFile(TEST_SCRIPT);
 		String stdOut = executeAndCaptureStdOut(ml, script).getRight();
+		System.out.println(stdOut);
 		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
 	}
 }

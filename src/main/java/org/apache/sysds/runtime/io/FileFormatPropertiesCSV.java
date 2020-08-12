@@ -21,10 +21,13 @@ package org.apache.sysds.runtime.io;
 
 import java.io.Serializable;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.parser.DataExpression;
 
 public class FileFormatPropertiesCSV extends FileFormatProperties implements Serializable
 {
+	protected static final Log LOG = LogFactory.getLog(FileFormatPropertiesCSV.class.getName());
 	private static final long serialVersionUID = -2870393360885401604L;
 	
 	private boolean header;
@@ -43,6 +46,8 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.fillValue = DataExpression.DEFAULT_DELIM_FILL_VALUE;
 		this.sparse = DataExpression.DEFAULT_DELIM_SPARSE;
 		this.naStrings = null;
+		if( LOG.isDebugEnabled() )
+			LOG.debug("FileFormatPropertiesCSV: " + toString());
 	}
 	
 	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean fill, double fillValue, String naStrings) {
@@ -51,12 +56,16 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 		this.fill = fill;
 		this.fillValue = fillValue;
 		this.naStrings = naStrings;
+		if( LOG.isDebugEnabled() )
+			LOG.debug("FileFormatPropertiesCSV full settings: " + toString());
 	}
 
 	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean sparse) {
 		this.header = hasHeader;
 		this.delim = delim;
 		this.sparse = sparse;
+		if( LOG.isDebugEnabled() )
+			LOG.debug("FileFormatPropertiesCSV medium settings: " + toString());
 	}
 
 	public boolean hasHeader() {
@@ -101,5 +110,16 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 
 	public void setSparse(boolean sparse) {
 		this.sparse = sparse;
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("header " +header);
+		sb.append(" delim " + delim);
+		sb.append(" fill " + fill);
+		sb.append(" fillValue " + fillValue);
+		sb.append(" naStrings " + naStrings);
+		return sb.toString();
 	}
 }

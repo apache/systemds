@@ -131,8 +131,8 @@ public class DMLOptions {
 							dmlOptions.linReuseType = ReuseCacheType.NONE;
 						else if (lineageType.equalsIgnoreCase("policy_lru"))
 							dmlOptions.linCachePolicy = LineageCachePolicy.LRU;
-						else if (lineageType.equalsIgnoreCase("policy_weighted"))
-							dmlOptions.linCachePolicy = LineageCachePolicy.WEIGHTED;
+						else if (lineageType.equalsIgnoreCase("policy_costnsize"))
+							dmlOptions.linCachePolicy = LineageCachePolicy.COSTNSIZE;
 						else if (lineageType.equalsIgnoreCase("policy_hybrid"))
 							dmlOptions.linCachePolicy = LineageCachePolicy.HYBRID;
 						else

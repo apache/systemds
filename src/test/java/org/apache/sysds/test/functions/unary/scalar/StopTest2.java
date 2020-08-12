@@ -19,9 +19,14 @@
 
 package org.apache.sysds.test.functions.unary.scalar;
 
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayOutputStream;
+
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 
 /**
@@ -56,13 +61,10 @@ public class StopTest2 extends AutomatedTestBase
 		programArgs = new String[]{"-args", errMessage};
 		
 		loadTestConfiguration(config);
-		boolean exceptionExpected = false;
-		int expectedNumberOfJobs = 0;
-		
-		setExpectedStdErr(errMessage);
-		setExpectedStdOut(outMessage);
-			
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs); 
+
+		ByteArrayOutputStream stdOut = runTest(true, true, DMLScriptException.class, -1); 
+
+		assertTrue(bufferContainsString(stdOut, outMessage));
 	}
 	
 }

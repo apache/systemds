@@ -82,7 +82,7 @@ public enum Builtins {
 	CUMSUM("cumsum", false),
 	CUMSUMPROD("cumsumprod", false),
 	CONFUSIONMATRIX("confusionMatrix", true),
-	CORRELATIONMATRIX("correlationMatrix", true),
+	COR("cor", true),
 	DBSCAN("dbscan", true),
 	DETECTSCHEMA("detectSchema", false),
 	DIAG("diag", false),

@@ -19,11 +19,11 @@
 
 package org.apache.sysds.test.functions.unary.scalar;
 
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
+import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 
 /**
@@ -205,7 +205,7 @@ public class ExponentTest extends AutomatedTestBase
 		
 		createHelperMatrix();
 		
-		runTest(true, DMLException.class);
+		runTest(true, LanguageException.class);
 	}
 	
 }

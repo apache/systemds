@@ -41,12 +41,10 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
-	private int rows, cols;
-
-	public FederatedMultiplyTest(int rows, int cols) {
-		this.rows = rows;
-		this.cols = cols;
-	}
+	@Parameterized.Parameter()
+	public int rows;
+	@Parameterized.Parameter(1)
+	public int cols;
 
 	@Override
 	public void setUp() {
@@ -57,8 +55,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		Object[][] data = new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}};
-		return Arrays.asList(data);
+		return Arrays.asList(new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}});
 	}
 
 	@Test
@@ -115,12 +112,10 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs",
-			"X1=" + TestUtils.federatedAddress("localhost", port1, input("X1")),
-			"X2=" + TestUtils.federatedAddress("localhost", port2, input("X2")),
-			"Y1=" + TestUtils.federatedAddress("localhost", port1, input("Y1")),
-			"Y2=" + TestUtils.federatedAddress("localhost", port2, input("Y2")), "r=" + rows, "c=" + cols,
-			"hr=" + halfRows, "Z=" + output("Z")};
+		programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files

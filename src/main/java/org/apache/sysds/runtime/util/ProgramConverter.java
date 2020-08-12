@@ -31,17 +31,23 @@ import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
 import org.apache.sysds.parser.IfStatementBlock;
 import org.apache.sysds.parser.ParForStatementBlock;
 import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -91,6 +97,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
@@ -220,7 +227,7 @@ public class ProgramConverter
 	 * @param forceDeepCopy if true, force deep copy
 	 * @return list of program blocks
 	 */
-	public static ArrayList<ProgramBlock> rcreateDeepCopyProgramBlocks(ArrayList<ProgramBlock> childBlocks, long pid, int IDPrefix, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) 
+	public static ArrayList<ProgramBlock> rcreateDeepCopyProgramBlocks(ArrayList<ProgramBlock> childBlocks, long pid, int IDPrefix, Set<String> fnStack, Set<String> fnCreated, boolean plain, boolean forceDeepCopy) 
 	{
 		ArrayList<ProgramBlock> tmp = new ArrayList<>();
 		
@@ -268,20 +275,24 @@ public class ProgramConverter
 		return tmp;
 	}
 
-	public static WhileProgramBlock createDeepCopyWhileProgramBlock(WhileProgramBlock wpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) {
+	public static WhileProgramBlock createDeepCopyWhileProgramBlock(WhileProgramBlock wpb, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain, boolean forceDeepCopy) {
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(wpb.getPredicate(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true);
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
-		tmpPB.setStatementBlock( createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), pid, plain, forceDeepCopy) );
+		StatementBlock sb = ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) ?
+			createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), forceDeepCopy) : wpb.getStatementBlock();
+		tmpPB.setStatementBlock( sb );
 		tmpPB.setThreadID(pid);
 		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
 		tmpPB.setExitInstruction(wpb.getExitInstruction());
 		return tmpPB;
 	}
 
-	public static IfProgramBlock createDeepCopyIfProgramBlock(IfProgramBlock ipb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) {
+	public static IfProgramBlock createDeepCopyIfProgramBlock(IfProgramBlock ipb, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain, boolean forceDeepCopy) {
 		ArrayList<Instruction> predinst = createDeepCopyInstructionSet(ipb.getPredicate(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true);
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
-		tmpPB.setStatementBlock( createIfStatementBlockCopy((IfStatementBlock)ipb.getStatementBlock(), pid, plain, forceDeepCopy ) );
+		StatementBlock sb = ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) ?
+			createIfStatementBlockCopy((IfStatementBlock)ipb.getStatementBlock(), forceDeepCopy ) : ipb.getStatementBlock();
+		tmpPB.setStatementBlock( sb );
 		tmpPB.setThreadID(pid);
 		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
 		tmpPB.setChildBlocksElseBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksElseBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
@@ -289,9 +300,11 @@ public class ProgramConverter
 		return tmpPB;
 	}
 
-	public static ForProgramBlock createDeepCopyForProgramBlock(ForProgramBlock fpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) {
+	public static ForProgramBlock createDeepCopyForProgramBlock(ForProgramBlock fpb, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain, boolean forceDeepCopy) {
 		ForProgramBlock tmpPB = new ForProgramBlock(prog,fpb.getIterVar());
-		tmpPB.setStatementBlock( createForStatementBlockCopy((ForStatementBlock)fpb.getStatementBlock(), pid, plain, forceDeepCopy));
+		StatementBlock sb = ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) ?
+			createForStatementBlockCopy((ForStatementBlock)fpb.getStatementBlock(), forceDeepCopy) : fpb.getStatementBlock();
+		tmpPB.setStatementBlock(sb);
 		tmpPB.setThreadID(pid);
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(fpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
@@ -311,7 +324,7 @@ public class ProgramConverter
 		return tmpPB;
 	}
 
-	public static ParForProgramBlock createDeepCopyParForProgramBlock(ParForProgramBlock pfpb, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean forceDeepCopy) {
+	public static ParForProgramBlock createDeepCopyParForProgramBlock(ParForProgramBlock pfpb, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain, boolean forceDeepCopy) {
 		ParForProgramBlock tmpPB = null;
 		
 		if( IDPrefix == -1 ) //still on master node
@@ -319,7 +332,9 @@ public class ProgramConverter
 		else //child of remote ParWorker at any level
 			tmpPB = new ParForProgramBlock(IDPrefix, prog, pfpb.getIterVar(), pfpb.getParForParams(), pfpb.getResultVariables());
 		
-		tmpPB.setStatementBlock( createForStatementBlockCopy( (ForStatementBlock) pfpb.getStatementBlock(), pid, plain, forceDeepCopy) );
+		StatementBlock sb = ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) ?
+			createForStatementBlockCopy((ForStatementBlock)pfpb.getStatementBlock(), forceDeepCopy) : pfpb.getStatementBlock();
+		tmpPB.setStatementBlock( sb );
 		tmpPB.setThreadID(pid);
 		
 		tmpPB.disableOptimization(); //already done in top-level parfor
@@ -353,7 +368,7 @@ public class ProgramConverter
 	 * @param fnCreated ?
 	 * @param plain ?
 	 */
-	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain) 
+	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain) 
 	{
 		//fpb guaranteed to be non-null (checked inside getFunctionProgramBlock)
 		FunctionProgramBlock fpb = prog.getFunctionProgramBlock(namespace, oldName);
@@ -387,12 +402,14 @@ public class ProgramConverter
 		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 		
-		//put 
-		prog.addFunctionProgramBlock(namespace, fnameNew, copy);
-		fnCreated.add(DMLProgram.constructFunctionKey(namespace, fnameNew));
+		//put if not existing (recursive processing might have added it)
+		if( !prog.getFunctionProgramBlocks().containsKey(fnameNewKey) ) {
+			prog.addFunctionProgramBlock(namespace, fnameNew, copy);
+			fnCreated.add(DMLProgram.constructFunctionKey(namespace, fnameNew));
+		}
 	}
 
-	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, HashSet<String> fnStack, HashSet<String> fnCreated) 
+	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated) 
 	{
 		if( fpb == null )
 			throw new DMLRuntimeException("Unable to create a deep copy of a non-existing FunctionProgramBlock.");
@@ -432,7 +449,7 @@ public class ProgramConverter
 	 * @param cpFunctions ?
 	 * @return list of instructions
 	 */
-	public static ArrayList<Instruction> createDeepCopyInstructionSet(ArrayList<Instruction> instSet, long pid, int IDPrefix, Program prog, HashSet<String> fnStack, HashSet<String> fnCreated, boolean plain, boolean cpFunctions) {
+	public static ArrayList<Instruction> createDeepCopyInstructionSet(ArrayList<Instruction> instSet, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain, boolean cpFunctions) {
 		ArrayList<Instruction> tmp = new ArrayList<>();
 		for( Instruction inst : instSet ) {
 			if( inst instanceof FunctionCallCPInstruction && cpFunctions ) {
@@ -477,6 +494,71 @@ public class ProgramConverter
 		
 		return inst;
 	}
+	
+	public static FunctionStatementBlock createDeepCopyFunctionStatementBlock(FunctionStatementBlock fsb, Set<String> fnStack, Set<String> fnCreated) {
+		FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
+		FunctionStatementBlock retSb = new FunctionStatementBlock();
+		FunctionStatement retStmt = new FunctionStatement();
+		retStmt.setName(fstmt.getName());
+		retStmt.setInputParams(fstmt.getInputParams());
+		retStmt.setInputDefaults(fstmt.getInputDefaults());
+		retStmt.setOutputParams(fstmt.getOutputParams());
+		retSb.addStatement(retStmt);
+		retSb.setDMLProg(fsb.getDMLProg());
+		retSb.setParseInfo(fsb);
+		retSb.setLiveIn( fsb.liveIn() );
+		retSb.setLiveOut( fsb.liveOut() );
+		for( StatementBlock sb : fstmt.getBody() )
+			retStmt.getBody().add(rCreateDeepCopyStatementBlock(sb));
+		return retSb;
+	}
+	
+	public static StatementBlock rCreateDeepCopyStatementBlock(StatementBlock sb) {
+		StatementBlock ret = null;
+		if( sb instanceof IfStatementBlock ) {
+			IfStatementBlock orig = (IfStatementBlock) sb;
+			IfStatementBlock isb = createIfStatementBlockCopy(orig, true);
+			IfStatement origstmt = (IfStatement) orig.getStatement(0);
+			IfStatement istmt = new IfStatement(); //only shallow
+			istmt.setConditionalPredicate(origstmt.getConditionalPredicate());
+			isb.setStatements(CollectionUtils.asArrayList(istmt));
+			for( StatementBlock c : origstmt.getIfBody() )
+				istmt.addStatementBlockIfBody(rCreateDeepCopyStatementBlock(c));
+			for( StatementBlock c : origstmt.getElseBody() )
+				istmt.addStatementBlockElseBody(rCreateDeepCopyStatementBlock(c));
+			ret = isb;
+		}
+		else if( sb instanceof WhileStatementBlock ) {
+			WhileStatementBlock orig = (WhileStatementBlock) sb;
+			WhileStatementBlock wsb = createWhileStatementBlockCopy(orig, true);
+			WhileStatement origstmt = (WhileStatement) orig.getStatement(0);
+			WhileStatement wstmt = new WhileStatement(); //only shallow
+			wstmt.setPredicate(origstmt.getConditionalPredicate());
+			wsb.setStatements(CollectionUtils.asArrayList(wstmt));
+			for( StatementBlock c : origstmt.getBody() )
+				wstmt.addStatementBlock(rCreateDeepCopyStatementBlock(c));
+			ret = wsb;
+		}
+		else if( sb instanceof ForStatementBlock ) { //incl parfor
+			ForStatementBlock orig = (ForStatementBlock) sb;
+			ForStatementBlock fsb = createForStatementBlockCopy(orig, true);
+			ForStatement origstmt = (ForStatement) orig.getStatement(0);
+			ForStatement fstmt = new ForStatement(); //only shallow
+			fstmt.setPredicate(origstmt.getIterablePredicate());
+			fsb.setStatements(CollectionUtils.asArrayList(fstmt));
+			for( StatementBlock c : origstmt.getBody() )
+				fstmt.addStatementBlock(rCreateDeepCopyStatementBlock(c));
+			ret = fsb;
+		}
+		else {
+			StatementBlock bsb = createStatementBlockCopy(sb, -1, true, true);
+			for( Hop root : bsb.getHops() )
+				if( root instanceof FunctionOp )
+					((FunctionOp)root).setCallOptimized(false);
+			ret = bsb;
+		}
+		return ret;
+	}
 
 	public static StatementBlock createStatementBlockCopy( StatementBlock sb, long pid, boolean plain, boolean forceDeepCopy )
 	{
@@ -484,9 +566,8 @@ public class ProgramConverter
 		
 		try
 		{
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
-				&& sb != null  //forced deep copy for function recompilation
-				&& (Recompiler.requiresRecompilation( sb.getHops() ) || forceDeepCopy)  )
+			if( sb != null  //forced deep copy for function recompilation
+				&& (Recompiler.requiresRecompilation( sb.getHops() ) || forceDeepCopy) )
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
 				ret = new StatementBlock();
@@ -516,14 +597,13 @@ public class ProgramConverter
 		return ret;
 	}
 
-	public static IfStatementBlock createIfStatementBlockCopy( IfStatementBlock sb, long pid, boolean plain, boolean forceDeepCopy ) 
+	public static IfStatementBlock createIfStatementBlockCopy( IfStatementBlock sb, boolean forceDeepCopy ) 
 	{
 		IfStatementBlock ret = null;
 		
 		try
 		{
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
-				&& sb != null //forced deep copy for function recompile
+			if( sb != null //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
@@ -555,14 +635,13 @@ public class ProgramConverter
 		return ret;
 	}
 
-	public static WhileStatementBlock createWhileStatementBlockCopy( WhileStatementBlock sb, long pid, boolean plain, boolean forceDeepCopy ) 
+	public static WhileStatementBlock createWhileStatementBlockCopy( WhileStatementBlock sb, boolean forceDeepCopy ) 
 	{
 		WhileStatementBlock ret = null;
 		
 		try
 		{
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
-				&& sb != null  //forced deep copy for function recompile
+			if( sb != null  //forced deep copy for function recompile
 				&& (Recompiler.requiresRecompilation( sb.getPredicateHops() ) || forceDeepCopy)  )
 			{
 				//create new statement (shallow copy livein/liveout for recompile, line numbers for explain)
@@ -595,18 +674,16 @@ public class ProgramConverter
 		return ret;
 	}
 
-	public static ForStatementBlock createForStatementBlockCopy( ForStatementBlock sb, long pid, boolean plain, boolean forceDeepCopy ) 
+	public static ForStatementBlock createForStatementBlockCopy( ForStatementBlock sb, boolean forceDeepCopy ) 
 	{
 		ForStatementBlock ret = null;
 		
 		try
 		{
-			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_PARALLEL_DYN_RECOMPILATION) 
-				&& sb != null 
-				&& ( Recompiler.requiresRecompilation(sb.getFromHops()) ||
-					 Recompiler.requiresRecompilation(sb.getToHops()) ||
-					 Recompiler.requiresRecompilation(sb.getIncrementHops()) ||
-					 forceDeepCopy )  )
+			if( sb != null && (forceDeepCopy
+				|| Recompiler.requiresRecompilation(sb.getFromHops())
+				|| Recompiler.requiresRecompilation(sb.getToHops())
+				|| Recompiler.requiresRecompilation(sb.getIncrementHops())) )
 			{
 				ret = (sb instanceof ParForStatementBlock) ? new ParForStatementBlock() : new ForStatementBlock();
 				

@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv;
 
-import static org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,6 +33,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -85,10 +84,10 @@ public abstract class ParamServer
 	}
 
 	protected void setupAggFunc(ExecutionContext ec, String aggFunc) {
-		String[] cfn = ParamservUtils.getCompleteFuncName(aggFunc, PS_FUNC_PREFIX);
+		String[] cfn = DMLProgram.splitFunctionKey(aggFunc);
 		String ns = cfn[0];
 		String fname = cfn[1];
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname);
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname, false);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -104,12 +103,10 @@ public abstract class ParamServer
 		CPOperand[] boundInputs = inputs.stream()
 			.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
 			.toArray(CPOperand[]::new);
-		ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
-			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs,
-			inputNames, func.getInputParamNames(), outputNames, "aggregate function");
+		_inst = new FunctionCallCPInstruction(ns, fname, false, boundInputs,
+			func.getInputParamNames(), outputNames, "aggregate function");
 	}
 
 	public abstract void push(int workerID, ListObject value);

@@ -1,0 +1,158 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Recursive depth-first search which in some cases can run into stack overflow errors in the
+# SystemDS runtime. Not recommended, use dfs_iter instead!
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME              TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# GRAPH             matrix  ---       An adjacency matrix.
+# start_vertex      Integer ---       The vertex to start the search from.
+# marked            matrix  ---       Column-vector which is used to mark already visited
+#                                      vertices. A value of 1 means already visited, 0 means
+#                                      unvisited.
+# id                matrix  ---       Column-vector which the connected component of each vertex
+#                                      is written to.
+# current_component Integer ---       The component id which is written to each visited vertex'
+#                                      entry in the id vector.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# id            matrix  ---       Column-vector which the connected component of each vertex is written to.
+# marked        matrix  ---       Column-vector which is used to mark already visited vertices.
+#                                  A value of 1 means already visited, 0 means unvisited.
+# --------------------------------------------------------------------------------------------
+dfs = function(Matrix[Double] GRAPH, Integer vertex, Matrix[Double] marked, Matrix[Double] id, Integer count) return (Matrix[Double] id, Matrix[Double] marked) {
+  marked[vertex,] = 1;
+  id[vertex,] = count;
+  for (col in 1:ncol(GRAPH)) {
+    if (as.scalar(GRAPH[vertex,col])) {
+      if (!as.scalar(marked[col,])) {
+        [id, marked] = dfs(GRAPH, col, marked, id, count);
+      }
+    }
+  }
+}
+
+# Iterative depth-first search with a manually allocated stack in order to avoid stack overflow
+# errors.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME              TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# GRAPH             matrix  ---       An adjacency matrix.
+# start_vertex      Integer ---       The vertex to start the search from.
+# marked            matrix  ---       Column-vector which is used to mark already visited
+#                                      vertices. A value of 1 means already visited, 0 means
+#                                      unvisited.
+# id                matrix  ---       Column-vector which the connected component of each vertex
+#                                      is written to.
+# current_component Integer ---       The component id which is written to each visited vertex'
+#                                      entry in the id vector.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# id            matrix  ---       Column-vector which the connected component of each vertex is
+#                                  written to.
+# marked        matrix  ---       Column-vector which is used to mark already visited vertices.
+#                                  A value of 1 means already visited, 0 means unvisited.
+# --------------------------------------------------------------------------------------------
+dfs_iter = function(Matrix[Double] GRAPH, Integer start_vertex, Matrix[Double] marked, Matrix[Double] id, Integer current_component) return (Matrix[Double] id, Matrix[Double] marked) {
+  nvert =  ncol(GRAPH);
+  stack_idx = matrix(0, rows=nvert, cols=1);
+  stack_vid = matrix(0, rows=nvert, cols=1);
+
+  stack_ptr = 1;
+  stack_vid[stack_ptr,] = start_vertex;
+  stack_idx[stack_ptr,] = 1;
+
+  while(stack_ptr > 0) {
+    vertex = as.scalar(stack_vid[stack_ptr,]);
+    neigh_idx = as.scalar(stack_idx[stack_ptr,]);
+    if (neigh_idx == 1) {
+      id[vertex,] = current_component;
+      marked[vertex,] = 1;
+    }
+    # find next not visited neighbour
+    cont = TRUE;
+    while (cont) {
+        if (as.scalar(GRAPH[vertex, neigh_idx]) & !as.scalar(marked[neigh_idx,])) {
+          cont = FALSE;
+        }
+        else {
+          neigh_idx = neigh_idx + 1;
+          if (neigh_idx > nvert) {
+            cont = FALSE;
+          }
+        }
+    }
+    if (neigh_idx > nvert ) {
+      stack_ptr = stack_ptr - 1;
+    }
+    else if (neigh_idx == nvert & as.scalar(marked[neigh_idx,])) {
+      stack_ptr = stack_ptr - 1;
+    }
+    else {
+      stack_ptr = stack_ptr + 1;
+      stack_vid[stack_ptr,] = neigh_idx;
+      stack_idx[stack_ptr,] = 1;
+    }
+  }
+}
+
+# Makes all connected components in the adjacency matrix GRAPH fully-connected.
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME              TYPE    DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# GRAPH             matrix  ---       An adjacency matrix.
+#
+# Output:
+# --------------------------------------------------------------------------------------------
+# NAME          TYPE     MEANING
+# --------------------------------------------------------------------------------------------
+# GRAPH             matrix  ---       An adjacency matrix with all connected components fully
+#                                      connected.
+# --------------------------------------------------------------------------------------------
+cluster_by_connected_components = function(Matrix[Double] ADJACENCY) return (Matrix[Double] COMPONENTS) {
+  #TODO could we reuse our components builtin?
+  rows = nrow(ADJACENCY);
+  marked = matrix(0, rows=rows, cols=1);
+  id = matrix(0, rows=nrow(ADJACENCY), cols=1);
+  count = 1;
+  for (s in 1:rows) {
+    if (!as.scalar(marked[s,])) {
+      #[id, marked] = dfs(ADJACENCY, s, marked, id, count);
+      [id, marked] = dfs_iter(ADJACENCY, s, marked, id, count);
+      count = count + 1;
+    }
+  }
+  COMPONENTS = outer(id, t(id), "==");
+  COMPONENTS = COMPONENTS - diag(diag(COMPONENTS));
+}

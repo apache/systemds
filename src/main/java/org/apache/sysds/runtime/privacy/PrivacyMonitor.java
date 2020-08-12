@@ -34,7 +34,7 @@ public class PrivacyMonitor
 	private static EnumMap<PrivacyLevel,LongAdder> checkedConstraints;
 
 	static {
-		checkedConstraints = new EnumMap<PrivacyLevel,LongAdder>(PrivacyLevel.class);
+		checkedConstraints = new EnumMap<>(PrivacyLevel.class);
 		for ( PrivacyLevel level : PrivacyLevel.values() ){
 			checkedConstraints.put(level, new LongAdder());
 		}
@@ -116,7 +116,8 @@ public class PrivacyMonitor
 	
 	/**
 	 * Throw DMLPrivacyException if privacy is activated for the input variable
-	 * @param input variable for which the privacy constraint is checked
+	 * @param input Variable for which the privacy constraint is checked
+	 * @param ec    The execution context associated with the operand.
 	 */
 	public static void handlePrivacyScalarOutput(CPOperand input, ExecutionContext ec) {
 		Data data = ec.getVariable(input);

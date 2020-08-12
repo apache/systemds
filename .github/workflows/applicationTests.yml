@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tests: [A,B,C,G,H,I,L,M,N,O,P,S,U,W]
+        tests: [A,B,C,E,G,H,I,L,M,N,O,P,S,U,W]
         os: [ubuntu-latest]
     name:  Ap Test ${{ matrix.tests }} 
     steps:

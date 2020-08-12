@@ -23,6 +23,5 @@
 
 A = read($1, format="libsvm", rows=1605, cols=124);
 x = sum(A);
-print("sum is = " + x);
 write(x, $2);
 

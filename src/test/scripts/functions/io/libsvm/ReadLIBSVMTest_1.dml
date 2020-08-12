@@ -24,6 +24,5 @@
 A = read($1);  
 print(toString(A));
 x = sum(A);
-print("sum is = " + x);
 write(x, $2);
 

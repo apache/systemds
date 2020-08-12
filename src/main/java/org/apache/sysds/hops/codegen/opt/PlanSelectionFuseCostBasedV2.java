@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
@@ -70,6 +69,7 @@ import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
 
@@ -661,17 +661,17 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 	private static HashSet<Long> collectIrreplaceableRowOps(CPlanMemoTable memo, PlanPartition part) {
 		//get row entries that are (a) reachable from rowwise ops (top down) other than
 		//operator root nodes, or dependent upon row-wise ops (bottom up)
-		HashSet<Long> blacklist = new HashSet<>();
+		HashSet<Long> excludeList = new HashSet<>();
 		HashSet<Pair<Long, Integer>> visited = new HashSet<>();
 		for( Long hopID : part.getRoots() ) {
 			rCollectDependentRowOps(memo.getHopRefs().get(hopID),
-				memo, part, blacklist, visited, null, false);
+				memo, part, excludeList, visited, null, false);
 		}
-		return blacklist;
+		return excludeList;
 	}
 	
 	private static void rCollectDependentRowOps(Hop hop, CPlanMemoTable memo, PlanPartition part,
-		HashSet<Long> blacklist, HashSet<Pair<Long, Integer>> visited, TemplateType type, boolean foundRowOp) 
+		HashSet<Long> excludeList, HashSet<Pair<Long, Integer>> visited, TemplateType type, boolean foundRowOp) 
 	{
 		//avoid redundant evaluation of processed and non-partition nodes
 		Pair<Long, Integer> key = Pair.of(hop.getHopID(),
@@ -688,9 +688,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			&& memo.contains(hop.getHopID(), TemplateType.ROW)
 			&& !memo.hasOnlyExactMatches(hop.getHopID(), TemplateType.ROW, TemplateType.CELL);
 		if( inRow && foundRowOp )
-			blacklist.add(hop.getHopID());
+			excludeList.add(hop.getHopID());
 		if( isRowAggOp(hop, inRow) || diffPlans ) { 
-			blacklist.add(hop.getHopID());
+			excludeList.add(hop.getHopID());
 			foundRowOp = true;
 		}
 		
@@ -699,16 +699,16 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			boolean lfoundRowOp = foundRowOp && me != null 
 				&& (me.isPlanRef(i) || isImplicitlyFused(hop, i, me.type));
 			rCollectDependentRowOps(hop.getInput().get(i), memo,
-				part, blacklist, visited, me!=null?me.type:null, lfoundRowOp);
+				part, excludeList, visited, me!=null?me.type:null, lfoundRowOp);
 		}
 		
 		//process node itself (bottom-up)
-		if( !blacklist.contains(hop.getHopID()) ) {
+		if( !excludeList.contains(hop.getHopID()) ) {
 			for( int i=0; i<hop.getInput().size(); i++ )
 				if( me != null && me.type == TemplateType.ROW
 					&& (me.isPlanRef(i) || isImplicitlyFused(hop, i, me.type))
-					&& blacklist.contains(hop.getInput().get(i).getHopID()) ) {
-					blacklist.add(hop.getHopID());
+					&& excludeList.contains(hop.getInput().get(i).getHopID()) ) {
+					excludeList.add(hop.getHopID());
 				}
 		}
 		
@@ -750,23 +750,23 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 						|| (hop instanceof AggBinaryOp && in.getDim1() <= in.getBlocksize()
 							&& HopRewriteUtils.isTransposeOperation(in));
 				if( isSpark && !validNcol ) {
-					List<MemoTableEntry> blacklist = memo.get(hopID, TemplateType.ROW);
+					List<MemoTableEntry> excludeList = memo.get(hopID, TemplateType.ROW);
 					memo.remove(memo.getHopRefs().get(hopID), TemplateType.ROW);
 					memo.removeAllRefTo(hopID, TemplateType.ROW);
 					if( LOG.isTraceEnabled() ) {
 						LOG.trace("Removed row memo table entries w/ violated blocksize constraint ("+hopID+"): "
-							+ Arrays.toString(blacklist.toArray(new MemoTableEntry[0])));
+							+ Arrays.toString(excludeList.toArray(new MemoTableEntry[0])));
 					}
 				}
 			}
 		}
 		
 		//prune row aggregates with pure cellwise operations
-		//(we determine a blacklist of all operators in a partition that either
+		//(we determine an excludeList of all operators in a partition that either
 		//depend upon row aggregates or on which row aggregates depend)
-		HashSet<Long> blacklist = collectIrreplaceableRowOps(memo, part);
+		HashSet<Long> excludeList = collectIrreplaceableRowOps(memo, part);
 		for( Long hopID : part.getPartition() ) {
-			if( blacklist.contains(hopID) ) continue;
+			if( excludeList.contains(hopID) ) continue;
 			MemoTableEntry me = memo.getBest(hopID, TemplateType.ROW);
 			if( me != null && me.type == TemplateType.ROW
 				&& memo.hasOnlyExactMatches(hopID, TemplateType.ROW, TemplateType.CELL) ) {
@@ -790,7 +790,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				MemoTableEntry rmEntry = TemplateOuterProduct.dropAlternativePlan(memo, me1, me2);
 				if( rmEntry != null ) {
 					memo.remove(memo.getHopRefs().get(hopID), Collections.singleton(rmEntry));
-					memo.getPlansBlacklisted().remove(rmEntry.input(rmEntry.getPlanRefIndex()));
+					memo.getPlansExcludeListed().remove(rmEntry.input(rmEntry.getPlanRefIndex()));
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Removed dominated outer product memo table entry: " + rmEntry);
 				}
@@ -1309,8 +1309,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			for( Long hopID : _aggregates.keySet() )
 				ret &= !that._inputAggs.contains(hopID);
 			//check partial shared reads
-			ret &= !CollectionUtils.intersection(
-				_fusedInputs, that._fusedInputs).isEmpty();
+			ret &= CollectionUtils.containsAny(_fusedInputs, that._fusedInputs);
 			//check consistent sizes (result correctness)
 			Hop in1 = _aggregates.values().iterator().next();
 			Hop in2 = that._aggregates.values().iterator().next();

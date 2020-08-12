@@ -51,7 +51,7 @@ setup(
     version=ARTIFACT_VERSION_SHORT,
     description='SystemDS is a distributed and declarative machine learning platform.',
     long_description=open('README.md').read(),
-    url='https://github.com/apache/systemml',
+    url='https://github.com/apache/systemds',
     author='SystemDS',
     author_email='dev@systemml.apache.org',
     packages=find_packages(),

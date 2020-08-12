@@ -40,27 +40,23 @@ import java.util.List;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedConstructionTest extends AutomatedTestBase {
-	
+
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME = "FederatedConstructionTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedConstructionTest.class.getSimpleName() + "/";
 	public static final String MATRIX_TEST_FILE_NAME = "FederatedMatrixConstructionTest";
 	public static final String FRAME_TEST_FILE_NAME = "FederatedFrameConstructionTest";
-	
-	private int blocksize = 1024;
-	private int rows, cols;
 
-	public FederatedConstructionTest(int rows, int cols) {
-
-		this.rows = rows;
-		this.cols = cols;
-	}
+	private static final int blocksize = 1024;
+	@Parameterized.Parameter()
+	public int rows;
+	@Parameterized.Parameter(1)
+	public int cols;
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// cols have to be dividable by 4 for Frame tests
-		Object[][] data = new Object[][] {{1, 1024}, {8, 256}, {256, 8}, {1024, 4}, {16, 2048}, {2048, 32}};
-		return Arrays.asList(data);
+		return Arrays.asList(new Object[][] {{1, 1024}, {8, 256}, {256, 8}, {1024, 4}, {16, 2048}, {2048, 32}});
 	}
 
 	@Override
@@ -86,36 +82,38 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
 		federatedConstruction(execMode, MATRIX_TEST_FILE_NAME, "A", null);
 	}
-	
+
 	@Test
 	public void federatedFrameConstructionCP() throws IOException {
 		federatedFrameConstruction(Types.ExecMode.SINGLE_NODE);
 	}
-	
-	/* like other federated functionality, SPARK execution mode is not yet working (waiting for better integration
-	of federated instruction building, like propagating information that object is federated)
-	@Test
-	public void federatedFrameConstructionSP() throws IOException {
-		federatedFrameConstruction(Types.ExecMode.SPARK);
-	}*/
-	
+
+	/*
+	 * like other federated functionality, SPARK execution mode is not yet working (waiting for better integration of
+	 * federated instruction building, like propagating information that object is federated)
+	 * 
+	 * @Test public void federatedFrameConstructionSP() throws IOException {
+	 * federatedFrameConstruction(Types.ExecMode.SPARK); }
+	 */
+
 	public void federatedFrameConstruction(Types.ExecMode execMode) throws IOException {
 		getAndLoadTestConfiguration(TEST_NAME);
 		// write input matrix
 		double[][] A = getRandomMatrix(rows, cols, -1, 1, 1, 1234);
-		
-		List<Types.ValueType> schemaList = new ArrayList<>(Collections.nCopies(cols/4, Types.ValueType.STRING));
-		schemaList.addAll(Collections.nCopies(cols/4, Types.ValueType.FP64));
-		schemaList.addAll(Collections.nCopies(cols/4, Types.ValueType.INT64));
-		schemaList.addAll(Collections.nCopies(cols/4, Types.ValueType.BOOLEAN));
-		
+
+		List<Types.ValueType> schemaList = new ArrayList<>(Collections.nCopies(cols / 4, Types.ValueType.STRING));
+		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.FP64));
+		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.INT64));
+		schemaList.addAll(Collections.nCopies(cols / 4, Types.ValueType.BOOLEAN));
+
 		Types.ValueType[] schema = new Types.ValueType[cols];
 		schemaList.toArray(schema);
 		writeInputFrameWithMTD("A", A, false, schema, FileFormat.BINARY);
 		federatedConstruction(execMode, FRAME_TEST_FILE_NAME, "A", schema);
 	}
 
-	public void federatedConstruction(Types.ExecMode execMode, String testFile, String inputIdentifier, Types.ValueType[] schema) {
+	public void federatedConstruction(Types.ExecMode execMode, String testFile, String inputIdentifier,
+		Types.ValueType[] schema) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -142,12 +140,12 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 		fullDMLScriptName = HOME + testFile + ".dml";
-		programArgs = new String[] {"-args", "\"localhost:" + port + "/" + input(inputIdentifier) + "\"",
-			Integer.toString(rows), Integer.toString(cols), Integer.toString(rows * 2), output("B")};
+		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input(inputIdentifier)),
+			"rows=" + rows, "cols=" + cols, "out=" + output("B")};
 
 		runTest(true, false, null, -1);
 		// compare via files
-		if (schema != null)
+		if(schema != null)
 			compareResults(schema);
 		else
 			compareResults(1e-12);

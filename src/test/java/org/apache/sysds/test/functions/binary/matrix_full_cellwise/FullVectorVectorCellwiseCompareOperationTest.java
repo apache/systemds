@@ -195,7 +195,7 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-explain","recompile_runtime","-args", 
+			programArgs = new String[]{"-stats", "-args", 
 				input("A"), input("B"), opcode, output("C") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
@@ -237,5 +237,5 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}		
+	}
 }

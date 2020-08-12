@@ -19,5 +19,6 @@
 #
 #-------------------------------------------------------------
 
-A = federated(type="Frame", addresses=list($1, $1), ranges=list(list(0, 0), list($2, $3), list($2, 0), list($4, $3)))
-write(A, $5)
+A = federated(type="Frame", addresses=list($in, $in),
+  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)))
+write(A, $out)

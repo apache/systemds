@@ -19,9 +19,10 @@
 
 package org.apache.sysds.test.functions.unary.scalar;
 
-import org.junit.Test;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.junit.Test;
 
 
 /**
@@ -63,15 +64,8 @@ public class StopTest extends AutomatedTestBase
 		programArgs = new String[]{"-args", Integer.toString(val), errMessage};
 		
 		loadTestConfiguration(config);
-		boolean exceptionExpected = false;
-		int expectedNumberOfJobs = 0;
-		
-		if ( val == 0 )
-			setExpectedStdErr(errMessage);
-		else 
-			setExpectedStdOut(outMessage);
-			
-		runTest(true, exceptionExpected, null, expectedNumberOfJobs); 
+
+		runTest(true, val == 0, DMLScriptException.class, -1); 
 	}
 	
 }

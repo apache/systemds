@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 X = federated(addresses=list($X1, $X2),
-    ranges=list(list(0, 0), list($hr, $c), list($hr, 0), list($r, $c)))
+    ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
 Y = federated(addresses=list($Y1, $Y2),
-    ranges=list(list(0, 0), list($c, $hr), list(0, $hr), list($c, $r)))
+    ranges=list(list(0, 0), list($c, $r / 2), list(0, $r / 2), list($c, $r)))
 Z = X %*% Y
 write(Z, $Z)

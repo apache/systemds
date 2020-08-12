@@ -28,17 +28,21 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+
+/** 
+ * TODO FIX Stability. The test currently sometimes fails due to differences in test executions and random behaviour in operations.
+*/
 public class BuiltinKmeansTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "kmeans";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinKmeansTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
-	private final static int rows = 3972;
-	private final static int cols = 972;
+	private final static int rows = 1320;
+	private final static int cols = 32;
 	private final static double spSparse = 0.3;
 	private final static double spDense = 0.7;
-	private final static double max_iter = 10;
+	private final static double max_iter = 50;
 
 	@Override
 	public void setUp() {

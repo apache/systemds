@@ -84,6 +84,10 @@ public class OptTreePlanMappingAbstract extends OptTreePlanMapping
 		return ret;
 	}
 	
+	public ProgramBlock getMappedProgramBlock(long id) {
+		return (ProgramBlock) _id_rtprog.get(id);
+	}
+	
 	public void replaceMapping( ProgramBlock pb, OptNode n ) {
 		long id = n.getID();
 		_id_rtprog.put(id, pb);

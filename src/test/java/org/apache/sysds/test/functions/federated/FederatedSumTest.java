@@ -41,17 +41,14 @@ public class FederatedSumTest extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedSumTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
-	private int rows, cols;
-
-	public FederatedSumTest(int rows, int cols) {
-		this.rows = rows;
-		this.cols = cols;
-	}
+	@Parameterized.Parameter()
+	public int rows;
+	@Parameterized.Parameter(1)
+	public int cols;
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] {{1, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}};
-		return Arrays.asList(data);
+		return Arrays.asList(new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}});
 	}
 
 	@Override
@@ -75,13 +72,13 @@ public class FederatedSumTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t = null;
+		Thread t;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
-		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+		double[][] A = getRandomMatrix(rows / 2, cols, -10, 10, 1, 1);
+		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows / 2, cols, blocksize, (rows / 2) * cols));
 		int port = getRandomAvailablePort();
 		t = startLocalFedWorker(port);
 
@@ -108,8 +105,8 @@ public class FederatedSumTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
-			Integer.toString(cols), Integer.toString(rows * 2), output("S"), output("R"), output("C")};
+		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
+			"cols=" + cols, "out_S=" + output("S"), "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, false, null, -1);
 

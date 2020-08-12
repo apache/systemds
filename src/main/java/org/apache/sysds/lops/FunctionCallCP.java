@@ -37,9 +37,10 @@ public class FunctionCallCP extends Lop
 	private String[] _inputNames;
 	private String[] _outputNames;
 	private ArrayList<Lop> _outputLops = null;
+	private boolean _opt;
 
-	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, 
-		String[] inputNames, String[] outputNames, ArrayList<Hop> outputHops, ExecType et) {
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames,
+		String[] outputNames, ArrayList<Hop> outputHops, boolean opt, ExecType et) {
 		this(inputs, fnamespace, fname, inputNames, outputNames, et);
 		if(outputHops != null) {
 			_outputLops = new ArrayList<>();
@@ -54,6 +55,7 @@ public class FunctionCallCP extends Lop
 				}
 			}
 		}
+		_opt = opt;
 	}
 	
 	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames, String[] outputNames, ExecType et) 
@@ -125,11 +127,13 @@ public class FunctionCallCP extends Lop
 		inst.append(getExecType());
 		
 		inst.append(Lop.OPERAND_DELIMITOR); 
-		inst.append(FunctionOp.OPSTRING);
+		inst.append(FunctionOp.OPCODE);
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_fnamespace);
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_fname);
+		inst.append(Lop.OPERAND_DELIMITOR);
+		inst.append(_opt);
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(inputs.length);
 		inst.append(Lop.OPERAND_DELIMITOR);

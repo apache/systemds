@@ -258,12 +258,9 @@ public class DMLTranslator
 		// Step 1: construct hops for all functions
 		if( inclFuns ) {
 			// for each namespace, handle function program blocks
-			for (String namespaceKey : dmlp.getNamespaces().keySet()){
-				for (String fname: dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
-					FunctionStatementBlock current = dmlp.getFunctionStatementBlock(namespaceKey, fname);
-					constructHops(current);
-				}
-			}
+			for( FunctionDictionary<FunctionStatementBlock> fdict : dmlp.getNamespaces().values() )
+				for( FunctionStatementBlock fsb : fdict.getFunctions().values() )
+					constructHops(fsb);
 		}
 		
 		// Step 2: construct hops for main program
@@ -326,10 +323,16 @@ public class DMLTranslator
 	}
 	
 	public void constructLops(DMLProgram dmlp) {
-		// for each namespace, handle function program blocks handle function 
-		for( String namespaceKey : dmlp.getNamespaces().keySet() )
-			for( FunctionStatementBlock fsb : dmlp.getFunctionStatementBlocks(namespaceKey).values() )
+		// for each namespace, handle function program blocks
+		for( FunctionDictionary<FunctionStatementBlock> fdict : dmlp.getNamespaces().values() ) {
+			//handle optimized functions
+			for( FunctionStatementBlock fsb : fdict.getFunctions().values() )
 				constructLops(fsb);
+			//handle unoptimized functions
+			if( fdict.getFunctions(false) != null )
+				for( FunctionStatementBlock fsb : fdict.getFunctions(false).values() )
+					constructLops(fsb);
+		}
 		
 		// handle regular program blocks
 		for( StatementBlock sb : dmlp.getStatementBlocks() )
@@ -422,7 +425,7 @@ public class DMLTranslator
 			for (Hop hop : sb.getHops())
 				lops.add(hop.constructLops());
 			sb.setLops(lops);
-			ret |= sb.updateRecompilationFlag(); 
+			ret |= sb.updateRecompilationFlag();
 		}
 		
 		return ret;
@@ -431,7 +434,7 @@ public class DMLTranslator
 	
 	public Program getRuntimeProgram(DMLProgram prog, DMLConfig config) 
 		throws LanguageException, DMLRuntimeException, LopsException, HopsException 
-	{	
+	{
 		// constructor resets the set of registered functions
 		Program rtprog = new Program(prog);
 		
@@ -441,16 +444,17 @@ public class DMLTranslator
 			for (String fname : prog.getFunctionStatementBlocks(namespace).keySet()){
 				// add program block to program
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlocks(namespace).get(fname);
-				FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, config);
-				rtprog.addFunctionProgramBlock(namespace, fname, rtpb);
-				rtpb.setRecompileOnce( fsb.isRecompileOnce() );
-				rtpb.setNondeterministic(fsb.isNondeterministic());
+				prepareAndAddFunctionProgramBlock(rtprog, config, namespace, fname, fsb, true);
+				// add unoptimized block to program (for second-order calls)
+				if( prog.getNamespaces().get(namespace).containsFunction(fname, false) ) {
+					prepareAndAddFunctionProgramBlock(rtprog, config, namespace, fname,
+						prog.getNamespaces().get(namespace).getFunction(fname, false), false);
+				}
 			}
 		}
 		
 		// translate all top-level statement blocks to program blocks
 		for (StatementBlock sb : prog.getStatementBlocks() ) {
-		
 			// add program block to program
 			ProgramBlock rtpb = createRuntimeProgramBlock(rtprog, sb, config);
 			rtprog.addProgramBlock(rtpb);
@@ -463,6 +467,15 @@ public class DMLTranslator
 		}
 		
 		return rtprog ;
+	}
+	
+	private void prepareAndAddFunctionProgramBlock(Program rtprog, DMLConfig config,
+		String fnamespace, String fname, FunctionStatementBlock fsb, boolean opt)
+	{
+		FunctionProgramBlock rtpb = (FunctionProgramBlock)createRuntimeProgramBlock(rtprog, fsb, config);
+		rtprog.addFunctionProgramBlock(fnamespace, fname, rtpb, opt);
+		rtpb.setRecompileOnce(fsb.isRecompileOnce());
+		rtpb.setNondeterministic(fsb.isNondeterministic());
 	}
 	
 	public ProgramBlock createRuntimeProgramBlock(Program prog, StatementBlock sb, DMLConfig config) {
@@ -630,7 +643,7 @@ public class DMLTranslator
 			rtpb = new FunctionProgramBlock(prog, fstmt.getInputParams(), fstmt.getOutputParams());
 			
 			// process the function statement body
-			for (StatementBlock sblock : fstmt.getBody()){	
+			for (StatementBlock sblock : fstmt.getBody()){
 				// process the body
 				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
 				rtpb.addProgramBlock(childBlock);

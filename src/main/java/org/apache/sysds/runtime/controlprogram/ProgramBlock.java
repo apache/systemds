@@ -272,11 +272,11 @@ public abstract class ProgramBlock implements ParseInfo
 				checkSparsity( tmp, ec.getVariables() );
 			}
 		}
+		catch (DMLScriptException e){
+			throw e;
+		}
 		catch (Exception e) {
-			if ( e instanceof DMLScriptException)
-				throw (DMLScriptException)e;
-			else
-				throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
+			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
 		}
 	}
 	

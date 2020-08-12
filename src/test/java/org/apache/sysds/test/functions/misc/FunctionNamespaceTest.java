@@ -22,14 +22,15 @@ package org.apache.sysds.test.functions.misc;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class FunctionNamespaceTest extends AutomatedTestBase 
 {
@@ -167,37 +168,13 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		
 		PrintStream origStdErr = System.err;
 
-		try
-		{
-			ByteArrayOutputStream baos = null;
-			
-			boolean exceptionExpected = (TEST_NAME2.equals(TEST_NAME)) ? true : false;
-			if (!exceptionExpected) {
-				baos = new ByteArrayOutputStream();
-				PrintStream newStdErr = new PrintStream(baos);
-				System.setErr(newStdErr);
-			}
-			
-			runTest(true, exceptionExpected, DMLException.class, -1);
-			
-			if (!exceptionExpected)
-			{
-				String stdErrString = baos.toString();
-				if (null != stdErrString && stdErrString.length() > 0)
-				{
-					if (TEST_NAME8.equals(TEST_NAME)) {
-						if (!stdErrString.contains("Namespace Conflict"))
-							Assert.fail("Expected parse issue not detected.");
-					}
-					else if (TEST_NAME13.equals(TEST_NAME)) {
-						if (!stdErrString.contains("Function Name Conflict"))
-							Assert.fail("Expected parse issue not detected.");
-					}
-					else {
-						Assert.fail("Unexpected parse error or DML script error: " + stdErrString);
-					}
-				}
-			}
+		try {
+			if(TEST_NAME2.equals(TEST_NAME))
+				runTest(true, true, LanguageException.class, -1);
+			else if(TEST_NAME8.equals(TEST_NAME) || TEST_NAME13.equals(TEST_NAME))
+				runTest(true, true, ParseException.class, -1);
+			else
+				runTest(true, false, null, -1);
 		}
 		catch (Exception e) {
 			e.printStackTrace(origStdErr);

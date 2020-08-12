@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.transform;
 
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
@@ -31,6 +30,7 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
 public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase 
 {
@@ -128,7 +128,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			int nrows = subset ? 4 : 13;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain", "-stats","-args", 
+			programArgs = new String[]{"-stats","-args", 
 				HOME + "input/" + DATASET, String.valueOf(nrows), output("R") };
 			
 			runTest(true, false, null, -1); 
@@ -137,8 +137,8 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			FrameReader reader2 = parRead ? 
 				new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) : 
 				new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
-			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
-			System.out.println(DataConverter.toString(fb2));
+				FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
+				System.out.println(DataConverter.toString(fb2));
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

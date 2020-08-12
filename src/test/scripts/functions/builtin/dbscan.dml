@@ -19,6 +19,8 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
-Y = dbscan(X,  2.5, 5);
-write(Y, $2);
+X = read($X);
+eps = as.double($eps);
+minPts = as.integer($minPts);
+Y = dbscan(X, eps, minPts);
+write(Y, $Y);

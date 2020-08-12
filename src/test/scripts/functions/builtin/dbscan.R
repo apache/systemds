@@ -19,13 +19,13 @@
 #
 #-------------------------------------------------------------
 args<-commandArgs(TRUE)
-options(digits=22)
 library("Matrix")
+options(digits=22)
 library("dbscan")
 
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")));
 eps = as.double(args[2]);
 minPts = as.integer(args[3]);
-Ys = dbscan(X, 2.5, 5);
+Ys = dbscan(X, eps, minPts);
 Y = as.matrix(Ys$cluster, FALSE);
-writeMM(as(Y, "CsparseMatrix"), paste(args[2], "B", sep=""));
+writeMM(as(Y, "CsparseMatrix"), paste(args[4], "B", sep=""));

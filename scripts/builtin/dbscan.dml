@@ -30,79 +30,42 @@
 # minPts Int     ---    Minimum number of points within eps
 #
 
-m_dbscan = function (Matrix[double] X, double eps = 0.5, int minPts = 5)
+m_dbscan = function (Matrix[double] X, Double eps = 0.5, Integer minPts = 5)
     return (Matrix[double] clusterMembers)
 {
+    assert(eps > 0);
+    assert(minPts > 0);
+
     UNASSIGNED = 0;
-    BORDER = 1;
 
     num_records = nrow(X);
     num_features = ncol(X);
 
-    if (eps <= 0) {print("Incorrect eps.");}
-    if (minPts <= 0) {print("Incorrect minPts.");}
+    neighbors = edm(X);
 
-    neighbours = edm(X);
+    #find same pts and set their distance to the smallest double representation
+    neighbors = replace(target=neighbors, pattern=0, replacement=2.225e-307)
+    neighbors = neighbors - diag(diag(neighbors));
 
-    #find similar pts
-    neighbours = replace(target=neighbours, pattern=0, replacement=eps);
-    neighbours = neighbours - diag(diag(neighbours));
-
-    # neigbours within eps
-    inEpsNeighbours = ((neighbours <= eps) * (0 < neighbours));
-
-    # only distances within eps
-    neighbours = neighbours * inEpsNeighbours;
-
-    # assign CORE pts
-    corePts = rowSums(inEpsNeighbours) >= minPts - 1;
+    # neighbors within eps
+    withinEps = ((neighbors<=eps) * (0<neighbors));
+    corePts = rowSums(withinEps)+1 >= minPts;
 
     clusterMembers = matrix(UNASSIGNED, num_records, 1);
 
-    # assign BORDER pts and to clusters
     if (sum(corePts) != 0) {
-        # assign border pts
-        for (i in 1:num_records) {
-            for (j in i:num_features) {
-                if ((as.scalar(corePts[i,1]) == 0) & (as.scalar(neighbours[i,j]) != 0) & (as.scalar(corePts[j, 1]) == 1)) {
-                    corePts[i, 1] = BORDER;
-                }
-            }
-        }
-        neighbours = neighbours * corePts;
-        clusterMembers = assign_to_clusters(neighbours, clusterMembers);
-    }
-}
+        # leave only density reachable pts
+        neighbors = (neighbors * corePts * withinEps) > 0;
 
+        # border pts of multiple clusters
+        border = neighbors * (t(corePts)==0 & colSums(neighbors)>1) * seq(num_records,1);
+        border = (border - colMaxs(border)) == 0;
+        neighbors = neighbors * border;
 
-assign_to_clusters = function (Matrix[double] neighbours, Matrix[double] clusterMembers)
-    return (Matrix[double] clusterMembers)
-{
-    UNASSIGNED = 0;
+        adjacency = (neighbors + t(neighbors)) > 0;
 
-    num_records = nrow(clusterMembers);
-
-    cluster = 1;
-    clusterNeighbours = 1;
-
-    for (i in 1:num_records) {
-        s = rowSums(neighbours);
-        rSum = as.scalar(s[i,1]);
-        clusterN = 0;
-        if (rSum != 0) {
-            if (as.scalar(clusterMembers[i,1]) == UNASSIGNED) {
-                clusterMembers[i,1] = cluster;
-                clusterN = cluster;
-                cluster = cluster + 1;
-            }  else if (as.scalar(clusterMembers[i,1]) > 0) {
-                clusterN = as.scalar(clusterMembers[i,1]);
-            }
-
-            for (j in 1:num_records) {
-                if (as.scalar(neighbours[i, j]) != 0) {
-                    clusterMembers[j,1] = clusterN;
-                }
-            }
-        }
+        clusterMembers = components(G=adjacency, verbose=FALSE);
+        # noise to 0
+        clusterMembers = clusterMembers * (rowSums(adjacency) > 0);
     }
 }

@@ -19,10 +19,10 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -30,6 +30,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -39,6 +40,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -57,9 +59,10 @@ import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.Arrays;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
@@ -112,7 +115,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return getVariable(request);
 				case EXEC_INST:
 					return execInstruction(request);
-				case ENCODE_META:
+				case CREATE_ENCODER:
 					return createFrameEncoder(request);
 				case FRAME_ENCODE:
 					return executeFrameEncode(request);
@@ -133,57 +136,58 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse createFrameEncoder(FederatedRequest request) {
 		// param parsing
-		checkNumParams(request.getNumParams(), 3);
+		checkNumParams(request.getNumParams(), 2);
 		String spec = (String) request.getParam(0);
 		int globalOffset = (int) request.getParam(1);
-		long varID = (long) request.getParam(2);
-		
-		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(_vars.get(varID));
+		long varID = request.getID();
+
+		Data dataObject = _ec.getVariable(String.valueOf(varID));
+		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(dataObject);
 		FrameBlock data = fo.acquireRead();
 		String[] colNames = data.getColumnNames();
-		
+
 		// create the encoder
 		Encoder encoder = EncoderFactory.createEncoder(spec,
-				colNames,
-				data.getNumColumns(),
-				null,
-				globalOffset,
-				globalOffset + data.getNumColumns());
+			colNames,
+			data.getNumColumns(),
+			null,
+			globalOffset,
+			globalOffset + data.getNumColumns());
 		// build necessary structures for encoding
 		encoder.build(data);
 		// otherwise data of FrameBlock would be null, therefore it would fail
 		// hack because serialization of FrameBlock does not function if Arrays are not allocated
 		fo.release();
 
-		return new FederatedResponse(FederatedResponse.Type.SUCCESS, encoder);
+		return new FederatedResponse(ResponseType.SUCCESS, encoder);
 	}
-	
+
 	private FederatedResponse executeFrameEncode(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 2);
 		Encoder encoder = (Encoder) request.getParam(0);
-		long varID = (long) request.getParam(1);
+		long newVarID = (long) request.getParam(1);
+		long varID = request.getID();
 
-		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(_vars.get(varID));
+		Data dataObject = _ec.getVariable(String.valueOf(varID));
+		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(dataObject);
 		FrameBlock data = fo.acquireRead();
 
 		// apply transformation
 		MatrixBlock mbout = encoder.apply(data, new MatrixBlock(data.getNumRows(), data.getNumColumns(), false));
-		
+
 		// copy characteristics
 		MatrixCharacteristics mc = new MatrixCharacteristics(fo.getDataCharacteristics());
 		MatrixObject mo = new MatrixObject(Types.ValueType.FP64, OptimizerUtils.getUniqueTempFileName(),
-				new MetaDataFormat(mc, FileFormat.BINARY));
+			new MetaDataFormat(mc, FileFormat.BINARY));
 		// set the encoded data
 		mo.acquireModify(mbout);
 		mo.release();
 		fo.release();
-		
-		// create a new id handle
-		long id = _seq.getNextID();
+
 		// add it to the list of variables
-		_vars.put(id, mo);
+		_ec.setVariable(String.valueOf(newVarID), mo);
 		// return id handle
-		return new FederatedResponse(FederatedResponse.Type.SUCCESS, id);
+		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 	
 	private FederatedResponse readData(FederatedRequest request) {

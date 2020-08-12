@@ -24,7 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -35,6 +37,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class FederationMap
 {
@@ -149,5 +152,65 @@ public class FederationMap
 				new FederatedData(e.getValue(), _ID));
 		}
 		return this;
+	}
+
+	/**
+	 * Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair. The function should
+	 * not change any data of the pair and instead use <code>mapParallel</code> if that is a necessity. Note that this
+	 * operation is parallel and necessary synchronisation has to be performed.
+	 * 
+	 * @param forEachFunction function to execute for each pair
+	 */
+	public void forEachParallel(BiFunction<FederatedRange, FederatedData, Void> forEachFunction) {
+		CommonThreadPool pool = new CommonThreadPool(CommonThreadPool.get(_fedMap.size()));
+
+		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
+		for(Map.Entry<FederatedRange, FederatedData> fedMap : _fedMap.entrySet())
+			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), forEachFunction, _ID));
+		CommonThreadPool.invokeAndShutdown(pool, mappingTasks);
+	}
+
+	/**
+	 * Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair mapping the pairs to
+	 * their new form by directly changing both <code>FederatedRange</code> and <code>FederatedData</code>. The varIDs
+	 * don't have to be changed by the <code>mappingFunction</code> as that will be done by this method. Note that this
+	 * operation is parallel and necessary synchronisation has to be performed.
+	 *
+	 * @param newVarID        the new varID to be used by the new FederationMap
+	 * @param mappingFunction the function directly changing ranges and data
+	 * @return the new <code>FederationMap</code>
+	 */
+	public FederationMap mapParallel(long newVarID, BiFunction<FederatedRange, FederatedData, Void> mappingFunction) {
+		CommonThreadPool pool = new CommonThreadPool(CommonThreadPool.get(_fedMap.size()));
+
+		FederationMap fedMapCopy = copyWithNewID(_ID);
+		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
+		for(Map.Entry<FederatedRange, FederatedData> fedMap : fedMapCopy._fedMap.entrySet())
+			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), mappingFunction, newVarID));
+		CommonThreadPool.invokeAndShutdown(pool, mappingTasks);
+		fedMapCopy._ID = newVarID;
+		return fedMapCopy;
+	}
+
+	private static class MappingTask implements Callable<Void> {
+		private final FederatedRange _range;
+		private final FederatedData _data;
+		private final BiFunction<FederatedRange, FederatedData, Void> _mappingFunction;
+		private final long _varID;
+
+		public MappingTask(FederatedRange range, FederatedData data,
+			BiFunction<FederatedRange, FederatedData, Void> mappingFunction, long varID) {
+			_range = range;
+			_data = data;
+			_mappingFunction = mappingFunction;
+			_varID = varID;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_mappingFunction.apply(_range, _data);
+			_data.setVarID(_varID);
+			return null;
+		}
 	}
 }

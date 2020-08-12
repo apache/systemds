@@ -36,7 +36,7 @@ public class FederatedRequest implements Serializable {
 		GET_VAR,  // return local variable to main
 		EXEC_INST, // execute arbitrary instruction over
 		FRAME_ENCODE, // TODO replace with user defined functions
-		ENCODE_META
+		CREATE_ENCODER
 	}
 	
 	private RequestType _method;

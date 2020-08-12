@@ -21,9 +21,6 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types;
@@ -31,10 +28,10 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -43,7 +40,6 @@ import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final ArrayList<CPOperand> _outputs;
@@ -83,30 +79,51 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		FrameObject fin = ec.getFrameObject(input1.getName());
 		String spec = ec.getScalarInput(input2).getStringValue();
 
-		Map<FederatedRange, FederatedData> fedMapping = fin.getFedMapping();
-
 		// the encoder in which the complete encoding information will be aggregated
 		EncoderComposite globalEncoder = new EncoderComposite(
 			Arrays.asList(new EncoderRecode(), new EncoderPassThrough()));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
-		CommonThreadPool pool = new CommonThreadPool(CommonThreadPool.get(fedMapping.size()));
-		ArrayList<FederatedCreateEncoderTask> createTasks = new ArrayList<>();
-		for(Map.Entry<FederatedRange, FederatedData> fedMap : fedMapping.entrySet())
-			createTasks.add(new FederatedCreateEncoderTask(fedMap.getKey(), fedMap.getValue(), spec, globalEncoder));
-		try {
-			pool.invokeAll(createTasks);
-		}
-		catch(InterruptedException e) {
-			throw new DMLRuntimeException("Federated Creation of encoders failed: " + e.getMessage());
-		}
+		FederationMap fedMapping = fin.getFedMapping();
+		fedMapping.forEachParallel((range, data) -> {
+			int columnOffset = (int) range.getBeginDims()[1] + 1;
 
-		Map<FederatedRange, FederatedData> transformedFedMapping = new HashMap<>();
-		ArrayList<FederatedEncodeTask> encodeTasks = new ArrayList<>();
-		for(Map.Entry<FederatedRange, FederatedData> fedMap : fedMapping.entrySet())
-			encodeTasks
-				.add(new FederatedEncodeTask(fedMap.getKey(), fedMap.getValue(), globalEncoder, transformedFedMapping));
-		CommonThreadPool.invokeAndShutdown(pool, encodeTasks);
+			// create an encoder with the given spec. The columnOffset (which is 1 based) has to be used to
+			// tell the federated worker how much the indexes in the spec have to be offset.
+			Future<FederatedResponse> response = data.executeFederatedOperation(
+				new FederatedRequest(FederatedRequest.RequestType.CREATE_ENCODER, data.getVarID(), spec, columnOffset));
+			// collect responses with encoders
+			try {
+				Encoder encoder = (Encoder) response.get().getData()[0];
+				// merge this encoder into a composite encoder
+				synchronized(globalEncoder) {
+					globalEncoder.mergeAt(encoder, columnOffset);
+				}
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
+			}
+			return null;
+		});
+		long varID = FederationUtils.getNextFedDataID();
+		FederationMap transformedFedMapping = fedMapping.mapParallel(varID, (range, data) -> {
+			int colStart = (int) range.getBeginDims()[1] + 1;
+			int colEnd = (int) range.getEndDims()[1] + 1;
+			// get the encoder segment that is relevant for this federated worker
+			Encoder encoder = globalEncoder.subRangeEncoder(colStart, colEnd);
+
+			try {
+				FederatedResponse response = data.executeFederatedOperation(
+					new FederatedRequest(FederatedRequest.RequestType.FRAME_ENCODE, data.getVarID(), encoder, varID))
+					.get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+			return null;
+		});
 
 		// construct a federated matrix with the encoded data
 		MatrixObject transformedMat = ec.getMatrixObject(getOutput(0));
@@ -117,74 +134,5 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// release input and outputs
 		ec.setFrameOutput(getOutput(1).getName(),
 			globalEncoder.getMetaData(new FrameBlock(globalEncoder.getNumCols(), Types.ValueType.STRING)));
-	}
-
-	private static class FederatedCreateEncoderTask implements Callable<Void> {
-		private final FederatedRange _range;
-		private final FederatedData _data;
-		private final String _spec;
-		private final Encoder _result;
-
-		public FederatedCreateEncoderTask(FederatedRange range, FederatedData data, String spec, Encoder result) {
-			_range = range;
-			_data = data;
-			_spec = spec;
-			_result = result;
-		}
-
-		@Override
-		public Void call() throws Exception {
-			int columnOffset = (int) _range.getBeginDims()[1] + 1;
-
-			// create an encoder with the given spec. The columnOffset (which is 1 based) has to be used to
-			// tell the federated worker how much the indexes in the spec have to be offset.
-			Future<FederatedResponse> response = _data.executeFederatedOperation(
-				new FederatedRequest(FederatedRequest.FedMethod.CREATE_ENCODER, _spec, columnOffset),
-				true);
-			// collect responses with encoders
-			try {
-				Encoder encoder = (Encoder) response.get().getData()[0];
-				// merge this encoder into a composite encoder
-				synchronized(_result) {
-					_result.mergeAt(encoder, columnOffset);
-				}
-			}
-			catch(Exception e) {
-				throw new DMLRuntimeException("Federated encoder creation failed: " + e.getMessage());
-			}
-			return null;
-		}
-	}
-
-	private static class FederatedEncodeTask implements Callable<Void> {
-		private final FederatedRange _range;
-		private final FederatedData _data;
-		private final Encoder _globalEncoder;
-		private final Map<FederatedRange, FederatedData> _resultMapping;
-
-		public FederatedEncodeTask(FederatedRange range, FederatedData data, Encoder globalEncoder,
-			Map<FederatedRange, FederatedData> resultMapping) {
-			_range = range;
-			_data = data;
-			_globalEncoder = globalEncoder;
-			_resultMapping = resultMapping;
-		}
-
-		@Override
-		public Void call() throws Exception {
-			int colStart = (int) _range.getBeginDims()[1] + 1;
-			int colEnd = (int) _range.getEndDims()[1] + 1;
-			// get the encoder segment that is relevant for this federated worker
-			Encoder encoder = _globalEncoder.subRangeEncoder(colStart, colEnd);
-
-			FederatedResponse response = _data
-				.executeFederatedOperation(new FederatedRequest(FederatedRequest.FedMethod.FRAME_ENCODE, encoder), true)
-				.get();
-			long varId = (long) response.getData()[0];
-			synchronized(_resultMapping) {
-				_resultMapping.put(new FederatedRange(_range), new FederatedData(_data, varId));
-			}
-			return null;
-		}
 	}
 }

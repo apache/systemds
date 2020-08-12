@@ -76,6 +76,10 @@ public class FederatedData {
 		_varID = varID;
 	}
 	
+	public long getVarID() {
+		return _varID;
+	}
+	
 	public String getFilepath() {
 		return _filepath;
 	}

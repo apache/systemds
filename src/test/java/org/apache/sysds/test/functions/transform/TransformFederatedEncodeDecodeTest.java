@@ -87,7 +87,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 		ExecMode platformOld = rtplatform;
 		rtplatform = ExecMode.SINGLE_NODE;
 
-		Thread t1 = null, t2 = null;
+		Thread t1 = null, t2 = null, t3 = null, t4 = null;
 		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 
@@ -95,6 +95,10 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			t1 = startLocalFedWorker(port1);
 			int port2 = getRandomAvailablePort();
 			t2 = startLocalFedWorker(port2);
+			int port3 = getRandomAvailablePort();
+			t3 = startLocalFedWorker(port3);
+			int port4 = getRandomAvailablePort();
+			t4 = startLocalFedWorker(port4);
 
 			// schema
 			Types.ValueType[] schema = new Types.ValueType[cols / 2];
@@ -120,9 +124,9 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 
 			programArgs = new String[] {"-nvargs",
 				"in_AU=" + TestUtils.federatedAddress("localhost", port1, input("AU")),
-				"in_AL=" + TestUtils.federatedAddress("localhost", port1, input("AL")),
-				"in_BU=" + TestUtils.federatedAddress("localhost", port1, input("BU")),
-				"in_BL=" + TestUtils.federatedAddress("localhost", port1, input("BL")), "rows=" + rows, "cols=" + cols,
+				"in_AL=" + TestUtils.federatedAddress("localhost", port2, input("AL")),
+				"in_BU=" + TestUtils.federatedAddress("localhost", port3, input("BU")),
+				"in_BL=" + TestUtils.federatedAddress("localhost", port4, input("BL")), "rows=" + rows, "cols=" + cols,
 				"spec_file=" + SCRIPT_DIR + TEST_DIR + SPEC, "out=" + output("FO"), "format=" + format.toString()};
 
 			// run test
@@ -147,6 +151,8 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 		finally {
 			TestUtils.shutdownThread(t1);
 			TestUtils.shutdownThread(t2);
+			TestUtils.shutdownThread(t3);
+			TestUtils.shutdownThread(t4);
 			rtplatform = platformOld;
 		}
 	}

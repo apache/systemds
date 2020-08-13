@@ -42,7 +42,7 @@ def numpy_to_matrix_block(jvm: JVMView, np_arr: np.array):
     else:
         arr = np_arr.ravel().astype(np.float64)
         value_type = jvm.org.apache.sysds.common.Types.ValueType.FP64
-    buf = bytearray(arr.tostring())
+    buf = bytearray(arr.tobytes())
     convert_method = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertPy4JArrayToMB
     return convert_method(buf, rows, cols, value_type)
 

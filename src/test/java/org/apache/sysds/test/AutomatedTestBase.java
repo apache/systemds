@@ -38,6 +38,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.sysds.api.DMLScript;
@@ -45,12 +47,15 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
@@ -192,13 +197,10 @@ public abstract class AutomatedTestBase {
 
 	private boolean isOutAndExpectedDeletionDisabled = false;
 
-	private String expectedStdOut;
 	private int iExpectedStdOutState = 0;
-	private String unexpectedStdOut;
 	private int iUnexpectedStdOutState = 0;
 	// private PrintStream originalPrintStreamStd = null;
 
-	private String expectedStdErr;
 	private int iExpectedStdErrState = 0;
 	// private PrintStream originalErrStreamStd = null;
 
@@ -1208,7 +1210,7 @@ public abstract class AutomatedTestBase {
 			String[] dmlScriptArgs = args.toArray(new String[args.size()]);
 			if( LOG.isTraceEnabled() )
 				LOG.trace("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
-			DMLScript.main(dmlScriptArgs);
+			main(dmlScriptArgs);
 
 			if(maxSparkInst > -1 && maxSparkInst < Statistics.getNoOfCompiledSPInst())
 				fail("Limit of Spark jobs is exceeded: expected: " + maxSparkInst + ", occurred: "
@@ -1242,6 +1244,19 @@ public abstract class AutomatedTestBase {
 			System.setOut(old);
 		}
 		return buff;
+	}
+
+	/**
+	 *
+	 * @param args command-line arguments
+	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
+	 */
+	public static void main(String[] args)
+			throws IOException, ParseException, DMLScriptException
+	{
+		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
+		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		DMLScript.executeScript(conf, otherArgs);
 	}
 
 	private void addProgramIndependentArguments(ArrayList<String> args) {
@@ -1525,11 +1540,11 @@ public abstract class AutomatedTestBase {
 	public void tearDown() {
 		LOG.trace("Duration: " + (System.currentTimeMillis() - lTimeBeforeTest) + "ms");
 
-		assertTrue("expected String did not occur: " + expectedStdOut,
-			iExpectedStdOutState == 0 || iExpectedStdOutState == 2);
-		assertTrue("expected String did not occur (stderr): " + expectedStdErr,
-			iExpectedStdErrState == 0 || iExpectedStdErrState == 2);
-		assertFalse("unexpected String occurred: " + unexpectedStdOut, iUnexpectedStdOutState == 1);
+//		assertTrue("expected String did not occur: " + expectedStdOut,
+//			iExpectedStdOutState == 0 || iExpectedStdOutState == 2);
+//		assertTrue("expected String did not occur (stderr): " + expectedStdErr,
+//			iExpectedStdErrState == 0 || iExpectedStdErrState == 2);
+//		assertFalse("unexpected String occurred: " + unexpectedStdOut, iUnexpectedStdOutState == 1);
 		TestUtils.displayAssertionBuffer();
 
 		if(!isOutAndExpectedDeletionDisabled()) {
@@ -1740,8 +1755,8 @@ public abstract class AutomatedTestBase {
 	 *
 	 * @param name   directory name
 	 * @param data   two dimensional frame data
-	 * @param schema
-	 * @param oi
+	 * @param schema The schema of the frame
+	 * @param fmt    The format of the frame
 	 * @throws IOException
 	 */
 	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, FileFormat fmt)

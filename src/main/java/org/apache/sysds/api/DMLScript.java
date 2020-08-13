@@ -33,6 +33,7 @@ import java.util.Scanner;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -148,16 +149,43 @@ public class DMLScript
 	}
 
 	/**
+	 * Main entry point for systemDS dml script execution
 	 *
 	 * @param args command-line arguments
-	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
 	public static void main(String[] args)
-		throws IOException, ParseException, DMLScriptException
 	{
-		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		DMLScript.executeScript(conf, otherArgs);
+		try{
+			Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
+			String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+			DMLScript.executeScript(conf, otherArgs);
+		} catch(Exception e){
+			for(String s: args){
+				if(s.trim().contains("-debug")){
+					e.printStackTrace();
+				}
+			}
+			final String ANSI_RED = "\u001B[31m";
+			final String ANSI_RESET = "\u001B[0m";
+			StringBuilder sb = new StringBuilder();
+			sb.append(ANSI_RED);
+			sb.append("An Error Occured : ");
+			sb.append("\n" );
+			sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
+			sb.append(" -- ");
+			sb.append(e.getMessage());
+			Throwable s =  e.getCause();
+			while(s != null){
+				sb.append("\n" );
+				sb.append(StringUtils.leftPad(s.getClass().getSimpleName(),25));
+				sb.append(" -- ");
+				sb.append(s.getMessage());
+				s = s.getCause();
+			}
+			sb.append(ANSI_RESET);
+			System.out.println(sb.toString());
+		}
+
 	}
 
 	/**

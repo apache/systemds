@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 
@@ -162,7 +163,7 @@ public class FederationMap
 	 * @param forEachFunction function to execute for each pair
 	 */
 	public void forEachParallel(BiFunction<FederatedRange, FederatedData, Void> forEachFunction) {
-		CommonThreadPool pool = new CommonThreadPool(CommonThreadPool.get(_fedMap.size()));
+		ExecutorService pool = CommonThreadPool.get(_fedMap.size());
 
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
 		for(Map.Entry<FederatedRange, FederatedData> fedMap : _fedMap.entrySet())
@@ -181,7 +182,7 @@ public class FederationMap
 	 * @return the new <code>FederationMap</code>
 	 */
 	public FederationMap mapParallel(long newVarID, BiFunction<FederatedRange, FederatedData, Void> mappingFunction) {
-		CommonThreadPool pool = new CommonThreadPool(CommonThreadPool.get(_fedMap.size()));
+		ExecutorService pool = CommonThreadPool.get(_fedMap.size());
 
 		FederationMap fedMapCopy = copyWithNewID(_ID);
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();

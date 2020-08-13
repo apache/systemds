@@ -2656,8 +2656,9 @@ public class DMLTranslator
 		case CHOLESKY:
 		case TYPEOF:
 		case DETECTSCHEMA:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
-				OpOp1.valueOf(source.getOpCode().name()), expr);
+		case COLNAMES:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), OpOp1.valueOf(source.getOpCode().name()), expr);
 			break;
 			
 		case OUTER:

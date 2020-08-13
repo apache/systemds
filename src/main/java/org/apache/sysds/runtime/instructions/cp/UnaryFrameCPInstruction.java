@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -37,12 +38,19 @@ public class UnaryFrameCPInstruction extends UnaryCPInstruction {
 			ec.releaseFrameInput(input1.getName());
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
-		else if(getOpcode().equals("detectSchema"))
-		{
+		else if(getOpcode().equals("detectSchema")) {
 			FrameBlock inBlock = ec.getFrameInput(input1.getName());
 			FrameBlock retBlock = inBlock.detectSchemaFromRow(Lop.SAMPLE_FRACTION);
 			ec.releaseFrameInput(input1.getName());
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
+		else if(getOpcode().equals("colnames")) {
+			FrameBlock inBlock = ec.getFrameInput(input1.getName());
+			FrameBlock retBlock = inBlock.getColumnNamesAsFrame();
+			ec.releaseFrameInput(input1.getName());
+			ec.setFrameOutput(output.getName(), retBlock);
+		}
+		else
+			throw new DMLScriptException("Opcode '" + getOpcode() + "' is not a valid UnaryFrameCPInstruction");
 	}
 }

@@ -1307,10 +1307,9 @@ public abstract class AutomatedTestBase {
 		try {
 			t = new Thread(() -> {
 				try {
-					DMLScript.main(finalArguments);
+					main(finalArguments);
 				}
 				catch(IOException e) {
-
 				}
 			});
 			t.start();

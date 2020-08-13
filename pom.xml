@@ -51,7 +51,8 @@
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.2.0</jcuda.version>
 		<!-->Testing settings<!-->
-		<skipTests>true</skipTests>
+		<maven.test.skip>true</maven.test.skip>
+		<jacoco.skip>true</jacoco.skip>
 		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
 	</properties>
 
@@ -256,7 +257,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M4</version><!--$NO-MVN-MAN-VER$ -->
 				<configuration>
-					<skipTests>${skipTests}</skipTests>
+					<skipTests>${maven.test.skip}</skipTests>
 					<parallel>classes</parallel>
 					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
 					<threadCount>12</threadCount>

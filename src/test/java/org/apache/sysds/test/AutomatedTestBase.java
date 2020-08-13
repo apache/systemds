@@ -20,8 +20,6 @@
 package org.apache.sysds.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -196,13 +194,6 @@ public abstract class AutomatedTestBase {
 	private File curLocalTempDir = null;
 
 	private boolean isOutAndExpectedDeletionDisabled = false;
-
-	private int iExpectedStdOutState = 0;
-	private int iUnexpectedStdOutState = 0;
-	// private PrintStream originalPrintStreamStd = null;
-
-	private int iExpectedStdErrState = 0;
-	// private PrintStream originalErrStreamStd = null;
 
 	private boolean outputBuffering = true;
 	

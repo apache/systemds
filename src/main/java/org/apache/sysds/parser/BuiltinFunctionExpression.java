@@ -716,6 +716,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		case TYPEOF:
 		case DETECTSCHEMA:
+		case COLNAMES:
 			checkNumParameters(1);
 			checkMatrixFrameParam(getFirstExpr());
 			output.setDataType(DataType.FRAME);

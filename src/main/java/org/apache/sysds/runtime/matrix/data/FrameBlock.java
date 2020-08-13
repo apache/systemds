@@ -176,7 +176,14 @@ public class FrameBlock implements CacheBlock, Externalizable
 	public String[] getColumnNames() {
 		return getColumnNames(true);
 	}
-		
+	
+	
+	public FrameBlock getColumnNamesAsFrame() {
+		FrameBlock fb = new FrameBlock(getNumColumns(), ValueType.STRING);
+		fb.appendRow(getColumnNames());
+		return fb;
+	}
+	
 	/**
 	 * Returns the column names of the frame block. This method 
 	 * allocates default column names if required.

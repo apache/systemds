@@ -84,6 +84,7 @@ public enum Builtins {
 	CONFUSIONMATRIX("confusionMatrix", true),
 	COR("cor", true),
 	DETECTSCHEMA("detectSchema", false),
+	COLUMN_NAMES("columnNames", false),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
 	DROP_INVALID_TYPE("dropInvalidType", false),

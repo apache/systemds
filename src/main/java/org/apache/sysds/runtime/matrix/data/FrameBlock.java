@@ -202,6 +202,12 @@ public class FrameBlock implements CacheBlock, Externalizable
 			_colnames = createColNames(getNumColumns());
 		return _colnames[c];
 	}
+	
+	public FrameBlock getColumnNamesFrameBlock() {
+		FrameBlock fb = new FrameBlock(getNumColumns(), ValueType.STRING);
+		fb.appendRow(getColumnNames());
+		return fb;
+	}
 
 	public void setColumnNames(String[] colnames) {
 		_colnames = colnames;

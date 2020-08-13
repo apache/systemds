@@ -195,7 +195,7 @@ public class Types
 		ABS, ACOS, ASIN, ASSERT, ATAN, CAST_AS_SCALAR, CAST_AS_MATRIX,
 		CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
 		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
-		CUMSUMPROD, DETECTSCHEMA, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
+		CUMSUMPROD, DETECTSCHEMA, COLUMN_NAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
 		MEDIAN, PRINT, ROUND, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP, SVD,
 		TAN, TANH, TYPEOF,
@@ -232,6 +232,7 @@ public class Types
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
 				case DETECTSCHEMA:    return "detectSchema";
+				case COLUMN_NAMES:    return "columnNames";
 				case MULT2:           return "*2";
 				case NOT:             return "!";
 				case POW2:            return "^2";

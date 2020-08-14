@@ -112,10 +112,10 @@ public class OptimizationWrapper
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
 
-	public static void setLogLevel( Level optLogLevel ) {
-		Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
-				.setLevel( optLogLevel );
-	}
+	// public static void setLogLevel( Level optLogLevel ) {
+	// 	Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
+	// 			.setLevel( optLogLevel );
+	// }
 
 	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 

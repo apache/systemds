@@ -560,7 +560,7 @@ public class ExecutionContext {
 		return null;
 	}
 	
-	private static CacheableData<?> createMatrixObject(MatrixBlock mb) {
+	public static MatrixObject createMatrixObject(MatrixBlock mb) {
 		MatrixObject ret = new MatrixObject(Types.ValueType.FP64, 
 			OptimizerUtils.getUniqueTempFileName());
 		ret.acquireModify(mb);
@@ -572,7 +572,7 @@ public class ExecutionContext {
 		return ret;
 	}
 	
-	private static CacheableData<?> createFrameObject(FrameBlock fb) {
+	public static FrameObject createFrameObject(FrameBlock fb) {
 		FrameObject ret = new FrameObject(OptimizerUtils.getUniqueTempFileName());
 		ret.acquireModify(fb);
 		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(

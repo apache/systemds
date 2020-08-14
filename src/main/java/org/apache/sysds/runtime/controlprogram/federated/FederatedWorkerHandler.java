@@ -31,7 +31,6 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -48,15 +47,11 @@ import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.privacy.PrivacyPropagator;
-import org.apache.sysds.runtime.transform.encode.Encoder;
-import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.utils.JSONHelper;
 import org.apache.wink.json4j.JSONObject;
 
@@ -115,10 +110,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return getVariable(request);
 				case EXEC_INST:
 					return execInstruction(request);
-				case CREATE_ENCODER:
-					return createFrameEncoder(request);
-				case FRAME_ENCODE:
-					return executeFrameEncode(request);
+				case EXEC_UDF:
+					return execUDF(request);
 				default:
 					String message = String.format("Method %s is not supported.", method);
 					return new FederatedResponse(FederatedResponse.ResponseType.ERROR, new FederatedWorkerHandlerException(message));
@@ -132,58 +125,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				new FederatedWorkerHandlerException("Exception of type "
 				+ ex.getClass() + " thrown when processing request", ex));
 		}
-	}
-
-	private FederatedResponse createFrameEncoder(FederatedRequest request) {
-		// param parsing
-		checkNumParams(request.getNumParams(), 2);
-		String spec = (String) request.getParam(0);
-		int globalOffset = (int) request.getParam(1);
-		long varID = request.getID();
-
-		Data dataObject = _ec.getVariable(String.valueOf(varID));
-		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(dataObject);
-		FrameBlock data = fo.acquireRead();
-		String[] colNames = data.getColumnNames();
-
-		// create the encoder
-		Encoder encoder = EncoderFactory.createEncoder(spec, colNames,
-			data.getNumColumns(), null, globalOffset, globalOffset + data.getNumColumns());
-		// build necessary structures for encoding
-		encoder.build(data);
-		// otherwise data of FrameBlock would be null, therefore it would fail
-		// hack because serialization of FrameBlock does not function if Arrays are not allocated
-		fo.release();
-
-		return new FederatedResponse(ResponseType.SUCCESS, encoder);
-	}
-
-	private FederatedResponse executeFrameEncode(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 2);
-		Encoder encoder = (Encoder) request.getParam(0);
-		long newVarID = (long) request.getParam(1);
-		long varID = request.getID();
-
-		Data dataObject = _ec.getVariable(String.valueOf(varID));
-		FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(dataObject);
-		FrameBlock data = fo.acquireRead();
-
-		// apply transformation
-		MatrixBlock mbout = encoder.apply(data, new MatrixBlock(data.getNumRows(), data.getNumColumns(), false));
-
-		// copy characteristics
-		MatrixCharacteristics mc = new MatrixCharacteristics(fo.getDataCharacteristics());
-		MatrixObject mo = new MatrixObject(Types.ValueType.FP64, OptimizerUtils.getUniqueTempFileName(),
-			new MetaDataFormat(mc, FileFormat.BINARY));
-		// set the encoded data
-		mo.acquireModify(mbout);
-		mo.release();
-		fo.release();
-
-		// add it to the list of variables
-		_ec.setVariable(String.valueOf(newVarID), mo);
-		// return id handle
-		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 	
 	private FederatedResponse readData(FederatedRequest request) {
@@ -308,6 +249,24 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return new FederatedResponse(ResponseType.ERROR, ex.getMessage());
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+	}
+	
+	private FederatedResponse execUDF(FederatedRequest request) {
+		checkNumParams(request.getNumParams(), 1);
+		
+		//get function and input parameters
+		FederatedUDF udf = (FederatedUDF) request.getParam(0);
+		Data[] inputs = Arrays.stream(udf.getInputIDs())
+			.mapToObj(id -> _ec.getVariable(String.valueOf(id)))
+			.toArray(Data[]::new);
+		
+		//execute user-defined function
+		try {
+			return udf.execute(_ec, inputs);
+		}
+		catch(Exception ex) {
+			return new FederatedResponse(ResponseType.ERROR, ex.getMessage());
+		}
 	}
 
 	private static void checkNumParams(int actual, int... expected) {

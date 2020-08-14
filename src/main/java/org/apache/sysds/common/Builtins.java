@@ -124,6 +124,7 @@ public enum Builtins {
 	LMDS("lmDS", true),
 	LMPREDICT("lmpredict", true),
 	LOG("log", false),
+	LOGSUMEXP("logSumExp", true),
 	LSTM("lstm", false, ReturnType.MULTI_RETURN),
 	LSTM_BACKWARD("lstm_backward", false, ReturnType.MULTI_RETURN),
 	LU("lu", false, ReturnType.MULTI_RETURN),

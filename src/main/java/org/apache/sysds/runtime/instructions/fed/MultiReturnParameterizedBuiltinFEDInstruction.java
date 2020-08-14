@@ -30,15 +30,21 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
+import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
 
@@ -92,7 +98,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// create an encoder with the given spec. The columnOffset (which is 1 based) has to be used to
 			// tell the federated worker how much the indexes in the spec have to be offset.
 			Future<FederatedResponse> response = data.executeFederatedOperation(
-				new FederatedRequest(RequestType.CREATE_ENCODER, data.getVarID(), spec, columnOffset));
+				new FederatedRequest(RequestType.EXEC_UDF, data.getVarID(),
+					new CreateFrameEncoder(data.getVarID(), spec, columnOffset)));
 			// collect responses with encoders
 			try {
 				Encoder encoder = (Encoder) response.get().getData()[0];
@@ -114,7 +121,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			Encoder encoder = globalEncoder.subRangeEncoder(colStart, colEnd);
 			try {
 				FederatedResponse response = data.executeFederatedOperation(
-					new FederatedRequest(RequestType.FRAME_ENCODE, data.getVarID(), encoder, varID)).get();
+					new FederatedRequest(RequestType.EXEC_UDF, varID,
+						new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -133,5 +141,67 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		// release input and outputs
 		ec.setFrameOutput(getOutput(1).getName(),
 			globalEncoder.getMetaData(new FrameBlock(globalEncoder.getNumCols(), Types.ValueType.STRING)));
+	}
+	
+	
+	public static class CreateFrameEncoder extends FederatedUDF {
+		private static final long serialVersionUID = 2376756757742169692L;
+		private final String _spec;
+		private final int _offset;
+		
+		public CreateFrameEncoder(long input, String spec, int offset) {
+			super(new long[]{input});
+			_spec = spec;
+			_offset = offset;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
+			FrameBlock fb = fo.acquireRead();
+			String[] colNames = fb.getColumnNames();
+
+			// create the encoder
+			Encoder encoder = EncoderFactory.createEncoder(_spec, colNames,
+				fb.getNumColumns(), null, _offset, _offset + fb.getNumColumns());
+			
+			// build necessary structures for encoding
+			encoder.build(fb);
+			fo.release();
+
+			// create federated response
+			return new FederatedResponse(ResponseType.SUCCESS, encoder);
+		}
+	}
+
+	public static class ExecuteFrameEncoder extends FederatedUDF {
+		private static final long serialVersionUID = 6034440964680578276L;
+		private final long _outputID;
+		private final Encoder _encoder;
+		
+		public ExecuteFrameEncoder(long input, long output, Encoder encoder) {
+			super(new long[] {input});
+			_outputID = output;
+			_encoder = encoder;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
+			FrameBlock fb = fo.acquireReadAndRelease();
+
+			// apply transformation
+			MatrixBlock mbout = _encoder.apply(fb,
+				new MatrixBlock(fb.getNumRows(), fb.getNumColumns(), false));
+
+			// create output matrix object
+			MatrixObject mo = ExecutionContext.createMatrixObject(mbout);
+
+			// add it to the list of variables
+			ec.setVariable(String.valueOf(_outputID), mo);
+		
+			// return id handle
+			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+		}
 	}
 }

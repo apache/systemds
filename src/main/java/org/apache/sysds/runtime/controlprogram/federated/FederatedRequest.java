@@ -31,12 +31,11 @@ public class FederatedRequest implements Serializable {
 	
 	// commands sent to and excuted by federated workers
 	public enum RequestType {
-		READ_VAR, // create variable for local data, read on first access
-		PUT_VAR,  // receive data from main and store to local variable
-		GET_VAR,  // return local variable to main
+		READ_VAR,  // create variable for local data, read on first access
+		PUT_VAR,   // receive data from main and store to local variable
+		GET_VAR,   // return local variable to main
 		EXEC_INST, // execute arbitrary instruction over
-		FRAME_ENCODE, // TODO replace with user defined functions
-		CREATE_ENCODER
+		EXEC_UDF,  // execute arbitrary user-defined function
 	}
 	
 	private RequestType _method;

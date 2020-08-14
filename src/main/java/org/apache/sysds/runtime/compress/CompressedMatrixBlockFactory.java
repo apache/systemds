@@ -47,18 +47,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * Factory pattern to construct a CompressedMatrixBlock.
  */
 public class CompressedMatrixBlockFactory {
-	// local debug flag
-	private static final boolean LOCAL_DEBUG = false;
-
-	// DEBUG/TRACE for details
-	private static final Level LOCAL_DEBUG_LEVEL = Level.DEBUG;
-
-	static {
-		// for internal debugging only
-		if(LOCAL_DEBUG) {
-			Logger.getLogger("org.apache.sysds.runtime.compress").setLevel(LOCAL_DEBUG_LEVEL);
-		}
-	}
 
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlockFactory.class.getName());
 	private static final CompressionSettings defaultCompressionSettings = new CompressionSettingsBuilder().create();

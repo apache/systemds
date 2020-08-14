@@ -42,15 +42,6 @@ import org.apache.sysds.utils.Explain;
  */
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
-	private static final boolean LDEBUG = false;
-	
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.hops.rewrite.RewriteMatrixMultChainOptimization")
-				.setLevel(Level.TRACE);
-		}
-	}
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 

@@ -71,18 +71,13 @@ import org.apache.sysds.utils.Statistics;
  */
 public class OptimizationWrapper 
 {
-	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(OptimizationWrapper.class.getName());
 	
 	//internal parameters
 	public static final double PAR_FACTOR_INFRASTRUCTURE = 1.0;
 	private static final boolean CHECK_PLAN_CORRECTNESS = false;
 
-	static {
-		if( LDEBUG )
-			setLogLevel(Level.DEBUG);
-	}
-	
+
 	/**
 	 * Called once per top-level parfor (during runtime, on parfor execute)
 	 * in order to optimize the specific parfor program block.

@@ -29,22 +29,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class ColGroupSizes {
-	// ------------------------------
-	// Logging parameters:
-	// local debug flag
-	private static final boolean LOCAL_DEBUG = false;
-	// DEBUG/TRACE for details
-	private static final Level LOCAL_DEBUG_LEVEL = Level.DEBUG;
-
 	protected static final Log LOG = LogFactory.getLog(ColGroupSizes.class.getName());
-
-	static {
-		// for internal debugging only
-		if(LOCAL_DEBUG) {
-			Logger.getLogger("org.apache.sysds.runtime.compress.colgroup").setLevel(LOCAL_DEBUG_LEVEL);
-		}
-	}
-	// ------------------------------
 
 	public static long getEmptyMemoryFootprint(Class<?> colGroupClass) {
 		switch(colGroupClass.getSimpleName()) {

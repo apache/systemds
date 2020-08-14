@@ -43,14 +43,6 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
  * Main abstract class for estimating size of compressions on columns.
  */
 public abstract class CompressedSizeEstimator {
-
-	private static final boolean LOCAL_DEBUG = false;
-	private static final Level LOCAL_DEBUG_LEVEL = Level.DEBUG;
-	static {
-		if(LOCAL_DEBUG) {
-			Logger.getLogger("org.apache.sysds.runtime.compress.estim").setLevel(LOCAL_DEBUG_LEVEL);
-		}
-	}
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimator.class.getName());
 
 	/** The Matrix Block to extract the compression estimates from */

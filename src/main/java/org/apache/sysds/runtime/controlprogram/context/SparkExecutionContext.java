@@ -94,7 +94,6 @@ import java.util.stream.LongStream;
 
 public class SparkExecutionContext extends ExecutionContext
 {
-	private static final boolean LDEBUG = false; //local debug flag
 
 	//internal configurations
 	private static final boolean LAZY_SPARKCTX_CREATION = true;
@@ -117,14 +116,6 @@ public class SparkExecutionContext extends ExecutionContext
 	private static boolean[] _poolBuff = FAIR_SCHEDULER_MODE ?
 		new boolean[InfrastructureAnalyzer.getLocalParallelism()] : null;
 	
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.runtime.controlprogram.context")
-				.setLevel(Level.DEBUG);
-		}
-	}
-
 	protected SparkExecutionContext(boolean allocateVars, boolean allocateLineage, Program prog) {
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, allocateLineage, prog );

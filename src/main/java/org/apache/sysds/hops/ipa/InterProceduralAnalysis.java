@@ -76,7 +76,6 @@ import java.util.Set;
  */
 public class InterProceduralAnalysis 
 {
-	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(InterProceduralAnalysis.class.getName());
 
 	//internal configuration parameters
@@ -95,14 +94,6 @@ public class InterProceduralAnalysis
 	protected static final boolean ELIMINATE_DEAD_CODE            = true; //remove dead code (e.g., assigments) not used later on
 	protected static final boolean FORWARD_SIMPLE_FUN_CALLS       = true; //replace a call to a simple forwarding function with the function itself
 	protected static final boolean FLAG_NONDETERMINISM            = true; //flag functions which directly or transitively contain non-deterministic calls
-	
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.hops.ipa")
-				.setLevel(Level.DEBUG);
-		}
-	}
 	
 	private final DMLProgram _prog;
 	private final StatementBlock _sb;

@@ -332,7 +332,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		for( ResultVar var : tmp )
 			if(_vsParent.containsVariable(var._name))
 				addToResultVariablesNoDup(var);
-		if( LDEBUG )
+		if( LOG.isDebugEnabled() )
 			for( ResultVar rvar : _resultVars )
 				LOG.debug("INFO: PARFOR final result variable: "+rvar._name);
 		

@@ -143,14 +143,6 @@ public class Statistics
 	private static final LongAdder federatedExecuteInstructionCount = new LongAdder();
 	private static final LongAdder federatedExecuteUDFCount = new LongAdder();
 
-	// private static final LongAdder federatedReadTime = new LongAdder();
-	// private static final LongAdder federatedPutTime = new LongAdder();
-	// private static final LongAdder federatedGetTime = new LongAdder();
-	// private static final LongAdder federatedExecuteInstructionTime = new LongAdder();
-	// private static final LongAdder federatedExecuteUDFTime = new LongAdder();
-
-	// private static long federatedTimer = 0L;
-
 	private static LongAdder numNativeFailures = new LongAdder();
 	public static LongAdder numNativeLibMatrixMultCalls = new LongAdder();
 	public static LongAdder numNativeConv2dCalls = new LongAdder();

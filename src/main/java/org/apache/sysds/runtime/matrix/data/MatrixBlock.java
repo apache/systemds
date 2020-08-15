@@ -637,15 +637,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public boolean containsValue(double pattern) {
+		//fast paths: infer from meta data only
 		if(isEmptyBlock(true))
 			return pattern==0;
+		if( nonZeros < getLength() && pattern == 0 )
+			return true;
 		
 		//make a pass over the data to determine if it includes the
 		//pattern, with early abort as soon as the pattern is found
 		boolean NaNpattern = Double.isNaN(pattern);
 		if( isInSparseFormat() ) {
-			if( nonZeros < getLength() && pattern == 0 )
-				return true;
 			SparseBlock sb = getSparseBlock();
 			for(int i=0; i<rlen; i++) {
 				if( sb.isEmpty(i) ) continue;
@@ -661,7 +662,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			DenseBlock db = getDenseBlock();
 			for(int i=0; i<rlen; i++) {
 				double[] vals = db.values(i);
-				for(int j=0; j<clen; j++)
+				int pos = db.pos(i);
+				for(int j=pos; j<pos+clen; j++)
 					if(vals[j]==pattern || (NaNpattern && Double.isNaN(vals[j])))
 						return true;
 			}

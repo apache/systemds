@@ -38,7 +38,7 @@ public class BuiltinDBSCANTest extends AutomatedTestBase
 
 	private final static double eps = 1e-3;
 	private final static int rows = 1700;
-	private final static double spDense = 0.99;
+	//private final static double spDense = 0.99;
 
 	private final static double epsDBSCAN = 1;
 	private final static int minPts = 5;

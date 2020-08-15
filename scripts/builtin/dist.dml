@@ -20,10 +20,10 @@
 
 # Returns Euclidian distance matrix (distances between N n-dimensional points)
 
-m_edm = function(Matrix[Double] X) return (Matrix[Double] Y) {
+m_dist = function(Matrix[Double] X) return (Matrix[Double] Y) {
     G = X %*% t(X);
-    I = matrix(1, rows=nrow(G), cols=ncol(G));
+    I = matrix(1, rows = nrow(G), cols = ncol(G));
     Y = -2 * (G) + t(I %*% diag(diag(G))) + t(diag(diag(G)) %*% I);
     Y = sqrt(Y);
-    Y = replace(target=Y, pattern=0/0, replacement=0);
+    Y = replace(target = Y, pattern=0/0, replacement = 0);
 }

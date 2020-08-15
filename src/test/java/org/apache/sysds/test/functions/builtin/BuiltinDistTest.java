@@ -31,7 +31,7 @@ import java.util.HashMap;
 
 public class BuiltinDistTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "edm";
+	private final static String TEST_NAME = "dist";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDistTest.class.getSimpleName() + "/";
 	

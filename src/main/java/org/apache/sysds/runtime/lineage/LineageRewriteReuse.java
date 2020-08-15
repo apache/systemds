@@ -76,15 +76,6 @@ public class LineageRewriteReuse
 	private static boolean _disableReuse = true;
 	private static final Log LOG = LogFactory.getLog(LineageRewriteReuse.class.getName());
 	
-	private static boolean LDEBUG = false; //internal debugging
-	
-	static {
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.runtime.lineage.LineageRewriteReuse")
-				.setLevel(Level.DEBUG);
-		}
-	}
-	
 	public static boolean executeRewrites (Instruction curr, ExecutionContext ec)
 	{
 		ExecutionContext lrwec = getExecutionContext();

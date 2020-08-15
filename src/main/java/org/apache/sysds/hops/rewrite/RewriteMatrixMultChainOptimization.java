@@ -22,9 +22,6 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
@@ -42,15 +39,6 @@ import org.apache.sysds.utils.Explain;
  */
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
-	private static final boolean LDEBUG = false;
-	
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.hops.rewrite.RewriteMatrixMultChainOptimization")
-				.setLevel(Level.TRACE);
-		}
-	}
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 

@@ -76,6 +76,12 @@ public class FEDInstructionUtils {
 				}
 			}
 		}
+		else if( inst instanceof MMTSJCPInstruction ) {
+			MMTSJCPInstruction linst = (MMTSJCPInstruction) inst;
+			MatrixObject mo = ec.getMatrixObject(linst.input1);
+			if( mo.isFederated() )
+				return TsmmFEDInstruction.parseInstruction(linst.toString());
+		}
 		return inst;
 	}
 	

@@ -29,13 +29,13 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 public class FederationUtils {
 	private static final IDSequence _idSeq = new IDSequence();
@@ -58,13 +58,11 @@ public class FederationUtils {
 
 	public static MatrixBlock aggAdd(Future<FederatedResponse>[] ffr) {
 		try {
-			BinaryOperator bop = InstructionUtils.parseBinaryOperator("+");
-			MatrixBlock ret = (MatrixBlock) (ffr[0].get().getData()[0]);
-			for (int i=1; i<ffr.length; i++) {
-				MatrixBlock tmp = (MatrixBlock) (ffr[i].get().getData()[0]);
-				ret.binaryOperationsInPlace(bop, tmp);
-			}
-			return ret;
+			SimpleOperator op = new SimpleOperator(Plus.getPlusFnObject());
+			MatrixBlock[] in = new MatrixBlock[ffr.length];
+			for(int i=0; i<ffr.length; i++)
+				in[i] = (MatrixBlock) ffr[i].get().getData()[0];
+			return MatrixBlock.naryOperations(op, in, new ScalarObject[0], new MatrixBlock());
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

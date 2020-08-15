@@ -37,9 +37,8 @@ public abstract class ComputationFEDInstruction extends FEDInstruction implement
 	public final CPOperand output;
 	public final CPOperand input1, input2, input3;
 	
-	protected ComputationFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			String opcode,
-			String istr) {
+	protected ComputationFEDInstruction(FEDType type, Operator op,
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;
@@ -47,9 +46,8 @@ public abstract class ComputationFEDInstruction extends FEDInstruction implement
 		output = out;
 	}
 	
-	protected ComputationFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3,
-			CPOperand out,
-			String opcode, String istr) {
+	protected ComputationFEDInstruction(FEDType type, Operator op,
+		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
 		super(type, op, opcode, istr);
 		input1 = in1;
 		input2 = in2;

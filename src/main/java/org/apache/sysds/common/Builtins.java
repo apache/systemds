@@ -84,9 +84,11 @@ public enum Builtins {
 	CUMSUMPROD("cumsumprod", false),
 	CONFUSIONMATRIX("confusionMatrix", true),
 	COR("cor", true),
+	DBSCAN("dbscan", true),
 	DETECTSCHEMA("detectSchema", false),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
+	DIST("dist", true),
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
@@ -291,7 +293,7 @@ public enum Builtins {
 	public static boolean contains(String name, boolean script, boolean parameterized) {
 		Builtins tmp = get(name);
 		return tmp != null && script == tmp.isScript()
-			&& parameterized == tmp.isParameterized();
+				&& parameterized == tmp.isParameterized();
 	}
 
 	public static Builtins get(String name) {

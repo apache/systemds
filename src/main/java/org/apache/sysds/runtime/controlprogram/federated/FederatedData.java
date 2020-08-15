@@ -36,7 +36,6 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-import org.apache.sysds.utils.Statistics;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;

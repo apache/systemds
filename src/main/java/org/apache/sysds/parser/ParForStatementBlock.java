@@ -27,8 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.IndexingOp;
@@ -62,8 +60,6 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  */
 public class ParForStatementBlock extends ForStatementBlock 
 {
-	private static final boolean LDEBUG = false; //internal local debug level
-	
 	//external parameter names 
 	private static HashSet<String> _paramNames;
 	public static final String CHECK            = "check";       //run loop dependency analysis
@@ -143,12 +139,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		//initialize function cache
 		if( USE_FN_CACHE ) {
 			_fncache = new HashMap<>();
-		}
-		
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.parser.ParForStatementBlock")
-				.setLevel(Level.TRACE);
 		}
 	}
 	
@@ -340,7 +330,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		for( ResultVar var : tmp )
 			if(_vsParent.containsVariable(var._name))
 				addToResultVariablesNoDup(var);
-		if( LDEBUG )
+		if( LOG.isDebugEnabled() )
 			for( ResultVar rvar : _resultVars )
 				LOG.debug("INFO: PARFOR final result variable: "+rvar._name);
 		

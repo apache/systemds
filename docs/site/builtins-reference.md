@@ -31,6 +31,7 @@ limitations under the License.
     * [`cvlm`-Function](#cvlm-function)
     * [`DBSCAN`-Function](#DBSCAN-function)
     * [`discoverFD`-Function](#discoverFD-function)
+    * [`dist`-Function](#dist-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -211,11 +212,13 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 The dbscan() implements the DBSCAN Clustering algorithm using Euclidian distance.
 
 ### Usage
+
 ```r
 Y = dbscan(X = X, eps = 2.5, minPts = 5)
 ```
 
 ### Arguments
+
 | Name       | Type            | Default    | Description |
 | :--------- | :-------------- | :--------- | :---------- |
 | X          | Matrix[Double]  | required   | The input Matrix to do DBSCAN on. |
@@ -223,11 +226,13 @@ Y = dbscan(X = X, eps = 2.5, minPts = 5)
 | minPts     | Int             | `5`        | Number of points in a neighborhood for a point to be considered as a core point (includes the point itself). |
 
 ### Returns
+
 | Type        | Description |
 | :-----------| :---------- |
 | Matrix[Integer] | The mapping of records to clusters |
 
 ### Example
+
 ```r
 X = rand(rows=1780, cols=180, min=1, max=20) 
 dbscan(X = X, eps = 2.5, minPts = 360)
@@ -254,6 +259,34 @@ discoverFD(X, Mask, threshold)
 | :----- | :---------- |
 | Double | matrix of functional dependencies |
 
+## `dist`-Function
+
+The `dist`-function is used to compute Euclidian distances between N d-dimensional points.
+
+### Usage
+
+```r
+dist(X)
+```
+
+### Arguments
+
+| Name | Type           | Default  | Description |
+| :--- | :------------- | :------- | :---------- |
+| X    | Matrix[Double] | required | (n x d) matrix of d-dimensional points  |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | (n x n) symmetric matrix of Euclidian distances |
+
+### Example
+
+```r
+X = rand (rows = 5, cols = 5)
+Y = dist(X)
+```
 
 ## `glm`-Function
 

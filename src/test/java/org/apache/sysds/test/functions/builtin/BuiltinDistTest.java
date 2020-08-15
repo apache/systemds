@@ -29,11 +29,11 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-public class BuiltinEDMTest extends AutomatedTestBase
+public class BuiltinDistTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "edm";
 	private final static String TEST_DIR = "functions/builtin/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinEDMTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDistTest.class.getSimpleName() + "/";
 	
 	private final static double eps = 1e-3;
 	private final static int rows = 1765;
@@ -45,14 +45,14 @@ public class BuiltinEDMTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testEDMDefaultCP() { runEDM(true, ExecType.CP); }
+	public void testDistDefaultCP() { runDist(true, ExecType.CP); }
 	
 	@Test
-	public void testEDMSP() {
-		runEDM(true, ExecType.SPARK);
+	public void testDistSP() {
+		runDist(true, ExecType.SPARK);
 	}
 
-	private void runEDM(boolean defaultProb, ExecType instType)
+	private void runDist(boolean defaultProb, ExecType instType)
 	{
 		ExecMode platformOld = setExecMode(instType);
 		

@@ -466,10 +466,16 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//(probe data for cache_nowrite / jvm_reuse)
 		if( _data==null && isEmpty(true) ) {
 			try {
-				if( DMLScript.STATISTICS )
-					CacheStatistics.incrementHDFSHits();
-				
-				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
+				if( isFederated() ) {
+					_data = readBlobFromFederated( _fedMapping );
+					
+					//mark for initial local write despite read operation
+					_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
+				}
+				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
+					if( DMLScript.STATISTICS )
+						CacheStatistics.incrementHDFSHits();
+					
 					//check filename
 					if( _hdfsFileName == null )
 						throw new DMLRuntimeException("Cannot read matrix for empty filename.");
@@ -660,6 +666,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				if (gObj != null)
 					gObj.clearData(null, DMLScript.EAGER_CUDA_FREE);
 		}
+		
+		//clear federated matrix
+		if( _fedMapping != null )
+			_fedMapping.cleanup(_fedMapping.getID());
 		
 		// change object state EMPTY
 		setDirty(false);
@@ -923,17 +933,28 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return hashCode() + " " + debugNameEnding;
 	}
 
-	protected T readBlobFromHDFS(String fname) 
-		throws IOException 
-	{
+	//HDFS read
+	protected T readBlobFromHDFS(String fname) throws IOException {
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();
 		return readBlobFromHDFS(fname, dc.getDims());
 	}
 
-	protected abstract T readBlobFromHDFS(String fname, long[] dims) throws IOException;
+	protected abstract T readBlobFromHDFS(String fname, long[] dims)
+		throws IOException;
 
+	//RDD read
 	protected abstract T readBlobFromRDD(RDDObject rdd, MutableBoolean status)
+		throws IOException;
+
+	// Federated read
+	protected T readBlobFromFederated(FederationMap fedMap) throws IOException {
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
+		DataCharacteristics dc = iimd.getDataCharacteristics();
+		return readBlobFromFederated(fedMap, dc.getDims());
+	}
+	
+	protected abstract T readBlobFromFederated(FederationMap fedMap, long[] dims)
 		throws IOException;
 
 	protected abstract void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)

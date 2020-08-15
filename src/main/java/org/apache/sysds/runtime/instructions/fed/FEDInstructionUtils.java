@@ -54,9 +54,10 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof BinaryCPInstruction) {
 			BinaryCPInstruction instruction = (BinaryCPInstruction) inst;
-			if( instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated()
-				|| instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated() ) {
-				return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
+				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
+				if(!instruction.getOpcode().equals("append")) //TODO support rbind/cbind
+					return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {

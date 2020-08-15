@@ -59,7 +59,9 @@ import org.apache.sysds.utils.Statistics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ExecutionContext {
@@ -71,6 +73,7 @@ public class ExecutionContext {
 	//symbol table
 	protected LocalVariableMap _variables;
 	protected boolean _autoCreateVars;
+	protected Set<String> _guardedFiles = new HashSet<>();
 	
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
@@ -130,6 +133,10 @@ public class ExecutionContext {
 	
 	public void setAutoCreateVars(boolean flag) {
 		_autoCreateVars = flag;
+	}
+	
+	public void addGuardedFilename(String fname) {
+		_guardedFiles.add(fname);
 	}
 
 	/**
@@ -751,7 +758,7 @@ public class ExecutionContext {
 			//compute ref count only if matrix cleanup actually necessary
 			if ( mo.isCleanupEnabled() && !getVariables().hasReferences(mo) )  {
 				mo.clearData(); //clean cached data
-				if( fileExists ) {
+				if( fileExists && !_guardedFiles.contains(mo.getFileName()) ) {
 					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName());
 					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName()+".mtd");
 				}

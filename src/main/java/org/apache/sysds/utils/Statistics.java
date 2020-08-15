@@ -1028,11 +1028,13 @@ public class Statistics
 				sb.append("ParFor total update in-place:\t" + lTotalUIPVar + "/" + lTotalLixUIP + "/" + lTotalLix + "\n");
 			}
 			if( federatedReadCount.longValue() > 0){
-				sb.append("Federated Reads       :\t" + federatedReadCount.longValue()+ "\n");
-				sb.append("Federated Puts        :\t" + federatedPutCount.longValue()+ "\n");
-				sb.append("Federated Gets        :\t" + federatedGetCount.longValue()+ "\n");
-				sb.append("Federated Execute In  :\t" + federatedExecuteInstructionCount.longValue()+ "\n");
-				sb.append("Federated Execute UDF :\t" + federatedExecuteUDFCount.longValue()+ "\n");
+				sb.append("Federated (Reads,Puts,Gets) :\t(" + 
+					federatedReadCount.longValue() + "," +
+					federatedPutCount.longValue() + "," +
+					federatedGetCount.longValue() + ")\n");
+				sb.append("Federated Execute (In,UDF)  :\t(" +
+					federatedExecuteInstructionCount.longValue() + "," +
+					federatedExecuteUDFCount.longValue() + ")\n");
 			}
 
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");

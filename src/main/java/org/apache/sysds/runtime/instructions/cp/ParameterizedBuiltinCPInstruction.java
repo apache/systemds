@@ -450,6 +450,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 	}
 	
+	public MatrixObject getTarget(ExecutionContext ec) {
+		return ec.getMatrixObject(params.get("target"));
+	}
+	
 	private CPOperand getTargetOperand() {
 		return new CPOperand(params.get("target"), ValueType.FP64, DataType.MATRIX);
 	}

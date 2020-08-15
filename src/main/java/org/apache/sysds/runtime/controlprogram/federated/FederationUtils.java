@@ -29,12 +29,16 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
+import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 public class FederationUtils {
@@ -50,9 +54,10 @@ public class FederationUtils {
 		String linst = inst.replace(ExecType.SPARK.name(), ExecType.CP.name());
 		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName(), Lop.OPERAND_DELIMITOR+String.valueOf(id));
 		for(int i=0; i<varOldIn.length; i++)
-			if( varOldIn[i] != null )
-				linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldIn[i].getName(),
-					Lop.OPERAND_DELIMITOR+String.valueOf(varNewIn[i]));
+			if( varOldIn[i] != null ) {
+				linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldIn[i].getName(), Lop.OPERAND_DELIMITOR+String.valueOf(varNewIn[i]));
+				linst = linst.replace("="+varOldIn[i].getName(), "="+String.valueOf(varNewIn[i])); //parameterized
+			}
 		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
 	}
 
@@ -63,6 +68,29 @@ public class FederationUtils {
 			for(int i=0; i<ffr.length; i++)
 				in[i] = (MatrixBlock) ffr[i].get().getData()[0];
 			return MatrixBlock.naryOperations(op, in, new ScalarObject[0], new MatrixBlock());
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+	
+	public static MatrixBlock aggMean(Future<FederatedResponse>[] ffr, FederationMap map) {
+		try {
+			FederatedRange[] ranges = map.getFederatedRanges();
+			BinaryOperator bop = InstructionUtils.parseBinaryOperator("+");
+			ScalarOperator sop1 = InstructionUtils.parseScalarBinaryOperator("*", false);
+			MatrixBlock ret = null;
+			long size = 0;
+			for(int i=0; i<ffr.length; i++) {
+				MatrixBlock tmp = (MatrixBlock)ffr[i].get().getData()[0];
+				size += ranges[i].getSize(0);
+				sop1 = sop1.setConstant(ranges[i].getSize(0));
+				tmp = tmp.scalarOperations(sop1, new MatrixBlock());
+				ret = (ret==null) ? tmp : ret.binaryOperationsInPlace(bop, tmp);
+			}
+			ScalarOperator sop2 = InstructionUtils.parseScalarBinaryOperator("/", false);
+			sop2 = sop2.setConstant(size);
+			return ret.scalarOperations(sop2, new MatrixBlock());
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -111,13 +139,20 @@ public class FederationUtils {
 		}
 	}
 
-	public static MatrixBlock aggMatrix(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr) {
-		if( !(aop.aggOp.increOp.fn instanceof KahanFunction) ) {
-			throw new DMLRuntimeException("Unsupported aggregation operator: "
-				+ aop.aggOp.increOp.getClass().getSimpleName());
+	public static MatrixBlock aggMatrix(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, FederationMap map) {
+		// handle row aggregate
+		if( aop.isRowAggregate() ) {
+			//independent of aggregation function for row-partitioned federated matrices
+			return rbind(ffr);
 		}
 		
-		//assumes full row partitions for row and col aggregates
-		return aop.isRowAggregate() ?  rbind(ffr) : aggAdd(ffr);
+		// handle col aggregate
+		if( aop.aggOp.increOp.fn instanceof KahanFunction )
+			return aggAdd(ffr);
+		else if( aop.aggOp.increOp.fn instanceof Mean )
+			return aggMean(ffr, map);
+		else
+			throw new DMLRuntimeException("Unsupported aggregation operator: "
+				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
 	}
 }

@@ -103,7 +103,7 @@ public abstract class MatrixValue implements WritableComparable
 	
 	public abstract MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result);
 	
-	public abstract void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue);
+	public abstract MatrixValue binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue);
 	
 	public abstract MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
 			int startRow, int startColumn, int length);

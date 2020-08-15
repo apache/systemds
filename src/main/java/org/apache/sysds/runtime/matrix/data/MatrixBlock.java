@@ -2837,7 +2837,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
+	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		MatrixBlock that=checkType(thatValue);
 		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
 			throw new RuntimeException("block sizes are not matched for binary " +
@@ -2853,6 +2853,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//core binary cell operation
 		LibMatrixBincell.bincellOpInPlace(this, that, op);
+		return this;
 	}
 	
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {

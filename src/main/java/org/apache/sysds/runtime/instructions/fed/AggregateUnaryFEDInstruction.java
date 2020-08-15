@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -61,11 +62,12 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 		
 		//execute federated commands and cleanups
-		Future<FederatedResponse>[] tmp = in.getFedMapping().execute(fr1, fr2);
-		in.getFedMapping().cleanup(fr1.getID());
+		FederationMap map = in.getFedMapping();
+		Future<FederatedResponse>[] tmp = map.execute(fr1, fr2);
+		map.cleanup(fr1.getID());
 		if( output.isScalar() )
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp));
 		else
-			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp));
+			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp, map));
 	}
 }

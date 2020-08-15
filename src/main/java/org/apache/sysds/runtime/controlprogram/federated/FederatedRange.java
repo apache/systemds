@@ -71,10 +71,13 @@ public class FederatedRange implements Comparable<FederatedRange> {
 	
 	public long getSize() {
 		long size = 1;
-		for (int i = 0; i < _beginDims.length; i++) {
-			size *= _endDims[i] - _beginDims[i];
-		}
+		for (int i = 0; i < _beginDims.length; i++)
+			size *= getSize(i);
 		return size;
+	}
+	
+	public long getSize(int dim) {
+		return _endDims[dim] - _beginDims[dim];
 	}
 	
 	@Override

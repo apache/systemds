@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.utils.Statistics;
 
 public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
@@ -57,6 +58,7 @@ public class FederatedRequest implements Serializable {
 	}
 	
 	public FederatedRequest(RequestType method, long id, List<Object> data) {
+		Statistics.incFederated(method);
 		_method = method;
 		_id = id;
 		_data = data;

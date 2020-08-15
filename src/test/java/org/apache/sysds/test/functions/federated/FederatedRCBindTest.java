@@ -96,7 +96,8 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
+		programArgs = new String[] {"-nvargs",
+			"in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
 			"cols=" + cols, "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, false, null, -1);

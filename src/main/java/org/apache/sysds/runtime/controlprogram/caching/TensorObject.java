@@ -28,6 +28,7 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
@@ -140,6 +141,13 @@ public class TensorObject extends CacheableData<TensorBlock> {
 		// TODO correct blocksize;
 		// TODO read from RDD
 		return SparkExecutionContext.toTensorBlock((JavaPairRDD<TensorIndexes, TensorBlock>) rdd.getRDD(), tc);
+	}
+	
+	@Override
+	protected TensorBlock readBlobFromFederated(FederationMap fedMap, long[] dims)
+		throws IOException
+	{
+		throw new DMLRuntimeException("Unsupported federated tensors");
 	}
 
 	@Override

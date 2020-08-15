@@ -181,6 +181,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		
 		//TODO spawn async load of data, otherwise on first access
 		_ec.setVariable(String.valueOf(id), cd);
+		_ec.addGuardedFilename(filename);
 		
 		if (dataType == Types.DataType.FRAME) {
 			FrameObject frameObject = (FrameObject) cd;

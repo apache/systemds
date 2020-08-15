@@ -145,6 +145,7 @@ public enum Builtins {
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	OUTLIER_SD("outlierBySd", true),
 	OUTLIER_IQR("outlierByIQR", true),
+	PCA("pca", true),
 	PNMF("pnmf", true),
 	PPRED("ppred", false),
 	PROD("prod", false),

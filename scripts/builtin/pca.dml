@@ -1,0 +1,64 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Principal Component Analysis (PCA) for dimensionality reduction
+# ---------------------------------------------------------------------------------------------
+# NAME   TYPE    DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X      Matrix  ---      Input feature matrix
+# K      Int     ---      Number of reduced dimensions (i.e., columns)
+# Center Boolean TRUE     Indicates whether or not to center the feature matrix
+# Scale  Boolean TRUE     Indicates whether or not to scale the feature matrix
+# ---------------------------------------------------------------------------------------------
+# Xout   Matrix  ---      Output feature matrix with K columns
+# Mout   Matrix  ---      Output dominant eigen vectors (can be used for projections)
+# ---------------------------------------------------------------------------------------------
+
+m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
+  return (Matrix[Double] Xout, Matrix[Double] Mout) 
+{
+  N = nrow(X);
+  D = ncol(X);
+
+  # perform z-scoring (centering and scaling)
+  X = scale(X, center, scale);
+
+  # co-variance matrix
+  mu = colSums(X)/N;
+  C = (t(X) %*% X)/(N-1) - (N/(N-1))*t(mu) %*% mu;
+
+  # compute eigen vectors and values
+  [evalues, evectors] = eigen(C);
+
+  decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
+  diagmat = table(seq(1,D),decreasing_Idx);
+  # sorts eigenvalues by decreasing order
+  evalues = diagmat %*% evalues;
+  # sorts eigenvectors column-wise in the order of decreasing eigenvalues
+  evectors = evectors %*% diagmat;
+
+  eval_dominant = evalues[1:K, 1];
+  evec_dominant = evectors[,1:K];
+
+  # Construct new data set by treating computed dominant eigenvectors as the basis vectors
+  Xout = X %*% evec_dominant;
+  Mout = evec_dominant;
+}

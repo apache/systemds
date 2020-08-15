@@ -1020,13 +1020,13 @@ public class Statistics
 				sb.append("ParFor total update in-place:\t" + lTotalUIPVar + "/" + lTotalLixUIP + "/" + lTotalLix + "\n");
 			}
 			if( federatedReadCount.longValue() > 0){
-				sb.append("Federated (Reads,Puts,Gets) :\t(" + 
-					federatedReadCount.longValue() + "," +
-					federatedPutCount.longValue() + "," +
-					federatedGetCount.longValue() + ")\n");
-				sb.append("Federated Execute (In,UDF)  :\t(" +
-					federatedExecuteInstructionCount.longValue() + "," +
-					federatedExecuteUDFCount.longValue() + ")\n");
+				sb.append("Federated I/O (Read, Put, Get):\t" + 
+					federatedReadCount.longValue() + "/" +
+					federatedPutCount.longValue() + "/" +
+					federatedGetCount.longValue() + ".\n");
+				sb.append("Federated Execute (Inst, UDF):\t" +
+					federatedExecuteInstructionCount.longValue() + "/" +
+					federatedExecuteUDFCount.longValue() + ".\n");
 			}
 
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");

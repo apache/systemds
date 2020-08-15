@@ -61,8 +61,7 @@ public class FederatedPCATest extends AutomatedTestBase {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
 			{10000, 10, false}, {2000, 50, false}, {1000, 100, false},
-			//TODO support for federated uacmean, uacvar
-			//{10000, 10, true}, {2000, 50, true}, {1000, 100, true}
+			{10000, 10, true}, {2000, 50, true}, {1000, 100, true}
 		});
 	}
 
@@ -99,7 +98,6 @@ public class FederatedPCATest extends AutomatedTestBase {
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		setOutputBuffering(false);
 		
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
@@ -124,8 +122,11 @@ public class FederatedPCATest extends AutomatedTestBase {
 		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
 		if( scaleAndShift ) {
+			Assert.assertTrue(heavyHittersContainsString("fed_uacsqk+"));
 			Assert.assertTrue(heavyHittersContainsString("fed_uacmean"));
-			Assert.assertTrue(heavyHittersContainsString("fed_uacvar"));
+			Assert.assertTrue(heavyHittersContainsString("fed_-"));
+			Assert.assertTrue(heavyHittersContainsString("fed_/"));
+			Assert.assertTrue(heavyHittersContainsString("fed_replace"));
 		}
 		
 		resetExecMode(platformOld);

@@ -198,10 +198,11 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public void binaryOperationsInPlace(BinaryOperator op,
+	public MatrixValue binaryOperationsInPlace(BinaryOperator op,
 			MatrixValue thatValue) {
 		MatrixCell c2=checkType(thatValue);
 		setValue(op.fn.execute(this.getValue(), c2.getValue()));
+		return this;
 	}
 
 	public void denseScalarOperationsInPlace(ScalarOperator op) {

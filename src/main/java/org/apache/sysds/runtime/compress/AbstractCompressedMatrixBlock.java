@@ -148,11 +148,12 @@ public abstract class AbstractCompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
+	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		printDecompressWarning("binaryOperationsInPlace", (MatrixBlock) thatValue);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(thatValue);
 		left.binaryOperationsInPlace(op, right);
+		return this;
 	}
 
 	@Override

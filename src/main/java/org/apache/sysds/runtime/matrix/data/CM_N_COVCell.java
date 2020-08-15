@@ -61,7 +61,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
+	public MatrixValue binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 

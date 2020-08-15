@@ -33,6 +33,7 @@ public abstract class FEDInstruction extends Instruction {
 		Binary,
 		Init,
 		MultiReturnParameterizedBuiltin,
+		ParameterizedBuiltin,
 		Tsmm,
 	}
 	

@@ -54,25 +54,24 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof BinaryCPInstruction) {
 			BinaryCPInstruction instruction = (BinaryCPInstruction) inst;
-			if( instruction.input1.isMatrix() && instruction.input2.isScalar() ){
-				MatrixObject mo = ec.getMatrixObject(instruction.input1);
-				if(mo.isFederated())
-					return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+			if( instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated()
+				|| instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated() ) {
+				return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
-			if( instruction.input2.isMatrix() && instruction.input1.isScalar() ){
-				MatrixObject mo = ec.getMatrixObject(instruction.input2);
-				if(mo.isFederated())
-					return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+		}
+		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
+			ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction)inst;
+			if(pinst.getOpcode().equals("replace") && pinst.getTarget(ec).isFederated()) {
+				return ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 			}
 		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {
-			MultiReturnParameterizedBuiltinCPInstruction instruction = (MultiReturnParameterizedBuiltinCPInstruction) inst;
-			String opcode = instruction.getOpcode();
-			if(opcode.equals("transformencode") && instruction.input1.isFrame()) {
-				CacheableData<?> fo = ec.getCacheableData(instruction.input1);
+			MultiReturnParameterizedBuiltinCPInstruction minst = (MultiReturnParameterizedBuiltinCPInstruction) inst;
+			if(minst.getOpcode().equals("transformencode") && minst.input1.isFrame()) {
+				CacheableData<?> fo = ec.getCacheableData(minst.input1);
 				if(fo.isFederated()) {
 					return MultiReturnParameterizedBuiltinFEDInstruction
-						.parseInstruction(instruction.getInstructionString());
+						.parseInstruction(minst.getInstructionString());
 				}
 			}
 		}
@@ -80,7 +79,7 @@ public class FEDInstructionUtils {
 			MMTSJCPInstruction linst = (MMTSJCPInstruction) inst;
 			MatrixObject mo = ec.getMatrixObject(linst.input1);
 			if( mo.isFederated() )
-				return TsmmFEDInstruction.parseInstruction(linst.toString());
+				return TsmmFEDInstruction.parseInstruction(linst.getInstructionString());
 		}
 		return inst;
 	}

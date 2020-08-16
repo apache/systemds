@@ -40,7 +40,7 @@ import java.util.Collection;
 public class FederatedKmeansTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
-	private final static String TEST_NAME = "FederatedKMeansTest";
+	private final static String TEST_NAME = "FederatedKmeansTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedKmeansTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;

@@ -31,7 +31,7 @@ public abstract class DataCharacteristics implements Serializable {
 
 	protected int _blocksize;
 	
-	public DataCharacteristics set(long nr, long nc, int len) {
+	public DataCharacteristics set(long nr, long nc, int blen) {
 		throw new DMLRuntimeException("DataCharacteristics.set(long, long, int): should never get called in the base class");
 	}
 

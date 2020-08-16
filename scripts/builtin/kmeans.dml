@@ -160,7 +160,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
         C_old = C; C = C_new;
     }
 
-    if(is_verbose == TRUE)
+    if(is_verbose)
       print ("Run " + run_index + ", Iteration " + iter_count + ":  Terminated with code = "
         + term_code + ",  Centroid WCSS = " + wcss);
 

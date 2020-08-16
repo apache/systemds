@@ -37,11 +37,11 @@ import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedPCATest extends AutomatedTestBase {
+public class FederatedKmeansTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
-	private final static String TEST_NAME = "FederatedPCATest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedPCATest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "FederatedKMeansTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedKmeansTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -49,7 +49,7 @@ public class FederatedPCATest extends AutomatedTestBase {
 	@Parameterized.Parameter(1)
 	public int cols;
 	@Parameterized.Parameter(2)
-	public boolean scaleAndShift;
+	public int runs;
 
 	@Override
 	public void setUp() {
@@ -61,22 +61,23 @@ public class FederatedPCATest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-			{10000, 10, false}, {2000, 50, false}, {1000, 100, false},
-			{10000, 10, true}, {2000, 50, true}, {1000, 100, true}
+			{10000, 10, 1}, {2000, 50, 1}, {1000, 100, 1},
+			//TODO support for multi-threaded federated interactions
+			//{10000, 10, 16}, {2000, 50, 16}, {1000, 100, 16}, //concurrent requests
 		});
 	}
 
 	@Test
-	public void federatedPCASinglenode() {
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
+	public void federatedKmeansSinglenode() {
+		federatedKmeans(Types.ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
-	public void federatedPCAHybrid() {
-		federatedL2SVM(Types.ExecMode.HYBRID);
+	public void federatedKmeansHybrid() {
+		federatedKmeans(Types.ExecMode.HYBRID);
 	}
 
-	public void federatedL2SVM(Types.ExecMode execMode) {
+	public void federatedKmeans(Types.ExecMode execMode) {
 		ExecMode platformOld = setExecMode(execMode);
 
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -99,11 +100,12 @@ public class FederatedPCATest extends AutomatedTestBase {
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
+		setOutputBuffering(false);
 		
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"),
-			String.valueOf(scaleAndShift).toUpperCase(), expected("Z")};
+			String.valueOf(runs), expected("Z")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
@@ -111,24 +113,21 @@ public class FederatedPCATest extends AutomatedTestBase {
 		programArgs = new String[] {"-stats",
 			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
-			"scaleAndShift=" + String.valueOf(scaleAndShift).toUpperCase(), "out=" + output("Z")};
+			"runs=" + String.valueOf(runs), "out=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-9);
+		//compareResults(1e-9); --> randomized
 		TestUtils.shutdownThreads(t1, t2);
 		
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
-		if( scaleAndShift ) {
-			Assert.assertTrue(heavyHittersContainsString("fed_uacsqk+"));
-			Assert.assertTrue(heavyHittersContainsString("fed_uacmean"));
-			Assert.assertTrue(heavyHittersContainsString("fed_-"));
-			Assert.assertTrue(heavyHittersContainsString("fed_/"));
-			Assert.assertTrue(heavyHittersContainsString("fed_replace"));
-		}
+		Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uarmin"));
+		Assert.assertTrue(heavyHittersContainsString("fed_*"));
+		Assert.assertTrue(heavyHittersContainsString("fed_+"));
+		Assert.assertTrue(heavyHittersContainsString("fed_<="));
+		Assert.assertTrue(heavyHittersContainsString("fed_/"));
 		
 		//check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

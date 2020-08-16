@@ -66,13 +66,22 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1.getID()});
-			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-			//execute federated operations and aggregate
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(fr1, fr2, fr3);
-			MatrixBlock ret = FederationUtils.rbind(tmp);
-			mo1.getFedMapping().cleanup(fr1.getID(), fr2.getID());
-			ec.setMatrixOutput(output.getName(), ret);
-			//TODO should remain federated matrix (no need for agg)
+			if( mo2.getNumColumns() == 1 ) { //MV
+				FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
+				//execute federated operations and aggregate
+				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(fr1, fr2, fr3);
+				MatrixBlock ret = FederationUtils.rbind(tmp);
+				mo1.getFedMapping().cleanup(fr1.getID(), fr2.getID());
+				ec.setMatrixOutput(output.getName(), ret);
+			}
+			else { //MM
+				//execute federated operations and aggregate
+				mo1.getFedMapping().execute(fr1, fr2);
+				mo1.getFedMapping().cleanup(fr1.getID());
+				MatrixObject out = ec.getMatrixObject(output);
+				out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+				out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID(), mo2.getNumColumns()));
+			}
 		}
 		//#2 vector - federated matrix multiplication
 		else if (mo2.isFederated()) {// VM + MM

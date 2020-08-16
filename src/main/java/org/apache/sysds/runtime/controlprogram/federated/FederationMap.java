@@ -149,6 +149,14 @@ public class FederationMap
 			map.put(new FederatedRange(e.getKey()), new FederatedData(e.getValue(), id));
 		return new FederationMap(id, map);
 	}
+	
+	public FederationMap copyWithNewID(long id, long clen) {
+		Map<FederatedRange, FederatedData> map = new TreeMap<>();
+		//TODO handling of file path, but no danger as never written
+		for( Entry<FederatedRange, FederatedData> e : _fedMap.entrySet() )
+			map.put(new FederatedRange(e.getKey(), clen), new FederatedData(e.getValue(), id));
+		return new FederationMap(id, map);
+	}
 
 	public FederationMap rbind(long offset, FederationMap that) {
 		for( Entry<FederatedRange, FederatedData> e : that._fedMap.entrySet() ) {

@@ -68,45 +68,59 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 
 	@Test
 	public void testDoubleinStringCP() {
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, LopProperties.ExecType.CP);
+		// This test now verifies floating points are okay in string columns
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, LopProperties.ExecType.CP, true);
 	}
 
 	@Test
 	public void testDoubleinStringSpark() {
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, LopProperties.ExecType.SPARK);
+		// This test now verifies floating points are okay in string columns
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, LopProperties.ExecType.SPARK, true);
 	}
 
 	@Test
 	public void testStringInDouble() {
+		// This test now verifies strings are removed in float columns
 		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 2, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testStringInDoubleSpark() {
+		// This test now verifies strings are removed in float columns
 		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 2, LopProperties.ExecType.SPARK);
 	}
 
 	@Test
 	public void testDoubleInFloat() {
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, LopProperties.ExecType.CP);
+		// This test now verifies that changing from FP64 to FP32 is okay.
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, LopProperties.ExecType.CP,true);
 	}
 
 	@Test
 	public void testDoubleInFloatSpark() {
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, LopProperties.ExecType.SPARK);
+		// This test now verifies that changing from FP64 to FP32 is okay.
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, LopProperties.ExecType.SPARK, true);
 	}
 
 	@Test
 	public void testLongInInt() {
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, LopProperties.ExecType.CP);
+		// This test now verifies that changing from INT32 to INT64 is okay.
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, LopProperties.ExecType.CP, true);
 	}
 
 	@Test
 	public void testLongInIntSpark() {
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, LopProperties.ExecType.SPARK);
+		// This test now verifies that changing from INT32 to INT64 is okay.
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, LopProperties.ExecType.SPARK, true);
 	}
+
 	private void runIsCorrectTest(ValueType[] schema, int rows, int cols,
-		int badValues, int test, LopProperties.ExecType et)
+								  int badValues, int test, LopProperties.ExecType et){
+		runIsCorrectTest(schema, rows, cols, badValues, test, et, false);
+	}
+
+	private void runIsCorrectTest(ValueType[] schema, int rows, int cols,
+		int badValues, int test, LopProperties.ExecType et, boolean ignore)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -182,7 +196,7 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 
 			int nullNum = Math.toIntExact(data.stream().filter(s -> s == null).count());
 			//verify output schema
-			Assert.assertEquals("Wrong result: " + nullNum + ".", badValues, nullNum);
+			Assert.assertEquals("Wrong result: " + nullNum + ".", ignore ? 0 : badValues, nullNum);
 		}
 		catch (Exception ex) {
 			throw new RuntimeException(ex);

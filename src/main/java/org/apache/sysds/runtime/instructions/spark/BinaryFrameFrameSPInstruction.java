@@ -95,7 +95,7 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 
 		@Override
 		public FrameBlock call(FrameBlock arg0) throws Exception {
-			return arg0.dropInvalid(schema_frame);
+			return arg0.dropInvalidType(schema_frame);
 		}
 	}
 

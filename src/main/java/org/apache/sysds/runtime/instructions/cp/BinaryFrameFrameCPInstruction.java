@@ -39,7 +39,7 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction
 		
 		if(getOpcode().equals("dropInvalidType")) {
 			// Perform computation using input frames, and produce the result frame
-			FrameBlock retBlock = inBlock1.dropInvalid(inBlock2);
+			FrameBlock retBlock = inBlock1.dropInvalidType(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}

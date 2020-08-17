@@ -20,12 +20,15 @@
 #-------------------------------------------------------------
 
 /*
- * The MNIST Data can be downloaded as follows:
- * mkdir -p data/mnist/
- * cd data/mnist/
- * curl -O https://pjreddie.com/media/files/mnist_train.csv
- * curl -O https://pjreddie.com/media/files/mnist_test.csv
- */
+* This Example trains a feed forward neural network with one input layer, two hidden affine layers (200 neurons) with
+* leaky relu activations and one affine output layer with a softmax activation
+*
+* The MNIST Data can be downloaded as follows:
+* mkdir -p data/mnist/
+* cd data/mnist/
+* curl -O https://pjreddie.com/media/files/mnist_train.csv
+* curl -O https://pjreddie.com/media/files/mnist_test.csv
+*/
 
 source("nn/examples/mnist_2NN.dml") as mnist_2NN
 
@@ -48,7 +51,7 @@ y = labels[5001:nrow(images),]
 y_val = labels[1:5000,]
 
 # Train
-epochs = 5
+epochs = 1
 [W_1, b_1, W_2, b_2, W_3, b_3] = mnist_2NN::train(X, y, X_val, y_val, epochs)
 
 # Read test data

@@ -4,17 +4,19 @@ __all__ = ['createJavaObject']
 import os
 import pandas as pd
 
-import py4j.java_gateway
-from pyspark.sql import SparkSession
+try:
+    import py4j.java_gateway
+    from pyspark.sql import SparkSession
+except ImportError:
+    raise ImportError('Unable  to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
-_initializedSparkSession = False
+
 def _createJavaObject(sc, obj_type):
 
     if obj_type == 'mlcontext':
         return sc._jvm.org.apache.sysds.api.mlcontext.MLContext(sc._jsc)
     else:
-        return sc._jvm.org.apache.sysds.api.mlcontext.MLContext(sc._jsc)
-        # raise ValueError('Incorrect usage: supported values: mlcontext')
+        raise ValueError('Incorrect usage: supported values: mlcontext')
 
 def _getJarFileName(sc, suffix):
     import imp, fnmatch

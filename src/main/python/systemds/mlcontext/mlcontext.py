@@ -1,14 +1,16 @@
-__all__ = ["MLContext"]
+script_factory_methods = [ 'dml' ]
+
+__all__ = ['MLContext'] + script_factory_methods
 
 import copy
 import os
 import time
 from glob import glob
-from queue import Empty, Queue
-from subprocess import PIPE, Popen
-from threading import Lock, Thread
-from time import sleep
-from typing import Dict, Iterable, Sequence, Tuple, Union
+# from queue import Empty, Queue
+# from subprocess import PIPE, Popen
+# from threading import Lock, Thread
+# from time import sleep
+# from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 from py4j.java_gateway import GatewayParameters, JavaGateway
@@ -22,6 +24,17 @@ from pyspark import SparkContext
 from pyspark.sql import SparkSession
 
 from .classloader import *
+
+def dml(scriptString):
+    """
+    Create a dml script object based on a string.
+
+    :param scriptString:
+    :return:
+    """
+    if not isinstance(scriptString, str):
+        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
+    return Script(scriptString, scriptType="dml")
 
 class MLContext(object):
     """
@@ -59,19 +72,8 @@ class MLContext(object):
         if not isinstance(script, Script):
             raise ValueError("Expected script to be an instance of Script")
         scriptString = script.scriptString
-        if script.scriptType == "dml":
-            if scriptString.endswith(".dml"):
-                if scriptString.startswith("http"):
-                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl(scriptString)
-                elif os.path.exists(scriptString):
-                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
-                elif script.isResource == True:
-                    script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(
-                        scriptString)
-                else:
-                    raise ValueError("path: %s does not exist" % scriptString)
-            else:
-                script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
+
+        script_java = self._sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
 
         for key, val in script._input.items():
             # `in` is a reserved word ("keyword") in Python, so `script_java.in(...)` is not
@@ -86,3 +88,36 @@ class MLContext(object):
         for val in script._output:
             script_java.out(val)
         return MLResults(self._ml.execute(script_java), self._sc)
+
+
+class Script(object):
+    """
+    Instance of a DML Script.
+
+
+    """
+    def __init__(self, scriptString, scriptType="dml"):
+        sc = SparkContext._active_spark_context
+        self.scriptString = scriptString
+        self.scriptType = scriptType
+        self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
+
+    def getScriptString(self):
+        """
+        Obtain the script string (in unicode).
+
+        :return:
+        """
+        return self.script_java.getScriptString()
+
+    def setScriptString(self, scriptString):
+        """
+        Set the script string.
+
+        :param scriptString: string
+            Can be either a file path to a DML script or a DML script itself.
+        :return:
+        """
+        self.scriptString = scriptString
+        self.script_java.setScriptString(scriptString)
+        return self

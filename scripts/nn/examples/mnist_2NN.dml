@@ -20,24 +20,23 @@
 #-------------------------------------------------------------
 
 /*
- * MNIST 2NN Relu Example
+ * MNIST 2NN Leaky Relu Example
  */
 
 # Imports
 source("nn/layers/affine.dml") as affine
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
-source("nn/layers/relu.dml") as relu
+source("nn/layers/leaky_relu.dml") as leaky_relu
 source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
-train = function(matrix[double] X, matrix[double] Y,
-                 matrix[double] X_val, matrix[double] Y_val,
-                 int epochs)
-    return (matrix[double] W_1, matrix[double] b_1,
-            matrix[double] W_2, matrix[double] b_2,
-            matrix[double] W_3, matrix[double] b_3) {
+train = function(matrix[double] X, matrix[double] Y, matrix[double] X_val, 
+                 matrix[double] Y_val, int epochs)
+  return (matrix[double] W_1, matrix[double] b_1, matrix[double] W_2, 
+	        matrix[double] b_2, matrix[double] W_3, matrix[double] b_3)
+{
   /*
-   * Trains a 2NN relu softmax classifier.
+   * Trains a 2 hidden layer leaky relu softmax classifier.
    *
    * The input matrix, X, has N examples, each with D features.
    * The targets, Y, have K classes, and are one-hot encoded.
@@ -53,12 +52,13 @@ train = function(matrix[double] X, matrix[double] Y,
    *  - W: Weights (parameters) matrix, of shape (D, M, 3).
    *  - b: Biases vector, of shape (1, M, 3).
    */
+
   N = nrow(X)  # num examples
   D = ncol(X)  # num features
   K = ncol(Y)  # num classes
 
   # Create the network:
-  # input -> 200 neuron affine -> relu -> 200 neuron affine -> relu -> K neurons affine -> softmax
+  # input -> 200 neuron affine -> leaky_relu -> 200 neuron affine -> leaky_relu -> K neurons affine -> softmax
   [W_1, b_1] = affine::init(D, 200)
   [W_2, b_2] = affine::init(200, 200)
   [W_3, b_3] = affine::init(200, K)
@@ -87,12 +87,12 @@ train = function(matrix[double] X, matrix[double] Y,
       y_batch = Y[beg:end,]
 
       # Compute forward pass
-      ## input D -> 200 neuron affine -> relu -> 200 neuron affine -> relu -> K neurons affine -> softmax
+      ## input D -> 200 neuron affine -> leaky_relu -> 200 neuron affine -> leaky_relu -> K neurons affine -> softmax
       out_1 = affine::forward(X_batch, W_1, b_1)
-      out_1_relu = relu::forward(out_1)
-      out_2 = affine::forward(out_1_relu, W_2, b_2)
-      out_2_relu = relu::forward(out_2)
-      out_3 = affine::forward(out_2_relu, W_3, b_3)
+      out_1_leaky_relu = leaky_relu::forward(out_1)
+      out_2 = affine::forward(out_1_leaky_relu, W_2, b_2)
+      out_2_leaky_relu = leaky_relu::forward(out_2)
+      out_3 = affine::forward(out_2_leaky_relu, W_3, b_3)
       probs = softmax::forward(out_3)
 
       # Compute loss & accuracy for training & validation data
@@ -102,16 +102,16 @@ train = function(matrix[double] X, matrix[double] Y,
       loss_val = cross_entropy_loss::forward(probs_val, Y_val)
       accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(Y_val))
       print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: " +
-            accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+      accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
 
       # Compute backward pass
       ## loss:
       dprobs = cross_entropy_loss::backward(probs, y_batch)
       dout_3 = softmax::backward(dprobs, out_3)
-      [dout_2_relu, dW_3, db_3] = affine::backward(dout_3, out_2_relu, W_3, b_3)
-      dout_2 = relu::backward(dout_2_relu, out_2)
-      [dout_1_relu, dW_2, db_2] = affine::backward(dout_2, out_1_relu, W_2, b_2)
-      dout_1 = relu::backward(dout_1_relu, out_1)
+      [dout_2_leaky_relu, dW_3, db_3] = affine::backward(dout_3, out_2_leaky_relu, W_3, b_3)
+      dout_2 = leaky_relu::backward(dout_2_leaky_relu, out_2)
+      [dout_1_leaky_relu, dW_2, db_2] = affine::backward(dout_2, out_1_leaky_relu, W_2, b_2)
+      dout_1 = leaky_relu::backward(dout_1_leaky_relu, out_1)
       [dX_batch, dW_1, db_1] = affine::backward(dout_1, X_batch, W_1, b_1)
 
       # Optimize with SGD
@@ -122,6 +122,7 @@ train = function(matrix[double] X, matrix[double] Y,
       [W_1, vW_1] = sgd_nesterov::update(W_1, dW_1, lr, mu, vW_1)
       [b_1, vb_1] = sgd_nesterov::update(b_1, db_1, lr, mu, vb_1)
     }
+
     # Anneal momentum towards 0.999
     mu = mu + (0.999 - mu)/(1+epochs-e)
     # Decay learning rate
@@ -130,9 +131,9 @@ train = function(matrix[double] X, matrix[double] Y,
 }
 
 predict = function(matrix[double] X,
-                    matrix[double] W_1, matrix[double] b_1,
-                    matrix[double] W_2, matrix[double] b_2,
-                    matrix[double] W_3, matrix[double] b_3)
+                   matrix[double] W_1, matrix[double] b_1,
+                   matrix[double] W_2, matrix[double] b_2,
+                   matrix[double] W_3, matrix[double] b_3)
     return (matrix[double] probs) {
   /*
    * Computes the class probability predictions of a softmax classifier.
@@ -148,10 +149,10 @@ predict = function(matrix[double] X,
    *  - probs: Class probabilities, of shape (N, K).
    */
   # Compute forward pass
-  ## input -> 200 neuron affine -> relu -> 200 neuron affine -> relu -> K neurons affine -> softmax
-  out_1_relu = relu::forward(affine::forward(X, W_1, b_1))
-  out_2_relu = relu::forward(affine::forward(out_1_relu, W_2, b_2))
-  probs = softmax::forward(affine::forward(out_2_relu, W_3, b_3))
+  ## input -> 200 neuron affine -> leaky_relu -> 200 neuron affine -> leaky_relu -> K neurons affine -> softmax
+  out_1_leaky_relu = leaky_relu::forward(affine::forward(X, W_1, b_1))
+  out_2_leaky_relu = leaky_relu::forward(affine::forward(out_1_leaky_relu, W_2, b_2))
+  probs = softmax::forward(affine::forward(out_2_leaky_relu, W_3, b_3))
 }
 
 eval = function(matrix[double] probs, matrix[double] Y)

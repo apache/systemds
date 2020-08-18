@@ -41,6 +41,7 @@ public class FederatedRequest implements Serializable {
 	
 	private RequestType _method;
 	private long _id;
+	private long _tid;
 	private List<Object> _data;
 	private boolean _checkPrivacy;
 	
@@ -71,6 +72,14 @@ public class FederatedRequest implements Serializable {
 	
 	public long getID() {
 		return _id;
+	}
+	
+	public long getTID() {
+		return _tid;
+	}
+	
+	public void setTID(long tid) {
+		_tid = tid;
 	}
 	
 	public Object getParam(int i) {
@@ -112,7 +121,9 @@ public class FederatedRequest implements Serializable {
 		StringBuilder sb = new StringBuilder("FederatedRequest[");
 		sb.append(_method); sb.append(";");
 		sb.append(_id); sb.append(";");
-		sb.append(Arrays.toString(_data.toArray())); sb.append("]");
+		sb.append("t"); sb.append(_tid); sb.append(";");
+		if( _method != RequestType.PUT_VAR )
+			sb.append(Arrays.toString(_data.toArray())); sb.append("]");
 		return sb.toString();
 	}
 }

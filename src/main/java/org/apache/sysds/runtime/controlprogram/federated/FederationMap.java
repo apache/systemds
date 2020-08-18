@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -95,22 +96,37 @@ public class FederationMap
 		return ret.toArray(new FederatedRequest[0]);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public Future<FederatedResponse>[] execute(FederatedRequest... fr) {
-		List<Future<FederatedResponse>> ret = new ArrayList<>();
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
-			ret.add(e.getValue().executeFederatedOperation(fr));
-		return ret.toArray(new Future[0]);
+	public Future<FederatedResponse>[] execute(long tid, FederatedRequest... fr) {
+		return execute(tid, false, fr);
+	}
+	
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest... fr) {
+		return execute(tid, wait, null, fr);
+	}
+	
+	public Future<FederatedResponse>[] execute(long tid, FederatedRequest[] frSlices, FederatedRequest... fr) {
+		return execute(tid, false, frSlices, fr);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public Future<FederatedResponse>[] execute(FederatedRequest[] frSlices, FederatedRequest... fr) {
-		//executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest[] frSlices, FederatedRequest... fr) {
+		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
+		setThreadID(tid, frSlices, fr);
 		List<Future<FederatedResponse>> ret = new ArrayList<>(); 
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
-			ret.add(e.getValue().executeFederatedOperation(addAll(frSlices[pos++], fr)));
-		return ret.toArray(new Future[0]);
+			ret.add(e.getValue().executeFederatedOperation(
+				(frSlices!=null) ? addAll(frSlices[pos++], fr) : fr));
+		
+		// prepare results (future federated responses), with optional wait to ensure the 
+		// order of requests without data dependencies (e.g., cleanup RPCs)
+		Future<FederatedResponse>[] ret2 = ret.toArray(new Future[0]);
+		if( wait ) {
+			Arrays.stream(ret2).forEach(e -> {
+				try {e.get();} catch(Exception ex) {throw new DMLRuntimeException(ex);}
+			});
+		}
+		return ret2;
 	}
 	
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {
@@ -125,9 +141,10 @@ public class FederationMap
 		return readResponses;
 	}
 	
-	public void cleanup(long... id) {
+	public void cleanup(long tid, long... id) {
 		FederatedRequest request = new FederatedRequest(RequestType.EXEC_INST, -1,
 			VariableCPInstruction.prepareRemoveInstruction(id).toString());
+		request.setTID(tid);
 		for(FederatedData fd : _fedMap.values())
 			fd.executeFederatedOperation(request);
 	}
@@ -203,6 +220,12 @@ public class FederationMap
 		CommonThreadPool.invokeAndShutdown(pool, mappingTasks);
 		fedMapCopy._ID = newVarID;
 		return fedMapCopy;
+	}
+	
+	private static void setThreadID(long tid, FederatedRequest[]... frsets) {
+		for( FederatedRequest[] frset : frsets )
+			if( frset != null )
+				Arrays.stream(frset).forEach(fr -> fr.setTID(tid));
 	}
 
 	private static class MappingTask implements Callable<Void> {

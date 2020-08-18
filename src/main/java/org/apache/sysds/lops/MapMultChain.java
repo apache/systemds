@@ -35,7 +35,10 @@ public class MapMultChain extends Lop
 		XtXv,  //(t(X) %*% (X %*% v))
 		XtwXv, //(t(X) %*% (w * (X %*% v)))
 		XtXvy, //(t(X) %*% ((X %*% v) - y))
-		NONE,
+		NONE;
+		public boolean isWeighted() {
+			return this == XtwXv || this == ChainType.XtXvy;
+		}
 	}
 	
 	private ChainType _chainType = null;

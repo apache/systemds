@@ -1771,6 +1771,12 @@ public class SparkExecutionContext extends ExecutionContext
 				_defaultPar = (defaultPar>1) ? defaultPar : numExecutors * numCoresPerExec;
 				_confOnly &= true;
 			}
+			else if( DMLScript.USE_LOCAL_SPARK_CONFIG ) {
+				//avoid unnecessary spark context creation in local mode (e.g., tests)
+				_numExecutors = 1;
+				_defaultPar = 2;
+				_confOnly &= true;
+			}
 			else {
 				//get default parallelism (total number of executors and cores)
 				//note: spark context provides this information while conf does not

@@ -35,6 +35,7 @@ public abstract class FEDInstruction extends Instruction {
 		MultiReturnParameterizedBuiltin,
 		ParameterizedBuiltin,
 		Tsmm,
+		MMChain,
 	}
 	
 	protected final FEDType _fedType;

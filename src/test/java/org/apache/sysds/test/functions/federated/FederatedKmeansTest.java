@@ -62,8 +62,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
 			{10000, 10, 1}, {2000, 50, 1}, {1000, 100, 1},
-			//TODO support for multi-threaded federated interactions
-			//{10000, 10, 16}, {2000, 50, 16}, {1000, 100, 16}, //concurrent requests
+			{10000, 10, 4}, {2000, 50, 4}, {1000, 100, 4}, //concurrent requests
 		});
 	}
 

@@ -70,6 +70,7 @@ public class ExecutionContext {
 	
 	//symbol table
 	protected LocalVariableMap _variables;
+	protected long _tid = -1;
 	protected boolean _autoCreateVars;
 	
 	//lineage map, cache, prepared dedup blocks
@@ -130,6 +131,14 @@ public class ExecutionContext {
 	
 	public void setAutoCreateVars(boolean flag) {
 		_autoCreateVars = flag;
+	}
+	
+	public void setTID(long tid) {
+		_tid = tid;
+	}
+	
+	public long getTID() {
+		return _tid;
 	}
 
 	/**
@@ -750,7 +759,7 @@ public class ExecutionContext {
 		try {
 			//compute ref count only if matrix cleanup actually necessary
 			if ( mo.isCleanupEnabled() && !getVariables().hasReferences(mo) )  {
-				mo.clearData(); //clean cached data
+				mo.clearData(getTID()); //clean cached data
 				if( fileExists ) {
 					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName());
 					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName()+".mtd");

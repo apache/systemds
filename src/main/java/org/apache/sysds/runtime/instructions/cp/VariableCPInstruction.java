@@ -741,7 +741,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// no other variable in the symbol table points to the same Data object as that of input1.getName()
 			
 			//remove matrix object from cache
-			m.clearData();
+			m.clearData(ec.getTID());
 		}
 	}
 

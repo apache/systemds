@@ -51,16 +51,16 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1[0].getID()});
 			//execute federated instruction and cleanup intermediates
-			mo1.getFedMapping().execute(fr1, fr2);
-			mo1.getFedMapping().cleanup(fr1[0].getID());
+			mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+			mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
 		}
 		else { //MM or MV col vector
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 			fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1.getID()});
 			//execute federated instruction and cleanup intermediates
-			mo1.getFedMapping().execute(fr1, fr2);
-			mo1.getFedMapping().cleanup(fr1.getID());
+			mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+			mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 		}
 		
 		//derive new fed mapping for output

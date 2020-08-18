@@ -62,12 +62,13 @@ import java.util.Arrays;
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
-	private final ExecutionContext _ec;
-	private final BasicProgramBlock _pb;
+	private final ExecutionContextMap _ecm;
 	
-	public FederatedWorkerHandler(ExecutionContext ec, BasicProgramBlock pb) {
-		_ec = ec;
-		_pb = pb;
+	public FederatedWorkerHandler(ExecutionContextMap ecm) {
+		//Note: federated worker handler created for every command;
+		//and concurrent parfor threads at coordinator need separate
+		//execution contexts at the federated sites too
+		_ecm = ecm;
 	}
 
 	@Override
@@ -131,10 +132,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		checkNumParams(request.getNumParams(), 2);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String)request.getParam(1));
-		return readData(filename, dt, request.getID());
+		return readData(filename, dt, request.getID(), request.getTID());
 	}
 
-	private FederatedResponse readData(String filename, Types.DataType dataType, long id) {
+	private FederatedResponse readData(String filename, Types.DataType dataType, long id, long tid) {
 		MatrixCharacteristics mc = new MatrixCharacteristics();
 		mc.setBlocksize(ConfigurationManager.getBlocksize());
 		CacheableData<?> cd;
@@ -180,7 +181,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		cd.release();
 		
 		//TODO spawn async load of data, otherwise on first access
-		_ec.setVariable(String.valueOf(id), cd);
+		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 		cd.enableCleanup(false); //guard against deletion
 		
 		if (dataType == Types.DataType.FRAME) {
@@ -193,7 +194,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse putVariable(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 1);
 		String varname = String.valueOf(request.getID());
-		if( _ec.containsVariable(varname) ) {
+		ExecutionContext ec = _ecm.get(request.getTID());
+		if( ec.containsVariable(varname) ) {
 			return new FederatedResponse(ResponseType.ERROR,
 				"Variable "+request.getID()+" already existing.");
 		}
@@ -206,22 +208,19 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			data = (ScalarObject) request.getParam(0);
 		
 		//set variable and construct empty response
-		_ec.setVariable(varname, data);
+		ec.setVariable(varname, data);
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 	
 	private FederatedResponse getVariable(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 0);
-		if( !_ec.containsVariable(String.valueOf(request.getID())) ) {
+		ExecutionContext ec = _ecm.get(request.getTID());
+		if( !ec.containsVariable(String.valueOf(request.getID())) ) {
 			return new FederatedResponse(ResponseType.ERROR,
 				"Variable "+request.getID()+" does not exist at federated worker.");
 		}
 		//get variable and construct response
-		return getVariableData(request.getID());
-	}
-	
-	private FederatedResponse getVariableData(long varID) {
-		Data dataObject = _ec.getVariable(String.valueOf(varID));
+		Data dataObject = ec.getVariable(String.valueOf(request.getID()));
 		dataObject = PrivacyMonitor.handlePrivacy(dataObject);
 		switch (dataObject.getDataType()) {
 			case TENSOR:
@@ -240,11 +239,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 	
 	private FederatedResponse execInstruction(FederatedRequest request) {
-		_pb.getInstructions().clear();
-		_pb.getInstructions().add(InstructionParser
+		ExecutionContext ec = _ecm.get(request.getTID());
+		BasicProgramBlock pb = new BasicProgramBlock(null);
+		pb.getInstructions().clear();
+		pb.getInstructions().add(InstructionParser
 			.parseSingleInstruction((String)request.getParam(0)));
 		try {
-			_pb.execute(_ec); //execute single instruction
+			pb.execute(ec); //execute single instruction
 		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, ex.getMessage());
@@ -254,16 +255,17 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	
 	private FederatedResponse execUDF(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 1);
+		ExecutionContext ec = _ecm.get(request.getTID());
 		
 		//get function and input parameters
 		FederatedUDF udf = (FederatedUDF) request.getParam(0);
 		Data[] inputs = Arrays.stream(udf.getInputIDs())
-			.mapToObj(id -> _ec.getVariable(String.valueOf(id)))
+			.mapToObj(id -> ec.getVariable(String.valueOf(id)))
 			.toArray(Data[]::new);
 		
 		//execute user-defined function
 		try {
-			return udf.execute(_ec, inputs);
+			return udf.execute(ec, inputs);
 		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, ex.getMessage());

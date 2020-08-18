@@ -629,6 +629,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 	}
 	
+	public void clearData() {
+		clearData(-1);
+	}
+	
 	/**
 	 * Sets the cache block reference to <code>null</code>, abandons the old block.
 	 * Makes the "envelope" empty.  Run it to finalize the object (otherwise the
@@ -637,8 +641,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * In-Status:  EMPTY, EVICTABLE, EVICTED;
 	 * Out-Status: EMPTY.
 	 * 
+	 * @param tid thread ID
+	 * 
 	 */
-	public synchronized void clearData() 
+	public synchronized void clearData(long tid) 
 	{
 		// check if cleanup enabled and possible 
 		if( !isCleanupEnabled() ) 
@@ -669,7 +675,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		//clear federated matrix
 		if( _fedMapping != null )
-			_fedMapping.cleanup(_fedMapping.getID());
+			_fedMapping.cleanup(tid, _fedMapping.getID());
 		
 		// change object state EMPTY
 		setDirty(false);

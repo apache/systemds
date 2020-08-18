@@ -80,7 +80,7 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1.getID()});
-			mo1.getFedMapping().execute(fr1, fr2);
+			mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			//derive new fed mapping for output
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(dc1.getRows(), dc1.getCols()+dc2.getCols(),

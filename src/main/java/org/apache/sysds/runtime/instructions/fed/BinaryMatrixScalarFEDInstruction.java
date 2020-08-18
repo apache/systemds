@@ -46,10 +46,10 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 			new CPOperand[]{matrix, (fr1 != null)?scalar:null},
 			new long[]{mo.getFedMapping().getID(), (fr1 != null)?fr1.getID():-1});
 		
-		mo.getFedMapping().execute((fr1!=null) ?
+		mo.getFedMapping().execute(getTID(), true, (fr1!=null) ?
 			new FederatedRequest[]{fr1, fr2}: new FederatedRequest[]{fr2});
 		if( fr1 != null )
-			mo.getFedMapping().cleanup(fr1.getID());
+			mo.getFedMapping().cleanup(getTID(), fr1.getID());
 		
 		//derive new fed mapping for output
 		MatrixObject out = ec.getMatrixObject(output);

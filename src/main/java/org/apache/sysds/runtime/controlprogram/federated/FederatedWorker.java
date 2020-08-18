@@ -32,21 +32,15 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
-import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 
 	private int _port;
-	private final ExecutionContext _ec;
-	private final BasicProgramBlock _pb;
+	private final ExecutionContextMap _ecm;
 	
 	public FederatedWorker(int port) {
-		_ec = ExecutionContextFactory.createContext();
-		_ec.setAutoCreateVars(true); //w/o createvar inst
-		_pb = new BasicProgramBlock(null);
+		_ecm = new ExecutionContextMap();
 		_port = (port == -1) ?
 			Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT) : port;
 	}
@@ -65,7 +59,7 @@ public class FederatedWorker {
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
 						.addLast("ObjectEncoder", new ObjectEncoder())
-						.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_ec, _pb));
+						.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_ecm));
 				}
 			}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 		try {

@@ -1350,7 +1350,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//compute ref count only if matrix cleanup actually necessary
 			if( !getVariables().hasReferences(mo) ) {
 				//clean cached data
-				mo.clearData();
+				mo.clearData(getTID());
 
 				//clean hdfs data if no pending rdd operations on it
 				if( mo.isHDFSFileExists() && mo.getFileName()!=null ) {

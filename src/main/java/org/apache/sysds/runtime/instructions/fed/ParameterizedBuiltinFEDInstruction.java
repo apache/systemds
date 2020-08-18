@@ -99,7 +99,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			MatrixObject mo = getTarget(ec);
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{getTargetOperand()}, new long[]{mo.getFedMapping().getID()});
-			mo.getFedMapping().execute(fr1);
+			mo.getFedMapping().execute(getTID(), true, fr1);
 			
 			//derive new fed mapping for output
 			MatrixObject out = ec.getMatrixObject(output);

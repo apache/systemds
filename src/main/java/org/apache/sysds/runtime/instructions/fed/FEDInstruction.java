@@ -39,6 +39,7 @@ public abstract class FEDInstruction extends Instruction {
 	
 	protected final FEDType _fedType;
 	protected final Operator _optr;
+	protected long _tid = -1; //main
 	
 	protected FEDInstruction(FEDType type, String opcode, String istr) {
 		this(type, null, opcode, istr);
@@ -58,6 +59,14 @@ public abstract class FEDInstruction extends Instruction {
 	
 	public FEDType getFEDInstructionType() {
 		return _fedType;
+	}
+	
+	public long getTID() {
+		return _tid;
+	}
+	
+	public void setTID(long tid) {
+		_tid = tid;
 	}
 	
 	@Override

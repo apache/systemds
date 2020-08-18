@@ -34,13 +34,14 @@ public class FEDInstructionUtils {
 	// counterpart, since we do not propagate the information that a matrix is federated, therefore we can not decide
 	// to choose a federated instruction earlier.
 	public static Instruction checkAndReplaceCP(Instruction inst, ExecutionContext ec) {
+		FEDInstruction fedinst = null;
 		if (inst instanceof AggregateBinaryCPInstruction) {
 			AggregateBinaryCPInstruction instruction = (AggregateBinaryCPInstruction) inst;
 			if( instruction.input1.isMatrix() && instruction.input2.isMatrix() ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
 				if (mo1.isFederated() || mo2.isFederated()) {
-					return AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}
 		}
@@ -49,7 +50,7 @@ public class FEDInstructionUtils {
 			if( instruction.input1.isMatrix() && ec.containsVariable(instruction.input1) ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				if (mo1.isFederated() && instruction.getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
-					return AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}
 		else if (inst instanceof BinaryCPInstruction) {
@@ -57,13 +58,13 @@ public class FEDInstructionUtils {
 			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
 				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
 				if(!instruction.getOpcode().equals("append")) //TODO support rbind/cbind
-					return BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
 			ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction)inst;
 			if(pinst.getOpcode().equals("replace") && pinst.getTarget(ec).isFederated()) {
-				return ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
+				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 			}
 		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {
@@ -71,7 +72,7 @@ public class FEDInstructionUtils {
 			if(minst.getOpcode().equals("transformencode") && minst.input1.isFrame()) {
 				CacheableData<?> fo = ec.getCacheableData(minst.input1);
 				if(fo.isFederated()) {
-					return MultiReturnParameterizedBuiltinFEDInstruction
+					fedinst = MultiReturnParameterizedBuiltinFEDInstruction
 						.parseInstruction(minst.getInstructionString());
 				}
 			}
@@ -80,8 +81,15 @@ public class FEDInstructionUtils {
 			MMTSJCPInstruction linst = (MMTSJCPInstruction) inst;
 			MatrixObject mo = ec.getMatrixObject(linst.input1);
 			if( mo.isFederated() )
-				return TsmmFEDInstruction.parseInstruction(linst.getInstructionString());
+				fedinst = TsmmFEDInstruction.parseInstruction(linst.getInstructionString());
 		}
+		
+		//set thread id for federated context management
+		if( fedinst != null ) {
+			fedinst.setTID(ec.getTID());
+			return fedinst;
+		}
+		
 		return inst;
 	}
 	

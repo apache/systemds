@@ -97,7 +97,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			return new ParameterizedBuiltinFEDInstruction(null, paramsMap, out, opcode, str);
 		}
 		else {
-			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
+			throw new DMLRuntimeException("Unsupported opcode (" + opcode + ") for ParameterizedBuiltinFEDInstruction.");
 		}
 	}
 

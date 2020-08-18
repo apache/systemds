@@ -36,31 +36,30 @@ public class MMChainCPInstruction extends UnaryCPInstruction {
 		_type = type;
 		_numThreads = k;
 	}
+	
+	public ChainType getMMChainType() {
+		return _type;
+	}
 
 	public static MMChainCPInstruction parseInstruction ( String str ) {
 		//parse instruction parts (without exec type)
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields( parts, 5, 6 );
-	
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		
-		if( parts.length==6 )
-		{
+		if( parts.length==6 ) {
 			CPOperand out= new CPOperand(parts[3]);
 			ChainType type = ChainType.valueOf(parts[4]);
 			int k = Integer.parseInt(parts[5]);
-			
 			return new MMChainCPInstruction(null, in1, in2, null, out, type, k, opcode, str);
 		}
-		else //parts.length==7
-		{
+		else { //parts.length==7
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
 			ChainType type = ChainType.valueOf(parts[5]);
 			int k = Integer.parseInt(parts[6]);
-			
 			return new MMChainCPInstruction(null, in1, in2, in3, out, type, k, opcode, str);
 		}
 	}
@@ -70,19 +69,15 @@ public class MMChainCPInstruction extends UnaryCPInstruction {
 		//get inputs
 		MatrixBlock X = ec.getMatrixInput(input1.getName());
 		MatrixBlock v = ec.getMatrixInput(input2.getName());
-		MatrixBlock w = (_type==ChainType.XtwXv || _type==ChainType.XtXvy) ? 
-			ec.getMatrixInput(input3.getName()) : null;
+		MatrixBlock w = _type.isWeighted() ? ec.getMatrixInput(input3.getName()) : null;
+		
 		//execute mmchain operation 
-		 MatrixBlock out = X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type, _numThreads);
+		MatrixBlock out = X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type, _numThreads);
+		
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), out);
 		ec.releaseMatrixInput(input1.getName(), input2.getName());
 		if( w !=null )
 			ec.releaseMatrixInput(input3.getName());
-	}
-	
-	public ChainType getMMChainType()
-	{
-		return _type;
 	}
 }

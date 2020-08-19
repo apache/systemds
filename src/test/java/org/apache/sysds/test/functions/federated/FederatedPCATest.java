@@ -99,10 +99,11 @@ public class FederatedPCATest extends AutomatedTestBase {
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
+		setOutputBuffering(false);
 		
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("X1"), input("X2"),
+		programArgs = new String[] {"-stats", "-args", input("X1"), input("X2"),
 			String.valueOf(scaleAndShift).toUpperCase(), expected("Z")};
 		runTest(true, false, null, -1);
 

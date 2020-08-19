@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
@@ -40,7 +41,7 @@ public class FEDInstructionUtils {
 			if( instruction.input1.isMatrix() && instruction.input2.isMatrix() ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
-				if (mo1.isFederated() || mo2.isFederated()) {
+				if (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) {
 					fedinst = AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
 			}
@@ -88,6 +89,12 @@ public class FEDInstructionUtils {
 						.parseInstruction(minst.getInstructionString());
 				}
 			}
+		}
+		else if(inst instanceof ReorgCPInstruction && inst.getOpcode().equals("r'")) {
+			ReorgCPInstruction rinst = (ReorgCPInstruction) inst;
+			CacheableData<?> mo = ec.getCacheableData(rinst.input1);
+			if( mo.isFederated() )
+				fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
 		}
 		
 		//set thread id for federated context management

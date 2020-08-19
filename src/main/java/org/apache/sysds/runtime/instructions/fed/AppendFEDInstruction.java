@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -76,7 +77,7 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 				+ " vs " + mo2.getNumColumns());
 		}
 		
-		if( mo1.isFederated() && _cbind ) {
+		if( mo1.isFederated(FType.ROW) && _cbind ) {
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1.getID()});
@@ -87,7 +88,7 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 				dc1.getBlocksize(), dc1.getNonZeros()+dc2.getNonZeros());
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID()));
 		}
-		else if( mo1.isFederated() && mo2.isFederated() && !_cbind ) {
+		else if( mo1.isFederated(FType.ROW) && mo2.isFederated(FType.ROW) && !_cbind ) {
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(dc1.getRows()+dc2.getRows(), dc1.getCols(),
 				dc1.getBlocksize(), dc1.getNonZeros()+dc2.getNonZeros());

@@ -45,7 +45,6 @@ import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -115,14 +114,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return execUDF(request);
 				default:
 					String message = String.format("Method %s is not supported.", method);
-					return new FederatedResponse(FederatedResponse.ResponseType.ERROR, new FederatedWorkerHandlerException(message));
+					return new FederatedResponse(ResponseType.ERROR,
+						new FederatedWorkerHandlerException(message));
 			}
 		}
 		catch (DMLPrivacyException | FederatedWorkerHandlerException ex) {
-			return new FederatedResponse(FederatedResponse.ResponseType.ERROR, ex);
+			return new FederatedResponse(ResponseType.ERROR, ex);
 		}
 		catch (Exception ex) {
-			return new FederatedResponse(FederatedResponse.ResponseType.ERROR,
+			return new FederatedResponse(ResponseType.ERROR,
 				new FederatedWorkerHandlerException("Exception of type "
 				+ ex.getClass() + " thrown when processing request", ex));
 		}
@@ -148,7 +148,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				break;
 			default:
 				// should NEVER happen (if we keep request codes in sync with actual behaviour)
-				return new FederatedResponse(FederatedResponse.ResponseType.ERROR,
+				return new FederatedResponse(ResponseType.ERROR,
 					new FederatedWorkerHandlerException("Could not recognize datatype"));
 		}
 		
@@ -161,7 +161,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
 					JSONObject mtd = JSONHelper.parse(br);
 					if (mtd == null)
-						return new FederatedResponse(FederatedResponse.ResponseType.ERROR, new FederatedWorkerHandlerException("Could not parse metadata file"));
+						return new FederatedResponse(ResponseType.ERROR,
+							new FederatedWorkerHandlerException("Could not parse metadata file"));
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
 					cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
@@ -172,23 +173,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-		cd.setMetaData(new MetaDataFormat(mc, fmt));
-		// TODO send FileFormatProperties with request and use them for CSV, this is currently a workaround so reading
-		//  of CSV files works
-		cd.setFileFormatProperties(new FileFormatPropertiesCSV());
-		cd.acquireRead();
-		cd.refreshMetaData(); //in pinned state
-		cd.release();
 		
-		//TODO spawn async load of data, otherwise on first access
-		_ecm.get(tid).setVariable(String.valueOf(id), cd);
+		//put meta data object in symbol table, read on first operation
+		cd.setMetaData(new MetaDataFormat(mc, fmt));
 		cd.enableCleanup(false); //guard against deletion
+		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 		
 		if (dataType == Types.DataType.FRAME) {
 			FrameObject frameObject = (FrameObject) cd;
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema()});
+			frameObject.acquireRead();
+			frameObject.refreshMetaData(); //get block schema
+			frameObject.release();
+			return new FederatedResponse(ResponseType.SUCCESS,
+				new Object[] {id, frameObject.getSchema()});
 		}
-		return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, id);
+		return new FederatedResponse(ResponseType.SUCCESS, id);
 	}
 	
 	private FederatedResponse putVariable(FederatedRequest request) {

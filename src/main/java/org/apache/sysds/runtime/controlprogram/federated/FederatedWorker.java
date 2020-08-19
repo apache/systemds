@@ -41,8 +41,7 @@ public class FederatedWorker {
 	
 	public FederatedWorker(int port) {
 		_ecm = new ExecutionContextMap();
-		_port = (port == -1) ?
-			Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT) : port;
+		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 	}
 
 	public void run() {

@@ -48,10 +48,11 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * 
  */
 public class FrameReaderTextCSV extends FrameReader {
-	protected FileFormatPropertiesCSV _props;
+	protected final FileFormatPropertiesCSV _props;
 
 	public FrameReaderTextCSV(FileFormatPropertiesCSV props) {
-		_props = props;
+		//if unspecified use default properties for robustness
+		_props = props != null ? props : new FileFormatPropertiesCSV();
 	}
 
 	@Override

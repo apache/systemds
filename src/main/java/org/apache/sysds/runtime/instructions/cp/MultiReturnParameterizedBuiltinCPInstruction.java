@@ -21,11 +21,14 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -85,5 +88,20 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		ec.releaseFrameInput(input1.getName());
 		ec.setMatrixOutput(getOutput(0).getName(), data);
 		ec.setFrameOutput(getOutput(1).getName(), meta);
+	}
+
+	@Override
+	public boolean hasSingleLineage() {
+		return false;
+	}
+
+	@Override
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	public Pair[] getLineageItems(ExecutionContext ec) {
+		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1,input2,input3);
+		ArrayList<Pair> items = new ArrayList<>();
+		for (CPOperand out : _outputs)
+			items.add(Pair.of(out.getName(), new LineageItem(getOpcode(), inputLineage)));
+		return items.toArray(new Pair[items.size()]);
 	}
 }

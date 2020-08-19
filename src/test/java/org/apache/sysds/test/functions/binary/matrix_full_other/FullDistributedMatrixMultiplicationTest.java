@@ -45,7 +45,7 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 	private final static int rowsA = 1501;
 	private final static int colsA = 1103;
 	private final static int rowsB = 1103;
-	private final static int colsB = 923;
+	private final static int colsB = 323;
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
@@ -192,6 +192,7 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 			double[][] B = getRandomMatrix(rowsB, colsB, 0, 1, sparsityB, 9873); 
 			writeInputMatrixWithMTD("B", B, true);
 	
+			setOutputBuffering(false);
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			

@@ -105,6 +105,7 @@ public class StringAppendTest extends AutomatedTestBase
 			programArgs = new String[]{
 				"-args", Integer.toString(iters), output("C") };
 			
+			setOutputBuffering(false);
 			runTest(exceptionExpected ? DMLRuntimeException.class : null);
 		}
 		catch(Exception ex) {

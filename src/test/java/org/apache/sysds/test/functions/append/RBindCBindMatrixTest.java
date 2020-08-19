@@ -128,12 +128,12 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "+ expectedDir();
 			
 			double[][] A = getRandomMatrix(rows1, cols, min, max, sparsity, 823);
-	        writeInputMatrixWithMTD("A", A, true);
-	        double[][] B= getRandomMatrix(rows2, cols, min, max, sparsity, 923);
-	        writeInputMatrixWithMTD("B", B, true);
-	        
-	        //execute dml and r scripts
-	        runTest(true, false, null, -1);
+			writeInputMatrixWithMTD("A", A, true);
+			double[][] B= getRandomMatrix(rows2, cols, min, max, sparsity, 923);
+			writeInputMatrixWithMTD("B", B, true);
+
+			setOutputBuffering(false);
+			runTest(true, false, null, -1);
 			runRScript(true);
 	
 			//compare results

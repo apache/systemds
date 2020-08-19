@@ -258,6 +258,7 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 			HDFSTool.writeMetaDataFile(input("B.mtd"), ValueType.FP64, mc2, FileFormat.TEXT);
 			
 			//run test
+			setOutputBuffering(false);
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			

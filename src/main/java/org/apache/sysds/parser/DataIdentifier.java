@@ -20,6 +20,7 @@
 package org.apache.sysds.parser;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 
 public class DataIdentifier extends Identifier
 {
@@ -43,6 +44,12 @@ public class DataIdentifier extends Identifier
 	public DataIdentifier(String name, DataType dt){
 		this(name);
 		_dataType = dt;
+	}
+
+	public DataIdentifier(String name, DataType dt, ValueType vt){
+		this(name);
+		_dataType = dt;
+		_valueType = vt;
 	}
 	
 	public DataIdentifier(){

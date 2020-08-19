@@ -27,9 +27,7 @@ import org.junit.Test;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.lineage.Lineage;
-import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.lineage.LineageParser;
+import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -89,8 +87,7 @@ public class LineageTraceFunctionTest extends AutomatedTestBase
 		
 		//get lineage and generate program
 		String Rtrace = readDMLLineageFromHDFS("R");
-		LineageItem R = LineageParser.parseLineageTrace(Rtrace);
-		Data ret = LineageItemUtils.computeByLineage(R);
+		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
 		
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		MatrixBlock tmp = ((MatrixObject)ret).acquireReadAndRelease();

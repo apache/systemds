@@ -687,6 +687,10 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readDMLString(baseDirectory + OUTPUT_DIR + fileName + ".lineage");
 	}
 
+	protected static String readDMLLineageDedupFromHDFS(String fileName) {
+		return TestUtils.readDMLString(baseDirectory + OUTPUT_DIR + fileName + ".lineage.dedup");
+	}
+
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt) throws IOException {
 		// read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;

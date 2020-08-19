@@ -34,52 +34,64 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class LineageTraceBuiltinTest extends AutomatedTestBase {
+public class LineageTraceDedupExecTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "LineageTraceBuiltin"; //rand - matrix result
-	
-	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceBuiltinTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME1 = "LineageTraceDedupExec1";
+	protected static final String TEST_NAME10 = "LineageTraceDedupExec10";
+	protected static final String TEST_NAME2 = "LineageTraceDedupExec2";
+	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceDedupExecTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
 	protected static final int numFeatures = 5;
 	
-	public LineageTraceBuiltinTest() {
-		
-	}
-	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
+		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 	}
 	
 	@Test
-	public void testLineageTraceBuiltin1() {
-		testLineageTraceBuiltin(TEST_NAME1);
+	public void testLineageTraceExec1() {
+		testLineageTraceExec(TEST_NAME1);
+	}
+
+	@Test
+	public void testLineageTraceExec10() {
+		testLineageTraceExec(TEST_NAME10);
+	}
+
+	@Test
+	public void testLineageTraceExec2() {
+		testLineageTraceExec(TEST_NAME2);
 	}
 	
-	private void testLineageTraceBuiltin(String testname) {
+	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
 		
 		getAndLoadTestConfiguration(testname);
 		List<String> proArgs = new ArrayList<>();
 		
+		proArgs.add("-lineage");
+		proArgs.add("dedup");
+		proArgs.add("-stats");
 		proArgs.add("-args");
-		proArgs.add(input("X"));
 		proArgs.add(output("R"));
 		proArgs.add(String.valueOf(numRecords));
 		proArgs.add(String.valueOf(numFeatures));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
 		
-		//run the test
 		Lineage.resetInternalState();
+		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		
 		//get lineage and generate program
 		String Rtrace = readDMLLineageFromHDFS("R");
-		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, null);
+		String RDedupPatches = readDMLLineageDedupFromHDFS("R");
+		Data ret = LineageRecomputeUtils.parseNComputeLineageTrace(Rtrace, RDedupPatches);
 		
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		MatrixBlock tmp = ((MatrixObject)ret).acquireReadAndRelease();

@@ -47,7 +47,7 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1100;
-	private final static int cols = 900;
+	private final static int cols = 300;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 	
@@ -264,7 +264,8 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 			}
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
-			
+
+			setOutputBuffering(false);
 			runRScript(true); 
 		
 			//compare matrices 

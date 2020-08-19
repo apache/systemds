@@ -45,7 +45,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 	private final static int min=1;
 	private final static int max=100;
 	
-	private final static int rows = 1692;
+	private final static int rows = 492;
 	//usecase a: inblock single
 	private final static int cols1a = 375;
 	private final static int cols2a = 92;
@@ -179,6 +179,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			
 			int expectedCompiled = platform==ExecMode.SINGLE_NODE ?
 				0 : 6; //2x(rblk+chkpt), append, write
+			setOutputBuffering(false);
 			runTest(true, false, null, expectedCompiled);
 			runRScript(true);
 			

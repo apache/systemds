@@ -45,8 +45,8 @@ public class FullLogicalMatrixTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullLogicalMatrixTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 
-	private final static int rows1 = 1383;
-	private final static int cols1 = 1432;
+	private final static int rows1 = 1183;
+	private final static int cols1 = 1032;
 
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.01;
@@ -421,6 +421,7 @@ public class FullLogicalMatrixTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("B", B, true);
 
 			//run tests
+			setOutputBuffering(false);
 			runTest(true, false, null, -1);
 			runRScript(true);
 

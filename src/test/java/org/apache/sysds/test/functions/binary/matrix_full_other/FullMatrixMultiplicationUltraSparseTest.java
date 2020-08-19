@@ -40,8 +40,8 @@ public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rowsA = 1501;
-	private final static int colsA = 1703;
-	private final static int rowsB = 1703;
+	private final static int colsA = 1603;
+	private final static int rowsB = 1603;
 	private final static int colsB = 1107;
 	
 	private final static double sparsity1 = 0.7;
@@ -172,8 +172,8 @@ public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase
 			double[][] B = getRandomMatrix(rowsB, colsB, 0, 1, sparsityRight, 3); 
 			writeInputMatrix("B", B, true);
 	
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
+			setOutputBuffering(false);
+			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
 			//compare matrices 

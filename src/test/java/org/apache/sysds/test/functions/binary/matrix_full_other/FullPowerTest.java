@@ -47,7 +47,7 @@ public class FullPowerTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 1100;
-	private final static int cols = 900;
+	private final static int cols = 300;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 	
@@ -193,9 +193,8 @@ public class FullPowerTest extends AutomatedTestBase
 				double[][] B = getRandomMatrix(1, 1, min, max, 1.0, 3);
 				writeScalarInputMatrixWithMTD( "B", B, true );
 			}
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
-			
+			setOutputBuffering(false);
+			runTest(true, false, null, -1); 
 			runRScript(true); 
 		
 			//compare matrices 

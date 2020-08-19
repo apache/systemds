@@ -195,6 +195,10 @@ public class LineageItem {
 		return !_opcode.isEmpty();
 	}
 	
+	public boolean isDedup() {
+		return _opcode.startsWith(dedupItemOpcode);
+	}
+	
 	/**
 	 * Non-recursive equivalent of {@link #resetVisitStatus()} 
 	 * for robustness with regard to stack overflow errors.

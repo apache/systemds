@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.lineage;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
@@ -28,8 +29,10 @@ import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.utils.Explain;
 
 public class LineageDedupUtils {
+	public static final String DEDUP_DELIM = "_";
 	private static Lineage _tmpLineage = null;
 	private static Lineage _mainLineage = null;
 	private static ArrayList<Long> _numDistinctPaths = new ArrayList<>();
@@ -131,7 +134,38 @@ public class LineageDedupUtils {
 		_tmpLineage.clearLineageMap();
 		_tmpLineage.clearDedupBlock();
 	}
+
+	public static String mergeExplainDedupBlocks(ExecutionContext ec) {
+		Map<ProgramBlock, LineageDedupBlock> dedupBlocks = ec.getLineage().getDedupBlocks();
+		StringBuilder sb = new StringBuilder();
+		// Gather all the DAG roots of all the paths in all the loops.
+		for (Map.Entry<ProgramBlock, LineageDedupBlock> dblock : dedupBlocks.entrySet()) {
+			if (dblock.getValue() != null) {
+				String forKey = dblock.getKey().getStatementBlock().getName();
+				LineageDedupBlock dedup = dblock.getValue();
+				for (Map.Entry<Long, LineageMap> patch : dedup.getPathMaps().entrySet()) {
+					for (Map.Entry<String, LineageItem> root : patch.getValue().getTraces().entrySet()) {
+						// Encode all the information in the headers that're
+						// needed by the deserialization logic.
+						sb.append("patch");
+						sb.append(DEDUP_DELIM);
+						sb.append(root.getKey());
+						sb.append(DEDUP_DELIM);
+						sb.append(forKey);
+						sb.append(DEDUP_DELIM);
+						sb.append(patch.getKey());
+						sb.append("\n");
+						sb.append(Explain.explain(root.getValue()));
+						sb.append("\n");
+						
+					}
+				}
+			}
+		}
+		return sb.toString();
+	}
 	
+	//------------------------------------------------------------------------------
 	/* The below static functions help to compute the number of distinct paths
 	 * in any program block, and are used for diagnostic purposes. These will
 	 * be removed in future.

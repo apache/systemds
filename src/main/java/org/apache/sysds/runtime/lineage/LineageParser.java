@@ -112,26 +112,23 @@ public class LineageParser
 		return new LineageItem(id, "", opcode, inputs.toArray(new LineageItem[0]));
 	}
 	
-	public static LineageItem parseLineageTraceDedup(String str) {
-		LineageItem li = null;
-		Map<Long, Map<String, LineageItem>> patchLiMap = new HashMap<>();
+	protected static void parseLineageTraceDedup(String str) {
 		str.replaceAll("\r\n", "\n");
 		String[] allPatches = str.split("\n\n");
 		for (String patch : allPatches) {
 			String[] headBody = patch.split("\r\n|\r|\n", 2);
-			// Parse the header
-			String[] parts = headBody[0].split(LineageItemUtils.DEDUP_DELIM);
-			// e.g. patch_R_SB15_1
+			// Parse the header (e.g. patch_R_SB15_1)
+			String[] parts = headBody[0].split(LineageDedupUtils.DEDUP_DELIM);
 			// Deserialize the patch
 			LineageItem patchLi = parseLineageTrace(headBody[1]);
+			//LineageItemUtils.computeByLineageDedup(patchLi);
 			Long pathId = Long.parseLong(parts[3]);
 			// Map the pathID and the DAG root name to the deserialized DAG.
-			if (!patchLiMap.containsKey(pathId)) {
-				patchLiMap.put(pathId, new HashMap<>());
+			if (!LineageRecomputeUtils.patchLiMap.containsKey(pathId)) {
+				LineageRecomputeUtils.patchLiMap.put(pathId, new HashMap<>());
 			}
-			patchLiMap.get(pathId).put(parts[1], patchLi);
+			LineageRecomputeUtils.patchLiMap.get(pathId).put(parts[1], patchLi);
 			// TODO: handle multiple loops
 		}
-		return li;
 	}
 }

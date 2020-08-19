@@ -50,6 +50,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME18 = "FunPotpourriMultiReturnBuiltin1";
 	private final static String TEST_NAME19 = "FunPotpourriMultiReturnBuiltin2";
 	private final static String TEST_NAME20 = "FunPotpourriNestedParforEval";
+	private final static String TEST_NAME21 = "FunPotpourriMultiEval";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -77,6 +78,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME18, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME18, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME19, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME19, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME20, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME20, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME21, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME21, new String[] { "R" }) );
 	}
 
 	@Test
@@ -189,6 +191,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	@Test
 	public void testFunctionNestedParforEval() {
 		runFunctionTest( TEST_NAME20, null );
+	}
+	
+	@Test
+	public void testFunctionMultiEval() {
+		runFunctionTest( TEST_NAME21, null );
 	}
 	
 	private void runFunctionTest(String testName, Class<?> error) {

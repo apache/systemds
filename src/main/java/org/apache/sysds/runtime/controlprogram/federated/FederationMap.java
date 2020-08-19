@@ -43,24 +43,44 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class FederationMap
 {
+	public enum FType {
+		ROW, //row partitioned, groups of rows
+		COL, //column partitioned, groups of columns
+		OTHER,
+	}
+	
 	private long _ID = -1;
 	private final Map<FederatedRange, FederatedData> _fedMap;
+	private FType _type;
 	
 	public FederationMap(Map<FederatedRange, FederatedData> fedMap) {
 		this(-1, fedMap);
 	}
 	
 	public FederationMap(long ID, Map<FederatedRange, FederatedData> fedMap) {
+		this(ID, fedMap, FType.OTHER);
+	}
+	
+	public FederationMap(long ID, Map<FederatedRange, FederatedData> fedMap, FType type) {
 		_ID = ID;
 		_fedMap = fedMap;
+		_type = type;
 	}
 	
 	public long getID() {
 		return _ID;
 	}
 	
+	public FType getType() {
+		return _type;
+	}
+	
 	public boolean isInitialized() {
 		return _ID >= 0;
+	}
+	
+	public void setType(FType type) {
+		_type = type;
 	}
 	
 	public FederatedRange[] getFederatedRanges() {
@@ -96,6 +116,19 @@ public class FederationMap
 		return ret.toArray(new FederatedRequest[0]);
 	}
 	
+	public boolean isAligned(FederationMap that, boolean transposed) {
+		//determines if the two federated data are aligned row/column partitions
+		//at the same federated site (which allows for purely federated operation)
+		boolean ret = true;
+		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+			FederatedRange range = !transposed ? e.getKey() :
+				new FederatedRange(e.getKey()).transpose();
+			FederatedData dat2 = that._fedMap.get(range);
+			ret &= e.getValue().equalAddress(dat2);
+		}
+		return ret;
+	}
+	
 	public Future<FederatedResponse>[] execute(long tid, FederatedRequest... fr) {
 		return execute(tid, false, fr);
 	}
@@ -120,13 +153,9 @@ public class FederationMap
 		
 		// prepare results (future federated responses), with optional wait to ensure the 
 		// order of requests without data dependencies (e.g., cleanup RPCs)
-		Future<FederatedResponse>[] ret2 = ret.toArray(new Future[0]);
-		if( wait ) {
-			Arrays.stream(ret2).forEach(e -> {
-				try {e.get();} catch(Exception ex) {throw new DMLRuntimeException(ex);}
-			});
-		}
-		return ret2;
+		if( wait )
+			waitFor(ret);
+		return ret.toArray(new Future[0]);
 	}
 	
 	public List<Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData() {
@@ -145,8 +174,21 @@ public class FederationMap
 		FederatedRequest request = new FederatedRequest(RequestType.EXEC_INST, -1,
 			VariableCPInstruction.prepareRemoveInstruction(id).toString());
 		request.setTID(tid);
+		List<Future<FederatedResponse>> tmp = new ArrayList<>();
 		for(FederatedData fd : _fedMap.values())
-			fd.executeFederatedOperation(request);
+			tmp.add(fd.executeFederatedOperation(request));
+		//wait to avoid interference w/ following requests
+		waitFor(tmp);
+	}
+	
+	private static void waitFor(List<Future<FederatedResponse>> responses) {
+		try {
+			for(Future<FederatedResponse> fr : responses)
+				fr.get();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
 	}
 	
 	private static FederatedRequest[] addAll(FederatedRequest a, FederatedRequest[] b) {
@@ -164,7 +206,7 @@ public class FederationMap
 		//TODO handling of file path, but no danger as never written
 		for( Entry<FederatedRange, FederatedData> e : _fedMap.entrySet() )
 			map.put(new FederatedRange(e.getKey()), new FederatedData(e.getValue(), id));
-		return new FederationMap(id, map);
+		return new FederationMap(id, map, _type);
 	}
 	
 	public FederationMap copyWithNewID(long id, long clen) {
@@ -183,6 +225,24 @@ public class FederationMap
 		}
 		return this;
 	}
+	
+	public FederationMap transpose() {
+		Map<FederatedRange, FederatedData> tmp = new TreeMap<>(_fedMap);
+		_fedMap.clear();
+		for( Entry<FederatedRange, FederatedData> e : tmp.entrySet() ) {
+			_fedMap.put(
+				new FederatedRange(e.getKey()).transpose(),
+				new FederatedData(e.getValue(), _ID));
+		}
+		//derive output type
+		switch(_type) {
+			case ROW: _type = FType.COL; break;
+			case COL: _type = FType.ROW; break;
+			default: _type = FType.OTHER;
+		}
+		return this;
+	}
+
 
 	/**
 	 * Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair. The function should

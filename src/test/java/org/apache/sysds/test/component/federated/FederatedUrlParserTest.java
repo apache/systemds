@@ -161,7 +161,7 @@ public class FederatedUrlParserTest
 
 	@Test
 	public void checkDefaultPortIsValid() {
-		int defaultPort = Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT);
+		int defaultPort = DMLConfig.DEFAULT_FEDERATED_PORT;
 		// The highest port number allowed.
 		int IANA_limit = 49152;
 		assertTrue(defaultPort <= IANA_limit);

@@ -109,4 +109,14 @@ public class FederatedRange implements Comparable<FederatedRange> {
 		_endDims[1] += cshift;
 		return this;
 	}
+	
+	public FederatedRange transpose() {
+		long tmpBeg = _beginDims[0];
+		long tmpEnd = _endDims[0];
+		_beginDims[0] = _beginDims[1];
+		_endDims[0] = _endDims[1];
+		_beginDims[1] = tmpBeg;
+		_endDims[1] = tmpEnd;
+		return this;
+	}
 }

@@ -49,7 +49,7 @@ public class FederatedData {
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
 	 */
 	private long _varID = -1; // -1 is never valid since varIDs start at 0
-	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
+	private int _nrThreads = DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS;
 
 
 	public FederatedData(Types.DataType dataType, InetSocketAddress address, String filepath) {
@@ -86,6 +86,11 @@ public class FederatedData {
 	
 	public boolean isInitialized() {
 		return _varID != -1;
+	}
+	
+	boolean equalAddress(FederatedData that) {
+		return _address != null && that != null && that._address != null 
+			&& _address.equals(that._address);
 	}
 	
 	public synchronized Future<FederatedResponse> initFederatedData(long id) {

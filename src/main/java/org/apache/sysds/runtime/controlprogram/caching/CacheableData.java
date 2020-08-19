@@ -33,6 +33,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -332,6 +333,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	public boolean isFederated() {
 		return _fedMapping != null;
+	}
+	
+	public boolean isFederated(FType type) {
+		return isFederated() && _fedMapping.getType() == type;
 	}
 	
 	/**

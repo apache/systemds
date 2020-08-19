@@ -62,7 +62,9 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
 			{10000, 10, 1}, {2000, 50, 1}, {1000, 100, 1},
-			{10000, 10, 4}, {2000, 50, 4}, {1000, 100, 4}, //concurrent requests
+			{10000, 10, 2}, {2000, 50, 2}, {1000, 100, 2}, //concurrent requests
+			//TODO more runs e.g., 16 -> but requires rework RPC framework first
+			//(e.g., see paramserv?)
 		});
 	}
 
@@ -127,6 +129,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		Assert.assertTrue(heavyHittersContainsString("fed_+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_<="));
 		Assert.assertTrue(heavyHittersContainsString("fed_/"));
+		Assert.assertTrue(heavyHittersContainsString("fed_r'"));
 		
 		//check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

@@ -20,5 +20,5 @@
 #-------------------------------------------------------------
 
 X = rbind(read($1), read($2))
-[C,Y] = kmeans(X=X, k=4, runs=$3)
+[C,Y] = kmeans(X=X, k=4, runs=$3, max_iter=150)
 write(C, $4)

@@ -21,8 +21,10 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -46,7 +48,7 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	@Test
 	public void testMiceMixCP() {
 		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
-		runMiceNominalTest(mask, 1, LopProperties.ExecType.CP);
+		runMiceNominalTest(mask, 1, false, LopProperties.ExecType.CP);
 	}
 
 //	@Test
@@ -58,7 +60,7 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	@Test
 	public void testMiceNumberCP() {
 		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
-		runMiceNominalTest(mask, 2, LopProperties.ExecType.CP);
+		runMiceNominalTest(mask, 2, false, LopProperties.ExecType.CP);
 	}
 
 //	@Test
@@ -70,7 +72,7 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	@Test
 	public void testMiceCategoricalCP() {
 		double[][] mask = {{ 1.0, 1.0, 1.0, 1.0, 1.0}};
-		runMiceNominalTest(mask, 3, LopProperties.ExecType.CP);
+		runMiceNominalTest(mask, 3, false, LopProperties.ExecType.CP);
 	}
 
 //	@Test
@@ -79,19 +81,29 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 //		runMiceNominalTest(mask, 3, LopProperties.ExecType.SPARK);
 //	}
 
-	private void runMiceNominalTest(double[][] mask, int testType, LopProperties.ExecType instType) {
+	@Test
+	public void testMiceMixLineageReuseCP() {
+		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
+		runMiceNominalTest(mask, 1, true, LopProperties.ExecType.CP);
+	}
+
+	private void runMiceNominalTest(double[][] mask, int testType, boolean lineage, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"), "iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
+			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"), 
+					"iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
+			if (lineage) {
+				String[] lin = new String[] {"-stats","-lineage", ReuseCacheType.REUSE_HYBRID.name().toLowerCase()};
+				programArgs = (String[]) ArrayUtils.addAll(programArgs, lin);
+			}
 			writeInputMatrixWithMTD("M", mask, true);
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(DATASET, inputDir(), expectedDir());
 
-			setOutputBuffering(false);
 			runTest(true, false, null, -1);
 			runRScript(true);
 

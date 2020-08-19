@@ -278,8 +278,11 @@ public class LineageCache
 						centry.setValue(((MatrixObject)data).acquireReadAndRelease(), computetime);
 					else if (data instanceof ScalarObject)
 						centry.setValue((ScalarObject)data, computetime);
-					else
-						throw new DMLRuntimeException("Lineage Cache: unsupported data: "+data.getDataType());
+					else {
+						// Reusable instructions can return a frame (rightIndex). Remove placeholders.
+						_cache.remove(item);
+						continue;
+					}
 
 					long size = centry.getSize();
 					//remove the entry if the entry is bigger than the cache.

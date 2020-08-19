@@ -443,6 +443,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return Pair.of(output.getName(), new LineageItem(getOpcode(),
 				LineageItemUtils.getLineage(ec, target, max, dir, cast, ignore)));
 		}
+		else if (opcode.equalsIgnoreCase("transformdecode")) {
+			CPOperand target = getTargetOperand();
+			CPOperand meta = getLiteral(params.get("meta"), DataType.FRAME);
+			CPOperand spec = getStringLiteral("spec");
+			return Pair.of(output.getName(), new LineageItem(getOpcode(),
+				LineageItemUtils.getLineage(ec, target, meta, spec)));
+		}
 		else {
 			//NOTE: for now, we cannot have a generic fall through path, because the 
 			//data and value types of parmeters are not compiled into the instruction
@@ -468,6 +475,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	
 	private CPOperand getBoolLiteral(String name) {
 		return getLiteral(name, ValueType.BOOLEAN);
+	}
+
+	private CPOperand getLiteral(String name, DataType dt) {
+		return new CPOperand(name, ValueType.UNKNOWN, DataType.FRAME);
 	}
 	
 	private CPOperand getLiteral(String name, ValueType vt) {

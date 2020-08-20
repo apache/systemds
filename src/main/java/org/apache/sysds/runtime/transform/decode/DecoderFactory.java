@@ -37,24 +37,33 @@ import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 public class DecoderFactory 
 {
 	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
-		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns());
+		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), -1, -1);
 	}
 	
-	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int clen) 
+	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int clen) {
+		return createDecoder(spec, colnames, schema, meta, clen, -1, -1);
+	}
+
+	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int minCol,
+		int maxCol) {
+		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), minCol, maxCol);
+	}
+
+	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema,
+		FrameBlock meta, int clen, int minCol, int maxCol)
 	{
 		Decoder decoder = null;
 		
-		try
-		{
+		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
 			List<Decoder> ldecoders = new ArrayList<>();
 			
 			//create decoders 'recode', 'dummy' and 'pass-through'
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString())));
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString()))); 
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
 			rcIDs = unionDistinct(rcIDs, dcIDs);
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
 			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, len, 1), rcIDs);

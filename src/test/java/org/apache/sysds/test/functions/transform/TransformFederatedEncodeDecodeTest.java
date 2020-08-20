@@ -49,7 +49,8 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"FO"}));
+		addTestConfiguration(TEST_NAME1,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"FO1", "FO2"}));
 	}
 
 	@Test
@@ -126,14 +127,26 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 				"in_AL=" + TestUtils.federatedAddress("localhost", port2, input("AL")),
 				"in_BU=" + TestUtils.federatedAddress("localhost", port3, input("BU")),
 				"in_BL=" + TestUtils.federatedAddress("localhost", port4, input("BL")), "rows=" + rows, "cols=" + cols,
-				"spec_file=" + SCRIPT_DIR + TEST_DIR + SPEC, "out=" + output("FO"), "format=" + format.toString()};
+				"spec_file=" + SCRIPT_DIR + TEST_DIR + SPEC, "out1=" + output("FO1"), "out2=" + output("FO2"),
+				"format=" + format.toString()};
 
 			// run test
 			runTest(true, false, null, -1);
 
-			// compare matrices (values recoded to identical codes)
+			// compare frame before and after encode and decode
 			FrameReader reader = FrameReaderFactory.createFrameReader(format);
-			FrameBlock FO = reader.readFrameFromHDFS(output("FO"), 15, 2);
+			FrameBlock OUT = reader.readFrameFromHDFS(output("FO2"), rows, cols);
+			for(int r = 0; r < rows; r++) {
+				for(int c = 0; c < cols; c++) {
+					String expected = c < cols / 2 ? Double.toString(A[r][c]) : "Str" + B[r][c - cols / 2];
+					String val = (String) OUT.get(r, c);
+					Assert.assertEquals("Enc- and Decoded frame does not match the source frame: " + expected + " vs "
+						+ val, expected, val);
+				}
+			}
+			// TODO federate the aggregated result so that the decode is applied in a federated environment
+			// compare matrices (values recoded to identical codes)
+			FrameBlock FO = reader.readFrameFromHDFS(output("FO1"), 15, 2);
 			HashMap<String, Long> cFA = getCounts(A, B);
 			Iterator<String[]> iterFO = FO.getStringRowIterator();
 			while(iterFO.hasNext()) {

@@ -256,7 +256,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			pb.execute(ec); //execute single instruction
 		}
 		catch(Exception ex) {
-			return new FederatedResponse(ResponseType.ERROR, ex.getMessage());
+			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
+				"Exception of type " + ex.getClass() + " thrown when processing EXEC_INST request", ex));
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
@@ -276,12 +277,19 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return udf.execute(ec, inputs);
 		}
 		catch(Exception ex) {
-			return new FederatedResponse(ResponseType.ERROR, ex.getMessage());
+			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
+				"Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request", ex));
 		}
 	}
 
 	private FederatedResponse execClear() {
-		_ecm.clear();
+		try {
+			_ecm.clear();
+		}
+		catch(Exception ex) {
+			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
+				"Exception of type " + ex.getClass() + " thrown when processing CLEAR request", ex));
+		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 	

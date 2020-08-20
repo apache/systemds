@@ -43,11 +43,11 @@ public class EncoderRecode extends Encoder
 	private HashMap<Integer, HashMap<String, Long>> _rcdMaps  = new HashMap<>();
 	private HashMap<Integer, HashSet<Object>> _rcdMapsPart = null;
 	
-	public EncoderRecode(JSONObject parsedSpec, String[] colnames, int clen)
+	public EncoderRecode(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException 
 	{
 		super(null, clen);
-		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.RECODE.toString());
+		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol);
 	}
 	
 	private EncoderRecode(int[] colList, int clen) {
@@ -56,6 +56,11 @@ public class EncoderRecode extends Encoder
 	
 	public EncoderRecode() {
 		this(new int[0], 0);
+	}
+	
+	private EncoderRecode(int[] colList, int clen, HashMap<Integer, HashMap<String, Long>> rcdMaps) {
+		super(colList, clen);
+		_rcdMaps = rcdMaps;
 	}
 	
 	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() { 
@@ -180,9 +185,7 @@ public class EncoderRecode extends Encoder
 			return null;
 		
 		int[] colList = cols.stream().mapToInt(i -> i).toArray();
-		EncoderRecode subRangeEncoder = new EncoderRecode(colList, colEnd - colStart);
-		subRangeEncoder._rcdMaps = rcdMaps;
-		return subRangeEncoder;
+		return new EncoderRecode(colList, colEnd - colStart, rcdMaps);
 	}
 
 	@Override

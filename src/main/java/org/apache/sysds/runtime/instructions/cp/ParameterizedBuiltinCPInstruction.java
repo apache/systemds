@@ -445,7 +445,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if (opcode.equalsIgnoreCase("transformdecode")) {
 			CPOperand target = getTargetOperand();
-			CPOperand meta = getLiteral(params.get("meta"), DataType.FRAME);
+			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, DataType.FRAME);
 			CPOperand spec = getStringLiteral("spec");
 			return Pair.of(output.getName(), new LineageItem(getOpcode(),
 				LineageItemUtils.getLineage(ec, target, meta, spec)));
@@ -476,12 +476,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	private CPOperand getBoolLiteral(String name) {
 		return getLiteral(name, ValueType.BOOLEAN);
 	}
-
-	private CPOperand getLiteral(String name, DataType dt) {
-		return new CPOperand(name, ValueType.UNKNOWN, DataType.FRAME);
-	}
 	
 	private CPOperand getLiteral(String name, ValueType vt) {
 		return new CPOperand(params.get(name), vt, DataType.SCALAR, true);
+	}
+	
+	private CPOperand getLiteral(String name, ValueType vt, DataType dt) {
+		return new CPOperand(params.get(name), vt, dt);
 	}
 }

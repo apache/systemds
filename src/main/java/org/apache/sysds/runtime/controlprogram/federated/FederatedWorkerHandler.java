@@ -295,7 +295,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		@Override
 		public void operationComplete(ChannelFuture channelFuture) throws InterruptedException {
 			if (!channelFuture.isSuccess()){
-				log.fatal("Federated Worker Write failed");
+				log.error("Federated Worker Write failed");
 				channelFuture
 					.channel()
 					.writeAndFlush(

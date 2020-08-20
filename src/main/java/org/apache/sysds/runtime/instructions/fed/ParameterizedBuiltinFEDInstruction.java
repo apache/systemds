@@ -119,59 +119,62 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			out.getDataCharacteristics().set(mo.getDataCharacteristics());
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}
-		else if(opcode.equalsIgnoreCase("transformdecode")) {
-			// acquire locks
-			MatrixObject mo = ec.getMatrixObject(params.get("target"));
-			FrameBlock meta = ec.getFrameInput(params.get("meta"));
-			String spec = params.get("spec");
-
-			FederationMap fedMapping = mo.getFedMapping();
-
-			ValueType[] schema = new ValueType[(int) mo.getNumColumns()];
-			long varID = FederationUtils.getNextFedDataID();
-			FederationMap decodedMapping = fedMapping.mapParallel(varID, (range, data) -> {
-				int columnOffset = (int) range.getBeginDims()[1] + 1;
-
-				FrameBlock subMeta = new FrameBlock();
-				synchronized(meta) {
-					meta.slice(0, meta.getNumRows() - 1, columnOffset - 1, (int) range.getEndDims()[1] - 1, subMeta);
-				}
-
-				FederatedResponse response;
-				try {
-					response = data
-						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, varID,
-							new DecodeMatrix(data.getVarID(), varID, subMeta, spec, columnOffset)))
-						.get();
-					if(!response.isSuccessful())
-						response.throwExceptionFromResponse();
-
-					ValueType[] subSchema = (ValueType[]) response.getData()[0];
-					synchronized(schema) {
-						// It would be possible to assert that different federated workers don't give different value
-						// types for the same columns, but the performance impact is not worth the effort
-						System.arraycopy(subSchema, 0, schema, columnOffset - 1, subSchema.length);
-					}
-				}
-				catch(Exception e) {
-					throw new DMLRuntimeException(e);
-				}
-				return null;
-			});
-
-			// construct a federated matrix with the encoded data
-			FrameObject decodedFrame = ec.getFrameObject(output);
-			decodedFrame.setSchema(schema);
-			decodedFrame.getDataCharacteristics().set(mo.getDataCharacteristics());
-			// set the federated mapping for the matrix
-			decodedFrame.setFedMapping(decodedMapping);
-
-			// release locks
-			ec.releaseFrameInput(params.get("meta"));
-		}
+		else if(opcode.equalsIgnoreCase("transformdecode"))
+			transformDecode(ec);
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
+	}
+	
+	private void transformDecode(ExecutionContext ec) {
+		// acquire locks
+		MatrixObject mo = ec.getMatrixObject(params.get("target"));
+		FrameBlock meta = ec.getFrameInput(params.get("meta"));
+		String spec = params.get("spec");
+		
+		FederationMap fedMapping = mo.getFedMapping();
+		
+		ValueType[] schema = new ValueType[(int) mo.getNumColumns()];
+		long varID = FederationUtils.getNextFedDataID();
+		FederationMap decodedMapping = fedMapping.mapParallel(varID, (range, data) -> {
+			int columnOffset = (int) range.getBeginDims()[1] + 1;
+			
+			FrameBlock subMeta = new FrameBlock();
+			synchronized(meta) {
+				meta.slice(0, meta.getNumRows() - 1, columnOffset - 1, (int) range.getEndDims()[1] - 1, subMeta);
+			}
+			
+			FederatedResponse response;
+			try {
+				response = data
+						.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, varID,
+								new DecodeMatrix(data.getVarID(), varID, subMeta, spec, columnOffset)))
+						.get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+				
+				ValueType[] subSchema = (ValueType[]) response.getData()[0];
+				synchronized(schema) {
+					// It would be possible to assert that different federated workers don't give different value
+					// types for the same columns, but the performance impact is not worth the effort
+					System.arraycopy(subSchema, 0, schema, columnOffset - 1, subSchema.length);
+				}
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+			return null;
+		});
+		
+		// construct a federated matrix with the encoded data
+		FrameObject decodedFrame = ec.getFrameObject(output);
+		decodedFrame.setSchema(schema);
+		decodedFrame.getDataCharacteristics().set(mo.getDataCharacteristics());
+		// set the federated mapping for the matrix
+		decodedFrame.setFedMapping(decodedMapping);
+		
+		// release locks
+		ec.releaseFrameInput(params.get("meta"));
 	}
 
 	public MatrixObject getTarget(ExecutionContext ec) {

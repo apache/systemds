@@ -85,7 +85,7 @@ public class EncoderFactory
 			
 			//create individual encoders
 			if( !rcIDs.isEmpty() ) {
-				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen);
+				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen, minCol, maxCol);
 				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
 				lencoders.add(ra);
 			}

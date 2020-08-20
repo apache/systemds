@@ -267,7 +267,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return udf.execute(ec, inputs);
 		}
 		catch(Exception ex) {
-			return new FederatedResponse(ResponseType.ERROR, ex.getMessage());
+			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
+				"Exception of type " + ex.getClass() + " thrown when processing request", ex));
 		}
 	}
 

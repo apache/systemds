@@ -293,11 +293,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private static class CloseListener implements ChannelFutureListener {
 		@Override
-		public void operationComplete(ChannelFuture channelFuture) throws InterruptedException, DMLRuntimeException {
-			if (!channelFuture.isSuccess())
-				throw new DMLRuntimeException("Federated Worker Write failed");
-			PrivacyMonitor.clearCheckedConstraints();
-			channelFuture.channel().close().sync();
+		public void operationComplete(ChannelFuture channelFuture) throws InterruptedException {
+			if (!channelFuture.isSuccess()){
+				log.fatal("Federated Worker Write failed");
+				channelFuture
+					.channel()
+					.writeAndFlush(
+						new FederatedResponse(ResponseType.ERROR,
+						new FederatedWorkerHandlerException("Error while sending response.")))
+					.channel().close().sync();
+			}
+			else {
+				PrivacyMonitor.clearCheckedConstraints();
+				channelFuture.channel().close().sync();
+			}
 		}
 	}
 }

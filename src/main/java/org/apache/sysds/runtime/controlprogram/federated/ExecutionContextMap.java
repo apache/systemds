@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,6 +43,18 @@ public class ExecutionContextMap {
 		//atomic probe, create if necessary, and return
 		return _parEc.computeIfAbsent(tid,
 			k -> deriveExecutionContext(_main));
+	}
+	
+	public void clear() {
+		//handle main symbol table (w/ tmp list for concurrent modification)
+		for( String varName : new ArrayList<>(_main.getVariables().keySet()) )
+			_main.cleanupDataObject(_main.removeVariable(varName));
+		
+		//handle parfor execution contexts
+		for( ExecutionContext ec : _parEc.values() )
+			for( String varName : ec.getVariables().keySet() )
+				_main.cleanupDataObject(ec.removeVariable(varName));
+		_parEc.clear();
 	}
 	
 	private static ExecutionContext createExecutionContext() {

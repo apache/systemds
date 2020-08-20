@@ -135,7 +135,7 @@ public class TfMetaUtils
 				}
 				if(ix <= 0) {
 					if (minCol == -1 && maxCol == -1) {
-						// only if we cut of some columns, ix -1 is expected
+						// only if we remove some columns, ix -1 is expected
 						throw new RuntimeException("Specified column '"
 							+ attrs.get(i)+"' does not exist.");
 					}

@@ -119,6 +119,7 @@ public class FederatedData {
 	/**
 	 * Executes an federated operation on a federated worker.
 	 *
+	 * @param address socket address (incl host and port)
 	 * @param request the requested operation
 	 * @return the response
 	 */

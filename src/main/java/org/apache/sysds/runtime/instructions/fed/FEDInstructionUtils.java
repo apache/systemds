@@ -75,9 +75,12 @@ public class FEDInstructionUtils {
 			}
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
-			ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction)inst;
+			ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction) inst;
 			if(pinst.getOpcode().equals("replace") && pinst.getTarget(ec).isFederated()) {
 				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
+			}
+			else if(pinst.getOpcode().equals("transformdecode") && pinst.getTarget(ec).isFederated()) {
+				return ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 			}
 		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {

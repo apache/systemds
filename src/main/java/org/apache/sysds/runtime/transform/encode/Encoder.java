@@ -134,7 +134,7 @@ public abstract class Encoder implements Serializable
 	 */
 	public Encoder subRangeEncoder(int colStart, int colEnd) {
 		throw new DMLRuntimeException(
-			this.getClass().getName() + " does not support the creation of a sub-range encoder");
+			this.getClass().getSimpleName() + " does not support the creation of a sub-range encoder");
 	}
 
 	/**
@@ -145,7 +145,7 @@ public abstract class Encoder implements Serializable
 	 */
 	protected void mergeColumnInfo(Encoder other, int col) {
 		// update number of columns
-		_clen = Math.max(_colList.length, col - 1 + other.getNumCols());
+		_clen = Math.max(_clen, col - 1 + other._clen);
 
 		// update the new columns that this encoder operates on
 		Set<Integer> colListAgg = new HashSet<>(); // for dedup

@@ -17,9 +17,21 @@ limitations under the License.
 {% endcomment %}
 -->
 
-#### dml to r translation recipes
+#### `dml` to `R` translation recipes
 
-##### Multiple outputs
+To ease the prototyping of the `dml` scripts from its `R` counterparts, this
+guide covers various practical functions or operations.
+
+NOTE: This document is still a work in progress.
+
+## Table of Contents
+
+  * [Multiple outputs](#multiple-outputs)
+  * [Order function](#order-function)
+  * [Read function](#read-function)
+  * [`Write` function](#write-function)
+
+##### Multiple-outputs
 
 ```dml
 # dml
@@ -39,7 +51,7 @@ evalues = R$values;
 evectors = R$vectors;
 ```
 
-##### order function
+##### `order`-function
 
 ```dml
 # dml
@@ -55,7 +67,7 @@ decreasing_Idx = order(as.vector(evalues), decreasing=TRUE);
 diagmat = table(seq(1,D), decreasing_Idx);
 ```
 
-##### Read function
+##### `Read`-function
 
 ```dml
 # dml
@@ -71,7 +83,7 @@ A = read("")
 A = readMM(paste(args[1], "A.mtx", sep=""))
 ```
 
-##### Write function
+##### `Write`-function
 
 ```dml
 # dml

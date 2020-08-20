@@ -1273,7 +1273,7 @@ public abstract class AutomatedTestBase {
 			args.add("-gpu");
 	}
 
-	protected int getRandomAvailablePort() {
+	public static int getRandomAvailablePort() {
 		try(ServerSocket availableSocket = new ServerSocket(0)) {
 			return availableSocket.getLocalPort();
 		}
@@ -1299,6 +1299,26 @@ public abstract class AutomatedTestBase {
 			t = new Thread(() -> {
 				try {
 					main(finalArguments);
+				}
+				catch(IOException e) {
+				}
+			});
+			t.start();
+			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(FED_WORKER_WAIT);
+		}
+		catch(InterruptedException e) {
+			// Should happen at closing of the worker so don't print
+		}
+		return t;
+	}
+
+	public static Thread startLocalFedWorkerWithArgs(String[] args) {
+		Thread t = null;
+
+		try {
+			t = new Thread(() -> {
+				try {
+					main(args);
 				}
 				catch(IOException e) {
 				}

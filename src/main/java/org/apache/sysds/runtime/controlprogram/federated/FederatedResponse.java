@@ -91,7 +91,11 @@ public class FederatedResponse implements Serializable {
 				throw (Exception) potentialException;
 			}
 		}
-		throw new DMLRuntimeException("Unknown runtime exception in handling of federated request by federated worker.");
+		String errorMessage = getErrorMessage();
+		if (getErrorMessage() != "No readable error message")
+			throw new DMLRuntimeException(errorMessage);
+		else
+			throw new DMLRuntimeException("Unknown runtime exception in handling of federated request by federated worker.");
 	}
 
 	/**

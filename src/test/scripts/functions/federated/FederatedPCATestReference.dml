@@ -19,6 +19,6 @@
 #
 #-------------------------------------------------------------
 
-X = rbind(read($1), read($2))
-[X2,M] = pca(X=X,  K=2, scale=$3, center=$3)
-write(X2, $4)
+X = rbind(read($1), read($2), read($3), read($4));
+[X2,M] = pca(X=X,  K=2, scale=$5, center=$5)
+write(X2, $6)

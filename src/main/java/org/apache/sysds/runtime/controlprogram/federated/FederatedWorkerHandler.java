@@ -119,6 +119,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return execInstruction(request);
 				case EXEC_UDF:
 					return execUDF(request);
+				case CLEAR:
+					return execClear();
 				default:
 					String message = String.format("Method %s is not supported.", method);
 					return new FederatedResponse(ResponseType.ERROR,
@@ -278,6 +280,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
+	private FederatedResponse execClear() {
+		_ecm.clear();
+		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+	}
+	
 	private static void checkNumParams(int actual, int... expected) {
 		if (Arrays.stream(expected).anyMatch(x -> x == actual))
 			return;

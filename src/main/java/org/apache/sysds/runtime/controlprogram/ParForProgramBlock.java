@@ -422,6 +422,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		LOG.trace("PARFOR: ParForProgramBlock created with mode = "+_execMode+", optmode = "+_optMode+", numThreads = "+_numThreads);
 	}
 	
+	public static void resetWorkerIDs() {
+		_pwIDSeq.reset();
+	}
+	
 	public long getID() {
 		return _ID;
 	}

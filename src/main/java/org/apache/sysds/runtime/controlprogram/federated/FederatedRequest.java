@@ -37,6 +37,7 @@ public class FederatedRequest implements Serializable {
 		GET_VAR,   // return local variable to main
 		EXEC_INST, // execute arbitrary instruction over
 		EXEC_UDF,  // execute arbitrary user-defined function
+		CLEAR,     // clear all variables and execution contexts (i.e., rmvar ALL)
 	}
 	
 	private RequestType _method;

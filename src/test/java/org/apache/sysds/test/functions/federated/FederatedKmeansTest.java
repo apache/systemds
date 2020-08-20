@@ -26,6 +26,8 @@ import org.junit.runners.Parameterized;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -50,6 +52,8 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	public int cols;
 	@Parameterized.Parameter(2)
 	public int runs;
+	@Parameterized.Parameter(3)
+	public int rep;
 
 	@Override
 	public void setUp() {
@@ -61,8 +65,9 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-			{10000, 10, 1}, {2000, 50, 1}, {1000, 100, 1},
-			{10000, 10, 2}, {2000, 50, 2}, {1000, 100, 2}, //concurrent requests
+			{10000, 10, 1, 1}, {2000, 50, 1, 1}, {1000, 100, 1, 1},
+			{10000, 10, 2, 1}, {2000, 50, 2, 1}, {1000, 100, 2, 1}, //concurrent requests
+			{10000, 10, 2, 2}, //repeated exec
 			//TODO more runs e.g., 16 -> but requires rework RPC framework first
 			//(e.g., see paramserv?)
 		});
@@ -115,25 +120,30 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"runs=" + String.valueOf(runs), "out=" + output("Z")};
-		runTest(true, false, null, -1);
-
+		
+		for( int i=0; i<rep; i++ ) {
+			ParForProgramBlock.resetWorkerIDs();
+			FederationUtils.resetFedDataID();
+			runTest(true, false, null, -1);
+		
+			// check for federated operations
+			Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
+			Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));
+			Assert.assertTrue(heavyHittersContainsString("fed_uarmin"));
+			Assert.assertTrue(heavyHittersContainsString("fed_*"));
+			Assert.assertTrue(heavyHittersContainsString("fed_+"));
+			Assert.assertTrue(heavyHittersContainsString("fed_<="));
+			Assert.assertTrue(heavyHittersContainsString("fed_/"));
+			Assert.assertTrue(heavyHittersContainsString("fed_r'"));
+			
+			//check that federated input files are still existing
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
+			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
+		}
+		
 		// compare via files
 		//compareResults(1e-9); --> randomized
 		TestUtils.shutdownThreads(t1, t2);
-		
-		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uarmin"));
-		Assert.assertTrue(heavyHittersContainsString("fed_*"));
-		Assert.assertTrue(heavyHittersContainsString("fed_+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_<="));
-		Assert.assertTrue(heavyHittersContainsString("fed_/"));
-		Assert.assertTrue(heavyHittersContainsString("fed_r'"));
-		
-		//check that federated input files are still existing
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 		
 		resetExecMode(platformOld);
 	}

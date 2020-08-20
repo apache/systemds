@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types.ExecType;
@@ -43,6 +44,10 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 public class FederationUtils {
 	private static final IDSequence _idSeq = new IDSequence();
+	
+	public static void resetFedDataID() {
+		_idSeq.reset();
+	}
 	
 	public static long getNextFedDataID() {
 		return _idSeq.getNextID();
@@ -158,5 +163,15 @@ public class FederationUtils {
 		else
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
+	}
+	
+	public static void waitFor(List<Future<FederatedResponse>> responses) {
+		try {
+			for(Future<FederatedResponse> fr : responses)
+				fr.get();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
 	}
 }

@@ -154,7 +154,7 @@ public class FederationMap
 		// prepare results (future federated responses), with optional wait to ensure the 
 		// order of requests without data dependencies (e.g., cleanup RPCs)
 		if( wait )
-			waitFor(ret);
+			FederationUtils.waitFor(ret);
 		return ret.toArray(new Future[0]);
 	}
 	
@@ -178,17 +178,7 @@ public class FederationMap
 		for(FederatedData fd : _fedMap.values())
 			tmp.add(fd.executeFederatedOperation(request));
 		//wait to avoid interference w/ following requests
-		waitFor(tmp);
-	}
-	
-	private static void waitFor(List<Future<FederatedResponse>> responses) {
-		try {
-			for(Future<FederatedResponse> fr : responses)
-				fr.get();
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
-		}
+		FederationUtils.waitFor(tmp);
 	}
 	
 	private static FederatedRequest[] addAll(FederatedRequest a, FederatedRequest[] b) {

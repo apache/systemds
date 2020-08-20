@@ -58,6 +58,11 @@ public class EncoderRecode extends Encoder
 		this(new int[0], 0);
 	}
 	
+	private EncoderRecode(int[] colList, int clen, HashMap<Integer, HashMap<String, Long>> rcdMaps) {
+		super(colList, clen);
+		_rcdMaps = rcdMaps;
+	}
+	
 	public HashMap<Integer, HashMap<String,Long>> getCPRecodeMaps() { 
 		return _rcdMaps; 
 	}
@@ -180,9 +185,7 @@ public class EncoderRecode extends Encoder
 			return null;
 		
 		int[] colList = cols.stream().mapToInt(i -> i).toArray();
-		EncoderRecode subRangeEncoder = new EncoderRecode(colList, colEnd - colStart);
-		subRangeEncoder._rcdMaps = rcdMaps;
-		return subRangeEncoder;
+		return new EncoderRecode(colList, colEnd - colStart, rcdMaps);
 	}
 
 	@Override

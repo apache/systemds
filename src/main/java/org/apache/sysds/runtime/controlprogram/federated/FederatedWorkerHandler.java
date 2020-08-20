@@ -72,7 +72,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
-		log.debug("Received: " + msg.getClass().getSimpleName());
+		if( log.isDebugEnabled() ){
+			log.debug("Received: " + msg.getClass().getSimpleName());
+		}
 		if (!(msg instanceof FederatedRequest[]))
 			throw new DMLRuntimeException("FederatedWorkerHandler: Received object no instance of 'FederatedRequest[]'.");
 		FederatedRequest[] requests = (FederatedRequest[]) msg;
@@ -80,15 +82,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		
 		for( int i=0; i<requests.length; i++ ) {
 			FederatedRequest request = requests[i];
-			if( log.isDebugEnabled() )
-				log.debug("Executing command "+(i+1)+"/"+requests.length + ": " + request.getType().name());
+			if( log.isInfoEnabled() ){
+				log.info("Executing command " + (i+1) + "/" + requests.length + ": " + request.getType().name());
+				if( log.isDebugEnabled() ){
+					log.debug("full command: " + request.toString());
+				}
+			}
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
 	
 			response = executeCommand(request);
 			conditionalAddCheckedConstraints(request, response);
-			if (!response.isSuccessful())
-				log.error("Command " + request.getType() + " failed: " + response.getErrorMessage());
+			if (!response.isSuccessful()){
+				log.error("Command " + request.getType() + " failed: " + response.getErrorMessage() + "full command: \n" + request.toString());
+			}
 		}
 		ctx.writeAndFlush(response).addListener(new CloseListener());
 	}

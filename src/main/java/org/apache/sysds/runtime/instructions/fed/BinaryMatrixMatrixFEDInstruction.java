@@ -39,29 +39,41 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
 		
+		FederatedRequest fr2 = null;
+
 		if( mo2.isFederated() ) {
-			throw new DMLRuntimeException("Matrix-matrix binary operations "
-				+ " with a federated right input are not supported yet.");
+			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)){
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
+					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
+				mo1.getFedMapping().execute(getTID(), true, fr2);
+				
+			} else{
+				throw new DMLRuntimeException("Matrix-matrix binary operations "
+					+ " with a federated right input are not supported yet.");
+			}
+
+		} 
+		else {
+			//matrix-matrix binary oFederatedRequest fr2 = null;perations -> lhs fed input -> fed output
+			
+			if(mo2.getNumRows() > 1 && mo2.getNumColumns() == 1 ) { //MV row vector
+				FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
+					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()});
+				//execute federated instruction and cleanup intermediates
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
+			}
+			else { //MM or MV col vector
+				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
+					new long[]{mo1.getFedMapping().getID(), fr1.getID()});
+				//execute federated instruction and cleanup intermediates
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				mo1.getFedMapping().cleanup(getTID(), fr1.getID());
+			}
 		}
 		
-		//matrix-matrix binary operations -> lhs fed input -> fed output
-		FederatedRequest fr2 = null;
-		if(mo2.getNumRows() > 1 && mo2.getNumColumns() == 1 ) { //MV row vector
-			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
-			fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-				new long[]{mo1.getFedMapping().getID(), fr1[0].getID()});
-			//execute federated instruction and cleanup intermediates
-			mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
-			mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-		}
-		else { //MM or MV col vector
-			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
-			fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-				new long[]{mo1.getFedMapping().getID(), fr1.getID()});
-			//execute federated instruction and cleanup intermediates
-			mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
-			mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-		}
 		
 		//derive new fed mapping for output
 		MatrixObject out = ec.getMatrixObject(output);

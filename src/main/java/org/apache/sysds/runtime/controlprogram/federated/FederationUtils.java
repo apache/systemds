@@ -19,17 +19,20 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -43,6 +46,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 public class FederationUtils {
+	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
 	
 	public static void resetFedDataID() {
@@ -132,16 +136,31 @@ public class FederationUtils {
 	}
 
 	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr) {
-		if( !(aop.aggOp.increOp.fn instanceof KahanFunction) ) {
+		if(!(aop.aggOp.increOp.fn instanceof KahanPlus || (aop.aggOp.increOp.fn instanceof Builtin &&
+			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.getClass().getSimpleName());
 		}
-		//compute scalar sum of partial aggregates
+
 		try {
-			double sum = 0; //uak+, uasqk+
-			for( Future<FederatedResponse> fr : ffr )
-				sum += ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
-			return new DoubleObject(sum);
+			if(aop.aggOp.increOp.fn instanceof Builtin){
+				// then we know it is a Min or Max based on the previous check.
+				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
+				double res = isMin ? Double.MAX_VALUE: - Double.MAX_VALUE;
+				double v;
+				for (Future<FederatedResponse> fr: ffr){
+					v = ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
+					res = isMin ? Math.min(res, v) : Math.max(res, v);
+				}
+				return new DoubleObject(res);
+			} 
+			else {		
+				double sum = 0; //uak+
+				for( Future<FederatedResponse> fr : ffr )
+					sum += ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
+				return new DoubleObject(sum);
+			}
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

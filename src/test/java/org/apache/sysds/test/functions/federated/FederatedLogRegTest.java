@@ -40,7 +40,7 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME = "FederatedLogRegTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedGLMTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedLogRegTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -108,7 +108,7 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats",
+		programArgs = new String[] {"-stats", "30",
 			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y=" + input("Y"), "out=" + output("Z")};
@@ -120,11 +120,9 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		TestUtils.shutdownThreads(t1, t2);
 
 		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uark+","fed_uarsqk+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_mmchain"));
+		Assert.assertTrue("contains federated matrix mult",heavyHittersContainsString("fed_ba+*"));
+		Assert.assertTrue("contains federated row unary aggregate",heavyHittersContainsString("fed_uark+","fed_uarsqk+"));
+		Assert.assertTrue("contains federated matrix mult chain or transpose",heavyHittersContainsString("fed_mmchain", "fed_r'"));
 		
 		//check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

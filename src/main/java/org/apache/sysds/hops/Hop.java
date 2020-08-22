@@ -200,7 +200,7 @@ public abstract class Hop implements ParseInfo {
 			}
 			else {
 				// enabled with -exec singlenode option
-				_etypeForced = ExecType.CP;  
+				_etypeForced = ExecType.CP;
 			}
 		}
 		else if ( DMLScript.getGlobalExecMode() == ExecMode.SPARK )
@@ -1064,6 +1064,8 @@ public abstract class Hop implements ParseInfo {
 	 * </ul>
 	 */
 	protected void setRequiresRecompileIfNecessary() {
+		//NOTE: when changing these conditions, remember to update the code for
+		//function recompilation in FunctionProgramBlock accordingly
 		boolean caseRemote = (!dimsKnown(true) && _etype == ExecType.SPARK);
 		boolean caseLocal = (!dimsKnown() && _etypeForced == ExecType.CP);
 		boolean caseCodegen = (!dimsKnown() && ConfigurationManager.isCodegenEnabled());

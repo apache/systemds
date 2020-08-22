@@ -112,7 +112,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			// create an encoder with the given spec. The columnOffset (which is 1 based) has to be used to
 			// tell the federated worker how much the indexes in the spec have to be offset.
 			Future<FederatedResponse> responseFuture = data.executeFederatedOperation(
-				new FederatedRequest(RequestType.EXEC_UDF, data.getVarID(),
+				new FederatedRequest(RequestType.EXEC_UDF, -1,
 					new CreateFrameEncoder(data.getVarID(), spec, columnOffset)));
 			// collect responses with encoders
 			try {
@@ -157,7 +157,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 			try {
 				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,
-					varID, new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
+					-1, new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}

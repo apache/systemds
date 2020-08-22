@@ -168,7 +168,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			FederatedResponse response;
 			try {
 				response = data.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-					varID, new DecodeMatrix(data.getVarID(), varID, metaSlice, decoder))).get();
+					-1, new DecodeMatrix(data.getVarID(), varID, metaSlice, decoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 
@@ -211,8 +211,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		fedMapping.forEachParallel((range, data) -> {
 			try {
 				FederatedResponse response = data
-					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
-						data.getVarID(), new GetColumnNames(data.getVarID())))
+					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+						new GetColumnNames(data.getVarID())))
 					.get();
 
 				// no synchronization necessary since names should anyway match

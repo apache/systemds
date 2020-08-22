@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -35,10 +38,21 @@ public class EncoderFeatureHash extends Encoder
 	private static final long serialVersionUID = 7435806042138687342L;
 	private long _K;
 
-	public EncoderFeatureHash(JSONObject parsedSpec, String[] colnames, int clen) throws JSONException {
+	public EncoderFeatureHash(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
+		throws JSONException {
 		super(null, clen);
-		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.HASH.toString());
-		_K = getK(parsedSpec); 
+		_colList = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol);
+		_K = getK(parsedSpec);
+	}
+	
+	public EncoderFeatureHash(int[] colList, int clen, long K) {
+		super(colList, clen);
+		_K = K;
+	}
+	
+	public EncoderFeatureHash() {
+		super(new int[0], 0);
+		_K = 0;
 	}
 	
 	/**
@@ -86,6 +100,36 @@ public class EncoderFeatureHash extends Encoder
 			}
 		}
 		return out;
+	}
+	
+	@Override
+	public Encoder subRangeEncoder(IndexRange ixRange) {
+		List<Integer> cols = new ArrayList<>();
+		for (int col : _colList) {
+			if (col >= ixRange.colStart && col < ixRange.colEnd) {
+				// add the correct column, removed columns before start
+				// colStart - 1 because colStart is 1-based
+				int corrColumn = (int) (col - (ixRange.colStart - 1));
+				cols.add(corrColumn);
+			}
+		}
+		if (cols.isEmpty())
+			// empty encoder -> sub range encoder does not exist
+			return null;
+		
+		int[] colList = cols.stream().mapToInt(i -> i).toArray();
+		return new EncoderFeatureHash(colList, (int) (ixRange.colEnd - ixRange.colStart), _K);
+	}
+	
+	@Override
+	public void mergeAt(Encoder other, int col) {
+		if(other instanceof EncoderFeatureHash) {
+			mergeColumnInfo(other, col);
+			if (((EncoderFeatureHash) other)._K != 0 && _K == 0)
+				_K = ((EncoderFeatureHash) other)._K;
+			return;
+		}
+		super.mergeAt(other, col);
 	}
 	
 	@Override

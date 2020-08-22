@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.transform.encode.EncoderBin;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.EncoderFeatureHash;
 import org.apache.sysds.runtime.transform.encode.EncoderOmit;
 import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
@@ -97,6 +98,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		Encoder globalEncoder = new EncoderComposite(
 			// IMPORTANT: Encoder order matters
 			Arrays.asList(new EncoderRecode(),
+				new EncoderFeatureHash(),
 				new EncoderPassThrough(),
 				new EncoderBin(),
 				new EncoderDummycode(),

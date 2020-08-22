@@ -166,7 +166,7 @@ public abstract class Encoder implements Serializable
 	 */
 	public void mergeAt(Encoder other, int col) {
 		throw new DMLRuntimeException(
-			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getName());
+			this.getClass().getSimpleName() + " does not support merging with " + other.getClass().getSimpleName());
 	}
 	
 	/**

@@ -90,7 +90,7 @@ public class EncoderFactory
 				lencoders.add(ra);
 			}
 			if( !haIDs.isEmpty() ) {
-				EncoderFeatureHash ha = new EncoderFeatureHash(jSpec, colnames, clen);
+				EncoderFeatureHash ha = new EncoderFeatureHash(jSpec, colnames, clen, minCol, maxCol);
 				ha.setColList(ArrayUtils.toPrimitive(haIDs.toArray(new Integer[0])));
 				lencoders.add(ha);
 			}

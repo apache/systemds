@@ -57,10 +57,10 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	private final static String SPEC6b = "homes3/homes.tfspec_recode_dummy2.json";
 	private final static String SPEC7 = "homes3/homes.tfspec_binDummy.json"; // recode+dummy
 	private final static String SPEC7b = "homes3/homes.tfspec_binDummy2.json"; // recode+dummy
-	// private final static String SPEC8 = "homes3/homes.tfspec_hash.json";
-	// private final static String SPEC8b = "homes3/homes.tfspec_hash2.json";
-	// private final static String SPEC9 = "homes3/homes.tfspec_hash_recode.json";
-	// private final static String SPEC9b = "homes3/homes.tfspec_hash_recode2.json";
+	private final static String SPEC8 = "homes3/homes.tfspec_hash.json";
+	private final static String SPEC8b = "homes3/homes.tfspec_hash2.json";
+	private final static String SPEC9 = "homes3/homes.tfspec_hash_recode.json";
+	private final static String SPEC9b = "homes3/homes.tfspec_hash_recode2.json";
 
 	// dataset and transform tasks with missing values
 	private final static String DATASET2 = "homes/homes.csv";
@@ -76,8 +76,8 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY,
 		// IMPUTE,
 		OMIT,
-		// HASH,
-		// HASH_RECODE,
+		HASH,
+		HASH_RECODE,
 	}
 
 	@Override
@@ -156,25 +156,25 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	// runTransformTest(TransformType.IMPUTE, true);
 	// }
 
-	// @Test
-	// public void testHomesHashColnamesCSV() {
-	// runTransformTest(TransformType.HASH, true);
-	// }
+	@Test
+	public void testHomesHashColnamesCSV() {
+		runTransformTest(TransformType.HASH, true);
+	}
 
-	// @Test
-	// public void testHomesHashIDsCSV() {
-	// runTransformTest(TransformType.HASH, false);
-	// }
+	@Test
+	public void testHomesHashIDsCSV() {
+		runTransformTest(TransformType.HASH, false);
+	}
 
-	// @Test
-	// public void testHomesHashRecodeColnamesCSV() {
-	// runTransformTest(TransformType.HASH_RECODE, true);
-	// }
+	@Test
+	public void testHomesHashRecodeColnamesCSV() {
+		runTransformTest(TransformType.HASH_RECODE, true);
+	}
 
-	// @Test
-	// public void testHomesHashRecodeIDsCSV() {
-	// runTransformTest(TransformType.HASH_RECODE, false);
-	// }
+	@Test
+	public void testHomesHashRecodeIDsCSV() {
+		runTransformTest(TransformType.HASH_RECODE, false);
+	}
 
 	private void runTransformTest(TransformType type, boolean colnames) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -187,30 +187,15 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		String SPEC = null;
 		String DATASET = null;
 		switch(type) {
-			case RECODE:
-				SPEC = colnames ? SPEC1b : SPEC1;
-				DATASET = DATASET1;
-				break;
-			case DUMMY:
-				SPEC = colnames ? SPEC2b : SPEC2;
-				DATASET = DATASET1;
-				break;
-			case BIN:
-				SPEC = colnames ? SPEC3b : SPEC3;
-				DATASET = DATASET1;
-				break;
+			case RECODE: SPEC = colnames ? SPEC1b : SPEC1; DATASET = DATASET1; break;
+			case DUMMY: SPEC = colnames ? SPEC2b : SPEC2; DATASET = DATASET1; break;
+			case BIN: SPEC = colnames ? SPEC3b : SPEC3; DATASET = DATASET1; break;
 			// case IMPUTE: SPEC = colnames?SPEC4b:SPEC4; DATASET = DATASET2; break;
 			case OMIT: SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
-			case RECODE_DUMMY:
-				SPEC = colnames ? SPEC6b : SPEC6;
-				DATASET = DATASET1;
-				break;
-			case BIN_DUMMY:
-				SPEC = colnames ? SPEC7b : SPEC7;
-				DATASET = DATASET1;
-				break;
-			// case HASH: SPEC = colnames?SPEC8b:SPEC8; DATASET = DATASET1; break;
-			// case HASH_RECODE: SPEC = colnames?SPEC9b:SPEC9; DATASET = DATASET1; break;
+			case RECODE_DUMMY: SPEC = colnames ? SPEC6b : SPEC6; DATASET = DATASET1; break;
+			case BIN_DUMMY: SPEC = colnames ? SPEC7b : SPEC7; DATASET = DATASET1; break;
+			case HASH: SPEC = colnames?SPEC8b:SPEC8; DATASET = DATASET1; break;
+			case HASH_RECODE: SPEC = colnames?SPEC9b:SPEC9; DATASET = DATASET1; break;
 		}
 
 		Thread t1 = null, t2 = null;

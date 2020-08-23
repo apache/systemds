@@ -680,7 +680,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		//clear federated matrix
 		if( _fedMapping != null )
-			_fedMapping.cleanup(tid, _fedMapping.getID());
+			_fedMapping.execCleanup(tid, _fedMapping.getID());
 		
 		// change object state EMPTY
 		setDirty(false);

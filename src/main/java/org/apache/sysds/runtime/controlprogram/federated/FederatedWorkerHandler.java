@@ -91,10 +91,24 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
 	
-			response = executeCommand(request);
-			conditionalAddCheckedConstraints(request, response);
-			if (!response.isSuccessful()){
-				log.error("Command " + request.getType() + " failed: " + response.getErrorMessage() + "full command: \n" + request.toString());
+			//execute command and handle privacy constraints
+			FederatedResponse tmp = executeCommand(request);
+			conditionalAddCheckedConstraints(request, tmp);
+			
+			//select the response for the entire batch of requests
+			if (!tmp.isSuccessful()) {
+				log.error("Command " + request.getType() + " failed: " 
+					+ tmp.getErrorMessage() + "full command: \n" + request.toString());
+				response = (response == null || response.isSuccessful()) 
+					? tmp : response; //return first error
+			}
+			else if( request.getType() == RequestType.GET_VAR ) {
+				if( response != null && response.isSuccessful() )
+					log.error("Multiple GET_VAR are not supported in single batch of requests.");
+				response = tmp; //return last get result
+			}
+			else if( response == null && i == requests.length-1 ) {
+				response = tmp; //return last
 			}
 		}
 		ctx.writeAndFlush(response).addListener(new CloseListener());

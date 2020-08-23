@@ -67,11 +67,11 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()});
 			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
+			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 			
 			//execute federated operations and aggregate
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2);
+			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
 			MatrixBlock ret = FederationUtils.aggAdd(tmp);
-			mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 			ec.setMatrixOutput(output.getName(), ret);
 		}
 		else { //other combinations

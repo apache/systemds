@@ -140,6 +140,7 @@ public enum Builtins {
 	MSVMPREDICT("msvmPredict", true),
 	MULTILOGREG("multiLogReg", true),
 	MULTILOGREGPREDICT("multiLogRegPredict", true),
+	NA_LOCF("na_locf", true),
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
 	NROW("nrow", false),

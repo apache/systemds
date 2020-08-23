@@ -170,7 +170,14 @@ public class FederationMap
 		return readResponses;
 	}
 	
-	public void cleanup(long tid, long... id) {
+	public FederatedRequest cleanup(long tid, long... id) {
+		FederatedRequest request = new FederatedRequest(RequestType.EXEC_INST, -1,
+			VariableCPInstruction.prepareRemoveInstruction(id).toString());
+		request.setTID(tid);
+		return request;
+	}
+	
+	public void execCleanup(long tid, long... id) {
 		FederatedRequest request = new FederatedRequest(RequestType.EXEC_INST, -1,
 			VariableCPInstruction.prepareRemoveInstruction(id).toString());
 		request.setTID(tid);

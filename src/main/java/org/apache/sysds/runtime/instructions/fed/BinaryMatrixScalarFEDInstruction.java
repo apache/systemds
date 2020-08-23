@@ -39,17 +39,20 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 		CPOperand scalar = input2.isScalar() ? input2 : input1;
 		MatrixObject mo = ec.getMatrixObject(matrix);
 		
-		//execute federated matrix-scalar operation and cleanups
+		//prepare federated request matrix-scalar
 		FederatedRequest fr1 = !scalar.isLiteral() ?
 			mo.getFedMapping().broadcast(ec.getScalarInput(scalar)) : null;
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{matrix, (fr1 != null)?scalar:null},
 			new long[]{mo.getFedMapping().getID(), (fr1 != null)?fr1.getID():-1});
 		
-		mo.getFedMapping().execute(getTID(), true, (fr1!=null) ?
-			new FederatedRequest[]{fr1, fr2}: new FederatedRequest[]{fr2});
-		if( fr1 != null )
-			mo.getFedMapping().cleanup(getTID(), fr1.getID());
+		//execute federated matrix-scalar operation and cleanups
+		if( fr1 != null ) {
+			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1.getID());
+			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+		}
+		else
+			mo.getFedMapping().execute(getTID(), true, fr2);
 		
 		//derive new fed mapping for output
 		MatrixObject out = ec.getMatrixObject(output);

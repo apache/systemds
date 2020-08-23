@@ -27,6 +27,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,7 +49,9 @@ import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -60,7 +64,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements CacheBlock, Externalizable  {
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
-	
+	private static final IDSequence CLASS_ID =  new  IDSequence();// Log LOG = LogFactory.getLog(FrameBlock.class.getName());
+
 	private static final long serialVersionUID = -3993450030207130665L;
 	
 	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
@@ -2078,4 +2083,49 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
 	}
+
+
+	/**
+	 *  This method will perform the String processing by applying the given String operation on whole column
+	 *  @param operation a string expression to be evaluated
+	 *  @return FrameBlock (column vector) where each cell value is processed using given exp
+	 */
+	public  FrameBlock dmlMap(String operation)  {
+
+		Array input = this.getColumn(0);
+		String[][] output = new String[input._size][1];
+
+		try {
+
+			Method method = getCompiledMethod(operation);
+			for (int i = 0; i < input._size; i++) {
+
+				if(input.get(i) == null)
+					output[i][0] = null;
+				else
+					output[i][0] = (String) method.invoke(null, String.valueOf(input.get(i)));
+			}
+		}
+		catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+			e.printStackTrace();
+		}
+
+		return  new FrameBlock(UtilFunctions.nCopies(1, ValueType.STRING), output);
+	}
+
+	private Method getCompiledMethod(String expression) throws NoSuchMethodException {
+
+		final String CLASS_NAME = "StringProcessing"+CLASS_ID.getNextID();
+
+		String codeStr = "import org.apache.sysds.runtime.util.UtilFunctions;" +
+							"public class " + CLASS_NAME + " {" +
+							"public static String apply(String x)" +
+							"{ return String.valueOf("+expression+"); }}";
+
+		// get the loaded class and invoke the  method
+		return CodegenUtils.compileClass(CLASS_NAME, codeStr).getMethod("apply", String.class );
+	}
+
 }
+
+

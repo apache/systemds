@@ -1054,7 +1054,10 @@ public class BinaryOp extends MultiThreadedHop
 	{
 		if( !(that instanceof BinaryOp) )
 			return false;
-		
+
+		if(op == OpOp2.DML_MAP)
+			return false;
+
 		BinaryOp that2 = (BinaryOp)that;
 		return (   op == that2.op
 				&& outer == that2.outer

@@ -53,6 +53,7 @@ public enum Builtins {
 	BITWXOR("bitwXor", false),
 	BITWSHIFTL("bitwShiftL", false),
 	BITWSHIFTR("bitwShiftR", false),
+	BIVAR("bivar", true),
 	CAST_AS_SCALAR("as.scalar", "castAsScalar", false),
 	CAST_AS_MATRIX("as.matrix", false),
 	CAST_AS_FRAME("as.frame", false),
@@ -191,6 +192,7 @@ public enum Builtins {
 	COUNT_DISTINCT_APPROX("countDistinctApprox",false),
 	VAR("var", false),
 	XOR("xor", false),
+	UNIVAR("univar", true),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
 
 	//parameterized builtin functions

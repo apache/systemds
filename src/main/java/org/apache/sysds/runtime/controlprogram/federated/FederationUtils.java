@@ -47,27 +47,27 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
-	
+
 	public static void resetFedDataID() {
 		_idSeq.reset();
 	}
-	
+
 	public static long getNextFedDataID() {
 		return _idSeq.getNextID();
 	}
-	
+
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
 		//TODO better and safe replacement of operand names --> instruction utils
 		long id = getNextFedDataID();
 		String linst = inst.replace(ExecType.SPARK.name(), ExecType.CP.name());
 		linst = linst.replace(
-			Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX,
-			Lop.OPERAND_DELIMITOR+String.valueOf(id)+Lop.DATATYPE_PREFIX);
+				Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX,
+				Lop.OPERAND_DELIMITOR+String.valueOf(id)+Lop.DATATYPE_PREFIX);
 		for(int i=0; i<varOldIn.length; i++)
 			if( varOldIn[i] != null ) {
 				linst = linst.replace(
-					Lop.OPERAND_DELIMITOR+varOldIn[i].getName()+Lop.DATATYPE_PREFIX,
-					Lop.OPERAND_DELIMITOR+String.valueOf(varNewIn[i])+Lop.DATATYPE_PREFIX);
+						Lop.OPERAND_DELIMITOR+varOldIn[i].getName()+Lop.DATATYPE_PREFIX,
+						Lop.OPERAND_DELIMITOR+String.valueOf(varNewIn[i])+Lop.DATATYPE_PREFIX);
 				linst = linst.replace("="+varOldIn[i].getName(), "="+String.valueOf(varNewIn[i])); //parameterized
 			}
 		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
@@ -85,7 +85,7 @@ public class FederationUtils {
 			throw new DMLRuntimeException(ex);
 		}
 	}
-	
+
 	public static MatrixBlock aggMean(Future<FederatedResponse>[] ffr, FederationMap map) {
 		try {
 			FederatedRange[] ranges = map.getFederatedRanges();
@@ -108,7 +108,24 @@ public class FederationUtils {
 			throw new DMLRuntimeException(ex);
 		}
 	}
-	
+
+	public static DoubleObject aggMinMax(Future<FederatedResponse>[] ffr, boolean isMin, boolean isScalar) {
+		try {
+			double v;
+			double res = isMin ? Double.MAX_VALUE: - Double.MAX_VALUE;
+			for (Future<FederatedResponse> fr: ffr){
+				if (! isScalar)
+					v = isMin ? ((MatrixBlock) fr.get().getData()[0]).min() : ((MatrixBlock) fr.get().getData()[0]).max();
+				else v = ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
+				res = isMin ? Math.min(res, v) : Math.max(res, v);
+
+			}
+			return new DoubleObject(res);
+		} catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public static MatrixBlock[] getResults(Future<FederatedResponse>[] ffr) {
 		try {
 			MatrixBlock[] ret = new MatrixBlock[ffr.length];
@@ -126,8 +143,8 @@ public class FederationUtils {
 		try {
 			MatrixBlock[] tmp = getResults(ffr);
 			return tmp[0].append(
-				Arrays.copyOfRange(tmp, 1, tmp.length),
-				new MatrixBlock(), false);
+					Arrays.copyOfRange(tmp, 1, tmp.length),
+					new MatrixBlock(), false);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -136,25 +153,19 @@ public class FederationUtils {
 
 	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr) {
 		if(!(aop.aggOp.increOp.fn instanceof KahanFunction || (aop.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
-				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
+				(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+						((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
-				+ aop.aggOp.increOp.getClass().getSimpleName());
+					+ aop.aggOp.increOp.getClass().getSimpleName());
 		}
 
 		try {
 			if(aop.aggOp.increOp.fn instanceof Builtin){
 				// then we know it is a Min or Max based on the previous check.
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
-				double res = isMin ? Double.MAX_VALUE: - Double.MAX_VALUE;
-				double v;
-				for (Future<FederatedResponse> fr: ffr){
-					v = ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
-					res = isMin ? Math.min(res, v) : Math.max(res, v);
-				}
-				return new DoubleObject(res);
-			} 
-			else {		
+				return aggMinMax(ffr, isMin, true);
+			}
+			else {
 				double sum = 0; //uak+
 				for( Future<FederatedResponse> fr : ffr )
 					sum += ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
@@ -172,17 +183,22 @@ public class FederationUtils {
 			//independent of aggregation function for row-partitioned federated matrices
 			return rbind(ffr);
 		}
-		
 		// handle col aggregate
 		if( aop.aggOp.increOp.fn instanceof KahanFunction )
 			return aggAdd(ffr);
 		else if( aop.aggOp.increOp.fn instanceof Mean )
 			return aggMean(ffr, map);
+		else if (aop.aggOp.increOp.fn instanceof Builtin &&
+				(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+						((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)) {
+			boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
+			return new MatrixBlock(1,1,aggMinMax(ffr, isMin, false).getDoubleValue());
+		}
 		else
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
-				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
+					+ aop.aggOp.increOp.fn.getClass().getSimpleName());
 	}
-	
+
 	public static void waitFor(List<Future<FederatedResponse>> responses) {
 		try {
 			for(Future<FederatedResponse> fr : responses)

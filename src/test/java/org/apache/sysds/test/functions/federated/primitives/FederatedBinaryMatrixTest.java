@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated.primitives;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,12 +34,11 @@ import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedBinaryVectorTest extends AutomatedTestBase {
+public class FederatedBinaryMatrixTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
-	// Using same test base as binary matrix test
 	private final static String TEST_NAME = "FederatedBinaryMatrixTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedBinaryVectorTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedBinaryMatrixTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -90,18 +89,18 @@ public class FederatedBinaryVectorTest extends AutomatedTestBase {
 		double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
 		double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
 		// And another two matrices handled by a single federated worker
-		double[][] Y1 = getRandomMatrix(halfRows, 1, 0, 1, 1, 44);
-		double[][] Y2 = getRandomMatrix(halfRows, 1, 0, 1, 1, 21);
+		double[][] Y1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 44);
+		double[][] Y2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 21);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(halfRows, 1, blocksize, halfRows));
-		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(halfRows, 1, blocksize, halfRows));
+		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
+		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorker(port1);
-		Thread t2 = startLocalFedWorker(port2);
+		Process t1 = startLocalFedWorker(port1);
+		Process t2 = startLocalFedWorker(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);

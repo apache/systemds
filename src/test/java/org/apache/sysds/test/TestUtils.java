@@ -2469,6 +2469,11 @@ public class TestUtils
 		for( Thread t : ts )
 			shutdownThread(t);
 	}
+
+	public static void shutdownThreads(Process... ts) {
+		for( Process t : ts )
+			shutdownThread(t);
+	}
 	
 	public static void shutdownThread(Thread t) {
 		// kill the worker
@@ -2476,6 +2481,19 @@ public class TestUtils
 			t.interrupt();
 			try {
 				t.join();
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static void shutdownThread(Process t) {
+		// kill the worker
+		if( t != null ) {
+			Process d = t.destroyForcibly();
+			try {
+				d.waitFor();
 			}
 			catch (InterruptedException e) {
 				e.printStackTrace();

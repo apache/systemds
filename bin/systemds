@@ -156,6 +156,7 @@ elif echo "$1" | grep -q "WORKER"; then
     echo "error: Port is not a number"
     printUsageExit
   fi
+  shift
 else
   # handle optional '-f' before DML file (for consistency)
   if  echo "$1" | grep -q "\-f"; then
@@ -291,7 +292,8 @@ if [ $WORKER == 1 ]; then
   -cp $CLASSPATH \
   $LOG4JPROP \
   org.apache.sysds.api.DMLScript \
-  -w $PORT"
+  -w $PORT \
+  $*"
 
 elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   print_out "#"

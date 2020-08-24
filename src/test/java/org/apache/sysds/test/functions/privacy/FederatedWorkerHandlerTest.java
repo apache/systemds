@@ -154,7 +154,6 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t;
 
 		getAndLoadTestConfiguration("aggregation");
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -162,7 +161,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
 		int port = getRandomAvailablePort();
-		t = startLocalFedWorker(port);
+		Process t = startLocalFedWorker(port);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -224,7 +223,6 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
-		Thread t;
 
 		getAndLoadTestConfiguration("transfer");
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -233,7 +231,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
 
 		int port = getRandomAvailablePort();
-		t = startLocalFedWorker(port);
+		Process t = startLocalFedWorker(port);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -289,7 +287,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 
-		Thread t1, t2;
+		Process t1, t2;
 
 		getAndLoadTestConfiguration("matvecmult");
 		String HOME = SCRIPT_DIR + TEST_DIR;

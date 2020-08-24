@@ -314,7 +314,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		if(rtplatform == Types.ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
-		Thread t1 = null, t2 = null;
+		Process t1 = null, t2 = null;
 
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);

@@ -17,16 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated.algorithms;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -36,11 +34,11 @@ import java.util.Collection;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedLogRegTest extends AutomatedTestBase {
+public class FederatedL2SVMTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
-	private final static String TEST_NAME = "FederatedLogRegTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedLogRegTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "FederatedL2SVMTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedL2SVMTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -57,22 +55,28 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		return Arrays.asList(new Object[][] {{10000, 10}, {1000, 100}, {2000, 43}});
+		return Arrays.asList(new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}});
 	}
 
 	@Test
-	public void federatedSinglenodeGLM() {
-		federatedGLM(Types.ExecMode.SINGLE_NODE);
+	public void federatedL2SVMCP() {
+		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void federatedHybridGLM() {
-		federatedGLM(Types.ExecMode.HYBRID);
-	}
+	/*
+	 * TODO support SPARK execution mode -> RDDs and SPARK instructions lead to quite a few problems
+	 * 
+	 * @Test public void federatedL2SVMSP() { federatedL2SVM(Types.ExecMode.SPARK); }
+	 */
 
-	
-	public void federatedGLM(Types.ExecMode execMode) {
-		ExecMode platformOld = setExecMode(execMode);
+	public void federatedL2SVM(Types.ExecMode execMode) {
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		Types.ExecMode platformOld = rtplatform;
+		rtplatform = execMode;
+		if(rtplatform == Types.ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
+		Process t1, t2;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -94,8 +98,8 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorker(port1);
-		Thread t2 = startLocalFedWorker(port2);
+		t1 = startLocalFedWorker(port1);
+		t2 = startLocalFedWorker(port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -108,8 +112,7 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "30",
-			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+		programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y=" + input("Y"), "out=" + output("Z")};
 		runTest(true, false, null, -1);
@@ -119,15 +122,7 @@ public class FederatedLogRegTest extends AutomatedTestBase {
 
 		TestUtils.shutdownThreads(t1, t2);
 
-		// check for federated operations
-		Assert.assertTrue("contains federated matrix mult",heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue("contains federated row unary aggregate",heavyHittersContainsString("fed_uark+","fed_uarsqk+"));
-		Assert.assertTrue("contains federated matrix mult chain or transpose",heavyHittersContainsString("fed_mmchain", "fed_r'"));
-		
-		//check that federated input files are still existing
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
-		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
-		
-		resetExecMode(platformOld);
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
 }

@@ -39,8 +39,7 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	private final static double tol = 1e-3;
 	private final static double tol1 = 1e-4;
 	private final static double tol2 = 1e-5;
-	//private final static int rows = 100;
-	//private final static double spDense = 0.99;
+
 	private final static String DATASET = SCRIPT_DIR + "functions/transform/input/iris/iris.csv";
 
 	@Override
@@ -49,83 +48,104 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testGMMM1() { runGMMTest(3, "VVV", "random", 10, 0.0000001, tol,true, LopProperties.ExecType.CP); }
+	public void testGMMMDefault() { runGMMTest(1, "VVV", "kmeans", 100,
+		1e-6, 0.000001,42, false, LopProperties.ExecType.CP); }
+		
+	@Test
+	public void testGMMM1() { runGMMTest(3, "VVV", "random", 100,
+				0.0000001, 0.0001,42, true, LopProperties.ExecType.CP); }
 
 	@Test
 	public void testGMMM2() {
-		runGMMTest(3, "EEE", "random", 150, 0.000001, tol1,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "EEE", "random", 150,
+				0.000001, tol1,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM3() {
-		runGMMTest(3, "VVI", "random", 10, 0.000000001, tol,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "VVI", "random", 10,
+				0.000000001, tol,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM4() {
-		runGMMTest(3, "VII", "random", 50, 0.000001, tol2,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "VII", "random", 50,
+				0.000001, tol2,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM1Kmean() {
-		runGMMTest(3, "VVV", "kmeans", 10, 0.0000001, tol,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "VVV", "kmeans", 10,
+				0.0000001, tol,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM2Kmean() {
-		runGMMTest(3, "EEE", "kmeans", 150, 0.000001, tol,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "EEE", "kmeans", 150,
+				0.000001, tol,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM3Kmean() {
-		runGMMTest(3, "VVI", "kmeans", 10, 0.00000001, tol1,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "VVI", "kmeans", 10,
+				0.00000001, tol1,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM4Kmean() {
-		runGMMTest(3, "VII", "kmeans", 50, 0.000001, tol2,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "VII", "kmeans", 50,
+				0.000001, tol2,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
-	public void testGMMM1Spark() { runGMMTest(3, "VVV", "random", 10, 0.0000001, tol,true, LopProperties.ExecType.SPARK); }
+	public void testGMMM1Spark() { runGMMTest(3, "VVV", "random", 10,
+			0.0000001, tol,42,true, LopProperties.ExecType.SPARK); }
 
 	@Test
 	public void testGMMM2Spark() {
-		runGMMTest(3, "EEE", "random", 50, 0.0000001, tol,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "EEE", "random", 50,
+			0.0000001, tol,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMMS3Spark() {
-		runGMMTest(3, "VVI", "random", 100, 0.000001, tol,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "VVI", "random", 100,
+			0.000001, tol,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM4Spark() {
-		runGMMTest(3, "VII", "random", 100, 0.000001, tol1,true, LopProperties.ExecType.CP);
+		runGMMTest(3, "VII", "random", 100,
+			0.000001, tol1,42,true, LopProperties.ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM1KmeanSpark() {
-		runGMMTest(3, "VVV", "kmeans", 100, 0.000001, tol2,false, LopProperties.ExecType.SPARK);
+		runGMMTest(3, "VVV", "kmeans", 100,
+			0.000001, tol2,42,false, LopProperties.ExecType.SPARK);
 	}
 
 	@Test
 	public void testGMMM2KmeanSpark() {
-		runGMMTest(3, "EEE", "kmeans", 50, 0.00000001, tol1,false, LopProperties.ExecType.SPARK);
+		runGMMTest(3, "EEE", "kmeans", 50,
+			0.00000001, tol1,42,false, LopProperties.ExecType.SPARK);
 	}
 
 	@Test
 	public void testGMMM3KmeanSpark() {
-		runGMMTest(3, "VVI", "kmeans", 100, 0.000001, tol,false, LopProperties.ExecType.SPARK);
+		runGMMTest(3, "VVI", "kmeans", 100,
+			0.000001, tol,42,false, LopProperties.ExecType.SPARK);
 	}
 
 	@Test
 	public void testGMMM4KmeanSpark() {
-		runGMMTest(3, "VII", "kmeans", 100, 0.000001, tol,false, LopProperties.ExecType.SPARK);
+		runGMMTest(3, "VII", "kmeans", 100,
+			0.000001, tol,42,false, LopProperties.ExecType.SPARK);
 	}
 
-	private void runGMMTest(int G_mixtures, String model, String init_param, int iter, double reg, double tol, boolean rewrite,
-			LopProperties.ExecType instType) {
+	private void runGMMTest(int G_mixtures, String model, String init_param, int iter,
+							double reg, double tol, int seed, boolean rewrite, LopProperties.ExecType instType) {
+
 		Types.ExecMode platformOld = setExecMode(instType);
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
 
@@ -133,8 +153,9 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", DATASET, String.valueOf(G_mixtures), model, init_param, String.valueOf(iter),
-					String.valueOf(reg), String.valueOf(tol), output("B"), output("O")};
+			programArgs = new String[] {"-exec", "singlenode", "-args", DATASET, String.valueOf(G_mixtures), model,
+										init_param, String.valueOf(iter), String.valueOf(reg), String.valueOf(tol),
+										String.valueOf(seed), output("B"), output("O")};
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + DATASET + " " + String
@@ -146,7 +167,6 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 			//compare matrices
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("O");
 			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromFS("O");
-			System.out.println(dmlfile.values().iterator().next().doubleValue());
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {

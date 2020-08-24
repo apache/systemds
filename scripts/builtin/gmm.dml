@@ -31,7 +31,8 @@
 # n_components    Integer  3         Number of n_components in the Gaussian mixture model
 # model           String   "VVV"     "VVV": unequal variance (full),each component has its own general covariance matrix
 #                                    "EEE": equal variance (tied), all components share the same general covariance matrix
-#                                    "VVI": spherical, unequal volume (diag), each component has its own diagonal covariance matrix 
+#                                    "VVI": spherical, unequal volume (diag), each component has its own diagonal 
+#                                            covariance matrix 
 #                                    "VII": spherical, equal volume (spherical), each component has its own single variance
 # init_param      String  "kmeans"   initialize weights with "kmeans" or "random"
 # iterations      Integer  100       Number of iterations
@@ -44,7 +45,8 @@
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# weight          Double   ---      A matrix whose [i,k]th entry is the probability that observation i in the test data belongs to the kth class
+# weight          Double   ---      A matrix whose [i,k]th entry is the probability that observation i in the test data 
+#                                    belongs to the kth class
 # labels          Double   ---      Prediction matrix
 # df              Integer  ---      Number of estimated parameters
 # bic             Double   ---      Bayesian information criterion for best iteration
@@ -52,32 +54,37 @@
 
 
 
-m_gmm = function(Matrix[Double] X, Integer n_components = 1, String model = "VVV", String init_params = "kmeans", Integer iter = 100, Double reg_covar = 1e-6, Double tol = 0.000001, Boolean verbose = FALSE )
-return (Matrix[Double] weights, Matrix[Double] labels, Integer df, Double bic)
+m_gmm = function(Matrix[Double] X, Integer n_components = 1, String model = "VVV", String init_params = "kmeans", 
+        Integer iter = 100, Double reg_covar = 1e-6, Double tol = 0.000001, Integer seed = 42, Boolean verbose = FALSE )
+        
+return (Matrix[Double] labels, Matrix[Double] predict_prob, Integer df, Double bic, 
+        Matrix[Double] mu, Matrix[Double] prec_chol, Matrix[Double] weight)
 { 
 
   # sanity checks
   if(model != "VVV" & model != "EEE" & model != "VVI" & model != "VII")
     stop("model not supported, should be in VVV, EEE, VVI, VII");
 
-  [labels, weights, norm] = fit(X, n_components, model, init_params, iter, reg_covar, tol, verbose)
+  [labels, predict_prob, norm, mu, prec_chol, weight] = fit(X, n_components, model, init_params, iter, reg_covar, tol, seed,  verbose)
   df = estimate_free_param(n_components, ncol(X), model)
   bic = getBIC(nrow(X), norm, df)
 }
 
-fit = function(Matrix[Double] X, Integer n_components, String model, String init_params, Integer iter , Double reg_covar, Double tol, Boolean verbose)
-return (Matrix[Double] label, Matrix[Double] predict_prob, Double log_prob_norm)
+fit = function(Matrix[Double] X, Integer n_components, String model, String init_params, Integer iter, 
+      Double reg_covar, Double tol, Integer seed, Boolean verbose)
+      
+return (Matrix[Double] label, Matrix[Double] predict_prob, Double log_prob_norm,
+        Matrix[Double] mean, Matrix[Double] precision_chol, Matrix[Double] weight)
 {
-
+  et = FALSE
   lower_bound = 0
   converged = FALSE
-  [weight, mean, sigma, precision_chol] = initialize_param(X, n_components,init_params, model, reg_covar, tol)
+  [weight, mean, sigma, precision_chol] = initialize_param(X, n_components,init_params, model, reg_covar, tol, seed)
   i = 1
-  while(i <= iter & !converged) {
-
+  while(i <= iter & !converged & !et) {
     prev_lower_bound = lower_bound
-    [log_prob_norm, log_resp] = e_step(X, weight, mean, precision_chol, model)
-    [weight, mean, sigma, precision_chol] = m_step(X, log_resp, n_components, model, reg_covar)
+    [log_prob_norm, log_resp, weighted_log_prob] = e_step(X, weight, mean, precision_chol, model)
+    [weight, mean, sigma, precision_chol, et] = m_step(X, log_resp, n_components, model, reg_covar)
     lower_bound = log_prob_norm
     change = lower_bound - prev_lower_bound
     converged = (abs(change) < tol)
@@ -88,12 +95,26 @@ return (Matrix[Double] label, Matrix[Double] predict_prob, Double log_prob_norm)
     }
     i = i+1   
   }
-  [log_prob_norm, log_resp] = e_step(X, weight, mean, precision_chol, model)
-  label = rowIndexMax(log_resp)
-  predict_prob = exp(log_resp)
+  if(et)
+  {
+    print("warning: did not converge because some components have ill-defined empirical covariance 
+    (i.e., singleton matrix or non-symmetric).
+    \nTry to decrease the number of components, or increase reg_covar")
+    label = rowIndexMax(weighted_log_prob)
+    predict_prob = exp(log_resp)
+    
+  }
+  else {
+    [log_prob_norm, log_resp, weighted_log_prob] = e_step(X, weight, mean, precision_chol, model)
+    label = rowIndexMax(weighted_log_prob)
+    predict_prob = exp(log_resp)
+  }
+
 }
  
-initialize_param = function(Matrix[Double] X, Integer n_components, String init_params, String model, Double reg_covar, Double tol)
+initialize_param = function(Matrix[Double] X, Integer n_components, String init_params, String model, 
+                   Double reg_covar, Double tol , Integer seed)
+                   
 return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma, Matrix[Double] precision_chol) 
 {
   # create responsibility matrix, resp[n_samples, n_components]
@@ -105,18 +126,23 @@ return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma, Matrix
   }
   else if(init_params == "random")
   {
-    resp = Rand(rows = nrow(X), cols=n_components)
+    resp = Rand(rows = nrow(X), cols=n_components, seed=seed)
     resp = resp/rowSums(resp)
   }
   else stop("invalid parameter value, expected kmeans or random found "+init_params) 
   
   [weight, mean, sigma] = estimate_gaussian_param(X, resp, n_components, model, reg_covar)
   weight = weight/nrow(X)
-  precision_chol = compute_precision_cholesky(sigma, model, n_components)
+  [precision_chol, et] = compute_precision_cholesky(sigma, model, n_components)
+  if(et)
+    stop("Fitting the mixture model failed because some components have ill-defined empirical covariance 
+    (i.e., singleton matrix or non-symmetric).
+    \nTry to decrease the number of components, or increase reg_covar")
 }
 
 
 estimate_gaussian_param = function(Matrix[Double] X, Matrix[Double] resp, Integer n_components, String model, Double reg_covar)
+
 return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma)
 {
   MACHINE_PRECISION = 2.22e-16
@@ -125,7 +151,8 @@ return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma)
   mean = (t(resp) %*% X) / t(weight) # mean dims:  n_components * n_features
   
   if(model == "VVV") {
-  # output: (sigma a list of length = n_components where each item in list is a covariance matrix of (n_features * n_features) dimensions)
+  # output: (sigma a list of length = n_components where each item in list is a covariance matrix of (
+  # n_features * n_features) dimensions) all rbind in a matrix form
     sigma = matrix(0, 0, ncol(X))
     for(k in 1:nrow(mean))
     {
@@ -137,6 +164,7 @@ return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma)
   }
   else if(model == "EEE") {
   # output: (sigma a list of length = 1 where  item in list is a covariance matrix of (n_features * n_features) dimensions)
+  # all rbind in a matrix form
     avgX2 = t(X) %*% X
     avgMean = (t(mean) * weight) %*% mean
     cov = avgX2 - avgMean
@@ -164,24 +192,28 @@ return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma)
 
 
 compute_precision_cholesky = function(Matrix[Double] sigma, String model, Integer n_components)
-return (Matrix[Double] precision_chol)
+
+return (Matrix[Double] precision_chol, Boolean earlyTermination )
 {
 
+  earlyTermination = FALSE
   if(model == "VVV") {
-    i = 1;
+    index = 1; k = 1
     precision_chol = matrix(0, 0, ncol(sigma))
-    for(k in 1:n_components) {
-      cov = sigma[i:(ncol(sigma)*k), ]
+    while(k <= n_components) {
+      cov = sigma[index:(ncol(sigma)*k), ]
       isSPD = checkSPD(cov)
       if(isSPD) {
-        cov_chol = cholesky(cov)
+        cov_chol = choleskymatrix(cov)
         pre_chol = t(inv(cov_chol))                      
         precision_chol = rbind(precision_chol, pre_chol)
-        i = i + ncol(sigma)
-      } else 
-        stop("Fitting the mixture model failed because some components have ill-defined empirical covariance (i.e., singleton matrix or non-symmetric )."+ 
-        "\nTry to decrease the number of components, or increase reg_covar")
-    }      
+        index = index + ncol(sigma)
+        k = k+1
+      } else {
+        earlyTermination = TRUE;
+        k = n_components + 1
+      }
+    }     
   }
   else if(model == "EEE") {
     cov = sigma
@@ -191,14 +223,12 @@ return (Matrix[Double] precision_chol)
       pre_chol = t(inv(cov_chol))
       precision_chol = pre_chol
     } else 
-      stop("Fitting the mixture model failed because some components have ill-defined empirical covariance (i.e., singleton matrix or non-symmetric)."+ 
-      "\nTry to decrease the number of components, or increase reg_covar")
+      earlyTermination = TRUE
   }
   else {
     cov = sigma
     if(sum(cov <= 0) > 0)
-      stop("Fitting the mixture model failed because some components have ill-defined empirical covariance (i.e., singleton matrix or non-symmetric)."+ 
-      "\nTry to decrease the number of components, or increase reg_covar")
+      earlyTermination = TRUE
     else {
       precision_chol = 1.0/sqrt(cov)
     }   
@@ -207,7 +237,8 @@ return (Matrix[Double] precision_chol)
 
 # Expectation step
 e_step = function(Matrix[Double] X, Matrix[Double] w, Matrix[Double] mu, Matrix[Double] precisions_cholesky, String model)
-return(Double norm, Matrix[Double] log_resp)
+
+return(Double norm, Matrix[Double] log_resp, Matrix[Double] weighted_log_prob)
 {
   weighted_log_prob =  estimate_log_gaussian_prob(X, mu, precisions_cholesky, model) + log(w)
   log_prob_norm = logSumExp(weighted_log_prob, "rows")
@@ -217,14 +248,16 @@ return(Double norm, Matrix[Double] log_resp)
 
 # maximization Step
 m_step = function(Matrix[Double] X, Matrix[Double] log_resp, Integer n_components, String model, Double reg_covar)
-return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma, Matrix[Double] precision_chol) 
+
+return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma, Matrix[Double] precision_chol, Boolean et) 
 {
   [weight, mean, sigma] = estimate_gaussian_param(X, exp(log_resp), n_components, model, reg_covar)
   weight = weight/nrow(X)
-  precision_chol = compute_precision_cholesky(sigma, model, n_components)
+  [precision_chol, et] = compute_precision_cholesky(sigma, model, n_components)
 }
   
 estimate_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu, Matrix[Double] prec_chol, String model)
+
 return(Matrix[Double] es_log_prob ) # nrow(X) * n_components
 {
   n_components = nrow(mu)
@@ -275,6 +308,7 @@ return(Matrix[Double] es_log_prob ) # nrow(X) * n_components
 }
 
 compute_log_det_cholesky = function(Matrix[Double] mat_chol, String model, Integer d)
+
 return(Matrix[Double] log_det_cholesky)
 {
   comp = nrow(mat_chol)/ncol(mat_chol)
@@ -303,6 +337,7 @@ return(Matrix[Double] log_det_cholesky)
 
 # compute the number of estimated parameters
 estimate_free_param = function(Integer n_components, Integer n_features, String model)
+
 return (Integer n_parameters)
 {
   if(model == "VVV")
@@ -332,13 +367,33 @@ checkSPD = function(Matrix[Double] A)
 return(Boolean isSPD)
 {
   # abs(a - t(a)) <= (absoluteTolerance + relativeTolerance * abs(b))
-  sym = abs(A - t(A)) <= (1e-6 * abs(t(A)))
+  sym = abs(A - t(A)) <= (1e-4 + abs(t(A)))
   if(sum(sym == 0) == 0)
   {
     [eval, evec] = eigen(A);
     #check positive definite
-    isSPD = (sum(eval < 0) == 0)
+    isSPD = (sum(eval < 0) < 1e-4)
   }
   else isSPD = FALSE
+  # isSPD = TRUE
 }
 
+choleskymatrix = function(Matrix[Double] m)
+
+return(Matrix[Double] L) {
+  rows = nrow(m)
+  cols = ncol(m)
+  L = diag(matrix(0, rows, 1))
+  for(i in 1:rows) {
+    for(k in 1:i) {
+      sum = as.matrix(0)
+      for(j in 1:k)
+        sum = sum + L[j, i] * L[j, k]
+      if(i == k)
+        L[k, i] = sqrt(m[i, i] - sum)
+      else
+        L[k, i] = (m[k, i] - sum) / L[k, k]
+    }
+  }
+  L = t(L)
+}

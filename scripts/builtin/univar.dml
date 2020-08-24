@@ -1,0 +1,94 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# Computes univariate statistics for all attributes in a given data set
+#
+# INPUT PARAMETERS:
+# -------------------------------------------------------------------------------------------------
+# NAME           TYPE               DEFAULT  MEANING
+# -------------------------------------------------------------------------------------------------
+# X              Matrix[Double]     ---      Input matrix of the shape (N, D)
+# TYPES          Matrix[Integer]    ---      Matrix of the shape (1, D) with features types:
+#                                            1 for scale, 2 for nominal, 3 for ordinal
+# -------------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of summary statistics
+
+m_univar = function(Matrix[Double] X, Matrix[Double] types)
+return(Matrix[Double] univarStats)
+{
+  max_kind = max(types);
+  N = nrow(X);
+  D = ncol(X);
+
+  # Number of statistics (14 scale, 3 categorical)
+  numBaseStats = 17;
+  univarStats = matrix(0, rows=numBaseStats, cols=D);
+
+  # Compute max domain size among all categorical attributes
+  maxDomain = as.integer(max((types > 1) * colMaxs(X)));
+
+  parfor(i in 1:D, check=0) {
+    F = X[,i];
+
+    type = as.scalar(types[1,i]);
+    minF = min(F);
+    maxF = max(F);
+
+    if (type == 1) {
+      # compute SCALE statistics on the projected column
+      rng = maxF - minF;
+
+      mu = mean(F);
+      m2 = moment(F, 2);
+      m3 = moment(F, 3);
+      m4 = moment(F, 4);
+
+      var = N/(N-1.0)*m2;
+      std_dev = sqrt(var);
+      se = std_dev/sqrt(N);
+      cv = std_dev/mu;
+
+      g1 = m3/(std_dev^3);
+      g2 = m4/(std_dev^4) - 3;
+      se_g1=sqrt( (6/(N-2.0)) * (N/(N+1.0)) * ((N-1.0)/(N+3.0)) );
+      se_g2=sqrt( (4/(N+5.0)) * ((N^2-1)/(N-3.0)) * se_g1^2 );
+
+      md = median(F);
+      iqm = interQuartileMean(F);
+
+      univarStats[1:14,i] = as.matrix(list(minF, maxF, rng,
+        mu, var, std_dev, se, cv, g1, g2, se_g1, se_g2, md, iqm));
+    }
+
+    if (type == 2 | type == 3) {
+      # check if the categorical column has valid values
+      if( minF <= 0 ) {
+        print("ERROR: Categorical attributes can only take values starting from 1. Encountered a value " + minF + " in attribute " + i);
+      }
+
+      # compute CATEGORICAL statistics on the projected column
+      cat_counts = table(F, 1, maxDomain, 1);
+      mode = as.scalar(rowIndexMax(t(cat_counts)));
+      numModes = sum(cat_counts == max(cat_counts));
+      univarStats[15:17,i] = as.matrix(list(maxF, mode, numModes));
+    }
+  }
+}

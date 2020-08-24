@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated.algorithms;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -101,10 +101,10 @@ public class FederatedUnivarTest extends AutomatedTestBase {
 		int port2 = getRandomAvailablePort();
 		int port3 = getRandomAvailablePort();
 		int port4 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorker(port1);
-		Thread t2 = startLocalFedWorker(port2);
-		Thread t3 = startLocalFedWorker(port3);
-		Thread t4 = startLocalFedWorker(port4);
+		Process t1 = startLocalFedWorker(port1);
+		Process t2 = startLocalFedWorker(port2);
+		Process t3 = startLocalFedWorker(port3);
+		Process t4 = startLocalFedWorker(port4);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);

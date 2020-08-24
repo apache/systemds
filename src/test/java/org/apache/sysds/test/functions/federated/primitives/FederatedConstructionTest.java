@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated.primitives;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
@@ -120,7 +120,7 @@ public class FederatedConstructionTest extends AutomatedTestBase {
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		int port = getRandomAvailablePort();
-		Thread t = startLocalFedWorker(port);
+		Process t = startLocalFedWorker(port);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);

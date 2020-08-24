@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test;
 
+import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -100,7 +101,7 @@ public abstract class AutomatedTestBase {
 	public static final boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
 
-	public static final int FED_WORKER_WAIT = 750; // in ms
+	public static final int FED_WORKER_WAIT = 1000; // in ms
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
 	// to set the native library paths internally thus breaking the code.
@@ -1283,38 +1284,40 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
-	protected Thread startLocalFedWorker(int port) {
-		Thread t = null;
-		String[] fedWorkArgs = {"-w", Integer.toString(port)};
-		ArrayList<String> args = new ArrayList<>();
+	/**
+	 * Start new JVM for a federated worker at the port.
+	 * 
+	 * 
+	 * @param port Port to use for the JVM
+	 * @return the process associated with the worker.
+	 */
+	protected Process startLocalFedWorker(int port) {
+		Process process = null;
+		String separator = System.getProperty("file.separator");
+		String classpath = System.getProperty("java.class.path");
+		String path = System.getProperty("java.home")
+					+ separator + "bin" + separator + "java";
+		ProcessBuilder processBuilder = new ProcessBuilder(path, "-cp", 
+				classpath, DMLScript.class.getName(), "-w",  Integer.toString(port), "-stats");
 
-		addProgramIndependentArguments(args);
-
-		for(int i = 0; i < fedWorkArgs.length; i++)
-			args.add(fedWorkArgs[i]);
-
-		String[] finalArguments = args.toArray(new String[args.size()]);
-
-		try {
-			t = new Thread(() -> {
-				try {
-					main(finalArguments);
-				}
-				catch(IOException e) {
-				}
-			});
-			t.start();
-			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(FED_WORKER_WAIT);
+		try{
+			process = processBuilder.start();
+			// Give some time to startup the worker.
+			sleep(FED_WORKER_WAIT);
+		} catch (IOException | InterruptedException e){
+			e.printStackTrace();
 		}
-		catch(InterruptedException e) {
-			// Should happen at closing of the worker so don't print
-		}
-		return t;
+		return process;
 	}
 
+	/**
+	 * Start java worker in same JVM.
+	 * @param args the command line arguments
+	 * @return the thread associated with the process.s
+	 */
 	public static Thread startLocalFedWorkerWithArgs(String[] args) {
 		Thread t = null;
-
+		
 		try {
 			t = new Thread(() -> {
 				try {

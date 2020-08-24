@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated.primitives;
 
 import org.junit.Test;
 import org.junit.runners.Parameterized;

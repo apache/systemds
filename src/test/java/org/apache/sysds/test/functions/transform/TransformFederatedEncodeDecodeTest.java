@@ -87,7 +87,7 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 		ExecMode platformOld = rtplatform;
 		rtplatform = ExecMode.SINGLE_NODE;
 
-		Thread t1 = null, t2 = null, t3 = null, t4 = null;
+		Process t1 = null, t2 = null, t3 = null, t4 = null;
 		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 

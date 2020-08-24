@@ -19,14 +19,14 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -52,11 +52,13 @@ import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 import org.apache.sysds.utils.JSONHelper;
+import org.apache.sysds.utils.Statistics;
 import org.apache.wink.json4j.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.Arrays;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
@@ -109,6 +111,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 			else if( response == null && i == requests.length-1 ) {
 				response = tmp; //return last
+			}
+
+			if (DMLScript.STATISTICS && request.getType() == RequestType.CLEAR){
+				System.out.println("Federated Worker " + Statistics.display());
+				Statistics.reset();
 			}
 		}
 		ctx.writeAndFlush(response).addListener(new CloseListener());

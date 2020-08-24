@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated;
+package org.apache.sysds.test.functions.federated.primitives;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.federated.*;

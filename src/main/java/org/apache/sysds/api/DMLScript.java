@@ -256,6 +256,7 @@ public class DMLScript
 			}
 			
 			if (dmlOptions.fedWorker) {
+				loadConfiguration(fnameOptConfig);
 				new FederatedWorker(dmlOptions.fedWorkerPort).run();
 				return true;
 			}
@@ -355,6 +356,15 @@ public class DMLScript
 	// (core compilation and execute)
 	////////
 
+	private static void loadConfiguration(String fnameOptConfig) throws IOException {
+		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
+		ConfigurationManager.setGlobalConfig(dmlconf);
+		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
+		ConfigurationManager.setGlobalConfig(cconf);
+		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
+		setGlobalFlags(dmlconf);
+	}
+
 	/**
 	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
@@ -372,13 +382,7 @@ public class DMLScript
 		printStartExecInfo( dmlScriptStr );
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
-		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(dmlconf);
-		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
-		ConfigurationManager.setGlobalConfig(cconf);
-		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
-		
-		setGlobalFlags(dmlconf);
+		loadConfiguration(fnameOptConfig);
 		
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
@@ -392,7 +396,7 @@ public class DMLScript
 		dmlt.constructHops(prog);
 		
 		//init working directories (before usage by following compilation steps)
-		initHadoopExecution( dmlconf );
+		initHadoopExecution( ConfigurationManager.getDMLConfig() );
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
@@ -401,7 +405,7 @@ public class DMLScript
 		dmlt.constructLops(prog);
 		
 		//Step 7: generate runtime program, incl codegen
-		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
+		Program rtprog = dmlt.getRuntimeProgram(prog, ConfigurationManager.getDMLConfig());
 		
 		//Step 9: prepare statistics [and optional explain output]
 		//count number compiled MR jobs / SP instructions	
@@ -421,14 +425,14 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
-			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, STATISTICS ? STATISTICS_COUNT : 0, null);
+			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );
 			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( dmlconf );
+			cleanupHadoopExecution( ConfigurationManager.getDMLConfig());
 		}
 	}
 	

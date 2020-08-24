@@ -20,7 +20,6 @@ public class FederatedBivarTest extends AutomatedTestBase {
     private final static String TEST_DIR = "functions/federated/";
     private final static String TEST_NAME = "FederatedBivarTest";
     private final static String TEST_CLASS_DIR = TEST_DIR + FederatedUnivarTest.class.getSimpleName() + "/";
-//TODO
     private final static int blocksize = 1024;
     @Parameterized.Parameter()
     public int rows;
@@ -36,9 +35,8 @@ public class FederatedBivarTest extends AutomatedTestBase {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                {10000, 10},
-//                {2000, 50}, {1000, 10},
-//                {10000, 10}, {2000, 50}, {1000, 100}
+                {10000, 16},
+//                {2000, 32}, {1000, 64}, {10000, 128}
         });
     }
 
@@ -59,27 +57,27 @@ public class FederatedBivarTest extends AutomatedTestBase {
         String HOME = SCRIPT_DIR + TEST_DIR;
 
         // write input matrices
-        int quarterRows = rows / 4;
-        // We have two matrices handled by a single federated worker
-        double[][] X1 = getRandomMatrix(quarterRows, cols, 1, 5, 1, 3);
-        double[][] X2 = getRandomMatrix(quarterRows, cols, 1, 5, 1, 7);
-        double[][] X3 = getRandomMatrix(quarterRows, cols, 1, 5, 1, 8);
-        double[][] X4 = getRandomMatrix(quarterRows, cols, 1, 5, 1, 9);
+        int quarterCols = cols / 4;
+
+        double[][] X1 = getRandomMatrix(rows, quarterCols, 1, 5, 1, 3);
+        double[][] X2 = getRandomMatrix(rows, quarterCols, 1, 5, 1, 7);
+        double[][] X3 = getRandomMatrix(rows, quarterCols, 1, 5, 1, 8);
+        double[][] X4 = getRandomMatrix(rows, quarterCols, 1, 5, 1, 9);
+
+        // generate attribute set
+        double [][] S1 = getRandomMatrix(1, (int) cols/4, 1, cols, 1, 3);
+        TestUtils.floor(S1);
+        double [][] S2 = getRandomMatrix(1, (int) cols/4, 1, cols, 1, 9);
+        TestUtils.floor(S2);
 
         // write types matrix shape of (1, D)
-        double [][] T1 = getRandomMatrix(1, cols, 0, 2, 1, 9);
-        Arrays.stream(T1[0]).forEach(n -> Math.ceil(n));
+        double [][] T1 = getRandomMatrix(1, (int) cols/4, 0, 2, 1, 9);
+        TestUtils.ceil(T1);
+        double [][] T2 = getRandomMatrix(1, (int) cols/4, 0, 2, 1, 9);
+        TestUtils.ceil(T2);
 
-        double [][] T2 = getRandomMatrix(1, cols, 0, 2, 1, 9);
-        Arrays.stream(T2[0]).forEach(n -> Math.ceil(n));
 
-        double [][] S1 = getRandomMatrix(1, (int) cols/5, 1, cols, 1, 3);
-        Arrays.stream(S1[0]).forEach(n -> Math.ceil(n));
-
-        double [][] S2 = getRandomMatrix(1, (int) cols/4, 1, cols, 1, 9);
-        Arrays.stream(S2[0]).forEach(n -> Math.ceil(n));
-
-        MatrixCharacteristics mc= new MatrixCharacteristics(quarterRows, cols, blocksize, quarterRows * cols);
+        MatrixCharacteristics mc= new MatrixCharacteristics(rows, quarterCols, blocksize, rows * quarterCols);
         writeInputMatrixWithMTD("X1", X1, false, mc);
         writeInputMatrixWithMTD("X2", X2, false, mc);
         writeInputMatrixWithMTD("X3", X3, false, mc);
@@ -125,20 +123,11 @@ public class FederatedBivarTest extends AutomatedTestBase {
         runTest(true, false, null, -1);
 
         // compare via files
-//        compareResults(1e-9);
-//        TestUtils.shutdownThreads(t1, t2, t3, t4);
+        compareResults(1e-9);
+        TestUtils.shutdownThreads(t1, t2, t3, t4);
 
         // check for federated operations
-//        Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-//        Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
-//        Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
-//        if( scaleAndShift ) {
-//            Assert.assertTrue(heavyHittersContainsString("fed_uacsqk+"));
-//            Assert.assertTrue(heavyHittersContainsString("fed_uacmean"));
-//            Assert.assertTrue(heavyHittersContainsString("fed_-"));
-//            Assert.assertTrue(heavyHittersContainsString("fed_/"));
-//            Assert.assertTrue(heavyHittersContainsString("fed_replace"));
-//        }
+//        Assert.assertTrue(heavyHittersContainsString("fed_uacmin"));
 
         //check that federated input files are still existing
         Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

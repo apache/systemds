@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-#
-#
 # For a given pair of attribute sets, compute bivariate statistics between all attribute pairs
 #   Given, index1 = {A_11, A_12, ... A_1m} and index2 = {A_21, A_22, ... A_2n}
 #          compute bivariate stats for m*n pairs (A_1i, A_2j), (1<= i <=m) and (1<= j <=n)
@@ -33,31 +31,14 @@
 #    5) types2 - kind for attributes in S2
 #       (kind=1 for scale, kind=2 for nominal, kind=3 for ordinal)
 #
-# One output:
-#    6) output directory in which following (maximum of) four statistics files are created
-#        + bivar.scale.scale.stats - matrix containing scale-scale correlations
-#        + bivar.nominal.nominal.stats -
-#        + bivar.nominal.scale.stats -
-#        + bivar.ordinal.ordinal.stats -
 
-X = rand(rows=5,cols=5);
-S1 = rand(rows=1, cols=3, min=0, max=4);
-S1 = ceil(S1);
-S2 = rand(rows=1, cols=2, min=0, max=4);
-S2 = ceil(S2);
-
-T1 = matrix(1, 1, 5);
-T2 = matrix(1, 1, 5);
-
-bivar(X, S1, S2, T1, T2);
-
-bivar = function(Matrix[Double] X, Matrix[Double] S1, Matrix[Double] S2, Matrix[Double] T1, Matrix[Double] T2)
-  #return (Matrix[Double] basestats_scale_scale, Matrix[Double] basestats_nominal_scale, Matrix[Double] basestats_nominal_nominal, Matrix[Double] basestats_ordinal_ordinal)
+m_bivar = function(Matrix[Double] X, Matrix[Double] S1, Matrix[Double] S2, Matrix[Double] T1, Matrix[Double] T2)
+  return (Matrix[Double] basestats_scale_scale, Matrix[Double] basestats_nominal_scale, Matrix[Double] basestats_nominal_nominal, Matrix[Double] basestats_ordinal_ordinal)
 {
     s1size = ncol(S1);
     s2size = ncol(S2);
     numPairs = s1size * s2size;
-print(numPairs)
+
     #test: 1 is Pearson'R, 2 is F-test, 3 is chi-squared, 4 is Spearman'sRho
     # R, (chisq, df, pval, cramersv,) spearman, eta, anovaf, feature_col_index1, feature_col_index2, test
 
@@ -71,11 +52,6 @@ print(numPairs)
       pre_a1 = as.scalar(S1[1,i]);
       pre_t1 = as.scalar(T1[1,i]);
 
-      print(pre_a1);
-      print(pre_t1);
-
-      print(1);
-/*
       for( j in 1:s2size, check=0) {
         pre_pairID = (i-1)*s2size+j;
         pre_a2 = as.scalar(S2[1,j]);
@@ -105,9 +81,9 @@ print(numPairs)
             pair2row[pre_pairID,1] = num_nominal_nominal_tests
           }
         }
-      } */
+      }
     }
-/*
+
     size_scale_scale_tests = max(num_scale_scale_tests, 1);
     size_nominal_nominal_tests = max(num_nominal_nominal_tests, 1)
     size_ordinal_ordinal_tests = max(num_ordinal_ordinal_tests, 1);
@@ -125,23 +101,25 @@ print(numPairs)
 
     debug_str = "Stopping execution of DML script due to invalid input";
     error_flag = FALSE;
-
-    maxs = colMaxs(X);
-    mins = colMins(X)
+    #TODO colMax/Min
+    #maxs = colMaxs(X);
+    #mins = colMins(X)
     maxDomainSize = -1.0;
     for(k in 1:ncol(T1) ) {
       type = as.scalar(T1[1,k]);
       if ( type > 1) {
-        colID = as.scalar(S1[1,k]);
-        colMaximum = as.scalar(maxs[1,colID]);
-        if(maxDomainSize < colMaximum) maxDomainSize = colMaximum;
-        colMinimum = as.scalar(mins[1,colID]);
-        if(colMinimum < 1){
-          debug_str = ifelse(type == 2,
-            append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum),
-            append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum));
-          error_flag = TRUE;
-        }
+         colID = as.scalar(S1[1,k]);
+         #colMaximum = as.scalar(maxs[1,colID]);
+         colMaximum = max(X[,colID]);
+         if(maxDomainSize < colMaximum) maxDomainSize = colMaximum;
+         #colMinimum = as.scalar(mins[1,colID]);
+         colMinimum = min(X[,colID]);
+         if(colMinimum < 1){
+           debug_str = ifelse(type == 2,
+             append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum),
+             append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum));
+           error_flag = TRUE;
+         }
       }
     }
 
@@ -149,9 +127,11 @@ print(numPairs)
       type = as.scalar(T2[1,k]);
       if ( type > 1) {
         colID = as.scalar(T2[1,k]);
-        colMaximum = as.scalar(maxs[1,colID]);
+        #colMaximum = as.scalar(maxs[1,colID]);
+        colMaximum = max(X[,colID]);
         maxDomainSize = max(maxDomainSize, colMaximum);
-        colMinimum = as.scalar(mins[1,colID]);
+        #colMinimum = as.scalar(mins[1,colID]);
+        colMinimum = min(X[,colID]);
         if(colMinimum < 1){
           debug_str = ifelse(type == 2,
             append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum),
@@ -213,7 +193,6 @@ print(numPairs)
         }
       }
     }
-*/
 }
 
 

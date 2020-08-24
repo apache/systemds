@@ -38,6 +38,7 @@ jobs:
         tests: [
           aggregate,
           append,
+          binary.frame,
           binary.matrix,
           binary.matrix_full_cellwise,
           binary.matrix_full_other,

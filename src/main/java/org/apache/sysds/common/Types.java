@@ -267,12 +267,12 @@ public class Types
 	public enum OpOp2 {
 		AND(true), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
-		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false),
-		EQUAL(true), GREATER(true), GREATEREQUAL(true),
-		INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true), LESSEQUAL(true),
-		LOG(true), MAX(true), MEDIAN(false), MIN(true), MINUS(true), MODULUS(true),
-		MOMENT(false), MULT(true), NOTEQUAL(true), OR(true), PLUS(true), POW(true),
-		PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false), XOR(true),
+		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true), GREATER(true),
+		GREATEREQUAL(true), INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true),
+		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true), 
+		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
+		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false),
+		XOR(true),
 		//fused ML-specific operators for performance
 		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
@@ -317,6 +317,7 @@ public class Types
 				case BITWSHIFTR:   return "bitwShiftR";
 				case DROP_INVALID_TYPE: return "dropInvalidType";
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
+				case MAP:          return "dml_map";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -350,6 +351,7 @@ public class Types
 				case "bitwShiftR":  return BITWSHIFTR;
 				case "dropInvalidType": return DROP_INVALID_TYPE;
 				case "dropInvalidLength": return DROP_INVALID_LENGTH;
+				case "map":         return MAP;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}

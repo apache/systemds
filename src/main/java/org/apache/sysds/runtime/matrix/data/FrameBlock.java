@@ -47,7 +47,9 @@ import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
 import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -59,9 +61,9 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
 public class FrameBlock implements CacheBlock, Externalizable  {
-	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
-	
 	private static final long serialVersionUID = -3993450030207130665L;
+	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
+	private static final IDSequence CLASS_ID = new IDSequence();
 	
 	public static final int BUFFER_SIZE = 1 * 1000 * 1000; //1M elements, size of default matrix block 
 
@@ -2077,5 +2079,57 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			UtilFunctions.nCopies(temp1.getNumColumns(), ValueType.STRING));
 		mergedFrame.appendRow(rowTemp1);
 		return mergedFrame;
+	}
+
+	public FrameBlock map(String lambdaExpr) {
+		return map(getCompiledFunction(lambdaExpr));
+	}
+	
+	public FrameBlock map(FrameMapFunction lambdaExpr) {
+		// Prepare temporary output array
+		String[][] output = new String[getNumRows()][getNumColumns()];
+		
+		// Execute map function on all cells
+		for(int j=0; j<getNumColumns(); j++) {
+			Array input = getColumn(j);
+			for (int i = 0; i < input._size; i++)
+				if(input.get(i) != null)
+					output[i][j] = lambdaExpr.apply(String.valueOf(input.get(i)));
+		}
+
+		return  new FrameBlock(UtilFunctions.nCopies(getNumColumns(), ValueType.STRING), output);
+	}
+
+	public static FrameMapFunction getCompiledFunction(String lambdaExpr) {
+		// split lambda expression
+		String[] parts = lambdaExpr.split("->");
+		if( parts.length != 2 )
+			throw new DMLRuntimeException("Unsupported lambda expression: "+lambdaExpr);
+		String varname = parts[0].trim();
+		String expr = parts[1].trim();
+		
+		// construct class code
+		String cname = "StringProcessing"+CLASS_ID.getNextID();
+		StringBuilder sb = new StringBuilder();
+		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
+		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
+		sb.append("public class "+cname+" extends FrameMapFunction {\n");
+		sb.append("@Override\n");
+		sb.append("public String apply(String "+varname+") {\n");
+		sb.append("  return String.valueOf("+expr+"); }}\n");
+
+		// compile class, and create FrameMapFunction object
+		try {
+			return (FrameMapFunction) CodegenUtils
+				.compileClass(cname, sb.toString()).newInstance();
+		}
+		catch(InstantiationException | IllegalAccessException e) {
+			throw new DMLRuntimeException("Failed to compile FrameMapFunction.", e);
+		}
+	}
+
+	public static abstract class FrameMapFunction implements Serializable {
+		private static final long serialVersionUID = -8398572153616520873L;
+		public abstract String apply(String input);
 	}
 }

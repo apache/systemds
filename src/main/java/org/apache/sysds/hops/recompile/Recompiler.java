@@ -1039,7 +1039,7 @@ public class Recompiler
 		}
 	}
 	
-	private static void rRecompileProgramBlock2Forced( ProgramBlock pb, long tid, HashSet<String> fnStack, ExecType et ) {
+	public static void rRecompileProgramBlock2Forced( ProgramBlock pb, long tid, HashSet<String> fnStack, ExecType et ) {
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock pbTmp = (WhileProgramBlock)pb;

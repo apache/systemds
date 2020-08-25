@@ -71,7 +71,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_MODE = "mode";
 	public static final String PS_GRADIENTS = "gradients";
 	public enum PSModeType {
-		LOCAL, REMOTE_SPARK
+		FEDERATED, LOCAL, REMOTE_SPARK
 	}
 	public static final String PS_UPDATE_TYPE = "utype";
 	public enum PSUpdateType {
@@ -94,11 +94,25 @@ public abstract class Statement implements ParseInfo
 	public enum PSScheme {
 		DISJOINT_CONTIGUOUS, DISJOINT_ROUND_ROBIN, DISJOINT_RANDOM, OVERLAP_RESHUFFLE
 	}
+	public enum FederatedPSScheme {
+		KEEP_DATA_ON_WORKER, SHUFFLE
+	}
 	public static final String PS_HYPER_PARAMS = "hyperparams";
 	public static final String PS_CHECKPOINTING = "checkpointing";
 	public enum PSCheckpointing {
 		NONE, EPOCH, EPOCH10
 	}
+
+	// String constants related to federated parameter server functionality
+	// prefixed with code: "1701-NCC-" to not overwrite anything
+	public static final String PS_FED_BATCH_SIZE = "1701-NCC-batch_size";
+	public static final String PS_FED_DATA_SIZE = "1701-NCC-data_size";
+	public static final String PS_FED_NUM_BATCHES = "1701-NCC-num_batches";
+	public static final String PS_FED_NAMESPACE = "1701-NCC-namespace";
+	public static final String PS_FED_GRADIENTS_FNAME = "1701-NCC-gradients_fname";
+	public static final String PS_FED_AGGREGATION_FNAME = "1701-NCC-aggregation_fname";
+	public static final String PS_FED_BATCHCOUNTER_VARID = "1701-NCC-batchcounter_varid";
+	public static final String PS_FED_MODEL_VARID = "1701-NCC-model_varid";
 
 
 	public abstract boolean controlStatement();

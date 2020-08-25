@@ -52,6 +52,7 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
 import org.apache.sysds.parser.Statement.PSScheme;
@@ -61,13 +62,16 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartitioner;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -91,16 +95,87 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		PSModeType mode = getPSMode();
-		switch (mode) {
-			case LOCAL:
-				runLocally(ec, mode);
-				break;
-			case REMOTE_SPARK:
-				runOnSpark((SparkExecutionContext) ec, mode);
-				break;
-			default:
-				throw new DMLRuntimeException(String.format("Paramserv func: not support mode %s", mode));
+		// check if the input is federated
+		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
+				ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
+			runFederated(ec);
+		}
+		// if not federated check mode
+		else {
+			PSModeType mode = getPSMode();
+			switch (mode) {
+				case LOCAL:
+					runLocally(ec, mode);
+					break;
+				case REMOTE_SPARK:
+					runOnSpark((SparkExecutionContext) ec, mode);
+					break;
+				default:
+					throw new DMLRuntimeException(String.format("Paramserv func: not support mode %s", mode));
+			}
+		}
+	}
+
+	private void runFederated(ExecutionContext ec) {
+		System.out.println("PARAMETER SERVER");
+		System.out.println("[+] Running in federated mode");
+
+		// get inputs
+		PSFrequency freq = getFrequency();
+		PSUpdateType updateType = getUpdateType();
+		String updFunc = getParam(PS_UPDATE_FUN);
+		String aggFunc = getParam(PS_AGGREGATION_FUN);
+
+		// partition federated data
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.KEEP_DATA_ON_WORKER)
+				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
+		List<MatrixObject> pFeatures = result.pFeatures;
+		List<MatrixObject> pLabels = result.pLabels;
+		int workerNum = result.workerNum;
+
+		// setup threading
+		BasicThreadFactory factory = new BasicThreadFactory.Builder()
+				.namingPattern("workers-pool-thread-%d").build();
+		ExecutorService es = Executors.newFixedThreadPool(workerNum, factory);
+
+		// Get the compiled execution context
+		LocalVariableMap newVarsMap = createVarsMap(ec);
+		// Level of par is 1 because one worker will be launched per task
+		// TODO: Fix recompilation
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, 1, true);
+		// Create workers' execution context
+		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
+		// Create the agg service's execution context
+		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
+		// Create the parameter server
+		ListObject model = ec.getListObject(getParam(PS_MODEL));
+		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
+		// Create the local workers
+		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
+				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
+				.collect(Collectors.toList());
+
+		if(workerNum != threads.size()) {
+			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
+		}
+
+		// Set features and lables for the control threads and write the program and instructions and hyperparams to the federated workers
+		for (int i = 0; i < threads.size(); i++) {
+			threads.get(i).setFeatures(pFeatures.get(i));
+			threads.get(i).setLabels(pLabels.get(i));
+			threads.get(i).setup();
+		}
+
+		try {
+			// Launch the worker threads and wait for completion
+			for (Future<Void> ret : es.invokeAll(threads))
+				ret.get(); //error handling
+			// Fetch the final model from ps
+			ec.setVariable(output.getName(), ps.getResult());
+		} catch (InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: unknown error: ", e);
+		} finally {
+			es.shutdownNow();
 		}
 	}
 
@@ -150,7 +225,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		LongAccumulator aEpoch = sec.getSparkContext().sc().longAccumulator("numEpochs");
 		
 		// Create remote workers
-		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), 
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN),
 			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
 			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch);
 
@@ -333,6 +408,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
 		switch (mode) {
+			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
 				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum);

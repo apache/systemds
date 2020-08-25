@@ -31,6 +31,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.MultiThreadedHop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.Statement;
@@ -214,15 +215,21 @@ public class ParamservUtils {
 	}
 
 	public static ExecutionContext createExecutionContext(ExecutionContext ec,
-		LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
+	  	LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
+	{
+		return createExecutionContext(ec, varsMap, updFunc, aggFunc, k, false);
+	}
+
+	public static ExecutionContext createExecutionContext(ExecutionContext ec,
+		LocalVariableMap varsMap, String updFunc, String aggFunc, int k, boolean forceExecTypeCP)
 	{
 		Program prog = ec.getProgram();
 
 		// 1. Recompile the internal program blocks 
-		recompileProgramBlocks(k, prog.getProgramBlocks());
+		recompileProgramBlocks(k, prog.getProgramBlocks(), forceExecTypeCP);
 		// 2. Recompile the imported function blocks
 		prog.getFunctionProgramBlocks(false)
-			.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
+			.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks(), forceExecTypeCP));
 
 		// 3. Copy all functions 
 		return ExecutionContextFactory.createContext(
@@ -249,6 +256,10 @@ public class ParamservUtils {
 	}
 
 	public static void recompileProgramBlocks(int k, List<ProgramBlock> pbs) {
+		recompileProgramBlocks(k, pbs, false);
+	}
+
+	public static void recompileProgramBlocks(int k, List<ProgramBlock> pbs, boolean forceExecTypeCP) {
 		// Reset the visit status from root
 		for (ProgramBlock pb : pbs)
 			DMLTranslator.resetHopsDAGVisitStatus(pb.getStatementBlock());
@@ -256,43 +267,49 @@ public class ParamservUtils {
 		// Should recursively assign the level of parallelism
 		// and recompile the program block
 		try {
-			rAssignParallelism(pbs, k, false);
+			if(forceExecTypeCP)
+				rAssignParallelismAndRecompile(pbs, k, true, forceExecTypeCP);
+			else
+				rAssignParallelismAndRecompile(pbs, k, false, forceExecTypeCP);
 		} catch (IOException e) {
 			throw new DMLRuntimeException(e);
 		}
 	}
 
-	private static boolean rAssignParallelism(List<ProgramBlock> pbs, int k, boolean recompiled) throws IOException {
+	private static boolean rAssignParallelismAndRecompile(List<ProgramBlock> pbs, int k, boolean recompiled, boolean forceExecTypeCP) throws IOException {
 		for (ProgramBlock pb : pbs) {
 			if (pb instanceof ParForProgramBlock) {
 				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
 				pfpb.setDegreeOfParallelism(k);
-				recompiled |= rAssignParallelism(pfpb.getChildBlocks(), 1, recompiled);
+				recompiled |= rAssignParallelismAndRecompile(pfpb.getChildBlocks(), 1, recompiled, forceExecTypeCP);
 			} else if (pb instanceof ForProgramBlock) {
-				recompiled |= rAssignParallelism(((ForProgramBlock) pb).getChildBlocks(), k, recompiled);
+				recompiled |= rAssignParallelismAndRecompile(((ForProgramBlock) pb).getChildBlocks(), k, recompiled, forceExecTypeCP);
 			} else if (pb instanceof WhileProgramBlock) {
-				recompiled |= rAssignParallelism(((WhileProgramBlock) pb).getChildBlocks(), k, recompiled);
+				recompiled |= rAssignParallelismAndRecompile(((WhileProgramBlock) pb).getChildBlocks(), k, recompiled, forceExecTypeCP);
 			} else if (pb instanceof FunctionProgramBlock) {
-				recompiled |= rAssignParallelism(((FunctionProgramBlock) pb).getChildBlocks(), k, recompiled);
+				recompiled |= rAssignParallelismAndRecompile(((FunctionProgramBlock) pb).getChildBlocks(), k, recompiled, forceExecTypeCP);
 			} else if (pb instanceof IfProgramBlock) {
 				IfProgramBlock ipb = (IfProgramBlock) pb;
-				recompiled |= rAssignParallelism(ipb.getChildBlocksIfBody(), k, recompiled);
+				recompiled |= rAssignParallelismAndRecompile(ipb.getChildBlocksIfBody(), k, recompiled, forceExecTypeCP);
 				if (ipb.getChildBlocksElseBody() != null)
-					recompiled |= rAssignParallelism(ipb.getChildBlocksElseBody(), k, recompiled);
+					recompiled |= rAssignParallelismAndRecompile(ipb.getChildBlocksElseBody(), k, recompiled, forceExecTypeCP);
 			} else {
 				StatementBlock sb = pb.getStatementBlock();
 				for (Hop hop : sb.getHops())
-					recompiled |= rAssignParallelism(hop, k, recompiled);
+					recompiled |= rAssignParallelismAndRecompile(hop, k, recompiled);
 			}
 			// Recompile the program block
 			if (recompiled) {
-				Recompiler.recompileProgramBlockInstructions(pb);
+				if(forceExecTypeCP)
+					Recompiler.rRecompileProgramBlock2Forced(pb, pb.getThreadID(), new HashSet<>(), LopProperties.ExecType.CP);
+				else
+					Recompiler.recompileProgramBlockInstructions(pb);
 			}
 		}
 		return recompiled;
 	}
 
-	private static boolean rAssignParallelism(Hop hop, int k, boolean recompiled) {
+	private static boolean rAssignParallelismAndRecompile(Hop hop, int k, boolean recompiled) {
 		if (hop.isVisited()) {
 			return recompiled;
 		}
@@ -304,7 +321,7 @@ public class ParamservUtils {
 		}
 		ArrayList<Hop> inputs = hop.getInput();
 		for (Hop h : inputs) {
-			recompiled |= rAssignParallelism(h, k, recompiled);
+			recompiled |= rAssignParallelismAndRecompile(h, k, recompiled);
 		}
 		hop.setVisited();
 		return recompiled;

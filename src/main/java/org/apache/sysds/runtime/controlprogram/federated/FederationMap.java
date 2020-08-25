@@ -86,6 +86,10 @@ public class FederationMap
 	public FederatedRange[] getFederatedRanges() {
 		return _fedMap.keySet().toArray(new FederatedRange[0]);
 	}
+
+	public FederatedData getFederatedDataObject(FederatedRange r) {
+		return _fedMap.get(r);
+	}
 	
 	public FederatedRequest broadcast(CacheableData<?> data) {
 		//prepare single request for all federated data

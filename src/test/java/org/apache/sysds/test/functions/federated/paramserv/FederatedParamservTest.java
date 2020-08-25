@@ -32,7 +32,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
         int C = 1, Hin = 28, Win = 28;
         int numFeatures = C*Hin*Win;
         int numLabels = 10;
-        int examplesPerWorker = 10;
+        int examplesPerWorker = 2;
 
         // write row partitioned features to disk
         writeInputMatrixWithMTD("X1", generateDummyMNISTFeatures(examplesPerWorker, C, Hin, Win),false,

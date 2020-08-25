@@ -19,14 +19,25 @@
 #
 #-------------------------------------------------------------
 
-X = federated(addresses=list($X1, $X2),
+source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
+
+# create federated input matrices
+features = federated(addresses=list($X1, $X2),
     ranges=list(list(0, 0), list($examples_per_worker, $num_features),
                 list($examples_per_worker, 0), list($examples_per_worker * 2, $num_features)))
 
-y = federated(addresses=list($y1, $y2),
+labels = federated(addresses=list($y1, $y2),
     ranges=list(list(0, 0), list($examples_per_worker, $num_labels),
                 list($examples_per_worker, 0), list($examples_per_worker * 2, $num_labels)))
 
-print(toString(X))
-print("###")
-print(toString(y))
+epochs = 5
+batch_size = 32
+learning_rate = 0.01
+workers = 1
+utype = "BSP"
+freq = "BATCH"
+scheme = "DISJOINT_CONTIGUOUS"
+paramserv_mode = "LOCAL"
+
+model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+print(toString(model))

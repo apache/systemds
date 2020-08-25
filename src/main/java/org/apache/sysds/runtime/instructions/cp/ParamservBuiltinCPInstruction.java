@@ -50,8 +50,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
 import org.apache.sysds.parser.Statement.PSScheme;
@@ -61,13 +64,16 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartitioner;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
 import org.apache.sysds.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -91,17 +97,54 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		PSModeType mode = getPSMode();
-		switch (mode) {
-			case LOCAL:
-				runLocally(ec, mode);
-				break;
-			case REMOTE_SPARK:
-				runOnSpark((SparkExecutionContext) ec, mode);
-				break;
-			default:
-				throw new DMLRuntimeException(String.format("Paramserv func: not support mode %s", mode));
+
+		// check if the input is federated
+		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
+				ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
+			runFederated(ec);
 		}
+		// if not federated check mode
+		else {
+			PSModeType mode = getPSMode();
+			switch (mode) {
+				case LOCAL:
+					runLocally(ec, mode);
+					break;
+				case REMOTE_SPARK:
+					runOnSpark((SparkExecutionContext) ec, mode);
+					break;
+				default:
+					throw new DMLRuntimeException(String.format("Paramserv func: not support mode %s", mode));
+			}
+		}
+	}
+
+	private void runFederated(ExecutionContext ec) {
+		System.out.println("Running in federated mode");
+		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+
+		// "partition" federated data
+		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
+		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.NONE)
+				.doPartitioning(features, labels);
+		List<MatrixObject> pfs = result.pFeatures;
+		List<MatrixObject> pls = result.pLabels;
+
+		// Check partitioning
+		System.out.println("FEATURES");
+		for(MatrixObject f : pfs) {
+			System.out.println(f.toString());
+		}
+		System.out.println("LABELS");
+		for(MatrixObject l : pls) {
+			System.out.println(l.toString());
+		}
+
+
+
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
 	}
 
 	@SuppressWarnings("resource")

@@ -57,6 +57,7 @@ public abstract class ParamServer
 	//aggregation service
 	protected ExecutionContext _ec;
 	private Statement.PSUpdateType _updateType;
+
 	private FunctionCallCPInstruction _inst;
 	private String _outputName;
 	private boolean[] _finishedStates;  // Workers' finished states
@@ -231,5 +232,9 @@ public abstract class ParamServer
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSModelBroadcastTime((long) tBroad.stop());
+	}
+
+	public FunctionCallCPInstruction getAggInst() {
+		return _inst;
 	}
 }

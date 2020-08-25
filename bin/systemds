@@ -283,10 +283,6 @@ if [ $WORKER == 1 ]; then
   print_out "#"
   print_out "#  starting Fedederated worker on port $PORT"
   print_out "###############################################################################"
-
-  print_out "Executing command: $CMD"
-  print_out  ""
-
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   -cp $CLASSPATH \
@@ -294,6 +290,8 @@ if [ $WORKER == 1 ]; then
   org.apache.sysds.api.DMLScript \
   -w $PORT \
   $*"
+  print_out "Executing command: $CMD"
+  print_out  ""
 
 elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   print_out "#"
@@ -314,7 +312,6 @@ else
   print_out "#"
   print_out "#  Running script $SCRIPT_FILE distributed with opts: $*"
   print_out "###############################################################################"
-
   export SPARK_MAJOR_VERSION=2
   CMD=" \
   spark-submit $SYSTEMDS_DISTRIBUTED_OPTS \

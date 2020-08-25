@@ -98,12 +98,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	public void federatedParamservSingleNode() {
 		federatedParamserv(ExecMode.SINGLE_NODE);
 	}
-	
+
 	@Test
 	public void federatedParamservHybrid() {
 		federatedParamserv(ExecMode.HYBRID);
 	}
-	
+
 	private void federatedParamserv(ExecMode mode) {
 		// config
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -115,9 +115,9 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		int numLabels = 10;
 
 		ExecMode platformOld = setExecMode(mode);
-		
+
 		try {
-		
+
 			// dml name
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			// generate program args
@@ -137,7 +137,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				"hin=" + Hin,
 				"win=" + Win
 			));
-	
+
 			// for each worker
 			List<Integer> ports = new ArrayList<>();
 			List<Thread> threads = new ArrayList<>();
@@ -148,22 +148,22 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				// write row partitioned labels to disk
 				writeInputMatrixWithMTD("y" + i, generateDummyMNISTLabels(_examplesPerWorker, numLabels), false,
 						new MatrixCharacteristics(_examplesPerWorker, numLabels, _blocksize, _examplesPerWorker * numLabels));
-	
+
 				// start worker
 				ports.add(getRandomAvailablePort());
 				threads.add(startLocalFedWorkerThread(ports.get(i)));
-	
+
 				// add worker to program args
 				programArgsList.add("X" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("X" + i)));
 				programArgsList.add("y" + i + "=" + TestUtils.federatedAddress(ports.get(i), input("y" + i)));
 			}
-	
+
 			programArgs = programArgsList.toArray(new String[0]);
 			// ByteArrayOutputStream stdout =
 			runTest(null);
 			// System.out.print(stdout.toString());
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
-			
+
 			// cleanup
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				TestUtils.shutdownThreads(threads.get(i));

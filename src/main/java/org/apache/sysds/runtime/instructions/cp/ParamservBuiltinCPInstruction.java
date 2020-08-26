@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
@@ -97,7 +98,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-
 		// check if the input is federated
 		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
 				ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
@@ -141,7 +141,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			System.out.println(l.toString());
 		}
 
-
+		//FederatedRequest fr1 = new FederatedRequest();
+		//features.getFedMapping().execute();
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());

@@ -24,6 +24,8 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,30 +39,36 @@ public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedSchem
 				|| labels.isFederated(FederationMap.FType.ROW)) {
 
 			// partition features
-			List<MatrixObject> pFeatures = new ArrayList<MatrixObject>();
-			FederationMap fedMapFeatures = features.getFedMapping();
-			for(FederatedRange r : fedMapFeatures.getFederatedRanges()) {
+			List<MatrixObject> pFeatures = Collections.synchronizedList(new ArrayList<>());
+			features.getFedMapping().forEachParallel((range, data) -> {
 				// TODO: This slicing is really ugly, rework
 				MatrixObject slice = new MatrixObject(features);
+				slice.updateDataCharacteristics(new MatrixCharacteristics(range.getSize(0), range.getSize(1)));
+
 				HashMap<FederatedRange, FederatedData> newFedHashMap = new HashMap<>();
-				newFedHashMap.put(r, fedMapFeatures.getFederatedDataObject(r));
+				newFedHashMap.put(range, data);
 				slice.setFedMapping(new FederationMap(newFedHashMap));
 				slice.getFedMapping().setType(FederationMap.FType.ROW);
+
 				pFeatures.add(slice);
-			}
+				return null;
+			});
 
 			// partition labels
-			List<MatrixObject> pLabels = new ArrayList<MatrixObject>();
-			FederationMap fedMapLabels = features.getFedMapping();
-			for(FederatedRange r : labels.getFedMapping().getFederatedRanges()) {
+			List<MatrixObject> pLabels = Collections.synchronizedList(new ArrayList<>());
+			labels.getFedMapping().forEachParallel((range, data) -> {
 				// TODO: This slicing is really ugly, rework
 				MatrixObject slice = new MatrixObject(labels);
+				slice.updateDataCharacteristics(new MatrixCharacteristics(range.getSize(0), range.getSize(1)));
+
 				HashMap<FederatedRange, FederatedData> newFedHashMap = new HashMap<>();
-				newFedHashMap.put(r, fedMapLabels.getFederatedDataObject(r));
+				newFedHashMap.put(range, data);
 				slice.setFedMapping(new FederationMap(newFedHashMap));
 				slice.getFedMapping().setType(FederationMap.FType.ROW);
+
 				pLabels.add(slice);
-			}
+				return null;
+			});
 
 			return new Result(pFeatures, pLabels);
 		}

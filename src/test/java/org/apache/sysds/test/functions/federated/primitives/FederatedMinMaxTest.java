@@ -26,7 +26,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -65,11 +64,12 @@ public class FederatedMinMaxTest extends AutomatedTestBase {
     }
 
     @Test
-//    @Ignore
     public void federatedMinMaxCP() { federatedMinMax(Types.ExecMode.SINGLE_NODE); }
 
     @Test
-    public void federatedMinMaxSP() { federatedMinMax(Types.ExecMode.SPARK); }
+    public void federatedMinMaxSP() {
+        federatedMinMax(Types.ExecMode.SPARK);
+    }
 
     public void federatedMinMax(Types.ExecMode execMode) {
         boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;

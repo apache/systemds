@@ -142,9 +142,6 @@ public class FederatedBivarTest extends AutomatedTestBase {
         compareResults(1e-9);
         TestUtils.shutdownThreads(t1, t2, t3, t4);
 
-        // check for federated operations
-        Assert.assertTrue(heavyHittersContainsString("fed_uacmin"));
-
         //check that federated input files are still existing
         Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
         Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));

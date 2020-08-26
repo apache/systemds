@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -41,7 +40,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Future;
 
 public class FederationUtils {
@@ -105,6 +106,21 @@ public class FederationUtils {
 			return ret.scalarOperations(sop2, new MatrixBlock());
 		}
 		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
+	public static DoubleObject aggMinMax(Future<FederatedResponse>[] ffr, boolean isMin, boolean isScalar) {
+		try {
+			double res = isMin ? Double.MAX_VALUE : - Double.MAX_VALUE;
+			for (Future<FederatedResponse> fr: ffr){
+				double v = isScalar ? ((ScalarObject)fr.get().getData()[0]).getDoubleValue() :
+					isMin ? ((MatrixBlock) fr.get().getData()[0]).min() : ((MatrixBlock) fr.get().getData()[0]).max();
+				res = isMin ? Math.min(res, v) : Math.max(res, v);
+			}
+			return new DoubleObject(res);
+		}
+		catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 	}
@@ -211,6 +227,8 @@ public class FederationUtils {
 		}
 
 		if( aop.isRowAggregate()) return bind(ffr, false);
+		if (aop.isColAggregate()) return bind(ffr, true);
+
 		//whole matrix
 		if( aop.aggOp.increOp.fn instanceof KahanFunction )
 			return aggAdd(ffr);
@@ -229,14 +247,5 @@ public class FederationUtils {
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-	}
-
-	public static FederationMap federateLocalData(CacheableData<?> data) {
-		long id = FederationUtils.getNextFedDataID();
-		FederatedLocalData federatedLocalData = new FederatedLocalData(id, data);
-		Map<FederatedRange, FederatedData> fedMap = new HashMap<>();
-		fedMap.put(new FederatedRange(new long[2], new long[] {data.getNumRows(), data.getNumColumns()}),
-			federatedLocalData);
-		return new FederationMap(id, fedMap);
 	}
 }

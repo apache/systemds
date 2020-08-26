@@ -25,13 +25,14 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	
@@ -39,7 +40,17 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			CPOperand out, String opcode, String istr) {
 		super(FEDType.AggregateUnary, auop, in, out, opcode, istr);
 	}
-	
+
+	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+										   String opcode, String istr) {
+		super(FEDType.AggregateUnary, op, in1, in2, out, opcode, istr);
+	}
+
+	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+										   String opcode, String istr) {
+		super(FEDType.AggregateUnary, op, in1, in2, in3, out, opcode, istr);
+	}
+
 	public static AggregateUnaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -56,7 +67,19 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();
-		
+
+		// federated ranges mean for variance
+		Future<FederatedResponse>[] meanTmp = null;
+		if (getOpcode().contains("var")) {
+			String meanInstr = instString.replace(getOpcode(), getOpcode().replace("var", "mean"));
+			//create federated commands for aggregation
+			FederatedRequest meanFr1 = FederationUtils.callInstruction(meanInstr, output,
+				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
+			FederatedRequest meanFr2 = new FederatedRequest(RequestType.GET_VAR, meanFr1.getID());
+			FederatedRequest meanFr3 = map.cleanup(getTID(), meanFr1.getID());
+			meanTmp = map.execute(getTID(), meanFr1, meanFr2, meanFr3);
+		}
+
 		//create federated commands for aggregation
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
@@ -66,8 +89,8 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		//execute federated commands and cleanups
 		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
 		if( output.isScalar() )
-			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, map));
+			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, meanTmp, map));
 		else
-			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp, map));
+			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, meanTmp, tmp, map));
 	}
 }

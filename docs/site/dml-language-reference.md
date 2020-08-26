@@ -60,6 +60,7 @@ limitations under the License.
     * [Indexing Frames](#indexing-frames)
     * [Casting Frames](#casting-frames)
     * [Transforming Frames](#transforming-frames)
+    * [Processing Frames](#processing-frames)
   * [Modules](#modules)
   * [Reserved Keywords](#reserved-keywords)
 
@@ -2022,6 +2023,47 @@ The following example uses <code>transformapply()</code> with the input matrix a
     2.000 2.000 1.000 2.000 2.500 1.000 1.000 1.000 892.000
     2.000 2.000 1.000 2.000 2.500 2.000 2.000 1.000 889.000
     4.000 1.000 1.000 3.000 1.500 1.000 1.000 1.000 628.000
+
+### Processing Frames
+
+Built-In functions <code>dml_map()</code> is supported for frames to execute any arbitrary Java code on a frame.
+
+**Table F5**: Frame dml_map Built-In Function
+
+Function | Description | Parameters | Example
+-------- | ----------- | ---------- | -------
+dml_map() | It will execute the given java code on a frame (column-vector).| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and y is a String containing the Java code to be executed on frame X. where X is a column vector. | X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "Java code" <br/> Z = dml_map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: Z = dml_map(X, "x.charAt(2)")
+Example let X = 
+
+ ##### FRAME: nrow = 10, ncol = 1 <br/>
+    # C1 
+    # STRING 
+    west  
+    south 
+    north 
+    east  
+    south 
+    north 
+    north 
+    west  
+    west
+    east  
+
+Z = dml_map(X, "x.toUpperCase()") <br/>
+print(toString(Z))
+ ##### FRAME: nrow = 10, ncol = 1 <br/>
+    # C1 
+    # STRING 
+    WEST  
+    SOUTH 
+    NORTH 
+    EAST  
+    SOUTH 
+    NORTH 
+    NORTH 
+    WEST  
+    WEST
+    EAST 
 
 
 * * *

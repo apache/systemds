@@ -19,10 +19,29 @@
 #
 #-------------------------------------------------------------
 
-X = cbind(read($1), read($2), read($3), read($4));
-S1 = read($5);
-S2 = read($6);
-T1 = read($7);
-T2 = read($8);
-B = bivar(X=X, S1=S1, S2=S2, T1=T1, T2=T2, verbose=FALSE);
-write(B, $9);
+if ($rP) {
+    A = federated(addresses=list($in, $in), ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)));
+} else {
+    A = federated(addresses=list($in, $in), ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)));
+}
+s = matrix(0, 1, 2);
+s[1, 1] = min(A);
+s[1, 2] = max(A);
+
+/*
+r = cbind(rowMins(A), rowMaxs(A));
+c = rbind(colMins(A), colMaxs(A));
+*/
+
+r = matrix(0, nrow(A), 2);
+c = matrix(0, 2, ncol(A));
+
+r[, 1] = rowMins(A);
+r[, 2] = rowMaxs(A);
+
+c[1, ] = colMins(A);
+c[2, ] = colMaxs(A);
+
+write(s, $out_S);
+write(r, $out_R);
+write(c, $out_C);

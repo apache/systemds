@@ -195,7 +195,18 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 							new FederatedWorkerHandlerException("Could not parse metadata file"));
 					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
 					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-					mc.setNonZeros(mtd.getLong(DataExpression.READNNZPARAM));
+					if(mtd.containsKey(DataExpression.READNNZPARAM)){
+						mc.setNonZeros(mtd.getLong(DataExpression.READNNZPARAM));
+					}
+					else if (mc.getCols() * mc.getRows() < 8000000){
+						// force dense allocation.
+						mc.setNonZeros(mc.getCols() *mc.getRows());
+					}
+					else{
+						// force sparse allocation 
+						mc.setNonZeros((long)(mc.getCols() * mc.getRows() * 0.35));
+					}
+					
 					cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
 					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 				}

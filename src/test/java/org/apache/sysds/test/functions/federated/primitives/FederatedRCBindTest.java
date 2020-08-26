@@ -19,18 +19,19 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import java.util.Arrays;
-import java.util.Collection;
-
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedRCBindTest extends AutomatedTestBase {
@@ -48,7 +49,14 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		//TODO add tests and support of aligned blocksized (which is however a special case)
-		return Arrays.asList(new Object[][] {{1, 1001}, {10, 100}, {100, 10}, {1001, 1}, {10, 2001}, {2001, 10}});
+		return Arrays.asList(new Object[][] {
+			// {1, 1001},
+			//  {10, 100}, 
+			{100, 10}, 
+			// {1001, 1},
+			// {10, 2001}, 
+			// {2001, 10}
+		});
 	}
 
 	@Override
@@ -67,6 +75,7 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void federatedRCBindSP() {
 		federatedRCBind(Types.ExecMode.SPARK);
 	}

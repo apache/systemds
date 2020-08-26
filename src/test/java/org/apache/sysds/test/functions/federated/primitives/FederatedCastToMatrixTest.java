@@ -48,12 +48,12 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederetedCastToMatrixTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(FederetedCastToMatrixTest.class.getName());
+public class FederatedCastToMatrixTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedCastToMatrixTest.class.getName());
 
 	private final static String TEST_DIR = "functions/federated/primitives/";
 	private final static String TEST_NAME = "FederatedCastToMatrixTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederetedCastToMatrixTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCastToMatrixTest.class.getSimpleName() + "/";
 
 	@Parameterized.Parameter()
 	public int rows;

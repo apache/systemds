@@ -60,9 +60,10 @@ public class FederatedPCATest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		return Arrays.asList(new Object[][] {
-			{10000, 10, false}, {2000, 50, false}, {1000, 100, false},
-			{10000, 10, true}, {2000, 50, true}, {1000, 100, true}
+		return Arrays.asList(new Object[][] {{10000, 10, false},
+			// {2000, 50, false}, {1000, 100, false},
+			{10000, 10, true},
+			// {2000, 50, true}, {1000, 100, true}
 		});
 	}
 
@@ -70,7 +71,7 @@ public class FederatedPCATest extends AutomatedTestBase {
 	public void federatedPCASinglenode() {
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE);
 	}
-	
+
 	@Test
 	public void federatedPCAHybrid() {
 		federatedL2SVM(Types.ExecMode.HYBRID);
@@ -89,7 +90,7 @@ public class FederatedPCATest extends AutomatedTestBase {
 		double[][] X2 = getRandomMatrix(quarterRows, cols, 0, 1, 1, 7);
 		double[][] X3 = getRandomMatrix(quarterRows, cols, 0, 1, 1, 8);
 		double[][] X4 = getRandomMatrix(quarterRows, cols, 0, 1, 1, 9);
-		MatrixCharacteristics mc= new MatrixCharacteristics(quarterRows, cols, blocksize, quarterRows * cols);
+		MatrixCharacteristics mc = new MatrixCharacteristics(quarterRows, cols, blocksize, quarterRows * cols);
 		writeInputMatrixWithMTD("X1", X1, false, mc);
 		writeInputMatrixWithMTD("X2", X2, false, mc);
 		writeInputMatrixWithMTD("X3", X3, false, mc);
@@ -108,8 +109,7 @@ public class FederatedPCATest extends AutomatedTestBase {
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		
-		
+
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-stats", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
@@ -118,37 +118,35 @@ public class FederatedPCATest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "-nvargs", 
-			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+		programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-			"rows=" + rows, "cols=" + cols,
+			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
 			"scaleAndShift=" + String.valueOf(scaleAndShift).toUpperCase(), "out=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files
 		compareResults(1e-9);
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
-		
+
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
 		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
-		if( scaleAndShift ) {
+		if(scaleAndShift) {
 			Assert.assertTrue(heavyHittersContainsString("fed_uacsqk+"));
 			Assert.assertTrue(heavyHittersContainsString("fed_uacmean"));
 			Assert.assertTrue(heavyHittersContainsString("fed_-"));
 			Assert.assertTrue(heavyHittersContainsString("fed_/"));
 			Assert.assertTrue(heavyHittersContainsString("fed_replace"));
 		}
-		
-		//check that federated input files are still existing
+
+		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
-		
+
 		resetExecMode(platformOld);
 	}
 }

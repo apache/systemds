@@ -45,7 +45,7 @@ public class FederatedSSLTest extends AutomatedTestBase {
 	// This test use the same scripts as the Federated Reader tests, just with SSL enabled.
 	private final static String TEST_DIR = "functions/federated/io/";
 	private final static String TEST_NAME = "FederatedReaderTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedReaderTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedSSLTest.class.getSimpleName() + "/";
 	private final static int blocksize = 1024;
 	private final static File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR + "SSLConfig.xml");
 

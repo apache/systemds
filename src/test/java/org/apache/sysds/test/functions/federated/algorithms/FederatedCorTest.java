@@ -17,37 +17,33 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.federated.primitives;
+package org.apache.sysds.test.functions.federated.algorithms;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedFullAggregateTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "FederatedSumTest";
-	private final static String TEST_NAME2 = "FederatedMeanTest";
-	private final static String TEST_NAME3 = "FederatedMaxTest";
-	private final static String TEST_NAME4 = "FederatedMinTest";
+public class FederatedCorTest extends AutomatedTestBase {
 
-	private final static String TEST_DIR = "functions/federated/aggregate/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedFullAggregateTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "FederatedCorTest";
+	private final static String TEST_DIR = "functions/federated/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedCorTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
+
 	@Parameterized.Parameter()
 	public int rows;
 	@Parameterized.Parameter(1)
@@ -57,102 +53,26 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(
-			new Object[][] {
-				// {10, 1000, false}, 
-				{100, 4, false}, 
-				// {36, 1000, true}, 
-				// {1000, 10, true}, 
-				{4, 100, true}
-			});
-	}
-
-	private enum OpType {
-		SUM, MEAN, MAX, MIN
+		return Arrays.asList(new Object[][] {{1600, 8, true}});
 	}
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S.scalar"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S.scalar"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S.scalar"}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S.scalar"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S"}));
 	}
 
 	@Test
-	public void testSumDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.SUM, ExecType.CP);
+	public void testCorCP() {
+		runAggregateOperationTest(ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void testMeanDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.MEAN, ExecType.CP);
-	}
-
-	@Test
-	public void testMaxDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.MAX, ExecType.CP);
-	}
-
-	@Test
-	public void testMinDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.MIN, ExecType.CP);
-	}
-
-	@Test
-	@Ignore
-	public void testSumDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.SUM, ExecType.SPARK);
-	}
-
-	@Test
-	@Ignore
-	public void testMeanDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.MEAN, ExecType.SPARK);
-	}
-
-	@Test
-	@Ignore
-	public void testMaxDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.MAX, ExecType.SPARK);
-	}
-
-	@Test
-	@Ignore
-	public void testMinDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.MIN, ExecType.SPARK);
-	}
-
-	private void runColAggregateOperationTest(OpType type, ExecType instType) {
+	private void runAggregateOperationTest(ExecMode execMode) {
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
-		switch(instType) {
-			case SPARK:
-				rtplatform = ExecMode.SPARK;
-				break;
-			default:
-				rtplatform = ExecMode.HYBRID;
-				break;
-		}
 
 		if(rtplatform == ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-		String TEST_NAME = null;
-		switch(type) {
-			case SUM:
-				TEST_NAME = TEST_NAME1;
-				break;
-			case MEAN:
-				TEST_NAME = TEST_NAME2;
-				break;
-			case MAX:
-				TEST_NAME = TEST_NAME3;
-				break;
-			case MIN:
-				TEST_NAME = TEST_NAME4;
-				break;
-		}
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -187,6 +107,10 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		Thread t3 = startLocalFedWorkerThread(port3);
 		Thread t4 = startLocalFedWorkerThread(port4);
 
+		rtplatform = execMode;
+		if(rtplatform == ExecMode.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
@@ -199,7 +123,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		// Run actual dml script with federated matrix
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "100", "-nvargs",
+		programArgs = new String[] {"-explain", "-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
@@ -211,20 +135,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		// compare via files
 		compareResults(1e-9);
 
-		switch(type) {
-			case SUM:
-				Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
-				break;
-			case MEAN:
-				Assert.assertTrue(heavyHittersContainsString("fed_uamean"));
-				break;
-			case MAX:
-				Assert.assertTrue(heavyHittersContainsString("fed_uamax"));
-				break;
-			case MIN:
-				Assert.assertTrue(heavyHittersContainsString("fed_uamin"));
-				break;
-		}
+		// Assert.assertTrue(heavyHittersContainsString("k+"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
@@ -233,7 +144,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
 
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
-		resetExecMode(platformOld);
+
+		rtplatform = platformOld;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 
 	}
 }

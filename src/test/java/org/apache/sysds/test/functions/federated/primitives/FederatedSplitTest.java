@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -53,7 +54,7 @@ public class FederatedSplitTest extends AutomatedTestBase {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{152, 12, "TRUE"},{132, 11, "FALSE"}});
+        return Arrays.asList(new Object[][] {{152, 12, "TRUE"}, {132, 11, "FALSE"}});
     }
 
     @Override
@@ -108,7 +109,7 @@ public class FederatedSplitTest extends AutomatedTestBase {
 
         // Run actual dml script with federated matrix
         fullDMLScriptName = HOME + TEST_NAME + ".dml";
-        programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+        programArgs = new String[] {"-stats", "100", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
             "X2=" + TestUtils.federatedAddress(port2, input("X2")),
             "Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
             "Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z"),
@@ -120,6 +121,16 @@ public class FederatedSplitTest extends AutomatedTestBase {
         // compare via files
         compareResults(1e-9);
 
+        if(cont.equals("TRUE"))
+            Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
+        else{
+
+            Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
+            // TODO add federated diag operator.
+            // Assert.assertTrue(heavyHittersContainsString("fed_rdiag"));
+
+        }
+        
         TestUtils.shutdownThreads(t1, t2);
         rtplatform = platformOld;
         DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;

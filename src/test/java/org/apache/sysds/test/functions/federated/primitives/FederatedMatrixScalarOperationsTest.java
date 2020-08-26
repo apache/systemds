@@ -37,7 +37,10 @@ import static java.lang.Thread.sleep;
 public class FederatedMatrixScalarOperationsTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Iterable<Object[]> data() {
-		return Arrays.asList(new Object[][] {{100, 100}, {10000, 100},});
+		return Arrays.asList(new Object[][] {
+			{100, 100}, 
+		// {10000, 100}
+		});
 	}
 
 	// internals 4 parameterized tests

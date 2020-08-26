@@ -19,18 +19,19 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.Arrays;
-import java.util.Collection;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -48,7 +49,11 @@ public class FederatedSumTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{2, 1000}, {10, 100}, {100, 10}, {1000, 1}, {10, 2000}, {2000, 10}});
+		return Arrays.asList(new Object[][] {
+			// {2, 1000}, {10, 100}, 
+			{100, 10}, {1000, 1},
+			//  {10, 2000}, {2000, 10}
+			});
 	}
 
 	@Override
@@ -64,6 +69,7 @@ public class FederatedSumTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void federatedSumSP() {
 		federatedSum(Types.ExecMode.SPARK);
 	}

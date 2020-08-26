@@ -22,6 +22,8 @@ package org.apache.sysds.test.functions.federated.primitives;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -37,7 +39,7 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedRightIndexTest extends AutomatedTestBase {
-	// private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
+	private static final Log LOG = LogFactory.getLog(FederatedRightIndexTest.class.getName());
 
 	private final static String TEST_NAME1 = "FederatedRightIndexRightTest";
 	private final static String TEST_NAME2 = "FederatedRightIndexLeftTest";
@@ -64,11 +66,12 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{20, 10, 6, 8, true},
+			// {20, 10, 6, 8, true},
 			{20, 10, 1, 1, true},
 			{20, 10, 2, 10, true},
 			// {20, 10, 2, 10, true},
-			// {20, 12, 2, 10, false}, {20, 12, 1, 4, false}
+			// {20, 12, 2, 10, false}, 
+			// {20, 12, 1, 4, false}
 		});
 	}
 
@@ -164,8 +167,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-args", input("X1"), input("X2"), input("X3"), input("X4"), String.valueOf(from),
 			String.valueOf(to), Boolean.toString(rowPartitioned).toUpperCase(), expected("S")};
-		// LOG.error(runTest(null));
-		runTest(null);
+		LOG.debug(runTest(null));
 		// Run actual dml script with federated matrix
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -176,8 +178,8 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols, "from=" + from,
 			"to=" + to, "rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
-		// LOG.error(runTest(null));
-		runTest(null);
+		LOG.debug(runTest(null));
+
 		// compare via files
 		compareResults(1e-9);
 

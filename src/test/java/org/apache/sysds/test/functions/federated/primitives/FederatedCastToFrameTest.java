@@ -38,12 +38,12 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederetedCastToFrameTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(FederetedCastToFrameTest.class.getName());
+public class FederatedCastToFrameTest extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(FederatedCastToFrameTest.class.getName());
 
 	private final static String TEST_DIR = "functions/federated/primitives/";
 	private final static String TEST_NAME = "FederatedCastToFrameTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederetedCastToFrameTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCastToFrameTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()

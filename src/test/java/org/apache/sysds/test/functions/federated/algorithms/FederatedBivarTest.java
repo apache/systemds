@@ -55,7 +55,8 @@ public class FederatedBivarTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {{10000, 16},
-			// {2000, 32}, {1000, 64},
+			// {2000, 32},
+			// {1000, 64},
 			{10000, 128}});
 	}
 

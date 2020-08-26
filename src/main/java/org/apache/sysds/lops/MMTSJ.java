@@ -41,6 +41,9 @@ public class MMTSJ extends Lop
 		public boolean isLeft(){
 			return (this == LEFT);
 		}
+		public boolean isRight(){
+			return (this == RIGHT);
+		}
 	}
 	
 	private MMTSJType _type = null;

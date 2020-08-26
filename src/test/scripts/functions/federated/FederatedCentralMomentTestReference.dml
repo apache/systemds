@@ -17,14 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+#-------------------------------------------------------------
 
-# Returns Euclidian distance matrix (distances between N n-dimensional points)
+A = rbind(read($1), read($2), read($3), read($4));
 
-m_dist = function(Matrix[Double] X) return (Matrix[Double] Y) {
-    G = X %*% t(X);
-    I = matrix(1, rows = nrow(G), cols = ncol(G));
-    Y = -2 * (G) + (diag(G) * I) + (I * t(diag(G)));
-#   Y = -2 * (G) + t(I %*% diag(diag(G))) + t(diag(diag(G)) %*% I);
-    Y = sqrt(Y);
-    Y = replace(target = Y, pattern=0/0, replacement = 0);
-}
+s = moment(A, $6);
+write(s, $5);

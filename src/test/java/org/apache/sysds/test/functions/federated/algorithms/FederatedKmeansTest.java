@@ -64,12 +64,13 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
-		return Arrays.asList(new Object[][] {
-			{10000, 10, 1, 1}, {2000, 50, 1, 1}, {1000, 100, 1, 1},
-			{10000, 10, 2, 1}, {2000, 50, 2, 1}, {1000, 100, 2, 1}, //concurrent requests
-			{10000, 10, 2, 2}, //repeated exec
-			//TODO more runs e.g., 16 -> but requires rework RPC framework first
-			//(e.g., see paramserv?)
+		return Arrays.asList(new Object[][] {{10000, 10, 1, 1},
+			// {2000, 50, 1, 1}, {1000, 100, 1, 1},
+			{10000, 10, 2, 1},
+			// {2000, 50, 2, 1}, {1000, 100, 2, 1}, //concurrent requests
+			{10000, 10, 2, 2}, // repeated exec
+			// TODO more runs e.g., 16 -> but requires rework RPC framework first
+			// (e.g., see paramserv?)
 		});
 	}
 
@@ -77,7 +78,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 	public void federatedKmeansSinglenode() {
 		federatedKmeans(Types.ExecMode.SINGLE_NODE);
 	}
-	
+
 	@Test
 	public void federatedKmeansHybrid() {
 		federatedKmeans(Types.ExecMode.HYBRID);
@@ -106,29 +107,26 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		
-		
+
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("X1"), input("X2"),
-			String.valueOf(runs), expected("Z")};
+		programArgs = new String[] {"-args", input("X1"), input("X2"), String.valueOf(runs), expected("Z")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats",
-			"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+		programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"runs=" + String.valueOf(runs), "out=" + output("Z")};
-		
-		for( int i=0; i<rep; i++ ) {
+
+		for(int i = 0; i < rep; i++) {
 			ParForProgramBlock.resetWorkerIDs();
 			FederationUtils.resetFedDataID();
 			runTest(true, false, null, -1);
-		
+
 			// check for federated operations
 			Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-			//Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));
+			// Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));
 			Assert.assertTrue(heavyHittersContainsString("fed_uarmin"));
 			Assert.assertTrue(heavyHittersContainsString("fed_uark+"));
 			Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
@@ -137,16 +135,16 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 			Assert.assertTrue(heavyHittersContainsString("fed_<="));
 			Assert.assertTrue(heavyHittersContainsString("fed_/"));
 			Assert.assertTrue(heavyHittersContainsString("fed_r'"));
-			
-			//check that federated input files are still existing
+
+			// check that federated input files are still existing
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X2")));
 		}
-		
+
 		// compare via files
-		//compareResults(1e-9); --> randomized
+		// compareResults(1e-9); --> randomized
 		TestUtils.shutdownThreads(t1, t2);
-		
+
 		resetExecMode(platformOld);
 	}
 }

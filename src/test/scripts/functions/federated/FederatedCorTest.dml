@@ -17,14 +17,18 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+#-------------------------------------------------------------
 
-# Returns Euclidian distance matrix (distances between N n-dimensional points)
-
-m_dist = function(Matrix[Double] X) return (Matrix[Double] Y) {
-    G = X %*% t(X);
-    I = matrix(1, rows = nrow(G), cols = ncol(G));
-    Y = -2 * (G) + (diag(G) * I) + (I * t(diag(G)));
-#   Y = -2 * (G) + t(I %*% diag(diag(G))) + t(diag(diag(G)) %*% I);
-    Y = sqrt(Y);
-    Y = replace(target = Y, pattern=0/0, replacement = 0);
+if ($rP) {
+    A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+} else {
+    A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
+
+s = cor(A);
+
+write(s, $out_S);

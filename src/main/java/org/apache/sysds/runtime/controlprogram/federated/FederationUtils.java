@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
 import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -169,6 +170,164 @@ public class FederationUtils {
 		}
 	}
 
+	public static MatrixBlock aggVar(Future<FederatedResponse>[] ffr, Future<FederatedResponse>[] meanFfr, FederationMap map, boolean isRowAggregate, boolean isScalar) {
+		try {
+//			else if(aop.aggOp.increOp.fn instanceof CM) {
+//				double var = ((ScalarObject) ffr[0].get().getData()[0]).getDoubleValue();
+//				double mean = ((ScalarObject) meanFfr[0].get().getData()[0]).getDoubleValue();
+//				long size = map.getFederatedRanges()[0].getSize();
+//				for(int i = 0; i < ffr.length - 1; i++) {
+//					long l = size + map.getFederatedRanges()[i+1].getSize();
+//					double k = ((size * var) + (map.getFederatedRanges()[i+1].getSize() * ((ScalarObject) ffr[i+1].get().getData()[0]).getDoubleValue())) / l;
+//					var = k + (size * map.getFederatedRanges()[i+1].getSize()) * Math.pow((mean - ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue()) / l, 2);
+//					mean = (mean *  size + ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue() * (map.getFederatedRanges()[i+1].getSize())) / l;
+//					size = l;
+//					System.out.println("Olga");
+//					//					long l = sizes[i] + sizes[i + 1];
+//					//					double k = Math.pow(means[i] - means[i+1], 2) * (sizes[i] * sizes[i+1]);
+//					//					k += ((sizes[i] * vars[i]) + (sizes[i+1] * vars[i+1])) * l;
+//					//					vars[i+1] = k / Math.pow(l, 2);
+//					//
+//					//					means[i+1] = (means[i] * sizes[i] + means[i] * sizes[i]) / l;
+//					//					sizes[i+1] = l;
+//				}
+//				return new DoubleObject(var);
+//
+//			}
+
+
+			FederatedRange[] ranges = map.getFederatedRanges();
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
+			BinaryOperator minus = InstructionUtils.parseBinaryOperator("-");
+
+			ScalarOperator mult1 = InstructionUtils.parseScalarBinaryOperator("*", false);
+			ScalarOperator dev1 = InstructionUtils.parseScalarBinaryOperator("/", false);
+			ScalarOperator pow = InstructionUtils.parseScalarBinaryOperator("^2", false);
+
+			long size1 = isScalar ? ranges[0].getSize() : ranges[0].getSize(isRowAggregate ? 0 : 1);
+			MatrixBlock var1 = (MatrixBlock)ffr[0].get().getData()[0];
+			MatrixBlock mean1 = (MatrixBlock)meanFfr[0].get().getData()[0];
+			for(int i=0; i < ffr.length - 1; i++) {
+				MatrixBlock var2 = (MatrixBlock)ffr[i+1].get().getData()[0];
+				MatrixBlock mean2 = (MatrixBlock)meanFfr[i+1].get().getData()[0];
+				long size2 = isScalar ? ranges[i+1].getSize() : ranges[i+1].getSize(isRowAggregate ? 0 : 1);
+
+				mult1 = mult1.setConstant(size1);
+				var1 = var1.scalarOperations(mult1, new MatrixBlock());
+				mult1 = mult1.setConstant(size2);
+				var1 = var1.binaryOperationsInPlace(plus, var2.scalarOperations(mult1, new MatrixBlock()));
+				dev1 = dev1.setConstant(size1 + size2);
+				var1 = var1.scalarOperations(dev1, new MatrixBlock());
+
+				MatrixBlock tmp1 = (mean1.binaryOperationsInPlace(minus, mean2)).scalarOperations(dev1, new MatrixBlock());
+				tmp1 = tmp1.scalarOperations(pow, new MatrixBlock());
+				mult1 = mult1.setConstant(size1*size2);
+				tmp1 = tmp1.scalarOperations(mult1, new MatrixBlock());
+
+				var1 = tmp1.binaryOperationsInPlace(plus, var1);
+
+				// next mean
+				mult1 = mult1.setConstant(size1);
+				tmp1 = mean1.scalarOperations(mult1, new MatrixBlock());
+				mult1 = mult1.setConstant(size2);
+				mean1 = tmp1.binaryOperationsInPlace(plus, mean2.scalarOperations(mult1, new MatrixBlock()));
+				mean1 = mean1.scalarOperations(dev1, new MatrixBlock());
+
+				size1 = size1 + size2;
+			}
+
+			return var1;
+		}
+		catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
+	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, Future<FederatedResponse>[] meanFfr, FederationMap map) {
+		if(!(aop.aggOp.increOp.fn instanceof KahanFunction || aop.aggOp.increOp.fn instanceof CM ||
+			(aop.aggOp.increOp.fn instanceof Builtin &&
+				(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)
+				|| aop.aggOp.increOp.fn instanceof Mean))) {
+			throw new DMLRuntimeException("Unsupported aggregation operator: "
+				+ aop.aggOp.increOp.getClass().getSimpleName());
+		}
+
+		try {
+			if(aop.aggOp.increOp.fn instanceof Builtin){
+				// then we know it is a Min or Max based on the previous check.
+				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
+				return new DoubleObject(aggMinMax(ffr, isMin, true,  Optional.empty()).getValue(0,0));
+			}
+			else if( aop.aggOp.increOp.fn instanceof Mean ) {
+				return new DoubleObject(aggMean(ffr, map).getValue(0,0));
+			}
+			else if(aop.aggOp.increOp.fn instanceof CM) {
+				double var = ((ScalarObject) ffr[0].get().getData()[0]).getDoubleValue();
+				double mean = ((ScalarObject) meanFfr[0].get().getData()[0]).getDoubleValue();
+				long size = map.getFederatedRanges()[0].getSize();
+				for(int i = 0; i < ffr.length - 1; i++) {
+					long l = size + map.getFederatedRanges()[i+1].getSize();
+					double k = ((size * var) + (map.getFederatedRanges()[i+1].getSize() * ((ScalarObject) ffr[i+1].get().getData()[0]).getDoubleValue())) / l;
+					var = k + (size * map.getFederatedRanges()[i+1].getSize()) * Math.pow((mean - ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue()) / l, 2);
+					mean = (mean *  size + ((ScalarObject) meanFfr[i+1].get().getData()[0]).getDoubleValue() * (map.getFederatedRanges()[i+1].getSize())) / l;
+					size = l;
+//					long l = sizes[i] + sizes[i + 1];
+//					double k = Math.pow(means[i] - means[i+1], 2) * (sizes[i] * sizes[i+1]);
+//					k += ((sizes[i] * vars[i]) + (sizes[i+1] * vars[i+1])) * l;
+//					vars[i+1] = k / Math.pow(l, 2);
+//
+//					means[i+1] = (means[i] * sizes[i] + means[i] * sizes[i]) / l;
+//					sizes[i+1] = l;
+				}
+				return new DoubleObject(var);
+
+			}
+			else { //if (aop.aggOp.increOp.fn instanceof KahanFunction)
+				double sum = 0; //uak+
+				for( Future<FederatedResponse> fr : ffr )
+					sum += ((ScalarObject)fr.get().getData()[0]).getDoubleValue();
+				return new DoubleObject(sum);
+			}
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
+	public static MatrixBlock aggMatrix(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, Future<FederatedResponse>[] meanFfr, FederationMap map) {
+		if (aop.isRowAggregate() && map.getType() == FederationMap.FType.ROW)
+			return bind(ffr, false);
+		else if (aop.isColAggregate() && map.getType() == FederationMap.FType.COL)
+			return bind(ffr, true);
+
+		if (aop.aggOp.increOp.fn instanceof KahanFunction)
+			return aggAdd(ffr);
+		else if( aop.aggOp.increOp.fn instanceof Mean )
+			return aggMean(ffr, map);
+		else if (aop.aggOp.increOp.fn instanceof Builtin &&
+			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)) {
+			boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN;
+			return aggMinMax(ffr,isMin,false, Optional.of(map.getType()));
+		} else if(aop.aggOp.increOp.fn instanceof CM) {
+			return aggVar(ffr, meanFfr, map, aop.isRowAggregate(), !(aop.isColAggregate() && aop.isRowAggregate())); //TODO
+		}
+		else
+			throw new DMLRuntimeException("Unsupported aggregation operator: "
+				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
+	}
+
+	public static void waitFor(List<Future<FederatedResponse>> responses) {
+		try {
+			for(Future<FederatedResponse> fr : responses)
+				fr.get();
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
 	public static ScalarObject aggScalar(AggregateUnaryOperator aop, Future<FederatedResponse>[] ffr, FederationMap map) {
 		if(!(aop.aggOp.increOp.fn instanceof KahanFunction || (aop.aggOp.increOp.fn instanceof Builtin &&
 			(((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN
@@ -217,16 +376,6 @@ public class FederationUtils {
 		} else
 			throw new DMLRuntimeException("Unsupported aggregation operator: "
 				+ aop.aggOp.increOp.fn.getClass().getSimpleName());
-	}
-
-	public static void waitFor(List<Future<FederatedResponse>> responses) {
-		try {
-			for(Future<FederatedResponse> fr : responses)
-				fr.get();
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
-		}
 	}
 
 	public static FederationMap federateLocalData(CacheableData<?> data) {

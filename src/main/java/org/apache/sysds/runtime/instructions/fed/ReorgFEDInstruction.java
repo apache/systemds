@@ -54,12 +54,12 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		if( !mo1.isFederated() )
 			throw new DMLRuntimeException("Federated Reorg: "
 				+ "Federated input expected, but invoked w/ "+mo1.isFederated());
-	
+
 		//execute transpose at federated site
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1}, new long[]{mo1.getFedMapping().getID()});
 		mo1.getFedMapping().execute(getTID(), true, fr1);
-		
+
 		//drive output federated mapping
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics().set(mo1.getNumColumns(),

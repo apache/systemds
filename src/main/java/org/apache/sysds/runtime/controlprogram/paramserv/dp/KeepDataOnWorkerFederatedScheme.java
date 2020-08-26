@@ -41,7 +41,7 @@ public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedSchem
 			// partition features
 			List<MatrixObject> pFeatures = Collections.synchronizedList(new ArrayList<>());
 			features.getFedMapping().forEachParallel((range, data) -> {
-				// TODO: This slicing is really ugly, rework
+				// TODO Tobias: This slicing is really ugly, rework
 				MatrixObject slice = new MatrixObject(features);
 				slice.updateDataCharacteristics(new MatrixCharacteristics(range.getSize(0), range.getSize(1)));
 
@@ -57,7 +57,7 @@ public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedSchem
 			// partition labels
 			List<MatrixObject> pLabels = Collections.synchronizedList(new ArrayList<>());
 			labels.getFedMapping().forEachParallel((range, data) -> {
-				// TODO: This slicing is really ugly, rework
+				// TODO Tobias: This slicing is really ugly, rework
 				MatrixObject slice = new MatrixObject(labels);
 				slice.updateDataCharacteristics(new MatrixCharacteristics(range.getSize(0), range.getSize(1)));
 

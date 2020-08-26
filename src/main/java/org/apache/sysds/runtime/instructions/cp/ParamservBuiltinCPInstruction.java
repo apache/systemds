@@ -53,6 +53,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.Federated;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
@@ -65,6 +66,8 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
@@ -141,11 +144,31 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			System.out.println(l.toString());
 		}
 
-		//FederatedRequest fr1 = new FederatedRequest();
-		//features.getFedMapping().execute();
+		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, 1, new Test(1));
+		// TODO Tobias: Check tid
+		try {
+			Future<FederatedResponse>[] responseFuture = pfs.get(0).getFedMapping().execute(-1, fr1);
+			FederatedResponse response = responseFuture[0].get();
+			if(response.isSuccessful()) {
+				System.out.println("UDF Success");
+			}
+		}
+		catch(Exception e) {
+
+		}
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
+	}
+
+	public static class Test extends FederatedUDF {
+		public Test(long input) {
+			super(new long[] {input});
+		}
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, org.apache.sysds.runtime.instructions.cp.Data... data) {
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
+		}
 	}
 
 	@SuppressWarnings("resource")

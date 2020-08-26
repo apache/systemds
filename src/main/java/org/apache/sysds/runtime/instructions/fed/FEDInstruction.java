@@ -37,6 +37,9 @@ public abstract class FEDInstruction extends Instruction {
 		Tsmm,
 		MMChain,
 		Reorg,
+		MatrixIndexing,
+		QSort,
+		QPick
 	}
 	
 	protected final FEDType _fedType;

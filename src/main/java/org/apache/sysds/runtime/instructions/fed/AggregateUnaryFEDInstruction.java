@@ -30,8 +30,12 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	
@@ -39,7 +43,17 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			CPOperand out, String opcode, String istr) {
 		super(FEDType.AggregateUnary, auop, in, out, opcode, istr);
 	}
-	
+
+	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+										   String opcode, String istr) {
+		super(FEDType.AggregateUnary, op, in1, in2, out, opcode, istr);
+	}
+
+	protected AggregateUnaryFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+										   String opcode, String istr) {
+		super(FEDType.AggregateUnary, op, in1, in2, in3, out, opcode, istr);
+	}
+
 	public static AggregateUnaryFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];

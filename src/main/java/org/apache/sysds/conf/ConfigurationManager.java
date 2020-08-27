@@ -31,24 +31,24 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
  * NOTE: parallel execution of multiple DML scripts (in the same JVM) with different configurations  
  *       would require changes/extensions of this class. 
  */
-public class ConfigurationManager 
+public class ConfigurationManager
 {
-	/** Global cached job conf for read-only operations	*/
+	/** Global cached job conf for read-only operations */
 	private static JobConf _rJob = null; 
-	
+
 	/** Global DML configuration (read or defaults) */
 	private static DMLConfig _dmlconf = null; 
-	
+
 	/** Local DML configuration for thread-local config updates */
 	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig();
-	
-    /** Global compiler configuration (defaults) */
-    private static CompilerConfig _cconf = null;
-	
-    /** Local compiler configuration for thead-local config updates */
-    private static ThreadLocalCompilerConfig _lcconf = new ThreadLocalCompilerConfig();
-    
-    //global static initialization
+
+	/** Global compiler configuration (defaults) */
+	private static CompilerConfig _cconf = null;
+
+	/** Local compiler configuration for thead-local config updates */
+	private static ThreadLocalCompilerConfig _lcconf = new ThreadLocalCompilerConfig();
+
+	//global static initialization
 	static {
 		_rJob = new JobConf();
 		
@@ -59,13 +59,13 @@ public class ConfigurationManager
 	}
 	
 	
-    /**
-     * Returns a cached JobConf object, intended for global use by all operations 
-     * with read-only access to job conf. This prevents to read the hadoop conf files
-     * over and over again from classpath. However, 
-     * 
-     * @return the cached JobConf
-     */
+	/**
+	 * Returns a cached JobConf object, intended for global use by all operations 
+	 * with read-only access to job conf. This prevents to read the hadoop conf files
+	 * over and over again from classpath. However, 
+	 * 
+	 * @return the cached JobConf
+	 */
 	public static JobConf getCachedJobConf() {
 		return _rJob;
 	}

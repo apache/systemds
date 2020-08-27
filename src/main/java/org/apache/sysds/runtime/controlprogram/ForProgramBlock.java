@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageDedupUtils;
 
 public class ForProgramBlock extends ProgramBlock
 {
@@ -115,9 +116,9 @@ public class ForProgramBlock extends ProgramBlock
 			// prepare update in-place variables
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
-			// compute lineage patches for all distinct paths, and store globally
+			// compute and store the number of distinct paths
 			if (DMLScript.LINEAGE_DEDUP)
-				ec.getLineage().computeDedupBlock(this, ec);
+				ec.getLineage().initializeDedupBlock(this, ec);
 			
 			// run for loop body for each instance of predicate sequence 
 			SequenceIterator seqIter = new SequenceIterator(from, to, incr);
@@ -131,17 +132,22 @@ public class ForProgramBlock extends ProgramBlock
 					Lineage li = ec.getLineage();
 					li.set(_iterPredVar, li.getOrCreate(new CPOperand(iterVar)));
 				}
+				if (DMLScript.LINEAGE_DEDUP)
+					// create a new dedup map, if needed, to trace this iteration
+					ec.getLineage().createDedupPatch(this, ec);
 				
 				//execute all child blocks
-				for (int i = 0; i < _childBlocks.size(); i++) {
+				for (int i = 0; i < _childBlocks.size(); i++)
 					_childBlocks.get(i).execute(ec);
-				}
 				
-				if( DMLScript.LINEAGE_DEDUP )
-					ec.getLineage().traceCurrentDedupPath();
+				if (DMLScript.LINEAGE_DEDUP) {
+					LineageDedupUtils.replaceLineage(ec);
+					// hook the dedup map to the main lineage trace
+					ec.getLineage().traceCurrentDedupPath(this, ec);
+				}
 			}
 			
-			// clear current LineageDedupBlock
+			// clear the current LineageDedupBlock
 			if (DMLScript.LINEAGE_DEDUP)
 				ec.getLineage().clearDedupBlock();
 			

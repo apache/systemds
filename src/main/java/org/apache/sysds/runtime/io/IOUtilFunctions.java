@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -243,9 +244,10 @@ public class IOUtilFunctions
 	 * @param str string to split
 	 * @param delim delimiter
 	 * @param tokens array for tokens, length needs to match the number of tokens
+	 * @param naStrings the strings to map to null value.
 	 * @return string array of tokens
 	 */
-	public static String[] splitCSV(String str, String delim, String[] tokens)
+	public static String[] splitCSV(String str, String delim, String[] tokens, Set<String> naStrings)
 	{
 		// check for empty input
 		if( str == null || str.isEmpty() )
@@ -255,6 +257,7 @@ public class IOUtilFunctions
 		int from = 0, to = 0; 
 		int len = str.length();
 		int dlen = delim.length();
+		String curString;
 		int pos = 0;
 		while( from < len  ) { // for all tokens
 			if( str.charAt(from) == CSV_QUOTE_CHAR
@@ -277,7 +280,8 @@ public class IOUtilFunctions
 			
 			// slice out token and advance position
 			to = (to >= 0) ? to : len;
-			tokens[pos++] = str.substring(from, to);
+			curString = str.substring(from, to);
+			tokens[pos++] = (naStrings.contains(curString)) ? null: curString;
 			from = to + delim.length();
 		}
 		

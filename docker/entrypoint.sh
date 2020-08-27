@@ -24,20 +24,11 @@
 
 cd /github/workspace
 
-build="$(mvn -T 2 clean compile test-compile | grep 'BUILD')"
-
-if [[ $build == *"SUCCESS"* ]]; then
-  echo "Successfull build"
-else
-  echo "failed building"
-  exit 1
-fi
-
 log="/tmp/sysdstest.log"
 
 echo "Starting Tests"
 
-mvn surefire:test -DskipTests=false -Dtest=$1 2>&1 > $log
+mvn test -D maven.test.skip=false -Dtest=$1 2>&1 > $log
 
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"

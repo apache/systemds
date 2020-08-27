@@ -30,8 +30,6 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOp1;
@@ -105,7 +103,6 @@ public class SpoofCompiler
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 	
 	//internal configuration flags
-	public static final boolean LDEBUG                 = false;
 	public static CompilerType JAVA_COMPILER           = CompilerType.JANINO; 
 	public static PlanSelector PLAN_SEL_POLICY         = PlanSelector.FUSE_COST_BASED_V2; 
 	public static final IntegrationType INTEGRATION    = IntegrationType.RUNTIME;
@@ -156,14 +153,6 @@ public class SpoofCompiler
 		HEURISTIC,           //max vector intermediates, special handling pipelines (always safe)
 		EXACT_DYNAMIC_BUFF,  //min number of live vector intermediates, assuming dynamic pooling
 		EXACT_STATIC_BUFF,   //min number of live vector intermediates, assuming static array ring buffer
-	}
-	
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.hops.codegen")
-				.setLevel(Level.TRACE);
-		}
 	}
 	
 	//plan cache for cplan->compiled source to avoid unnecessary codegen/source code compile

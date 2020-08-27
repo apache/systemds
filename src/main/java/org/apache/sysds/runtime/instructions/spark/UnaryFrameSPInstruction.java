@@ -23,7 +23,9 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -37,7 +39,7 @@ public class UnaryFrameSPInstruction extends UnarySPInstruction {
 		super(SPInstruction.SPType.Unary, op, in, out, opcode, instr);
 	}
 
-	public static UnaryFrameSPInstruction parseInstruction (String str ) {
+	public static UnaryFrameSPInstruction parseInstruction(String str) {
 		CPOperand in = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
 		String opcode = parseUnaryInstruction(str, in, out);
@@ -46,18 +48,36 @@ public class UnaryFrameSPInstruction extends UnarySPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		//get input
-		JavaPairRDD<Long, FrameBlock> in = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName() );
-		JavaPairRDD<Long,FrameBlock> out = in.mapToPair(new DetectSchemaUsingRows());
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
+		if(getOpcode().equals(OpOp1.DETECTSCHEMA.toString()))
+			detectSchema(sec);
+		else if(getOpcode().equals(OpOp1.COLNAMES.toString()))
+			columnNames(sec);
+		else
+			throw new DMLScriptException("Opcode '" + getOpcode() + "' is not a valid UnaryFrameSPInstruction");
+	}
+
+	private void columnNames(SparkExecutionContext sec) {
+		// get input
+		JavaPairRDD<Long, FrameBlock> in = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
+		// get the first row block (frames are only blocked rowwise) and get its column names
+		FrameBlock outFrame = in.lookup(1L).get(0).getColumnNamesAsFrame();
+		sec.setFrameOutput(output.getName(), outFrame);
+	}
+
+	public void detectSchema(SparkExecutionContext sec) {
+		// get input
+		JavaPairRDD<Long, FrameBlock> in = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<Long, FrameBlock> out = in.mapToPair(new DetectSchemaUsingRows());
 		FrameBlock outFrame = out.values().reduce(new MergeFrame());
 		sec.setFrameOutput(output.getName(), outFrame);
 	}
 
 	private static class DetectSchemaUsingRows implements PairFunction<Tuple2<Long, FrameBlock>, Long, FrameBlock> {
 		private static final long serialVersionUID = 5850400295183766400L;
+
 		@Override
-		public Tuple2<Long,FrameBlock> call(Tuple2<Long, FrameBlock> arg0) throws Exception {
+		public Tuple2<Long, FrameBlock> call(Tuple2<Long, FrameBlock> arg0) throws Exception {
 			FrameBlock resultBlock = new FrameBlock(arg0._2.detectSchemaFromRow(Lop.SAMPLE_FRACTION));
 			return new Tuple2<>(1L, resultBlock);
 		}
@@ -65,6 +85,7 @@ public class UnaryFrameSPInstruction extends UnarySPInstruction {
 
 	private static class MergeFrame implements Function2<FrameBlock, FrameBlock, FrameBlock> {
 		private static final long serialVersionUID = 942744896521069893L;
+
 		@Override
 		public FrameBlock call(FrameBlock arg0, FrameBlock arg1) throws Exception {
 			return new FrameBlock(FrameBlock.mergeSchema(arg0, arg1));

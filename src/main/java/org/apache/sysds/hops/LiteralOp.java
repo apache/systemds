@@ -283,4 +283,9 @@ public class LiteralOp extends Hop
 	{
 		return false;
 	}
+
+	@Override
+	public String toString(){
+		return getOpString();
+	}
 }

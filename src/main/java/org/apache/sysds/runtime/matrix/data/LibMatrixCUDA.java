@@ -21,8 +21,6 @@ package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -102,16 +100,7 @@ import java.util.ArrayList;
  * @see GPUObject
  */
 public class LibMatrixCUDA {
-	// local flag for debug output
-	private static final boolean LTRACE = false;
 	private static final Log LOG = LogFactory.getLog(LibMatrixCUDA.class.getName());
-
-	static {
-		// for internal debugging only
-		if( LTRACE ) {
-			Logger.getLogger("org.apache.sysds.runtime.matrix.data.LibMatrixCUDA").setLevel(Level.TRACE);
-		}
-	}
 
 	protected static int CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 	// The below variables are used in CSRPointer, GPUObjects, etc.

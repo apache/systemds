@@ -32,29 +32,37 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.util.concurrent.Promise;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 
 public class FederatedData {
-	private Types.DataType _dataType;
-	private InetSocketAddress _address;
-	private String _filepath;
+	private static Set<InetSocketAddress> _allFedSites = new HashSet<>();
+	
+	private final Types.DataType _dataType;
+	private final InetSocketAddress _address;
+	private final String _filepath;
 	/**
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
 	 */
 	private long _varID = -1; // -1 is never valid since varIDs start at 0
-	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
-
 
 	public FederatedData(Types.DataType dataType, InetSocketAddress address, String filepath) {
 		_dataType = dataType;
 		_address = address;
 		_filepath = filepath;
+		if( _address != null )
+			_allFedSites.add(_address);
 	}
 	
 	/**
@@ -75,6 +83,10 @@ public class FederatedData {
 		_varID = varID;
 	}
 	
+	public long getVarID() {
+		return _varID;
+	}
+	
 	public String getFilepath() {
 		return _filepath;
 	}
@@ -83,64 +95,38 @@ public class FederatedData {
 		return _varID != -1;
 	}
 	
-	public synchronized Future<FederatedResponse> initFederatedData() {
+	boolean equalAddress(FederatedData that) {
+		return _address != null && that != null && that._address != null 
+			&& _address.equals(that._address);
+	}
+	
+	public synchronized Future<FederatedResponse> initFederatedData(long id) {
 		if(isInitialized())
 			throw new DMLRuntimeException("Tried to init already initialized data");
-		FederatedRequest.FedMethod fedMethod;
-		switch(_dataType) {
-			case MATRIX:
-				fedMethod = FederatedRequest.FedMethod.READ_MATRIX;
-				break;
-			case FRAME:
-				fedMethod = FederatedRequest.FedMethod.READ_FRAME;
-				break;
-			default:
-				throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
-		}
-		FederatedRequest request = new FederatedRequest(fedMethod);
+		if(!_dataType.isMatrix() && !_dataType.isFrame())
+			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
+		_varID = id;
+		FederatedRequest request = new FederatedRequest(RequestType.READ_VAR, id);
 		request.appendParam(_filepath);
+		request.appendParam(_dataType.name());
 		return executeFederatedOperation(request);
 	}
 	
-	/**
-	 * Executes an federated operation on a federated worker and default variable.
-	 *
-	 * @param request the requested operation
-	 * @param withVarID true if we should add the default varID (initialized) or false if we should not
-	 * @return the response
-	 */
-	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest request, boolean withVarID) {
-		if (withVarID) {
-			if( !isInitialized() )
-				throw new DMLRuntimeException("Tried to execute federated operation on data non initialized federated data.");
-			return executeFederatedOperation(request, _varID);
-		}
-		return executeFederatedOperation(request);
+	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
+		return executeFederatedOperation(_address, request);
 	}
 	
 	/**
 	 * Executes an federated operation on a federated worker.
 	 *
-	 * @param request the requested operation
-	 * @param varID variable ID
-	 * @return the response
-	 */
-	public Future<FederatedResponse> executeFederatedOperation(FederatedRequest request, long varID) {
-		request = request.deepClone();
-		request.appendParam(varID);
-		return executeFederatedOperation(request);
-	}
-	
-	/**
-	 * Executes an federated operation on a federated worker.
-	 *
+	 * @param address socket address (incl host and port)
 	 * @param request the requested operation
 	 * @return the response
 	 */
-	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest request) {
+	public static Future<FederatedResponse> executeFederatedOperation(InetSocketAddress address, FederatedRequest... request) {
 		// Careful with the number of threads. Each thread opens connections to multiple files making resulting in 
 		// java.io.IOException: Too many open files
-		EventLoopGroup workerGroup = new NioEventLoopGroup(_nrThreads);
+		EventLoopGroup workerGroup = new NioEventLoopGroup(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
 		try {
 			Bootstrap b = new Bootstrap();
 			final DataRequestHandler handler = new DataRequestHandler(workerGroup);
@@ -148,13 +134,13 @@ public class FederatedData {
 				@Override
 				public void initChannel(SocketChannel ch) {
 					ch.pipeline().addLast("ObjectDecoder",
-							new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
-							.addLast("FederatedOperationHandler", handler)
-							.addLast("ObjectEncoder", new ObjectEncoder());
+						new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
+						.addLast("FederatedOperationHandler", handler)
+						.addLast("ObjectEncoder", new ObjectEncoder());
 				}
 			});
 			
-			ChannelFuture f = b.connect(_address).sync();
+			ChannelFuture f = b.connect(address).sync();
 			Promise<FederatedResponse> promise = f.channel().eventLoop().newPromise();
 			handler.setPromise(promise);
 			f.channel().writeAndFlush(request);
@@ -166,6 +152,21 @@ public class FederatedData {
 		catch (Exception e) {
 			throw new DMLRuntimeException(e);
 		}
+	}
+	
+	public static void clearFederatedWorkers() {
+		if( _allFedSites.isEmpty() )
+			return;
+		
+		//create and execute clear request on all workers
+		FederatedRequest fr = new FederatedRequest(RequestType.CLEAR);
+		List<Future<FederatedResponse>> ret = new ArrayList<>();
+		for( InetSocketAddress address : _allFedSites )
+			ret.add(executeFederatedOperation(address, fr));
+		
+		//wait for successful completion
+		FederationUtils.waitFor(ret);
+		_allFedSites.clear();
 	}
 	
 	private static class DataRequestHandler extends ChannelInboundHandlerAdapter {

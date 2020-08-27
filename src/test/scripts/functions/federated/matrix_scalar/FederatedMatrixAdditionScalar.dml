@@ -25,4 +25,5 @@
 M = federated(addresses=list($in), ranges=list(list(0, 0), list($rows, $cols)))
 S = $scalar
 R = M + S
+
 write(R, $out)

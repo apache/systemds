@@ -539,7 +539,8 @@ public class UnaryOp extends MultiThreadedHop
 			setDim1(input.getDim1());
 			setDim2(1);
 		}
-		else if(_op == OpOp1.TYPEOF || _op == OpOp1.DETECTSCHEMA) {
+		else if(_op == OpOp1.TYPEOF || _op == OpOp1.DETECTSCHEMA || _op == OpOp1.COLNAMES) {
+			//TODO theses three builtins should rather be moved to unary aggregates
 			setDim1(1);
 			setDim2(input.getDim2());
 		}

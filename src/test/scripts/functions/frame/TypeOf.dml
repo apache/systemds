@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 X = read($1, rows=$2, cols=$3, data_type="frame", format="csv");
-R = typeOf(X);
+R = typeof(X);
 print(toString(R))
 write(R, $4, format="binary");
   

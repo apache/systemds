@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -52,12 +57,12 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
 import scala.Tuple2;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 public class ReorgSPInstruction extends UnarySPInstruction {
+	private static final Log LOG = LogFactory.getLog(ReorgSPInstruction.class.getName());
+
 	// sort-specific attributes (to enable variable attributes)
 	private CPOperand _col = null;
 	private CPOperand _desc = null;

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -37,6 +39,10 @@ public class EncoderPassThrough extends Encoder
 	
 	protected EncoderPassThrough(int[] ptCols, int clen) {
 		super(ptCols, clen); //1-based 
+	}
+	
+	public EncoderPassThrough() {
+		this(new int[0], 0);
 	}
 
 	@Override
@@ -63,6 +69,32 @@ public class EncoderPassThrough extends Encoder
 		}
 		
 		return out;
+	}
+	
+	@Override
+	public Encoder subRangeEncoder(int colStart, int colEnd) {
+		if (colStart - 1 >= _clen)
+			return null;
+		
+		List<Integer> colList = new ArrayList<>();
+		for (int col : _colList) {
+			if (col >= colStart && col < colEnd)
+				// add the correct column, removed columns before start
+				colList.add(col - (colStart - 1));
+		}
+		if (colList.isEmpty())
+			// empty encoder -> return null
+			return null;
+		return new EncoderPassThrough(colList.stream().mapToInt(i -> i).toArray(), colEnd - colStart);
+	}
+	
+	@Override
+	public void mergeAt(Encoder other, int col) {
+		if(other instanceof EncoderPassThrough) {
+			mergeColumnInfo(other, col);
+			return;
+		}
+		super.mergeAt(other, col);
 	}
 
 	@Override

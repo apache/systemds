@@ -22,8 +22,11 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -121,6 +124,50 @@ public abstract class Encoder implements Serializable
 	 * @return output matrix block
 	 */
 	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
+
+	/**
+	 * Returns a new Encoder that only handles a sub range of columns.
+	 * 
+	 * @param colStart the start index of the sub-range (1-based, inclusive)
+	 * @param colEnd   the end index of the sub-range (1-based, exclusive)
+	 * @return an encoder of the same type, just for the sub-range
+	 */
+	public Encoder subRangeEncoder(int colStart, int colEnd) {
+		throw new DMLRuntimeException(
+			this.getClass().getSimpleName() + " does not support the creation of a sub-range encoder");
+	}
+
+	/**
+	 * Merges the column information, like how many columns the frame needs and which columns this encoder operates on.
+	 * 
+	 * @param other the other encoder of the same type
+	 * @param col   column at which the second encoder will be merged in (1-based)
+	 */
+	protected void mergeColumnInfo(Encoder other, int col) {
+		// update number of columns
+		_clen = Math.max(_clen, col - 1 + other._clen);
+
+		// update the new columns that this encoder operates on
+		Set<Integer> colListAgg = new HashSet<>(); // for dedup
+		for(int i : _colList)
+			colListAgg.add(i);
+		for(int i : other._colList)
+			colListAgg.add(col - 1 + i);
+		_colList = colListAgg.stream().mapToInt(i -> i).toArray();
+	}
+
+	/**
+	 * Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
+	 * <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
+	 * other <code>Encoder</code>.
+	 * 
+	 * @param other the encoder that should be merged in
+	 * @param col   the position where it should be placed (1-based)
+	 */
+	public void mergeAt(Encoder other, int col) {
+		throw new DMLRuntimeException(
+			this.getClass().getName() + " does not support merging with " + other.getClass().getName());
+	}
 
 	/**
 	 * Construct a frame block out of the transform meta data.

@@ -636,6 +636,41 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return denseBlock.get(r, c);
 	}
 	
+	public boolean containsValue(double pattern) {
+		//fast paths: infer from meta data only
+		if(isEmptyBlock(true))
+			return pattern==0;
+		if( nonZeros < getLength() && pattern == 0 )
+			return true;
+		
+		//make a pass over the data to determine if it includes the
+		//pattern, with early abort as soon as the pattern is found
+		boolean NaNpattern = Double.isNaN(pattern);
+		if( isInSparseFormat() ) {
+			SparseBlock sb = getSparseBlock();
+			for(int i=0; i<rlen; i++) {
+				if( sb.isEmpty(i) ) continue;
+				int apos = sb.pos(i);
+				int alen = sb.size(i);
+				double[] avals = sb.values(i);
+				for( int j=apos; j<apos+alen; j++ )
+					if(avals[j]==pattern || (NaNpattern && Double.isNaN(avals[j])))
+						return true;
+			}
+		}
+		else {
+			DenseBlock db = getDenseBlock();
+			for(int i=0; i<rlen; i++) {
+				double[] vals = db.values(i);
+				int pos = db.pos(i);
+				for(int j=pos; j<pos+clen; j++)
+					if(vals[j]==pattern || (NaNpattern && Double.isNaN(vals[j])))
+						return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * Append value is only used when values are appended at the end of each row for the sparse representation
 	 * This can only be called, when the caller knows the access pattern of the block
@@ -2802,7 +2837,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	@Override
-	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
+	public MatrixBlock binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		MatrixBlock that=checkType(thatValue);
 		if( !LibMatrixBincell.isValidDimensionsBinary(this, that) ) {
 			throw new RuntimeException("block sizes are not matched for binary " +
@@ -2818,6 +2853,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		//core binary cell operation
 		LibMatrixBincell.bincellOpInPlace(this, that, op);
+		return this;
 	}
 	
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
@@ -5004,10 +5040,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		MatrixBlock ret = checkType(result);
 		examSparsity(); //ensure its in the right format
 		ret.reset(rlen, clen, sparse);
+		//probe early abort conditions
 		if( nonZeros == 0 && pattern != 0  )
-			return ret; //early abort
-		boolean NaNpattern = Double.isNaN(pattern);
+			return ret;
+		if( !containsValue(pattern) )
+			return this; //avoid allocation + copy
 		
+		boolean NaNpattern = Double.isNaN(pattern);
 		if( sparse ) //SPARSE
 		{
 			if( pattern != 0d ) //SPARSE <- SPARSE (sparse-safe)
@@ -5017,15 +5056,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				SparseBlock c = ret.sparseBlock;
 				
 				for( int i=0; i<rlen; i++ ) {
-					if( !a.isEmpty(i) )
-					{
+					if( !a.isEmpty(i) ) {
 						c.allocate(i);
 						int apos = a.pos(i);
 						int alen = a.size(i);
 						int[] aix = a.indexes(i);
 						double[] avals = a.values(i);
-						for( int j=apos; j<apos+alen; j++ )
-						{
+						for( int j=apos; j<apos+alen; j++ ) {
 							double val = avals[j];
 							if( val== pattern || (NaNpattern && Double.isNaN(val)) )
 								c.append(i, aix[j], replacement);
@@ -5038,19 +5075,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			else //DENSE <- SPARSE
 			{
 				ret.sparse = false;
-				ret.allocateDenseBlock();	
+				ret.allocateDenseBlock();
 				SparseBlock a = sparseBlock;
 				double[] c = ret.getDenseBlockValues();
 				
 				//initialize with replacement (since all 0 values, see SPARSITY_TURN_POINT)
-				Arrays.fill(c, replacement); 
+				Arrays.fill(c, replacement);
 				
 				//overwrite with existing values (via scatter)
 				if( a != null  ) //check for empty matrix
-					for( int i=0, cix=0; i<rlen; i++, cix+=clen )
-					{
-						if( !a.isEmpty(i) )
-						{
+					for( int i=0, cix=0; i<rlen; i++, cix+=clen ) {
+						if( !a.isEmpty(i) ) {
 							int apos = a.pos(i);
 							int alen = a.size(i);
 							int[] aix = a.indexes(i);
@@ -5060,22 +5095,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 									c[ cix+aix[j] ] = avals[ j ];
 						}
 					}
-			}			
+			}
 		}
-		else //DENSE <- DENSE
-		{
+		else { //DENSE <- DENSE
 			int mn = ret.rlen * ret.clen;
 			ret.allocateDenseBlock();
 			double[] a = getDenseBlockValues();
 			double[] c = ret.getDenseBlockValues();
-			
-			for( int i=0; i<mn; i++ ) 
-			{
-				double val = a[i];
-				if( val== pattern || (NaNpattern && Double.isNaN(val)) )
-					c[i] = replacement;
-				else
-					c[i] = a[i];
+			for( int i=0; i<mn; i++ ) {
+				c[i] = ( a[i]== pattern || (NaNpattern && Double.isNaN(a[i])) ) ?
+					replacement : a[i];
 			}
 		}
 		

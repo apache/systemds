@@ -36,9 +36,9 @@ public class MatrixMultShortLhsTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rowsA = 10;
-	private final static int colsA = 2023;
-	private final static int rowsB = 2023;
-	private final static int colsB = 1997;
+	private final static int colsA = 1523;
+	private final static int rowsB = 1523;
+	private final static int colsB = 1397;
 	
 	private final static double sparsity1 = 0.9;
 	private final static double sparsity2 = 0.1;
@@ -91,6 +91,7 @@ public class MatrixMultShortLhsTest extends AutomatedTestBase
 		writeInputMatrixWithMTD("B", B, true);
 
 		//run tests
+		setOutputBuffering(false);
 		runTest(true, false, null, -1); 
 		runRScript(true); 
 		

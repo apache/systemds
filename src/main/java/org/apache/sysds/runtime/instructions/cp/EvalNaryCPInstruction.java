@@ -183,7 +183,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			if( !prog.containsFunctionProgramBlock(null, fsb.getKey(), false) ) {
 				FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
 					.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
-				//prog.addFunctionProgramBlock(null, fsb.getKey(), fpb, true); // optimized
+				prog.addFunctionProgramBlock(null, fsb.getKey(), fpb, true); // optimized
 				prog.addFunctionProgramBlock(null, fsb.getKey(), fpb, false);    // unoptimized -> eval
 			}
 		}

@@ -67,7 +67,7 @@ public class FederatedUrlParserTest
 		// Parse Ip normally, with filepath without port specified.
 		String[] values = InitFEDInstruction.parseURL("123.123.41.22/file.txt");
 		assertEquals("123.123.41.22", values[0]);
-		assertEquals(DMLConfig.DEFAULT_FEDERATED_PORT, values[1]);
+		assertEquals(String.valueOf(DMLConfig.DEFAULT_FEDERATED_PORT), values[1]);
 		assertEquals("file.txt", values[2]);
 	}
 
@@ -85,7 +85,7 @@ public class FederatedUrlParserTest
 		// parse URL without port.
 		String[] values = InitFEDInstruction.parseURL("hello.com/file.txt");
 		assertEquals("hello.com", values[0]);
-		assertEquals(DMLConfig.DEFAULT_FEDERATED_PORT, values[1]);
+		assertEquals(String.valueOf(DMLConfig.DEFAULT_FEDERATED_PORT), values[1]);
 		assertEquals("file.txt", values[2]);
 	}
 
@@ -95,7 +95,7 @@ public class FederatedUrlParserTest
 		// Here Japanese: Hello.World
 		String[] values = InitFEDInstruction.parseURL("今日は.世界/file.txt");
 		assertEquals("今日は.世界", values[0]);
-		assertEquals(DMLConfig.DEFAULT_FEDERATED_PORT, values[1]);
+		assertEquals(String.valueOf(DMLConfig.DEFAULT_FEDERATED_PORT), values[1]);
 		assertEquals("file.txt", values[2]);
 	}
 
@@ -161,7 +161,7 @@ public class FederatedUrlParserTest
 
 	@Test
 	public void checkDefaultPortIsValid() {
-		int defaultPort = Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT);
+		int defaultPort = DMLConfig.DEFAULT_FEDERATED_PORT;
 		// The highest port number allowed.
 		int IANA_limit = 49152;
 		assertTrue(defaultPort <= IANA_limit);

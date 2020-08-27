@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -30,6 +32,8 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction {
+	private static final Log LOG = LogFactory.getLog(GPUInstruction.class.getName());
+	
 	public enum GPUINSTRUCTION_TYPE {
 		AggregateUnary,
 		AggregateBinary,

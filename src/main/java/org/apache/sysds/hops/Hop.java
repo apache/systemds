@@ -58,9 +58,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public abstract class Hop implements ParseInfo
-{
-	protected static final Log LOG =  LogFactory.getLog(Hop.class.getName());
+public abstract class Hop implements ParseInfo {
+	private static final Log LOG =  LogFactory.getLog(Hop.class.getName());
 	
 	public static final long CPThreshold = 2000;
 
@@ -201,7 +200,7 @@ public abstract class Hop implements ParseInfo
 			}
 			else {
 				// enabled with -exec singlenode option
-				_etypeForced = ExecType.CP;  
+				_etypeForced = ExecType.CP;
 			}
 		}
 		else if ( DMLScript.getGlobalExecMode() == ExecMode.SPARK )
@@ -725,7 +724,6 @@ public abstract class Hop implements ParseInfo
 
 		if (LOG.isDebugEnabled()){
 			String s = String.format("  %c %-5s %-8s (%s,%s)  %s", c, getHopID(), getOpString(), OptimizerUtils.toMB(_outputMemEstimate), OptimizerUtils.toMB(_memEstimate), et);
-			//System.out.println(s);
 			LOG.debug(s);
 		}
 		
@@ -1066,6 +1064,8 @@ public abstract class Hop implements ParseInfo
 	 * </ul>
 	 */
 	protected void setRequiresRecompileIfNecessary() {
+		//NOTE: when changing these conditions, remember to update the code for
+		//function recompilation in FunctionProgramBlock accordingly
 		boolean caseRemote = (!dimsKnown(true) && _etype == ExecType.SPARK);
 		boolean caseLocal = (!dimsKnown() && _etypeForced == ExecType.CP);
 		boolean caseCodegen = (!dimsKnown() && ConfigurationManager.isCodegenEnabled());

@@ -19,19 +19,25 @@
 
 package org.apache.sysds.runtime.io;
 
-import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-public class MatrixReaderFactory 
-{
+public class MatrixReaderFactory {
+	private static final Log LOG = LogFactory.getLog(MatrixReaderFactory.class.getName());
 	public static MatrixReader createMatrixReader(FileFormat fmt) {
 		MatrixReader reader = null;
 		boolean par = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS);
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+
+		if (LOG.isDebugEnabled()){
+			LOG.debug("reading parallel: " + par + " mcsr: " + mcsr);
+		}
 		
 		switch(fmt) {
 			case TEXT:
@@ -72,6 +78,10 @@ public class MatrixReaderFactory
 		boolean par = ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS);
 		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
 		
+		if (LOG.isDebugEnabled()){
+			LOG.debug("reading parallel: " + par + " mcsr: " + mcsr);
+		}
+
 		switch(fmt) {
 			case TEXT:
 			case MM:

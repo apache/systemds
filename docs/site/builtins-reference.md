@@ -29,7 +29,9 @@ limitations under the License.
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
     * [`cvlm`-Function](#cvlm-function)
+    * [`DBSCAN`-Function](#DBSCAN-function)
     * [`discoverFD`-Function](#discoverFD-function)
+    * [`dist`-Function](#dist-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -57,6 +59,7 @@ limitations under the License.
     * [`outlier`-Function](#outlier-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`winsorize`-Function](#winsorize-function)
+    * [`gmm`-Function](#gmm-function)
     
     
 # Introduction
@@ -64,7 +67,7 @@ limitations under the License.
 The DML (Declarative Machine Learning) language has built-in functions which enable access to both low- and high-level functions
 to support all kinds of use cases.
 
-Builtins are either implemented on a compiler level or as DML scripts that are loaded at compile time.
+A builtin ir either implemented on a compiler level or as DML scripts that are loaded at compile time.
 
 # Built-In Construction Functions
 
@@ -75,12 +78,12 @@ objects.
 
 The `tensor`-function creates a **tensor** for us.
 
-### Usage
 ```r
 tensor(data, dims, byRow = TRUE)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | data    | Matrix[?], Tensor[?], Scalar[?] | required | The data with which the tensor should be filled. See [`data`-Argument](#data-argument).|
@@ -90,6 +93,7 @@ tensor(data, dims, byRow = TRUE)
 Note that this function is highly **unstable** and will be overworked and might change signature and functionality.
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Tensor[?] | The generated Tensor. Will support more datatypes than `Double`. |
@@ -109,6 +113,7 @@ The dimension of the tensor can either be given by a vector represented by eithe
 Dimensions given by a `String` will be expected to be concatenated by spaces.
 
 ### Example
+
 ```r
 print("Dimension matrix:");
 d = matrix("2 3 4", 1, 3);
@@ -179,11 +184,13 @@ cross validation method. It uses [`lm`](#lm-function) and [`lmpredict`](#lmpredi
 regression and to predict the class of a feature vector with no intercept, shifting, and rescaling.
 
 ### Usage
+
 ```r
 cvlm(X, y, k)
 ```
 
 ### Arguments
+
 | Name | Type           | Default  | Description |
 | :--- | :------------- | :------- | :---------- |
 | X    | Matrix[Double] | required | Recorded Data set into matrix |
@@ -193,16 +200,49 @@ cvlm(X, y, k)
 | reg  | Double         | `1e-7`   | Regularization constant (lambda) for L2-regularization. set to nonzero for highly dependant/sparse/numerous features |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Response values |
 | Matrix[Double] | Validated data set |
 
 ### Example
+
 ```r
 X = rand (rows = 5, cols = 5)
 y = X %*% rand(rows = ncol(X), cols = 1)
 [predict, beta] = cvlm(X = X, y = y, k = 4)
+```
+
+## `DBSCAN`-Function
+
+The dbscan() implements the DBSCAN Clustering algorithm using Euclidian distance.
+
+### Usage
+
+```r
+Y = dbscan(X = X, eps = 2.5, minPts = 5)
+```
+
+### Arguments
+
+| Name       | Type            | Default    | Description |
+| :--------- | :-------------- | :--------- | :---------- |
+| X          | Matrix[Double]  | required   | The input Matrix to do DBSCAN on. |
+| eps        | Double          | `0.5`      | Maximum distance between two points for one to be considered reachable for the other. |
+| minPts     | Int             | `5`        | Number of points in a neighborhood for a point to be considered as a core point (includes the point itself). |
+
+### Returns
+
+| Type        | Description |
+| :-----------| :---------- |
+| Matrix[Integer] | The mapping of records to clusters |
+
+### Example
+
+```r
+X = rand(rows=1780, cols=180, min=1, max=20) 
+dbscan(X = X, eps = 2.5, minPts = 360)
 ```
 
 ## `discoverFD`-Function
@@ -210,11 +250,13 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 The `discoverFD`-function finds the functional dependencies.
 
 ### Usage
+
 ```r
 discoverFD(X, Mask, threshold)
 ```
 
 ### Arguments
+
 | Name      | Type   | Default | Description |
 | :-------- | :----- | ------- | :---------- |
 | X         | Double | --      | Input Matrix X, encoded Matrix if data is categorical |
@@ -222,10 +264,39 @@ discoverFD(X, Mask, threshold)
 | threshold | Double | --      | threshold value in interval [0, 1] for robust FDs |
 
 ### Returns
+
 | Type   | Description |
 | :----- | :---------- |
 | Double | matrix of functional dependencies |
 
+## `dist`-Function
+
+The `dist`-function is used to compute Euclidian distances between N d-dimensional points.
+
+### Usage
+
+```r
+dist(X)
+```
+
+### Arguments
+
+| Name | Type           | Default  | Description |
+| :--- | :------------- | :------- | :---------- |
+| X    | Matrix[Double] | required | (n x d) matrix of d-dimensional points  |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | (n x n) symmetric matrix of Euclidian distances |
+
+### Example
+
+```r
+X = rand (rows = 5, cols = 5)
+Y = dist(X)
+```
 
 ## `glm`-Function
 
@@ -238,6 +309,7 @@ glm(X,Y)
 ```
 
 ### Arguments
+
 | Name | Type           | Default  | Description |
 | :--- | :------------- | :------- | :---------- |
 | X    | Matrix[Double] | required | matrix X of feature vectors |
@@ -255,6 +327,7 @@ glm(X,Y)
 | mii  | Int            | `0`      | Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum |
 
 ### Returns
+
 | Type           | Description      |
 | :------------- | :--------------- |
 | Matrix[Double] | Matrix whose size depends on icpt ( icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2) |
@@ -277,6 +350,7 @@ gridSearch(X, y, train, predict, params, paramValues, verbose)
 ```
 
 ### Arguments
+
 | Name         | Type           | Default  | Description |
 | :------      | :------------- | -------- | :---------- |
 | X            | Matrix[Double] | required | Input Matrix of vectors. |
@@ -288,12 +362,14 @@ gridSearch(X, y, train, predict, params, paramValues, verbose)
 | verbose      | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Parameter combination |
 | Frame[Unknown] | Best results model |
 
 ### Example
+
 ```r
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -319,6 +395,7 @@ hyperband(X_train, y_train, X_val, y_val, params, paramRanges, R, eta, verbose)
 ```
 
 ### Arguments
+
 | Name         | Type           | Default  | Description |
 | :------      | :------------- | -------- | :---------- |
 | X_train      | Matrix[Double] | required | Input Matrix of training vectors. |
@@ -332,12 +409,14 @@ hyperband(X_train, y_train, X_val, y_val, params, paramRanges, R, eta, verbose)
 | verbose      | Boolean        | `TRUE`   | If `TRUE` print messages are activated. |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of weights of best performing candidate |
 | Frame[Unknown] | hyper parameters of best performing candidate |
 
 ### Example
+
 ```r
 X_train = rand(rows=50, cols=10);
 y_train = rowSums(X_train) + rand(rows=50, cols=1);
@@ -357,11 +436,13 @@ The `img_brightness`-function is an image data augumentation function.
 It changes the brightness of the image.
 
 ### Usage
+
 ```r
 img_brightness(img_in, value, channel_max)
 ```
 
 ### Arguments
+
 | Name        | Type           | Default  | Description |
 | :---------- | :------------- | -------- | :---------- |
 | img_in      | Matrix[Double] | ---      | Input matrix/image |
@@ -369,11 +450,13 @@ img_brightness(img_in, value, channel_max)
 | channel_max | Integer        | ---      | Maximum value of the brightness of the image |
 
 ### Returns
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | img_out | Matrix[Double] | ---      | Output matrix/image |
 
 ### Example
+
 ```r
 A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_brightness(img_in = A, value = 128, channel_max = 255)
@@ -385,11 +468,13 @@ The `img_crop`-function is an image data augumentation function.
 It cuts out a subregion of an image.
 
 ### Usage
+
 ```r
 img_crop(img_in, w, h, x_offset, y_offset)
 ```
 
 ### Arguments
+
 | Name     | Type           | Default  | Description |
 | :------  | :------------- | -------- | :---------- |
 | img_in   | Matrix[Double] | ---      | Input matrix/image |
@@ -399,11 +484,13 @@ img_crop(img_in, w, h, x_offset, y_offset)
 | y_offset | Integer        | ---      | The vertical coordinate in the image to begin the crop operation |
 
 ### Returns
+
 | Name    | Type           | Default | Description |
 | :------ | :------------- | ------- | :---------- |
 | img_out | Matrix[Double] | ---     | Cropped matrix/image |
 
 ### Example
+
 ```r
 A = rand(rows = 3, cols = 3, min = 0, max = 255) 
 B = img_crop(img_in = A, w = 20, h = 10, x_offset = 0, y_offset = 0)
@@ -415,22 +502,26 @@ The `img_mirror`-function is an image data augumentation function.
 It flips an image on the `X` (horizontal) or `Y` (vertical) axis. 
 
 ### Usage
+
 ```r
 img_mirror(img_in, horizontal_axis)
 ```
 
 ### Arguments
+
 | Name            | Type           | Default  | Description |
 | :-------------- | :------------- | -------- | :---------- |
 | img_in          | Matrix[Double] | ---      | Input matrix/image |
 | horizontal_axis | Boolean        | ---      | If TRUE, the  image is flipped with respect to horizontal axis otherwise vertical axis |
 
 ### Returns
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | img_out | Matrix[Double] | ---      | Flipped matrix/image |
 
 ### Example
+
 ```r
 A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_mirror(img_in = A, horizontal_axis = TRUE)
@@ -442,11 +533,13 @@ The `imputeByFD`-function imputes missing values from observed values (if exist)
 using robust functional dependencies.
 
 ### Usage
+
 ```r
 imputeByFD(F, sourceAttribute, targetAttribute, threshold)
 ```
 
 ### Arguments
+
 | Name      | Type    | Default  | Description |
 | :-------- | :------ | -------- | :---------- |
 | F         | String  | --       | A data frame |
@@ -455,6 +548,7 @@ imputeByFD(F, sourceAttribute, targetAttribute, threshold)
 | threshold | Double  | --       | threshold value in interval [0, 1] for robust FDs |
 
 ### Returns
+
 | Type   | Description |
 | :----- | :---------- |
 | String | Frame with possible imputations |
@@ -465,11 +559,13 @@ imputeByFD(F, sourceAttribute, targetAttribute, threshold)
 The kmeans() implements the KMeans Clustering algorithm.
 
 ### Usage
+
 ```r
 kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50)
 ```
 
 ### Arguments
+
 | Name       | Type            | Default    | Description |
 | :--------- | :-------------- | :--------- | :---------- |
 | x          | Matrix[Double]  | required   | The input Matrix to do KMeans on. |
@@ -480,12 +576,14 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 | is_verbose | Boolean         |   FALSE    | do not print per-iteration stats |
 
 ### Returns
+
 | Type   | Description |
 | :----- | :---------- |
 | String | The mapping of records to centroids |
 | String | The output matrix with the centroids |
 
 ### Example
+
 ```r
 X = rand (rows = 3972, cols = 972)
 kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50)
@@ -503,6 +601,7 @@ lm(X, y, icpt = 0, reg = 1e-7, tol = 1e-7, maxi = 0, verbose = TRUE)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
@@ -517,6 +616,7 @@ Note that if number of *features* is small enough (`rows of X/y < 2000`), the [`
 is called internally and parameters `tol` and `maxi` are ignored.
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of weights. |
@@ -530,6 +630,7 @@ The *icpt-argument* can be set to 3 modes:
   * 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
 
 ### Example
+
 ```r
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -546,12 +647,14 @@ intersect(X, Y)
 ```
 
 ### Arguments
+
 | Name | Type   | Default  | Description |
 | :--- | :----- | -------- | :---------- |
 | X    | Double | --       | matrix X, set A |
 | Y    | Double | --       | matrix Y, set B | 
 
 ### Returns
+
 | Type   | Description |
 | :----- | :---------- |
 | Double | intersection matrix, set of intersecting items |
@@ -562,11 +665,13 @@ intersect(X, Y)
 The `lmDS`-function solves linear regression by directly solving the *linear system*.
 
 ### Usage
+
 ```r
 lmDS(X, y, icpt = 0, reg = 1e-7, verbose = TRUE)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
@@ -576,11 +681,13 @@ lmDS(X, y, icpt = 0, reg = 1e-7, verbose = TRUE)
 | verbose | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of weights. |
 
 ### Example
+
 ```r
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -592,11 +699,13 @@ lmDS(X = X, y = y)
 The `lmCG`-function solves linear regression using the *conjugate gradient algorithm*.
 
 ### Usage
+
 ```r
 lmCG(X, y, icpt = 0, reg = 1e-7, tol = 1e-7, maxi = 0, verbose = TRUE)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
@@ -608,11 +717,13 @@ lmCG(X, y, icpt = 0, reg = 1e-7, tol = 1e-7, maxi = 0, verbose = TRUE)
 | verbose | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of weights. |
 
 ### Example
+
 ```r
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -624,11 +735,13 @@ lmCG(X = X, y = y, maxi = 10)
 The `lmpredict`-function predicts the class of a feature vector.
 
 ### Usage
+
 ```r
 lmpredict(X, w)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vector(s). |
@@ -636,11 +749,13 @@ lmpredict(X, w)
 | icpt    | Matrix[Double] | `0`      | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of classes. |
 
 ### Example
+
 ```r
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -653,11 +768,13 @@ yp = lmpredict(X, w)
 The `mice`-function implements Multiple Imputation using Chained Equations (MICE) for nominal data.
 
 ### Usage
+
 ```r
 mice(F, cMask, iter, complete, verbose)
 ```
 
 ### Arguments
+
 | Name     | Type           | Default  | Description |
 | :------- | :------------- | -------- | :---------- |
 | F        | Frame[String]  | required | Data Frame with one-dimensional row matrix with N columns where N>1. |
@@ -667,12 +784,14 @@ mice(F, cMask, iter, complete, verbose)
 | verbose  | Boolean        | `FALSE`  | Boolean value. |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Frame[String]  | imputed dataset. |
 | Frame[String]  | A complete dataset generated though a specific iteration. |
 
 ### Example
+
 ```r
 F = as.frame(matrix("4 3 2 8 7 8 5", rows=1, cols=7))
 cMask = round(rand(rows=1,cols=ncol(F),min=0,max=1))
@@ -685,11 +804,13 @@ The `multiLogReg`-function solves Multinomial Logistic Regression using Trust Re
 (See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
 
 ### Usage
+
 ```r
 multiLogReg(X, Y, icpt, reg, tol, maxi, maxii, verbose)
 ```
 
 ### Arguments
+
 | Name  | Type   | Default | Description |
 | :---- | :----- | ------- | :---------- |
 | X     | Double | --      | The matrix of feature vectors |
@@ -701,11 +822,13 @@ multiLogReg(X, Y, icpt, reg, tol, maxi, maxii, verbose)
 | maxii | Int    | `0`     | max. number of inner (conjugate gradient) iterations |
 
 ### Returns
+
 | Type   | Description |
 | :----- | :---------- |
 | Double | Regression betas as output for prediction |
 
 ### Example
+
 ```r
 X = rand(rows = 50, cols = 30)
 Y = X %*% rand(rows = ncol(X), cols = 1)
@@ -720,11 +843,13 @@ two non-negative matrices, `W` and `H` based on Poisson probabilistic assumption
 resulting matrices easier to inspect.
 
 ### Usage
+
 ```r
 pnmf(X, rnk, eps = 10^-8, maxi = 10, verbose = TRUE)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
@@ -735,12 +860,14 @@ pnmf(X, rnk, eps = 10^-8, maxi = 10, verbose = TRUE)
 
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | List of pattern matrices, one for each repetition. |
 | Matrix[Double] | List of amplitude matrices, one for each repetition. |
 
 ### Example
+
 ```r
 X = rand(rows = 50, cols = 10)
 [W, H] = pnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10, verbose = TRUE)
@@ -751,11 +878,13 @@ X = rand(rows = 50, cols = 10)
 The scale function is a generic function whose default method centers or scales the column of a numeric matrix.
 
 ### Usage
+
 ```r
 scale(X, center=TRUE, scale=TRUE)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
@@ -763,11 +892,13 @@ scale(X, center=TRUE, scale=TRUE)
 | scale   | Boolean        | required | either a logical value or numerical value. |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of weights. |
 
 ### Example
+
 ```r
 X = rand(rows = 20, cols = 10)
 center=TRUE;
@@ -781,22 +912,26 @@ The Sigmoid function is a type of activation function, and also defined as a squ
 to a range between 0 and 1, which will make these functions useful in the prediction of probabilities.
 
 ### Usage
+
 ```r
 sigmoid(X)
 ```
 
 ### Arguments
+
 | Name  | Type           | Default  | Description |
 | :---- | :------------- | -------- | :---------- |
 | X     | Matrix[Double] | required | Matrix of feature vectors. |
 
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of weights. |
 
 ### Example
+
 ```r
 X = rand (rows = 20, cols = 10)
 Y = sigmoid(X)
@@ -810,11 +945,13 @@ information criterion (AIC) does not improve anymore. Each configuration trains 
 which in turn calls either the closed form `lmDS` or iterative `lmGC`.
 
 ### Usage
+
 ```r
 steplm(X, y, icpt);
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
@@ -826,6 +963,7 @@ steplm(X, y, icpt);
 | verbose | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Matrix of regression parameters (the betas) and its size depend on `icpt` input value. (C in the example)|
@@ -843,6 +981,7 @@ The *icpt-arg* can be set to 2 modes:
 If the best AIC is achieved without any features the matrix of *selected* features contains 0. Moreover, in this case no further statistics will be produced 
 
 ### Example
+
 ```r
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -854,11 +993,13 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 The `slicefinder`-function returns top-k worst performing subsets according to a model calculation.
 
 ### Usage
+
 ```r
 slicefinder(X,W, y, k, paq, S);
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Recoded dataset into Matrix |
@@ -869,11 +1010,13 @@ slicefinder(X,W, y, k, paq, S);
 | S       | Integer        | 2        | amount of subsets to combine (for now supported only 1 and 2) |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Matrix containing the information of top_K slices (relative error, standart error, value0, value1, col_number(sort), rows, cols,range_row,range_cols, value00, value01,col_number2(sort), rows2, cols2,range_row2,range_cols2) |
 
 ### Usage
+
 ```r
 X = rand (rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -888,17 +1031,20 @@ This is done while preserving differences in the ranges of values.
 The output is a matrix of values in range [0,1].
 
 ### Usage
+
 ```r
 normalize(X); 
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
 
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of normalized values. |
@@ -906,6 +1052,7 @@ normalize(X);
 
 
 ### Example
+
 ```r
 X = rand(rows = 50, cols = 10)
 y = X %*% rand(rows = ncol(X), cols = 1)
@@ -919,11 +1066,13 @@ In this, a matrix X is factorized into two matrices W and H, such that all three
 This non-negativity makes the resulting matrices easier to inspect.
 
 ### Usage
+
 ```r
 gnmf(X, rnk, eps = 10^-8, maxi = 10)
 ```
 
 ### Arguments
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
@@ -933,12 +1082,14 @@ gnmf(X, rnk, eps = 10^-8, maxi = 10)
 
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | List of pattern matrices, one for each repetition. |
 | Matrix[Double] | List of amplitude matrices, one for each repetition. |
 
 ### Example
+
 ```r
 X = rand(rows = 50, cols = 10)
 W = rand(rows = nrow(X), cols = 2, min = -0.05, max = 0.05);
@@ -951,11 +1102,13 @@ gnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10)
 The `naivebayes`-function computes the class conditional probabilities and class priors.
 
 ### Usage
+
 ```r
 naivebayes(D, C, laplace, verbose)
 ```
 
 ### Arguments
+
 | Name            | Type           | Default  | Description |
 | :------         | :------------- | -------- | :---------- |
 | D               | Matrix[Double] | required | One dimensional column matrix with N rows. |
@@ -964,12 +1117,14 @@ naivebayes(D, C, laplace, verbose)
 | Verbose         | Boolean        | `TRUE`   | Boolean value. |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Class priors, One dimensional column matrix with N rows. |
 | Matrix[Double] | Class conditional probabilites, One dimensional column matrix with N rows. |
 
 ### Example
+
 ```r
 D=rand(rows=10,cols=1,min=10)
 C=rand(rows=10,cols=1,min=10)
@@ -982,22 +1137,26 @@ This `outlier`-function takes a matrix data set as input from where it determine
 have the largest difference from mean.
 
 ### Usage
+
 ```r
 outlier(X, opposite)
 ```
 
 ### Arguments
+
 | Name     | Type           | Default  | Description |
 | :------- | :------------- | -------- | :---------- |
 | X        | Matrix[Double] | required | Matrix of Recoded dataset for outlier evaluation |
 | opposite | Boolean        | required | (1)TRUE for evaluating outlier from upper quartile range, (0)FALSE for evaluating outlier from lower quartile range |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | matrix indicating outlier values |
 
 ### Example
+
 ```r
 X = rand (rows = 50, cols = 10)
 outlier(X=X, opposite=1)
@@ -1008,22 +1167,26 @@ outlier(X=X, opposite=1)
 The `toOneHot`-function encodes unordered categorical vector to multiple binarized vectors.
 
 ### Usage
+
 ```r
 toOneHot(X, numClasses)
 ```
 
 ### Arguments
+
 | Name       | Type           | Default  | Description |
 | :--------- | :------------- | -------- | :---------- |
 | X          | Matrix[Double] | required | vector with N integer entries between 1 and numClasses. |
 | numClasses | int            | required | number of columns, must be greater than or equal to largest value in X. |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | one-hot-encoded matrix with shape (N, numClasses). |
 
 ### Example
+
 ```r
 numClasses = 5
 X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
@@ -1036,12 +1199,14 @@ The `msvm`-function implements builtin multiclass SVM with squared slack variabl
 It learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
 
 ### Usage
+
 ```r
 msvm(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
 ```
 
 
 ### Arguments
+
 | Name          | Type             | Default    | Description |
 | :------       | :-------------   | --------   | :---------- |
 | X             | Double           | ---        | Matrix X of feature vectors.|
@@ -1055,12 +1220,14 @@ msvm(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
 
 
 ### Returns
+
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | model   | Double         | ---      | Model matrix. |
 
 
 ### Example
+
 ```r
 X = rand(rows = 50, cols = 10)
 y = round(X %*% rand(rows=ncol(X), cols=1))
@@ -1074,22 +1241,68 @@ of the given data then it replaces any value that falls outside this range (less
 than upper quartile range).
 
 ### Usage
+
 ```r
 winsorize(X)
 ```
 
 ### Arguments
+
 | Name     | Type           | Default  | Description |
 | :------- | :------------- | :--------| :---------- |
 | X        | Matrix[Double] | required | recorded data set with possible outlier values |
 
 ### Returns
+
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Matrix without outlier values |
 
 ### Example
+
 ```r
 X = rand(rows=10, cols=10,min = 1, max=9)
 Y = winsorize(X=X)
+```
+
+## `gmm`-Function
+
+The `gmm`-function implements builtin Gaussian Mixture Model with four different types of 
+covariance matrices i.e., VVV, EEE, VVI, VII and two initialization methods namely "kmeans" and "random".
+
+### Usage
+
+```r
+gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, reg_covar = 0.000001, tol = 0.0001, verbose=TRUE)
+```
+
+
+### Arguments
+
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| X             | Double           | ---        | Matrix X of feature vectors.|
+| n_components             | Integer           | 3        | Number of n_components in the Gaussian mixture model |
+| model     | String          | "VVV"| "VVV": unequal variance (full),each component has its own general covariance matrix<br><br>"EEE": equal variance (tied), all components share the same general covariance matrix<br><br>"VVI": spherical, unequal volume (diag), each component has its own diagonal covariance matrix<br><br>"VII": spherical, equal volume (spherical), each component has its own single variance |
+| init_param   | String          | "kmeans"         | initialize weights with "kmeans" or "random"|
+| iterations       | Integer           | 100    |  Number of iterations|
+| reg_covar         | Double           | 1e-6        | regularization parameter for covariance matrix|
+| tol | Double          | 0.000001        |tolerance value for convergence |
+| verbose       | Boolean          | False      | Set to true to print intermediate results.|
+
+
+### Returns
+
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| weight    |      Double  | ---      |A matrix whose [i,k]th entry is the probability that observation i in the test data belongs to the kth class|
+|labels   |       Double  | ---     | Prediction matrix|
+|df |              Integer  |---  |    Number of estimated parameters|
+| bic |             Double  | ---  |    Bayesian information criterion for best iteration|
+
+### Example
+
+```r
+X = read($1)
+[labels, df, bic] = gmm(X=X, n_components = 3,  model = "VVV",  init_params = "random", iter = 100, reg_covar = 0.000001, tol = 0.0001, verbose=TRUE)
 ```

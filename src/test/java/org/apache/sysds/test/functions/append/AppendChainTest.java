@@ -41,7 +41,7 @@ public class AppendChainTest extends AutomatedTestBase
 	private final static int min=1;
 	private final static int max=100;
 	
-	private final static int rows = 1692;
+	private final static int rows = 492;
 	private final static int cols1 = 1059;
 	private final static int cols2a = 1;
 	private final static int cols3a = 1;
@@ -137,6 +137,7 @@ public class AppendChainTest extends AutomatedTestBase
 	
 			int expectedCompiled = platform==ExecMode.SINGLE_NODE ?
 				0 : 8; //3x(rblk+chkpt), append, write
+			setOutputBuffering(false);
 			runTest(true, false, null, expectedCompiled);
 			runRScript(true);
 			

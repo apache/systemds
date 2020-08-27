@@ -26,46 +26,39 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-/**
- * JUnit Test cases to evaluate the functionality of reading CSV files.
- * 
- * Test 1: read() with a mtd file.
- * 
- * Test 2: read(format="csv") without mtd file.
- * 
- * Test 3: read() with complete mtd file.
- *
- */
 public abstract class ReadCSVTest extends CSVTestBase {
 
 	protected abstract int getId();
-
-	@Test
-	public void testCSV_Sequential_CP1() {
-		runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
+	protected String getInputCSVFileName() {
+		return "transfusion_" + getId();
 	}
 
-	@Test
-	public void testCSV_Parallel_CP1() {
-		runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
-	}
+	 @Test
+	 public void testCSV_Sequential_CP1() {
+	 	runCSVTest(getId(), ExecMode.SINGLE_NODE, false);
+	 }
 
-	@Test
-	public void testCSV_Sequential_CP() {
-		runCSVTest(getId(), ExecMode.HYBRID, false);
-	}
+	 @Test
+	 public void testCSV_Parallel_CP1() {
+	 	runCSVTest(getId(), ExecMode.SINGLE_NODE, true);
+	 }
 
-	@Test
-	public void testCSV_Parallel_CP() {
-		runCSVTest(getId(), ExecMode.HYBRID, true);
-	}
+	 @Test
+	 public void testCSV_Sequential_CP() {
+	 	runCSVTest(getId(), ExecMode.HYBRID, false);
+	 }
+
+	 @Test
+	 public void testCSV_Parallel_CP() {
+	 	runCSVTest(getId(), ExecMode.HYBRID, true);
+	 }
 
 	@Test
 	public void testCSV_SP() {
 		runCSVTest(getId(), ExecMode.SPARK, false);
 	}
 
-	protected void runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
+	protected String runCSVTest(int testNumber, ExecMode platform, boolean parallel) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 
@@ -75,6 +68,7 @@ public abstract class ReadCSVTest extends CSVTestBase {
 
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
+		String output;
 		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
@@ -83,7 +77,7 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrixNameNoExtension = HOME + INPUT_DIR + "transfusion_" + testNumber;
+			String inputMatrixNameNoExtension = HOME + INPUT_DIR + getInputCSVFileName();
 			String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".csv";
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
@@ -94,7 +88,7 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			fullRScriptName = HOME + "csv_verify2.R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixNameNoExtension + ".single.csv " + rOutput;
 
-			runTest(true, false, null, -1);
+			output = runTest(true, false, null, -1).toString();
 			runRScript(true);
 
 			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
@@ -107,5 +101,6 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
+		return output;
 	}
 }

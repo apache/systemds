@@ -24,7 +24,6 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
 import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.UncompressedBitmap;
 
@@ -33,11 +32,6 @@ import org.apache.sysds.runtime.compress.UncompressedBitmap;
  * into given CompressionFormats
  */
 public class CompressedSizeEstimationFactors implements Comparable<CompressedSizeEstimationFactors> {
-	static {
-		// Set to avoid constructing multiple main loggers.
-		Logger.getLogger("org.apache.sysds.runtime.compress.estim");
-	}
-
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimationFactors.class.getName());
 
 	protected final int numCols; // Number of columns in the compressed group

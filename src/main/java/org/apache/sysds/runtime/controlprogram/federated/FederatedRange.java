@@ -41,8 +41,12 @@ public class FederatedRange implements Comparable<FederatedRange> {
 	 * @param other the <code>FederatedRange</code> to copy
 	 */
 	public FederatedRange(FederatedRange other) {
-		_beginDims = other._beginDims.clone();
-		_endDims = other._endDims.clone();
+		this(other._beginDims.clone(), other._endDims.clone());
+	}
+	
+	public FederatedRange(FederatedRange other, long clen) {
+		this(other._beginDims.clone(), other._endDims.clone());
+		_endDims[1] = clen;
 	}
 	
 	public void setBeginDim(int dim, long value) {
@@ -71,10 +75,13 @@ public class FederatedRange implements Comparable<FederatedRange> {
 	
 	public long getSize() {
 		long size = 1;
-		for (int i = 0; i < _beginDims.length; i++) {
-			size *= _endDims[i] - _beginDims[i];
-		}
+		for (int i = 0; i < _beginDims.length; i++)
+			size *= getSize(i);
 		return size;
+	}
+	
+	public long getSize(int dim) {
+		return _endDims[dim] - _beginDims[dim];
 	}
 	
 	@Override
@@ -91,5 +98,25 @@ public class FederatedRange implements Comparable<FederatedRange> {
 	@Override
 	public String toString() {
 		return Arrays.toString(_beginDims) + " - " + Arrays.toString(_endDims);
+	}
+
+	public FederatedRange shift(long rshift, long cshift) {
+		//row shift
+		_beginDims[0] += rshift;
+		_endDims[0] += rshift;
+		//column shift
+		_beginDims[1] += cshift;
+		_endDims[1] += cshift;
+		return this;
+	}
+	
+	public FederatedRange transpose() {
+		long tmpBeg = _beginDims[0];
+		long tmpEnd = _endDims[0];
+		_beginDims[0] = _beginDims[1];
+		_endDims[0] = _endDims[1];
+		_beginDims[1] = tmpBeg;
+		_endDims[1] = tmpEnd;
+		return this;
 	}
 }

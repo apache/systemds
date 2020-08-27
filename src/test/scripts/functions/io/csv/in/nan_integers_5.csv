@@ -1,0 +1,9 @@
+col1,col2,col3,col4
+NA,1,fake,NA
+nan,1,1,NA
+NA,1,NA,1
+NA,1,NA,nan
+1,1,null,NA
+NA,1,NA,fake
+NA,1,NA,NA
+NA, 1, fake, nothing

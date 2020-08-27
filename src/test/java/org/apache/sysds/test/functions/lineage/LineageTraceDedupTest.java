@@ -24,22 +24,21 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
-import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineageParser;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import static junit.framework.TestCase.assertEquals;
 
 public class LineageTraceDedupTest extends AutomatedTestBase
 {
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "LineageTraceDedup";
 	protected static final String TEST_NAME1 = "LineageTraceDedup1";
+	protected static final String TEST_NAME10 = "LineageTraceDedup10";
 	protected static final String TEST_NAME2 = "LineageTraceDedup2";
 	protected static final String TEST_NAME3 = "LineageTraceDedup3";
 	protected static final String TEST_NAME4 = "LineageTraceDedup4";
@@ -58,13 +57,18 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=0; i<10; i++)
+		for(int i=0; i<11; i++)
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
 	
 	@Test
 	public void testLineageTrace1() {
 		testLineageTrace(TEST_NAME1);
+	}
+
+	@Test
+	public void testLineageTrace10() {
+		testLineageTrace(TEST_NAME10);
 	}
 	
 	@Test
@@ -141,14 +145,16 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
-			String trace = readDMLLineageFromHDFS("R");
-			LineageItem li = LineageParser.parseLineageTrace(trace);
-			
+			//String trace = readDMLLineageFromHDFS("R");
+			//LineageItem li = LineageParser.parseLineageTrace(trace);
+			HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromHDFS("R");
+
 			// w/ lineage deduplication
 			proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("dedup");
+			//proArgs.add("reuse_hybrid");
 			proArgs.add("-args");
 			proArgs.add(input("X"));
 			proArgs.add(output("R"));
@@ -157,11 +163,15 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			
-			String dedup_trace = readDMLLineageFromHDFS("R");
-			LineageItem dedup_li = LineageParser.parseLineageTrace(dedup_trace);
+			//String dedup_trace = readDMLLineageFromHDFS("R");
+			//LineageItem dedup_li = LineageParser.parseLineageTrace(dedup_trace);
+			HashMap<MatrixValue.CellIndex, Double> R_dedup = readDMLMatrixFromHDFS("R");
 			
-			//check lineage DAG
-			assertEquals(dedup_li, li);
+			//check equality of lineage DAGs
+			//assertEquals(dedup_li, li);
+			// TODO: compute the results from the lineage trace and compare
+			//check result correctness
+			TestUtils.compareMatrices(R_orig, R_dedup, 1e-6, "Origin", "Dedup");
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;

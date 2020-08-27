@@ -33,6 +33,7 @@ import java.util.Scanner;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -58,6 +59,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
@@ -148,16 +150,43 @@ public class DMLScript
 	}
 
 	/**
+	 * Main entry point for systemDS dml script execution
 	 *
 	 * @param args command-line arguments
-	 * @throws IOException if an IOException occurs in the hadoop GenericOptionsParser
 	 */
 	public static void main(String[] args)
-		throws IOException, ParseException, DMLScriptException
 	{
-		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		DMLScript.executeScript(conf, otherArgs);
+		try{
+			Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
+			String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+			DMLScript.executeScript(conf, otherArgs);
+		} catch(Exception e){
+			for(String s: args){
+				if(s.trim().contains("-debug")){
+					e.printStackTrace();
+				}
+			}
+			final String ANSI_RED = "\u001B[31m";
+			final String ANSI_RESET = "\u001B[0m";
+			StringBuilder sb = new StringBuilder();
+			sb.append(ANSI_RED);
+			sb.append("An Error Occured : ");
+			sb.append("\n" );
+			sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
+			sb.append(" -- ");
+			sb.append(e.getMessage());
+			Throwable s =  e.getCause();
+			while(s != null){
+				sb.append("\n" );
+				sb.append(StringUtils.leftPad(s.getClass().getSimpleName(),25));
+				sb.append(" -- ");
+				sb.append(s.getMessage());
+				s = s.getCause();
+			}
+			sb.append(ANSI_RESET);
+			System.out.println(sb.toString());
+		}
+
 	}
 
 	/**
@@ -167,7 +196,7 @@ public class DMLScript
 	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
-	 * @throws IOException If an internal IO Exception happened.
+	 * @throws IOException If an internal IOException happens.
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
 		throws  IOException, ParseException, DMLScriptException
@@ -227,6 +256,7 @@ public class DMLScript
 			}
 			
 			if (dmlOptions.fedWorker) {
+				loadConfiguration(fnameOptConfig);
 				new FederatedWorker(dmlOptions.fedWorkerPort).run();
 				return true;
 			}
@@ -326,6 +356,15 @@ public class DMLScript
 	// (core compilation and execute)
 	////////
 
+	private static void loadConfiguration(String fnameOptConfig) throws IOException {
+		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
+		ConfigurationManager.setGlobalConfig(dmlconf);
+		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
+		ConfigurationManager.setGlobalConfig(cconf);
+		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
+		setGlobalFlags(dmlconf);
+	}
+
 	/**
 	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
@@ -343,13 +382,7 @@ public class DMLScript
 		printStartExecInfo( dmlScriptStr );
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
-		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(dmlconf);
-		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
-		ConfigurationManager.setGlobalConfig(cconf);
-		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
-		
-		setGlobalFlags(dmlconf);
+		loadConfiguration(fnameOptConfig);
 		
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
@@ -363,7 +396,7 @@ public class DMLScript
 		dmlt.constructHops(prog);
 		
 		//init working directories (before usage by following compilation steps)
-		initHadoopExecution( dmlconf );
+		initHadoopExecution( ConfigurationManager.getDMLConfig() );
 	
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
@@ -372,7 +405,7 @@ public class DMLScript
 		dmlt.constructLops(prog);
 		
 		//Step 7: generate runtime program, incl codegen
-		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
+		Program rtprog = dmlt.getRuntimeProgram(prog, ConfigurationManager.getDMLConfig());
 		
 		//Step 9: prepare statistics [and optional explain output]
 		//count number compiled MR jobs / SP instructions	
@@ -392,14 +425,14 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
-			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, STATISTICS ? STATISTICS_COUNT : 0, null);
+			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );
 			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( dmlconf );
+			cleanupHadoopExecution( ConfigurationManager.getDMLConfig());
 		}
 	}
 	
@@ -476,6 +509,9 @@ public class DMLScript
 		sb.append(Lop.PROCESS_PREFIX);
 		sb.append(DMLScript.getUUID());
 		String dirSuffix = sb.toString();
+		
+		//0) cleanup federated workers if necessary
+		FederatedData.clearFederatedWorkers();
 		
 		//1) cleanup scratch space (everything for current uuid) 
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)

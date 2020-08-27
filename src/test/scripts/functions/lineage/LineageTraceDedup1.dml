@@ -22,13 +22,13 @@
 X = read($1);
 
 R = X;
-for(i in 1:10){
+for(i in 1:2){
   R = R + 1 / 2;
   R = R * 3;
   X = X - 5;
   R = R - 5;
 }
 
-R = R * 3;
+R = R * 4;
 
 write(R, $2, format="text");

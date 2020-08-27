@@ -20,6 +20,11 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 
+import java.util.Iterator;
+import java.util.stream.IntStream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -48,12 +53,12 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+
 import scala.Tuple2;
 
-import java.util.Iterator;
-import java.util.stream.IntStream;
-
 public class MapmmSPInstruction extends BinarySPInstruction {
+	private static final Log LOG = LogFactory.getLog(MapmmSPInstruction.class.getName());
+	
 	private CacheType _type = null;
 	private boolean _outputEmpty = true;
 	private SparkAggType _aggtype;

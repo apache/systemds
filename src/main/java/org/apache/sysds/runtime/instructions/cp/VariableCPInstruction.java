@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
@@ -58,19 +63,13 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
-import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class VariableCPInstruction extends CPInstruction implements LineageTraceable {
-
 	/*
 	 * Supported Operations
 	 * --------------------
@@ -420,7 +419,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					boolean hasHeader = Boolean.parseBoolean(parts[curPos]);
 					String delim = parts[curPos+1];
 					boolean fill = Boolean.parseBoolean(parts[curPos+2]);
-					double fillValue = UtilFunctions.parseToDouble(parts[curPos+3]);
+					double fillValue = UtilFunctions.parseToDouble(parts[curPos+3],UtilFunctions.defaultNaString);
 					String naStrings = null;
 					if ( parts.length == 16+extSchema )
 						naStrings = parts[curPos+4];
@@ -670,28 +669,26 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void processMoveInstruction(ExecutionContext ec) {
 		
 		if ( getInput3() == null ) {
-			// example: mvvar tempA A
+			// example: mvvar tempA A (note that mvvar does not carry the data types)
 			
-			// get source variable 
-			Data srcData = ec.getVariable(getInput1().getName());
+			// get and remove source variable 
+			Data srcData = ec.removeVariable(getInput1().getName());
 			
 			if ( srcData == null ) {
 				throw new DMLRuntimeException("Unexpected error: could not find a data object "
 					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
 			}
 			
-			if( getInput2().getDataType().isMatrix() || getInput2().getDataType().isFrame() ) {
-				// remove existing variable bound to target name
-				Data tgt = ec.removeVariable(getInput2().getName());
-				
-				//cleanup matrix data on fs/hdfs (if necessary)
-				if( tgt != null )
-					ec.cleanupDataObject(tgt);
+			// remove existing variable bound to target name and
+			// cleanup matrix/frame/list data if necessary
+			if( srcData.getDataType().isMatrix() || srcData.getDataType().isFrame() ) {
+				Data tgtData = ec.removeVariable(getInput2().getName());
+				if( tgtData != null && srcData != tgtData )
+					ec.cleanupDataObject(tgtData);
 			}
 			
 			// do the actual move
 			ec.setVariable(getInput2().getName(), srcData);
-			ec.removeVariable(getInput1().getName());
 		}
 		else {
 			// example instruction: mvvar <srcVar> <destFile> <format>
@@ -744,7 +741,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// no other variable in the symbol table points to the same Data object as that of input1.getName()
 			
 			//remove matrix object from cache
-			m.clearData();
+			m.clearData(ec.getTID());
 		}
 	}
 
@@ -753,8 +750,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 */
 	private void processCastAsScalarVariableInstruction(ExecutionContext ec){
-		//TODO: Create privacy constraints for ScalarObject so that the privacy constraints can be propagated to scalars as well.
-		PrivacyMonitor.handlePrivacyScalarOutput(getInput1(), ec);
 
 		switch( getInput1().getDataType() ) {
 			case MATRIX: {
@@ -1080,7 +1075,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		try {
 			ScalarObject scalar = ec.getScalarInput(getInput1());
 			HDFSTool.writeObjectToHDFS(scalar.getValue(), fname);
-			HDFSTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType());
+			HDFSTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType(), scalar.getPrivacyConstraint());
 
 			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
 			if (fs instanceof LocalFileSystem) {
@@ -1103,6 +1098,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		} catch (IOException e) {
 			throw new DMLRuntimeException(e);
 		}
+	}
+	
+	public static Instruction prepareRemoveInstruction(long... varName) {
+		String[] tmp = new String[varName.length];
+		Arrays.setAll(tmp, i -> String.valueOf(varName[i]));
+		return prepareRemoveInstruction(tmp);
 	}
 	
 	public static Instruction prepareRemoveInstruction(String... varNames) {

@@ -20,6 +20,7 @@
 package org.apache.sysds.test.applications;
 
 import static org.apache.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.apache.sysds.api.mlcontext.Script;
@@ -36,7 +37,7 @@ public class NNTest extends MLContextTestBase {
 	@Test
 	public void testNNLibrary() {
 		Script script = dmlFromFile(TEST_SCRIPT);
-		setUnexpectedStdOut(ERROR_STRING);
-		ml.execute(script);
+		String stdOut = executeAndCaptureStdOut(ml, script).getRight();
+		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
 	}
 }

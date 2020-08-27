@@ -19,4 +19,4 @@
 #
 #-------------------------------------------------------------
 
-FROM sebaba/testingsysds:2.0
+FROM systemds/testingsysds:latest

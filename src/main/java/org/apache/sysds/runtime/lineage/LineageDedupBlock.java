@@ -39,6 +39,7 @@ public class LineageDedupBlock {
 	private int _numPaths = 0;
 	
 	private long _activePath = -1;
+	private ArrayList<Long> _numDistinctPaths = new ArrayList<>();
 	
 	public LineageMap getActiveMap() {
 		if (_activePath < 0 || !_distinctPaths.containsKey(_activePath))
@@ -47,9 +48,15 @@ public class LineageDedupBlock {
 	}
 	
 	public LineageMap getMap(Long path) {
-		if (!_distinctPaths.containsKey(path))
-			throw new DMLRuntimeException("Given path in LineageDedupBlock could not be found.");
-		return _distinctPaths.get(path);
+		return _distinctPaths.containsKey(path) ? _distinctPaths.get(path) : null;
+	}
+	
+	public Map<Long, LineageMap> getPathMaps() {
+		return _distinctPaths;
+	}
+	
+	public void setMap(Long takenPath, LineageMap tracedMap) {
+		_distinctPaths.put(takenPath, new LineageMap(tracedMap));
 	}
 	
 	public boolean pathExists(Long path) {
@@ -67,6 +74,10 @@ public class LineageDedupBlock {
 	public long getPath() {
 		return _path.length() == 0 ? 0 :
 			_path.toLongArray()[0];
+	}
+	
+	public boolean isAllPathsTaken() {
+		return _distinctPaths.size() == _numDistinctPaths.size();
 	}
 	
 	public void traceProgramBlocks(ArrayList<ProgramBlock> pbs, ExecutionContext ec) {
@@ -116,5 +127,37 @@ public class LineageDedupBlock {
 			for (Instruction inst : bpb.getInstructions())
 				entry.getValue().trace(inst, ec);
 		}
+	}
+	// compute and save the number of distinct paths
+	public void setNumPathsInPBs (ArrayList<ProgramBlock> pbs, ExecutionContext ec) {
+		if (_numDistinctPaths.size() == 0) 
+			_numDistinctPaths.add(0L);
+		for (ProgramBlock pb : pbs)
+			numPathsInPB(pb, ec, _numDistinctPaths);
+	}
+	
+	private void numPathsInPB(ProgramBlock pb, ExecutionContext ec, ArrayList<Long> paths) {
+		if (pb instanceof IfProgramBlock)
+			numPathsInIfPB((IfProgramBlock)pb, ec, paths);
+		else if (pb instanceof BasicProgramBlock)
+			return;
+		else
+			throw new DMLRuntimeException("Only BasicProgramBlocks or "
+				+ "IfProgramBlocks are allowed inside a LineageDedupBlock.");
+	}
+	
+	private void numPathsInIfPB(IfProgramBlock ipb, ExecutionContext ec, ArrayList<Long> paths) {
+		ipb.setLineageDedupPathPos(_numPaths++);
+		ArrayList<Long> rep = new ArrayList<>();
+		int pathKey = 1 << (_numPaths-1);
+		for (long p : paths) {
+			long pathIndex = p | pathKey;
+			rep.add(pathIndex);
+		}
+		_numDistinctPaths.addAll(rep);
+		for (ProgramBlock pb : ipb.getChildBlocksIfBody())
+			numPathsInPB(pb, ec, rep);
+		for (ProgramBlock pb : ipb.getChildBlocksElseBody())
+			numPathsInPB(pb, ec, paths);
 	}
 }

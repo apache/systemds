@@ -19,10 +19,12 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -39,7 +41,7 @@ public class EncoderComposite extends Encoder
 	private List<Encoder> _encoders = null;
 	private FrameBlock _meta = null;
 	
-	protected EncoderComposite(List<Encoder> encoders) {
+	public EncoderComposite(List<Encoder> encoders) {
 		super(null, -1);
 		_encoders = encoders;
 	}
@@ -100,7 +102,49 @@ public class EncoderComposite extends Encoder
 		}
 		return out;
 	}
-	
+
+	@Override
+	public Encoder subRangeEncoder(int colStart, int colEnd) {
+		List<Encoder> subRangeEncoders = new ArrayList<>();
+		for (Encoder encoder : _encoders) {
+			Encoder subEncoder = encoder.subRangeEncoder(colStart, colEnd);
+			if (subEncoder != null) {
+				subRangeEncoders.add(subEncoder);
+			}
+		}
+		return new EncoderComposite(subRangeEncoders);
+	}
+
+	@Override
+	public void mergeAt(Encoder other, int col) {
+		if (other instanceof EncoderComposite) {
+			EncoderComposite otherComposite = (EncoderComposite) other;
+			// TODO maybe assert that the _encoders never have the same type of encoder twice or more
+			for (Encoder otherEnc : otherComposite.getEncoders()) {
+				boolean mergedIn = false;
+				for (Encoder encoder : _encoders) {
+					if (encoder.getClass() == otherEnc.getClass()) {
+						encoder.mergeAt(otherEnc, col);
+						mergedIn = true;
+						break;
+					}
+				}
+				if(!mergedIn) {
+					throw new DMLRuntimeException("Tried to merge in encoder of class that is not present in "
+						+ "CompositeEncoder: " + otherEnc.getClass().getSimpleName());
+				}
+			}
+			return;
+		}
+		for (Encoder encoder : _encoders) {
+			if (encoder.getClass() == other.getClass()) {
+				encoder.mergeAt(other, col);
+				return;
+			}
+		}
+		super.mergeAt(other, col);
+	}
+
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		if( _meta != null )

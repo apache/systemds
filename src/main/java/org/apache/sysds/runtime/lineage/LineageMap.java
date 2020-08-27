@@ -81,6 +81,18 @@ public class LineageMap {
 			}
 		}
 	}
+
+	public void processDedupItem(LineageMap lm, Long path, LineageItem[] liinputs, String name) {
+		String delim = LineageItemUtils.DEDUP_DELIM;
+		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
+			// Encode everything in the opcode needed by the deserialization logic
+			// to map this lineage item to the right patch.
+			String opcode = LineageItem.dedupItemOpcode + delim + entry.getKey()
+				+ delim + name + delim + path.toString();
+			LineageItem li = new LineageItem(opcode, liinputs);
+			addLineageItem(Pair.of(entry.getKey(), li));
+		}
+	}
 	
 	public LineageItem getOrCreate(CPOperand variable) {
 		if (variable == null)
@@ -237,8 +249,11 @@ public class LineageMap {
 		String fName = ec.getScalarInput(input2.getName(), Types.ValueType.STRING, input2.isLiteral()).getStringValue();
 		
 		if (DMLScript.LINEAGE_DEDUP) {
-			LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage.dedup");
-			li = LineageItemUtils.rDecompress(li);
+			// gracefully serialize the dedup maps without decompressing
+			LineageItemUtils.writeTraceToHDFS(LineageItemUtils.mergeExplainDedupBlocks(ec), fName + ".lineage.dedup");
+			// sample code to deserialize the dedup patches
+			//String allDedup = LineageItemUtils.mergeExplainDedupBlocks(ec);
+			//LineageItem tmp = LineageParser.parseLineageTraceDedup(allDedup);
 		}
 		LineageItemUtils.writeTraceToHDFS(Explain.explain(li), fName + ".lineage");
 	}

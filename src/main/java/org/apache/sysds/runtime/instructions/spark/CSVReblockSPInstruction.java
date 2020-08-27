@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -26,6 +29,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -49,9 +53,10 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	private String _delim;
 	private boolean _fill;
 	private double _fillValue;
+	private Set<String> _naStrings;
 
 	protected CSVReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean hasHeader,
-			String delim, boolean fill, double fillValue, String opcode, String instr) {
+			String delim, boolean fill, double fillValue, String opcode, String instr, Set<String> naStrings) {
 		super(SPType.CSVReblock, op, in, out, opcode, instr);
 		_blen = br;
 		_blen = bc;
@@ -59,6 +64,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		_delim = delim;
 		_fill = fill;
 		_fillValue = fillValue;
+		_naStrings = naStrings;
 	}
 
 	public static CSVReblockSPInstruction parseInstruction(String str) {
@@ -79,8 +85,14 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		boolean fill = Boolean.parseBoolean(parts[6]);
 		double fillValue = Double.parseDouble(parts[7]);
 
+		// Set<String> naStrings = UtilFunctions.defaultNaString;
+		Set<String> naStrings = new HashSet<>();
+		for(String s:parts[8].split(DataExpression.DELIM_NA_STRING_SEP)){
+			naStrings.add(s);
+		}
+
 		return new CSVReblockSPInstruction(null, in, out, blen, blen,
-			hasHeader, delim, fill, fillValue, opcode, str);
+			hasHeader, delim, fill, fillValue, opcode, str, naStrings);
 	}
 
 	@Override
@@ -131,7 +143,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		
 		//reblock csv to binary block
 		return RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
-			in, mcOut, _hasHeader, _delim, _fill, _fillValue);
+			in, mcOut, _hasHeader, _delim, _fill, _fillValue, _naStrings);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -143,6 +155,6 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		
 		//reblock csv to binary block
 		return FrameRDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
-			in, mcOut, schema, _hasHeader, _delim, _fill, _fillValue);
+			in, mcOut, schema, _hasHeader, _delim, _fill, _fillValue, _naStrings);
 	}
 }

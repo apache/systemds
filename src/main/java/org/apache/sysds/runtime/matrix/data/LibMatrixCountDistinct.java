@@ -28,8 +28,6 @@ import java.util.Set;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
@@ -41,23 +39,7 @@ import org.apache.sysds.utils.Hash.HashType;
  * This class contains various methods for counting the number of distinct values inside a MatrixBlock
  */
 public class LibMatrixCountDistinct {
-
-	// ------------------------------
-	// Logging parameters:
-	// local debug flag
-	private static final boolean LOCAL_DEBUG = false;
-	// DEBUG/TRACE for details
-	private static final Level LOCAL_DEBUG_LEVEL = Level.DEBUG;
-
 	private static final Log LOG = LogFactory.getLog(LibMatrixCountDistinct.class.getName());
-
-	static {
-		// for internal debugging only
-		if(LOCAL_DEBUG) {
-			Logger.getLogger("org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct").setLevel(LOCAL_DEBUG_LEVEL);
-		}
-	}
-	// ------------------------------
 
 	/**
 	 * The minimum number NonZero of cells in the input before using approximate techniques for counting number of

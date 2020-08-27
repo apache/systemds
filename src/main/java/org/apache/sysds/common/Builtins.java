@@ -64,6 +64,7 @@ public enum Builtins {
 	COLMAX("colMaxs", false),
 	COLMEAN("colMeans", false),
 	COLMIN("colMins", false),
+	COLNAMES("colnames", false),
 	COLPROD("colProds", false),
 	COLSD("colSds", false),
 	COLSUM("colSums", false),
@@ -83,18 +84,21 @@ public enum Builtins {
 	CUMSUMPROD("cumsumprod", false),
 	CONFUSIONMATRIX("confusionMatrix", true),
 	COR("cor", true),
+	DBSCAN("dbscan", true),
 	DETECTSCHEMA("detectSchema", false),
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
+	DIST("dist", true),
 	DROP_INVALID_TYPE("dropInvalidType", false),
 	DROP_INVALID_LENGTH("dropInvalidLength", false),
 	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
 	EXISTS("exists", false),
-	ExecutePipeline("executePipeline", true),
+	EXECUTE_PIPELINE("executePipeline", true),
 	EXP("exp", false),
 	EVAL("eval", false),
 	FLOOR("floor", false),
 	GLM("glm", true),
+	GMM("gmm", true),
 	GNMF("gnmf", true),
 	GRID_SEARCH("gridSearch", true),
 	HYPERBAND("hyperband", true),
@@ -123,6 +127,7 @@ public enum Builtins {
 	LSTM("lstm", false, ReturnType.MULTI_RETURN),
 	LSTM_BACKWARD("lstm_backward", false, ReturnType.MULTI_RETURN),
 	LU("lu", false, ReturnType.MULTI_RETURN),
+	MAP("map", false),
 	MEAN("mean", "avg", false),
 	MICE("mice", true),
 	MIN("min", "pmin", false),
@@ -143,6 +148,7 @@ public enum Builtins {
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	OUTLIER_SD("outlierBySd", true),
 	OUTLIER_IQR("outlierByIQR", true),
+	PCA("pca", true),
 	PNMF("pnmf", true),
 	PPRED("ppred", false),
 	PROD("prod", false),
@@ -181,11 +187,12 @@ public enum Builtins {
 	TANH("tanh", false),
 	TRACE("trace", false),
 	TO_ONE_HOT("toOneHot", true),
-	TYPEOF("typeOf", false),
+	TYPEOF("typeof", false),
 	COUNT_DISTINCT("countDistinct",false),
 	COUNT_DISTINCT_APPROX("countDistinctApprox",false),
 	VAR("var", false),
 	XOR("xor", false),
+	UNIVAR("univar", true),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
 
 	//parameterized builtin functions
@@ -288,7 +295,7 @@ public enum Builtins {
 	public static boolean contains(String name, boolean script, boolean parameterized) {
 		Builtins tmp = get(name);
 		return tmp != null && script == tmp.isScript()
-			&& parameterized == tmp.isParameterized();
+				&& parameterized == tmp.isParameterized();
 	}
 
 	public static Builtins get(String name) {

@@ -93,10 +93,10 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType = new HashMap<>();
 		
 		//unary aggregate operators
-		String2SPInstructionType.put( "uak+"   	, SPType.AggregateUnary);
+		String2SPInstructionType.put( "uak+"    , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uark+"   , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uack+"   , SPType.AggregateUnary);
-		String2SPInstructionType.put( "uasqk+" 	, SPType.AggregateUnary);
+		String2SPInstructionType.put( "uasqk+"  , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uarsqk+" , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uacsqk+" , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uamean"  , SPType.AggregateUnary);
@@ -107,7 +107,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "uacvar"  , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uamax"   , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uarmax"  , SPType.AggregateUnary);
-		String2SPInstructionType.put( "uarimax",  SPType.AggregateUnary);
+		String2SPInstructionType.put( "uarimax" ,  SPType.AggregateUnary);
 		String2SPInstructionType.put( "uacmax"  , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uamin"   , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uarmin"  , SPType.AggregateUnary);
@@ -127,7 +127,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "mapmmchain" , SPType.MAPMMCHAIN);
 		String2SPInstructionType.put( "tsmm"       , SPType.TSMM); //single-pass tsmm
 		String2SPInstructionType.put( "tsmm2"      , SPType.TSMM2); //multi-pass tsmm
-		String2SPInstructionType.put( "cpmm"   	   , SPType.CPMM);
+		String2SPInstructionType.put( "cpmm"       , SPType.CPMM);
 		String2SPInstructionType.put( "rmm"        , SPType.RMM);
 		String2SPInstructionType.put( "pmm"        , SPType.PMM);
 		String2SPInstructionType.put( "zipmm"      , SPType.ZIPMM);
@@ -141,44 +141,45 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "tack+*"     , SPType.AggregateTernary);
 
 		// Neural network operators
-		String2SPInstructionType.put( "conv2d",                 SPType.Dnn);
+		String2SPInstructionType.put( "conv2d",          SPType.Dnn);
 		String2SPInstructionType.put( "conv2d_bias_add", SPType.Dnn);
-		String2SPInstructionType.put( "maxpooling",             SPType.Dnn);
-		String2SPInstructionType.put( "relu_maxpooling",          SPType.Dnn);
+		String2SPInstructionType.put( "maxpooling",      SPType.Dnn);
+		String2SPInstructionType.put( "relu_maxpooling", SPType.Dnn);
 		
 		String2SPInstructionType.put( RightIndex.OPCODE, SPType.MatrixIndexing);
-		String2SPInstructionType.put( LeftIndex.OPCODE, SPType.MatrixIndexing);
-		String2SPInstructionType.put( "mapLeftIndex" , SPType.MatrixIndexing);
+		String2SPInstructionType.put( LeftIndex.OPCODE,  SPType.MatrixIndexing);
+		String2SPInstructionType.put( "mapLeftIndex",    SPType.MatrixIndexing);
 		
 		// Reorg Instruction Opcodes (repositioning of existing values)
-		String2SPInstructionType.put( "r'"   	   , SPType.Reorg);
-		String2SPInstructionType.put( "rev"   	   , SPType.Reorg);
-		String2SPInstructionType.put( "rdiag"      , SPType.Reorg);
-		String2SPInstructionType.put( "rshape"     , SPType.MatrixReshape);
-		String2SPInstructionType.put( "rsort"      , SPType.Reorg);
+		String2SPInstructionType.put( "r'",       SPType.Reorg);
+		String2SPInstructionType.put( "rev",      SPType.Reorg);
+		String2SPInstructionType.put( "rdiag",    SPType.Reorg);
+		String2SPInstructionType.put( "rshape",   SPType.MatrixReshape);
+		String2SPInstructionType.put( "rsort",    SPType.Reorg);
 		
-		String2SPInstructionType.put( "+"    , SPType.Binary);
-		String2SPInstructionType.put( "-"    , SPType.Binary);
-		String2SPInstructionType.put( "*"    , SPType.Binary);
-		String2SPInstructionType.put( "/"    , SPType.Binary);
-		String2SPInstructionType.put( "%%"   , SPType.Binary);
-		String2SPInstructionType.put( "%/%"  , SPType.Binary);
-		String2SPInstructionType.put( "1-*"  , SPType.Binary);
-		String2SPInstructionType.put( "^"    , SPType.Binary);
-		String2SPInstructionType.put( "^2"   , SPType.Binary);
-		String2SPInstructionType.put( "*2"   , SPType.Binary);
-		String2SPInstructionType.put( "map+"    , SPType.Binary);
-		String2SPInstructionType.put( "map-"    , SPType.Binary);
-		String2SPInstructionType.put( "map*"    , SPType.Binary);
-		String2SPInstructionType.put( "map/"    , SPType.Binary);
-		String2SPInstructionType.put( "map%%"   , SPType.Binary);
-		String2SPInstructionType.put( "map%/%"  , SPType.Binary);
-		String2SPInstructionType.put( "map1-*"  , SPType.Binary);
-		String2SPInstructionType.put( "map^"    , SPType.Binary);
-		String2SPInstructionType.put( "map+*"   , SPType.Binary);
-		String2SPInstructionType.put( "map-*"   , SPType.Binary);
+		String2SPInstructionType.put( "+",        SPType.Binary);
+		String2SPInstructionType.put( "-",        SPType.Binary);
+		String2SPInstructionType.put( "*",        SPType.Binary);
+		String2SPInstructionType.put( "/",        SPType.Binary);
+		String2SPInstructionType.put( "%%",       SPType.Binary);
+		String2SPInstructionType.put( "%/%",      SPType.Binary);
+		String2SPInstructionType.put( "1-*",      SPType.Binary);
+		String2SPInstructionType.put( "^",        SPType.Binary);
+		String2SPInstructionType.put( "^2",       SPType.Binary);
+		String2SPInstructionType.put( "*2",       SPType.Binary);
+		String2SPInstructionType.put( "map+",     SPType.Binary);
+		String2SPInstructionType.put( "map-",     SPType.Binary);
+		String2SPInstructionType.put( "map*",     SPType.Binary);
+		String2SPInstructionType.put( "map/",     SPType.Binary);
+		String2SPInstructionType.put( "map%%",    SPType.Binary);
+		String2SPInstructionType.put( "map%/%",   SPType.Binary);
+		String2SPInstructionType.put( "map1-*",   SPType.Binary);
+		String2SPInstructionType.put( "map^",     SPType.Binary);
+		String2SPInstructionType.put( "map+*",    SPType.Binary);
+		String2SPInstructionType.put( "map-*",    SPType.Binary);
 		String2SPInstructionType.put( "dropInvalidType", SPType.Binary);
 		String2SPInstructionType.put( "mapdropInvalidLength", SPType.Binary);
+		String2SPInstructionType.put( "dml_map", SPType.Binary);
 		// Relational Instruction Opcodes
 		String2SPInstructionType.put( "=="   , SPType.Binary);
 		String2SPInstructionType.put( "!="   , SPType.Binary);
@@ -250,6 +251,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "sprop", SPType.Unary);
 		String2SPInstructionType.put( "sigmoid", SPType.Unary);
 		String2SPInstructionType.put( "detectSchema", SPType.Unary);
+		String2SPInstructionType.put( "colnames", SPType.Unary);
 		String2SPInstructionType.put( "isna", SPType.Unary);
 		String2SPInstructionType.put( "isnan", SPType.Unary);
 		String2SPInstructionType.put( "isinf", SPType.Unary);

@@ -32,29 +32,22 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysds.runtime.instructions.cp.Data;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 
 	private int _port;
-	private int _nrThreads = Integer.parseInt(DMLConfig.DEFAULT_NUMBER_OF_FEDERATED_WORKER_THREADS);
-	private IDSequence _seq = new IDSequence();
-	private Map<Long, Data> _vars = new HashMap<>();
-
+	private final ExecutionContextMap _ecm;
+	
 	public FederatedWorker(int port) {
-		_port = (port == -1) ?
-			Integer.parseInt(DMLConfig.DEFAULT_FEDERATED_PORT) : port;
+		_ecm = new ExecutionContextMap();
+		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 	}
 
 	public void run() {
 		log.info("Setting up Federated Worker");
-		EventLoopGroup bossGroup = new NioEventLoopGroup(_nrThreads);
-		EventLoopGroup workerGroup = new NioEventLoopGroup(_nrThreads);
+		EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+		EventLoopGroup workerGroup = new NioEventLoopGroup(1);
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
 			.childHandler(new ChannelInitializer<SocketChannel>() {
@@ -65,7 +58,7 @@ public class FederatedWorker {
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())))
 						.addLast("ObjectEncoder", new ObjectEncoder())
-						.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_seq, _vars));
+						.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_ecm));
 				}
 			}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 		try {

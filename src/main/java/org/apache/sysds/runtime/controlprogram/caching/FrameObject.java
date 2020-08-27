@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -47,7 +48,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.requestFederatedData;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
@@ -161,41 +161,6 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 	
 	@Override
-	public FrameBlock acquireRead() {
-		// forward call for non-federated objects
-		if( !isFederated() )
-			return super.acquireRead();
-		
-		FrameBlock result = new FrameBlock(_schema);
-		// provide long support?
-		result.ensureAllocatedColumns((int) _metaData.getDataCharacteristics().getRows());
-		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = requestFederatedData(_fedMapping);
-		try {
-			for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
-				FederatedRange range = readResponse.getLeft();
-				FederatedResponse response = readResponse.getRight().get();
-				// add result
-				FrameBlock multRes = (FrameBlock) response.getData()[0];
-				for (int r = 0; r < multRes.getNumRows(); r++) {
-					for (int c = 0; c < multRes.getNumColumns(); c++) {
-						int destRow = range.getBeginDimsInt()[0] + r;
-						int destCol = range.getBeginDimsInt()[1] + c;
-						result.set(destRow, destCol, multRes.get(r, c));
-					}
-				}
-			}
-		}
-		catch(Exception e) {
-			throw new DMLRuntimeException("Federated Frame read failed.", e);
-		}
-		
-		//keep returned object for future use 
-		acquireModify(result);
-		
-		return result;
-	}
-	
-	@Override
 	protected FrameBlock readBlobFromCache(String fname) throws IOException {
 		return (FrameBlock)LazyWriteBuffer.readBlock(fname, false);
 	}
@@ -270,6 +235,36 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		return fb;
 	}
+	
+	@Override
+	protected FrameBlock readBlobFromFederated(FederationMap fedMap, long[] dims)
+		throws IOException
+	{
+		FrameBlock ret = new FrameBlock(_schema);
+		// provide long support?
+		ret.ensureAllocatedColumns((int) dims[0]);
+		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = fedMap.requestFederatedData();
+		try {
+			for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+				FederatedRange range = readResponse.getLeft();
+				FederatedResponse response = readResponse.getRight().get();
+				// add result
+				FrameBlock multRes = (FrameBlock) response.getData()[0];
+				for (int r = 0; r < multRes.getNumRows(); r++) {
+					for (int c = 0; c < multRes.getNumColumns(); c++) {
+						int destRow = range.getBeginDimsInt()[0] + r;
+						int destCol = range.getBeginDimsInt()[1] + c;
+						ret.set(destRow, destCol, multRes.get(r, c));
+					}
+				}
+			}
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Federated Frame read failed.", e);
+		}
+		
+		return ret;
+	}
 
 	@Override
 	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)
@@ -291,5 +286,4 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//lazy evaluation of pending transformations.
 		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, iimd.getFileFormat());
 	}
-
 }

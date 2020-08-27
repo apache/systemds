@@ -126,7 +126,7 @@ public class CacheEvictionTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(R_lru, R_costnsize, 1e-6, "LRU", "costnsize");
 			
 			// Compare reused instructions
-			Assert.assertTrue(expCount_lru > expCount_wt);
+			Assert.assertTrue(expCount_lru >= expCount_wt);
 			// Compare counts of evicted items
 			// LRU tends to evict more entries to recover equal amount of memory
 			Assert.assertTrue(evictedCount_lru > evictedCount_wt);

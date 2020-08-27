@@ -48,7 +48,7 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		if( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR )
 			throw new DMLRuntimeException("Federated binary scalar scalar operations not yet supported");
 		else if( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
-			throw new DMLRuntimeException("Federated binary matrix matrix operations not yet supported");
+			return new BinaryMatrixMatrixFEDInstruction(operator, in1, in2, out, opcode, str);
 		else if( in1.getDataType() == DataType.TENSOR && in2.getDataType() == DataType.TENSOR )
 			throw new DMLRuntimeException("Federated binary tensor tensor operations not yet supported");
 		else if( in1.isMatrix() && in2.isScalar() )

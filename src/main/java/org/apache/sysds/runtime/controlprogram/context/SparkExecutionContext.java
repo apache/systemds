@@ -22,8 +22,6 @@ package org.apache.sysds.runtime.controlprogram.context;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -94,7 +92,6 @@ import java.util.stream.LongStream;
 
 public class SparkExecutionContext extends ExecutionContext
 {
-	private static final boolean LDEBUG = false; //local debug flag
 
 	//internal configurations
 	private static final boolean LAZY_SPARKCTX_CREATION = true;
@@ -117,14 +114,6 @@ public class SparkExecutionContext extends ExecutionContext
 	private static boolean[] _poolBuff = FAIR_SCHEDULER_MODE ?
 		new boolean[InfrastructureAnalyzer.getLocalParallelism()] : null;
 	
-	static {
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.runtime.controlprogram.context")
-				.setLevel(Level.DEBUG);
-		}
-	}
-
 	protected SparkExecutionContext(boolean allocateVars, boolean allocateLineage, Program prog) {
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, allocateLineage, prog );
@@ -381,14 +370,14 @@ public class SparkExecutionContext extends ExecutionContext
 			rdd = mo.getRDDHandle().getRDD();
 		}
 		//CASE 2: dirty in memory data or cached result of rdd operations
-		else if( mo.isDirty() || mo.isCached(false) )
+		else if( mo.isDirty() || mo.isCached(false) || mo.isFederated() )
 		{
 			//get in-memory matrix block and parallelize it
 			//w/ guarded parallelize (fallback to export, rdd from file if too large)
 			DataCharacteristics dc = mo.getDataCharacteristics();
 			boolean fromFile = false;
-			if( !OptimizerUtils.checkSparkCollectMemoryBudget(dc, 0) || !_parRDDs.reserve(
-					OptimizerUtils.estimatePartitionedSizeExactSparsity(dc))) {
+			if( !mo.isFederated() && (!OptimizerUtils.checkSparkCollectMemoryBudget(dc, 0)
+				|| !_parRDDs.reserve(OptimizerUtils.estimatePartitionedSizeExactSparsity(dc)))) {
 				if( mo.isDirty() || !mo.isHDFSFileExists() ) //write if necessary
 					mo.exportData();
 				rdd = sc.hadoopFile( mo.getFileName(), inputInfo.inputFormatClass, inputInfo.keyClass, inputInfo.valueClass);
@@ -1361,7 +1350,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//compute ref count only if matrix cleanup actually necessary
 			if( !getVariables().hasReferences(mo) ) {
 				//clean cached data
-				mo.clearData();
+				mo.clearData(getTID());
 
 				//clean hdfs data if no pending rdd operations on it
 				if( mo.isHDFSFileExists() && mo.getFileName()!=null ) {
@@ -1780,6 +1769,12 @@ public class SparkExecutionContext extends ExecutionContext
 			if( numExecutors > 1 && (defaultPar > 1 || numCoresPerExec > 1) ) {
 				_numExecutors = numExecutors;
 				_defaultPar = (defaultPar>1) ? defaultPar : numExecutors * numCoresPerExec;
+				_confOnly &= true;
+			}
+			else if( DMLScript.USE_LOCAL_SPARK_CONFIG ) {
+				//avoid unnecessary spark context creation in local mode (e.g., tests)
+				_numExecutors = 1;
+				_defaultPar = 2;
 				_confOnly &= true;
 			}
 			else {

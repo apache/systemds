@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -30,6 +31,9 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -103,7 +107,6 @@ public class InitFEDInstruction extends FEDInstruction {
 		for (int i = 0; i < addresses.getLength(); i++) {
 			Data addressData = addresses.getData().get(i);
 			if (addressData instanceof StringObject) {
-
 				// We split address into url/ip, the port and file path of file to read
 				String[] parsedValues = parseURL(((StringObject) addressData).getStringValue());
 				String host = parsedValues[0];
@@ -136,7 +139,6 @@ public class InitFEDInstruction extends FEDInstruction {
 				catch (UnknownHostException e) {
 					throw new DMLRuntimeException("federated host was unknown: " + host);
 				}
-
 			}
 			else {
 				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
@@ -174,8 +176,8 @@ public class InitFEDInstruction extends FEDInstruction {
 			String ipRegex = "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
 			if (host.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$") && !host.matches(ipRegex))
 				throw new IllegalArgumentException("Input Host address looks like an IP address but is outside range");
-			String port = Integer.toString(address.getPort());
-			if (port.equals("-1"))
+			int port = address.getPort();
+			if (port == -1)
 				port = DMLConfig.DEFAULT_FEDERATED_PORT;
 			String filePath = address.getPath();
 			if (filePath.length() <= 1)
@@ -192,7 +194,7 @@ public class InitFEDInstruction extends FEDInstruction {
 			if (address.getRef() != null)
 				throw new IllegalArgumentException("Reference is not supported");
 			
-			return new String[] { host, port, filePath };
+			return new String[] { host, String.valueOf(port), filePath };
 		}
 		catch (MalformedURLException e) {
 			throw new IllegalArgumentException("federated address `" + input
@@ -206,6 +208,9 @@ public class InitFEDInstruction extends FEDInstruction {
 			fedMapping.put(t.getLeft(), t.getRight());
 		}
 		List<Pair<FederatedData, Future<FederatedResponse>>> idResponses = new ArrayList<>();
+		long id = FederationUtils.getNextFedDataID();
+		boolean rowPartitioned = true;
+		boolean colPartitioned = true;
 		for (Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
 			FederatedRange range = entry.getKey();
 			FederatedData value = entry.getValue();
@@ -213,24 +218,24 @@ public class InitFEDInstruction extends FEDInstruction {
 				long[] beginDims = range.getBeginDims();
 				long[] endDims = range.getEndDims();
 				long[] dims = output.getDataCharacteristics().getDims();
-				for (int i = 0; i < dims.length; i++) {
+				for (int i = 0; i < dims.length; i++)
 					dims[i] = endDims[i] - beginDims[i];
-				}
-				// TODO check if all matrices have the same DataType (currently only double is supported)
-				idResponses.add(new ImmutablePair<>(value, value.initFederatedData()));
+				idResponses.add(new ImmutablePair<>(value, value.initFederatedData(id)));
 			}
+			rowPartitioned &= (range.getSize(1) == output.getNumColumns());
+			colPartitioned &= (range.getSize(0) == output.getNumRows()); 
 		}
 		try {
-			for (Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses) {
-				FederatedResponse response = idResponse.getRight().get();
-				idResponse.getLeft().setVarID((Long) response.getData()[0]);
-			}
+			for (Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses)
+				idResponse.getRight().get(); //wait for initialization
 		}
 		catch (Exception e) {
 			throw new DMLRuntimeException("Federation initialization failed", e);
 		}
-		output.getDataCharacteristics().setNonZeros(output.getNumColumns() * output.getNumRows());
-		output.setFedMapping(fedMapping);
+		output.getDataCharacteristics().setNonZeros(-1);
+		output.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
+		output.setFedMapping(new FederationMap(id, fedMapping));
+		output.getFedMapping().setType(rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
 	}
 	
 	public void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
@@ -242,6 +247,7 @@ public class InitFEDInstruction extends FEDInstruction {
 		// on the distributed workers. We need the FederatedData, the starting column of the sub frame (for the schema)
 		// and the future for the response
 		List<Pair<FederatedData, Pair<Integer, Future<FederatedResponse>>>> idResponses = new ArrayList<>();
+		long id = FederationUtils.getNextFedDataID();
 		for (Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
 			FederatedRange range = entry.getKey();
 			FederatedData value = entry.getValue();
@@ -252,7 +258,7 @@ public class InitFEDInstruction extends FEDInstruction {
 				for (int i = 0; i < dims.length; i++) {
 					dims[i] = endDims[i] - beginDims[i];
 				}
-				idResponses.add(new ImmutablePair<>(value, new ImmutablePair<>((int) beginDims[1], value.initFederatedData())));
+				idResponses.add(new ImmutablePair<>(value, new ImmutablePair<>((int) beginDims[1], value.initFederatedData(id))));
 			}
 		}
 		// columns are definitely in int range, because we throw an DMLRuntime Exception in `processInstruction` else
@@ -271,7 +277,7 @@ public class InitFEDInstruction extends FEDInstruction {
 		}
 		output.getDataCharacteristics().setNonZeros(output.getNumColumns() * output.getNumRows());
 		output.setSchema(schema);
-		output.setFedMapping(fedMapping);
+		output.setFedMapping(new FederationMap(id, fedMapping));
 	}
 	
 	private static void handleFedFrameResponse(Types.ValueType[] schema, FederatedData federatedData,

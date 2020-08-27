@@ -41,11 +41,11 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	//for CP
-	private final static int rows1 = 3500;
-	private final static int cols1 = 1500;
-	//for MR
-	private final static int rows2 = 7000;//7000;
-	private final static int cols2 = 750;//750; 
+	private final static int rows1 = 1100;
+	private final static int cols1 = 300;
+	//for Spark
+	private final static int rows2 = 2500;
+	private final static int cols2 = 750; 
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
@@ -177,8 +177,8 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 	
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
+			setOutputBuffering(false);
+			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
 			//compare matrices 
@@ -248,8 +248,8 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 	
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
+			setOutputBuffering(false);
+			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
 			//compare matrices 

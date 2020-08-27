@@ -23,8 +23,6 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.Program;
@@ -40,7 +38,6 @@ public class CostEstimationWrapper
 		STATIC // based on FLOPS, read/write, etc, [time in sec]
 	}
 	
-	private static final boolean LDEBUG = false; //internal local debug level
 	private static final Log LOG = LogFactory.getLog(CostEstimationWrapper.class.getName());
 	private static final CostType DEFAULT_COSTTYPE = CostType.STATIC;
 	
@@ -49,12 +46,7 @@ public class CostEstimationWrapper
 	
 	static 
 	{
-		// for internal debugging only
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.hops.cost")
-				.setLevel(Level.DEBUG);
-		}
-		
+
 		//create cost estimator
 		try
 		{

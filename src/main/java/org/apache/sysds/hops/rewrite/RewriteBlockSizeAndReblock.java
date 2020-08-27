@@ -134,8 +134,9 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 					}
 				}
 				else if (dop.getOp() == OpOpData.FEDERATED) {
-					// TODO maybe do something here?
-				} else {
+					dop.setBlocksize(blocksize);
+				}
+				else {
 					throw new HopsException(hop.printErrorLocation() + "unexpected non-scalar Data HOP in reblock.\n");
 				}
 			}

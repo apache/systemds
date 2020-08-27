@@ -1,0 +1,38 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+F = federated(type="frame", addresses=list($in_AU, $in_AL, $in_BU, $in_BL), ranges=
+  list(list(0,0), list($rows / 2, $cols / 2), # AUpper range
+    list($rows / 2, 0), list($rows, $cols / 2), # ALower range
+    list(0, $cols / 2), list($rows / 2, $cols), # BUpper range
+    list($rows / 2, $cols / 2), list($rows, $cols))); # BLower range
+jspec = read($spec_file, data_type="scalar", value_type="string");
+
+[X, M] = transformencode(target=F, spec=jspec);
+
+A = aggregate(target=X[,1], groups=X[,2], fn="count");
+Ag = cbind(A, seq(1,nrow(A)));
+
+FO1 = transformdecode(target=Ag, spec=jspec, meta=M);
+FO2 = transformdecode(target=X, spec=jspec, meta=M);
+
+write(FO1, $out1, format=$format);
+write(FO2, $out2, format=$format);

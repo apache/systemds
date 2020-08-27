@@ -26,8 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
@@ -75,15 +73,6 @@ public class LineageRewriteReuse
 	private static ExecutionContext _lrEC = null;
 	private static boolean _disableReuse = true;
 	private static final Log LOG = LogFactory.getLog(LineageRewriteReuse.class.getName());
-	
-	private static boolean LDEBUG = false; //internal debugging
-	
-	static {
-		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysds.runtime.lineage.LineageRewriteReuse")
-				.setLevel(Level.DEBUG);
-		}
-	}
 	
 	public static boolean executeRewrites (Instruction curr, ExecutionContext ec)
 	{

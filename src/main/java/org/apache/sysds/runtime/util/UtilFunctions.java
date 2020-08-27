@@ -19,15 +19,14 @@
 
 package org.apache.sysds.runtime.util;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -36,15 +35,9 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
+public class UtilFunctions {
+	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
-public class UtilFunctions 
-{
 	//for accurate cast of double values to int and long 
 	//IEEE754: binary64 (double precision) eps = 2^(-53) = 1.11 * 10^(-16)
 	//(same epsilon as used for matrix index cast in R)
@@ -54,6 +47,12 @@ public class UtilFunctions
 	//because it determines the max hash domain size
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
+	
+	public static final HashSet<String> defaultNaString = new HashSet<>();
+
+	static{
+		defaultNaString.add("NA");
+	}
 
 	public static int intHashCode(int key1, int key2) {
 		return 31 * (31 + key1) + key2;
@@ -351,11 +350,12 @@ public class UtilFunctions
 	 * environments because Double.parseDouble relied on a synchronized cache
 	 * (which was replaced with thread-local caches in JDK8).
 	 * 
-	 * @param str string to parse to double
+	 * @param str   string to parse to double
+	 * @param isNan collection of Nan string which if encountered should be parsed to nan value
 	 * @return double value
 	 */
-	public static double parseToDouble(String str) {
-		return "NA".equals(str) ?
+	public static double parseToDouble(String str, Set<String> isNan ) {
+		return isNan.contains(str) ?
 			Double.NaN :
 			Double.parseDouble(str);
 	}
@@ -792,22 +792,48 @@ public class UtilFunctions
 		}
 	}
 	
-	public static List<org.apache.commons.lang3.tuple.Pair<FederatedRange, Future<FederatedResponse>>> requestFederatedData(
-		Map<FederatedRange, FederatedData> fedMapping) {
-		List<org.apache.commons.lang3.tuple.Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
-		for(Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
-			FederatedRange range = entry.getKey();
-			FederatedData fd = entry.getValue();
+	private static final Map<String, String> DATE_FORMATS = new HashMap<String, String>() {
+		private static final long serialVersionUID = 6826162458614520846L; {
+		put("^\\d{4}-\\d{1,2}-\\d{1,2}\\s\\d{1,2}:\\d{2}:\\d{2}$", "yyyy-MM-dd HH:mm:ss");
+		put("^\\d{1,2}-\\d{1,2}-\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd-MM-yyyy HH:mm:ss");
+		put("^\\d{1,2}/\\d{1,2}/\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "MM/dd/yyyy HH:mm:ss");
+		put("^\\d{4}/\\d{1,2}/\\d{1,2}\\s\\d{1,2}:\\d{2}:\\d{2}$", "yyyy/MM/dd HH:mm:ss");
+		put("^\\d{1,2}\\s[a-z]{3}\\s\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd MMM yyyy HH:mm:ss");
+		put("^\\d{1,2}\\s[a-z]{4,}\\s\\d{4}\\s\\d{1,2}:\\d{2}:\\d{2}$", "dd MMMM yyyy HH:mm:ss");
+		put("^\\d{8}$", "yyyyMMdd");
+		put("^\\d{1,2}-\\d{1,2}-\\d{4}$", "dd-MM-yyyy");
+		put("^\\d{4}-\\d{1,2}-\\d{1,2}$", "yyyy-MM-dd");
+		put("^\\d{1,2}/\\d{1,2}/\\d{4}$", "MM/dd/yyyy");
+		put("^\\d{4}/\\d{1,2}/\\d{1,2}$", "yyyy/MM/dd");
+		put("^\\d{1,2}\\s[a-z]{3}\\s\\d{4}$", "dd MMM yyyy");
+		put("^\\d{1,2}\\s[a-z]{4,}\\s\\d{4}$", "dd MMMM yyyy");
+		put("^\\d{12}$", "yyyyMMddHHmm");
+		put("^\\d{8}\\s\\d{4}$", "yyyyMMdd HHmm");
+		put("^\\d{1,2}-\\d{1,2}-\\d{4}\\s\\d{1,2}:\\d{2}$", "dd-MM-yyyy HH:mm");
+		put("^\\d{4}-\\d{1,2}-\\d{1,2}\\s\\d{1,2}:\\d{2}$", "yyyy-MM-dd HH:mm");
+		put("^\\d{1,2}/\\d{1,2}/\\d{4}\\s\\d{1,2}:\\d{2}$", "MM/dd/yyyy HH:mm");
+		put("^\\d{4}/\\d{1,2}/\\d{1,2}\\s\\d{1,2}:\\d{2}$", "yyyy/MM/dd HH:mm");
+		put("^\\d{1,2}\\s[a-z]{3}\\s\\d{4}\\s\\d{1,2}:\\d{2}$", "dd MMM yyyy HH:mm");
+		put("^\\d{1,2}\\s[a-z]{4,}\\s\\d{4}\\s\\d{1,2}:\\d{2}$", "dd MMMM yyyy HH:mm");
+		put("^\\d{14}$", "yyyyMMddHHmmss");
+		put("^\\d{8}\\s\\d{6}$", "yyyyMMdd HHmmss");
+	}};
 
-			if(fd.isInitialized()) {
-				FederatedRequest request = new FederatedRequest(FederatedRequest.FedMethod.TRANSFER);
-				Future<FederatedResponse> readResponse = fd.executeFederatedOperation(request, true);
-				readResponses.add(new ImmutablePair<>(range, readResponse));
-			}
-			else {
-				throw new DMLRuntimeException("Federated matrix read only supported on initialized FederatedData");
-			}
+	public static long toMillis (String dateString) {
+		long value = 0;
+		try {
+			value = new SimpleDateFormat(getDateFormat(dateString)).parse(dateString).getTime();
 		}
-		return readResponses;
+		catch(ParseException e) {
+			throw new DMLRuntimeException(e);
+		}
+		return value ;
 	}
+
+	private static String getDateFormat (String dateString) {
+		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
+			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
+	}
+
+
 }

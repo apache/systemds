@@ -22,11 +22,15 @@ package org.apache.sysds.runtime.controlprogram.context;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -58,7 +62,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 public class ExecutionContext {
 	protected static final Log LOG = LogFactory.getLog(ExecutionContext.class.getName());
 
@@ -67,7 +70,9 @@ public class ExecutionContext {
 	
 	//symbol table
 	protected LocalVariableMap _variables;
-
+	protected long _tid = -1;
+	protected boolean _autoCreateVars;
+	
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
 
@@ -84,12 +89,14 @@ public class ExecutionContext {
 	protected ExecutionContext( boolean allocateVariableMap, boolean allocateLineage, Program prog ) {
 		//protected constructor to force use of ExecutionContextFactory
 		_variables = allocateVariableMap ? new LocalVariableMap() : null;
+		_autoCreateVars = false;
 		_lineage = allocateLineage ? new Lineage() : null;
 		_prog = prog;
 	}
 
 	public ExecutionContext(LocalVariableMap vars) {
 		_variables = vars;
+		_autoCreateVars = false;
 		_lineage = null;
 		_prog = null;
 	}
@@ -116,6 +123,22 @@ public class ExecutionContext {
 
 	public void setLineage(Lineage lineage) {
 		_lineage = lineage;
+	}
+	
+	public boolean isAutoCreateVars() {
+		return _autoCreateVars;
+	}
+	
+	public void setAutoCreateVars(boolean flag) {
+		_autoCreateVars = flag;
+	}
+	
+	public void setTID(long tid) {
+		_tid = tid;
+	}
+	
+	public long getTID() {
+		return _tid;
 	}
 
 	/**
@@ -503,6 +526,8 @@ public class ExecutionContext {
 	}
 	
 	public void setMatrixOutput(String varName, MatrixBlock outputData) {
+		if( isAutoCreateVars() && !containsVariable(varName) )
+			setVariable(varName, createMatrixObject(outputData));
 		MatrixObject mo = getMatrixObject(varName);
 		mo.acquireModify(outputData);
 		mo.release();
@@ -510,16 +535,14 @@ public class ExecutionContext {
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) {
+		if( isAutoCreateVars() && !containsVariable(varName) )
+			setVariable(varName, createMatrixObject(outputData));
 		if( flag.isInPlace() ) {
 			//modify metadata to carry update status
 			MatrixObject mo = getMatrixObject(varName);
 			mo.setUpdateType( flag );
 		}
 		setMatrixOutput(varName, outputData);
-	}
-
-	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag, String opcode) {
-		setMatrixOutput(varName, outputData, flag);
 	}
 
 	public void setTensorOutput(String varName, TensorBlock outputData) {
@@ -530,10 +553,41 @@ public class ExecutionContext {
 	}
 	
 	public void setFrameOutput(String varName, FrameBlock outputData) {
+		if( isAutoCreateVars() && !containsVariable(varName) )
+			setVariable(varName, createFrameObject(outputData));
 		FrameObject fo = getFrameObject(varName);
 		fo.acquireModify(outputData);
 		fo.release();
 		setVariable(varName, fo);
+	}
+
+	public static CacheableData<?> createCacheableData(CacheBlock cb) {
+		if( cb instanceof MatrixBlock )
+			return createMatrixObject((MatrixBlock) cb);
+		else if( cb instanceof FrameBlock )
+			return createFrameObject((FrameBlock) cb);
+		return null;
+	}
+	
+	public static MatrixObject createMatrixObject(MatrixBlock mb) {
+		MatrixObject ret = new MatrixObject(Types.ValueType.FP64, 
+			OptimizerUtils.getUniqueTempFileName());
+		ret.acquireModify(mb);
+		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
+			mb.getNumRows(), mb.getNumColumns()), FileFormat.BINARY));
+		ret.getMetaData().getDataCharacteristics()
+			.setBlocksize(ConfigurationManager.getBlocksize());
+		ret.release();
+		return ret;
+	}
+	
+	public static FrameObject createFrameObject(FrameBlock fb) {
+		FrameObject ret = new FrameObject(OptimizerUtils.getUniqueTempFileName());
+		ret.acquireModify(fb);
+		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
+			fb.getNumRows(), fb.getNumColumns()), FileFormat.BINARY));
+		ret.release();
+		return ret;
 	}
 	
 	public List<MatrixBlock> getMatrixInputs(CPOperand[] inputs) {
@@ -705,7 +759,7 @@ public class ExecutionContext {
 		try {
 			//compute ref count only if matrix cleanup actually necessary
 			if ( mo.isCleanupEnabled() && !getVariables().hasReferences(mo) )  {
-				mo.clearData(); //clean cached data
+				mo.clearData(getTID()); //clean cached data
 				if( fileExists ) {
 					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName());
 					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName()+".mtd");
@@ -737,5 +791,18 @@ public class ExecutionContext {
 	
 	private static String getNonExistingVarError(String varname) {
 		return "Variable '" + varname + "' does not exist in the symbol table.";
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		if(_prog != null)
+			sb.append("\nProgram: " + _prog.toString());
+		if(_variables != null)
+			sb.append("\nLocalVariableMap: " + _variables.toString());
+		if(_lineage != null)
+			sb.append("\nLineage: " + _lineage.toString());
+		return sb.toString();
 	}
 }

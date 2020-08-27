@@ -1,0 +1,85 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * This Example trains a feed forward neural network with one input layer, two hidden affine layers (200 neurons) with
+ * leaky relu activations and one affine output layer with a softmax activation
+ *
+ * The reason for this example is to test the performance differences between single threaded, with a parameter server
+ * for parallelization and finally federated across multiple SystemDS instances
+ *
+ * Inputs:
+ *  - train: The file containing the training data
+ *  - test: the file containing the test data
+ *
+ * The MNIST Data can be downloaded as follows:
+ * mkdir -p data/mnist/
+ * cd data/mnist/
+ * curl -O https://pjreddie.com/media/files/mnist_train.csv
+ * curl -O https://pjreddie.com/media/files/mnist_test.csv
+ *
+ * Sample Invocation
+ *
+ * systemds "<path to systemds repo>/systemds/scripts/nn/examples/Example-MNIST_2NN_Leaky_ReLu_Softmax.dml"
+ *       -nvargs train=<path to data>/mnist_data/mnist_train.csv test=<path to data>/mnist_data/mnist_test.csv
+ */
+
+source("nn/examples/mnist_2NN.dml") as mnist_2NN
+
+# Read training data
+data = read($train, format="csv")
+n = nrow(data)
+
+# Extract images and labels
+images = data[,2:ncol(data)]
+labels = data[,1]
+
+# Scale images to [0,1], and one-hot encode the labels
+images = images / 255.0
+labels = table(seq(1, n), labels+1, n, 10)
+
+# Split into training (55,000 examples) and validation (5,000 examples)
+X = images[5001:nrow(images),]
+X_val = images[1:5000,]
+y = labels[5001:nrow(images),]
+y_val = labels[1:5000,]
+
+# Train
+epochs = 1
+[W_1, b_1, W_2, b_2, W_3, b_3] = mnist_2NN::train(X, y, X_val, y_val, epochs)
+
+# Read test data
+data = read($test, format="csv")
+n = nrow(data)
+
+# Extract images and labels
+X_test = data[,2:ncol(data)]
+y_test = data[,1]
+
+# Scale images to [0,1], and one-hot encode the labels
+X_test = X_test / 255.0
+y_test = table(seq(1, n), y_test+1, n, 10)
+
+# Eval on test set
+probs = mnist_2NN::predict(X_test, W_1, b_1, W_2, b_2, W_3, b_3)
+[loss, accuracy] = mnist_2NN::eval(probs, y_test)
+
+print("Test Accuracy: " + accuracy)

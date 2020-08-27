@@ -1,0 +1,32 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+X = read($1, data_type = "frame", format = "csv")
+X = as.matrix(X[, 2:5])
+[prob, labels, df, bic] = gmm(X=X, n_components = $2,  model = $3,  init_params = $4, iter = $5, reg_covar = $6, tol = $7, verbose=TRUE)
+out = (rowMaxs(prob) < 0.7)
+cluster = colSums(prob == rowMaxs(prob))
+# print("clusters "+toString(cluster))
+# print("bic "+bic)
+# print("df "+df)
+write(prob, $8)
+write(out, $9)

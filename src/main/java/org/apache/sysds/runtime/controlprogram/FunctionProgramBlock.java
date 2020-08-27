@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FunctionBlock;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.recompile.Recompiler;
@@ -112,7 +113,9 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				//     function will be recompiled for every execution.
 				// (2) without reset, there would be no benefit in recompiling the entire function
 				LocalVariableMap tmp = (LocalVariableMap) ec.getVariables().clone();
-				ResetType reset = ConfigurationManager.isCodegenEnabled() ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
+				boolean codegen = ConfigurationManager.isCodegenEnabled();
+				boolean singlenode = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE;
+				ResetType reset = (codegen || singlenode) ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
 				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, reset);
 				
 				if( DMLScript.STATISTICS ){

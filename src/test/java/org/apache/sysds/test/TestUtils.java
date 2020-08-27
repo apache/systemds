@@ -45,6 +45,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -885,7 +886,7 @@ public class TestUtils
 		String namesecond = name1;
 		boolean flag = true;
 		
-		/** to ensure that always the matrix with more nnz is iterated */
+		// to ensure that always the matrix with more nnz is iterated
 		if (m1.size() > m2.size()) {
 			first = m1;
 			second = m2;
@@ -896,28 +897,23 @@ public class TestUtils
 
 		int countErrorWithinTolerance = 0;
 		int countIdentical = 0;
-		double minerr = -1;
-		double maxerr = 0;
+		double minerr = Double.MAX_VALUE;
+		double maxerr = -Double.MAX_VALUE;
 
-		for (CellIndex index : first.keySet()) {
-			Double v1 = first.get(index);
-			Double v2 = second.get(index);
-			if (v1 == null)
-				v1 = 0.0;
-			if (v2 == null)
-				v2 = 0.0;
-			if (Math.abs(v1 - v2) < minerr || minerr == -1)
-				minerr = Math.abs(v1 - v2);
-			if (Math.abs(v1 - v2) > maxerr)
-				maxerr = Math.abs(v1 - v2);
+		for (Entry<CellIndex, Double> e : first.entrySet()) {
+			Double v1 = e.getValue() == null ? 0.0 : e.getValue();
+			Double v2 = second.get(e.getKey());
+			v2 = v2 == null ? 0.0 : v2;
+			minerr = Math.min(minerr, Math.abs(v1 - v2));
+			maxerr = Math.max(maxerr, Math.abs(v1 - v2));
 
-			if (!compareCellValue(first.get(index), second.get(index), 0, ignoreNaN)) {
-				if (!compareCellValue(first.get(index), second.get(index), tolerance, ignoreNaN)) {
+			if (!compareCellValue(v1, v2, 0, ignoreNaN)) {
+				if (!compareCellValue(v1, v2, tolerance, ignoreNaN)) {
 					countErrorWithinTolerance++;
 					if(!flag)
-						System.out.println(index+": "+first.get(index)+" <--> "+second.get(index));
+						System.out.println(e.getKey()+": "+v1+" <--> "+v2);
 					else 
-						System.out.println(index+": "+second.get(index)+" <--> "+first.get(index));
+						System.out.println(e.getKey()+": "+v2+" <--> "+v1);
 				}
 			} else {
 				countIdentical++;
@@ -962,7 +958,7 @@ public class TestUtils
 			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
 			case INT64:     return ((Long)in1).compareTo((Long)in2);
 			case FP64:  
-				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:	
+				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:
 					((Double)in1).compareTo((Double)in2);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
@@ -2473,6 +2469,11 @@ public class TestUtils
 		for( Thread t : ts )
 			shutdownThread(t);
 	}
+
+	public static void shutdownThreads(Process... ts) {
+		for( Process t : ts )
+			shutdownThread(t);
+	}
 	
 	public static void shutdownThread(Thread t) {
 		// kill the worker
@@ -2480,6 +2481,19 @@ public class TestUtils
 			t.interrupt();
 			try {
 				t.join();
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static void shutdownThread(Process t) {
+		// kill the worker
+		if( t != null ) {
+			Process d = t.destroyForcibly();
+			try {
+				d.waitFor();
 			}
 			catch (InterruptedException e) {
 				e.printStackTrace();

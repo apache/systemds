@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -176,48 +176,81 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#addProgramBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-">addProgramBlock</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#addFunctionProgramBlock-java.lang.String-java.lang.String-org.apache.sysds.runtime.controlprogram.FunctionProgramBlock-boolean-">addFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
+                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                       <a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&nbsp;fpb,
+                       boolean&nbsp;opt)</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#addProgramBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-">addProgramBlock</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb)</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#clone--">clone</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html" title="class in org.apache.sysds.runtime.controlprogram">Program</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#clone-boolean-">clone</a></span>(boolean&nbsp;deep)</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#containsFunctionProgramBlock-java.lang.String-boolean-">containsFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fkey,
+                            boolean&nbsp;opt)</code>&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#containsFunctionProgramBlock-java.lang.String-java.lang.String-">containsFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#containsFunctionProgramBlock-java.lang.String-java.lang.String-boolean-">containsFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
+                            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                            boolean&nbsp;opt)</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">execute</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#getDMLProg--">getDMLProg</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#getFunctionProgramBlock-java.lang.String-boolean-">getFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fkey,
+                       boolean&nbsp;opt)</code>&nbsp;</td>
+</tr>
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#getFunctionProgramBlock-java.lang.String-java.lang.String-">getFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname)</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i12" class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#getFunctionProgramBlock-java.lang.String-java.lang.String-boolean-">getFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
+                       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                       boolean&nbsp;opt)</code>&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#getFunctionProgramBlocks--">getFunctionProgramBlocks</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i14" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#getFunctionProgramBlocks-boolean-">getFunctionProgramBlocks</a></span>(boolean&nbsp;opt)</code>&nbsp;</td>
+</tr>
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#getProgramBlocks--">getProgramBlocks</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#removeFunctionProgramBlock-java.lang.String-java.lang.String-">removeFunctionProgramBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
                           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/controlprogram/Program.html#setDMLProg-org.apache.sysds.parser.DMLProgram-">setDMLProg</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog)</code>&nbsp;</td>
 </tr>
@@ -319,6 +352,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                     <a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&nbsp;fpb)</pre>
 </li>
 </ul>
+<a name="addFunctionProgramBlock-java.lang.String-java.lang.String-org.apache.sysds.runtime.controlprogram.FunctionProgramBlock-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addFunctionProgramBlock</h4>
+<pre>public&nbsp;void&nbsp;addFunctionProgramBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
+                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                                    <a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&nbsp;fpb,
+                                    boolean&nbsp;opt)</pre>
+</li>
+</ul>
 <a name="removeFunctionProgramBlock-java.lang.String-java.lang.String-">
 <!--   -->
 </a>
@@ -338,6 +383,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&gt;&nbsp;getFunctionProgramBlocks()</pre>
 </li>
 </ul>
+<a name="getFunctionProgramBlocks-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getFunctionProgramBlocks</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&gt;&nbsp;getFunctionProgramBlocks(boolean&nbsp;opt)</pre>
+</li>
+</ul>
 <a name="containsFunctionProgramBlock-java.lang.String-java.lang.String-">
 <!--   -->
 </a>
@@ -348,6 +402,27 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname)</pre>
 </li>
 </ul>
+<a name="containsFunctionProgramBlock-java.lang.String-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>containsFunctionProgramBlock</h4>
+<pre>public&nbsp;boolean&nbsp;containsFunctionProgramBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fkey,
+                                            boolean&nbsp;opt)</pre>
+</li>
+</ul>
+<a name="containsFunctionProgramBlock-java.lang.String-java.lang.String-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>containsFunctionProgramBlock</h4>
+<pre>public&nbsp;boolean&nbsp;containsFunctionProgramBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
+                                            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                                            boolean&nbsp;opt)</pre>
+</li>
+</ul>
 <a name="getFunctionProgramBlock-java.lang.String-java.lang.String-">
 <!--   -->
 </a>
@@ -356,6 +431,27 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>getFunctionProgramBlock</h4>
 <pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&nbsp;getFunctionProgramBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
                                                     <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname)</pre>
+</li>
+</ul>
+<a name="getFunctionProgramBlock-java.lang.String-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getFunctionProgramBlock</h4>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&nbsp;getFunctionProgramBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fkey,
+                                                    boolean&nbsp;opt)</pre>
+</li>
+</ul>
+<a name="getFunctionProgramBlock-java.lang.String-java.lang.String-boolean-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getFunctionProgramBlock</h4>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/controlprogram/FunctionProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">FunctionProgramBlock</a>&nbsp;getFunctionProgramBlock(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;namespace,
+                                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                                                    boolean&nbsp;opt)</pre>
 </li>
 </ul>
 <a name="addProgramBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-">

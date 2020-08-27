@@ -37,7 +37,7 @@ public class Types
 	/**
 	 * Execution type of individual operations.
 	 */
-	public enum ExecType { CP, CP_FILE, SPARK, GPU, INVALID }
+	public enum ExecType { CP, CP_FILE, SPARK, GPU, FED, INVALID }
 	
 	/**
 	 * Data types (tensor, matrix, scalar, frame, object, unknown).
@@ -195,7 +195,7 @@ public class Types
 		ABS, ACOS, ASIN, ASSERT, ATAN, CAST_AS_SCALAR, CAST_AS_MATRIX,
 		CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
 		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
-		CUMSUMPROD, DETECTSCHEMA, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
+		CUMSUMPROD, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
 		MEDIAN, PRINT, ROUND, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP, SVD,
 		TAN, TANH, TYPEOF,
@@ -231,6 +231,7 @@ public class Types
 				case CUMPROD:         return "ucum*";
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
+				case COLNAMES:        return "colnames";
 				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";
@@ -266,12 +267,12 @@ public class Types
 	public enum OpOp2 {
 		AND(true), BITWAND(true), BITWOR(true), BITWSHIFTL(true), BITWSHIFTR(true),
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
-		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false),
-		EQUAL(true), GREATER(true), GREATEREQUAL(true),
-		INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true), LESSEQUAL(true),
-		LOG(true), MAX(true), MEDIAN(false), MIN(true), MINUS(true), MODULUS(true),
-		MOMENT(false), MULT(true), NOTEQUAL(true), OR(true), PLUS(true), POW(true),
-		PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false), XOR(true),
+		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true), GREATER(true),
+		GREATEREQUAL(true), INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true),
+		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true), 
+		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
+		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false),
+		XOR(true),
 		//fused ML-specific operators for performance
 		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
@@ -316,6 +317,7 @@ public class Types
 				case BITWSHIFTR:   return "bitwShiftR";
 				case DROP_INVALID_TYPE: return "dropInvalidType";
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
+				case MAP:          return "dml_map";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -349,6 +351,7 @@ public class Types
 				case "bitwShiftR":  return BITWSHIFTR;
 				case "dropInvalidType": return DROP_INVALID_TYPE;
 				case "dropInvalidLength": return DROP_INVALID_LENGTH;
+				case "map":         return MAP;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}

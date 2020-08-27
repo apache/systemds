@@ -66,7 +66,7 @@ def process(all_features, predictions, loss, sc, debug, alpha, k, w, loss_type, 
         top_k.print_topk()
         print("Level " + str(cur_lvl) + " had " + str(len(levels[cur_lvl - 1].value) * (len(levels[cur_lvl - 1].value) - 1)) +
               " candidates but after pruning only " + str(len(prev_level.value)) + " go to the next level")
-    print("Program stopped at level " + str(cur_lvl))
+    print("Program stopped at level " + str(cur_lvl - 1))
     print()
     print("Selected slices are: ")
     top_k.print_topk()

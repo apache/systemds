@@ -61,7 +61,7 @@ class SliceTests(unittest.TestCase):
     first_level = slicer.make_first_level(all_features, list(complete_x), loss, len(complete_x), y_test, errors,
                                           loss_type, top_k, alpha, w)
     first_level_nodes = first_level[0]
-    slice_member = first_level_nodes[7]
+    slice_member = first_level_nodes[(7, 'x2_2')]
 
     def test_attr_spark(self):
         conf = SparkConf().setAppName("toy_test").setMaster('local[2]')
@@ -173,11 +173,11 @@ class SliceTests(unittest.TestCase):
         print("check 9")
 
     def test_base_join_enum(self):
-        cur_lvl_nodes = []
+        cur_lvl_nodes = {}
         all_nodes = {}
         b_update = True
         cur_lvl = 1
-        slice_index = 7
+        slice_index = (2, 'x0_3')
         combined = slicer.join_enum(slice_index, self.first_level_nodes, self.complete_x, self.loss,
                                len(self.complete_x), self.y_test, self.errors, self.debug, self.alpha, self.w,
                                self.loss_type, b_update, cur_lvl, all_nodes, self.top_k, cur_lvl_nodes)
@@ -185,16 +185,16 @@ class SliceTests(unittest.TestCase):
         print("check1")
 
     def test_parents_second(self):
-        cur_lvl_nodes = []
+        cur_lvl_nodes = {}
         all_nodes = {}
         b_update = True
         cur_lvl = 1
-        slice_index = 7
+        slice_index = (2, 'x0_3')
         combined = slicer.join_enum(slice_index, self.first_level_nodes, self.complete_x, self.loss,
                                     len(self.complete_x), self.y_test, self.errors, self.debug, self.alpha, self.w,
                                     self.loss_type, b_update, cur_lvl, all_nodes, self.top_k, cur_lvl_nodes)
-        parent1 = combined[0][2]
-        parent2 = combined[0][5]
+        parent1 = combined[0][('x0_3 && x1_3')]
+        parent2 = combined[0][('x0_3 && x2_2')]
         new_node = Node(self.complete_x, self.loss, len(self.complete_x), self.y_test, self.errors)
         new_node.parents = [parent1, parent2]
         parent1_attr = parent1.attributes
@@ -204,16 +204,16 @@ class SliceTests(unittest.TestCase):
         print("check2")
 
     def test_nonsense(self):
-        cur_lvl_nodes = []
+        cur_lvl_nodes = {}
         all_nodes = {}
         b_update = True
         cur_lvl = 1
-        slice_index = 7
+        slice_index = (2, 'x0_3')
         combined = slicer.join_enum(slice_index, self.first_level_nodes, self.complete_x, self.loss,
                                     len(self.complete_x), self.y_test, self.errors, self.debug, self.alpha, self.w,
                                     self.loss_type, b_update, cur_lvl, all_nodes, self.top_k, cur_lvl_nodes)
-        parent1 = combined[0][2]
-        parent2 = combined[0][5]
+        parent1 = combined[0][('x0_3 && x1_3')]
+        parent2 = combined[0][('x0_3 && x2_2')]
         new_node = Node(self.complete_x, self.loss, len(self.complete_x), self.y_test, self.errors)
         new_node.parents = [parent1, parent2]
         parent1_attr = parent1.attributes
@@ -226,34 +226,37 @@ class SliceTests(unittest.TestCase):
         print("check3")
 
     def test_non_nonsense(self):
-        cur_lvl_nodes = []
+        cur_lvl_nodes = {}
         all_nodes = {}
         b_update = True
         cur_lvl = 1
-        slice_index = 7
+        slice_index = (2, 'x0_3')
         parent3 = Node(self.complete_x, self.loss, len(self.complete_x), self.y_test, self.errors)
-        parent3.parents = [self.first_level_nodes[4], self.first_level_nodes[1]]
+        parent3.parents = [self.first_level_nodes[(4, 'x1_2')], self.first_level_nodes[(7, 'x2_2')]]
+        parent3.attributes = [('x1_2', 4), ('x2_2', 7)]
         combined = slicer.join_enum(slice_index, self.first_level_nodes, self.complete_x, self.loss,
                                     len(self.complete_x), self.y_test, self.errors, self.debug, self.alpha, self.w,
                                     self.loss_type, b_update, cur_lvl, all_nodes, self.top_k, cur_lvl_nodes)
-        parent2 = combined[0][5]
+        parent2 = combined[0]['x0_3 && x2_3']
+        parent3.key = (8, 'x1_2 && x2_2')
         flag_nonsense = slicer.slice_name_nonsense(parent2, parent3, 2)
-        self.assertEqual(False, flag_nonsense)
+        self.assertEqual(True, flag_nonsense)
         print("check4")
 
     def test_uppers(self):
-        cur_lvl_nodes = []
+        cur_lvl_nodes = {}
         all_nodes = {}
         b_update = True
         cur_lvl = 1
-        slice_index = 7
+        slice_index = (2, 'x0_3')
         parent3 = Node(self.complete_x, self.loss, len(self.complete_x), self.y_test, self.errors)
-        parent3.parents = [self.first_level_nodes[4], self.first_level_nodes[1]]
+        parent3.parents = [self.first_level_nodes[(4, 'x1_2')], self.first_level_nodes[(7, 'x2_2')]]
+        parent3.attributes = [('x1_2', 4), ('x2_2', 7)]
         combined = slicer.join_enum(slice_index, self.first_level_nodes, self.complete_x, self.loss,
                                     len(self.complete_x), self.y_test, self.errors, self.debug, self.alpha, self.w,
                                     self.loss_type, b_update, cur_lvl, all_nodes, self.top_k, cur_lvl_nodes)
-        parent1 = combined[0][2]
-        parent2 = combined[0][5]
+        parent1 = combined[0]['x0_3 && x1_3']
+        parent2 = combined[0]['x0_3 && x2_3']
         new_node = Node(self.complete_x, self.loss, len(self.complete_x), self.y_test, self.errors)
         new_node.parents = [parent1, parent2]
         new_node.calc_bounds(2, self.w)
@@ -278,6 +281,126 @@ class SliceTests(unittest.TestCase):
             idx += 1
             self.assertEqual(sliced.score, union_top_k.slices[idx].score)
         print("check4")
+
+    def test_extreme_target(self):
+        test_dataset = pd.read_csv("/home/lana/diploma/project/slicing/datasets/toy_extreme_change.csv")
+        y_test = test_dataset.iloc[:, self.attributes_amount - 1:self.attributes_amount].values
+        x_test = test_dataset.iloc[:, 0:self.attributes_amount - 1].values
+        y_pred = self.model.predict(x_test)
+        print("Mean squared error: %.2f"
+              % mean_squared_error(y_test, y_pred))
+        print('r_2 statistic: %.2f' % r2_score(y_test, y_pred))
+        # Now that we have trained the model, we can print the coefficient of x that it has predicted
+        print('Coefficients: \n', self.model.coef_)
+        enc = OneHotEncoder(handle_unknown='ignore')
+        x = enc.fit_transform(x_test).toarray()
+        complete_x = []
+        complete_y = []
+        counter = 0
+        for item in x:
+            complete_x.append((counter, item))
+            complete_y.append((counter, y_test[counter]))
+            counter = counter + 1
+        all_features = enc.get_feature_names()
+        loss = mean_squared_error(y_test, y_pred)
+        devs = (y_pred - y_test) ** 2
+        errors = []
+        counter = 0
+        for pred in devs:
+            errors.append((counter, pred))
+            counter = counter + 1
+        k = 5
+        w = 0.5
+        alpha = 4
+        top_k = Topk(k)
+        debug = True
+        b_update = True
+        first_level = slicer.make_first_level(all_features, list(complete_x), loss, len(complete_x), y_test, errors,
+                                              self.loss_type, top_k, alpha, w)
+        first_level_nodes = first_level[0]
+        slice_member = first_level_nodes[(7, 'x2_2')]
+        self.assertGreater(slice_member.loss, self.slice_member.loss)
+        print("check 1")
+        self.assertGreater(slice_member.score, self.slice_member.score)
+        print("check 2")
+
+    def test_error_significance(self):
+        y_test = self.test_dataset.iloc[:, self.attributes_amount - 1:self.attributes_amount].values
+        x_test = self.test_dataset.iloc[:, 0:self.attributes_amount - 1].values
+        y_pred = self.model.predict(x_test)
+        print("Mean squared error: %.2f"
+              % mean_squared_error(y_test, y_pred))
+        print('r_2 statistic: %.2f' % r2_score(y_test, y_pred))
+        # Now that we have trained the model, we can print the coefficient of x that it has predicted
+        print('Coefficients: \n', self.model.coef_)
+        enc = OneHotEncoder(handle_unknown='ignore')
+        x = enc.fit_transform(x_test).toarray()
+        complete_x = []
+        complete_y = []
+        counter = 0
+        for item in x:
+            complete_x.append((counter, item))
+            complete_y.append((counter, y_test[counter]))
+            counter = counter + 1
+        all_features = enc.get_feature_names()
+        loss = mean_squared_error(y_test, y_pred)
+        devs = (y_pred - y_test) ** 2
+        errors = []
+        counter = 0
+        for pred in devs:
+            errors.append((counter, pred))
+            counter = counter + 1
+        k = 5
+        # Maximized size significance
+        w = 0
+        alpha = 4
+        top_k = Topk(k)
+        debug = True
+        b_update = True
+        first_level = slicer.make_first_level(all_features, list(complete_x), loss, len(complete_x), y_test, errors,
+                                              self.loss_type, top_k, alpha, w)
+        first_level_nodes = first_level[0]
+        slice_member = first_level_nodes[(7, 'x2_2')]
+        self.assertGreater(self.slice_member.score, slice_member.score)
+
+    def test_size_significance(self):
+        y_test = self.test_dataset.iloc[:, self.attributes_amount - 1:self.attributes_amount].values
+        x_test = self.test_dataset.iloc[:, 0:self.attributes_amount - 1].values
+        y_pred = self.model.predict(x_test)
+        print("Mean squared error: %.2f"
+                  % mean_squared_error(y_test, y_pred))
+        print('r_2 statistic: %.2f' % r2_score(y_test, y_pred))
+        # Now that we have trained the model, we can print the coefficient of x that it has predicted
+        print('Coefficients: \n', self.model.coef_)
+        enc = OneHotEncoder(handle_unknown='ignore')
+        x = enc.fit_transform(x_test).toarray()
+        complete_x = []
+        complete_y = []
+        counter = 0
+        for item in x:
+            complete_x.append((counter, item))
+            complete_y.append((counter, y_test[counter]))
+            counter = counter + 1
+        all_features = enc.get_feature_names()
+        loss = mean_squared_error(y_test, y_pred)
+        devs = (y_pred - y_test) ** 2
+        errors = []
+        counter = 0
+        for pred in devs:
+            errors.append((counter, pred))
+            counter = counter + 1
+        k = 5
+        # Maximized size significance
+        w = 1
+        alpha = 4
+        top_k = Topk(k)
+        debug = True
+        b_update = True
+        first_level = slicer.make_first_level(all_features, list(complete_x), loss, len(complete_x), y_test, errors,
+                                                  self.loss_type, top_k, alpha, w)
+        first_level_nodes = first_level[0]
+        slice_member = first_level_nodes[(7, 'x2_2')]
+        self.assertGreater(slice_member.score, self.slice_member.score)
 
 
 if __name__ == '__main__':

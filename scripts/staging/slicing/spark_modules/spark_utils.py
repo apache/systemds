@@ -129,7 +129,7 @@ def update_top_k(new_slices, top_k, alpha, predictions, cur_min):
 
 
 def calc_bucket_metrics(bucket, loss, w, x_size, cur_lvl):
-    bucket.calc_error()
+    bucket.error = bucket.calc_error()
     bucket.score = opt_fun(bucket.error, bucket.size, loss, x_size, w)
     if cur_lvl == 0:
         bucket.s_upper = bucket.size

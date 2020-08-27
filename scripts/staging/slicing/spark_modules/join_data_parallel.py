@@ -29,7 +29,8 @@ from slicing.spark_modules.spark_utils import approved_join_slice
 
 
 def rows_mapper(row, buckets, loss_type):
-    filtered = dict(filter(lambda bucket: all(attr in row[1] for attr in bucket[1].attributes), buckets.items()))
+    # filtered = dict(filter(lambda bucket: all(attr in row[1] for attr in bucket[1].attributes), buckets.items()))
+    filtered = dict(filter(lambda bucket: all(attr in row[0] for attr in bucket[1].attributes), buckets.items()))
     for item in filtered:
         filtered[item].update_metrics(row, loss_type)
     return filtered
@@ -79,7 +80,7 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
         bucket = Bucket(node, cur_lvl, w, x_size, loss)
         buckets[bucket.name] = bucket
     b_buckets = SparkContext.broadcast(sc, buckets)
-    rows = predictions.rdd.map(lambda row: row[1].indices)\
+    rows = predictions.rdd.map(lambda row: (row[1].indices, row[2]))\
         .map(lambda item: list(item))
     mapped = rows.map(lambda row: rows_mapper(row, b_buckets.value, loss_type))
     flattened = mapped.flatMap(lambda line: (line.items()))
@@ -114,8 +115,9 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
         print("Level " + str(cur_lvl) + " had " + str(
             len(b_cur_lvl_nodes.value * (len(prev_level) - 1)))+" candidates but after pruning only " +
               str(len(prev_level)) + " go to the next level")
-        print("Program stopped at level " + str(cur_lvl - 1))
+        top_k.print_topk()
     print()
+    print("Program stopped at level " + str(cur_lvl - 1))
     print("Selected slices are: ")
     top_k.print_topk()
     return None

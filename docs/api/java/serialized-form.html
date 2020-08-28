@@ -680,13 +680,8 @@
  must get the OutputInfo that matches with InputInfo stored inside _mtd.</div>
 </li>
 <li class="blockList">
-<h4>_privacyConstraint</h4>
-<pre><a href="org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a> _privacyConstraint</pre>
-<div class="block">Object holding all privacy constraints associated with the cacheable data.</div>
-</li>
-<li class="blockList">
 <h4>_fedMapping</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">K</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">V</a>&gt; _fedMapping</pre>
+<pre><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a> _fedMapping</pre>
 </li>
 <li class="blockList">
 <h4>_hdfsFileName</h4>
@@ -845,7 +840,15 @@
 <ul class="blockList">
 <li class="blockList">
 <h4>_method</h4>
-<pre><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a> _method</pre>
+<pre><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a> _method</pre>
+</li>
+<li class="blockList">
+<h4>_id</h4>
+<pre>long _id</pre>
+</li>
+<li class="blockList">
+<h4>_tid</h4>
+<pre>long _tid</pre>
 </li>
 <li class="blockList">
 <h4>_data</h4>
@@ -873,7 +876,7 @@
 <ul class="blockList">
 <li class="blockList">
 <h4>_status</h4>
-<pre><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.Type.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse.Type</a> _status</pre>
+<pre><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.ResponseType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse.ResponseType</a> _status</pre>
 </li>
 <li class="blockList">
 <h4>_data</h4>
@@ -882,6 +885,26 @@
 <li class="blockListLast">
 <h4>checkedConstraints</h4>
 <pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">K</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">V</a>&gt; checkedConstraints</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.federated.FederatedUDF">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">org.apache.sysds.runtime.controlprogram.federated.FederatedUDF</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>799416525191257308L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
+<h4>_inputIDs</h4>
+<pre>long[] _inputIDs</pre>
 </li>
 </ul>
 </li>
@@ -2925,9 +2948,14 @@
 <h4>dataType</h4>
 <pre><a href="org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a> dataType</pre>
 </li>
-<li class="blockListLast">
+<li class="blockList">
 <h4>valueType</h4>
 <pre><a href="org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a> valueType</pre>
+</li>
+<li class="blockListLast">
+<h4>_privacyConstraint</h4>
+<pre><a href="org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a> _privacyConstraint</pre>
+<div class="block">Object holding all privacy constraints associated with the data.</div>
 </li>
 </ul>
 </li>
@@ -3057,6 +3085,91 @@
 <li class="blockListLast">
 <h4>_value</h4>
 <pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> _value</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList">
+<h2 title="Package">Package&nbsp;org.apache.sysds.runtime.instructions.fed</h2>
+<ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed.MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder.html" title="class in org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed.MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>2376756757742169692L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_spec</h4>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> _spec</pre>
+</li>
+<li class="blockListLast">
+<h4>_offset</h4>
+<pre>int _offset</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed.MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html" title="class in org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed.MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>6034440964680578276L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_outputID</h4>
+<pre>long _outputID</pre>
+</li>
+<li class="blockListLast">
+<h4>_encoder</h4>
+<pre><a href="org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> _encoder</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed.ParameterizedBuiltinFEDInstruction.DecodeMatrix">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/instructions/fed/ParameterizedBuiltinFEDInstruction.DecodeMatrix.html" title="class in org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed.ParameterizedBuiltinFEDInstruction.DecodeMatrix</a> extends <a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>2376756757742169692L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>_outputID</h4>
+<pre>long _outputID</pre>
+</li>
+<li class="blockList">
+<h4>_meta</h4>
+<pre><a href="org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a> _meta</pre>
+</li>
+<li class="blockList">
+<h4>_spec</h4>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> _spec</pre>
+</li>
+<li class="blockListLast">
+<h4>_globalOffset</h4>
+<pre>int _globalOffset</pre>
 </li>
 </ul>
 </li>
@@ -4844,7 +4957,7 @@
 </li>
 <li class="blockList">
 <h4>naStrings</h4>
-<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> naStrings</pre>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">E</a>&gt; naStrings</pre>
 </li>
 <li class="blockListLast">
 <h4>sparse</h4>
@@ -5094,6 +5207,15 @@
 </ul>
 </li>
 </ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction</a> extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-8398572153616520873L</dd>
+</dl>
 </li>
 <li class="blockList"><a name="org.apache.sysds.runtime.matrix.data.MatrixBlock">
 <!--   -->

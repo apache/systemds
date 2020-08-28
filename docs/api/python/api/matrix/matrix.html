@@ -214,11 +214,13 @@ on need, or a path pointing to a matrix.</p>
 <dd><p>Computes the Cholesky decomposition of a symmetric, positive definite matrix</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>safe</strong> – default value is False, if flag is True additional checks to ensure</p>
+<dd class="field-odd"><p><strong>safe</strong> – default value is False, if flag is True additional checks to ensure
+that the matrix is symmetric positive definite are applied, if False, checks will be skipped</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the OperationNode representing this operation</p>
 </dd>
 </dl>
-<p>that the matrix is symmetric positive definite are applied, if False, checks will be skipped
-:return: the OperationNode representing this operation</p>
 </dd></dl>
 
 <dl class="py method">

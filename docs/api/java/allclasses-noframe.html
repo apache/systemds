@@ -39,7 +39,6 @@
 <li><a href="org/apache/sysds/runtime/instructions/cp/AppendCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">AppendCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/AppendCPInstruction.AppendType.html" title="enum in org.apache.sysds.runtime.instructions.cp">AppendCPInstruction.AppendType</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">AppendFEDInstruction</a></li>
-<li><a href="org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.FEDAppendType.html" title="enum in org.apache.sysds.runtime.instructions.fed">AppendFEDInstruction.FEDAppendType</a></li>
 <li><a href="org/apache/sysds/lops/AppendG.html" title="class in org.apache.sysds.lops">AppendG</a></li>
 <li><a href="org/apache/sysds/lops/AppendGAlignedSP.html" title="class in org.apache.sysds.lops">AppendGAlignedSP</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/AppendGAlignedSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">AppendGAlignedSPInstruction</a></li>
@@ -70,10 +69,13 @@
 <li><a href="org/apache/sysds/runtime/instructions/spark/BinaryFrameFrameSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">BinaryFrameFrameSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/BinaryFrameMatrixCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryFrameMatrixCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/BinaryFrameMatrixSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">BinaryFrameMatrixSPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/cp/BinaryFrameScalarCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryFrameScalarCPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/spark/BinaryFrameScalarSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">BinaryFrameScalarSPInstruction</a></li>
 <li><a href="org/apache/sysds/lops/BinaryM.html" title="class in org.apache.sysds.lops">BinaryM</a></li>
 <li><a href="org/apache/sysds/lops/BinaryM.VectorType.html" title="enum in org.apache.sysds.lops">BinaryM.VectorType</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/BinaryMatrixBVectorSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">BinaryMatrixBVectorSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/BinaryMatrixMatrixCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryMatrixMatrixCPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/BinaryMatrixMatrixFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryMatrixMatrixFEDInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/BinaryMatrixMatrixSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">BinaryMatrixMatrixSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/BinaryMatrixScalarCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BinaryMatrixScalarCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/fed/BinaryMatrixScalarFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">BinaryMatrixScalarFEDInstruction</a></li>
@@ -436,6 +438,7 @@
 <li><a href="org/apache/sysds/runtime/instructions/gpu/context/ExecutionConfig.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">ExecutionConfig</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/context/ExecutionContextFactory.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContextFactory</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/ExecutionContextMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">ExecutionContextMap</a></li>
 <li><a href="org/apache/sysds/utils/Explain.html" title="class in org.apache.sysds.utils">Explain</a></li>
 <li><a href="org/apache/sysds/utils/Explain.ExplainCounts.html" title="class in org.apache.sysds.utils">Explain.ExplainCounts</a></li>
 <li><a href="org/apache/sysds/utils/Explain.ExplainType.html" title="enum in org.apache.sysds.utils">Explain.ExplainType</a></li>
@@ -459,12 +462,16 @@
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a></li>
-<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></li>
-<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.Type.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse.Type</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.ResponseType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse.ResponseType</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedWorker.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorker</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedWorkerHandler.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkerHandler</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedWorkerHandlerException.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkerHandlerException</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationUtils.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationUtils</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/fed/FEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">FEDInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/FEDInstructionParser.html" title="class in org.apache.sysds.runtime.instructions">FEDInstructionParser</a></li>
@@ -488,6 +495,7 @@
 <li><a href="org/apache/sysds/runtime/instructions/spark/FrameAppendRSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">FrameAppendRSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a></li>
+<li><a href="org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a></li>
 <li><a href="org/apache/sysds/api/mlcontext/FrameFormat.html" title="enum in org.apache.sysds.api.mlcontext">FrameFormat</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/FrameIndexingCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">FrameIndexingCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/FrameIndexingSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">FrameIndexingSPInstruction</a></li>
@@ -634,8 +642,6 @@
 <li><a href="org/apache/sysds/runtime/functionobjects/LessThan.html" title="class in org.apache.sysds.runtime.functionobjects">LessThan</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/LessThanEquals.html" title="class in org.apache.sysds.runtime.functionobjects">LessThanEquals</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/LibCommonsMath.html" title="class in org.apache.sysds.runtime.matrix.data">LibCommonsMath</a></li>
-<li><a href="org/apache/sysds/runtime/controlprogram/federated/LibFederatedAgg.html" title="class in org.apache.sysds.runtime.controlprogram.federated">LibFederatedAgg</a></li>
-<li><a href="org/apache/sysds/runtime/controlprogram/federated/LibFederatedAppend.html" title="class in org.apache.sysds.runtime.controlprogram.federated">LibFederatedAppend</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/LibMatrixAgg.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixAgg</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html" title="class in org.apache.sysds.runtime.matrix.data">LibMatrixBincell</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/LibMatrixBincell.BinaryAccessType.html" title="enum in org.apache.sysds.runtime.matrix.data">LibMatrixBincell.BinaryAccessType</a></li>
@@ -777,6 +783,7 @@
 <li><a href="org/apache/sysds/api/mlcontext/MLContextUtil.html" title="class in org.apache.sysds.api.mlcontext">MLContextUtil</a></li>
 <li><a href="org/apache/sysds/api/mlcontext/MLResults.html" title="class in org.apache.sysds.api.mlcontext">MLResults</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/MMChainCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">MMChainCPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/MMChainFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">MMChainFEDInstruction</a></li>
 <li><a href="org/apache/sysds/lops/MMCJ.html" title="class in org.apache.sysds.lops">MMCJ</a></li>
 <li><a href="org/apache/sysds/lops/MMCJ.MMCJType.html" title="enum in org.apache.sysds.lops">MMCJ.MMCJType</a></li>
 <li><a href="org/apache/sysds/hops/estim/MMNode.html" title="class in org.apache.sysds.hops.estim">MMNode</a></li>
@@ -792,6 +799,9 @@
 <li><a href="org/apache/sysds/runtime/functionobjects/Multiply2.html" title="class in org.apache.sysds.runtime.functionobjects">Multiply2</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/MultiReturnBuiltinCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">MultiReturnBuiltinCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/MultiReturnParameterizedBuiltinCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">MultiReturnParameterizedBuiltinCPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">MultiReturnParameterizedBuiltinFEDInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder.html" title="class in org.apache.sysds.runtime.instructions.fed">MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html" title="class in org.apache.sysds.runtime.instructions.fed">MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/MultiReturnParameterizedBuiltinSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">MultiReturnParameterizedBuiltinSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeBuild2Function.html" title="class in org.apache.sysds.runtime.instructions.spark">MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeBuild2Function</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeBuildFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeBuildFunction</a></li>
@@ -845,6 +855,8 @@
 <li><a href="org/apache/sysds/runtime/functionobjects/ParameterizedBuiltin.ParameterizedBuiltinCode.html" title="enum in org.apache.sysds.runtime.functionobjects">ParameterizedBuiltin.ParameterizedBuiltinCode</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/ParameterizedBuiltin.ProbabilityDistributionCode.html" title="enum in org.apache.sysds.runtime.functionobjects">ParameterizedBuiltin.ProbabilityDistributionCode</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/ParameterizedBuiltinCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ParameterizedBuiltinCPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/ParameterizedBuiltinFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">ParameterizedBuiltinFEDInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/ParameterizedBuiltinFEDInstruction.DecodeMatrix.html" title="class in org.apache.sysds.runtime.instructions.fed">ParameterizedBuiltinFEDInstruction.DecodeMatrix</a></li>
 <li><a href="org/apache/sysds/parser/ParameterizedBuiltinFunctionExpression.html" title="class in org.apache.sysds.parser">ParameterizedBuiltinFunctionExpression</a></li>
 <li><a href="org/apache/sysds/hops/ParameterizedBuiltinOp.html" title="class in org.apache.sysds.hops">ParameterizedBuiltinOp</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">ParameterizedBuiltinSPInstruction</a></li>
@@ -998,6 +1010,7 @@
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/RemoteParForSparkWorker.html" title="class in org.apache.sysds.runtime.controlprogram.parfor">RemoteParForSparkWorker</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/RemoteParForUtils.html" title="class in org.apache.sysds.runtime.controlprogram.parfor">RemoteParForUtils</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/ReorgCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ReorgCPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/ReorgFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">ReorgFEDInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/gpu/ReorgGPUInstruction.html" title="class in org.apache.sysds.runtime.instructions.gpu">ReorgGPUInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/functions/ReorgMapFunction.html" title="class in org.apache.sysds.runtime.instructions.spark.functions">ReorgMapFunction</a></li>
 <li><a href="org/apache/sysds/hops/ReorgOp.html" title="class in org.apache.sysds.hops">ReorgOp</a></li>
@@ -1194,6 +1207,7 @@
 <li><a href="org/apache/sysds/runtime/matrix/data/TripleIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">TripleIndexes</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/TripleIndexes.Comparator.html" title="class in org.apache.sysds.runtime.matrix.data">TripleIndexes.Comparator</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/Tsmm2SPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">Tsmm2SPInstruction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/fed/TsmmFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">TsmmFEDInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/TsmmSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">TsmmSPInstruction</a></li>
 <li><a href="org/apache/sysds/common/Types.html" title="class in org.apache.sysds.common">Types</a></li>
 <li><a href="org/apache/sysds/common/Types.AggOp.html" title="enum in org.apache.sysds.common">Types.AggOp</a></li>

@@ -25,7 +25,7 @@ from systemds.operator import OperationNode
 from systemds.script_building.dag import DAGNode
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-__all__ = ['l2svm', 'lm']
+__all__ = ['l2svm', 'lm', 'kmeans', 'pca']
 
 
 def l2svm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
@@ -68,15 +68,15 @@ def lm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Operat
 
 def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
-    Perfoms KMeans on matrix input.
+    Performs KMeans on matrix input.
 
     :param x: Input dataset to perform K-Means on.
-    :param k: The Number of centroids to use for the algorithm.
-    :param runs: The Number of concurrent instances of K-Means to run (with different initial centroids).
-    :param max_iter: The Maximum number of iterations to run the K-Means algorithm for.
+    :param k: The number of centroids to use for the algorithm.
+    :param runs: The number of concurrent instances of K-Means to run (with different initial centroids).
+    :param max_iter: The maximum number of iterations to run the K-Means algorithm for.
     :param eps: Tolerance for the algorithm to declare convergence using WCSS change ratio.
     :param is_verbose: Boolean flag if the algorithm should be run in a verbose manner.
-    :param avg_sample_size_per_centroid: The Average Number of records per centroid in the data samples.
+    :param avg_sample_size_per_centroid: The average number of records per centroid in the data samples.
     """
 
     x._check_matrix_op()
@@ -87,8 +87,42 @@ def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     if 'k' in kwargs.keys() and kwargs.get('k') < 1:
         raise ValueError("Invalid number of clusters in K means, number must be integer above 0")
 
-
-
     params_dict = {'X': x}
     params_dict.update(kwargs)
     return OperationNode(x.sds_context, 'kmeans', named_input_nodes=params_dict)
+
+
+def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+    """
+    Performs PCA on the matrix input
+
+    :param x: Input dataset to perform K-Means on.
+    :param K: The number of reduced dimensions.
+    :param center: Boolean specifying if the input values should be centered.
+    :param scale: Boolean specifying if the input values should be scaled.
+    """
+
+    x._check_matrix_op()
+    if x._np_array.size == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                         .format(s=x._np_array.shape))
+
+    if 'K' in kwargs.keys() and kwargs.get('K') < 1:
+        raise ValueError("Invalid number of clusters in K means, number must be integer above 0")
+
+    if 'scale'in kwargs.keys():
+        if kwargs.get('scale') == True:
+            kwargs.set('scale', "TRUE")
+        elif kwargs.get('scale' == False):
+            kwargs.set('scale', "FALSE")
+
+    if 'center' in kwargs.keys():
+        if kwargs.get('center') == True:
+            kwargs.set('center', "TRUE")
+        elif kwargs.get('center' == False):
+            kwargs.set('center', "FALSE")
+
+    params_dict = {'X': x}
+    params_dict.update(kwargs)
+    return OperationNode(x.sds_context, 'pca', named_input_nodes=params_dict)
+

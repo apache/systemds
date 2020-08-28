@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.transform.encode.EncoderComposite;
+import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
@@ -88,7 +89,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		// the encoder in which the complete encoding information will be aggregated
 		EncoderComposite globalEncoder = new EncoderComposite(
-			Arrays.asList(new EncoderRecode(), new EncoderPassThrough()));
+			Arrays.asList(new EncoderRecode(), new EncoderPassThrough(), new EncoderDummycode()));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
 		FederationMap fedMapping = fin.getFedMapping();
@@ -115,14 +116,21 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		});
 		long varID = FederationUtils.getNextFedDataID();
 		FederationMap transformedFedMapping = fedMapping.mapParallel(varID, (range, data) -> {
-			int colStart = (int) range.getBeginDims()[1] + 1;
-			int colEnd = (int) range.getEndDims()[1] + 1;
+			// copy because we reuse it
+			long[] beginDims = range.getBeginDims();
+			long[] endDims = range.getEndDims();
+			int colStart = (int) beginDims[1] + 1;
+			int colEnd = (int) endDims[1] + 1;
+
+			// update begin end dims (column part) considering columns added by dummycoding
+			globalEncoder.updateIndexRanges(beginDims, endDims);
+
 			// get the encoder segment that is relevant for this federated worker
 			Encoder encoder = globalEncoder.subRangeEncoder(colStart, colEnd);
+
 			try {
-				FederatedResponse response = data.executeFederatedOperation(
-					new FederatedRequest(RequestType.EXEC_UDF, varID,
-						new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
+				FederatedResponse response = data.executeFederatedOperation(new FederatedRequest(RequestType.EXEC_UDF,
+					varID, new ExecuteFrameEncoder(data.getVarID(), varID, encoder))).get();
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 			}
@@ -134,13 +142,14 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		// construct a federated matrix with the encoded data
 		MatrixObject transformedMat = ec.getMatrixObject(getOutput(0));
-		transformedMat.getDataCharacteristics().set(fin.getDataCharacteristics());
+		transformedMat.getDataCharacteristics().setRows(transformedFedMapping.getMaxIndexInRange(0));
+		transformedMat.getDataCharacteristics().setCols(transformedFedMapping.getMaxIndexInRange(1));
 		// set the federated mapping for the matrix
 		transformedMat.setFedMapping(transformedFedMapping);
 
 		// release input and outputs
 		ec.setFrameOutput(getOutput(1).getName(),
-			globalEncoder.getMetaData(new FrameBlock(globalEncoder.getNumCols(), Types.ValueType.STRING)));
+			globalEncoder.getMetaData(new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING)));
 	}
 	
 	

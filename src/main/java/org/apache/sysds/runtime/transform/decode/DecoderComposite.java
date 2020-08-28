@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
@@ -26,9 +28,9 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Simple composite decoder that applies a list of decoders 
+ * Simple composite decoder that applies a list of decoders
  * in specified order. By implementing the default decoder API
- * it can be used as a drop-in replacement for any other decoder. 
+ * it can be used as a drop-in replacement for any other decoder.
  * 
  */
 public class DecoderComposite extends Decoder
@@ -45,13 +47,30 @@ public class DecoderComposite extends Decoder
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
 		for( Decoder decoder : _decoders )
-			out = decoder.decode(in, out);	
+			out = decoder.decode(in, out);
 		return out;
+	}
+	
+	@Override
+	public Decoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
+		List<Decoder> subRangeDecoders = new ArrayList<>();
+		for (Decoder decoder : _decoders) {
+			Decoder subDecoder = decoder.subRangeDecoder(colStart, colEnd, dummycodedOffset);
+			if (subDecoder != null)
+				subRangeDecoders.add(subDecoder);
+		}
+		return new DecoderComposite(Arrays.copyOfRange(_schema, colStart-1, colEnd-1), subRangeDecoders);
+	}
+	
+	@Override
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		for(Decoder dec : _decoders)
+			dec.updateIndexRanges(beginDims, endDims);
 	}
 	
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		for( Decoder decoder : _decoders )
-			decoder.initMetaData(meta);	
+			decoder.initMetaData(meta);
 	}
 }

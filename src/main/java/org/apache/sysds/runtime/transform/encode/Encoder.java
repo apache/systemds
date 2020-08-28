@@ -168,6 +168,16 @@ public abstract class Encoder implements Serializable
 		throw new DMLRuntimeException(
 			this.getClass().getName() + " does not support merging with " + other.getClass().getName());
 	}
+	
+	/**
+	 * Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.
+	 *
+	 * @param beginDims the begin indexes before encoding
+	 * @param endDims   the end indexes before encoding
+	 */
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		// do nothing - default
+	}
 
 	/**
 	 * Construct a frame block out of the transform meta data.

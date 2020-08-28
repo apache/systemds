@@ -165,9 +165,6 @@ public class EncoderRecode extends Encoder
 
 	@Override
 	public Encoder subRangeEncoder(int colStart, int colEnd) {
-		if (colStart - 1 >= _clen)
-			return null;
-		
 		List<Integer> cols = new ArrayList<>();
 		HashMap<Integer, HashMap<String, Long>> rcdMaps = new HashMap<>();
 		for (int col : _colList) {
@@ -215,6 +212,16 @@ public class EncoderRecode extends Encoder
 			return;
 		}
 		super.mergeAt(other, col);
+	}
+	
+	public int[] numDistinctValues() {
+		int[] numDistinct = new int[_colList.length];
+		
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			numDistinct[j] = _rcdMaps.get(colID).size();
+		}
+		return numDistinct;
 	}
 
 	@Override

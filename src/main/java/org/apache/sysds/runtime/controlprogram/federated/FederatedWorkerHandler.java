@@ -187,29 +187,20 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		try {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
-			try (FileSystem fs = IOUtilFunctions.getFileSystem(mtdname)) {
-				try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-					JSONObject mtd = JSONHelper.parse(br);
-					if (mtd == null)
-						return new FederatedResponse(ResponseType.ERROR,
-							new FederatedWorkerHandlerException("Could not parse metadata file"));
-					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
-					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-					if(mtd.containsKey(DataExpression.READNNZPARAM)){
-						mc.setNonZeros(mtd.getLong(DataExpression.READNNZPARAM));
-					}
-					else if (mc.getCols() * mc.getRows() < 8000000){
-						// force dense allocation.
-						mc.setNonZeros(mc.getCols() *mc.getRows());
-					}
-					else{
-						// force sparse allocation 
-						mc.setNonZeros((long)(mc.getCols() * mc.getRows() * 0.35));
-					}
-					
-					cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
-					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
-				}
+			
+			FileSystem fs = IOUtilFunctions.getFileSystem(mtdname); //no auto-close
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+				JSONObject mtd = JSONHelper.parse(br);
+				if (mtd == null)
+					return new FederatedResponse(ResponseType.ERROR,
+						new FederatedWorkerHandlerException("Could not parse metadata file"));
+				mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
+				mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
+				if(mtd.containsKey(DataExpression.READNNZPARAM))
+					mc.setNonZeros(mtd.getLong(DataExpression.READNNZPARAM));
+				
+				cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
+				fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 			}
 		}
 		catch (Exception ex) {

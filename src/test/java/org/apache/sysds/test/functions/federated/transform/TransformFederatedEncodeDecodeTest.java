@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.transform;
+package org.apache.sysds.test.functions.federated.transform;
 
 import java.util.Arrays;
 import java.util.HashMap;

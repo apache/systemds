@@ -57,6 +57,7 @@ jobs:
           dnn,
           federated.algorithms,
           federated.primitives,
+          federated.transform,
           frame,
           indexing,
           io,

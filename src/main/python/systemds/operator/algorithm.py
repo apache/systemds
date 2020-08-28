@@ -20,16 +20,18 @@
 # -------------------------------------------------------------
 
 from typing import Dict
+
+from systemds.operator import OperationNode
 from systemds.script_building.dag import DAGNode
 from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.operator import OperationNode
 
 __all__ = ['l2svm', 'lm']
+
 
 def l2svm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Perform L2SVM on matrix with labels given.
-    
+
     :param x: Input dataset
     :param y: Input labels in shape of one column
     :param kwargs: Dictionary of extra arguments 
@@ -41,16 +43,16 @@ def l2svm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Ope
     return OperationNode(x.sds_context, 'l2svm', named_input_nodes=params_dict)
 
 
-def lm(x :DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def lm(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Performs LM on matrix with labels given.
-    
+
     :param x: Input dataset
     :param y: Input labels in shape of one column
     :param kwargs: Dictionary of extra arguments 
     :return: `OperationNode` containing the model fit.
     """
-    
+
     x._check_matrix_op()
     if x._np_array.size == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
@@ -58,8 +60,35 @@ def lm(x :DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Operat
     if y._np_array.size == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
                          .format(s=y._np_array.shape))
-    
+
     params_dict = {'X': x, 'y': y}
     params_dict.update(kwargs)
     return OperationNode(x.sds_context, 'lm', named_input_nodes=params_dict)
 
+
+def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+    """
+    Perfoms KMeans on matrix input.
+
+    :param x: Input dataset to perform K-Means on.
+    :param k: The Number of centroids to use for the algorithm.
+    :param runs: The Number of concurrent instances of K-Means to run (with different initial centroids).
+    :param max_iter: The Maximum number of iterations to run the K-Means algorithm for.
+    :param eps: Tolerance for the algorithm to declare convergence using WCSS change ratio.
+    :param is_verbose: Boolean flag if the algorithm should be run in a verbose manner.
+    :param avg_sample_size_per_centroid: The Average Number of records per centroid in the data samples.
+    """
+
+    x._check_matrix_op()
+    if x._np_array.size == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                         .format(s=x._np_array.shape))
+
+    if 'k' in kwargs.keys() and kwargs.get('k') < 1:
+        raise ValueError("Invalid number of clusters in K means, number must be integer above 0")
+
+
+
+    params_dict = {'X': x}
+    params_dict.update(kwargs)
+    return OperationNode(x.sds_context, 'kmeans', named_input_nodes=params_dict)

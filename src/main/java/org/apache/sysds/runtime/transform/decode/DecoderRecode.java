@@ -19,8 +19,11 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
+import java.util.List;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -70,6 +73,32 @@ public class DecoderRecode extends Decoder
 			}
 		}
 		return out;
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Decoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
+		List<Integer> cols = new ArrayList<>();
+		List<HashMap<Long, Object>> rcMaps = new ArrayList<>();
+		for(int i = 0; i < _colList.length; i++) {
+			int col = _colList[i];
+			if(col >= colStart && col < colEnd) {
+				// add the correct column, removed columns before start
+				// colStart - 1 because colStart is 1-based
+				int corrColumn = col - (colStart - 1);
+				cols.add(corrColumn);
+				rcMaps.add(new HashMap<>(_rcMaps[i]));
+			}
+		}
+		if(cols.isEmpty())
+			// empty encoder -> sub range encoder does not exist
+			return null;
+
+		int[] colList = cols.stream().mapToInt(i -> i).toArray();
+		DecoderRecode subRangeDecoder = new DecoderRecode(
+			Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1), _onOut, colList);
+		subRangeDecoder._rcMaps = rcMaps.toArray(new HashMap[0]);
+		return subRangeDecoder;
 	}
 
 	@Override

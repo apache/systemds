@@ -100,7 +100,7 @@ public class EncoderFactory
 			if( !binIDs.isEmpty() )
 				lencoders.add(new EncoderBin(jSpec, colnames, schema.length));
 			if( !dcIDs.isEmpty() )
-				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length));
+				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length, minCol, maxCol));
 			if( !oIDs.isEmpty() )
 				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length));
 			if( !mvIDs.isEmpty() ) {

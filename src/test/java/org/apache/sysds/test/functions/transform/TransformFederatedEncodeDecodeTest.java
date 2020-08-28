@@ -87,18 +87,18 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 		ExecMode platformOld = rtplatform;
 		rtplatform = ExecMode.SINGLE_NODE;
 
-		Process t1 = null, t2 = null, t3 = null, t4 = null;
+		Thread t1 = null, t2 = null, t3 = null, t4 = null;
 		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 
 			int port1 = getRandomAvailablePort();
-			t1 = startLocalFedWorker(port1);
+			t1 = startLocalFedWorkerThread(port1);
 			int port2 = getRandomAvailablePort();
-			t2 = startLocalFedWorker(port2);
+			t2 = startLocalFedWorkerThread(port2);
 			int port3 = getRandomAvailablePort();
-			t3 = startLocalFedWorker(port3);
+			t3 = startLocalFedWorkerThread(port3);
 			int port4 = getRandomAvailablePort();
-			t4 = startLocalFedWorker(port4);
+			t4 = startLocalFedWorkerThread(port4);
 
 			// schema
 			Types.ValueType[] schema = new Types.ValueType[cols / 2];

@@ -57,6 +57,10 @@ public class FederatedNegativeTest {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
+		finally {
+			//robustness in single JVM tests
+			FederatedData.resetFederatedSites();
+		}
 		TestUtils.shutdownThread(t);
 	}
 }

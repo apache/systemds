@@ -33,6 +33,7 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.util.concurrent.Promise;
 
+import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -47,7 +48,8 @@ import java.util.concurrent.Future;
 
 
 public class FederatedData {
-	private static Set<InetSocketAddress> _allFedSites = new HashSet<>();
+	protected final static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
+	private final static Set<InetSocketAddress> _allFedSites = new HashSet<>();
 	
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
@@ -158,14 +160,25 @@ public class FederatedData {
 		if( _allFedSites.isEmpty() )
 			return;
 		
-		//create and execute clear request on all workers
-		FederatedRequest fr = new FederatedRequest(RequestType.CLEAR);
-		List<Future<FederatedResponse>> ret = new ArrayList<>();
-		for( InetSocketAddress address : _allFedSites )
-			ret.add(executeFederatedOperation(address, fr));
-		
-		//wait for successful completion
-		FederationUtils.waitFor(ret);
+		try {
+			//create and execute clear request on all workers
+			FederatedRequest fr = new FederatedRequest(RequestType.CLEAR);
+			List<Future<FederatedResponse>> ret = new ArrayList<>();
+			for( InetSocketAddress address : _allFedSites )
+				ret.add(executeFederatedOperation(address, fr));
+			
+			//wait for successful completion
+			FederationUtils.waitFor(ret);
+		}
+		catch(Exception ex) {
+			log.warn("Failed to execute CLEAR request on existing federated sites.", ex);
+		}
+		finally {
+			resetFederatedSites();
+		}
+	}
+	
+	public static void resetFederatedSites() {
 		_allFedSites.clear();
 	}
 	

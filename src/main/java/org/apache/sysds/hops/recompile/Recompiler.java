@@ -1604,17 +1604,16 @@ public class Recompiler
 			//get meta data filename
 			String mtdname = DataExpression.getMTDFileName(dop.getFileName());
 			Path path = new Path(mtdname);
-			try( FileSystem fs = IOUtilFunctions.getFileSystem(mtdname) ) {
-				if( fs.exists(path) ){
-					try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-						JSONObject mtd = JSONHelper.parse(br);
-						DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
-						dop.setDataType(dt);
-						if(dt != DataType.FRAME)
-							dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
-						dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
-						dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
-					}
+			FileSystem fs = IOUtilFunctions.getFileSystem(mtdname); //no auto-close
+			if( fs.exists(path) ){
+				try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+					JSONObject mtd = JSONHelper.parse(br);
+					DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
+					dop.setDataType(dt);
+					if(dt != DataType.FRAME)
+						dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
+					dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
+					dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
 				}
 			}
 		}

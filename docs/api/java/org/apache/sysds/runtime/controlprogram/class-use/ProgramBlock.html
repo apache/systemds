@@ -631,6 +631,19 @@
 </a>
 <h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a> in <a href="../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a></h3>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a> that return types with arguments of type <a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html" title="class in org.apache.sysds.runtime.lineage">LineageDedupBlock</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">Lineage.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/Lineage.html#getDedupBlocks--">getDedupBlocks</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
 <caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -648,9 +661,40 @@
                  <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><span class="typeNameLabel">LineageDedupUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupUtils.html#computeNumPaths-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">computeNumPaths</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;fpb,
+               <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">Lineage.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/Lineage.html#createDedupPatch-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">createDedupPatch</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
+                <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">Lineage.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/Lineage.html#initializeDedupBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">initializeDedupBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
+                    <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html" title="class in org.apache.sysds.runtime.lineage">LineageDedupBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LineageDedupUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupUtils.html#initializeDedupBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">initializeDedupBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;fpb,
+                    <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">LineageDedupUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupUtils.html#isValidDedupBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-boolean-">isValidDedupBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
                  boolean&nbsp;inLoop)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">LineageDedupUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupUtils.html#setNewDedupPatch-org.apache.sysds.runtime.lineage.LineageDedupBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">setNewDedupPatch</a></span>(<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html" title="class in org.apache.sysds.runtime.lineage">LineageDedupBlock</a>&nbsp;ldb,
+                <a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;fpb,
+                <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">Lineage.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/Lineage.html#traceCurrentDedupPath-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">traceCurrentDedupPath</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
+                     <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -667,6 +711,16 @@
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><span class="typeNameLabel">LineageDedupUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupUtils.html#numPathsInPBs-java.util.ArrayList-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">numPathsInPBs</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
+             <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">LineageDedupBlock.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#setNumPathsInPBs-java.util.ArrayList-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">setNumPathsInPBs</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
+                <a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">LineageDedupBlock.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#traceProgramBlocks-java.util.ArrayList-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">traceProgramBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,

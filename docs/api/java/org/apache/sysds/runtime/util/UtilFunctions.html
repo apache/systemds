@@ -134,10 +134,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#ADD_PRIME1">ADD_PRIME1</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#defaultNaString">defaultNaString</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#DIVIDE_PRIME">DIVIDE_PRIME</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#DOUBLE_EPS">DOUBLE_EPS</a></span></code>&nbsp;</td>
 </tr>
@@ -528,7 +532,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i56" class="altColor">
 <td class="colFirst"><code>static double</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#parseToDouble-java.lang.String-">parseToDouble</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;str)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#parseToDouble-java.lang.String-java.util.Set-">parseToDouble</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;str,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;isNan)</code>
 <div class="block">Safe double parsing including handling of NAs.</div>
 </td>
 </tr>
@@ -563,30 +568,30 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#quote-java.lang.String-">quote</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;s)</code>&nbsp;</td>
 </tr>
 <tr id="i64" class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#requestFederatedData-java.util.Map-">requestFederatedData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&nbsp;fedMapping)</code>&nbsp;</td>
-</tr>
-<tr id="i65" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#roundToNext-int-int-">roundToNext</a></span>(int&nbsp;val,
            int&nbsp;factor)</code>&nbsp;</td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#stringToObject-org.apache.sysds.common.Types.ValueType-java.lang.String-">stringToObject</a></span>(<a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#toInt-double-">toInt</a></span>(double&nbsp;val)</code>&nbsp;</td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#toInt-java.lang.Object-">toInt</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;obj)</code>&nbsp;</td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#toLong-double-">toLong</a></span>(double&nbsp;val)</code>&nbsp;</td>
+</tr>
+<tr id="i69" class="rowColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#toMillis-java.lang.String-">toMillis</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;dateString)</code>&nbsp;</td>
 </tr>
 <tr id="i70" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -639,7 +644,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="DIVIDE_PRIME">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>DIVIDE_PRIME</h4>
 <pre>public static final&nbsp;int DIVIDE_PRIME</pre>
@@ -647,6 +652,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../constant-values.html#org.apache.sysds.runtime.util.UtilFunctions.DIVIDE_PRIME">Constant Field Values</a></dd>
 </dl>
+</li>
+</ul>
+<a name="defaultNaString">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>defaultNaString</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt; defaultNaString</pre>
 </li>
 </ul>
 </li>
@@ -1018,13 +1032,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                                     long&nbsp;lDestRowIndex)</pre>
 </li>
 </ul>
-<a name="parseToDouble-java.lang.String-">
+<a name="parseToDouble-java.lang.String-java.util.Set-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>parseToDouble</h4>
-<pre>public static&nbsp;double&nbsp;parseToDouble(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;str)</pre>
+<pre>public static&nbsp;double&nbsp;parseToDouble(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;str,
+                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;isNan)</pre>
 <div class="block">Safe double parsing including handling of NAs. Previously, we also
  used this wrapper for handling thread contention in multi-threaded
  environments because Double.parseDouble relied on a synchronized cache
@@ -1032,6 +1047,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>str</code> - string to parse to double</dd>
+<dd><code>isNan</code> - collection of Nan string which if encountered should be parsed to nan value</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>double value</dd>
 </dl>
@@ -1554,13 +1570,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                   int[]&nbsp;upper)</pre>
 </li>
 </ul>
-<a name="requestFederatedData-java.util.Map-">
+<a name="toMillis-java.lang.String-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>requestFederatedData</h4>
-<pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;&nbsp;requestFederatedData(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&nbsp;fedMapping)</pre>
+<h4>toMillis</h4>
+<pre>public static&nbsp;long&nbsp;toMillis(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;dateString)</pre>
 </li>
 </ul>
 </li>

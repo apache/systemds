@@ -83,10 +83,14 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -95,6 +99,24 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a> in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructors in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html#ExecuteFrameEncoder-long-long-org.apache.sysds.runtime.transform.encode.Encoder-">ExecuteFrameEncoder</a></span>(long&nbsp;input,
+                   long&nbsp;output,
+                   <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;encoder)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.instructions.spark">
 <!--   -->
 </a>
@@ -192,10 +214,28 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderFactory.html#createEncoder-java.lang.String-java.lang.String:A-int-org.apache.sysds.runtime.matrix.data.FrameBlock-int-int-">createEncoder</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+             int&nbsp;clen,
+             <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta,
+             int&nbsp;minCol,
+             int&nbsp;maxCol)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderFactory.html#createEncoder-java.lang.String-java.lang.String:A-org.apache.sysds.common.Types.ValueType:A-org.apache.sysds.runtime.matrix.data.FrameBlock-">createEncoder</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
              <a href="../../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
              <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderFactory.html#createEncoder-java.lang.String-java.lang.String:A-org.apache.sysds.common.Types.ValueType:A-org.apache.sysds.runtime.matrix.data.FrameBlock-int-int-">createEncoder</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+             <a href="../../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
+             <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta,
+             int&nbsp;minCol,
+             int&nbsp;maxCol)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
@@ -204,6 +244,28 @@
              <a href="../../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
              int&nbsp;clen,
              <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderRecode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderRecode.html#subRangeEncoder-int-int-">subRangeEncoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderComposite.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderComposite.html#subRangeEncoder-int-int-">subRangeEncoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Encoder.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-int-int-">subRangeEncoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd)</code>
+<div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderPassThrough.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderPassThrough.html#subRangeEncoder-int-int-">subRangeEncoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -217,6 +279,48 @@
 <tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">EncoderComposite.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderComposite.html#getEncoders--">getEncoders</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/package-summary.html">org.apache.sysds.runtime.transform.encode</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderRecode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderRecode.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-">mergeAt</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
+       int&nbsp;col)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderComposite.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderComposite.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-">mergeAt</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
+       int&nbsp;col)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">Encoder.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-">mergeAt</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
+       int&nbsp;col)</code>
+<div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">EncoderPassThrough.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderPassThrough.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-">mergeAt</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
+       int&nbsp;col)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructor parameters in <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/package-summary.html">org.apache.sysds.runtime.transform.encode</a> with type arguments of type <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderComposite.html#EncoderComposite-java.util.List-">EncoderComposite</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&gt;&nbsp;encoders)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

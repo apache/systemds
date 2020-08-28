@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 from typing import Union, Optional, Iterable, Dict, Sequence, Tuple, TYPE_CHECKING
+from multiprocessing import Process
 
 import numpy as np
 from py4j.java_gateway import JVMView, JavaObject
@@ -29,6 +30,8 @@ from systemds.utils.helpers import create_params_string
 from systemds.utils.converters import matrix_block_to_numpy
 from systemds.script_building.script import DMLScript
 from systemds.script_building.dag import OutputType, DAGNode
+
+
 
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
@@ -70,6 +73,10 @@ class OperationNode(DAGNode):
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
+
+
+
+
         if self._result_var is None or self._lineage_trace is None:
             self._script = DMLScript(self.sds_context)
             self._script.build_code(self)
@@ -77,14 +84,21 @@ class OperationNode(DAGNode):
                 result_variables, self._lineage_trace = self._script.execute(lineage)
             else:
                 result_variables = self._script.execute(lineage)
+
+            if verbose:
+                print("SCRIPT:")
+                print(self._script.dml_script)
+
             if self.output_type == OutputType.DOUBLE:
                 self._result_var = result_variables.getDouble(self._script.out_var_name)
             elif self.output_type == OutputType.MATRIX:
                 self._result_var = matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
                                                          result_variables.getMatrixBlock(self._script.out_var_name))
         if verbose:
-            print(self._script.dml_script)
-            # TODO further info
+            for x in self.sds_context.get_stdout():
+                print(x)
+            for y in self.sds_context.get_stderr():
+                print(y)
 
         if lineage:
             return self._result_var, self._lineage_trace

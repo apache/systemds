@@ -113,7 +113,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				response = tmp; //return last
 			}
 
-			if (DMLScript.STATISTICS && request.getType() == RequestType.CLEAR){
+			if (DMLScript.STATISTICS && request.getType() == RequestType.CLEAR && Statistics.allowWorkerStatistics){
 				System.out.println("Federated Worker " + Statistics.display());
 				Statistics.reset();
 			}

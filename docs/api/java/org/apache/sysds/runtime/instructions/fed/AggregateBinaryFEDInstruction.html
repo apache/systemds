@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":10};
+var methods = {"i0":9,"i1":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -220,20 +220,10 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateBinaryFEDInstruction.html#federatedAggregateBinaryMV-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-boolean-">federatedAggregateBinaryMV</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;fedMo,
-                          <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;vector,
-                          <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;output,
-                          <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op,
-                          boolean&nbsp;matrixVectorOp)</code>
-<div class="block">Performs a federated binary aggregation on a Matrix and Vector.</div>
-</td>
-</tr>
-<tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateBinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">AggregateBinaryFEDInstruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateBinaryFEDInstruction.html#parseInstruction-java.lang.String-">parseInstruction</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;str)</code>&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateBinaryFEDInstruction.html#processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">processInstruction</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
 <div class="block">This method should be used to execute the instruction.</div>
@@ -252,7 +242,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.fed.<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">FEDInstruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getFEDInstructionType--">getFEDInstructionType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getType--">getType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getFEDInstructionType--">getFEDInstructionType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getTID--">getTID</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getType--">getType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#setTID-long-">setTID</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.instructions.Instruction">
@@ -323,7 +313,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <a name="processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>processInstruction</h4>
 <pre>public&nbsp;void&nbsp;processInstruction(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
@@ -334,28 +324,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html#processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">processInstruction</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ec</code> - execution context</dd>
-</dl>
-</li>
-</ul>
-<a name="federatedAggregateBinaryMV-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-boolean-">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>federatedAggregateBinaryMV</h4>
-<pre>public static&nbsp;void&nbsp;federatedAggregateBinaryMV(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;fedMo,
-                                              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;vector,
-                                              <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/MatrixObject.html" title="class in org.apache.sysds.runtime.controlprogram.caching">MatrixObject</a>&nbsp;output,
-                                              <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op,
-                                              boolean&nbsp;matrixVectorOp)</pre>
-<div class="block">Performs a federated binary aggregation on a Matrix and Vector.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>fedMo</code> - the federated matrix object</dd>
-<dd><code>vector</code> - the vector</dd>
-<dd><code>output</code> - the output matrix object</dd>
-<dd><code>op</code> - the operation</dd>
-<dd><code>matrixVectorOp</code> - true if matrix vector operation, false if vector matrix op</dd>
 </dl>
 </li>
 </ul>

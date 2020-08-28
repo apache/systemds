@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -159,37 +159,55 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#getPath--">getPath</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#getPathMaps--">getPathMaps</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#isAllPathsTaken--">isAllPathsTaken</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#pathExists-java.lang.Long-">pathExists</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;path)</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#resetPath--">resetPath</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#setMap-java.lang.Long-org.apache.sysds.runtime.lineage.LineageMap-">setMap</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;takenPath,
+      <a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&nbsp;tracedMap)</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#setNumPathsInPBs-java.util.ArrayList-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">setNumPathsInPBs</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
+                <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#setPathBranch-int-boolean-">setPathBranch</a></span>(int&nbsp;pos,
              boolean&nbsp;value)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#traceBasicProgramBlock-org.apache.sysds.runtime.controlprogram.BasicProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.Collection-">traceBasicProgramBlock</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/BasicProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">BasicProgramBlock</a>&nbsp;bpb,
                       <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.Entry.html?is-external=true" title="class or interface in java.util">Map.Entry</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&gt;&gt;&nbsp;paths)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#traceIfProgramBlock-org.apache.sysds.runtime.controlprogram.IfProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.Collection-">traceIfProgramBlock</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/IfProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">IfProgramBlock</a>&nbsp;ipb,
                    <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.Entry.html?is-external=true" title="class or interface in java.util">Map.Entry</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&gt;&gt;&nbsp;paths)</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#traceProgramBlock-org.apache.sysds.runtime.controlprogram.ProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.Collection-">traceProgramBlock</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
                  <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.Entry.html?is-external=true" title="class or interface in java.util">Map.Entry</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&gt;&gt;&nbsp;paths)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/lineage/LineageDedupBlock.html#traceProgramBlocks-java.util.ArrayList-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">traceProgramBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
                   <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
@@ -251,6 +269,25 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&nbsp;getMap(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;path)</pre>
 </li>
 </ul>
+<a name="getPathMaps--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getPathMaps</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&gt;&nbsp;getPathMaps()</pre>
+</li>
+</ul>
+<a name="setMap-java.lang.Long-org.apache.sysds.runtime.lineage.LineageMap-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setMap</h4>
+<pre>public&nbsp;void&nbsp;setMap(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;takenPath,
+                   <a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&nbsp;tracedMap)</pre>
+</li>
+</ul>
 <a name="pathExists-java.lang.Long-">
 <!--   -->
 </a>
@@ -288,6 +325,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public&nbsp;long&nbsp;getPath()</pre>
 </li>
 </ul>
+<a name="isAllPathsTaken--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isAllPathsTaken</h4>
+<pre>public&nbsp;boolean&nbsp;isAllPathsTaken()</pre>
+</li>
+</ul>
 <a name="traceProgramBlocks-java.util.ArrayList-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
 <!--   -->
 </a>
@@ -323,12 +369,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="traceBasicProgramBlock-org.apache.sysds.runtime.controlprogram.BasicProgramBlock-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-java.util.Collection-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>traceBasicProgramBlock</h4>
 <pre>public&nbsp;void&nbsp;traceBasicProgramBlock(<a href="../../../../../org/apache/sysds/runtime/controlprogram/BasicProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">BasicProgramBlock</a>&nbsp;bpb,
                                    <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.Entry.html?is-external=true" title="class or interface in java.util">Map.Entry</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/sysds/runtime/lineage/LineageMap.html" title="class in org.apache.sysds.runtime.lineage">LineageMap</a>&gt;&gt;&nbsp;paths)</pre>
+</li>
+</ul>
+<a name="setNumPathsInPBs-java.util.ArrayList-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>setNumPathsInPBs</h4>
+<pre>public&nbsp;void&nbsp;setNumPathsInPBs(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
+                             <a href="../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
 </li>
 </ul>
 </li>

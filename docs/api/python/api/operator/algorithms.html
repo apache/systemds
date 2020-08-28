@@ -224,6 +224,25 @@
 </pre></div>
 </div>
 <span class="target" id="module-systemds.operator.algorithm"></span><dl class="py function">
+<dt id="systemds.operator.algorithm.kmeans">
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">kmeans</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.kmeans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs KMeans on matrix input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Input dataset to perform K-Means on.</p></li>
+<li><p><strong>k</strong> – The number of centroids to use for the algorithm.</p></li>
+<li><p><strong>runs</strong> – The number of concurrent instances of K-Means to run (with different initial centroids).</p></li>
+<li><p><strong>max_iter</strong> – The maximum number of iterations to run the K-Means algorithm for.</p></li>
+<li><p><strong>eps</strong> – Tolerance for the algorithm to declare convergence using WCSS change ratio.</p></li>
+<li><p><strong>is_verbose</strong> – Boolean flag if the algorithm should be run in a verbose manner.</p></li>
+<li><p><strong>avg_sample_size_per_centroid</strong> – The average number of records per centroid in the data samples.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="systemds.operator.algorithm.l2svm">
 <code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">l2svm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.l2svm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perform L2SVM on matrix with labels given.</p>
@@ -255,6 +274,22 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><cite>OperationNode</cite> containing the model fit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="systemds.operator.algorithm.pca">
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">pca</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n"><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode">systemds.script_building.dag.DAGNode</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.algorithm.pca" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs PCA on the matrix input</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Input dataset to perform K-Means on.</p></li>
+<li><p><strong>K</strong> – The number of reduced dimensions.</p></li>
+<li><p><strong>center</strong> – Boolean specifying if the input values should be centered.</p></li>
+<li><p><strong>scale</strong> – Boolean specifying if the input values should be scaled.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

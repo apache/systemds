@@ -159,6 +159,8 @@ public class Statistics
 	public static long recomputeNNZTime = 0;
 	public static long examSparsityTime = 0;
 	public static long allocateDoubleArrTime = 0;
+
+	public static boolean allowWorkerStatistics = true;
 	
 	public static void incrementNativeFailuresCounter() {
 		numNativeFailures.increment();

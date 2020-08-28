@@ -95,9 +95,9 @@ class SystemDSContext(object):
         self.__stdout = Queue()
         self.__stderr = Queue()
 
-        Thread(target= self.__enqueue_output, args=(
+        Thread(target=self.__enqueue_output, args=(
             process.stdout, self.__stdout), daemon=True).start()
-        Thread(target= self.__enqueue_output, args=(
+        Thread(target=self.__enqueue_output, args=(
             process.stderr, self.__stderr), daemon=True).start()
 
         # Py4j connect to the started process.
@@ -106,22 +106,24 @@ class SystemDSContext(object):
         self.java_gateway = JavaGateway(
             gateway_parameters=gateway_parameters, java_process=process)
 
-    def get_stdout(self, lines: int = 1):
+    def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
         The output is taken from the stdout queue and returned in a new list.
-        :param lines: The number of lines to try to read from the stdout queue
+        :param lines: The number of lines to try to read from the stdout queue.
+        default -1 prints all current lines in the queue.
         """
-        if self.__stdout.qsize() < lines:
+        if lines == -1 or self.__stdout.qsize() < lines:
             return [self.__stdout.get() for x in range(self.__stdout.qsize())]
         else:
             return [self.__stdout.get() for x in range(lines)]
 
-    def get_stderr(self, lines: int = 1):
+    def get_stderr(self, lines: int = -1):
         """Getter for the stderr of the java subprocess
         The output is taken from the stderr queue and returned in a new list.
-        :param lines: The number of lines to try to read from the stderr queue
+        :param lines: The number of lines to try to read from the stderr queue.
+        default -1 prints all current lines in the queue.
         """
-        if self.__stderr.qsize() < lines:
+        if lines == -1 or self.__stderr.qsize() < lines:
             return [self.__stderr.get() for x in range(self.__stderr.qsize())]
         else:
             return [self.__stderr.get() for x in range(lines)]
@@ -136,18 +138,17 @@ class SystemDSContext(object):
 
     def close(self):
         """Close the connection to the java process and do necessary cleanup."""
-        process : Popen = self.java_gateway.java_process
+        process: Popen = self.java_gateway.java_process
         self.java_gateway.shutdown()
         # Send SigTerm
         os.kill(process.pid, 14)
 
-    def __enqueue_output(self,out, queue):
+    def __enqueue_output(self, out, queue):
         """Method for handling the output from java.
         It is locating the string handeling inside a different thread, since the 'out.readline' is a blocking command.
         """
         for line in iter(out.readline, b""):
             queue.put(line.decode("utf-8").strip())
-
 
     def __get_open_port(self):
         """Get a random available port."""

@@ -107,10 +107,10 @@ public class EncoderDummycode extends Encoder
 	public Encoder subRangeEncoder(IndexRange ixRange) {
 		List<Integer> cols = new ArrayList<>();
 		List<Integer> domainSizes = new ArrayList<>();
-		int newDummycodedLength = (int) (ixRange.colEnd - ixRange.colStart);
-		for(int i = 0; i < _colList.length; i++){
+		int newDummycodedLength = (int) ixRange.colSpan();
+		for(int i = 0; i < _colList.length; i++) {
 			int col = _colList[i];
-			if(col >= ixRange.colStart && col < ixRange.colEnd) {
+			if(ixRange.inColRange(col)) {
 				// add the correct column, removed columns before start
 				// colStart - 1 because colStart is 1-based
 				int corrColumn = (int) (col - (ixRange.colStart - 1));
@@ -122,10 +122,9 @@ public class EncoderDummycode extends Encoder
 		if(cols.isEmpty())
 			// empty encoder -> sub range encoder does not exist
 			return null;
-		
-		return new EncoderDummycode(cols.stream().mapToInt(i -> i).toArray(),
-			(int) (ixRange.colEnd - ixRange.colStart), domainSizes.stream().mapToInt(i -> i).toArray(),
-			newDummycodedLength);
+
+		return new EncoderDummycode(cols.stream().mapToInt(i -> i).toArray(), (int) ixRange.colSpan(),
+			domainSizes.stream().mapToInt(i -> i).toArray(), newDummycodedLength);
 	}
 
 	@Override

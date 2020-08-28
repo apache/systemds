@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -104,21 +102,11 @@ public class EncoderFeatureHash extends Encoder
 	
 	@Override
 	public Encoder subRangeEncoder(IndexRange ixRange) {
-		List<Integer> cols = new ArrayList<>();
-		for (int col : _colList) {
-			if (col >= ixRange.colStart && col < ixRange.colEnd) {
-				// add the correct column, removed columns before start
-				// colStart - 1 because colStart is 1-based
-				int corrColumn = (int) (col - (ixRange.colStart - 1));
-				cols.add(corrColumn);
-			}
-		}
-		if (cols.isEmpty())
+		int[] colList = subRangeColList(ixRange);
+		if(colList.length == 0)
 			// empty encoder -> sub range encoder does not exist
 			return null;
-		
-		int[] colList = cols.stream().mapToInt(i -> i).toArray();
-		return new EncoderFeatureHash(colList, (int) (ixRange.colEnd - ixRange.colStart), _K);
+		return new EncoderFeatureHash(colList, (int) ixRange.colSpan(), _K);
 	}
 	
 	@Override

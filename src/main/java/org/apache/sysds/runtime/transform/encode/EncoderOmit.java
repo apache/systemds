@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -39,6 +37,7 @@ public class EncoderOmit extends Encoder
 {	
 	private static final long serialVersionUID = 1978852120416654195L;
 
+	private boolean _federated = false;
 	private TreeSet<Integer> _rmRows = new TreeSet<>();
 
 	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
@@ -49,15 +48,23 @@ public class EncoderOmit extends Encoder
 			return;
 		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol);
 		initColList(collist);
+		_federated = minCol != -1 || maxCol != -1;
 	}
 	
 	public EncoderOmit() {
 		super(new int[0], 0);
 	}
 	
+	public EncoderOmit(boolean federated) {
+		this();
+		_federated = federated;
+	}
+	
+	
 	private EncoderOmit(int[] colList, int clen, TreeSet<Integer> rmRows) {
 		super(colList, clen);
 		_rmRows = rmRows;
+		_federated = true;
 	}
 	
 	public int getNumRemovedRows() {
@@ -84,7 +91,41 @@ public class EncoderOmit extends Encoder
 	
 	@Override
 	public void build(FrameBlock in) {
-		//do nothing
+		if(_federated)
+			_rmRows = computeRmRows(in);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		// local rmRows for broadcasting encoder in spark
+		TreeSet<Integer> rmRows;
+		if(_federated)
+			rmRows = _rmRows;
+		else
+			rmRows = computeRmRows(in);
+
+		// determine output size
+		int numRows = out.getNumRows() - rmRows.size();
+
+		// copy over valid rows into the output
+		MatrixBlock ret = new MatrixBlock(numRows, out.getNumColumns(), false);
+		int pos = 0;
+		for(int i = 0; i < in.getNumRows(); i++) {
+			// copy row if necessary
+			if(!rmRows.contains(i)) {
+				for(int j = 0; j < out.getNumColumns(); j++)
+					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
+				pos++;
+			}
+		}
+
+		_rmRows = rmRows;
+
+		return ret;
+	}
+
+	private TreeSet<Integer> computeRmRows(FrameBlock in) {
+		TreeSet<Integer> rmRows = new TreeSet<>();
 		ValueType[] schema = in.getSchema();
 		for(int i = 0; i < in.getNumRows(); i++) {
 			boolean valid = true;
@@ -93,58 +134,24 @@ public class EncoderOmit extends Encoder
 				valid &= !(val == null || (schema[colID - 1] == ValueType.STRING && val.toString().isEmpty()));
 			}
 			if(!valid)
-				_rmRows.add(i);
+				rmRows.add(i);
 		}
+		return rmRows;
 	}
-	
-	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) 
-	{
-		//determine output size
-		int numRows = out.getNumRows() - _rmRows.size();
-		
-		//copy over valid rows into the output
-		MatrixBlock ret = new MatrixBlock(numRows, out.getNumColumns(), false);
-		int pos = 0;
-		for(int i=0; i<in.getNumRows(); i++) {
-			//determine if valid row or omit
-			boolean valid = true;
-			for(int j=0; j<_colList.length; j++)
-				valid &= !Double.isNaN(out.quickGetValue(i, _colList[j]-1));
-			//copy row if necessary
-			if( valid ) {
-				for(int j=0; j<out.getNumColumns(); j++)
-					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
-				pos++;
-			}
-			else
-				_rmRows.add(i);
-		}
-		
-		return ret; 
-	}
-	
+
 	@Override
 	public Encoder subRangeEncoder(IndexRange ixRange) {
-		List<Integer> colsList = new ArrayList<>();
-		for (int col : _colList) {
-			if(col >= ixRange.colStart && col < ixRange.colEnd) {
-				// add the correct column, removed columns before start
-				// colStart - 1 because colStart is 1-based
-				int corrColumn = (int) (col - (ixRange.colStart - 1));
-				colsList.add(corrColumn);
-			}
-		}
-		TreeSet<Integer> rmRows = _rmRows.stream().filter((row) -> row >= (ixRange.colStart - 1) && row < (ixRange.colEnd - 1))
-			.map((row) -> (int) (row - (ixRange.colStart - 1))).collect(Collectors.toCollection(TreeSet::new));
-		if(colsList.isEmpty())
+		int[] colList = subRangeColList(ixRange);
+		if(colList.length == 0)
 			// empty encoder -> sub range encoder does not exist
 			return null;
-		
-		int[] colList = colsList.stream().mapToInt(i -> i).toArray();
-		return new EncoderOmit(colList, (int) (ixRange.colEnd - ixRange.colStart), rmRows);
+
+		TreeSet<Integer> rmRows = _rmRows.stream().filter((row) -> ixRange.inRowRange(row + 1))
+			.map((row) -> (int) (row - (ixRange.rowStart - 1))).collect(Collectors.toCollection(TreeSet::new));
+
+		return new EncoderOmit(colList, (int) (ixRange.colSpan()), rmRows);
 	}
-	
+
 	@Override
 	public void mergeAt(Encoder other, int col) {
 		if(other instanceof EncoderOmit) {

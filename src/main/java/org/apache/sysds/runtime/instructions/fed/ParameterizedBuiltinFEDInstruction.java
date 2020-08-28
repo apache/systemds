@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
+import java.util.List;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -53,7 +54,9 @@ import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
 import org.apache.sysds.runtime.transform.encode.Encoder;
+import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
+import org.apache.sysds.runtime.transform.encode.EncoderOmit;
 
 public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstruction {
 	protected final LinkedHashMap<String, String> params;
@@ -205,6 +208,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		FederationMap fedMapping = fo.getFedMapping();
 
+		// get column names for the EncoderFactory
 		String[] colNames = new String[(int) fo.getNumColumns()];
 		Arrays.fill(colNames, "");
 
@@ -227,11 +231,50 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		Encoder globalEncoder = EncoderFactory.createEncoder(spec, colNames, colNames.length, meta);
 
+		// check if EncoderOmit exists
+		List<Encoder> encoders = ((EncoderComposite) globalEncoder).getEncoders();
+		int omitIx = -1;
+		for(int i = 0; i < encoders.size(); i++) {
+			if(encoders.get(i) instanceof EncoderOmit) {
+				omitIx = i;
+				break;
+			}
+		}
+		if(omitIx != -1) {
+			// extra step, build the omit encoder: we need information about all the rows to omit, if our federated
+			// ranges are split up row-wise we need to build the encoder separately and combine it
+			buildOmitEncoder(fedMapping, encoders, omitIx);
+		}
+
 		MultiReturnParameterizedBuiltinFEDInstruction
 			.encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutputVariableName()));
 
 		// release locks
 		ec.releaseFrameInput(params.get("meta"));
+	}
+
+	private void buildOmitEncoder(FederationMap fedMapping, List<Encoder> encoders, int omitIx) {
+		Encoder omitEncoder = encoders.get(omitIx);
+		EncoderOmit newOmit = new EncoderOmit(true);
+		fedMapping.forEachParallel((range, data) -> {
+			try {
+				EncoderOmit subRangeEncoder = (EncoderOmit) omitEncoder.subRangeEncoder(range.getAsIndexRange().add(1));
+				FederatedResponse response = data
+					.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, -1,
+						new InitRowsToRemoveOmit(data.getVarID(), subRangeEncoder)))
+					.get();
+
+				// no synchronization necessary since names should anyway match
+				Encoder builtEncoder = (Encoder) response.getData()[0];
+				newOmit.mergeAt(builtEncoder, (int) (range.getBeginDims()[1] + 1));
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+			return null;
+		});
+		encoders.remove(omitIx);
+		encoders.add(omitIx, newOmit);
 	}
 
 	public CacheableData<?> getTarget(ExecutionContext ec) {
@@ -292,6 +335,27 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			FrameBlock fb = fo.acquireRead();
 			// return column names
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {fb.getColumnNames()});
+		}
+	}
+
+	private static class InitRowsToRemoveOmit extends FederatedUDF {
+		private static final long serialVersionUID = -8196730717390438411L;
+
+		EncoderOmit _encoder;
+
+		public InitRowsToRemoveOmit(long varID, EncoderOmit encoder) {
+			super(new long[] {varID});
+			_encoder = encoder;
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
+			FrameBlock fb = fo.acquireRead();
+
+			_encoder.build(fb);
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {_encoder});
 		}
 	}
 }

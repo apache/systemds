@@ -95,14 +95,14 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		Arrays.fill(colNames, "");
 
 		// the encoder in which the complete encoding information will be aggregated
-		Encoder globalEncoder = new EncoderComposite(
+		EncoderComposite globalEncoder = new EncoderComposite(
 			// IMPORTANT: Encoder order matters
 			Arrays.asList(new EncoderRecode(),
 				new EncoderFeatureHash(),
 				new EncoderPassThrough(),
 				new EncoderBin(),
 				new EncoderDummycode(),
-				new EncoderOmit()));
+				new EncoderOmit(true)));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
 		FederationMap fedMapping = fin.getFedMapping();
@@ -131,13 +131,15 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 			}
 			return null;
 		});
+		FrameBlock meta = new FrameBlock((int) fin.getNumColumns(), Types.ValueType.STRING);
+		meta.setColumnNames(colNames);
+		globalEncoder.getMetaData(meta);
+		globalEncoder.initMetaData(meta);
+
 		encodeFederatedFrames(fedMapping, globalEncoder, ec.getMatrixObject(getOutput(0)));
 		
-		Types.ValueType[] metaSchema = new Types.ValueType[(int) fin.getNumColumns()];
-		Arrays.fill(metaSchema, Types.ValueType.STRING);
 		// release input and outputs
-		ec.setFrameOutput(getOutput(1).getName(),
-			globalEncoder.getMetaData(new FrameBlock(metaSchema, colNames)));
+		ec.setFrameOutput(getOutput(1).getName(), meta);
 	}
 	
 	public static void encodeFederatedFrames(FederationMap fedMapping, Encoder globalEncoder,

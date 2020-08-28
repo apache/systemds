@@ -168,8 +168,8 @@ public class EncoderRecode extends Encoder
 	public Encoder subRangeEncoder(IndexRange ixRange) {
 		List<Integer> cols = new ArrayList<>();
 		HashMap<Integer, HashMap<String, Long>> rcdMaps = new HashMap<>();
-		for (int col : _colList) {
-			if (col >= ixRange.colStart && col < ixRange.colEnd) {
+		for(int col : _colList) {
+			if(ixRange.inColRange(col)) {
 				// add the correct column, removed columns before start
 				// colStart - 1 because colStart is 1-based
 				int corrColumn = (int) (col - (ixRange.colStart - 1));
@@ -178,12 +178,12 @@ public class EncoderRecode extends Encoder
 				rcdMaps.put(corrColumn, new HashMap<>(_rcdMaps.get(col)));
 			}
 		}
-		if (cols.isEmpty())
+		if(cols.isEmpty())
 			// empty encoder -> sub range encoder does not exist
 			return null;
-		
+
 		int[] colList = cols.stream().mapToInt(i -> i).toArray();
-		return new EncoderRecode(colList, (int) (ixRange.colEnd - ixRange.colStart), rcdMaps);
+		return new EncoderRecode(colList, (int) ixRange.colSpan(), rcdMaps);
 	}
 
 	@Override

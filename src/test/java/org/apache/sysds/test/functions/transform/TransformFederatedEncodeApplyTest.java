@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -190,12 +191,12 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			case RECODE: SPEC = colnames ? SPEC1b : SPEC1; DATASET = DATASET1; break;
 			case DUMMY: SPEC = colnames ? SPEC2b : SPEC2; DATASET = DATASET1; break;
 			case BIN: SPEC = colnames ? SPEC3b : SPEC3; DATASET = DATASET1; break;
-			// case IMPUTE: SPEC = colnames?SPEC4b:SPEC4; DATASET = DATASET2; break;
-			case OMIT: SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
+			// case IMPUTE: SPEC = colnames ? SPEC4b : SPEC4; DATASET = DATASET2; break;
+			case OMIT: SPEC = colnames ? SPEC5b : SPEC5; DATASET = DATASET2; break;
 			case RECODE_DUMMY: SPEC = colnames ? SPEC6b : SPEC6; DATASET = DATASET1; break;
 			case BIN_DUMMY: SPEC = colnames ? SPEC7b : SPEC7; DATASET = DATASET1; break;
-			case HASH: SPEC = colnames?SPEC8b:SPEC8; DATASET = DATASET1; break;
-			case HASH_RECODE: SPEC = colnames?SPEC9b:SPEC9; DATASET = DATASET1; break;
+			case HASH: SPEC = colnames ? SPEC8b : SPEC8; DATASET = DATASET1; break;
+			case HASH_RECODE: SPEC = colnames ? SPEC9b : SPEC9; DATASET = DATASET1; break;
 		}
 
 		Thread t1 = null, t2 = null;
@@ -208,12 +209,16 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			t2 = startLocalFedWorker(port2);
 
 			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,
-				true, Double.NaN, "" + DataExpression.DELIM_NA_STRING_SEP + "NA");
+				DataExpression.DEFAULT_DELIM_FILL, DataExpression.DEFAULT_DELIM_FILL_VALUE,
+				DATASET.equals(DATASET1) ? DataExpression.DEFAULT_NA_STRINGS : "NA" + DataExpression.DELIM_NA_STRING_SEP
+					+ "");
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			// split up dataset
 			FrameBlock dataset = FrameReaderFactory.createFrameReader(FileFormat.CSV, ffpCSV)
 				.readFrameFromHDFS(HOME + "input/" + DATASET, -1, -1);
 
+			// default for write
+			ffpCSV.setNAStrings(UtilFunctions.defaultNaString);
 			FrameWriter fw = FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffpCSV);
 
 			FrameBlock A = new FrameBlock();

@@ -54,6 +54,7 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 	}
 	
 	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean fill, double fillValue, String naStrings) {
+		this();
 		this.header = hasHeader;
 		this.delim = delim;
 		this.fill = fill;
@@ -68,6 +69,7 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 	}
 
 	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean sparse) {
+		this();
 		this.header = hasHeader;
 		this.delim = delim;
 		this.sparse = sparse;
@@ -88,7 +90,11 @@ public class FileFormatPropertiesCSV extends FileFormatProperties implements Ser
 	public String getDelim() {
 		return delim;
 	}
-	
+
+	public void setNAStrings(HashSet<String> naStrings) {
+		this.naStrings = naStrings;
+	}
+
 	public HashSet<String> getNAStrings() { 
 		return naStrings;
 	}

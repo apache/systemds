@@ -20,8 +20,10 @@
 package org.apache.sysds.runtime.transform.encode;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -125,6 +127,19 @@ public abstract class Encoder implements Serializable
 	 * @return output matrix block
 	 */
 	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out);
+
+	protected int[] subRangeColList(IndexRange ixRange) {
+		List<Integer> cols = new ArrayList<>();
+		for(int col : _colList) {
+			if(ixRange.inColRange(col)) {
+				// add the correct column, removed columns before start
+				// colStart - 1 because colStart is 1-based
+				int corrColumn = (int) (col - (ixRange.colStart - 1));
+				cols.add(corrColumn);
+			}
+		}
+		return cols.stream().mapToInt(i -> i).toArray();
+	}
 
 	/**
 	 * Returns a new Encoder that only handles a sub range of columns.

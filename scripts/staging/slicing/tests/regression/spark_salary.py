@@ -58,8 +58,8 @@ if __name__ == "__main__":
         debug = True
         loss_type = 0
         enumerator = "union"
-        dataset = '/home/lana/diploma/project/slicing/datasets/salaries.csv'
-        # dataset = '/home/lana/diploma/project/slicing/datasets/parallel_attr/salaries/attr3000.csv'
+        dataset = 'slicing/datasets/salaries.csv'
+        # dataset = 'slicing/datasets/parallel_attr/salaries/attr3000.csv'
 
     conf = SparkConf().setAppName("salary_test").setMaster('local[4]')
     num_partitions = 4

@@ -50,7 +50,7 @@ if __name__ == "__main__":
         debug = True
         loss_type = 0
         enumerator = "union"
-    file_name = '/home/lana/diploma/project/slicing/datasets/real/compas/compas-test.csv'
+    file_name = 'slicing/datasets/real/compas/compas-test.csv'
     dataset = pd.read_csv(file_name)
     attributes_amount = len(dataset.values[0])
     y = dataset.iloc[:, attributes_amount - 1:attributes_amount].values

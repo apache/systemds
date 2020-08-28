@@ -56,7 +56,7 @@ if __name__ == "__main__":
         b_update = True
         debug = True
         loss_type = 0
-        dataset = '/home/lana/diploma/project/slicing/datasets/parallel_data/salaries/rows1000.csv'
+        dataset = 'slicing/datasets/parallel_data/salaries/rows1000.csv'
         enumerator = "join"
 
     conf = SparkConf().setAppName("salary_test").setMaster('local[4]')

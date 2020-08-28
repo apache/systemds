@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 import unittest
 
 import pandas as pd
@@ -20,13 +41,13 @@ from slicing.spark_modules import spark_utils, spark_slicer, spark_union_slicer
 class SliceTests(unittest.TestCase):
     loss_type = 0
     # x, y = m.generate_dataset(10, 100)
-    train_dataset = pd.read_csv("/home/lana/diploma/project/slicing/datasets/toy_train.csv")
+    train_dataset = pd.read_csv("toy_train.csv")
     attributes_amount = len(train_dataset.values[0])
     model = linear_model.LinearRegression()
     y_train = train_dataset.iloc[:, attributes_amount - 1:attributes_amount].values
     x_train = train_dataset.iloc[:, 0:attributes_amount - 1].values
     model.fit(x_train, y_train)
-    test_dataset = pd.read_csv("/home/lana/diploma/project/slicing/datasets/toy.csv")
+    test_dataset = pd.read_csv("toy.csv")
     y_test = test_dataset.iloc[:, attributes_amount - 1:attributes_amount].values
     x_test = test_dataset.iloc[:, 0:attributes_amount - 1].values
     y_pred = model.predict(x_test)
@@ -71,9 +92,9 @@ class SliceTests(unittest.TestCase):
         label = 'target'
         sparkContext = SparkContext(conf=conf)
         sqlContext = SQLContext(sparkContext)
-        train_df = sqlContext.read.csv("/home/lana/diploma/project/slicing/datasets/toy_train.csv", header='true',
+        train_df = sqlContext.read.csv("toy_train.csv", header='true',
                             inferSchema='true')
-        test_df = sqlContext.read.csv("/home/lana/diploma/project/slicing/datasets/toy.csv", header='true',
+        test_df = sqlContext.read.csv("toy.csv", header='true',
                             inferSchema='true')
         # initializing stages of main transformation pipeline
         stages = []

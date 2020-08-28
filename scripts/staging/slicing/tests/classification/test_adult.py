@@ -52,7 +52,7 @@ if __name__ == "__main__":
         debug = True
         loss_type = 1
         enumerator = "union"
-    dataset = pd.read_csv('/home/lana/diploma/project/slicing/datasets/adult.csv')
+    dataset = pd.read_csv('/slicing/datasets/adult.csv')
     attributes_amount = len(dataset.values[0])
     x = dataset.iloc[:, 0:attributes_amount - 1].values
     y = dataset.iloc[:, attributes_amount - 1]

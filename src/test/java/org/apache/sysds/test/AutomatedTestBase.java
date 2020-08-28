@@ -101,7 +101,7 @@ public abstract class AutomatedTestBase {
 	public static final boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
 
-	public static final int FED_WORKER_WAIT = 2000; // in ms
+	public static final int FED_WORKER_WAIT = 800; // in ms
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
 	// to set the native library paths internally thus breaking the code.
@@ -1308,6 +1308,47 @@ public abstract class AutomatedTestBase {
 			e.printStackTrace();
 		}
 		return process;
+	}
+
+	/**
+	 * Start a thread for a worker. This will share the same JVM,
+	 * so all static variables will be shared.!
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, 
+	 * and clearing from the worker is disabled.
+	 * 
+	 * @param port Port to use
+	 * @return the thread associated with the worker.
+	 */
+	protected Thread startLocalFedWorkerThread(int port) {
+		Thread t = null;
+		String[] fedWorkArgs = {"-w", Integer.toString(port)};
+		ArrayList<String> args = new ArrayList<>();
+
+		addProgramIndependentArguments(args);
+
+		for(int i = 0; i < fedWorkArgs.length; i++)
+			args.add(fedWorkArgs[i]);
+
+		String[] finalArguments = args.toArray(new String[args.size()]);
+
+		Statistics.allowWorkerStatistics = false;
+
+		try {
+			t = new Thread(() -> {
+				try {
+					main(finalArguments);
+				}
+				catch(IOException e) {
+				}
+			});
+			t.start();
+			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(FED_WORKER_WAIT);
+		}
+		catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+		return t;
 	}
 
 	/**

@@ -87,7 +87,7 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -100,6 +100,24 @@
 </a>
 <h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a> in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a></h3>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> that return <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedUDF.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>
+<div class="block">Execute the user-defined function on a set of data objects
+ (e.g., matrix objects, frame objects, or scalars), which are
+ looked up by specified input IDs and passed in the same order.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
 <caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> that return types with arguments of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -108,45 +126,64 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#executeFederatedOperation-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest-">executeFederatedOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>&nbsp;request)</code>
-<div class="block">Executes an federated operation on a federated worker.</div>
-</td>
+<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#executeFederatedOperation-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...-">executeFederatedOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#executeFederatedOperation-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest-boolean-">executeFederatedOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>&nbsp;request,
-                         boolean&nbsp;withVarID)</code>
-<div class="block">Executes an federated operation on a federated worker and default variable.</div>
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#executeFederatedOperation-java.net.InetSocketAddress-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest...-">executeFederatedOperation</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;address,
+                         <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>...&nbsp;request)</code>
+<div class="block">Executes an federated operation on a federated worker.</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#executeFederatedOperation-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest-long-">executeFederatedOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>&nbsp;request,
-                         long&nbsp;varID)</code>
-<div class="block">Executes an federated operation on a federated worker.</div>
-</td>
+<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#initFederatedData-long-">initFederatedData</a></span>(long&nbsp;id)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#initFederatedData--">initFederatedData</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">FederationMap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederationMap.html#requestFederatedData--">requestFederatedData</a></span>()</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
-</li>
-<li class="blockList"><a name="org.apache.sysds.runtime.util">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a> in <a href="../../../../../../../org/apache/sysds/runtime/util/package-summary.html">org.apache.sysds.runtime.util</a></h3>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/util/package-summary.html">org.apache.sysds.runtime.util</a> that return types with arguments of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Method parameters in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> with type arguments of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">UtilFunctions.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/util/UtilFunctions.html#requestFederatedData-java.util.Map-">requestFederatedData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedData</a>&gt;&nbsp;fedMapping)</code>&nbsp;</td>
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">FederationUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederationUtils.html#waitFor-java.util.List-">waitFor</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&nbsp;responses)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a> in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a> that return <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ParameterizedBuiltinFEDInstruction.DecodeMatrix.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/ParameterizedBuiltinFEDInstruction.DecodeMatrix.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

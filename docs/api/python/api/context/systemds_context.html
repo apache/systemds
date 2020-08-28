@@ -230,18 +230,20 @@ that can be read from to get the printed statements from the JVM.</p>
 
 <dl class="py method">
 <dt id="systemds.context.SystemDSContext.get_stderr">
-<code class="sig-name descname">get_stderr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lines</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.get_stderr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_stderr</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lines</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.get_stderr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Getter for the stderr of the java subprocess
 The output is taken from the stderr queue and returned in a new list.
-:param lines: The number of lines to try to read from the stderr queue</p>
+:param lines: The number of lines to try to read from the stderr queue.
+default -1 prints all current lines in the queue.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt id="systemds.context.SystemDSContext.get_stdout">
-<code class="sig-name descname">get_stdout</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lines</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.get_stdout" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_stdout</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lines</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">- 1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.get_stdout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Getter for the stdout of the java subprocess
 The output is taken from the stdout queue and returned in a new list.
-:param lines: The number of lines to try to read from the stdout queue</p>
+:param lines: The number of lines to try to read from the stdout queue.
+default -1 prints all current lines in the queue.</p>
 </dd></dl>
 
 </dd></dl>

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":9,"i14":9,"i15":9,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":9,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":9,"i15":9,"i16":9,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":9,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":9,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10,"i73":10,"i74":10,"i75":10,"i76":10,"i77":10,"i78":10,"i79":10,"i80":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -115,7 +115,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">FrameBlock</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
-implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></pre>
+implements <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../../serialized-form.html#org.apache.sysds.runtime.matrix.data.FrameBlock">Serialized Form</a></dd>
@@ -141,6 +141,10 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a></span></code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -293,16 +297,26 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
 </td>
 </tr>
 <tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#binaryOperations-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.FrameBlock-">binaryOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bop,
+                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;that,
+                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code>
+<div class="block">This method performs the value comparison on two frames
+  if the values in both frames are equal, not equal, less than, greater than, less than/greater than and equal to
+  the output frame will store boolean value for each each comparison</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#compactEmptyBlock--">compactEmptyBlock</a></span>()</code>
 <div class="block">Free unnecessarily allocated empty block.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#copy-org.apache.sysds.runtime.matrix.data.FrameBlock-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;src)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#copy-int-int-int-int-org.apache.sysds.runtime.matrix.data.FrameBlock-">copy</a></span>(int&nbsp;rl,
     int&nbsp;ru,
@@ -310,130 +324,138 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
     int&nbsp;cu,
     <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;src)</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#createColName-int-">createColName</a></span>(int&nbsp;i)</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#createColNames-int-">createColNames</a></span>(int&nbsp;size)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#createColNames-int-int-">createColNames</a></span>(int&nbsp;off,
               int&nbsp;size)</code>&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#detectSchemaFromRow-double-">detectSchemaFromRow</a></span>(double&nbsp;sampleFraction)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#dropInvalid-org.apache.sysds.runtime.matrix.data.FrameBlock-">dropInvalid</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;schema)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#dropInvalidType-org.apache.sysds.runtime.matrix.data.FrameBlock-">dropInvalidType</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;schema)</code>
 <div class="block">Drop the cell value which does not confirms to the data type of its column</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#ensureAllocatedColumns-int-">ensureAllocatedColumns</a></span>(int&nbsp;numRows)</code>
 <div class="block">Allocate column data structures if necessary, i.e., if schema specified
  but not all column data structures created yet.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#ensureColumnCompatibility-int-">ensureColumnCompatibility</a></span>(int&nbsp;newlen)</code>
 <div class="block">Checks for matching column sizes in case of existing columns.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#get-int-int-">get</a></span>(int&nbsp;r,
    int&nbsp;c)</code>
 <div class="block">Gets a boxed object of the value in position (r,c).</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>org.apache.sysds.runtime.matrix.data.FrameBlock.Array</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumn-int-">getColumn</a></span>(int&nbsp;c)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnData-int-">getColumnData</a></span>(int&nbsp;c)</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnMetadata--">getColumnMetadata</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnMetadata-int-">getColumnMetadata</a></span>(int&nbsp;c)</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnName-int-">getColumnName</a></span>(int&nbsp;c)</code>
 <div class="block">Returns the column name for the requested column.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnNameIDMap--">getColumnNameIDMap</a></span>()</code>
 <div class="block">Creates a mapping from column names to column IDs, i.e., 
  1-based column indexes</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnNames--">getColumnNames</a></span>()</code>
 <div class="block">Returns the column names of the frame block.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnNames-boolean-">getColumnNames</a></span>(boolean&nbsp;alloc)</code>
 <div class="block">Returns the column names of the frame block.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getColumnNamesAsFrame--">getColumnNamesAsFrame</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i31" class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getCompiledFunction-java.lang.String-">getCompiledFunction</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;lambdaExpr)</code>&nbsp;</td>
+</tr>
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getExactSerializedSize--">getExactSerializedSize</a></span>()</code>
 <div class="block">Get the exact serialized size in bytes of the cache block.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getInMemorySize--">getInMemorySize</a></span>()</code>
 <div class="block">Get the in-memory size in bytes of the cache block.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getNumColumns--">getNumColumns</a></span>()</code>
 <div class="block">Get the number of columns of the frame block, that is
  the number of columns defined in the schema.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getNumRows--">getNumRows</a></span>()</code>
 <div class="block">Get the number of rows of the frame block.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getObjectRowIterator--">getObjectRowIterator</a></span>()</code>
 <div class="block">Get a row iterator over the frame where all fields are encoded
  as boxed objects according to their value types.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getObjectRowIterator-int:A-">getObjectRowIterator</a></span>(int[]&nbsp;cols)</code>
 <div class="block">Get a row iterator over the frame where all selected fields are 
  encoded as boxed objects according to their value types.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getObjectRowIterator-int-int-">getObjectRowIterator</a></span>(int&nbsp;rl,
                     int&nbsp;ru)</code>
@@ -441,7 +463,7 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  as boxed objects according to their value types.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getObjectRowIterator-int-int-int:A-">getObjectRowIterator</a></span>(int&nbsp;rl,
                     int&nbsp;ru,
@@ -450,7 +472,7 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  encoded as boxed objects according to their value types.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getObjectRowIterator-org.apache.sysds.common.Types.ValueType:A-">getObjectRowIterator</a></span>(<a href="../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code>
 <div class="block">Get a row iterator over the frame where all fields are encoded
@@ -458,7 +480,7 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  target schema.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getRecodeMap-int-">getRecodeMap</a></span>(int&nbsp;col)</code>
 <div class="block">This function will split every Recode map in the column using delimiter Lop.DATATYPE_PREFIX, 
@@ -466,31 +488,31 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  which contains token and code for every unique tokens.</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getSchema--">getSchema</a></span>()</code>
 <div class="block">Returns the schema of the frame block.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getSchemaTypeOf--">getSchemaTypeOf</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getStringRowIterator--">getStringRowIterator</a></span>()</code>
 <div class="block">Get a row iterator over the frame where all fields are encoded
  as strings independent of their value types.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getStringRowIterator-int:A-">getStringRowIterator</a></span>(int[]&nbsp;cols)</code>
 <div class="block">Get a row iterator over the frame where all selected fields are 
  encoded as strings independent of their value types.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getStringRowIterator-int-int-">getStringRowIterator</a></span>(int&nbsp;rl,
                     int&nbsp;ru)</code>
@@ -498,7 +520,7 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  as strings independent of their value types.</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#getStringRowIterator-int-int-int:A-">getStringRowIterator</a></span>(int&nbsp;rl,
                     int&nbsp;ru,
@@ -507,7 +529,7 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  encoded as strings independent of their value types.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#invalidByLength-org.apache.sysds.runtime.matrix.data.MatrixBlock-">invalidByLength</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;feaLen)</code>
 <div class="block">This method validates the frame data against an attribute length constrain
@@ -515,23 +537,23 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
   the output frame will store a null on that cell position, thus removing the length-violating values.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#isColNameDefault-int-">isColNameDefault</a></span>(int&nbsp;i)</code>&nbsp;</td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#isColNamesDefault--">isColNamesDefault</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#isColumnMetadataDefault--">isColumnMetadataDefault</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#isColumnMetadataDefault-int-">isColumnMetadataDefault</a></span>(int&nbsp;c)</code>&nbsp;</td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#isShallowSerialize--">isShallowSerialize</a></span>()</code>
 <div class="block">Indicates if the cache block is subject to shallow serialized,
@@ -539,7 +561,7 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  are almost identical allowing to avoid unnecessary deep serialize.</div>
 </td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#isShallowSerialize-boolean-">isShallowSerialize</a></span>(boolean&nbsp;inclConvert)</code>
 <div class="block">Indicates if the cache block is subject to shallow serialized,
@@ -547,13 +569,13 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  are almost identical allowing to avoid unnecessary deep serialize.</div>
 </td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#leftIndexingOperations-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.util.IndexRange-org.apache.sysds.runtime.matrix.data.FrameBlock-">leftIndexingOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;rhsFrame,
                       <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
                       <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;ret)</code>&nbsp;</td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#leftIndexingOperations-org.apache.sysds.runtime.matrix.data.FrameBlock-int-int-int-int-org.apache.sysds.runtime.matrix.data.FrameBlock-">leftIndexingOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;rhsFrame,
                       int&nbsp;rl,
@@ -562,44 +584,52 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
                       int&nbsp;cu,
                       <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;ret)</code>&nbsp;</td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i57" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#map-org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction-">map</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a>&nbsp;lambdaExpr)</code>&nbsp;</td>
+</tr>
+<tr id="i58" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#map-java.lang.String-">map</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;lambdaExpr)</code>&nbsp;</td>
+</tr>
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#merge-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-boolean-">merge</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;that,
      boolean&nbsp;bDummy)</code>
 <div class="block">Merge the given block into the current block.</div>
 </td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#merge-org.apache.sysds.runtime.matrix.data.FrameBlock-">merge</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;that)</code>&nbsp;</td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#mergeSchema-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.FrameBlock-">mergeSchema</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;temp1,
            <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;temp2)</code>&nbsp;</td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#readFields-java.io.DataInput-">readFields</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#recomputeColumnCardinality--">recomputeColumnCardinality</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#reset--">reset</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#reset-int-boolean-">reset</a></span>(int&nbsp;nrow,
      boolean&nbsp;clearMeta)</code>&nbsp;</td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#set-int-int-java.lang.Object-">set</a></span>(int&nbsp;r,
    int&nbsp;c,
@@ -608,46 +638,46 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
  to be a boxed object consistent with the schema definition.</div>
 </td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#setColumn-int-org.apache.sysds.runtime.matrix.data.FrameBlock.Array-">setColumn</a></span>(int&nbsp;c,
          org.apache.sysds.runtime.matrix.data.FrameBlock.Array&nbsp;column)</code>&nbsp;</td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#setColumnMetadata-org.apache.sysds.runtime.matrix.data.FrameBlock.ColumnMetadata:A-">setColumnMetadata</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a>[]&nbsp;colmeta)</code>&nbsp;</td>
 </tr>
-<tr id="i65" class="rowColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#setColumnMetadata-int-org.apache.sysds.runtime.matrix.data.FrameBlock.ColumnMetadata-">setColumnMetadata</a></span>(int&nbsp;c,
                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.ColumnMetadata.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.ColumnMetadata</a>&nbsp;colmeta)</code>&nbsp;</td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#setColumnNames-java.lang.String:A-">setColumnNames</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames)</code>&nbsp;</td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#setNumRows-int-">setNumRows</a></span>(int&nbsp;numRows)</code>&nbsp;</td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i73" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#setSchema-org.apache.sysds.common.Types.ValueType:A-">setSchema</a></span>(<a href="../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code>
 <div class="block">Sets the schema of the frame block.</div>
 </td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i74" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#slice-java.util.ArrayList-org.apache.sysds.runtime.util.IndexRange-int-">slice</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;&gt;&nbsp;outlist,
      <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
      int&nbsp;rowCut)</code>&nbsp;</td>
 </tr>
-<tr id="i70" class="altColor">
+<tr id="i75" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#slice-org.apache.sysds.runtime.util.IndexRange-org.apache.sysds.runtime.matrix.data.FrameBlock-">slice</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
      <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;ret)</code>&nbsp;</td>
 </tr>
-<tr id="i71" class="rowColor">
+<tr id="i76" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#slice-int-int-int-int-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
      int&nbsp;ru,
@@ -657,22 +687,22 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
 <div class="block">Right indexing operations to slice a subframe out of this frame block.</div>
 </td>
 </tr>
-<tr id="i72" class="altColor">
+<tr id="i77" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#toShallowSerializeBlock--">toShallowSerializeBlock</a></span>()</code>
 <div class="block">Converts a cache block that is not shallow serializable into
  a form that is shallow serializable.</div>
 </td>
 </tr>
-<tr id="i73" class="rowColor">
+<tr id="i78" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#write-java.io.DataOutput-">write</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
-<tr id="i74" class="altColor">
+<tr id="i79" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
-<tr id="i75" class="rowColor">
+<tr id="i80" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#zeroOutOperations-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.util.IndexRange-boolean-int-int-int-int-">zeroOutOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;result,
                  <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
@@ -893,6 +923,15 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>column names</dd>
 </dl>
+</li>
+</ul>
+<a name="getColumnNamesAsFrame--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getColumnNamesAsFrame</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;getColumnNamesAsFrame()</pre>
 </li>
 </ul>
 <a name="getColumnNames-boolean-">
@@ -1654,6 +1693,28 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
 </dl>
 </li>
 </ul>
+<a name="binaryOperations-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.FrameBlock-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>binaryOperations</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;binaryOperations(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bop,
+                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;that,
+                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
+<div class="block">This method performs the value comparison on two frames
+  if the values in both frames are equal, not equal, less than, greater than, less than/greater than and equal to
+  the output frame will store boolean value for each each comparison</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>bop</code> - binary operator</dd>
+<dd><code>that</code> - frame block of rhs of m * n dimensions</dd>
+<dd><code>out</code> - output frame block</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a boolean frameBlock</dd>
+</dl>
+</li>
+</ul>
 <a name="leftIndexingOperations-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.util.IndexRange-org.apache.sysds.runtime.matrix.data.FrameBlock-">
 <!--   -->
 </a>
@@ -1865,13 +1926,13 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;detectSchemaFromRow(double&nbsp;sampleFraction)</pre>
 </li>
 </ul>
-<a name="dropInvalid-org.apache.sysds.runtime.matrix.data.FrameBlock-">
+<a name="dropInvalidType-org.apache.sysds.runtime.matrix.data.FrameBlock-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>dropInvalid</h4>
-<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;dropInvalid(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;schema)</pre>
+<h4>dropInvalidType</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;dropInvalidType(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;schema)</pre>
 <div class="block">Drop the cell value which does not confirms to the data type of its column</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1902,11 +1963,38 @@ implements org.apache.hadoop.io.Writable, <a href="../../../../../../org/apache/
 <a name="mergeSchema-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.FrameBlock-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>mergeSchema</h4>
 <pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;mergeSchema(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;temp1,
                                      <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;temp2)</pre>
+</li>
+</ul>
+<a name="map-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>map</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;map(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;lambdaExpr)</pre>
+</li>
+</ul>
+<a name="map-org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>map</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;map(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a>&nbsp;lambdaExpr)</pre>
+</li>
+</ul>
+<a name="getCompiledFunction-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getCompiledFunction</h4>
+<pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.FrameMapFunction.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock.FrameMapFunction</a>&nbsp;getCompiledFunction(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;lambdaExpr)</pre>
 </li>
 </ul>
 </li>

@@ -949,45 +949,49 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-java.lang.String-boolean-double-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
+<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-java.lang.String-boolean-double-java.util.Set-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                 org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,org.apache.hadoop.io.Text&gt;&nbsp;input,
                 <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc,
                 boolean&nbsp;hasHeader,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;delim,
                 boolean&nbsp;fill,
-                double&nbsp;fillValue)</code>&nbsp;</td>
+                double&nbsp;fillValue,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;naStrings)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.ValueType:A-boolean-java.lang.String-boolean-double-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
+<td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.ValueType:A-boolean-java.lang.String-boolean-double-java.util.Set-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                 org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,org.apache.hadoop.io.Text&gt;&nbsp;input,
                 <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc,
                 <a href="../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                 boolean&nbsp;hasHeader,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;delim,
                 boolean&nbsp;fill,
-                double&nbsp;fillValue)</code>&nbsp;</td>
+                double&nbsp;fillValue,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;naStrings)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-java.lang.String-boolean-double-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
+<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-java.lang.String-boolean-double-java.util.Set-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                 org.apache.spark.api.java.JavaRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;input,
                 <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut,
                 boolean&nbsp;hasHeader,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;delim,
                 boolean&nbsp;fill,
-                double&nbsp;fillValue)</code>&nbsp;</td>
+                double&nbsp;fillValue,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;naStrings)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.ValueType:A-boolean-java.lang.String-boolean-double-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
+<td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.ValueType:A-boolean-java.lang.String-boolean-double-java.util.Set-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                 org.apache.spark.api.java.JavaRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;input,
                 <a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut,
                 <a href="../../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema,
                 boolean&nbsp;hasHeader,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;delim,
                 boolean&nbsp;fill,
-                double&nbsp;fillValue)</code>&nbsp;</td>
+                double&nbsp;fillValue,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;naStrings)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;</code></td>
@@ -1199,7 +1203,7 @@
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
 <td class="colLast"><span class="typeNameLabel">DataCharacteristics.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html#set-long-long-int-">set</a></span>(long&nbsp;nr,
    long&nbsp;nc,
-   int&nbsp;len)</code>&nbsp;</td>
+   int&nbsp;blen)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10};
+var methods = {"i0":10,"i1":10,"i2":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -199,6 +199,14 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Ope
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html#getNumThreads--">getNumThreads</a></span>()</code>&nbsp;</td>
 </tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html#isColAggregate--">isColAggregate</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html#isRowAggregate--">isRowAggregate</a></span>()</code>&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -279,10 +287,28 @@ extends <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Ope
 <a name="getNumThreads--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getNumThreads</h4>
 <pre>public&nbsp;int&nbsp;getNumThreads()</pre>
+</li>
+</ul>
+<a name="isRowAggregate--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isRowAggregate</h4>
+<pre>public&nbsp;boolean&nbsp;isRowAggregate()</pre>
+</li>
+</ul>
+<a name="isColAggregate--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>isColAggregate</h4>
+<pre>public&nbsp;boolean&nbsp;isColAggregate()</pre>
 </li>
 </ul>
 </li>

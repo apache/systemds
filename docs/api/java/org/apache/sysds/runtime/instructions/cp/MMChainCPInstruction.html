@@ -217,7 +217,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Unar
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.cp.<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ComputationCPInstruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutputVariableName--">getOutputVariableName</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getInputs--">getInputs</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getOutputVariableName--">getOutputVariableName</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.instructions.cp.CPInstruction">
@@ -261,6 +261,15 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Unar
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a name="getMMChainType--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getMMChainType</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/lops/MapMultChain.ChainType.html" title="enum in org.apache.sysds.lops">MapMultChain.ChainType</a>&nbsp;getMMChainType()</pre>
+</li>
+</ul>
 <a name="parseInstruction-java.lang.String-">
 <!--   -->
 </a>
@@ -273,7 +282,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Unar
 <a name="processInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>processInstruction</h4>
 <pre>public&nbsp;void&nbsp;processInstruction(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</pre>
@@ -285,15 +294,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Unar
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ec</code> - execution context</dd>
 </dl>
-</li>
-</ul>
-<a name="getMMChainType--">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>getMMChainType</h4>
-<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/lops/MapMultChain.ChainType.html" title="enum in org.apache.sysds.lops">MapMultChain.ChainType</a>&nbsp;getMMChainType()</pre>
 </li>
 </ul>
 </li>

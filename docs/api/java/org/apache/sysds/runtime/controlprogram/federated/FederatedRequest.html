@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" target="_top">Frames</a></li>
@@ -140,7 +140,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a></span></code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -157,15 +157,21 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.FedMethod-">FederatedRequest</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a>&nbsp;method)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-">FederatedRequest</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.FedMethod-java.util.List-">FederatedRequest</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a>&nbsp;method,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&nbsp;data)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-long-">FederatedRequest</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method,
+                long&nbsp;id)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.FedMethod-java.lang.Object...-">FederatedRequest</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a>&nbsp;method,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>...&nbsp;datas)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-long-java.util.List-">FederatedRequest</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method,
+                long&nbsp;id,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-long-java.lang.Object...-">FederatedRequest</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method,
+                long&nbsp;id,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>...&nbsp;data)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -199,8 +205,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#deepClone--">deepClone</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#getMethod--">getMethod</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#getID--">getID</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>int</code></td>
@@ -211,12 +217,28 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#getParam-int-">getParam</a></span>(int&nbsp;i)</code>&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#getTID--">getTID</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#getType--">getType</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#setCheckPrivacy--">setCheckPrivacy</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#setCheckPrivacy-boolean-">setCheckPrivacy</a></span>(boolean&nbsp;checkPrivacy)</code>&nbsp;</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#setTID-long-">setTID</a></span>(long&nbsp;tid)</code>&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -224,7 +246,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -240,33 +262,45 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.FedMethod-java.util.List-">
+<a name="FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>FederatedRequest</h4>
-<pre>public&nbsp;FederatedRequest(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a>&nbsp;method,
-                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&nbsp;data)</pre>
+<pre>public&nbsp;FederatedRequest(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method)</pre>
 </li>
 </ul>
-<a name="FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.FedMethod-java.lang.Object...-">
+<a name="FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-long-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>FederatedRequest</h4>
-<pre>public&nbsp;FederatedRequest(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a>&nbsp;method,
-                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>...&nbsp;datas)</pre>
+<pre>public&nbsp;FederatedRequest(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method,
+                        long&nbsp;id)</pre>
 </li>
 </ul>
-<a name="FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.FedMethod-">
+<a name="FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-long-java.lang.Object...-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FederatedRequest</h4>
+<pre>public&nbsp;FederatedRequest(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method,
+                        long&nbsp;id,
+                        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>...&nbsp;data)</pre>
+</li>
+</ul>
+<a name="FederatedRequest-org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType-long-java.util.List-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>FederatedRequest</h4>
-<pre>public&nbsp;FederatedRequest(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a>&nbsp;method)</pre>
+<pre>public&nbsp;FederatedRequest(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;method,
+                        long&nbsp;id,
+                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&nbsp;data)</pre>
 </li>
 </ul>
 </li>
@@ -277,13 +311,40 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="getMethod--">
+<a name="getType--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getMethod</h4>
-<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.FedMethod</a>&nbsp;getMethod()</pre>
+<h4>getType</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a>&nbsp;getType()</pre>
+</li>
+</ul>
+<a name="getID--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getID</h4>
+<pre>public&nbsp;long&nbsp;getID()</pre>
+</li>
+</ul>
+<a name="getTID--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getTID</h4>
+<pre>public&nbsp;long&nbsp;getTID()</pre>
+</li>
+</ul>
+<a name="setTID-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setTID</h4>
+<pre>public&nbsp;void&nbsp;setTID(long&nbsp;tid)</pre>
 </li>
 </ul>
 <a name="getParam-int-">
@@ -352,10 +413,23 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <a name="checkPrivacy--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>checkPrivacy</h4>
 <pre>public&nbsp;boolean&nbsp;checkPrivacy()</pre>
+</li>
+</ul>
+<a name="toString--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>toString</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;toString()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -387,7 +461,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.FedMethod.html" title="enum in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" target="_top">Frames</a></li>

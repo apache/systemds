@@ -91,11 +91,11 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark.data">org.apache.sysds.runtime.instructions.spark.data</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.federated">org.apache.sysds.runtime.controlprogram.federated</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.privacy">org.apache.sysds.runtime.privacy</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark.data">org.apache.sysds.runtime.instructions.spark.data</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>
@@ -143,10 +143,14 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#createCacheableData-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">createCacheableData</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;cb)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getCacheableData-org.apache.sysds.runtime.instructions.cp.CPOperand-">getCacheableData</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;input)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#getCacheableData-java.lang.String-">getCacheableData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;varname)</code>&nbsp;</td>
 </tr>
@@ -174,6 +178,29 @@
 </tbody>
 </table>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.federated">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a> in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FederationMap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederationMap.html#broadcast-org.apache.sysds.runtime.controlprogram.caching.CacheableData-">broadcast</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest</a>[]</code></td>
+<td class="colLast"><span class="typeNameLabel">FederationMap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederationMap.html#broadcastSliced-org.apache.sysds.runtime.controlprogram.caching.CacheableData-boolean-">broadcastSliced</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;data,
+               boolean&nbsp;transposed)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.instructions.spark.data">
 <!--   -->
 </a>
@@ -188,39 +215,6 @@
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">LineageObject.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/LineageObject.html#setBackReference-org.apache.sysds.runtime.controlprogram.caching.CacheableData-">setBackReference</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;cd)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
-<li class="blockList"><a name="org.apache.sysds.runtime.privacy">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a> in <a href="../../../../../../../org/apache/sysds/runtime/privacy/package-summary.html">org.apache.sysds.runtime.privacy</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/privacy/package-summary.html">org.apache.sysds.runtime.privacy</a> that return <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#parseAndSetPrivacyConstraint-org.apache.sysds.runtime.controlprogram.caching.CacheableData-org.apache.wink.json4j.JSONObject-">parseAndSetPrivacyConstraint</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;cd,
-                            org.apache.wink.json4j.JSONObject&nbsp;mtd)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/privacy/package-summary.html">org.apache.sysds.runtime.privacy</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#parseAndSetPrivacyConstraint-org.apache.sysds.runtime.controlprogram.caching.CacheableData-org.apache.wink.json4j.JSONObject-">parseAndSetPrivacyConstraint</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheableData.html" title="class in org.apache.sysds.runtime.controlprogram.caching">CacheableData</a>&lt;?&gt;&nbsp;cd,
-                            org.apache.wink.json4j.JSONObject&nbsp;mtd)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

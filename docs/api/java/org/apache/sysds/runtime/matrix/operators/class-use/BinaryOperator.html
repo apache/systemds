@@ -137,7 +137,7 @@
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">AbstractCompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/AbstractCompressedMatrixBlock.html#binaryOperationsInPlace-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperationsInPlace</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue)</code>&nbsp;</td>
 </tr>
@@ -316,50 +316,60 @@
                <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;uaggOp)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FrameBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html#binaryOperations-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.FrameBlock-">binaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bop,
+                <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;that,
+                <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code>
+<div class="block">This method performs the value comparison on two frames
+  if the values in both frames are equal, not equal, less than, greater than, less than/greater than and equal to
+  the output frame will store boolean value for each each comparison</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#binaryOperations-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixCell.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixCell.html#binaryOperations-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html#binaryOperations-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CM_N_COVCell.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/CM_N_COVCell.html#binaryOperations-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;result)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
+<tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#binaryOperationsInPlace-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperationsInPlace</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixCell.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixCell.html#binaryOperationsInPlace-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperationsInPlace</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html#binaryOperationsInPlace-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperationsInPlace</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CM_N_COVCell.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/CM_N_COVCell.html#binaryOperationsInPlace-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixValue-">binaryOperationsInPlace</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;thatValue)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixBincell.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#bincellOp-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">bincellOp</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
          <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -368,7 +378,7 @@
 <div class="block">matrix-matrix binary operations, MM, MV</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixBincell.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#bincellOpInPlace-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">bincellOpInPlace</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
                 <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
@@ -376,23 +386,23 @@
 <div class="block">NOTE: operations in place always require m1 and m2 to be of equal dimensions</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixOuterAgg.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixOuterAgg.html#isCompareOperator-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">isCompareOperator</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bOp)</code>
 <div class="block">This will return if uaggOp is of type RowIndexMin</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixBincell.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#isSparseSafeDivide-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixBlock-">isSparseSafeDivide</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                   <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rhs)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixOuterAgg.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixOuterAgg.html#isSupportedUaggOp-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">isSupportedUaggOp</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;uaggOp,
                  <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bOp)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixCUDA.html#matrixMatrixArithmetic-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.gpu.context.GPUContext-java.lang.String-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-java.lang.String-boolean-boolean-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">matrixMatrixArithmetic</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                       <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
@@ -406,7 +416,7 @@
 <div class="block">Performs elementwise arithmetic operation specified by op of two input matrices in1 and in2</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixCUDA.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixCUDA.html#matrixMatrixRelational-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.gpu.context.GPUContext-java.lang.String-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-org.apache.sysds.runtime.controlprogram.caching.MatrixObject-java.lang.String-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">matrixMatrixRelational</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
                       <a href="../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUContext.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUContext</a>&nbsp;gCtx,
@@ -418,21 +428,21 @@
 <div class="block">Performs elementwise operation relational specified by op of two input matrices in1 and in2</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">OperationsOnMatrixValues.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performBinaryIgnoreIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">performBinaryIgnoreIndexes</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;value1,
                           <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;value2,
                           <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueOut,
                           <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixOuterAgg.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixOuterAgg.html#prepareRowIndices-int-double:A-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-">prepareRowIndices</a></span>(int&nbsp;iCols,
                  double[]&nbsp;vmb,
                  <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;bOp,
                  <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;uaggOp)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static int[]</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixOuterAgg.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixOuterAgg.html#prepareRowIndicesMax-int-double:A-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">prepareRowIndicesMax</a></span>(int&nbsp;iCols,
                     double[]&nbsp;vmb,
@@ -440,7 +450,7 @@
 <div class="block">This function will return max indices, based on column vector data.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
 <td class="colLast"><span class="typeNameLabel">LibMatrixOuterAgg.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixOuterAgg.html#prepareRowIndicesMin-int-double:A-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">prepareRowIndicesMin</a></span>(int&nbsp;iCols,
                     double[]&nbsp;vmb,
@@ -448,7 +458,7 @@
 <div class="block">This function will return min indices, based on column vector data.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html#uaggouterchainOperations-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-">uaggouterchainOperations</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbLeft,
                         <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mbRight,

@@ -70,8 +70,10 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
         bucket = Bucket(node, cur_lvl, w, x_size, loss)
         buckets[bucket.name] = bucket
     b_buckets = SparkContext.broadcast(sc, buckets)
-    rows = predictions.rdd.map(lambda row: (row[0], row[1].indices, row[2])) \
-        .map(lambda item: (item[0], item[1].tolist(), item[2]))
+    # rows = predictions.rdd.map(lambda row: (row[0], row[1].indices, row[2])) \
+    #     .map(lambda item: (item[0], item[1].tolist(), item[2]))
+    rows = predictions.rdd.map(lambda row: row[1].indices) \
+        .map(lambda item: list(item))
     mapped = rows.map(lambda row: rows_mapper(row, b_buckets.value, loss_type))
     flattened = mapped.flatMap(lambda line: (line.items()))
     reduced = flattened.combineByKey(combiner, join_data_parallel.merge_values, join_data_parallel.merge_combiners)
@@ -83,9 +85,10 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
     prev_level = cur_lvl_nodes.collect()
     b_cur_lvl_nodes = SparkContext.broadcast(sc, prev_level)
     levels.append(b_cur_lvl_nodes)
-    top_k = top_k.buckets_top_k(prev_level, x_size, alpha)
+    top_k = top_k.buckets_top_k(prev_level, x_size, alpha, 1)
     while len(prev_level) > 0:
         b_topk = SparkContext.broadcast(sc, top_k)
+        cur_min = top_k.min_score
         b_cur_lvl = SparkContext.broadcast(sc, cur_lvl)
         top_k.print_topk()
         buckets = []
@@ -104,7 +107,7 @@ def parallel_process(all_features, predictions, loss, sc, debug, alpha, k, w, lo
         partial = flattened.combineByKey(combiner, join_data_parallel.merge_values, join_data_parallel.merge_combiners)
         prev_level = partial\
             .map(lambda bucket: spark_utils.calc_bucket_metrics(bucket[1], loss, w, x_size, b_cur_lvl.value)).collect()
-        top_k = top_k.buckets_top_k(prev_level, x_size, alpha)
+        top_k = top_k.buckets_top_k(prev_level, x_size, alpha, cur_min)
         b_topk = SparkContext.broadcast(sc, top_k)
         if debug:
             partial.values().map(lambda bucket: bucket.print_debug(b_topk.value)).collect()

@@ -108,11 +108,13 @@ class Node:
         return list(filter(lambda row: all(row[1][attr] == 1 for attr in mask), self.complete_x))
 
     def calc_s_upper(self, cur_lvl):
-        cur_min = self.parents[0].size
-        for parent in self.parents:
-            if cur_lvl == 1:
+        if cur_lvl == 1:
+            cur_min = self.parents[0].size
+            for parent in self.parents:
                 cur_min = min(cur_min, parent.size)
-            else:
+        else:
+            cur_min = self.parents[0].s_upper
+            for parent in self.parents:
                 cur_min = min(cur_min, parent.s_upper)
         return cur_min
 
@@ -157,11 +159,11 @@ class Node:
     def make_key(self, new_id):
         return new_id, self.name
 
-    def check_constraint(self, top_k, x_size, alpha):
-        return self.score >= top_k.min_score and self.size >= x_size / alpha
+    def check_constraint(self, top_k, x_size, alpha, cur_min):
+        return self.score >= cur_min and self.size >= x_size / alpha
 
-    def check_bounds(self, top_k, x_size, alpha):
-        return self.s_upper >= x_size / alpha and self.c_upper >= top_k.min_score
+    def check_bounds(self, x_size, alpha, cur_min):
+        return self.s_upper >= x_size / alpha and self.c_upper >= cur_min
 
     def update_bounds(self, s_upper, s_lower, e_upper, e_max_upper, w):
         if self.s_upper:

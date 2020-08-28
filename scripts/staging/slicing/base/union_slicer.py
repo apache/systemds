@@ -22,6 +22,7 @@
 from slicing.base.node import Node
 from slicing.base.top_k import Topk
 from slicing.base.slicer import opt_fun, union
+import matplotlib.pyplot as plt
 
 
 def check_attributes(left_node, right_node):
@@ -69,6 +70,12 @@ def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha
     first_level = make_first_level(all_features, complete_x, loss, x_size, y_test, errors, loss_type, w, alpha, top_k)
     # double appending of first level nodes in order to enumerating second level in the same way as others
     levels.append((first_level[0], len(all_features)))
+    candidates = []
+    pruned = []
+    indexes = []
+    indexes.append(1)
+    candidates.append(len(first_level[0]))
+    pruned.append(len(first_level[0]))
     all_nodes = first_level[1]
     # cur_lvl - index of current level, correlates with number of slice forming features
     cur_lvl = 1  # level that is planned to be filled later
@@ -82,12 +89,14 @@ def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha
     while len(cur_lvl_nodes) > 0:
         cur_lvl_nodes = []
         count = 0
+        prev_lvl = levels[cur_lvl - 1]
         for left in range(int(cur_lvl / 2) + 1):
             right = cur_lvl - 1 - left
             for node_i in range(len(levels[left][0])):
                 for node_j in range(len(levels[right][0])):
                     flag = check_attributes(levels[left][0][node_i], levels[right][0][node_j])
-                    if flag:
+                    required_number = len(union(levels[left][0][node_i].attributes, levels[right][0][node_j].attributes))
+                    if flag and required_number == cur_lvl + 1:
                         new_node = Node(complete_x, loss, x_size, y_test, errors)
                         parents_set = set(new_node.parents)
                         parents_set.add(levels[left][0][node_i])
@@ -115,24 +124,39 @@ def process(all_features, complete_x, loss, x_size, y_test, errors, debug, alpha
                             all_nodes[new_node.key[1]] = new_node
                             # check if concrete data should be extracted or not (only for those that have score upper
                             # big enough and if size of subset is big enough
-                            to_slice = new_node.check_bounds(top_k, x_size, alpha)
+                            to_slice = new_node.check_bounds(x_size, alpha, top_k.min_score)
                             if to_slice:
                                 new_node.process_slice(loss_type)
                                 new_node.score = opt_fun(new_node.loss, new_node.size, loss, x_size, w)
                                 # we decide to add node to current level nodes (in order to make new combinations
                                 # on the next one or not basing on its score value
-                                if new_node.check_constraint(top_k, x_size, alpha) and new_node.key not in top_k.keys:
+                                if new_node.check_constraint(top_k, x_size, alpha, top_k.min_score) and new_node.key \
+                                        not in top_k.keys:
                                     top_k.add_new_top_slice(new_node)
                                 cur_lvl_nodes.append(new_node)
                             if debug:
                                 new_node.print_debug(top_k, cur_lvl)
             count = count + levels[left][1] * levels[right][1]
+        cur_lvl = cur_lvl + 1
+        indexes.append(cur_lvl)
         print("Level " + str(cur_lvl) + " had " + str(count) +
               " candidates but after pruning only " + str(len(cur_lvl_nodes)) + " go to the next level")
-        cur_lvl = cur_lvl + 1
         levels.append((cur_lvl_nodes, count))
+        candidates.append(count)
+        pruned.append(len(cur_lvl_nodes))
         top_k.print_topk()
+    plt.plot(indexes, candidates, 'r--',
+             indexes, pruned, 'g--')
+    plt.xlabel('Level')
+    plt.ylabel('Number of slices')
+    plt.show()
     print("Program stopped at level " + str(cur_lvl))
     print()
     print("Selected slices are: ")
     top_k.print_topk()
+    print("candidates:")
+    print(candidates)
+    print(">>>>>>>>>")
+    print("pruned:")
+    print(pruned)
+    return top_k

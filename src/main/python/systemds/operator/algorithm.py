@@ -85,7 +85,8 @@ def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
                          .format(s=x._np_array.shape))
 
     if 'k' in kwargs.keys() and kwargs.get('k') < 1:
-        raise ValueError("Invalid number of clusters in K means, number must be integer above 0")
+        raise ValueError(
+            "Invalid number of clusters in K-Means, number must be integer above 0")
 
     params_dict = {'X': x}
     params_dict.update(kwargs)
@@ -108,9 +109,10 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
                          .format(s=x._np_array.shape))
 
     if 'K' in kwargs.keys() and kwargs.get('K') < 1:
-        raise ValueError("Invalid number of clusters in K means, number must be integer above 0")
+        raise ValueError(
+            "Invalid number of clusters in K means, number must be integer above 0")
 
-    if 'scale'in kwargs.keys():
+    if 'scale' in kwargs.keys():
         if kwargs.get('scale') == True:
             kwargs.set('scale', "TRUE")
         elif kwargs.get('scale' == False):
@@ -126,3 +128,34 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     params_dict.update(kwargs)
     return OperationNode(x.sds_context, 'pca', named_input_nodes=params_dict)
 
+
+def multiLogReg(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+    """
+    Performs Multiclass Logistic Regression on the matrix input
+    using Trust Region method.
+
+    See: Trust Region Newton Method for Logistic Regression, Lin, Weng and Keerthi, JMLR 9 (2008) 627-650)
+
+    :param x: Input dataset to perform logstic regression on
+    :param y: Labels rowaligned with the input dataset
+    :param icpt: Intercept, default 2, Intercept presence, shifting and rescaling X columns:
+        0 = no intercept, no shifting, no rescaling;
+        1 = add intercept, but neither shift nor rescale X;
+        2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+    :param tol: float tolerance for the algorithm.
+    :param reg: Regularization parameter (lambda = 1/C); intercept settings are not regularized.
+    :param maxi: Maximum outer iterations of the algorithm
+    :param maxii: Maximum inner iterations of the algorithm
+    """
+    
+    x._check_matrix_op()
+    if x._np_array.size == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                         .format(s=x._np_array.shape))
+    if y._np_array.size == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                         .format(s=y._np_array.shape))
+
+    params_dict = {'X': x, 'Y': y}
+    params_dict.update(kwargs)
+    return OperationNode(x.sds_context, 'multiLogReg', named_input_nodes=params_dict)

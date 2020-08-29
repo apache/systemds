@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 from typing import Union, Optional, Iterable, Dict, Sequence, Tuple, TYPE_CHECKING
 from multiprocessing import Process
@@ -32,21 +32,25 @@ from systemds.script_building.script import DMLScript
 from systemds.script_building.dag import OutputType, DAGNode
 
 
-
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
     from systemds.context import SystemDSContext
+
 
 class OperationNode(DAGNode):
     """A Node representing an operation in SystemDS"""
     _result_var: Optional[Union[float, np.array]]
     _lineage_trace: Optional[str]
     _script: Optional[DMLScript]
+    _output_types: Optional[Iterable[VALID_INPUT_TYPES]]
 
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
                  unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 output_type: OutputType = OutputType.MATRIX, is_python_local_data: bool = False):
+                 output_type: OutputType = OutputType.MATRIX,
+                 is_python_local_data: bool = False,
+                 number_of_outputs=1,
+                 output_types: Iterable[OutputType] = None):
         """
         Create general `OperationNode`
 
@@ -55,7 +59,11 @@ class OperationNode(DAGNode):
         :param unnamed_input_nodes: inputs identified by their position, not name
         :param named_input_nodes: inputs with their respective parameter name
         :param output_type: type of the output in DML (double, matrix etc.)
-        :param is_python_local_data: if the data is local in python e.g. numpy arrays
+        :param is_python_local_data: if the data is local in python e.g. Numpy arrays
+        :param number_of_outputs: If set to other value than 1 then it is expected
+            that this operation node returns multiple values. If set remember to set the output_types value as well.
+        :param output_types: The types of output in a multi output scenario.
+            Default is None, and means every multi output is a matrix.
         """
         self.sds_context = sds_context
         if unnamed_input_nodes is None:
@@ -70,30 +78,43 @@ class OperationNode(DAGNode):
         self._result_var = None
         self._lineage_trace = None
         self._script = None
+        self._number_of_outputs = number_of_outputs
+        self._output_types = output_types
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
 
-
-
-
         if self._result_var is None or self._lineage_trace is None:
             self._script = DMLScript(self.sds_context)
             self._script.build_code(self)
-            if lineage:
-                result_variables, self._lineage_trace = self._script.execute(lineage)
-            else:
-                result_variables = self._script.execute(lineage)
-
             if verbose:
                 print("SCRIPT:")
                 print(self._script.dml_script)
 
+            if lineage:
+                result_variables, self._lineage_trace = self._script.execute(
+                    lineage)
+            else:
+                result_variables = self._script.execute(lineage)
+
             if self.output_type == OutputType.DOUBLE:
-                self._result_var = result_variables.getDouble(self._script.out_var_name)
+                self._result_var = result_variables.getDouble(
+                    self._script.out_var_name[0])
             elif self.output_type == OutputType.MATRIX:
                 self._result_var = matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
-                                                         result_variables.getMatrixBlock(self._script.out_var_name))
+                                                         result_variables.getMatrixBlock(self._script.out_var_name[0]))
+            elif self.output_type == OutputType.LIST:
+                self._result_var = []
+                for idx, v in enumerate(self._script.out_var_name):
+                    if(self._output_types == None):
+                        self._result_var.append(matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
+                                                                      result_variables.getMatrixBlock(v)))
+                    elif(self._output_types[idx] == OutputType.MATRIX):
+                        self._result_var.append(matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
+                                                                      result_variables.getMatrixBlock(v)))
+                    else:
+                        self._result_var.append(result_variables.getDouble(
+                            self._script.out_var_name[idx]))
         if verbose:
             for x in self.sds_context.get_stdout():
                 print(x)
@@ -120,15 +141,27 @@ class OperationNode(DAGNode):
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
         if self.operation in BINARY_OPERATIONS:
-            assert len(named_input_vars) == 0, 'Named parameters can not be used with binary operations'
-            assert len(unnamed_input_vars) == 2, 'Binary Operations need exactly two input variables'
+            assert len(
+                named_input_vars) == 0, 'Named parameters can not be used with binary operations'
+            assert len(
+                unnamed_input_vars) == 2, 'Binary Operations need exactly two input variables'
             return f'{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}'
+
+        inputs_comma_sep = create_params_string(
+            unnamed_input_vars, named_input_vars)
+
+        if self.output_type == OutputType.LIST:
+            output = "["
+            for idx in range(self._number_of_outputs):
+                output += f'{var_name}_{idx},'
+            output = output[:-1] + "]"
+            return f'{output}={self.operation}({inputs_comma_sep});'
         else:
-            inputs_comma_sep = create_params_string(unnamed_input_vars, named_input_vars)
             return f'{var_name}={self.operation}({inputs_comma_sep});'
 
     def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
-        raise NotImplementedError('Operation node has no python local data. Missing implementation in derived class?')
+        raise NotImplementedError(
+            'Operation node has no python local data. Missing implementation in derived class?')
 
     def _check_matrix_op(self):
         """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
@@ -137,40 +170,40 @@ class OperationNode(DAGNode):
         """
         assert self.output_type == OutputType.MATRIX, f'{self.operation} only supported for matrices'
 
-    def __add__(self, other: VALID_ARITHMETIC_TYPES):
+    def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
         return OperationNode(self.sds_context, '+', [self, other])
 
-    def __sub__(self, other: VALID_ARITHMETIC_TYPES):
+    def __sub__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
         return OperationNode(self.sds_context, '-', [self, other])
 
-    def __mul__(self, other: VALID_ARITHMETIC_TYPES):
+    def __mul__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
         return OperationNode(self.sds_context, '*', [self, other])
 
-    def __truediv__(self, other: VALID_ARITHMETIC_TYPES):
+    def __truediv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
         return OperationNode(self.sds_context, '/', [self, other])
 
-    def __floordiv__(self, other: VALID_ARITHMETIC_TYPES):
+    def __floordiv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
         return OperationNode(self.sds_context, '//', [self, other])
 
     def __lt__(self, other) -> 'OperationNode':
         return OperationNode(self.sds_context, '<', [self, other])
 
-    def __le__(self, other):
+    def __le__(self, other) -> 'OperationNode':
         return OperationNode(self.sds_context, '<=', [self, other])
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> 'OperationNode':
         return OperationNode(self.sds_context, '>', [self, other])
 
-    def __ge__(self, other):
+    def __ge__(self, other) -> 'OperationNode':
         return OperationNode(self.sds_context, '>=', [self, other])
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> 'OperationNode':
         return OperationNode(self.sds_context, '==', [self, other])
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> 'OperationNode':
         return OperationNode(self.sds_context, '!=', [self, other])
 
-    def __matmul__(self, other: VALID_ARITHMETIC_TYPES):
+    def __matmul__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
         return OperationNode(self.sds_context, '%*%', [self, other])
 
     def sum(self, axis: int = None) -> 'OperationNode':
@@ -186,7 +219,8 @@ class OperationNode(DAGNode):
             return OperationNode(self.sds_context, 'rowSums', [self])
         elif axis is None:
             return OperationNode(self.sds_context, 'sum', [self], output_type=OutputType.DOUBLE)
-        raise ValueError(f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
     def mean(self, axis: int = None) -> 'OperationNode':
         """Calculate mean of matrix.
@@ -201,7 +235,8 @@ class OperationNode(DAGNode):
             return OperationNode(self.sds_context, 'rowMeans', [self])
         elif axis is None:
             return OperationNode(self.sds_context, 'mean', [self], output_type=OutputType.DOUBLE)
-        raise ValueError(f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
     def var(self, axis: int = None) -> 'OperationNode':
         """Calculate variance of matrix.
@@ -216,7 +251,8 @@ class OperationNode(DAGNode):
             return OperationNode(self.sds_context, 'rowVars', [self])
         elif axis is None:
             return OperationNode(self.sds_context, 'var', [self], output_type=OutputType.DOUBLE)
-        raise ValueError(f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
     def abs(self) -> 'OperationNode':
         """Calculate absolute.
@@ -287,14 +323,6 @@ class OperationNode(DAGNode):
         :return: `OperationNode` representing operation
         """
         return OperationNode(self.sds_context, 'tanh', [self])
-    '''
-    def rev(self) -> 'OperationNode':
-        """Calculate tan.
-
-        :return: `OperationNode` representing operation
-        """
-        return OperationNode(self.sds_context, 'rev', [self])
-    '''
 
     def moment(self, moment, weights: DAGNode = None) -> 'OperationNode':
         # TODO write tests
@@ -304,19 +332,3 @@ class OperationNode(DAGNode):
             unnamed_inputs.append(weights)
         unnamed_inputs.append(moment)
         return OperationNode(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
-
-    def lm(self, y: DAGNode, **kwargs) -> 'OperationNode':
-        self._check_matrix_op()
-
-        if self._np_array.size == 0:
-            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                             .format(s=self._np_array.shape))
-
-        if y._np_array.size == 0:
-            raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
-                             .format(s=y._np_array.shape))
-
-        params_dict = {'X': self, 'y': y}
-        params_dict.update(kwargs)
-
-        return OperationNode(self.sds_context, 'lm', named_input_nodes=params_dict)

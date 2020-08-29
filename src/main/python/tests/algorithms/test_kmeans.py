@@ -45,7 +45,7 @@ class TestKMeans(unittest.TestCase):
         and use 4 clusters then they will be located in each one corner.
         """
         features = self.generate_matrices_for_k_means((500, 2), seed=1304)
-        res = kmeans(features, k=4).compute()
+        [res, classifications] = kmeans(features, k=4).compute()
 
         corners = set()
         for x in res:

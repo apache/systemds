@@ -22,7 +22,7 @@
 from typing import Dict
 
 from systemds.operator import OperationNode
-from systemds.script_building.dag import DAGNode
+from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 __all__ = ['l2svm', 'lm', 'kmeans', 'pca']
@@ -77,6 +77,7 @@ def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     :param eps: Tolerance for the algorithm to declare convergence using WCSS change ratio.
     :param is_verbose: Boolean flag if the algorithm should be run in a verbose manner.
     :param avg_sample_size_per_centroid: The average number of records per centroid in the data samples.
+    :return: `OperationNode` List containing two outputs 1. the clusters, 2 the cluster ID associated with each row in x.
     """
 
     x._check_matrix_op()
@@ -90,7 +91,7 @@ def kmeans(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
 
     params_dict = {'X': x}
     params_dict.update(kwargs)
-    return OperationNode(x.sds_context, 'kmeans', named_input_nodes=params_dict)
+    return OperationNode(x.sds_context, 'kmeans', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2)
 
 
 def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
@@ -101,6 +102,7 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     :param K: The number of reduced dimensions.
     :param center: Boolean specifying if the input values should be centered.
     :param scale: Boolean specifying if the input values should be scaled.
+     :return: `OperationNode` List containing two outputs 1. The dimensionality reduced X input, 2. A matrix to reduce dimensionality similarly on unseen data.
     """
 
     x._check_matrix_op()
@@ -126,7 +128,7 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
 
     params_dict = {'X': x}
     params_dict.update(kwargs)
-    return OperationNode(x.sds_context, 'pca', named_input_nodes=params_dict)
+    return OperationNode(x.sds_context, 'pca', named_input_nodes=params_dict,  output_type=OutputType.LIST, number_of_outputs=2)
 
 
 def multiLogReg(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
@@ -146,8 +148,9 @@ def multiLogReg(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) 
     :param reg: Regularization parameter (lambda = 1/C); intercept settings are not regularized.
     :param maxi: Maximum outer iterations of the algorithm
     :param maxii: Maximum inner iterations of the algorithm
+     :return: `OperationNode` of a matrix containing the regression parameters trained.
     """
-    
+
     x._check_matrix_op()
     if x._np_array.size == 0:
         raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
@@ -159,3 +162,35 @@ def multiLogReg(x: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) 
     params_dict = {'X': x, 'Y': y}
     params_dict.update(kwargs)
     return OperationNode(x.sds_context, 'multiLogReg', named_input_nodes=params_dict)
+
+
+def multiLogRegPredict(x: DAGNode, b: DAGNode, y: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+    """
+    Performs prediction on input data x using the model trained, b.
+
+    :param x: The data to perform classification on.
+    :param b: The regression parameters trained from multiLogReg.
+    :param y: The Labels expected to be contained in the X dataset, to calculate accuracy.
+    :param verbose: Boolean specifying if the prediction should be verbose.
+    :return: `OperationNode` List containing three outputs. 
+        1. The predicted means / probabilities
+        2. The predicted response vector
+        3. The scalar value of accuracy
+    """
+
+    x._check_matrix_op()
+    b._check_matrix_op()
+    y._check_matrix_op()
+    if x._np_array.size == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                         .format(s=x._np_array.shape))
+    if b._np_array.size == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                         .format(s=y._np_array.shape))
+    if y._np_array.size == 0:
+        raise ValueError("Found array with 0 feature(s) (shape={s}) while a minimum of 1 is required."
+                         .format(s=y._np_array.shape))
+
+    params_dict = {'X': x, 'B': b, 'Y': y}
+    params_dict.update(kwargs)
+    return OperationNode(x.sds_context, 'multiLogRegPredict', named_input_nodes=params_dict,  output_type=OutputType.LIST, number_of_outputs=3, output_types=[OutputType.MATRIX,OutputType.MATRIX,OutputType.DOUBLE])

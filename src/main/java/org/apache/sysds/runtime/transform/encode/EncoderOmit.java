@@ -19,33 +19,57 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
 
 public class EncoderOmit extends Encoder 
 {	
 	private static final long serialVersionUID = 1978852120416654195L;
 
-	private int _rmRows = 0;
+	private boolean _federated = false;
+	//TODO perf replace with boolean[rlen] similar to removeEmpty
+	private TreeSet<Integer> _rmRows = new TreeSet<>();
 
-	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen) 
+	public EncoderOmit(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException 
 	{
 		super(null, clen);
 		if (!parsedSpec.containsKey(TfMethod.OMIT.toString()))
 			return;
-		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.OMIT.toString());
+		int[] collist = TfMetaUtils.parseJsonIDList(parsedSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol);
 		initColList(collist);
+		_federated = minCol != -1 || maxCol != -1;
+	}
+	
+	public EncoderOmit() {
+		super(new int[0], 0);
+	}
+	
+	public EncoderOmit(boolean federated) {
+		this();
+		_federated = federated;
+	}
+	
+	
+	private EncoderOmit(int[] colList, int clen, TreeSet<Integer> rmRows) {
+		super(colList, clen);
+		_rmRows = rmRows;
+		_federated = true;
 	}
 	
 	public int getNumRemovedRows() {
-		return _rmRows;
+		return _rmRows.size();
 	}
 	
 	public boolean omit(String[] words, TfUtils agents) 
@@ -67,44 +91,96 @@ public class EncoderOmit extends Encoder
 	}
 	
 	@Override
-	public void build(FrameBlock in) {	
-		//do nothing
+	public void build(FrameBlock in) {
+		if(_federated)
+			_rmRows = computeRmRows(in);
 	}
-	
+
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out) 
-	{
-		//determine output size
-		int numRows = 0;
-		for(int i=0; i<out.getNumRows(); i++) {
-			boolean valid = true;
-			for(int j=0; j<_colList.length; j++)
-				valid &= !Double.isNaN(out.quickGetValue(i, _colList[j]-1));
-			numRows += valid ? 1 : 0;
-		}
-		
-		//copy over valid rows into the output
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		// local rmRows for broadcasting encoder in spark
+		TreeSet<Integer> rmRows;
+		if(_federated)
+			rmRows = _rmRows;
+		else
+			rmRows = computeRmRows(in);
+
+		// determine output size
+		int numRows = out.getNumRows() - rmRows.size();
+
+		// copy over valid rows into the output
 		MatrixBlock ret = new MatrixBlock(numRows, out.getNumColumns(), false);
 		int pos = 0;
-		for(int i=0; i<in.getNumRows(); i++) {
-			//determine if valid row or omit
-			boolean valid = true;
-			for(int j=0; j<_colList.length; j++)
-				valid &= !Double.isNaN(out.quickGetValue(i, _colList[j]-1));
-			//copy row if necessary
-			if( valid ) {
-				for(int j=0; j<out.getNumColumns(); j++)
+		for(int i = 0; i < in.getNumRows(); i++) {
+			// copy row if necessary
+			if(!rmRows.contains(i)) {
+				for(int j = 0; j < out.getNumColumns(); j++)
 					ret.quickSetValue(pos, j, out.quickGetValue(i, j));
 				pos++;
 			}
 		}
-	
-		//keep info an remove rows
-		_rmRows = out.getNumRows() - pos;
-		
-		return ret; 
+
+		_rmRows = rmRows;
+
+		return ret;
 	}
 
+	private TreeSet<Integer> computeRmRows(FrameBlock in) {
+		TreeSet<Integer> rmRows = new TreeSet<>();
+		ValueType[] schema = in.getSchema();
+		for(int i = 0; i < in.getNumRows(); i++) {
+			boolean valid = true;
+			for(int colID : _colList) {
+				Object val = in.get(i, colID - 1);
+				valid &= !(val == null || (schema[colID - 1] == ValueType.STRING && val.toString().isEmpty()));
+			}
+			if(!valid)
+				rmRows.add(i);
+		}
+		return rmRows;
+	}
+
+	@Override
+	public Encoder subRangeEncoder(IndexRange ixRange) {
+		int[] colList = subRangeColList(ixRange);
+		if(colList.length == 0)
+			// empty encoder -> sub range encoder does not exist
+			return null;
+
+		TreeSet<Integer> rmRows = _rmRows.stream().filter((row) -> ixRange.inRowRange(row + 1))
+			.map((row) -> (int) (row - (ixRange.rowStart - 1))).collect(Collectors.toCollection(TreeSet::new));
+
+		return new EncoderOmit(colList, (int) (ixRange.colSpan()), rmRows);
+	}
+
+	@Override
+	public void mergeAt(Encoder other, int col) {
+		if(other instanceof EncoderOmit) {
+			mergeColumnInfo(other, col);
+			_rmRows.addAll(((EncoderOmit) other)._rmRows);
+			return;
+		}
+		super.mergeAt(other, col);
+	}
+	
+	@Override
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		// first update begin dims
+		int numRowsToRemove = 0;
+		Integer removedRow = _rmRows.ceiling(0);
+		while(removedRow != null && removedRow < beginDims[0]) {
+			numRowsToRemove++;
+			removedRow = _rmRows.ceiling(removedRow + 1);
+		}
+		beginDims[0] -= numRowsToRemove;
+		// update end dims
+		while(removedRow != null && removedRow < endDims[0]) {
+			numRowsToRemove++;
+			removedRow = _rmRows.ceiling(removedRow + 1);
+		}
+		endDims[0] -= numRowsToRemove;
+	}
+	
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		//do nothing
@@ -116,4 +192,3 @@ public class EncoderOmit extends Encoder
 		//do nothing
 	}
 }
- 

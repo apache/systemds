@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.OrderedJSONObject;
 import org.apache.sysds.common.Types.DataType;
@@ -466,6 +467,12 @@ public class HDFSTool
 			mtd.put(DataExpression.AUTHORPARAM, userName);
 		} else {
 			mtd.put(DataExpression.AUTHORPARAM, "SystemDS");
+		}
+		
+		if (formatProperties instanceof FileFormatPropertiesCSV) {
+			FileFormatPropertiesCSV csvProps = (FileFormatPropertiesCSV) formatProperties;
+			mtd.put(DataExpression.DELIM_HAS_HEADER_ROW, csvProps.hasHeader());
+			mtd.put(DataExpression.DELIM_DELIMITER, csvProps.getDelim());
 		}
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");

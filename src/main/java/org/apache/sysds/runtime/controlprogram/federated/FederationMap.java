@@ -242,10 +242,9 @@ public class FederationMap
 
 	
 	public long getMaxIndexInRange(int dim) {
-		long maxIx = 0;
-		for(FederatedRange range : _fedMap.keySet())
-			maxIx = Math.max(range.getEndDims()[dim], maxIx);
-		return maxIx;
+		return _fedMap.keySet().stream()
+			.mapToLong(range -> range.getEndDims()[dim]).max()
+			.orElse(-1L);
 	}
 
 	/**

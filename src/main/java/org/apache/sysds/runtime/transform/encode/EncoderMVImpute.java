@@ -82,7 +82,7 @@ public class EncoderMVImpute extends Encoder
 		super(null, clen);
 		
 		//handle column list
-		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, colnames, TfMethod.IMPUTE.toString());
+		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, colnames, TfMethod.IMPUTE.toString(), -1, -1);
 		initColList(collist);
 	
 		//handle method list

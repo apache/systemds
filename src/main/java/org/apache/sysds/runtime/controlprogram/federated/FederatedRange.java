@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.util.IndexRange;
+
 public class FederatedRange implements Comparable<FederatedRange> {
 	private long[] _beginDims;
 	private long[] _endDims;
@@ -118,5 +120,9 @@ public class FederatedRange implements Comparable<FederatedRange> {
 		_beginDims[1] = tmpBeg;
 		_endDims[1] = tmpEnd;
 		return this;
+	}
+
+	public IndexRange asIndexRange() {
+		return new IndexRange(_beginDims[0], _endDims[0], _beginDims[1], _endDims[1]);
 	}
 }

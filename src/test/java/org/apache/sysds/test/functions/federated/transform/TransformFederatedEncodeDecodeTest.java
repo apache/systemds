@@ -115,11 +115,9 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 		runTransformEncodeDecodeTest(false, true, Types.FileFormat.BINARY);
 	}
 
-	private void runTransformEncodeDecodeTest(boolean recode, boolean sparse,
-		Types.FileFormat format) {
-		ExecMode platformOld = rtplatform;
-		rtplatform = ExecMode.SINGLE_NODE;
-
+	private void runTransformEncodeDecodeTest(boolean recode, boolean sparse, Types.FileFormat format) {
+		ExecMode rtold = setExecMode(ExecMode.SINGLE_NODE);
+		
 		Thread t1 = null, t2 = null, t3 = null, t4 = null;
 		try {
 			getAndLoadTestConfiguration(TEST_NAME_RECODE);
@@ -197,11 +195,8 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			Assert.fail(ex.getMessage());
 		}
 		finally {
-			TestUtils.shutdownThread(t1);
-			TestUtils.shutdownThread(t2);
-			TestUtils.shutdownThread(t3);
-			TestUtils.shutdownThread(t4);
-			rtplatform = platformOld;
+			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			resetExecMode(rtold);
 		}
 	}
 

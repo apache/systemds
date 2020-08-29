@@ -79,7 +79,8 @@ public class FEDInstructionUtils {
 			if(pinst.getOpcode().equals("replace") && pinst.getTarget(ec).isFederated()) {
 				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 			}
-			else if(pinst.getOpcode().equals("transformdecode") && pinst.getTarget(ec).isFederated()) {
+			else if((pinst.getOpcode().equals("transformdecode") || pinst.getOpcode().equals("transformapply")) &&
+				pinst.getTarget(ec).isFederated()) {
 				return ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 			}
 		}

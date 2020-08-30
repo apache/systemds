@@ -480,7 +480,7 @@ public class UtilFunctions {
 	}
 
 	public static double objectToDouble(ValueType vt, Object in) {
-		if( in == null )  return 0;
+		if( in == null )  return Double.NaN;
 		switch( vt ) {
 			case FP64:    return (Double)in;
 			case FP32:    return (Float)in;

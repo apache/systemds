@@ -19,19 +19,13 @@
 #
 #-------------------------------------------------------------
 
-m_winsorize = function(Matrix[Double] X) return (Matrix[Double] Y) {
-  Y = matrix(0, nrow(X), ncol(X))
-  parfor(i in 1:ncol(X))
-    Y[,i] = fixOutliersWinsorize(X[,i])
-}
+# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
 
-fixOutliersWinsorize = function(Matrix[Double] X) return (Matrix[Double] Y)
+m_imputeByMean = function(Matrix[Double] X)
+return(Matrix[Double] X)
 {
-  # compute quantiles for lower and upper probs
-  q = quantile(X, matrix("0.05 0.95", rows=2, cols=1));
-  ql = as.scalar(q[1,1]);
-  qu = as.scalar(q[2,1]);
-  # replace values outside [ql,qu] w/ ql and qu respectively
-  Y = ifelse(X < ql, ql, X);
-  Y = ifelse(Y > qu, qu, Y);
+  Mask = is.nan(X)
+  X = replace(target=X, pattern=NaN, replacement=0)
+  Mask = Mask * (colMeans(X))
+  X = X + Mask
 }

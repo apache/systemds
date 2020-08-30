@@ -1,0 +1,254 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_val, Matrix[Double] Y_val, Matrix[Double] mask,
+  Frame[Unknown] lp, Scalar[int] R = 81, Integer k = 3,  Boolean verbose = TRUE)
+  return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams,  Matrix[Double] accuracy ) 
+{
+  bestHyperparams = as.matrix(0)
+  bestPipeline = as.frame("")
+  # variable names follow publication where algorithm is introduced
+  eta = 2  # the halving ratio is fixed
+  s_max = floor(log(R,eta));
+  B = (s_max + 1) * R;
+  if(s_max < k)
+    stop("unable to generate "+k+" pipelines. Please increase the resources or decrease k")
+
+  k_tmp_operations = as.frame("NaN")
+  k_tmp_hyp = matrix(0,1,0)
+  
+  n = ceil(floor(B/R/(s_max+1)) * eta^s_max);
+  r = R * eta^(-s_max);
+  configurations = get_physical_configurations(lp, n)
+      
+  for( i in 0:s_max ) {
+      
+    # successive halving    
+    n_i = as.integer(floor(n * eta^(-i)));
+    r_i = as.integer(floor(r * eta^i));
+      
+    if(verbose) {
+      
+      print("no of configurations ------------------------"+n_i)
+      print("no of resources ------------------------"+r_i)
+      print("iteration  ------------------------"+i)
+    }
+
+    [a,b] = run_with_hyperparam(configurations[1:n_i,], r_i, X_train, Y_train, X_val, Y_val, mask, verbose)
+    a = frameSort(a)
+    b = order(target = b, by = 1, decreasing=TRUE, index.return=FALSE)
+    
+    if(nrow(configurations) > 1)
+      configurations = a[2:nrow(a), 2:ncol(a)]
+    
+    # generate one output in each iteration
+    top_pipeline = a[1]
+    top_hp = b[1]
+    
+    if(ncol(k_tmp_operations) == 1)
+    {
+      k_tmp_operations = a[1]
+      k_tmp_hyp = b[1]
+    }
+    else {
+      if(ncol(k_tmp_hyp) < ncol(b))
+        k_tmp_hyp = cbind(k_tmp_hyp, matrix(0, nrow(k_tmp_hyp), ncol(b) - ncol(k_tmp_hyp)))
+      else if(ncol(k_tmp_hyp) > ncol(b))
+        top_hp = cbind(top_hp, matrix(0, 1, ncol(k_tmp_hyp) - ncol(top_hp)))
+    
+      k_tmp_operations = rbind(k_tmp_operations, top_pipeline) 
+      k_tmp_hyp = rbind(k_tmp_hyp, top_hp)
+    }
+  }
+ 
+  
+  bestPipeline = frameSort(k_tmp_operations)
+  bestHyperparams = order(target = k_tmp_hyp, by = 1, decreasing=TRUE, index.return=FALSE)
+  
+  accuracy = bestHyperparams[1:k,1]
+  bestPipeline = bestPipeline[1:k, 2:ncol(bestPipeline)]
+  bestHyperparams = bestHyperparams[1:k, 2:ncol(bestHyperparams)]
+  # remove any extra column
+  bestHyperparams = removeEmpty(target = bestHyperparams, margin = "cols")
+  
+  if(verbose) {
+    print("best pipeline"+ toString(bestPipeline))
+    print("best hyper-parameters \n"+ toString(bestHyperparams))
+    print("best accuracy \n"+ toString(accuracy))
+  }
+}
+
+
+get_physical_configurations = function(Frame[String] logical, Scalar[int] n)
+  return(Frame[String] physical)
+{
+  # load the primitives
+  physical = as.frame("")
+  resource_dir = "./scripts/staging/pipelines/";
+  mvi = read(resource_dir+"mviPrimitives.csv", data_type = "frame", format="csv", header= FALSE)
+  outliers = read(resource_dir+"outlierPrimitives.csv", data_type = "frame", format="csv", header= FALSE)
+  
+  operator = as.frame(matrix(0,nrow(outliers),1)) #combine all logical primitives
+  for(j in 1:ncol(logical))
+  {
+    if(as.scalar(logical[1,j]) == "outlier")
+      operator = cbind(operator, outliers);
+    else if(as.scalar(logical[1,j]) == "mvi")
+      operator = cbind(operator, mvi);
+  }
+  
+  operator = operator[,2:ncol(operator)] 
+  intermediates = getPermutations(operator)
+  remaining = 0;
+
+  if(n >= nrow(intermediates))
+  {
+    physical = intermediates
+    remaining = n - nrow(intermediates) 
+  }
+  else {
+    remaining = n
+  }
+     
+  for(i in 1:remaining)
+  {
+    random = round(as.scalar(rand(rows=1, cols=1, min=1, max= nrow(intermediates), pdf="uniform")))
+    if(ncol(physical) == 1)
+      physical = intermediates[random,]
+    else 
+      physical = rbind(physical, intermediates[random,])
+  }
+}
+
+run_with_hyperparam = function(Frame[String] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y, 
+                      Matrix[Double] X_val, Matrix[Double] Y_val, Matrix[Double] mask, Boolean verbose)
+                      
+return (Frame[Unknown] output_operator, Matrix[Double] output_hyperparam)
+{
+  output_hyperparam = matrix(-1, 1, 1)
+  output_operator = as.frame("")
+  clone_X = X
+  clone_val = X_val
+  
+  for(i in 1:nrow(ph_pip))
+  {
+    tmp_hp = matrix(0, 1, 1)
+    tmp_op = as.frame("")
+    best_acc = as.double(0.0)
+    best_hp = list()
+    # execute configurations with r resources and keep the best
+    for(r in 1:r_i)
+    {
+      hp = getHyperparam(ph_pip[i,])
+      X = executePipeline(ph_pip[i], X, mask, hp, TRUE)
+      X_val = executePipeline(ph_pip[i], X_val, mask, hp, TRUE)
+      accuracy = fclassify(X, Y, X_val, Y_val)
+      if(accuracy > best_acc) {
+        best_acc = accuracy
+        best_hp = hp
+      }
+    }
+    hp_vec = listToVector(best_hp, FALSE)
+    tmp_hp = cbind(cbind(as.matrix(best_acc), hp_vec), tmp_hp) #TODO list to vector
+    tmp_op = cbind(cbind(as.frame(best_acc), ph_pip[i]), tmp_op) #TODO list to vector
+    if(as.scalar(output_hyperparam[1,1]) == -1 )
+    {
+      output_hyperparam = tmp_hp
+      output_operator = tmp_op
+    }
+    else
+    {
+      if(ncol(tmp_hp) < ncol(output_hyperparam))
+        tmp_hp = cbind(tmp_hp, matrix(0,1,ncol(output_hyperparam) - ncol(tmp_hp)))
+      else if(ncol(tmp_hp) > ncol(output_hyperparam))
+        output_hyperparam = cbind(output_hyperparam, matrix(0,nrow(output_hyperparam), ncol(tmp_hp) - ncol(output_hyperparam) ))
+      
+      output_hyperparam = rbind(output_hyperparam, tmp_hp)
+      output_operator = rbind(output_operator, tmp_op)
+    }
+    X = clone_X
+    X_val = clone_val
+  }
+  output_hyperparam = output_hyperparam[, 1:ncol(output_hyperparam) - 1]
+  output_operator = output_operator[, 1:ncol(output_operator) - 1]
+  if(verbose) {
+    print("hp \n"+toString(output_hyperparam))
+    print("op \n"+toString(output_operator))
+  }
+}
+
+
+getHyperparam = function(Frame[Unknown] pipeline)
+return (List[Unknown] paramList)
+{
+  # load the hyper-parameters values
+  resource_dir = "./scripts/staging/pipelines/";
+  hpList = read(resource_dir+"param.csv", data_type = "frame", format="csv", header= FALSE)
+  paramList = list()
+  for(i in 1:ncol(pipeline)) {
+    op = as.scalar(pipeline[1,i])
+    hasParam = map(hpList[,1], "x->x.contains(\""+op+"\")")
+    m_hasParam = matrix(0, nrow(hasParam), 1)
+    
+    for(h in 1:nrow(hasParam))
+      m_hasParam[h] = ifelse(as.scalar(hasParam[h,1]) == "true",1,0)
+      
+    if(sum(m_hasParam) > 0) { 
+      index = m_hasParam * seq(1, nrow(m_hasParam))
+      index = as.scalar(removeEmpty(target = index, margin = "rows"))
+      d = as.integer(as.scalar(hpList[index, 2]))
+      parameters =  matrix(0, 1, d)
+      p = 3
+      for(j in 1:d) {
+        minVal = as.scalar(hpList[index, p]);
+        maxVal = as.scalar(hpList[index, p + 1]);
+        val = as.scalar(rand(rows=1, cols=1, min=minVal, max=maxVal, pdf="uniform"));
+        parameters[1, j] = val;
+        p = p + 2; 
+      } 
+      paramList = append(paramList, parameters)
+    }
+    else 
+      paramList = append(paramList, as.matrix(-1))
+  }
+}
+
+
+listToVector = function(List[Unknown] hp, Boolean verbose)
+return (Matrix[Double] hp_vec)
+{
+  hp_vec = matrix(0, 1, 0)
+  len = length(hp)
+  for(k in 1:len) {
+    mat = as.matrix(hp[k])
+    if(sum(mat) != -1)
+      hp_vec = cbind(hp_vec, as.matrix(ncol(mat)), mat)
+    else hp_vec = cbind(hp_vec, as.matrix(-1))
+  }
+}
+
+
+fclassify = function(Matrix[Double] X, Matrix[Double] Y,  Matrix[Double] X_val, Matrix[Double] y_val)
+return (Double accuracy)
+{
+  betas = multiLogReg(X=X, Y=Y, icpt=2, tol=1e-9, reg=1.2, maxi=100, maxii=0, verbose=FALSE)
+  [prob, yhat, accuracy] = multiLogRegPredict(X_val, betas, y_val, FALSE)
+}

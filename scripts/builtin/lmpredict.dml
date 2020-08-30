@@ -21,7 +21,7 @@
 
 m_lmpredict = function(Matrix[Double] X, Matrix[Double] w, Integer icpt = 0) return (Matrix[Double] y) {
   intercept_status = icpt;
-
+  y = as.matrix(0)
   if (intercept_status == 0) {
     y = X %*% w
   }

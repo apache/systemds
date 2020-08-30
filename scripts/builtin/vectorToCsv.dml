@@ -19,19 +19,18 @@
 #
 #-------------------------------------------------------------
 
-m_winsorize = function(Matrix[Double] X) return (Matrix[Double] Y) {
-  Y = matrix(0, nrow(X), ncol(X))
-  parfor(i in 1:ncol(X))
-    Y[,i] = fixOutliersWinsorize(X[,i])
-}
+# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
 
-fixOutliersWinsorize = function(Matrix[Double] X) return (Matrix[Double] Y)
-{
-  # compute quantiles for lower and upper probs
-  q = quantile(X, matrix("0.05 0.95", rows=2, cols=1));
-  ql = as.scalar(q[1,1]);
-  qu = as.scalar(q[2,1]);
-  # replace values outside [ql,qu] w/ ql and qu respectively
-  Y = ifelse(X < ql, ql, X);
-  Y = ifelse(Y > qu, qu, Y);
+# function to convert vector into csv
+
+m_vectorToCsv = function(Matrix[Double] vector)
+return (String indexes){
+
+  if(nrow(vector) >  ncol(vector))
+    vector = t(vector)
+  vector = removeEmpty(target= vector, margin = "cols")
+  s = ""
+  for(i in 1:ncol(vector)-1)
+    s = s+as.integer(as.scalar(vector[1,i]))+","
+  indexes = s+as.integer(as.scalar(vector[1,ncol(vector)]))
 }

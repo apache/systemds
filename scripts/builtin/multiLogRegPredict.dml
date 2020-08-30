@@ -46,7 +46,8 @@ return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)
 {  
   if(min(Y) <= 0)
     stop("class labels should be greater than zero")
-    
+  # initialize variables
+  accuracy = as.double(0.0)
   num_records = nrow(X);
   num_features = ncol(X);
   beta = B[1:ncol(X), ];

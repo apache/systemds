@@ -26,11 +26,11 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.test.TestConfiguration;
 
-public class BuiltinEnumeratorTest extends AutomatedTestBase {
+public class EnumeratorTest extends AutomatedTestBase {
 
 	private final static String TEST_NAME = "enumerator";
 	private final static String TEST_DIR = "pipelines/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinEnumeratorTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + EnumeratorTest.class.getSimpleName() + "/";
 	protected static final String SCRIPT_DIR = "./scripts/staging/";
 	private final static String logicalFile = SCRIPT_DIR+TEST_DIR + "logical.csv";
 	private final static String outlierPrimitives = SCRIPT_DIR+TEST_DIR + "outlierPrimitives.csv";
@@ -44,13 +44,13 @@ public class BuiltinEnumeratorTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testEnumerator(){runEnumerator(LopProperties.ExecType.CP);};
+	public void testEnumerator(){runEnumerator(Types.ExecMode.SINGLE_NODE);};
 
 
-	private void runEnumerator(LopProperties.ExecType instType)
+	private void runEnumerator(Types.ExecMode instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
-
+		setOutputBuffering(false);
 		try
 		{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

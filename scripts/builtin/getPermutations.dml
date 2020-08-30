@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,23 +19,19 @@
 #
 #-------------------------------------------------------------
 
+# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+# This built-in will generate all possible permutation for a given set of values
 
-source("./scripts/staging/pipelines/utils.dml") as utils;
-
-
-# The below functions will generate the all possible 
-# physical pipelines for a  given logical pipeline
-###################################################
-
-getPermutations = function(Frame[String] opt)
+s_getPermutations = function(Frame[String] opt)
 return(Frame[String] output)
 {
   idx = seq(1, ncol(opt))
   # get the indexes of columns for recode transformation
-  index = utils::vectorToCsv(idx)
+  index = vectorToCsv(idx)
   # recode logical pipelines for easy handling
   jspecR = "{ids:true, recode:["+index+"]}";
   [X, M] = transformencode(target=opt, spec=jspecR);
+  X = replace(target= X, pattern = NaN, replacement = 0)
   # initialize output matrix
   n = nrow(opt)
   d = ncol(opt)
@@ -54,5 +50,7 @@ return(Frame[String] output)
     }  
     outC[,i] = outR
   }
+  computeInvalid = rowMins(outC) == 0 
+  outC = removeEmpty(target = outC,  margin = "rows", select = computeInvalid == 0)
   output = transformdecode(target=outC, spec=jspecR, meta=M);
 }

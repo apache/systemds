@@ -700,18 +700,12 @@ public class ProgramConverter
 				ret.setStatements( sb.getStatements() );
 				
 				//deep copy predicate hops dag for concurrent recompile
-				if( sb.requiresFromRecompilation() ){
-					Hop hops = Recompiler.deepCopyHopsDag( sb.getFromHops() );
-					ret.setFromHops( hops );
-				}
-				if( sb.requiresToRecompilation() ){
-					Hop hops = Recompiler.deepCopyHopsDag( sb.getToHops() );
-					ret.setToHops( hops );
-				}
-				if( sb.requiresIncrementRecompilation() ){
-					Hop hops = Recompiler.deepCopyHopsDag( sb.getIncrementHops() );
-					ret.setIncrementHops( hops );
-				}
+				//or on create full statement block copies
+				ret.setFromHops( Recompiler.deepCopyHopsDag(sb.getFromHops()));
+				ret.setToHops(Recompiler.deepCopyHopsDag(sb.getToHops()));
+				if( sb.getIncrementHops() != null )
+					ret.setIncrementHops(Recompiler.deepCopyHopsDag(sb.getIncrementHops()));
+				
 				ret.updatePredicateRecompilationFlags();
 				ret.setNondeterministic(sb.isNondeterministic());
 			}

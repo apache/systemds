@@ -104,5 +104,4 @@ public class ForStatement extends Statement
 		LOG.error(this.printErrorLocation() +  "should not call variablesRead from ForStatement ");
 		return new VariableSet();
 	}
-} 
- 
+}

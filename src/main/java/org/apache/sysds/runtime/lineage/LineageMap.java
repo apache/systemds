@@ -72,16 +72,6 @@ public class LineageMap {
 		}
 	}
 	
-	public void processDedupItem(LineageMap lm, Long path) {
-		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
-			if (_traces.containsKey(entry.getKey())) {
-				addLineageItem(Pair.of(entry.getKey(),
-					new LineageItem(entry.getKey(), LineageItem.dedupItemOpcode,
-					new LineageItem[]{_traces.get(entry.getKey()), entry.getValue()})));
-			}
-		}
-	}
-
 	public void processDedupItem(LineageMap lm, Long path, LineageItem[] liinputs, String name) {
 		String delim = LineageDedupUtils.DEDUP_DELIM;
 		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {

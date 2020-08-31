@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp1;
@@ -78,8 +77,7 @@ public class LineageRecomputeUtils {
 	private static final String LVARPREFIX = "lvar";
 	public static final String LPLACEHOLDER = "IN#";
 	private static final boolean DEBUG = false;
-	public static final Map<Long, Map<String, LineageItem>> patchLiMap = new HashMap<>();
-	private static final Map<Long, Map<String, Hop>> patchHopMap = new HashMap<>();
+	public static Map<String, DedupLoopItem> loopPatchMap = new HashMap<>();
 
 	public static Data parseNComputeLineageTrace(String mainTrace, String dedupPatches) {
 		LineageItem root = LineageParser.parseLineageTrace(mainTrace);
@@ -87,8 +85,7 @@ public class LineageRecomputeUtils {
 			LineageParser.parseLineageTraceDedup(dedupPatches);
 		Data ret = computeByLineage(root);
 		// Cleanup the statics
-		patchLiMap.clear();
-		patchHopMap.clear();
+		loopPatchMap.clear();
 		return ret;
 	}
 	
@@ -225,31 +222,31 @@ public class LineageRecomputeUtils {
 				}
 				break;
 			}
+			case Dedup: {
+				// Create function call for each dedup entry 
+				String[] parts = item.getOpcode().split(LineageDedupUtils.DEDUP_DELIM); //e.g. dedup_R_SB13_0
+				String name = parts[2] + parts[1] + parts[3];  //loopId + outVar + pathId
+				List<Hop> finputs = Arrays.stream(item.getInputs())
+						.map(inp -> operands.get(inp.getId())).collect(Collectors.toList());
+				String[] inputNames = new String[item.getInputs().length];
+				for (int i=0; i<item.getInputs().length; i++)
+					inputNames[i] = LPLACEHOLDER + i;  //e.g. IN#0, IN#1
+				Hop funcOp = new FunctionOp(FunctionType.DML, DMLProgram.DEFAULT_NAMESPACE, 
+						name, inputNames, finputs, new String[] {parts[1]}, false);
+
+				// Cut the Hop dag after function calls 
+				partDagRoots.put(parts[1], funcOp);
+				// Compile the dag and save
+				constructBasicBlock(partDagRoots, parts[1], prog);
+
+				// Construct a Hop dag for the function body from the dedup patch, and compile
+				Hop output = constructHopsDedupPatch(parts, inputNames, finputs, prog);
+				// Create a TRead on the function o/p as a leaf for the next Hop dag
+				// Use the function body root/return hop to propagate right data type
+				operands.put(item.getId(), HopRewriteUtils.createTransientRead(parts[1], output));
+				break;
+			}
 			case Instruction: {
-				if (item.isDedup()) {
-					// Create function call for each dedup entry 
-					String[] parts = item.getOpcode().split(LineageDedupUtils.DEDUP_DELIM); //e.g. dedup_R_SB13_0
-					String name = parts[2] + parts[1] + parts[3];  //loopId + outVar + pathId
-					List<Hop> finputs = Arrays.stream(item.getInputs())
-							.map(inp -> operands.get(inp.getId())).collect(Collectors.toList());
-					String[] inputNames = new String[item.getInputs().length];
-					for (int i=0; i<item.getInputs().length; i++)
-						inputNames[i] = LPLACEHOLDER + i;  //e.g. IN#0, IN#1
-					Hop funcOp = new FunctionOp(FunctionType.DML, DMLProgram.DEFAULT_NAMESPACE, 
-							name, inputNames, finputs, new String[] {parts[1]}, false);
-
-					// Cut the Hop dag after function calls 
-					partDagRoots.put(parts[1], funcOp);
-					// Compile the dag and save
-					constructBasicBlock(partDagRoots, parts[1], prog);
-
-					// Construct a Hop dag for the function body from the dedup patch, and compile
-					Hop output = constructHopsDedupPatch(parts, inputNames, finputs, prog);
-					// Create a TRead on the function o/p as a leaf for the next Hop dag
-					// Use the function body root/return hop to propagate right data type
-					operands.put(item.getId(), HopRewriteUtils.createTransientRead(parts[1], output));
-					break;
-				}
 				CPType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
 				SPType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
 				
@@ -408,35 +405,36 @@ public class LineageRecomputeUtils {
 					.createLiteralOp(op.getValueType(), op.getName()));
 				break;
 			}
-			case Dedup: {
-				throw new NotImplementedException();
-			}
 		}
 		
 		item.setVisited();
 	}
 
+	// Construct and compile the function body
 	private static Hop constructHopsDedupPatch(String[] parts, String[] inputs, List<Hop> inpHops, Program prog) {
-		// Construct and compile the function body
 		String outname = parts[1];
 		Long pathId = Long.parseLong(parts[3]);
+		DedupLoopItem loop = loopPatchMap.get(parts[2]);
 		// Return if this patch is already compiled
-		if (patchHopMap.containsKey(pathId) && patchHopMap.get(pathId).containsKey(outname))
-			return patchHopMap.get(pathId).get(outname);
+		if (loop.patchHopMap.containsKey(pathId) && loop.patchHopMap.get(pathId).containsKey(outname))
+			return loop.patchHopMap.get(pathId).get(outname);
 
 		// Construct a Hop dag
-		LineageItem patchRoot = patchLiMap.get(pathId).get(outname);
+		LineageItem patchRoot = loop.patchLiMap.get(pathId).get(outname);
 		patchRoot.resetVisitStatusNR();
 		Map<Long, Hop> operands = new HashMap<>();
 		// Create TRead on the function inputs
 		//FIXME: the keys of operands can be replaced inside rConstructHops
 		for (int i=0; i<inputs.length; i++)
 			operands.put((long)i, HopRewriteUtils.createTransientRead(inputs[i], inpHops.get(i))); //order preserving
+		// Construct the Hop dag.
 		rConstructHops(patchRoot, operands, null, null);
+		// TWrite the func return (pass dag root to copy datatype)
 		Hop out = HopRewriteUtils.createTransientWrite(outname, operands.get(patchRoot.getId()));
-		if (!patchHopMap.containsKey(pathId))
-			patchHopMap.put(pathId, new HashMap<>());
-		patchHopMap.get(pathId).put(outname, out);
+		// Save the Hop dag
+		if (!loop.patchHopMap.containsKey(pathId))
+			loop.patchHopMap.put(pathId, new HashMap<>());
+		loop.patchHopMap.get(pathId).put(outname, out);
 		
 		// Compile to instructions and save as a FunctionProgramBlock
 		List<DataIdentifier> funcInputs = new ArrayList<>();
@@ -518,5 +516,19 @@ public class LineageRecomputeUtils {
 				operands.get(item.getInputs()[4].getId()), //cl
 				operands.get(item.getInputs()[5].getId())); //cu
 		throw new DMLRuntimeException("Unsupported opcode: "+item.getOpcode());
+	}
+	
+	
+	// Below class represents a single loop and contains related data
+	// that are needed for recomputation.
+	protected static class DedupLoopItem {
+		public String functionName;
+		// Lineage/Hop DAG per output variable per unique path
+		public final Map<Long, Map<String, LineageItem>> patchLiMap = new HashMap<>();
+		private final Map<Long, Map<String, Hop>> patchHopMap = new HashMap<>();
+		
+		public DedupLoopItem(String name) {
+			functionName = name;
+		}
 	}
 }

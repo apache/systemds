@@ -233,6 +233,8 @@ public class LineageItemUtils {
 		root.setVisited();
 	}
 	
+	@Deprecated
+	@SuppressWarnings("unused")
 	public static LineageItem rDecompress(LineageItem item) {
 		if (item.getType() == LineageItemType.Dedup) {
 			LineageItem dedupInput = rDecompress(item.getInputs()[0]);

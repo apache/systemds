@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
+X = rand(rows=10, cols=5, seed=42);
 
 R = X;
 for(i in 1:3){
@@ -39,4 +39,4 @@ for(i in 1:3){
 
 R = R * 3;
 
-write(R, $2, format="text");
+write(R, $1, format="text");

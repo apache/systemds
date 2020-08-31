@@ -52,7 +52,8 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		"FunPotpourriNestedParforEval",
 		"FunPotpourriMultiEval",
 		"FunPotpourriEvalPred",
-		"FunPotpourriEvalListArg",
+		"FunPotpourriEvalList1Arg",
+		"FunPotpourriEvalList2Arg",
 	};
 	
 	private final static String TEST_DIR = "functions/misc/";
@@ -175,15 +176,19 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		runFunctionTest( TEST_NAMES[21], null );
 	}
 	
-//	@Test
-//	public void testFunctionEvalListArg() {
-//		runFunctionTest( TEST_NAMES[22], null );
-//	}
+	@Test
+	public void testFunctionEvalList1Arg() {
+		runFunctionTest( TEST_NAMES[22], null );
+	}
+	
+	@Test
+	public void testFunctionEvalList2Arg() {
+		runFunctionTest( TEST_NAMES[23], null );
+	}
 	
 	private void runFunctionTest(String testName, Class<?> error) {
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
-		setOutputBuffering(false);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";

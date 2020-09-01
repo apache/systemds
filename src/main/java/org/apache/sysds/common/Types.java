@@ -317,7 +317,7 @@ public class Types
 				case BITWSHIFTR:   return "bitwShiftR";
 				case DROP_INVALID_TYPE: return "dropInvalidType";
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
-				case MAP:          return "dml_map";
+				case MAP:          return "_map";
 				default:           return name().toLowerCase();
 			}
 		}

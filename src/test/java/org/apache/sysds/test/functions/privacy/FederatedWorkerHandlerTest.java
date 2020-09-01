@@ -202,7 +202,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		assertTrue("The privacy level " + privacyLevel.toString() + " should have been checked during execution",
 			checkedPrivacyConstraintsContains(privacyLevel));
 
-		TestUtils.shutdownThread(t);
+		TestUtils.shutdownProcess(t);
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}
@@ -267,7 +267,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		assertTrue("Privacy constraint with level " + privacyLevel + " should have been checked during execution",
 			checkedPrivacyConstraintsContains(privacyLevel));
 
-		TestUtils.shutdownThread(t);
+		TestUtils.shutdownProcess(t);
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

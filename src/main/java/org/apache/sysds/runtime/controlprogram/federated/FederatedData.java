@@ -155,9 +155,11 @@ public class FederatedData {
 			return promise;
 		}
 		catch (InterruptedException e) {
+			workerGroup.shutdownGracefully();
 			throw new DMLRuntimeException("Could not send federated operation.");
 		}
 		catch (Exception e) {
+			workerGroup.shutdownGracefully();
 			throw new DMLRuntimeException(e);
 		}
 	}

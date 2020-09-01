@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test;
 
-import static java.lang.Thread.sleep;
+import static org.apache.sysds.runtime.controlprogram.federated.FederatedData.executeFederatedOperation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,6 +60,8 @@ import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -106,6 +109,8 @@ public abstract class AutomatedTestBase {
 	public static final double GPU_TOLERANCE = 1e-9;
 
 	public static final int FED_WORKER_WAIT = 1000; // in ms
+	// max time to wait when checking if worker accepts connections
+	public static final int FED_WORKER_CONNECTION_WAIT = 5000;
 
 	// With OpenJDK 8u242 on Windows, the new changes in JDK are not allowing
 	// to set the native library paths internally thus breaking the code.
@@ -867,7 +872,7 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Call readDMLMetaDataValue but fail test in case of JSONException or NullPointerException.
-	 * 
+	 *
 	 * @param fileName  of metadata file
 	 * @param outputDir directory of metadata file
 	 * @param key       key to find in metadata
@@ -1380,20 +1385,64 @@ public abstract class AutomatedTestBase {
 			return availableSocket.getLocalPort();
 		}
 		catch(IOException e) {
-			// If no port was found just use 9999
+			// If no port was found just use 9990
 			return 9990;
 		}
 	}
 
+	private static void waitForFederatedWorker(int port) {
+		long start = System.currentTimeMillis();
+		while(System.currentTimeMillis() - start <= FED_WORKER_CONNECTION_WAIT) {
+			FederatedResponse response = null;
+			try {
+				response = executeFederatedOperation(new InetSocketAddress("localhost", port),
+					new FederatedRequest(FederatedRequest.RequestType.CLEAR)).get();
+			}
+			catch(Exception e) {
+				// failed, try again if fed worker wait has not passed yet
+			}
+			if(response != null) {
+				if(!(response.isSuccessful()))
+					LOG.error("Ping failed: " + response.getErrorMessage());
+				else
+					break;
+			}
+		}
+	}
+
+	/**
+	 * Start new JVMs for multiple federated workers at the port. Faster than starting each worker separately.
+	 *
+	 * @param ports the ports to use
+	 * @return the processes associated with the workers
+	 */
+	protected Process[] startLocalFedWorkers(int... ports) {
+		Process[] processes = Arrays.stream(ports).mapToObj(port -> startLocalFedWorker(port, false))
+			.toArray(Process[]::new);
+		Arrays.stream(ports).forEach(AutomatedTestBase::waitForFederatedWorker);
+		return processes;
+	}
+
 	/**
 	 * Start new JVM for a federated worker at the port.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param port Port to use for the JVM
 	 * @return the process associated with the worker.
 	 */
-	@Deprecated
 	protected Process startLocalFedWorker(int port) {
+		return startLocalFedWorker(port, true);
+	}
+
+	/**
+	 * Start new JVM for a federated worker at the port.
+	 *
+	 *
+	 * @param port Port to use for the JVM
+	 * @param wait wait a delay to ensure the worker is ready for connections (max <code>FED_WORKER_CONNECTION_WAIT</code>ms)
+	 * @return the process associated with the worker.
+	 */
+	protected Process startLocalFedWorker(int port, boolean wait) {
 		Process process = null;
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
@@ -1407,6 +1456,12 @@ public abstract class AutomatedTestBase {
 			sleep(FED_WORKER_WAIT);
 		}
 		catch(IOException | InterruptedException e) {
+
+			if(wait)
+				// Give some time to startup the worker.
+				waitForFederatedWorker(port);
+		}
+		catch(Exception e) {
 			e.printStackTrace();
 		}
 		return process;
@@ -1414,9 +1469,9 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Start a thread for a worker. This will share the same JVM, so all static variables will be shared.!
-	 * 
+	 *
 	 * Also when using the local Fed Worker thread the statistics printing, and clearing from the worker is disabled.
-	 * 
+	 *
 	 * @param port Port to use
 	 * @return the thread associated with the worker.
 	 */
@@ -1453,7 +1508,7 @@ public abstract class AutomatedTestBase {
 
 	/**
 	 * Start java worker in same JVM.
-	 * 
+	 *
 	 * @param args the command line arguments
 	 * @return the thread associated with the process.s
 	 */

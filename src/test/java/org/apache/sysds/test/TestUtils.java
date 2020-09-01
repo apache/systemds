@@ -2603,9 +2603,9 @@ public class TestUtils
 			shutdownThread(t);
 	}
 
-	public static void shutdownThreads(Process... ts) {
+	public static void shutdownProcesses(Process... ts) {
 		for( Process t : ts )
-			shutdownThread(t);
+			shutdownProcess(t);
 	}
 	
 	public static void shutdownThread(Thread t) {
@@ -2621,7 +2621,7 @@ public class TestUtils
 		}
 	}
 
-	public static void shutdownThread(Process t) {
+	public static void shutdownProcess(Process t) {
 		// kill the worker
 		if( t != null ) {
 			Process d = t.destroyForcibly();

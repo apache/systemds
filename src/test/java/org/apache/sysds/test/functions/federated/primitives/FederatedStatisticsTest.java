@@ -95,8 +95,7 @@ public class FederatedStatisticsTest extends AutomatedTestBase {
 		fullDMLScriptName = "";
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		Thread t1 = startLocalFedWorkerThread(port1);
-		Thread t2 = startLocalFedWorkerThread(port2);
+		Process[] processes = startLocalFedWorkers(port1, port2);
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
@@ -118,7 +117,7 @@ public class FederatedStatisticsTest extends AutomatedTestBase {
 		// compare via files
 		compareResults(1e-9);
 
-		TestUtils.shutdownThreads(t1, t2);
+		TestUtils.shutdownProcesses(processes);
 
 		// check for federated operations
 		Assert.assertTrue("contains federated matrix mult", heavyHittersContainsString("fed_ba+*"));

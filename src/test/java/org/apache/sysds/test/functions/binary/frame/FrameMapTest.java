@@ -33,7 +33,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FrameMapTest extends AutomatedTestBase {
-	private final static String TEST_NAME = "dmlMap";
+	private final static String TEST_NAME = "map";
 	private final static String TEST_DIR = "functions/binary/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FrameMapTest.class.getSimpleName() + "/";
 

@@ -16,6 +16,24 @@
 #
 #-------------------------------------------------------------
 
-X = read($1, data_type="frame", format="csv", header=FALSE);
+F = read($1, data_type="frame", format="csv", header=FALSE);
+# as the method accepts the matrix so convert the non-numeric data into matrix
+
+# detect schema for transformation
+schema = detectSchema(F)
+s=""
+for(i in 1: ncol(F)) {
+  if(as.scalar(schema[1,i]) == "STRING" | as.scalar(schema[1,i]) == "BOOLEAN" )
+    s = s+as.integer(i)+","; 
+}
+  
+# recode data frame
+jspecR = "{ids:true, recode:["+s+"]}";
+[X, M] = transformencode(target=F, spec=jspecR);
+# call the method
 Y = imputeByFD(X, $2, $3, $4);
-write(Y, $5, format="binary")
+
+# getting the actual data back
+dF = transformdecode(target=Y, spec=jspecR, meta=M);
+
+write(dF, $5, format="binary")

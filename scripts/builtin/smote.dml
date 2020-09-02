@@ -56,7 +56,7 @@ return (Matrix[Double] Y) {
   }
   
   # number of synthetic samples from each minority class sample
-  iter = (s/100)-1
+  iter = (s/100)
   # matrix to store synthetic samples
   synthetic_samples = matrix(0, 0, ncol(X))
   while(iter > 0)
@@ -79,6 +79,8 @@ return (Matrix[Double] Y) {
   }
 
   Y = synthetic_samples
+  if(verbose)
+    print(nrow(Y)+ " synthesized samples generated.")
 }
   
 

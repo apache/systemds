@@ -39,7 +39,7 @@
 # X               Double   ---        Matrix with possible imputations 
 
 
-m_imputeByFD = function(Matrix[Double] X, Integer sourceAttribute, Integer targetAttribute, Double threshold)
+m_imputeByFD = function(Matrix[Double] X, Integer sourceAttribute, Integer targetAttribute, Double threshold, Boolean verbose = FALSE)
   return(Matrix[Double] X)
 {
   # sanity checks
@@ -51,6 +51,9 @@ m_imputeByFD = function(Matrix[Double] X, Integer sourceAttribute, Integer targe
  
   # impute missing values and fix errors
   X[,targetAttribute] = imputeAndCorrect(X[,sourceAttribute], X[,targetAttribute], threshold) 
+
+  if(verbose)
+    print("output \n"+toString(X))
 }
 
 imputeAndCorrect = function(Matrix[Double] X, Matrix[Double] Y, Double threshold)

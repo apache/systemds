@@ -69,12 +69,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
-import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
-import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
-import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
-import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.*;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartitioner;
@@ -123,28 +118,76 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runFederated(ExecutionContext ec) {
-		System.out.println("Running in federated mode");
+		System.out.println("PARAMETER SERVER");
+		System.out.println("[+] Running in federated mode");
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 
-		// "partition" federated data
-		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
-		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
+		// get inputs
+		PSFrequency freq = getFrequency();
+		PSUpdateType updateType = getUpdateType();
+		String updFunc = getParam(PS_UPDATE_FUN);
+		String aggFunc = getParam(PS_AGGREGATION_FUN);
+
+		// partition federated data
 		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.KEEP_DATA_ON_WORKER)
-				.doPartitioning(features, labels);
+				.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
 		List<MatrixObject> pFeatures = result.pFeatures;
 		List<MatrixObject> pLabels = result.pLabels;
+		int workerNum = result.workerNum;
 
 		// Check partitioning
-		System.out.println("FEATURES");
+		System.out.println("PARTITIONING");
+		System.out.println("[+] Partitioned features");
 		for(MatrixObject feature : pFeatures) {
 			System.out.println(feature.toString());
 		}
-		System.out.println("LABELS");
+		System.out.println("[+] Partitioned labels");
 		for(MatrixObject label : pLabels) {
 			System.out.println(label.toString());
 		}
 
-		System.out.println("Here");
+		System.out.println("INFRASTRUCTURE");
+		// setup threading
+		BasicThreadFactory factory = new BasicThreadFactory.Builder()
+				.namingPattern("workers-pool-thread-%d").build();
+		ExecutorService es = Executors.newFixedThreadPool(workerNum, factory);
+
+		System.out.println("[+] Threading setup");
+
+		// Get the compiled execution context
+		LocalVariableMap newVarsMap = createVarsMap(ec);
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, getParLevel(workerNum));
+
+		// Create workers' execution context
+		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
+
+		// Create the agg service's execution context
+		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
+
+		System.out.println("[+] Compiled and created execution contexts");
+
+		// Create the parameter server
+		ListObject model = ec.getListObject(getParam(PS_MODEL));
+		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
+
+		// Create the local workers
+		List<FederatedLocalPSThread> threads = IntStream.range(0, workerNum)
+				.mapToObj(i -> new FederatedLocalPSThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
+				.collect(Collectors.toList());
+
+		System.out.println("[+] Created parameter server and threads for federated workers");
+
+		try {
+			// Launch the worker threads and wait for completion
+			for (Future<Void> ret : es.invokeAll(threads))
+				ret.get(); //error handling
+			// Fetch the final model from ps
+			ec.setVariable(output.getName(), ps.getResult());
+		} catch (InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: unknown error: ", e);
+		} finally {
+			es.shutdownNow();
+		}
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
@@ -379,6 +422,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
 		switch (mode) {
+			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
 				return LocalParamServer.create(model, aggFunc, updateType, ec, workerNum);

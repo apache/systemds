@@ -71,7 +71,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_MODE = "mode";
 	public static final String PS_GRADIENTS = "gradients";
 	public enum PSModeType {
-		LOCAL, REMOTE_SPARK
+		FEDERATED, LOCAL, REMOTE_SPARK
 	}
 	public static final String PS_UPDATE_TYPE = "utype";
 	public enum PSUpdateType {

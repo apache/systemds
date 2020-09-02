@@ -30,10 +30,12 @@ public abstract class DataPartitionFederatedScheme {
 	public final class Result {
 		public final List<MatrixObject> pFeatures;
 		public final List<MatrixObject> pLabels;
+		public final int workerNum;
 
-		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels) {
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels, int workerNum) {
 			this.pFeatures = pFeatures;
 			this.pLabels = pLabels;
+			this.workerNum = workerNum;
 		}
 	}
 

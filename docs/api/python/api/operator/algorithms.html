@@ -239,6 +239,9 @@
 <li><p><strong>avg_sample_size_per_centroid</strong> – The average number of records per centroid in the data samples.</p></li>
 </ul>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><cite>OperationNode</cite> List containing two outputs 1. the clusters, 2 the cluster ID associated with each row in x.</p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -285,10 +288,11 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> – Input dataset to perform K-Means on.</p></li>
+<li><p><strong>x</strong> – Input dataset to perform Principal Componenet Analysis (PCA) on.</p></li>
 <li><p><strong>K</strong> – The number of reduced dimensions.</p></li>
 <li><p><strong>center</strong> – Boolean specifying if the input values should be centered.</p></li>
-<li><p><strong>scale</strong> – Boolean specifying if the input values should be scaled.</p></li>
+<li><p><strong>scale</strong> – Boolean specifying if the input values should be scaled.
+:return: <cite>OperationNode</cite> List containing two outputs 1. The dimensionality reduced X input, 2. A matrix to reduce dimensionality similarly on unseen data.</p></li>
 </ul>
 </dd>
 </dl>

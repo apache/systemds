@@ -98,7 +98,7 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
     """
     Performs PCA on the matrix input
 
-    :param x: Input dataset to perform K-Means on.
+    :param x: Input dataset to perform Principal Componenet Analysis (PCA) on.
     :param K: The number of reduced dimensions.
     :param center: Boolean specifying if the input values should be centered.
     :param scale: Boolean specifying if the input values should be scaled.
@@ -112,7 +112,7 @@ def pca(x: DAGNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
 
     if 'K' in kwargs.keys() and kwargs.get('K') < 1:
         raise ValueError(
-            "Invalid number of clusters in K means, number must be integer above 0")
+            "Invalid number of dimensions in PCA, number must be integer above 0")
 
     if 'scale' in kwargs.keys():
         if kwargs.get('scale') == True:

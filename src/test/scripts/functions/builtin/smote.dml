@@ -21,7 +21,7 @@
 
 
 A = read($X);
-B = smote(X = A, s=$S, k=$K);
+B = smote(X = A, s=$S, k=$K, verbose=TRUE);
 
 # test if all point fall in same cluster (closed to each other)
 # read some new data T != A 

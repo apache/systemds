@@ -50,6 +50,7 @@ limitations under the License.
     * [`pnmf`-Function](#pnmf-function)
     * [`scale`-Function](#scale-function)
     * [`sigmoid`-Function](#sigmoid-function)
+    * [`smote`-Function](#smote-function)
     * [`steplm`-Function](#steplm-function)
     * [`slicefinder`-Function](#slicefinder-function)
     * [`normalize`-Function](#normalize-function)
@@ -535,14 +536,14 @@ using robust functional dependencies.
 ### Usage
 
 ```r
-imputeByFD(F, sourceAttribute, targetAttribute, threshold)
+imputeByFD(X, sourceAttribute, targetAttribute, threshold)
 ```
 
 ### Arguments
 
 | Name      | Type    | Default  | Description |
 | :-------- | :------ | -------- | :---------- |
-| F         | String  | --       | A data frame |
+| X         | Matrix[Double]  | --       | Matrix of feature vectors (recoded matrix for non-numeric values) |
 | source    | Integer | --       | Source attribute to use for imputation and error correction |
 | target    | Integer | --       | Attribute to be fixed |
 | threshold | Double  | --       | threshold value in interval [0, 1] for robust FDs |
@@ -551,8 +552,14 @@ imputeByFD(F, sourceAttribute, targetAttribute, threshold)
 
 | Type   | Description |
 | :----- | :---------- |
-| String | Frame with possible imputations |
+| Matrix[Double] | Matrix with possible imputations |
 
+### Example
+
+```r
+X = matrix("1 1 1 2 4 5 5 3 3 NaN 4 5 4 1", rows=7, cols=2) 
+imputeByFD(X = X, source = 1, target = 2, threshold = 0.6, verbose = FALSE)
+```
 
 ## `KMeans`-Function
 
@@ -777,25 +784,24 @@ mice(F, cMask, iter, complete, verbose)
 
 | Name     | Type           | Default  | Description |
 | :------- | :------------- | -------- | :---------- |
-| F        | Frame[String]  | required | Data Frame with one-dimensional row matrix with N columns where N>1. |
+| X        | Matrix[Double]  | required | Data Matrix (Recoded Matrix for categorical features), ncol(X) > 1|
 | cMask    | Matrix[Double] | required | 0/1 row vector for identifying numeric (0) and categorical features (1) with one-dimensional row matrix with column = ncol(F). |
 | iter     | Integer        | `3`      | Number of iteration for multiple imputations. |
-| complete | Integer        | `3`      | A complete dataset generated though a specific iteration. |
 | verbose  | Boolean        | `FALSE`  | Boolean value. |
 
 ### Returns
 
 | Type           | Description |
 | :------------- | :---------- |
-| Frame[String]  | imputed dataset. |
-| Frame[String]  | A complete dataset generated though a specific iteration. |
+| Matrix[Double]  | imputed dataset. |
+
 
 ### Example
 
 ```r
-F = as.frame(matrix("4 3 2 8 7 8 5", rows=1, cols=7))
+F = matrix("4 3 NaN 8 7 8 5 NaN 6", rows=3, cols=3)
 cMask = round(rand(rows=1,cols=ncol(F),min=0,max=1))
-[dataset, singleSet] = mice(F, cMask, iter = 3, complete = 3, verbose = FALSE)
+dataset = mice(F, cMask, iter = 3, verbose = FALSE)
 ```
 
 ## `multiLogReg`-Function
@@ -936,7 +942,43 @@ sigmoid(X)
 X = rand (rows = 20, cols = 10)
 Y = sigmoid(X)
 ```
+## `smote`-Function
 
+The `smote`-function (Synthetic Minority Oversampling Technique) implements a classical techniques for handling class imbalance.
+The  built-in takes the samples from minority class and over-sample them by generating the synthesized samples.
+The built-in accepts two parameters s and k. The parameter s define the number of synthesized samples to be generated
+ i.e., over-sample the minority class by s time, where s is the multiple of 100. For given 40 samples of minority class and
+ s = 200 the smote will generate the 80 synthesized samples to over-sample the class by 200 percent. The parameter k is used to generate the 
+ k nearest neighbours for each minority class sample and then the neighbours are chosen randomly in synthesis process.
+
+### Usage
+
+```r
+smote(X, s, k, verbose);
+```
+
+### Arguments
+
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of feature vectors of minority class samples |
+| s       | Integer | 200 | Amount of SMOTE (percentage of oversampling), integral multiple of 100 |
+| k    | Integer        | `1`      | Number of nearest neighbour
+| verbose | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Matrix of (N/100) * X synthetic minority class samples 
+
+
+### Example
+
+```r
+X = rand (rows = 50, cols = 10)
+B = smote(X = X, s=200, k=3, verbose=TRUE);
+```
 ## `steplm`-Function
 
 The `steplm`-function (stepwise linear regression) implements a classical forward feature selection method.

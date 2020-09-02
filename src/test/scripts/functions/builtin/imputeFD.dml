@@ -31,7 +31,7 @@ for(i in 1: ncol(F)) {
 jspecR = "{ids:true, recode:["+s+"]}";
 [X, M] = transformencode(target=F, spec=jspecR);
 # call the method
-Y = imputeByFD(X, $2, $3, $4);
+Y = imputeByFD(X, $2, $3, $4, FALSE);
 
 # getting the actual data back
 dF = transformdecode(target=Y, spec=jspecR, meta=M);

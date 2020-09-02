@@ -254,9 +254,11 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			throws Exception 
 		{
 			//build meta data (e.g., recode maps)
-			if( _raEncoder != null )
+			if( _raEncoder != null ) {
+				_raEncoder.prepareBuildPartial();
 				while( iter.hasNext() )
 					_raEncoder.buildPartial(iter.next()._2());
+			}
 			
 			//output recode maps as columnID - token pairs
 			ArrayList<Tuple2<Integer,Object>> ret = new ArrayList<>();

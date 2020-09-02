@@ -129,46 +129,25 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// "partition" federated data
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
-		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.NONE)
+		DataPartitionFederatedScheme.Result result = new FederatedDataPartitioner(Statement.FederatedPSScheme.KEEP_DATA_ON_WORKER)
 				.doPartitioning(features, labels);
-		List<MatrixObject> pfs = result.pFeatures;
-		List<MatrixObject> pls = result.pLabels;
+		List<MatrixObject> pFeatures = result.pFeatures;
+		List<MatrixObject> pLabels = result.pLabels;
 
 		// Check partitioning
 		System.out.println("FEATURES");
-		for(MatrixObject f : pfs) {
-			System.out.println(f.toString());
+		for(MatrixObject feature : pFeatures) {
+			System.out.println(feature.toString());
 		}
 		System.out.println("LABELS");
-		for(MatrixObject l : pls) {
-			System.out.println(l.toString());
+		for(MatrixObject label : pLabels) {
+			System.out.println(label.toString());
 		}
 
-		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF, 1, new Test(1));
-		// TODO Tobias: Check tid
-		try {
-			Future<FederatedResponse>[] responseFuture = pfs.get(0).getFedMapping().execute(-1, fr1);
-			FederatedResponse response = responseFuture[0].get();
-			if(response.isSuccessful()) {
-				System.out.println("UDF Success");
-			}
-		}
-		catch(Exception e) {
-
-		}
+		System.out.println("Here");
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
-	}
-
-	public static class Test extends FederatedUDF {
-		public Test(long input) {
-			super(new long[] {input});
-		}
-		@Override
-		public FederatedResponse execute(ExecutionContext ec, org.apache.sysds.runtime.instructions.cp.Data... data) {
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS_EMPTY);
-		}
 	}
 
 	@SuppressWarnings("resource")

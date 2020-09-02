@@ -19,13 +19,16 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,45 +38,44 @@ import java.util.List;
 public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedScheme {
 	@Override
 	public Result doPartitioning(MatrixObject features, MatrixObject labels) {
-		if (features.isFederated(FederationMap.FType.ROW)
-				|| labels.isFederated(FederationMap.FType.ROW)) {
+		List<MatrixObject> pFeatures = sliceFederatedMatrix(features);
+		List<MatrixObject> pLabels = sliceFederatedMatrix(labels);
+		return new Result(pFeatures, pLabels);
+	}
 
-			// partition features
-			List<MatrixObject> pFeatures = Collections.synchronizedList(new ArrayList<>());
-			features.getFedMapping().forEachParallel((range, data) -> {
-				// TODO Tobias: This slicing is really ugly, rework
-				MatrixObject slice = new MatrixObject(features);
-				slice.updateDataCharacteristics(new MatrixCharacteristics(range.getSize(0), range.getSize(1)));
+	/**
+	 * Takes a row federated Matrix and slices it into a matrix for each worker
+	 *
+	 * @param fedMatrix the federated input matrix
+	 */
+	private List<MatrixObject> sliceFederatedMatrix(MatrixObject fedMatrix) {
+		if (fedMatrix.isFederated(FederationMap.FType.ROW)
+				|| fedMatrix.isFederated(FederationMap.FType.ROW)) {
 
+			List<MatrixObject> slices = Collections.synchronizedList(new ArrayList<>());
+			fedMatrix.getFedMapping().forEachParallel((range, data) -> {
+				// Create sliced matrix object
+				MatrixObject slice = new MatrixObject(fedMatrix.getValueType(), Dag.getNextUniqueVarname(Types.DataType.MATRIX));
+				// Warning needs MetaDataFormat instead of MetaData
+				slice.setMetaData(new MetaDataFormat(
+										new MatrixCharacteristics(range.getSize(0), range.getSize(1)),
+										Types.FileFormat.BINARY)
+								 );
+
+				// Create new federation map
 				HashMap<FederatedRange, FederatedData> newFedHashMap = new HashMap<>();
 				newFedHashMap.put(range, data);
 				slice.setFedMapping(new FederationMap(newFedHashMap));
 				slice.getFedMapping().setType(FederationMap.FType.ROW);
 
-				pFeatures.add(slice);
+				slices.add(slice);
 				return null;
 			});
 
-			// partition labels
-			List<MatrixObject> pLabels = Collections.synchronizedList(new ArrayList<>());
-			labels.getFedMapping().forEachParallel((range, data) -> {
-				// TODO Tobias: This slicing is really ugly, rework
-				MatrixObject slice = new MatrixObject(labels);
-				slice.updateDataCharacteristics(new MatrixCharacteristics(range.getSize(0), range.getSize(1)));
-
-				HashMap<FederatedRange, FederatedData> newFedHashMap = new HashMap<>();
-				newFedHashMap.put(range, data);
-				slice.setFedMapping(new FederationMap(newFedHashMap));
-				slice.getFedMapping().setType(FederationMap.FType.ROW);
-
-				pLabels.add(slice);
-				return null;
-			});
-
-			return new Result(pFeatures, pLabels);
+			return slices;
 		}
 		else {
-			throw new DMLRuntimeException(String.format("Paramserv func: " +
+			throw new DMLRuntimeException(String.format("Federated data partitioner: " +
 					"currently only supports row federated data"));
 		}
 	}

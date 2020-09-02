@@ -29,7 +29,7 @@ public class FederatedDataPartitioner {
 
 	public FederatedDataPartitioner(Statement.FederatedPSScheme scheme) {
 		switch (scheme) {
-			case NONE:
+			case KEEP_DATA_ON_WORKER:
 				_scheme = new KeepDataOnWorkerFederatedScheme();
 				break;
 			default:

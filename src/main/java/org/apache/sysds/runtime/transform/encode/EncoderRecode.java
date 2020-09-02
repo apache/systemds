@@ -121,14 +121,16 @@ public class EncoderRecode extends Encoder
 	protected void putCode(HashMap<String,Long> map, String key) {
 		map.put(key, Long.valueOf(map.size()+1));
 	}
+	
+	public void prepareBuildPartial() {
+		//ensure allocated partial recode map
+		if( _rcdMapsPart == null )
+			_rcdMapsPart = new HashMap<>();
+	}
 
 	public void buildPartial(FrameBlock in) {
 		if( !isApplicable() )
 			return;
-
-		//ensure allocated partial recode map
-		if( _rcdMapsPart == null )
-			_rcdMapsPart = new HashMap<>();
 		
 		//construct partial recode map (tokens w/o codes)
 		//iterate over columns for sequential access

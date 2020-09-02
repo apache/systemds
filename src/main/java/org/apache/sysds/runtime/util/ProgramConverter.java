@@ -44,6 +44,7 @@ import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.parser.FunctionStatementBlock;
 import org.apache.sysds.parser.IfStatement;
 import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.ParForStatement;
 import org.apache.sysds.parser.ParForStatementBlock;
 import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.parser.StatementBlock;
@@ -543,7 +544,8 @@ public class ProgramConverter
 			ForStatementBlock orig = (ForStatementBlock) sb;
 			ForStatementBlock fsb = createForStatementBlockCopy(orig, true);
 			ForStatement origstmt = (ForStatement) orig.getStatement(0);
-			ForStatement fstmt = new ForStatement(); //only shallow
+			ForStatement fstmt = (origstmt instanceof ParForStatement) ?
+				new ParForStatement() : new ForStatement(); //only shallow
 			fstmt.setPredicate(origstmt.getIterablePredicate());
 			fsb.setStatements(CollectionUtils.asArrayList(fstmt));
 			for( StatementBlock c : origstmt.getBody() )

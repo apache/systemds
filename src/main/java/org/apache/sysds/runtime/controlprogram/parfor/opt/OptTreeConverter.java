@@ -367,7 +367,7 @@ public class OptTreeConverter
 		}
 		else if( pb instanceof ParForProgramBlock && sb instanceof ParForStatementBlock )
 		{
-			ParForProgramBlock fpb = (ParForProgramBlock) pb;		
+			ParForProgramBlock fpb = (ParForProgramBlock) pb;
 			ParForStatementBlock fsb = (ParForStatementBlock)sb;
 			ParForStatement fs = (ParForStatement) fsb.getStatement(0);
 			node = new OptNode( NodeType.PARFOR );

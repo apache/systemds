@@ -68,6 +68,8 @@ jobs:
           nary,
           paramserv,
           parfor,
+          pipelines,
+          privacy,
           quaternary,
           recompile,
           reorg,

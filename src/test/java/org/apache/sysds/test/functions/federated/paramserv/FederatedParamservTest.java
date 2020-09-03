@@ -47,10 +47,13 @@ public class FederatedParamservTest extends AutomatedTestBase {
                 new MatrixCharacteristics(examplesPerWorker, numLabels, blocksize, examplesPerWorker * numLabels));
 
         // start workers
-        int port1 = getRandomAvailablePort();
+        /*int port1 = getRandomAvailablePort();
         int port2 = getRandomAvailablePort();
         Process process1 = startLocalFedWorker(port1);
-        Process process2 = startLocalFedWorker(port2);
+        Process process2 = startLocalFedWorker(port2);*/
+
+        int port1 = 9998;
+        int port2 = 9999;
 
         // run test
         fullDMLScriptName = HOME + TEST_NAME + ".dml";

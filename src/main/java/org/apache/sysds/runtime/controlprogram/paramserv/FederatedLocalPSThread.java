@@ -89,10 +89,10 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			/* System.out.println("Federated Worker");
-			System.out.println(data[0]);
+			System.out.println("Federated Worker");
+			/* System.out.println(data[0]);
 			System.out.println(data[1]); */
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{data[0], data[1]});
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{"test1", "test2"});
 
 
 			/*ec.setVariable(Statement.PS_MODEL, params);

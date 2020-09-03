@@ -65,7 +65,7 @@ public class KeepDataOnWorkerFederatedScheme extends DataPartitionFederatedSchem
 				// Create new federation map
 				HashMap<FederatedRange, FederatedData> newFedHashMap = new HashMap<>();
 				newFedHashMap.put(range, data);
-				slice.setFedMapping(new FederationMap(newFedHashMap));
+				slice.setFedMapping(new FederationMap(fedMatrix.getFedMapping().getID(), newFedHashMap));
 				slice.getFedMapping().setType(FederationMap.FType.ROW);
 
 				slices.add(slice);

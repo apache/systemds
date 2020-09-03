@@ -22,201 +22,107 @@ package org.apache.sysds.runtime.controlprogram.paramserv;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Federated;
+import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.*;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.utils.Statistics;
 
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
-public class FederatedLocalPSThread extends PSWorker implements Callable<Void> {
-
-	protected static final Log LOG = LogFactory.getLog(FederatedLocalPSThread.class.getName());
-	private static final long serialVersionUID = 5195390748495357295L;
-
-	protected FederatedLocalPSThread() {}
+public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Void> {
+	FederatedData _featuresData;
+	FederatedData _labelsData;
 
 	public FederatedLocalPSThread(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
-		System.out.println("[+] Federation control thread created");
 	}
 
 	@Override
-	public String getWorkerName() {
-		return String.format("Local worker_%d", _workerID);
-	}
-	
-	@Override
-	public Void call() throws Exception {
-		incWorkerNumber();
+	protected ListObject computeGradients(ListObject params, long dataSize, int batchIter, int i, int j) {
+		System.out.println("[+] Control thread started computing gradients method");
+
+		// TODO: kind of a workaround. Assumes only one entry in the federation map
+		_features.getFedMapping().forEachParallel((range, data) -> {
+			_featuresData = data;
+			return null;
+		});
+		_labels.getFedMapping().forEachParallel((range, data) -> {
+			_labelsData = data;
+			return null;
+		});
+
+		System.out.println("[+] UDF with the following IDs: " + _featuresData.getVarID() + ", " + _labelsData.getVarID());
+		// TODO: Warning. This assumes features and labels exist on the same worker
+		Future<FederatedResponse> response = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
+				_featuresData.getVarID(),
+				new federatedComputeGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID()})
+		));
+
 		try {
-			long dataSize = _features.getNumRows();
-			int batchIter = (int) Math.ceil((double) dataSize / _batchSize);
+			Object[] responseData = response.get().getData();
+			System.out.println("[+] Got response");
+			System.out.println("[+] Got response: " + responseData[0]);
+			System.out.println("[+] Got response: " + responseData[1]);
+			return null;
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage());
+		}
+	}
 
-			switch (_freq) {
-				case BATCH:
-					computeBatch(dataSize, batchIter);
-					break;
-				case EPOCH:
-					computeEpoch(dataSize, batchIter);
-					break;
-				default:
-					throw new DMLRuntimeException(String.format("%s not support update frequency %s", getWorkerName(), _freq));
-			}
+	private static class federatedComputeGradients extends FederatedUDF {
+		protected federatedComputeGradients(long[] inIDs) {
+			super(inIDs);
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			/* System.out.println("Federated Worker");
+			System.out.println(data[0]);
+			System.out.println(data[1]); */
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{data[0], data[1]});
+
+
+			/*ec.setVariable(Statement.PS_MODEL, params);
+			long begin = j * batchSize + 1;
+			long end = Math.min((j + 1) * batchSize, dataSize);
+
+			// Get batch features and labels
+			MatrixObject bFeatures = ParamservUtils.sliceMatrix(features, begin, end);
+			MatrixObject bLabels = ParamservUtils.sliceMatrix(labels, begin, end);
+
+			ec.setVariable(Statement.PS_FEATURES, bFeatures);
+			ec.setVariable(Statement.PS_LABELS, bLabels);
 
 			if (LOG.isDebugEnabled()) {
-				LOG.debug(String.format("%s: job finished.", getWorkerName()));
-			}
-		} catch (Exception e) {
-			throw new DMLRuntimeException(String.format("%s failed", getWorkerName()), e);
-		}
-		return null;
-	}
-
-	private void computeEpoch(long dataSize, int batchIter) {
-		for (int i = 0; i < _epochs; i++) {
-			// Pull the global parameters from ps
-			ListObject params = pullModel();
-			ListObject accGradients = null;
-			
-			for (int j = 0; j < batchIter; j++) {
-				ListObject gradients = computeGradients(params, dataSize, batchIter, i, j);
-
-				boolean localUpdate = j < batchIter - 1;
-				// Accumulate the intermediate gradients
-				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, !localUpdate);
-
-				// Update the local model with gradients
-				if(localUpdate)
-					params = updateModel(params, gradients, i, j, batchIter);
-
-				accNumBatches(1);
+				LOG.debug(String.format("%s: got batch data [size:%d kb] of index from %d to %d [last index: %d]. "
+								+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", getWorkerName(),
+						bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, dataSize, i + 1, epochs,
+						j + 1, batchIter));
 			}
 
-			// Push the gradients to ps
-			pushGradients(accGradients);
-			ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+			inst.processInstruction(ec);
 
-			accNumEpochs(1);
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
-			}
+			// Get the gradients
+			ListObject gradients = ec.getListObject(_output.getName());
+
+			ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
+			ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
+			//return gradients;
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new MatrixObject(Types.ValueType.FP64, "test"));*/
 		}
-	}
-
-	private ListObject updateModel(ListObject globalParams, ListObject gradients, int i, int j, int batchIter) {
-		Timing tUpd = DMLScript.STATISTICS ? new Timing(true) : null;
-
-		globalParams = _ps.updateLocalModel(_ec, gradients, globalParams);
-
-		accLocalModelUpdateTime(tUpd);
-		
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s: local global parameter [size:%d kb] updated. "
-				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
-				getWorkerName(), globalParams.getDataSize(), i + 1, _epochs, j + 1, batchIter));
-		}
-		return globalParams;
-	}
-
-	private void computeBatch(long dataSize, int totalIter) {
-		for (int i = 0; i < _epochs; i++) {
-			for (int j = 0; j < totalIter; j++) {
-				ListObject globalParams = pullModel();
-
-				ListObject gradients = computeGradients(globalParams, dataSize, totalIter, i, j);
-
-				// Push the gradients to ps
-				pushGradients(gradients);
-				ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
-				
-				accNumBatches(1);
-			}
-			
-			accNumEpochs(1);
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
-			}
-		}
-	}
-
-	private ListObject pullModel() {
-		// Pull the global parameters from ps
-		ListObject globalParams = _ps.pull(_workerID);
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s: successfully pull the global parameters "
-				+ "[size:%d kb] from ps.", getWorkerName(), globalParams.getDataSize() / 1024));
-		}
-		return globalParams;
-	}
-
-	private void pushGradients(ListObject gradients) {
-		// Push the gradients to ps
-		_ps.push(_workerID, gradients);
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s: successfully push the gradients "
-				+ "[size:%d kb] to ps.", getWorkerName(), gradients.getDataSize() / 1024));
-		}
-	}
-
-	private ListObject computeGradients(ListObject params, long dataSize, int batchIter, int i, int j) {
-		_ec.setVariable(Statement.PS_MODEL, params);
-		long begin = j * _batchSize + 1;
-		long end = Math.min((j + 1) * _batchSize, dataSize);
-
-		// Get batch features and labels
-		Timing tSlic = DMLScript.STATISTICS ? new Timing(true) : null;
-		MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
-		MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
-		accBatchIndexingTime(tSlic);
-
-		_ec.setVariable(Statement.PS_FEATURES, bFeatures);
-		_ec.setVariable(Statement.PS_LABELS, bLabels);
-
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s: got batch data [size:%d kb] of index from %d to %d [last index: %d]. "
-				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", getWorkerName(),
-				bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, dataSize, i + 1, _epochs,
-				j + 1, batchIter));
-		}
-
-		// Invoke the update function
-		Timing tGrad = DMLScript.STATISTICS ? new Timing(true) : null;
-		_inst.processInstruction(_ec);
-		accGradientComputeTime(tGrad);
-
-		// Get the gradients
-		ListObject gradients = _ec.getListObject(_output.getName());
-
-		ParamservUtils.cleanupData(_ec, Statement.PS_FEATURES);
-		ParamservUtils.cleanupData(_ec, Statement.PS_LABELS);
-		return gradients;
-	}
-	
-	@Override
-	protected void incWorkerNumber() {
-		if (DMLScript.STATISTICS)
-			Statistics.incWorkerNumber();
-	}
-
-	@Override
-	protected void accLocalModelUpdateTime(Timing time) {
-		if (DMLScript.STATISTICS)
-			Statistics.accPSLocalModelUpdateTime((long) time.stop());
-	}
-
-	@Override
-	protected void accBatchIndexingTime(Timing time) {
-		if (DMLScript.STATISTICS)
-			Statistics.accPSBatchIndexingTime((long) time.stop());
-	}
-
-	@Override
-	protected void accGradientComputeTime(Timing time) {
-		if (DMLScript.STATISTICS)
-			Statistics.accPSGradientComputeTime((long) time.stop());
 	}
 }

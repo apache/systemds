@@ -35,7 +35,7 @@ import org.apache.sysds.utils.Statistics;
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	protected static final Log LOG = LogFactory.getLog(LocalPSWorker.class.getName());
-	private static final long serialVersionUID = 5195390748495357295L;
+	protected static final long serialVersionUID = 5195390748495357295L;
 
 	protected LocalPSWorker() {}
 
@@ -75,7 +75,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		return null;
 	}
 
-	private void computeEpoch(long dataSize, int batchIter) {
+	protected void computeEpoch(long dataSize, int batchIter) {
 		for (int i = 0; i < _epochs; i++) {
 			// Pull the global parameters from ps
 			ListObject params = pullModel();
@@ -106,7 +106,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		}
 	}
 
-	private ListObject updateModel(ListObject globalParams, ListObject gradients, int i, int j, int batchIter) {
+	protected ListObject updateModel(ListObject globalParams, ListObject gradients, int i, int j, int batchIter) {
 		Timing tUpd = DMLScript.STATISTICS ? new Timing(true) : null;
 
 		globalParams = _ps.updateLocalModel(_ec, gradients, globalParams);
@@ -121,7 +121,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		return globalParams;
 	}
 
-	private void computeBatch(long dataSize, int totalIter) {
+	protected void computeBatch(long dataSize, int totalIter) {
 		for (int i = 0; i < _epochs; i++) {
 			for (int j = 0; j < totalIter; j++) {
 				ListObject globalParams = pullModel();
@@ -142,7 +142,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		}
 	}
 
-	private ListObject pullModel() {
+	protected ListObject pullModel() {
 		// Pull the global parameters from ps
 		ListObject globalParams = _ps.pull(_workerID);
 		if (LOG.isDebugEnabled()) {
@@ -152,7 +152,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		return globalParams;
 	}
 
-	private void pushGradients(ListObject gradients) {
+	protected void pushGradients(ListObject gradients) {
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
 		if (LOG.isDebugEnabled()) {
@@ -161,7 +161,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		}
 	}
 
-	private ListObject computeGradients(ListObject params, long dataSize, int batchIter, int i, int j) {
+	protected ListObject computeGradients(ListObject params, long dataSize, int batchIter, int i, int j) {
 		_ec.setVariable(Statement.PS_MODEL, params);
 		long begin = j * _batchSize + 1;
 		long end = Math.min((j + 1) * _batchSize, dataSize);

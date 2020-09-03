@@ -122,6 +122,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		System.out.println("[+] Running in federated mode");
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 
+		// Debugging inputs
+		System.out.println("INPUTS");
+		System.out.println("[+] Features Federated Matrix _ID: " + ec.getMatrixObject(getParam(PS_FEATURES)).getFedMapping().getID());
+		ec.getMatrixObject(getParam(PS_FEATURES)).getFedMapping().forEachParallel(((range, data) -> {
+			System.out.println("[+] Features Federated Data Member Object _varID: " + data.getVarID());
+			return null;
+		}));
+
+		System.out.println("[+] Labels Federated Matrix _ID: " + ec.getMatrixObject(getParam(PS_LABELS)).getFedMapping().getID());
+		ec.getMatrixObject(getParam(PS_LABELS)).getFedMapping().forEachParallel(((range, data) -> {
+			System.out.println("[+] Lables Federated Data Member Object _varID: " + data.getVarID());
+			return null;
+		}));
+
+
 		// get inputs
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
@@ -177,6 +192,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		System.out.println("[+] Created parameter server and threads for federated workers");
 
+		if(workerNum != threads.size()) {
+			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
+		}
+
+		// Set features and lables for the control threads
+		for (int i = 0; i < threads.size(); i++) {
+			threads.get(i).setFeatures(pFeatures.get(i));
+			threads.get(i).setLabels(pLabels.get(i));
+		}
+
+		System.out.println("[+] Set data for workers");
+
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
+
 		try {
 			// Launch the worker threads and wait for completion
 			for (Future<Void> ret : es.invokeAll(threads))
@@ -188,9 +218,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} finally {
 			es.shutdownNow();
 		}
-
-		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
 	}
 
 	@SuppressWarnings("resource")

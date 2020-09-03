@@ -39,7 +39,10 @@ RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/ap
 # Install Extras
 RUN apt-get update -qq && \
 	apt-get upgrade -y && \
-	apt-get install openjdk-8-jdk-headless -y
+	apt-get install openjdk-8-jdk-headless -y && \
+	apt-get install libcurl4-openssl-dev -y && \
+	apt-get install libxml2-dev -y && \
+	apt-get install r-cran-xml -y 
 
 COPY ./src/test/scripts/installDependencies.R installDependencies.R
 

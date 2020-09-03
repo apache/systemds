@@ -240,6 +240,12 @@ public class FederationMap
 		return this;
 	}
 
+	
+	public long getMaxIndexInRange(int dim) {
+		return _fedMap.keySet().stream()
+			.mapToLong(range -> range.getEndDims()[dim]).max()
+			.orElse(-1L);
+	}
 
 	/**
 	 * Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair. The function should

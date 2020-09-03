@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -43,6 +46,7 @@ public class DecoderDummycode extends Decoder
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
+		//TODO perf (exploit sparse representation for better asymptotic behavior)
 		out.ensureAllocatedColumns(in.getNumRows());
 		for( int i=0; i<in.getNumRows(); i++ )
 			for( int j=0; j<_colList.length; j++ )
@@ -50,11 +54,60 @@ public class DecoderDummycode extends Decoder
 					if( in.quickGetValue(i, k-1) != 0 ) {
 						int col = _colList[j] - 1;
 						out.set(i, col, UtilFunctions.doubleToObject(
-								out.getSchema()[col], k-_clPos[j]+1));
-					}		
+							out.getSchema()[col], k-_clPos[j]+1));
+					}
 		return out;
 	}
-
+	
+	@Override
+	public Decoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
+		List<Integer> dcList = new ArrayList<>();
+		List<Integer> clPosList = new ArrayList<>();
+		List<Integer> cuPosList = new ArrayList<>();
+		
+		// get the column IDs for the sub range of the dummycode columns and their destination positions,
+		// where they will be decoded to
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j];
+			if (colID >= colStart && colID < colEnd) {
+				dcList.add(colID - (colStart - 1));
+				clPosList.add(_clPos[j] - dummycodedOffset);
+				cuPosList.add(_cuPos[j] - dummycodedOffset);
+			}
+		}
+		if (dcList.isEmpty())
+			return null;
+		// create sub-range decoder
+		int[] colList = dcList.stream().mapToInt(i -> i).toArray();
+		DecoderDummycode subRangeDecoder = new DecoderDummycode(
+			Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1), colList);
+		subRangeDecoder._clPos = clPosList.stream().mapToInt(i -> i).toArray();
+		subRangeDecoder._cuPos = cuPosList.stream().mapToInt(i -> i).toArray();
+		return subRangeDecoder;
+	}
+	
+	@Override
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		if(_colList == null)
+			return;
+		
+		long lowerColDest = beginDims[1];
+		long upperColDest = endDims[1];
+		for(int i = 0; i < _colList.length; i++) {
+			long numDistinct = _cuPos[i] - _clPos[i];
+			
+			if(_cuPos[i] <= beginDims[1] + 1)
+				if(numDistinct > 0)
+					lowerColDest -= numDistinct - 1;
+			
+			if(_cuPos[i] <= endDims[1] + 1)
+				if(numDistinct > 0)
+					upperColDest -= numDistinct - 1;
+		}
+		beginDims[1] = lowerColDest;
+		endDims[1] = upperColDest;
+	}
+	
 	@Override
 	public void initMetaData(FrameBlock meta) {
 		_clPos = new int[_colList.length]; //col lower pos 

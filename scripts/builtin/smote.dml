@@ -1,0 +1,101 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# Builtin function for handing class imbalance using Synthetic Minority Over-sampling Technique (SMOTE)
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double   ---       Matrix of minority class samples 
+# s               Integer   25       Amount of SMOTE (percentage of oversampling), integral multiple of 100
+# k               Integer   1        Number of nearest neighbour
+# ---------------------------------------------------------------------------------------------
+
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# Y               Double   ---       Matrix of (N/100)-1 * nrow(X) synthetic minority class samples 
+
+m_smote = function(Matrix[Double] X, Integer s = 200, Integer k = 1, Boolean verbose = FALSE) 
+return (Matrix[Double] Y) {
+
+  if(s < 100 | (s%%100) != 0)
+  {
+    print("the number of samples should be an integral multiple of 100. Setting s = 100")
+    s = 100
+  }
+  # matrix to keep the index of KNN for each minority sample
+  knn_index = matrix(0,k,0)
+  # find nearest neighbour
+  for(i in 1:nrow(X))
+  {
+    knn = nn(X, X[i, ], k)
+    knn_index = cbind(knn_index, knn)
+  }
+  
+  # number of synthetic samples from each minority class sample
+  iter = (s/100)
+  # matrix to store synthetic samples
+  synthetic_samples = matrix(0, 0, ncol(X))
+  while(iter > 0)
+  {
+    # generate a random number
+    # TODO avoid duplicate random numbers
+    rand_index = as.integer(as.scalar(Rand(rows=1, cols=1, min=1, max=k)))
+    # pick the random NN
+    knn_sample = knn_index[rand_index,] 
+    # generate sample    
+    for(i in 1:ncol(knn_index))
+    {
+      index = as.scalar(knn_sample[1,i])
+      X_diff = X[index,] - X[i, ]
+      gap = as.scalar(Rand(rows=1, cols=1, min=0, max=1))
+      X_sys = X[i, ] + (gap*X_diff)
+      synthetic_samples = rbind(synthetic_samples, X_sys)
+    }
+    iter = iter - 1
+  }
+
+  Y = synthetic_samples
+  if(verbose)
+    print(nrow(Y)+ " synthesized samples generated.")
+}
+  
+
+
+nn = function(Matrix[Double] X, Matrix[Double] instance, Integer k )
+return (Matrix[Double] knn_)
+{
+  if(nrow(X) < k)
+    stop("can not pick "+k+" nearest neighbours from "+nrow(X)+" total instances")
+
+  # compute the euclidean distance
+  diff = X - instance
+  square_diff = diff^2
+  distance = sqrt(rowSums(square_diff))
+  sort_dist = order(target = distance, by = 1, decreasing= FALSE, index.return =  TRUE)
+  knn_ = sort_dist[2:k+1,]
+}
+

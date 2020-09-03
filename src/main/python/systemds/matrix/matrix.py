@@ -127,7 +127,7 @@ class Matrix(OperationNode):
         """ Computes the Cholesky decomposition of a symmetric, positive definite matrix
 
         :param safe: default value is False, if flag is True additional checks to ensure
-        that the matrix is symmetric positive definite are applied, if False, checks will be skipped
+            that the matrix is symmetric positive definite are applied, if False, checks will be skipped
         :return: the OperationNode representing this operation
         """
 

@@ -28,8 +28,8 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageParser;
+import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -117,12 +117,12 @@ public class LineageTraceExecSparkTest extends AutomatedTestBase {
 			TestUtils.compareScalars(Y_lineage, Explain.explain(Y_li));
 			
 			//generate program
-			Data X_data = LineageItemUtils.computeByLineage(X_li);
+			Data X_data = LineageRecomputeUtils.parseNComputeLineageTrace(X_lineage, null);
 			HashMap<MatrixValue.CellIndex, Double> X_dmlfile = readDMLMatrixFromHDFS("X");
 			MatrixBlock X_tmp = ((MatrixObject)X_data).acquireReadAndRelease();
 			TestUtils.compareMatrices(X_dmlfile, X_tmp, 1e-6);
 			
-			Data Y_data = LineageItemUtils.computeByLineage(Y_li);
+			Data Y_data = LineageRecomputeUtils.parseNComputeLineageTrace(Y_lineage, null);
 			HashMap<MatrixValue.CellIndex, Double> Y_dmlfile = readDMLMatrixFromHDFS("Y");
 			MatrixBlock Y_tmp = ((MatrixObject)Y_data).acquireReadAndRelease();
 			TestUtils.compareMatrices(Y_dmlfile, Y_tmp, 1e-6);

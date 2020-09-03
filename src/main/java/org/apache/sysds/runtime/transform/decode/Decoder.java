@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.transform.decode;
 import java.io.Serializable;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -64,6 +65,30 @@ public abstract class Decoder implements Serializable
 	 * @return returns given output frame block for convenience
 	 */
 	public abstract FrameBlock decode(MatrixBlock in, FrameBlock out);
-
+	
+	/**
+	 * Returns a new Decoder that only handles a sub range of columns. The sub-range refers to the columns after
+	 * decoding.
+	 *
+	 * @param colStart         the start index of the sub-range (1-based, inclusive)
+	 * @param colEnd           the end index of the sub-range (1-based, exclusive)
+	 * @param dummycodedOffset the offset of dummycoded segments before colStart
+	 * @return a decoder of the same type, just for the sub-range
+	 */
+	public Decoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
+		throw new DMLRuntimeException(
+			getClass().getSimpleName() + " does not support the creation of a sub-range decoder");
+	}
+	
+	/**
+	 * Update index-ranges to after decoding. Note that only Dummycoding changes the ranges.
+	 *
+	 * @param beginDims the begin indexes before encoding
+	 * @param endDims   the end indexes before encoding
+	 */
+	public void updateIndexRanges(long[] beginDims, long[] endDims) {
+		// do nothing - default
+	}
+	
 	public abstract void initMetaData(FrameBlock meta);
 }

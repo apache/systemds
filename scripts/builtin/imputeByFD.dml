@@ -25,7 +25,7 @@
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# F               String    --       Data frame
+# X               Double    --       Matrix X 
 # source          Integer   --       source attribute to use for imputation and error correction
 # target          Integer   --       attribute to be fixed
 # threshold       Double    --       threshold value in interval [0, 1] for robust FDs 
@@ -36,39 +36,24 @@
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# imputed_F      String   ---        Frame with possible imputations 
+# X               Double   ---        Matrix with possible imputations 
 
 
-s_imputeByFD = function(Frame[String] F, Integer sourceAttribute, Integer targetAttribute, Double threshold)
-  return(Frame[String] imputed_F)
+m_imputeByFD = function(Matrix[Double] X, Integer sourceAttribute, Integer targetAttribute, Double threshold, Boolean verbose = FALSE)
+  return(Matrix[Double] X)
 {
-
   # sanity checks
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found "+threshold)
 
-  if(sourceAttribute < 0 | sourceAttribute > ncol(F) | targetAttribute < 0 | targetAttribute > ncol(F))
+  if(sourceAttribute < 0 | sourceAttribute > ncol(X) | targetAttribute < 0 | targetAttribute > ncol(X))
     stop("Stopping due to invalid source and target")
-
-
-  # detect schema for transformation
-  schema = detectSchema(F)
-  s=""
-  for(i in 1: ncol(F)) {
-    if(as.scalar(schema[1,i]) == "STRING" | as.scalar(schema[1,i]) == "BOOLEAN" )
-      s = s+as.integer(i)+","; 
-  }
-  
-  # recode data frame
-  jspecR = "{ids:true, recode:["+s+"]}";
-  [X, M] = transformencode(target=F, spec=jspecR);
-
+ 
   # impute missing values and fix errors
   X[,targetAttribute] = imputeAndCorrect(X[,sourceAttribute], X[,targetAttribute], threshold) 
 
-  # getting the actual data back
-  dF = transformdecode(target=X, spec=jspecR, meta=M);
-  imputed_F = dF;
+  if(verbose)
+    print("output \n"+toString(X))
 }
 
 imputeAndCorrect = function(Matrix[Double] X, Matrix[Double] Y, Double threshold)

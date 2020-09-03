@@ -73,7 +73,7 @@ public class EncoderFactory
 				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
-			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames);
+			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
 			//note: any dummycode column requires recode as preparation, unless it follows binning
 			rcIDs = except(unionDistinct(rcIDs, except(dcIDs, binIDs)), haIDs);
 			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1),
@@ -81,7 +81,7 @@ public class EncoderFactory
 			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString())));
+				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol)));
 			
 			//create individual encoders
 			if( !rcIDs.isEmpty() ) {
@@ -90,7 +90,7 @@ public class EncoderFactory
 				lencoders.add(ra);
 			}
 			if( !haIDs.isEmpty() ) {
-				EncoderFeatureHash ha = new EncoderFeatureHash(jSpec, colnames, clen);
+				EncoderFeatureHash ha = new EncoderFeatureHash(jSpec, colnames, clen, minCol, maxCol);
 				ha.setColList(ArrayUtils.toPrimitive(haIDs.toArray(new Integer[0])));
 				lencoders.add(ha);
 			}
@@ -98,11 +98,11 @@ public class EncoderFactory
 				lencoders.add(new EncoderPassThrough(
 						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));
 			if( !binIDs.isEmpty() )
-				lencoders.add(new EncoderBin(jSpec, colnames, schema.length));
+				lencoders.add(new EncoderBin(jSpec, colnames, schema.length, minCol, maxCol));
 			if( !dcIDs.isEmpty() )
-				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length));
+				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length, minCol, maxCol));
 			if( !oIDs.isEmpty() )
-				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length));
+				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
 			if( !mvIDs.isEmpty() ) {
 				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length);
 				ma.initRecodeIDList(rcIDs);

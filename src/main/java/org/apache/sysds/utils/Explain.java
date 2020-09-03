@@ -357,7 +357,7 @@ public class Explain
 	public static String explain( LineageItem li ) {
 		li.resetVisitStatusNR();
 		String s = explain(li, 0);
-		s += rExplainDedupItems(li, new ArrayList<>());
+		//s += rExplainDedupItems(li, new ArrayList<>());
 		li.resetVisitStatusNR();
 		return s;
 	}
@@ -369,6 +369,8 @@ public class Explain
 		return ret;
 	}
 	
+	@Deprecated
+	@SuppressWarnings("unused")
 	private static String rExplainDedupItems(LineageItem li, List<String> paths) {
 		if (li.isVisited())
 			return "";

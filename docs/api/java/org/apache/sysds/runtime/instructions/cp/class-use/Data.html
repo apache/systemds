@@ -115,14 +115,18 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.lineage">org.apache.sysds.runtime.lineage</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.privacy">org.apache.sysds.runtime.privacy</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.lineage">org.apache.sysds.runtime.lineage</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.privacy">org.apache.sysds.runtime.privacy</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -320,15 +324,21 @@
 <!--   -->
 </a>
 <h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a> in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
-<caption><span>Constructor parameters in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> with type arguments of type <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></span><span class="tabEnd">&nbsp;</span></caption>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
-<th class="colOne" scope="col">Constructor and Description</th>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedWorkerHandler.html#FederatedWorkerHandler-org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence-java.util.Map-">FederatedWorkerHandler</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/parfor/util/IDSequence.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.util">IDSequence</a>&nbsp;seq,
-                      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&gt;&nbsp;_vars2)</code>&nbsp;</td>
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedUDF.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>
+<div class="block">Execute the user-defined function on a set of data objects
+ (e.g., matrix objects, frame objects, or scalars), which are
+ looked up by specified input IDs and passed in the same order.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -714,6 +724,35 @@
 </tbody>
 </table>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.fed">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a> in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/package-summary.html">org.apache.sysds.runtime.instructions.fed</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.CreateFrameEncoder.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/MultiReturnParameterizedBuiltinFEDInstruction.ExecuteFrameEncoder.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ParameterizedBuiltinFEDInstruction.DecodeMatrix.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/fed/ParameterizedBuiltinFEDInstruction.DecodeMatrix.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.lineage">
 <!--   -->
 </a>
@@ -746,8 +785,19 @@
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrivacyMonitor.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyMonitor.html#handlePrivacy-org.apache.sysds.runtime.instructions.cp.Data-">handlePrivacy</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;dataObject)</code>
-<div class="block">Throws DMLPrivacyException if data object is CacheableData and privacy constraint is set to private or private aggregation.</div>
+<div class="block">Throws DMLPrivacyException if privacy constraint is set to private or private aggregation.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
+<td class="colLast"><span class="typeNameLabel">PrivacyMonitor.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyMonitor.html#handlePrivacyAllowAggregation-org.apache.sysds.runtime.instructions.cp.Data-">handlePrivacyAllowAggregation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;dataObject)</code>
+<div class="block">Throws DMLPrivacyException if privacy constraint of data object has level privacy.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
+<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#parseAndSetPrivacyConstraint-org.apache.sysds.runtime.instructions.cp.Data-org.apache.wink.json4j.JSONObject-">parseAndSetPrivacyConstraint</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;cd,
+                            org.apache.wink.json4j.JSONObject&nbsp;mtd)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -761,8 +811,19 @@
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrivacyMonitor.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyMonitor.html#handlePrivacy-org.apache.sysds.runtime.instructions.cp.Data-">handlePrivacy</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;dataObject)</code>
-<div class="block">Throws DMLPrivacyException if data object is CacheableData and privacy constraint is set to private or private aggregation.</div>
+<div class="block">Throws DMLPrivacyException if privacy constraint is set to private or private aggregation.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
+<td class="colLast"><span class="typeNameLabel">PrivacyMonitor.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyMonitor.html#handlePrivacyAllowAggregation-org.apache.sysds.runtime.instructions.cp.Data-">handlePrivacyAllowAggregation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;dataObject)</code>
+<div class="block">Throws DMLPrivacyException if privacy constraint of data object has level privacy.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a></code></td>
+<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#parseAndSetPrivacyConstraint-org.apache.sysds.runtime.instructions.cp.Data-org.apache.wink.json4j.JSONObject-">parseAndSetPrivacyConstraint</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>&nbsp;cd,
+                            org.apache.wink.json4j.JSONObject&nbsp;mtd)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

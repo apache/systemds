@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -179,17 +179,25 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseJsonIDList-org.apache.wink.json4j.JSONObject-java.lang.String:A-java.lang.String-int-int-">parseJsonIDList</a></span>(org.apache.wink.json4j.JSONObject&nbsp;spec,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group,
+               int&nbsp;minCol,
+               int&nbsp;maxCol)</code>&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>static int[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseJsonIDList-java.lang.String-java.lang.String:A-java.lang.String-">parseJsonIDList</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static int[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#parseJsonObjectIDList-org.apache.wink.json4j.JSONObject-java.lang.String:A-java.lang.String-">parseJsonObjectIDList</a></span>(org.apache.wink.json4j.JSONObject&nbsp;spec,
                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
                      <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group)</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#readTransformMetaDataFromFile-java.lang.String-java.lang.String-java.lang.String-">readTransformMetaDataFromFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
                              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;metapath,
@@ -198,7 +206,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  FrameBlock object.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/meta/TfMetaUtils.html#readTransformMetaDataFromPath-java.lang.String-java.lang.String-java.lang.String-">readTransformMetaDataFromPath</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;spec,
                              <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;metapath,
@@ -305,7 +313,33 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>spec</code> - transform specification as json string</dd>
 <dd><code>colnames</code> - column names</dd>
-<dd><code>group</code> - ?</dd>
+<dd><code>group</code> - attribute name in json class</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>list of column ids</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>org.apache.wink.json4j.JSONException</code> - if JSONException occurs</dd>
+</dl>
+</li>
+</ul>
+<a name="parseJsonIDList-org.apache.wink.json4j.JSONObject-java.lang.String:A-java.lang.String-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>parseJsonIDList</h4>
+<pre>public static&nbsp;int[]&nbsp;parseJsonIDList(org.apache.wink.json4j.JSONObject&nbsp;spec,
+                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
+                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;group,
+                                    int&nbsp;minCol,
+                                    int&nbsp;maxCol)
+                             throws org.apache.wink.json4j.JSONException</pre>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>spec</code> - transform specification as json string</dd>
+<dd><code>colnames</code> - column names</dd>
+<dd><code>group</code> - attribute name in json class</dd>
+<dd><code>minCol</code> - start of columns to ignore (1-based, inclusive, if -1 not used)</dd>
+<dd><code>maxCol</code> - end of columns to ignore (1-based, exclusive, if -1 not used)</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>list of column ids</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>

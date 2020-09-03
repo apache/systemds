@@ -49,36 +49,71 @@ if __name__ == "__main__":
         debug = args[5]
         loss_type = int(args[6])
         enumerator = args[7]
+        dataset = args[8]
     else:
         k = 10
         w = 0.5
-        alpha = 6
+        alpha = 10
         b_update = True
         debug = True
         loss_type = 0
-        enumerator = "join"
+        enumerator = "union"
+        dataset = 'slicing/datasets/salaries.csv'
+        # dataset = 'slicing/datasets/parallel_attr/salaries/attr3000.csv'
 
-    conf = SparkConf().setAppName("salary_test").setMaster('local[2]')
-    num_partitions = 2
+    conf = SparkConf().setAppName("salary_test").setMaster('local[4]')
+    num_partitions = 4
     model_type = "regression"
     label = 'salary'
     sparkContext = SparkContext(conf=conf)
     sqlContext = SQLContext(sparkContext)
-    dataset_df = sqlContext.read.csv('salaries.csv', header='true', inferSchema='true')
+    dataset_df = sqlContext.read.csv(dataset, header='true',
+                                     inferSchema='true')
     # initializing stages of main transformation pipeline
     stages = []
     # list of categorical features for further hot-encoding
-    cat_features = ["rank", "discipline", "sincephd_bin", "service_bin", "sex"]
+    cat_features = ["rank", "discipline", "sincephd_bin", "service_bin", "sex"]  # base
+    # cat_features = ["rank", "discipline", "sex"]  # 10
+    # cat_features = ["rank", "discipline", "sincephd", "sex"]  # 50
+    # cat_features = ["rank", "discipline", "sex", "company", "country", "city", "start", "dept", "card"]  # 100
+    # cat_features = ["rank", "discipline", "sex", "company", "country", "city", "skills", "language", "tz", "card",
+    #                  "uni", "dept", "race", "code", "job", "size", "previous", "stock"]  # 1013
+    # cat_features = ["rank", "discipline", "sex", "company", "country", "city", "skills", "language", "tz", "card",
+    #                     "uni", "dept", "origin", "children", "bmi", "code", "job", "size", "previous", "stock", "market",
+    #                     "freq", "smoker", "region", "WorkClass", "Education", "EducationNum", "MaritalStatus",
+    #                     "Occupation", "Relationship", "color", "sepal_length", "sepal_width", "petal_length",
+    #                     "petal_width", "variety", "symboling", "normalized-losses", "make",	"fuel-type", "aspiration",
+    #                     "num-of-doors",	"body-style", "drive-wheels", "engine-location", "wheel-base", 	"length", "width",
+    #                     "height", "curb-weight", "engine-type", "num-of-cylinders", "engine-size", "fuel-system", "bore",
+    #                     "stroke", "compression-ratio", "horsepower", "peak-rpm", "city-mpg", "highway-mpg",	"price",
+    #                     "codeNumber", "clump", "cellsize", "cellshape", "adhesion", "epitel", "nuclei", "chromatin",
+    #                     "nucleoli", "mitoses", "class", "elevation", "aspect", "slope", "distToHydr"]
+
+#     cat_features = ["rank", "discipline", "sex", "company", "country", "city", "skills", "language", "tz", "card",
+#                     "uni", "dept", "origin", "children", "bmi", "code", "job", "size", "previous", "stock", "market",
+#                     "freq", "smoker", "region", "WorkClass", "Education", "EducationNum", "MaritalStatus",
+#                     "Occupation", "Relationship", "color", "sepal_length", "sepal_width", "petal_length",
+#                     "petal_width", "variety", "symboling", "normalized-losses", "make",	"fuel-type", "aspiration",
+#                     "num-of-doors",	"body-style", "drive-wheels", "engine-location", "wheel-base", 	"length", "width",
+#                     "height", "curb-weight", "engine-type", "num-of-cylinders", "engine-size", "fuel-system", "bore",
+#                     "stroke", "compression-ratio", "horsepower", "peak-rpm", "city-mpg", "highway-mpg",	"price",
+#                     "codeNumber", "clump", "cellsize", "cellshape", "adhesion", "epitel", "nuclei", "chromatin",
+#                     "nucleoli", "mitoses", "class", "elevation", "aspect", "slope", "distToHydr", "distToRoad",
+#                     "hillshadeMorning", "hillSahdeNoon", "hillSadeAfternoon", "distToFire", "DSName", "T", "N", "p",
+#                     "k", "Bin", "Cost",	"Sdratio", "correl", "cancor1",	"cancor2", "fract1", "fract2", "skewness",
+#                     "kurtosis",	"Hc", "Hx", "Mcx", "EnAttr", "NSRation", "Alg", "error"]   # 3000
+
+    # lines till 87 only for base case
     # removing column with ID field
-    dataset_df = dataset_df.drop('_c0')
+    # dataset_df = dataset_df.drop('_c0')
     # bining numeric features by local binner udf function (specified for current dataset if needed)
     dataset_df = dataset_df.withColumn('sincephd_bin', binner(dataset_df['sincephd']))
     dataset_df = dataset_df.withColumn('service_bin', binner(dataset_df['service']))
-    dataset_df = dataset_df.withColumn('model_type', sf.lit(0))
     dataset_df = dataset_df.drop('sincephd', 'service')
+    dataset_df = dataset_df.withColumn('model_type', sf.lit(0))
     # hot encoding categorical features
     for feature in cat_features:
-        string_indexer = StringIndexer(inputCol=feature, outputCol=feature + "_index")
+        string_indexer = StringIndexer(inputCol=feature, outputCol=feature + "_index").setHandleInvalid("skip")
         encoder = OneHotEncoderEstimator(inputCols=[string_indexer.getOutputCol()], outputCols=[feature + "_vec"])
         encoder.setDropLast(False)
         stages += [string_indexer, encoder]
@@ -112,9 +147,8 @@ if __name__ == "__main__":
     pred_df_fin = pred.withColumn('error', spark_utils.calc_loss(pred[label], pred['prediction'], pred['model_type']))
     predictions = pred_df_fin.select('features', 'error').repartition(num_partitions)
     converter = IndexToString(inputCol='features', outputCol='cats')
-    all_features = range(predictions.toPandas().values[0][0].size)
+    all_features = list(decode_dict.keys())
     predictions = predictions.collect()
-    k = 10
     if enumerator == "join":
         spark_slicer.parallel_process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha, k=k, w=w,
                                       loss_type=loss_type, enumerator=enumerator)

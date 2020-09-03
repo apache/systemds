@@ -51,23 +51,11 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 		runMiceNominalTest(mask, 1, false, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testMiceMixSpark() {
-//		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
-//		runMiceNominalTest(mask, 1, LopProperties.ExecType.SPARK);
-//	}
-
 	@Test
 	public void testMiceNumberCP() {
 		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
 		runMiceNominalTest(mask, 2, false, LopProperties.ExecType.CP);
 	}
-
-//	@Test
-//	public void testMiceNumberSpark() {
-//		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
-//		runMiceNominalTest(mask, 2, LopProperties.ExecType.SPARK);
-//	}
 
 	@Test
 	public void testMiceCategoricalCP() {
@@ -75,18 +63,22 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 		runMiceNominalTest(mask, 3, false, LopProperties.ExecType.CP);
 	}
 
-//	@Test
-//	public void testMiceCategoricalSpark() {
-//		double[][] mask = {{ 1.0, 1.0, 1.0, 1.0, 1.0}};
-//		runMiceNominalTest(mask, 3, LopProperties.ExecType.SPARK);
-//	}
-
 	@Test
 	public void testMiceMixLineageReuseCP() {
 		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
 		runMiceNominalTest(mask, 1, true, LopProperties.ExecType.CP);
 	}
 
+	//added a single, relatively-fast spark test, others seem infeasible
+	//as forcing every operation to spark takes too long for complex,
+	//composite builtins like mice.
+
+	@Test
+	public void testMiceNumberSpark() {
+		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
+		runMiceNominalTest(mask, 2, false, LopProperties.ExecType.SPARK);
+	}
+	
 	private void runMiceNominalTest(double[][] mask, int testType, boolean lineage, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
@@ -94,10 +86,10 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"), 
-					"iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
+				"iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
 			if (lineage) {
-				String[] lin = new String[] {"-stats","-lineage", ReuseCacheType.REUSE_HYBRID.name().toLowerCase()};
-				programArgs = (String[]) ArrayUtils.addAll(programArgs, lin);
+				programArgs = (String[]) ArrayUtils.addAll(programArgs, new String[] {
+					"-stats","-lineage", ReuseCacheType.REUSE_HYBRID.name().toLowerCase()});
 			}
 			writeInputMatrixWithMTD("M", mask, true);
 
@@ -125,18 +117,16 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 		}
 	}
 
-	private void testNumericOutput()
-	{
+	private void testNumericOutput() {
 		//compare matrices
 		HashMap<MatrixValue.CellIndex, Double> dmlfileN = readDMLMatrixFromHDFS("N");
 		HashMap<MatrixValue.CellIndex, Double> rfileN  = readRMatrixFromFS("N");
 
 		// compare numerical imputations
 		TestUtils.compareMatrices(dmlfileN, rfileN, eps, "Stat-DML", "Stat-R");
-
 	}
-	private void testCategoricalOutput()
-	{
+
+	private void testCategoricalOutput() {
 		HashMap<MatrixValue.CellIndex, Double> dmlfileC = readDMLMatrixFromHDFS("C");
 		HashMap<MatrixValue.CellIndex, Double> rfileC  = readRMatrixFromFS("C");
 

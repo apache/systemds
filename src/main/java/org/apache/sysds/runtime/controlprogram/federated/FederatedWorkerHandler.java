@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -113,7 +114,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				response = tmp; //return last
 			}
 
-			if (DMLScript.STATISTICS && request.getType() == RequestType.CLEAR){
+			if (DMLScript.STATISTICS && request.getType() == RequestType.CLEAR && Statistics.allowWorkerStatistics){
 				System.out.println("Federated Worker " + Statistics.display());
 				Statistics.reset();
 			}
@@ -184,20 +185,24 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		
 		// read metadata
 		FileFormat fmt = null;
+		boolean header = false;
 		try {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
-			try (FileSystem fs = IOUtilFunctions.getFileSystem(mtdname)) {
-				try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-					JSONObject mtd = JSONHelper.parse(br);
-					if (mtd == null)
-						return new FederatedResponse(ResponseType.ERROR,
-							new FederatedWorkerHandlerException("Could not parse metadata file"));
-					mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
-					mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
-					cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
-					fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
-				}
+			FileSystem fs = IOUtilFunctions.getFileSystem(mtdname); //no auto-close
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+				JSONObject mtd = JSONHelper.parse(br);
+				if (mtd == null)
+					return new FederatedResponse(ResponseType.ERROR,
+						new FederatedWorkerHandlerException("Could not parse metadata file"));
+				mc.setRows(mtd.getLong(DataExpression.READROWPARAM));
+				mc.setCols(mtd.getLong(DataExpression.READCOLPARAM));
+				if(mtd.containsKey(DataExpression.READNNZPARAM))
+					mc.setNonZeros(mtd.getLong(DataExpression.READNNZPARAM));
+				if (mtd.has(DataExpression.DELIM_HAS_HEADER_ROW))
+					header = mtd.getBoolean(DataExpression.DELIM_HAS_HEADER_ROW);
+				cd = (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, mtd);
+				fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 			}
 		}
 		catch (Exception ex) {
@@ -206,6 +211,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		
 		//put meta data object in symbol table, read on first operation
 		cd.setMetaData(new MetaDataFormat(mc, fmt));
+		// TODO send FileFormatProperties with request and use them for CSV, this is currently a workaround so reading
+		//  of CSV files works
+		cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, DataExpression.DEFAULT_DELIM_DELIMITER,
+			DataExpression.DEFAULT_DELIM_SPARSE));
 		cd.enableCleanup(false); //guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 		

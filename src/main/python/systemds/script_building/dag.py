@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 class OutputType(Enum):
     MATRIX = auto()
     DOUBLE = auto()
+    LIST = auto()
 
 
 class DAGNode(ABC):
@@ -42,6 +43,7 @@ class DAGNode(ABC):
     _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
     _output_type: OutputType
     _is_python_local_data: bool
+    _number_of_outputs: int
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
         """Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
@@ -90,3 +92,7 @@ class DAGNode(ABC):
     @property
     def is_python_local_data(self):
         return self._is_python_local_data
+    
+    @property
+    def number_of_outputs(self):
+        return self._number_of_outputs

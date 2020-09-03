@@ -1,0 +1,40 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+A = read($X);
+B = smote(X = A, s=$S, k=$K, verbose=TRUE);
+
+# test if all point fall in same cluster (closed to each other)
+# read some new data T != A 
+T = read($T);
+# bind all instanced of minority class
+A_B = rbind(A, B)
+n = nrow(A_B)
+# group data into k=2 clusters
+[C, Y] = kmeans(rbind(A_B, T),  2, 10, 100, 0.000001, FALSE, 50)
+# check if the instances of A and B fall in same cluster
+check = matrix(as.scalar(Y[1,1]), n, 1)
+testSum = sum(check - Y[1:n,])
+# hack for avoiding null pointer exception while reading a single zero in HashMap
+testSum = ifelse(testSum == 0, 1, testSum)
+testSum = as.matrix(testSum)
+write(testSum, $Z);  

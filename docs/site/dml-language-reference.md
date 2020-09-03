@@ -2026,13 +2026,13 @@ The following example uses <code>transformapply()</code> with the input matrix a
 
 ### Processing Frames
 
-Built-In functions <code>dml_map()</code> is supported for frames to execute any arbitrary Java code on a frame.
+The built-in function <code>map()</code> provides support for the lambda expressions.
 
-**Table F5**: Frame dml_map Built-In Function
+**Table F5**: Frame map built-in function
 
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
-dml_map() | It will execute the given java code on a frame (column-vector).| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and y is a String containing the Java code to be executed on frame X. where X is a column vector. | X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "Java code" <br/> Z = dml_map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: Z = dml_map(X, "x.charAt(2)")
+map() | It will execute the given lambda expression on a frame.| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and y is a String containing the lambda expression to be executed on frame X. | X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "lambda expression" <br/> Z = map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: Z = map(X, "x -> x.charAt(2)")
 Example let X = 
 
  ##### FRAME: nrow = 10, ncol = 1 <br/>
@@ -2049,7 +2049,7 @@ Example let X =
     west
     east  
 
-Z = dml_map(X, "x.toUpperCase()") <br/>
+Z = map(X, "x -> x.toUpperCase()") <br/>
 print(toString(Z))
  ##### FRAME: nrow = 10, ncol = 1 <br/>
     # C1 

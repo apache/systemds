@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.lops.Lop;
@@ -120,14 +121,16 @@ public class EncoderRecode extends Encoder
 	protected void putCode(HashMap<String,Long> map, String key) {
 		map.put(key, Long.valueOf(map.size()+1));
 	}
+	
+	public void prepareBuildPartial() {
+		//ensure allocated partial recode map
+		if( _rcdMapsPart == null )
+			_rcdMapsPart = new HashMap<>();
+	}
 
 	public void buildPartial(FrameBlock in) {
 		if( !isApplicable() )
 			return;
-
-		//ensure allocated partial recode map
-		if( _rcdMapsPart == null )
-			_rcdMapsPart = new HashMap<>();
 		
 		//construct partial recode map (tokens w/o codes)
 		//iterate over columns for sequential access
@@ -164,28 +167,25 @@ public class EncoderRecode extends Encoder
 	}
 
 	@Override
-	public Encoder subRangeEncoder(int colStart, int colEnd) {
-		if (colStart - 1 >= _clen)
-			return null;
-		
+	public Encoder subRangeEncoder(IndexRange ixRange) {
 		List<Integer> cols = new ArrayList<>();
 		HashMap<Integer, HashMap<String, Long>> rcdMaps = new HashMap<>();
-		for (int col : _colList) {
-			if (col >= colStart && col < colEnd) {
+		for(int col : _colList) {
+			if(ixRange.inColRange(col)) {
 				// add the correct column, removed columns before start
 				// colStart - 1 because colStart is 1-based
-				int corrColumn = col - (colStart - 1);
+				int corrColumn = (int) (col - (ixRange.colStart - 1));
 				cols.add(corrColumn);
 				// copy rcdMap for column
 				rcdMaps.put(corrColumn, new HashMap<>(_rcdMaps.get(col)));
 			}
 		}
-		if (cols.isEmpty())
+		if(cols.isEmpty())
 			// empty encoder -> sub range encoder does not exist
 			return null;
-		
+
 		int[] colList = cols.stream().mapToInt(i -> i).toArray();
-		return new EncoderRecode(colList, colEnd - colStart, rcdMaps);
+		return new EncoderRecode(colList, (int) ixRange.colSpan(), rcdMaps);
 	}
 
 	@Override
@@ -215,6 +215,16 @@ public class EncoderRecode extends Encoder
 			return;
 		}
 		super.mergeAt(other, col);
+	}
+	
+	public int[] numDistinctValues() {
+		int[] numDistinct = new int[_colList.length];
+		
+		for( int j=0; j<_colList.length; j++ ) {
+			int colID = _colList[j]; //1-based
+			numDistinct[j] = _rcdMaps.get(colID).size();
+		}
+		return numDistinct;
 	}
 
 	@Override

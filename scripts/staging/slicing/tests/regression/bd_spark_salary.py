@@ -48,6 +48,7 @@ if __name__ == "__main__":
         debug = args[5]
         loss_type = int(args[6])
         enumerator = args[7]
+        dataset = args[8]
     else:
         k = 10
         w = 0.5
@@ -55,18 +56,18 @@ if __name__ == "__main__":
         b_update = True
         debug = True
         loss_type = 0
-        enumerator = "union"
+        dataset = 'slicing/datasets/parallel_data/salaries/rows1000.csv'
+        enumerator = "join"
 
-    conf = SparkConf().setAppName("salary_test").setMaster('local[2]')
-    num_partitions = 2
+    conf = SparkConf().setAppName("salary_test").setMaster('local[4]')
+    num_partitions = 8
     model_type = "regression"
     label = 'salary'
     sparkContext = SparkContext(conf=conf)
     sqlContext = SQLContext(sparkContext)
-    fileRDD = sparkContext.textFile('salaries.csv', num_partitions)
+    fileRDD = sparkContext.textFile(dataset, num_partitions)
     header = fileRDD.first()
     head_split = header.split(",")
-    head_split[0] = '_c0'
     fileRDD = fileRDD.filter(lambda line: line != header)
     data = fileRDD.map(lambda row: row.split(","))
     dataset_df = sqlContext.createDataFrame(data, head_split)
@@ -74,7 +75,6 @@ if __name__ == "__main__":
     cat_features = ["rank", "discipline", "sincephd_bin", "service_bin", "sex"]
     # initializing stages of main transformation pipeline
     stages = []
-    dataset_df = dataset_df.drop('_c0')
     dataset_df = dataset_df.withColumn("id", sf.monotonically_increasing_id())
     # bining numeric features by local binner udf function (specified for current dataset if needed)
     dataset_df = dataset_df.withColumn('sincephd_bin', binner(dataset_df['sincephd']))
@@ -121,8 +121,7 @@ if __name__ == "__main__":
     pred_df_fin = pred.withColumn('error', spark_utils.calc_loss(pred['target'], pred['prediction'], pred['model_type']))
     predictions = pred_df_fin.select('id', 'features', 'error').repartition(num_partitions)
     converter = IndexToString(inputCol='features', outputCol='cats')
-    all_features = range(predictions.toPandas().values[1][1].size)
-    k = 10
+    all_features = list(decode_dict.keys())
     if enumerator == "join":
         join_data_parallel.parallel_process(all_features, predictions, f_l2, sparkContext, debug=debug, alpha=alpha,
                                             k=k, w=w, loss_type=loss_type)

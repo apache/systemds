@@ -23,6 +23,7 @@ import sys
 
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
+from sklearn import svm
 
 from slicing.base import slicer as slicer, union_slicer
 from sklearn.ensemble import RandomForestClassifier
@@ -83,14 +84,8 @@ if __name__ == "__main__":
         complete_y.append((counter, y_test[counter]))
         counter = counter + 1
     x_size = counter
-    clf = RandomForestClassifier(n_jobs=2, random_state=0)
+    clf = svm.SVC()
     clf.fit(x_train, y_train)
-    RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',
-                max_depth=None, max_features='auto', max_leaf_nodes=None,
-                min_impurity_split=1e-07, min_samples_leaf=1,
-                min_samples_split=2, min_weight_fraction_leaf=0.0,
-                n_estimators=10, n_jobs=2, oob_score=False, random_state=0,
-                verbose=0, warm_start=False)
 
     # alpha is size significance coefficient
     # verbose option is for returning debug info while creating slices and printing it

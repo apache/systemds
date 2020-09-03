@@ -38,8 +38,6 @@ class DMLScript:
 
     TODO caching
 
-    TODO multiple outputs
-
     TODO rerun with different inputs without recompilation
     """
     sds_context: 'SystemDSContext'
@@ -54,7 +52,7 @@ class DMLScript:
         self.dml_script = ''
         self.inputs = {}
         self.prepared_script = None
-        self.out_var_name = ''
+        self.out_var_name = []
         self._variable_counter = 0
 
     def add_code(self, code: str) -> None:
@@ -88,7 +86,7 @@ class DMLScript:
             self.prepared_script = connection.prepareScript(
                 self.dml_script,
                 _list_to_java_array(gateway, input_names),
-                _list_to_java_array(gateway, [self.out_var_name]))
+                _list_to_java_array(gateway, self.out_var_name))
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(
                     gateway.jvm, name, self.prepared_script)
@@ -98,7 +96,13 @@ class DMLScript:
 
         ret = self.prepared_script.executeScript()
         if lineage:
-            return ret, self.prepared_script.getLineageTrace(self.out_var_name)
+            if len(self.out_var_name) == 1:
+                return ret, self.prepared_script.getLineageTrace(self.out_var_name[0])
+            else:
+                traces = []
+                for output in self.out_var_name:
+                    traces.append(self.prepared_script.getLineageTrace(output))
+                return ret, traces
 
         return ret
 
@@ -111,7 +115,7 @@ class DMLScript:
             self.prepared_script = connection.prepareScript(
                 self.dml_script,
                 _list_to_java_array(gateway, input_names),
-                _list_to_java_array(gateway, [self.out_var_name]))
+                _list_to_java_array(gateway, self.out_var_name))
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(
                     gateway.jvm, name, self.prepared_script)
@@ -119,16 +123,29 @@ class DMLScript:
             connection.setLineage(True)
 
         self.prepared_script.executeScript()
-        lineage = self.prepared_script.getLineageTrace(self.out_var_name)
-        return lineage
+        if len(self.out_var_name) == 1:
+            return self.prepared_script.getLineageTrace(self.out_var_name[0])
+        else:
+            traces = []
+            for output in self.out_var_name:
+                traces.append(self.prepared_script.getLineageTrace(output))
+            return traces
+        
 
     def build_code(self, dag_root: DAGNode) -> None:
         """Builds code from our DAG
 
         :param dag_root: the topmost operation of our DAG, result of operation will be output
         """
-        self.out_var_name = self._dfs_dag_nodes(dag_root)
-        self.add_code(f'write({self.out_var_name}, \'./tmp\');')
+        baseOutVarString = self._dfs_dag_nodes(dag_root)
+        if(dag_root.number_of_outputs > 1):
+            self.out_var_name = []
+            for idx in range(dag_root.number_of_outputs):
+                self.add_code(f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
+                self.out_var_name.append(f'{baseOutVarString}_{idx}')
+        else:
+            self.out_var_name.append(baseOutVarString)
+            self.add_code(f'write({baseOutVarString}, \'./tmp\');')
 
     def _dfs_dag_nodes(self, dag_node: VALID_INPUT_TYPES) -> str:
         """Uses Depth-First-Search to create code from DAG

@@ -687,6 +687,10 @@ public abstract class AutomatedTestBase {
 		return TestUtils.readDMLString(baseDirectory + OUTPUT_DIR + fileName + ".lineage");
 	}
 
+	protected static String readDMLLineageDedupFromHDFS(String fileName) {
+		return TestUtils.readDMLString(baseDirectory + OUTPUT_DIR + fileName + ".lineage.dedup");
+	}
+
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, FileFormat fmt) throws IOException {
 		// read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
@@ -1308,6 +1312,47 @@ public abstract class AutomatedTestBase {
 			e.printStackTrace();
 		}
 		return process;
+	}
+
+	/**
+	 * Start a thread for a worker. This will share the same JVM,
+	 * so all static variables will be shared.!
+	 * 
+	 * Also when using the local Fed Worker thread the statistics printing, 
+	 * and clearing from the worker is disabled.
+	 * 
+	 * @param port Port to use
+	 * @return the thread associated with the worker.
+	 */
+	protected Thread startLocalFedWorkerThread(int port) {
+		Thread t = null;
+		String[] fedWorkArgs = {"-w", Integer.toString(port)};
+		ArrayList<String> args = new ArrayList<>();
+
+		addProgramIndependentArguments(args);
+
+		for(int i = 0; i < fedWorkArgs.length; i++)
+			args.add(fedWorkArgs[i]);
+
+		String[] finalArguments = args.toArray(new String[args.size()]);
+
+		Statistics.allowWorkerStatistics = false;
+
+		try {
+			t = new Thread(() -> {
+				try {
+					main(finalArguments);
+				}
+				catch(IOException e) {
+				}
+			});
+			t.start();
+			java.util.concurrent.TimeUnit.MILLISECONDS.sleep(FED_WORKER_WAIT);
+		}
+		catch(InterruptedException e) {
+			e.printStackTrace();
+		}
+		return t;
 	}
 
 	/**

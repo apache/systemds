@@ -25,7 +25,7 @@
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# X               String    ---        Data Matrix (Recoded Matrix for categorical features)
+# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
 # cMask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
 # iter            Integer    3         Number of iteration for multiple imputations 
 # ---------------------------------------------------------------------------------------------
@@ -43,6 +43,10 @@
 m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, Boolean verbose = FALSE)
   return(Matrix[Double] output)
 {
+  if(ncol(X) < 2)
+    stop("MICE can not be applied on single vectors.
+         expected number of columns > 1 found: "+ncol(X))
+    
   lastIndex = ncol(X);
   sumMax = sum(cMask);
   

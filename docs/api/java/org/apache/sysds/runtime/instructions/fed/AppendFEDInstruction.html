@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateUnaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.FEDAppendType.html" title="enum in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/BinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.html" target="_top">Frames</a></li>
@@ -74,7 +74,7 @@ var activeTableTab = "activeTableTab";
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
+<li><a href="#nested.classes.inherited.from.class.org.apache.sysds.runtime.instructions.fed.FEDInstruction">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#fields.inherited.from.class.org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction">Field</a>&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -147,17 +147,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <!--   -->
 </a>
 <h3>Nested Class Summary</h3>
-<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Nested Class Summary table, listing nested classes, and an explanation">
-<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Class and Description</th>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.FEDAppendType.html" title="enum in org.apache.sysds.runtime.instructions.fed">AppendFEDInstruction.FEDAppendType</a></span></code>&nbsp;</td>
-</tr>
-</table>
 <ul class="blockList">
 <li class="blockList"><a name="nested.classes.inherited.from.class.org.apache.sysds.runtime.instructions.fed.FEDInstruction">
 <!--   -->
@@ -231,7 +220,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.fed.<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">FEDInstruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getFEDInstructionType--">getFEDInstructionType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getType--">getType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getFEDInstructionType--">getFEDInstructionType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getTID--">getTID</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getType--">getType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#setTID-long-">setTID</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.instructions.Instruction">
@@ -323,7 +312,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AggregateUnaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.FEDAppendType.html" title="enum in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/BinaryFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/instructions/fed/AppendFEDInstruction.html" target="_top">Frames</a></li>
@@ -347,7 +336,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Bin
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
+<li><a href="#nested.classes.inherited.from.class.org.apache.sysds.runtime.instructions.fed.FEDInstruction">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#fields.inherited.from.class.org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction">Field</a>&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>

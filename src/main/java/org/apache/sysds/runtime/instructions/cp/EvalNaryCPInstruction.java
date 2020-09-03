@@ -89,7 +89,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//4. expand list arguments if needed
 		CPOperand[] boundInputs2 = null;
 		if( boundInputs.length == 1 && boundInputs[0].getDataType().isList()
-			&& fpb.getInputParams().size() > 1 && !fpb.getInputParams().get(0).getDataType().isList()) 
+			&& !(fpb.getInputParams().size() == 1 && fpb.getInputParams().get(0).getDataType().isList()))
 		{
 			ListObject lo = ec.getListObject(boundInputs[0]);
 			checkValidArguments(lo.getData(), lo.getNames(), fpb.getInputParamNames());

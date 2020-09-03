@@ -51,7 +51,23 @@ public class IndexRange implements Serializable
 			rowStart + delta, rowEnd + delta,
 			colStart + delta, colEnd + delta);
 	}
-	
+
+	public boolean inColRange(long col) {
+		return col >= colStart && col < colEnd;
+	}
+
+	public boolean inRowRange(long row) {
+		return row >= rowStart && row < rowEnd;
+	}
+
+	public long colSpan() {
+		return colEnd - colStart;
+	}
+
+	public long rowSpan() {
+		return rowEnd - rowStart;
+	}
+
 	@Override
 	public String toString() {
 		return "["+rowStart+":"+rowEnd+","+colStart+":"+colEnd+"]";

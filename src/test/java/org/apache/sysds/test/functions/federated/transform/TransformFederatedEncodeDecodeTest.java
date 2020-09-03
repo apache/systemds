@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.transform;
+package org.apache.sysds.test.functions.federated.transform;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,11 +35,13 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
-	private static final String TEST_NAME1 = "TransformFederatedEncodeDecode";
+	private static final String TEST_NAME_RECODE = "TransformRecodeFederatedEncodeDecode";
+	private static final String TEST_NAME_DUMMY = "TransformDummyFederatedEncodeDecode";
 	private static final String TEST_DIR = "functions/transform/";
 	private static final String TEST_CLASS_DIR = TEST_DIR+TransformFederatedEncodeDecodeTest.class.getSimpleName()+"/";
 
-	private static final String SPEC = "TransformEncodeDecodeSpec.json";
+	private static final String SPEC_RECODE = "TransformEncodeDecodeSpec.json";
+	private static final String SPEC_DUMMYCODE = "TransformEncodeDecodeDummySpec.json";
 
 	private static final int rows = 1234;
 	private static final int cols = 2;
@@ -49,56 +51,85 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1,
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"FO1", "FO2"}));
+		addTestConfiguration(TEST_NAME_RECODE,
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_RECODE, new String[] {"FO1", "FO2"}));
 	}
 
 	@Test
-	public void runTestCSVDenseCP() {
-		runTransformEncodeDecodeTest(false, Types.FileFormat.CSV);
+	public void runComplexRecodeTestCSVDenseCP() {
+		runTransformEncodeDecodeTest(true, false, Types.FileFormat.CSV);
 	}
 
 	@Test
-	public void runTestCSVSparseCP() {
-		runTransformEncodeDecodeTest(true, Types.FileFormat.CSV);
+	public void runComplexRecodeTestCSVSparseCP() {
+		runTransformEncodeDecodeTest(true, true, Types.FileFormat.CSV);
 	}
 
 	@Test
-	public void runTestTextcellDenseCP() {
-		runTransformEncodeDecodeTest(false, Types.FileFormat.TEXT);
+	public void runComplexRecodeTestTextcellDenseCP() {
+		runTransformEncodeDecodeTest(true, false, Types.FileFormat.TEXT);
 	}
 
 	@Test
-	public void runTestTextcellSparseCP() {
-		runTransformEncodeDecodeTest(true, Types.FileFormat.TEXT);
+	public void runComplexRecodeTestTextcellSparseCP() {
+		runTransformEncodeDecodeTest(true, true, Types.FileFormat.TEXT);
 	}
 
 	@Test
-	public void runTestBinaryDenseCP() {
-		runTransformEncodeDecodeTest(false, Types.FileFormat.BINARY);
+	public void runComplexRecodeTestBinaryDenseCP() {
+		runTransformEncodeDecodeTest(true, false, Types.FileFormat.BINARY);
 	}
 
 	@Test
-	public void runTestBinarySparseCP() {
-		runTransformEncodeDecodeTest(true, Types.FileFormat.BINARY);
+	public void runComplexRecodeTestBinarySparseCP() {
+		runTransformEncodeDecodeTest(true, true, Types.FileFormat.BINARY);
+	}
+	
+	@Test
+	public void runSimpleDummycodeTestCSVDenseCP() {
+		runTransformEncodeDecodeTest(false, false, Types.FileFormat.CSV);
+	}
+	
+	@Test
+	public void runSimpleDummycodeTestCSVSparseCP() {
+		runTransformEncodeDecodeTest(false, true, Types.FileFormat.CSV);
+	}
+	
+	@Test
+	public void runSimpleDummycodeTestTextDenseCP() {
+		runTransformEncodeDecodeTest(false, false, Types.FileFormat.TEXT);
+	}
+	
+	@Test
+	public void runSimpleDummycodeTestTextSparseCP() {
+		runTransformEncodeDecodeTest(false, true, Types.FileFormat.TEXT);
+	}
+	
+	@Test
+	public void runSimpleDummycodeTestBinaryDenseCP() {
+		runTransformEncodeDecodeTest(false, false, Types.FileFormat.BINARY);
+	}
+	
+	@Test
+	public void runSimpleDummycodeTestBinarySparseCP() {
+		runTransformEncodeDecodeTest(false, true, Types.FileFormat.BINARY);
 	}
 
-	private void runTransformEncodeDecodeTest(boolean sparse, Types.FileFormat format) {
-		ExecMode platformOld = rtplatform;
-		rtplatform = ExecMode.SINGLE_NODE;
-
-		Process t1 = null, t2 = null, t3 = null, t4 = null;
+	private void runTransformEncodeDecodeTest(boolean recode, boolean sparse, Types.FileFormat format) {
+		ExecMode rtold = setExecMode(ExecMode.SINGLE_NODE);
+		
+		Thread t1 = null, t2 = null, t3 = null, t4 = null;
 		try {
-			getAndLoadTestConfiguration(TEST_NAME1);
+			getAndLoadTestConfiguration(TEST_NAME_RECODE);
 
 			int port1 = getRandomAvailablePort();
-			t1 = startLocalFedWorker(port1);
+			t1 = startLocalFedWorkerThread(port1);
 			int port2 = getRandomAvailablePort();
-			t2 = startLocalFedWorker(port2);
+			t2 = startLocalFedWorkerThread(port2);
 			int port3 = getRandomAvailablePort();
-			t3 = startLocalFedWorker(port3);
+			t3 = startLocalFedWorkerThread(port3);
 			int port4 = getRandomAvailablePort();
-			t4 = startLocalFedWorker(port4);
+			t4 = startLocalFedWorkerThread(port4);
 
 			// schema
 			Types.ValueType[] schema = new Types.ValueType[cols / 2];
@@ -120,14 +151,15 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			writeInputFrameWithMTD("BU", BUpper, false, schema, format);
 			writeInputFrameWithMTD("BL", BLower, false, schema, format);
 
-			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME1 + ".dml";
+			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + (recode ? TEST_NAME_RECODE : TEST_NAME_DUMMY) + ".dml";
 
+			String spec_file = recode ? SPEC_RECODE : SPEC_DUMMYCODE;
 			programArgs = new String[] {"-nvargs",
 				"in_AU=" + TestUtils.federatedAddress("localhost", port1, input("AU")),
 				"in_AL=" + TestUtils.federatedAddress("localhost", port2, input("AL")),
 				"in_BU=" + TestUtils.federatedAddress("localhost", port3, input("BU")),
 				"in_BL=" + TestUtils.federatedAddress("localhost", port4, input("BL")), "rows=" + rows, "cols=" + cols,
-				"spec_file=" + SCRIPT_DIR + TEST_DIR + SPEC, "out1=" + output("FO1"), "out2=" + output("FO2"),
+				"spec_file=" + SCRIPT_DIR + TEST_DIR + spec_file, "out1=" + output("FO1"), "out2=" + output("FO2"),
 				"format=" + format.toString()};
 
 			// run test
@@ -144,16 +176,18 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 						+ val, expected, val);
 				}
 			}
-			// TODO federate the aggregated result so that the decode is applied in a federated environment
-			// compare matrices (values recoded to identical codes)
-			FrameBlock FO = reader.readFrameFromHDFS(output("FO1"), 15, 2);
-			HashMap<String, Long> cFA = getCounts(A, B);
-			Iterator<String[]> iterFO = FO.getStringRowIterator();
-			while(iterFO.hasNext()) {
-				String[] row = iterFO.next();
-				Double expected = (double) cFA.get(row[1]);
-				Double val = (row[0] != null) ? Double.parseDouble(row[0]) : 0;
-				Assert.assertEquals("Output aggregates don't match: " + expected + " vs " + val, expected, val);
+			if(recode) {
+				// TODO federate the aggregated result so that the decode is applied in a federated environment
+				// compare matrices (values recoded to identical codes)
+				FrameBlock FO = reader.readFrameFromHDFS(output("FO1"), 15, 2);
+				HashMap<String, Long> cFA = getCounts(A, B);
+				Iterator<String[]> iterFO = FO.getStringRowIterator();
+				while(iterFO.hasNext()) {
+					String[] row = iterFO.next();
+					Double expected = (double) cFA.get(row[1]);
+					Double val = (row[0] != null) ? Double.parseDouble(row[0]) : 0;
+					Assert.assertEquals("Output aggregates don't match: " + expected + " vs " + val, expected, val);
+				}
 			}
 		}
 		catch(Exception ex) {
@@ -161,11 +195,8 @@ public class TransformFederatedEncodeDecodeTest extends AutomatedTestBase {
 			Assert.fail(ex.getMessage());
 		}
 		finally {
-			TestUtils.shutdownThread(t1);
-			TestUtils.shutdownThread(t2);
-			TestUtils.shutdownThread(t3);
-			TestUtils.shutdownThread(t4);
-			rtplatform = platformOld;
+			TestUtils.shutdownThreads(t1, t2, t3, t4);
+			resetExecMode(rtold);
 		}
 	}
 

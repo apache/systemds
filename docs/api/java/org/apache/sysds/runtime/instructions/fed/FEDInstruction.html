@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -184,14 +184,22 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruc
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getFEDInstructionType--">getFEDInstructionType</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getTID--">getTID</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.IType.html" title="enum in org.apache.sysds.runtime.instructions">Instruction.IType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#getType--">getType</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
 <div class="block">This method should be used for any setup before executing this instruction.</div>
 </td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html#setTID-long-">setTID</a></span>(long&nbsp;tid)</code>&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -242,6 +250,24 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/Instruc
 <li class="blockList">
 <h4>getFEDInstructionType</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a>&nbsp;getFEDInstructionType()</pre>
+</li>
+</ul>
+<a name="getTID--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getTID</h4>
+<pre>public&nbsp;long&nbsp;getTID()</pre>
+</li>
+</ul>
+<a name="setTID-long-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setTID</h4>
+<pre>public&nbsp;void&nbsp;setTID(long&nbsp;tid)</pre>
 </li>
 </ul>
 <a name="preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">

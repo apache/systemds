@@ -95,12 +95,11 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 		testLineageTrace(TEST_NAME5);
 	}
 	
-	/*@Test
+	@Test
 	public void testLineageTrace6() {
 		testLineageTrace(TEST_NAME6);
-	}*/
-	//FIXME: stack overflow only when ran the full package
-	
+	}
+
 	@Test
 	public void testLineageTrace7() {
 		testLineageTrace(TEST_NAME7);

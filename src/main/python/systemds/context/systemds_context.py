@@ -54,34 +54,34 @@ class SystemDSContext(object):
         that can be read from to get the printed statements from the JVM.
         """
 
-        systemds_java_path = os.path.join(get_module_dir(), "systemds-java")
+        root = os.environ.get("SYSTEMDS_ROOT")
+        if root == None:
+            # If there is no systemds install default to use the PIP packaged java files.
+            root =  os.path.join(get_module_dir(), "systemds-java")
+        
         # nt means its Windows
         cp_separator = ";" if os.name == "nt" else ":"
-        lib_cp = os.path.join(systemds_java_path, "lib", "*")
-        systemds_cp = os.path.join(systemds_java_path, "*")
-        classpath = cp_separator.join([lib_cp, systemds_cp])
+        lib_cp = os.path.join(root, "target","lib", "*")
+        systemds_cp = os.path.join(root,"target","SystemDS.jar")
+        classpath = cp_separator.join([lib_cp , systemds_cp])
 
-        # TODO make use of JavaHome env-variable if set to find java, instead of just using any java available.
         command = ["java", "-cp", classpath]
 
-        sys_root = os.environ.get("SYSTEMDS_ROOT")
-        if sys_root != None:
-            files = glob(os.path.join(sys_root, "conf", "log4j*.properties"))
+        if os.environ.get("SYSTEMDS_ROOT") != None:
+            files = glob(os.path.join(root, "conf", "log4j*.properties"))
             if len(files) > 1:
-                print("WARNING: Multiple logging files")
+                print("WARNING: Multiple logging files found selecting: " + files[0])
             if len(files) == 0:
                 print("WARNING: No log4j file found at: "
-                      + os.path.join(sys_root, "conf")
+                      + os.path.join(root, "conf")
                       + " therefore using default settings")
             else:
-                # print("Using Log4J file at " + files[0])
                 command.append("-Dlog4j.configuration=file:" + files[0])
-        else:
-            print("Default Log4J used, since environment $SYSTEMDS_ROOT not set")
 
         command.append("org.apache.sysds.api.PythonDMLScript")
 
         # TODO add an argument parser here
+
         # Find a random port, and hope that no other process
         # steals it while we wait for the JVM to startup
         port = self.__get_open_port()
@@ -89,7 +89,27 @@ class SystemDSContext(object):
 
         process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
         first_stdout = process.stdout.readline()
-        assert (b"Server Started" in first_stdout), "Error JMLC Server not Started"
+        
+        if(b"GatewayServer Started" in first_stdout):
+            print("Startup success")
+        else:
+            stderr = process.stderr.readline().decode("utf-8")
+            if(len(stderr) > 1):
+                raise Exception("Exception in startup of GatewayServer: " + stderr)
+            outputs = []
+            outputs.append(first_stdout.decode("utf-8"))
+            max_tries = 10
+            for i in range(max_tries):
+                next_line = process.stdout.readline()
+                if(b"GatewayServer Started" in next_line):
+                    print("WARNING: Stdout corrupted by prints: " + str(outputs))
+                    print("Startup success")
+                    break
+                else:
+                    outputs.append(next_line)
+
+                if (i == max_tries-1):
+                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8") )
 
         # Handle Std out from the subprocess.
         self.__stdout = Queue()
@@ -153,7 +173,7 @@ class SystemDSContext(object):
     def __get_open_port(self):
         """Get a random available port."""
         # TODO Verify that it is not taking some critical ports change to select a good port range.
-        # TODO If it tries to select a port already in use, find anotherone. (recursion)
+        # TODO If it tries to select a port already in use, find another.
         # https://stackoverflow.com/questions/2838244/get-open-tcp-port-in-python
         import socket
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -46,8 +46,6 @@ public class UserInterfaceTest extends Base {
 	public void SyntaxError(){
 		Pair<String,String> res = runThread("SyntaxError.dml");
 		assertEquals("",res.getRight());
-		System.out.println(res.getLeft());
-		System.out.println(res.getRight());
 		assertTrue(res.getLeft().contains("An Error Occured :"));
 		assertTrue(res.getLeft().contains("[Syntax error]"));
 		assertTrue(res.getLeft().contains("ParseException --"));

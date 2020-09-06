@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function for imputing missing values using forward fill and backward fill techniques
+
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE      DEFAULT   MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Double    ---       Matrix X
+# option          String    "locf"    String "locf" (last observation moved forward) to do forward fill 
+#                                     String "nocb" (next observation carried backward) to do backward fill
+# verbose         Boolean   FALSE     to print output on screen
+# ---------------------------------------------------------------------------------------------
+
+#Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# output          Double  ---         Matrix with no missing values
+
+m_na_locf = function(Matrix[Double] X, String option = "locf", Boolean verbose = FALSE)
+  return(Matrix[Double] output)
+{
+  output = X
+  if(sum(is.nan(X)) > 0) {
+    if(option == "locf")
+      output = locf(X)
+    else
+      output = rev(locf(rev(X)))
+  }
+  
+  if(verbose)
+    print(toString(output))
+}
+
+locf = function(Matrix[Double] X)
+  return(Matrix[Double] outputLocf)
+{
+  # store mask of missing values
+  mask = is.nan(X)
+
+  # replace NaN with a number i.e., zeros
+  X = replace(target=X, pattern = NaN, replacement = 0)
+
+  # use the cumsumprod built-in to do fill forward
+  output = matrix(0, nrow(X), ncol(X))
+  parfor(i in 1:ncol(X)) 
+    output[ ,i] = cumsumprod(cbind(X[,i],mask[,i]))
+
+  # if there are leading NAs
+  leading_NA = (output == 0) & (mask == 1)
+  outputR = matrix(0, nrow(X), ncol(X))
+
+  if(sum(leading_NA) > 0) {
+    # doing fill forward in reverse
+    parfor(i in 1:ncol(X))
+      outputR[ ,i] = rev(cumsumprod(rev(cbind(X[,i],leading_NA[,i]))))
+  }
+
+  outputLocf = (outputR * leading_NA) + output
+}

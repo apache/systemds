@@ -1638,7 +1638,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		@Override
 		public List<ColGroup> call() {
-			List<ColGroup> res = new ArrayList<ColGroup>();
+			List<ColGroup> res = new ArrayList<>();
 			for(ColGroup x : _colGroups) {
 				res.add(x.scalarOperation(_sop));
 			}

@@ -289,7 +289,7 @@ public class BitmapEncoder {
 					lengths.put(scaledValues[idx], lengths.get(scaledValues[idx]) + fullSizeOffsetsLists[idx].size());
 				}
 				else {
-					Queue<IntArrayList> offsets = new LinkedList<IntArrayList>();
+					Queue<IntArrayList> offsets = new LinkedList<>();
 					offsets.add(fullSizeOffsetsLists[idx]);
 					values.put(scaledValues[idx], offsets);
 					lengths.put(scaledValues[idx], fullSizeOffsetsLists[idx].size());
@@ -347,7 +347,7 @@ public class BitmapEncoder {
 					lengths.put(array, lengths.get(array) + fullSizeOffsetsLists[idx / numColumns].size());
 				}
 				else {
-					Queue<IntArrayList> offsets = new LinkedList<IntArrayList>();
+					Queue<IntArrayList> offsets = new LinkedList<>();
 					offsets.add(fullSizeOffsetsLists[idx / numColumns]);
 					values.put(array, offsets);
 					lengths.put(array, fullSizeOffsetsLists[idx / numColumns].size());

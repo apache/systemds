@@ -78,9 +78,12 @@ public class Base {
 
     public static Pair<String, String> runThread(String script) {
         String fullDMLScriptName = BASE_FOLDER + script;
+        return runThread(new String[]{"-f", fullDMLScriptName});
+    }
 
+    public static Pair<String, String> runThread(String[] args) {
         Thread t = new Thread(() -> {
-            DMLScript.main(new String[] {"-f", fullDMLScriptName});
+            DMLScript.main(args);
         });
         
         ByteArrayOutputStream buff = new ByteArrayOutputStream();

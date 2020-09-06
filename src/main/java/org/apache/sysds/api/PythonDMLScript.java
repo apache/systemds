@@ -40,7 +40,13 @@ public class PythonDMLScript {
 	 * @param args Command line arguments.
 	 */
 	public static void main(String[] args) {
-		start(Integer.parseInt(args[0]));
+		if(args.length != 1) {
+			throw new IllegalArgumentException("Python DML Script should be initialized with a singe number argument");
+		}
+		else {
+			int port = Integer.parseInt(args[0]);
+			start(port);
+		}
 	}
 
 	private static void start(int port) {

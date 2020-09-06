@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.transform.encode.EncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderDummycode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderFeatureHash;
+import org.apache.sysds.runtime.transform.encode.EncoderMVImpute;
 import org.apache.sysds.runtime.transform.encode.EncoderOmit;
 import org.apache.sysds.runtime.transform.encode.EncoderPassThrough;
 import org.apache.sysds.runtime.transform.encode.EncoderRecode;
@@ -102,7 +103,8 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				new EncoderPassThrough(),
 				new EncoderBin(),
 				new EncoderDummycode(),
-				new EncoderOmit(true)));
+				new EncoderOmit(true),
+				new EncoderMVImpute()));
 		// first create encoders at the federated workers, then collect them and aggregate them to a single large
 		// encoder
 		FederationMap fedMapping = fin.getFedMapping();
@@ -120,7 +122,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				Encoder encoder = (Encoder) response.getData()[0];
 				// merge this encoder into a composite encoder
 				synchronized(globalEncoder) {
-					globalEncoder.mergeAt(encoder, columnOffset);
+					globalEncoder.mergeAt(encoder, (int) (range.getBeginDims()[0] + 1), columnOffset);
 				}
 				// no synchronization necessary since names should anyway match
 				String[] subRangeColNames = (String[]) response.getData()[1];

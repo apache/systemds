@@ -19,263 +19,119 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.io.IOException;
-import java.util.BitSet;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-import org.apache.sysds.runtime.functionobjects.CM;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Mean;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class EncoderMVImpute extends Encoder 
+public class EncoderMVImpute extends Encoder
 {
 	private static final long serialVersionUID = 9057868620144662194L;
 
 	public enum MVMethod { INVALID, GLOBAL_MEAN, GLOBAL_MODE, CONSTANT }
 	
 	private MVMethod[] _mvMethodList = null;
-	private MVMethod[] _mvscMethodList = null; // scaling methods for attributes that are imputed and also scaled
-	
-	private BitSet _isMVScaled = null;
-	private CM _varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);		// function object that understands variance computation
 	
 	// objects required to compute mean and variance of all non-missing entries 
-	private Mean _meanFn = Mean.getMeanFnObject();  // function object that understands mean computation
+	private final Mean _meanFn = Mean.getMeanFnObject();  // function object that understands mean computation
 	private KahanObject[] _meanList = null;         // column-level means, computed so far
 	private long[] _countList = null;               // #of non-missing values
 	
-	private CM_COV_Object[] _varList = null;        // column-level variances, computed so far (for scaling)
-
-	private int[]           _scnomvList = null;        // List of attributes that are scaled but not imputed
-	private MVMethod[]      _scnomvMethodList = null;  // scaling methods: 0 for invalid; 1 for mean-subtraction; 2 for z-scoring
-	private KahanObject[]   _scnomvMeanList = null;    // column-level means, for attributes scaled but not imputed
-	private long[]          _scnomvCountList = null;   // #of non-missing values, for attributes scaled but not imputed
-	private CM_COV_Object[] _scnomvVarList = null;     // column-level variances, computed so far
-	
 	private String[] _replacementList = null; // replacements: for global_mean, mean; and for global_mode, recode id of mode category
-	private String[] _NAstrings = null;
 	private List<Integer> _rcList = null;
 	private HashMap<Integer,HashMap<String,Long>> _hist = null;
 	
 	public String[] getReplacements() { return _replacementList; }
 	public KahanObject[] getMeans()   { return _meanList; }
-	public CM_COV_Object[] getVars()  { return _varList; }
-	public KahanObject[] getMeans_scnomv()   { return _scnomvMeanList; }
-	public CM_COV_Object[] getVars_scnomv()  { return _scnomvVarList; }
 	
-	public EncoderMVImpute(JSONObject parsedSpec, String[] colnames, int clen) 
+	public EncoderMVImpute(JSONObject parsedSpec, String[] colnames, int clen, int minCol, int maxCol)
 		throws JSONException
 	{
 		super(null, clen);
 		
 		//handle column list
-		int[] collist = TfMetaUtils.parseJsonObjectIDList(parsedSpec, colnames, TfMethod.IMPUTE.toString(), -1, -1);
+		int[] collist = TfMetaUtils
+			.parseJsonObjectIDList(parsedSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol);
 		initColList(collist);
 	
 		//handle method list
-		parseMethodsAndReplacments(parsedSpec);
+		parseMethodsAndReplacements(parsedSpec, colnames, minCol);
 		
 		//create reuse histograms
 		_hist = new HashMap<>();
 	}
 	
-	public EncoderMVImpute(JSONObject parsedSpec, String[] colnames, String[] NAstrings, int clen)
-		throws JSONException 
-	{
-		super(null, clen);
-		boolean isMV = parsedSpec.containsKey(TfMethod.IMPUTE.toString());
-		boolean isSC = parsedSpec.containsKey(TfMethod.SCALE.toString());
-		_NAstrings = NAstrings;
-		
-		if(!isMV) {
-			// MV Impute is not applicable
-			_colList = null;
-			_mvMethodList = null;
-			_meanList = null;
-			_countList = null;
-			_replacementList = null;
-		}
-		else {
-			JSONObject mvobj = (JSONObject) parsedSpec.get(TfMethod.IMPUTE.toString());
-			JSONArray mvattrs = (JSONArray) mvobj.get(TfUtils.JSON_ATTRS);
-			JSONArray mvmthds = (JSONArray) mvobj.get(TfUtils.JSON_MTHD);
-			int mvLength = mvattrs.size();
-			
-			_colList = new int[mvLength];
-			_mvMethodList = new MVMethod[mvLength];
-			
-			_meanList = new KahanObject[mvLength];
-			_countList = new long[mvLength];
-			_varList = new CM_COV_Object[mvLength];
-			
-			_isMVScaled = new BitSet(_colList.length);
-			_isMVScaled.clear();
-			
-			for(int i=0; i < _colList.length; i++) {
-				_colList[i] = UtilFunctions.toInt(mvattrs.get(i));
-				_mvMethodList[i] = MVMethod.values()[UtilFunctions.toInt(mvmthds.get(i))]; 
-				_meanList[i] = new KahanObject(0, 0);
-			}
-			
-			_replacementList = new String[mvLength]; 	// contains replacements for all columns (scale and categorical)
-			
-			JSONArray constants = (JSONArray)mvobj.get(TfUtils.JSON_CONSTS);
-			for(int i=0; i < constants.size(); i++) {
-				if ( constants.get(i) == null )
-					_replacementList[i] = "NaN";
-				else
-					_replacementList[i] = constants.get(i).toString();
-			}
-		}
-		
-		// Handle scaled attributes
-		if ( !isSC )
-		{
-			// scaling is not applicable
-			_scnomvCountList = null;
-			_scnomvMeanList = null;
-			_scnomvVarList = null;
-		}
-		else
-		{
-			if ( _colList != null ) 
-				_mvscMethodList = new MVMethod[_colList.length];
-			
-			JSONObject scobj = (JSONObject) parsedSpec.get(TfMethod.SCALE.toString());
-			JSONArray scattrs = (JSONArray) scobj.get(TfUtils.JSON_ATTRS);
-			JSONArray scmthds = (JSONArray) scobj.get(TfUtils.JSON_MTHD);
-			int scLength = scattrs.size();
-			
-			int[] _allscaled = new int[scLength];
-			int scnomv = 0, colID;
-			byte mthd;
-			for(int i=0; i < scLength; i++)
-			{
-				colID = UtilFunctions.toInt(scattrs.get(i));
-				mthd = (byte) UtilFunctions.toInt(scmthds.get(i));
-				
-				_allscaled[i] = colID;
-				
-				// check if the attribute is also MV imputed
-				int mvidx = isApplicable(colID);
-				if(mvidx != -1)
-				{
-					_isMVScaled.set(mvidx);
-					_mvscMethodList[mvidx] = MVMethod.values()[mthd];
-					_varList[mvidx] = new CM_COV_Object();
-				}
-				else
-					scnomv++;	// count of scaled but not imputed 
-			}
-			
-			if(scnomv > 0)
-			{
-				_scnomvList = new int[scnomv];
-				_scnomvMethodList = new MVMethod[scnomv];
-	
-				_scnomvMeanList = new KahanObject[scnomv];
-				_scnomvCountList = new long[scnomv];
-				_scnomvVarList = new CM_COV_Object[scnomv];
-				
-				for(int i=0, idx=0; i < scLength; i++)
-				{
-					colID = UtilFunctions.toInt(scattrs.get(i));
-					mthd = (byte)UtilFunctions.toInt(scmthds.get(i));
-							
-					if(isApplicable(colID) == -1)
-					{	// scaled but not imputed
-						_scnomvList[idx] = colID;
-						_scnomvMethodList[idx] = MVMethod.values()[mthd];
-						_scnomvMeanList[idx] = new KahanObject(0, 0);
-						_scnomvVarList[idx] = new CM_COV_Object();
-						idx++;
-					}
-				}
-			}
-		}
+	public EncoderMVImpute() {
+		super(new int[0], 0);
 	}
-
-	private void parseMethodsAndReplacments(JSONObject parsedSpec) throws JSONException {
+	
+	
+	public EncoderMVImpute(int[] colList, MVMethod[] mvMethodList, String[] replacementList, KahanObject[] meanList,
+			long[] countList, List<Integer> rcList, int clen) {
+		super(colList, clen);
+		_mvMethodList = mvMethodList;
+		_replacementList = replacementList;
+		_meanList = meanList;
+		_countList = countList;
+		_rcList = rcList;
+	}
+	
+	private void parseMethodsAndReplacements(JSONObject parsedSpec, String[] colnames, int offset) throws JSONException {
 		JSONArray mvspec = (JSONArray) parsedSpec.get(TfMethod.IMPUTE.toString());
+		boolean ids = parsedSpec.containsKey("ids") && parsedSpec.getBoolean("ids");
+		// make space for all elements
 		_mvMethodList = new MVMethod[mvspec.size()];
 		_replacementList = new String[mvspec.size()];
 		_meanList = new KahanObject[mvspec.size()];
 		_countList = new long[mvspec.size()];
-		for(int i=0; i < mvspec.size(); i++) {
-			JSONObject mvobj = (JSONObject)mvspec.get(i);
-			_mvMethodList[i] = MVMethod.valueOf(mvobj.get("method").toString().toUpperCase()); 
-			if( _mvMethodList[i] == MVMethod.CONSTANT ) {
-				_replacementList[i] = mvobj.getString("value").toString();
-			}
-			_meanList[i] = new KahanObject(0, 0);
-		}
-	}
+		// sort for binary search
+		Arrays.sort(_colList);
 		
-	public void prepare(String[] words) throws IOException {
-		
-		try {
-			String w = null;
-			if(_colList != null)
-			for(int i=0; i <_colList.length; i++) {
-				int colID = _colList[i];
-				w = UtilFunctions.unquote(words[colID-1].trim());
-				
-				try {
-				if(!TfUtils.isNA(_NAstrings, w)) {
-					_countList[i]++;
-					
-					boolean computeMean = (_mvMethodList[i] == MVMethod.GLOBAL_MEAN || _isMVScaled.get(i) );
-					if(computeMean) {
-						// global_mean
-						double d = UtilFunctions.parseToDouble(w, UtilFunctions.defaultNaString);
-						_meanFn.execute2(_meanList[i], d, _countList[i]);
-						
-						if (_isMVScaled.get(i) && _mvscMethodList[i] == MVMethod.GLOBAL_MODE)
-							_varFn.execute(_varList[i], d);
-					}
-					else {
-						// global_mode or constant
-						// Nothing to do here. Mode is computed using recode maps.
-					}
+		int listIx = 0;
+		for(Object o : mvspec) {
+			JSONObject mvobj = (JSONObject) o;
+			int ixOffset = offset == -1 ? 0 : offset - 1;
+			// check for position -> -1 if not present
+			int pos = Arrays.binarySearch(_colList,
+				ids ? mvobj.getInt("id") - ixOffset : ArrayUtils.indexOf(colnames, mvobj.get("name")) + 1);
+			if(pos >= 0) {
+				// add to arrays
+				_mvMethodList[listIx] = MVMethod.valueOf(mvobj.get("method").toString().toUpperCase());
+				if(_mvMethodList[listIx] == MVMethod.CONSTANT) {
+					_replacementList[listIx] = mvobj.getString("value");
 				}
-				} catch (NumberFormatException e) 
-				{
-					throw new RuntimeException("Encountered \"" + w + "\" in column ID \"" + colID + "\", when expecting a numeric value. Consider adding \"" + w + "\" to na.strings, along with an appropriate imputation method.");
-				}
+				_meanList[listIx++] = new KahanObject(0, 0);
 			}
-			
-			// Compute mean and variance for attributes that are scaled but not imputed
-			if(_scnomvList != null)
-			for(int i=0; i < _scnomvList.length; i++) 
-			{
-				int colID = _scnomvList[i];
-				w = UtilFunctions.unquote(words[colID-1].trim());
-				double d = UtilFunctions.parseToDouble(w, UtilFunctions.defaultNaString);
-				_scnomvCountList[i]++; 		// not required, this is always equal to total #records processed
-				_meanFn.execute2(_scnomvMeanList[i], d, _scnomvCountList[i]);
-				if(_scnomvMethodList[i] == MVMethod.GLOBAL_MODE)
-					_varFn.execute(_scnomvVarList[i], d);
-			}
-		} catch(Exception e) {
-			throw new IOException(e);
 		}
+		// make arrays required size
+		_mvMethodList = Arrays.copyOf(_mvMethodList, listIx);
+		_replacementList = Arrays.copyOf(_replacementList, listIx);
+		_meanList = Arrays.copyOf(_meanList, listIx);
+		_countList = Arrays.copyOf(_countList, listIx);
 	}
 	
 	public MVMethod getMethod(int colID) {
-		int idx = isApplicable(colID);		
+		int idx = isApplicable(colID);
 		if(idx == -1)
 			return MVMethod.INVALID;
 		else
@@ -287,8 +143,8 @@ public class EncoderMVImpute extends Encoder
 		return (idx == -1) ? 0 : _countList[idx];
 	}
 	
-	public String getReplacement(int colID)  {
-		int idx = isApplicable(colID);		
+	public String getReplacement(int colID) {
+		int idx = isApplicable(colID);
 		return (idx == -1) ? null : _replacementList[idx];
 	}
 	
@@ -321,7 +177,7 @@ public class EncoderMVImpute extends Encoder
 						if( key != null && !key.isEmpty() ) {
 							Long val = hist.get(key);
 							hist.put(key, (val!=null) ? val+1 : 1);
-						}	
+						}
 					}
 					_hist.put(colID, hist);
 					long max = Long.MIN_VALUE; 
@@ -349,12 +205,98 @@ public class EncoderMVImpute extends Encoder
 		}
 		return out;
 	}
+
+	@Override
+	public Encoder subRangeEncoder(IndexRange ixRange) {
+		Map<Integer, ColInfo> map = new HashMap<>();
+		for(int i = 0; i < _colList.length; i++) {
+			int col = _colList[i];
+			if(ixRange.inColRange(col))
+				map.put((int) (_colList[i] - (ixRange.colStart - 1)),
+					new ColInfo(_mvMethodList[i], _replacementList[i], _meanList[i], _countList[i], _hist.get(i)));
+		}
+		if(map.size() == 0)
+			// empty encoder -> sub range encoder does not exist
+			return null;
+
+		int[] colList = new int[map.size()];
+		MVMethod[] mvMethodList = new MVMethod[map.size()];
+		String[] replacementList = new String[map.size()];
+		KahanObject[] meanList = new KahanObject[map.size()];
+		long[] countList = new long[map.size()];
+
+		fillListsFromMap(map, colList, mvMethodList, replacementList, meanList, countList, _hist);
+
+		if(_rcList == null)
+			_rcList = new ArrayList<>();
+		List<Integer> rcList = _rcList.stream().filter(ixRange::inColRange).map(i -> (int) (i - (ixRange.colStart - 1)))
+			.collect(Collectors.toList());
+
+		return new EncoderMVImpute(colList, mvMethodList, replacementList, meanList, countList, rcList,
+			(int) ixRange.colSpan());
+	}
+
+	private static void fillListsFromMap(Map<Integer, ColInfo> map, int[] colList, MVMethod[] mvMethodList,
+		String[] replacementList, KahanObject[] meanList, long[] countList,
+		HashMap<Integer, HashMap<String, Long>> hist) {
+		int i = 0;
+		for(Entry<Integer, ColInfo> entry : map.entrySet()) {
+			colList[i] = entry.getKey();
+			mvMethodList[i] = entry.getValue()._method;
+			replacementList[i] = entry.getValue()._replacement;
+			meanList[i] = entry.getValue()._mean;
+			countList[i++] = entry.getValue()._count;
+
+			hist.put(entry.getKey(), entry.getValue()._hist);
+		}
+	}
+
+	@Override
+	public void mergeAt(Encoder other, int row, int col) {
+		if(other instanceof EncoderMVImpute) {
+			EncoderMVImpute otherImpute = (EncoderMVImpute) other;
+			Map<Integer, ColInfo> map = new HashMap<>();
+			for(int i = 0; i < _colList.length; i++) {
+				map.put(_colList[i],
+					new ColInfo(_mvMethodList[i], _replacementList[i], _meanList[i], _countList[i], _hist.get(i + 1)));
+			}
+			for(int i = 0; i < other._colList.length; i++) {
+				int column = other._colList[i] + (col - 1);
+				ColInfo otherColInfo = new ColInfo(otherImpute._mvMethodList[i], otherImpute._replacementList[i],
+					otherImpute._meanList[i], otherImpute._countList[i], otherImpute._hist.get(i + 1));
+				ColInfo colInfo = map.get(column);
+				if(colInfo == null)
+					map.put(column, otherColInfo);
+				else
+					colInfo.merge(otherColInfo);
+			}
+
+			_colList = new int[map.size()];
+			_mvMethodList = new MVMethod[map.size()];
+			_replacementList = new String[map.size()];
+			_meanList = new KahanObject[map.size()];
+			_countList = new long[map.size()];
+			_hist = new HashMap<>();
+
+			fillListsFromMap(map, _colList, _mvMethodList, _replacementList, _meanList, _countList, _hist);
+			// update number of columns
+			_clen = Math.max(_clen, col - 1 + other._clen);
+
+			if(_rcList == null)
+				_rcList = new ArrayList<>();
+			Set<Integer> rcSet = new HashSet<>(_rcList);
+			rcSet.addAll(otherImpute._rcList.stream().map(i -> i + (col - 1)).collect(Collectors.toSet()));
+			_rcList = new ArrayList<>(rcSet);
+			return;
+		}
+		super.mergeAt(other, row, col);
+	}
 	
 	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		for( int j=0; j<_colList.length; j++ ) {
 			out.getColumnMetadata(_colList[j]-1)
-			   .setMvValue(_replacementList[j]);
+				.setMvValue(_replacementList[j]);
 		}
 		return out;
 	}
@@ -390,5 +332,49 @@ public class EncoderMVImpute extends Encoder
 	 */
 	public HashMap<String,Long> getHistogram( int colID ) {
 		return _hist.get(colID);
+	}
+	
+	private static class ColInfo {
+		MVMethod _method;
+		String _replacement;
+		KahanObject _mean;
+		long _count;
+		HashMap<String, Long> _hist;
+
+		ColInfo(MVMethod method, String replacement, KahanObject mean, long count, HashMap<String, Long> hist) {
+			_method = method;
+			_replacement = replacement;
+			_mean = mean;
+			_count = count;
+			_hist = hist;
+		}
+
+		public void merge(ColInfo otherColInfo) {
+			if(_method != otherColInfo._method)
+				throw new DMLRuntimeException("Tried to merge two different impute methods: " + _method.name() + " vs. "
+					+ otherColInfo._method.name());
+			switch(_method) {
+				case CONSTANT:
+					assert _replacement.equals(otherColInfo._replacement);
+					break;
+				case GLOBAL_MEAN:
+					_mean._sum *= _count;
+					_mean._correction *= _count;
+					KahanPlus.getKahanPlusFnObject().execute(_mean, otherColInfo._mean._sum * otherColInfo._count);
+					KahanPlus.getKahanPlusFnObject().execute(_mean,
+						otherColInfo._mean._correction * otherColInfo._count);
+					_count += otherColInfo._count;
+					break;
+				case GLOBAL_MODE:
+					if (_hist == null)
+						_hist = new HashMap<>(otherColInfo._hist);
+					else
+						// add counts
+						_hist.replaceAll((key, count) -> count + otherColInfo._hist.getOrDefault(key, 0L));
+					break;
+				default:
+					throw new DMLRuntimeException("Method `" + _method.name() + "` not supported for federated impute");
+			}
+		}
 	}
 }

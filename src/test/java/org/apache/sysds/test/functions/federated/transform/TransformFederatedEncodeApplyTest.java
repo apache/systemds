@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.transform;
 
+import java.io.IOException;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -42,8 +43,8 @@ import org.junit.Test;
 public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFederatedEncodeApply";
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFederatedEncodeApplyTest.class.getSimpleName()
-		+ "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR 
+		+ TransformFederatedEncodeApplyTest.class.getSimpleName() + "/";
 
 	// dataset and transform tasks without missing values
 	private final static String DATASET1 = "homes3/homes.csv";
@@ -64,8 +65,8 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 
 	// dataset and transform tasks with missing values
 	private final static String DATASET2 = "homes/homes.csv";
-	// private final static String SPEC4 = "homes3/homes.tfspec_impute.json";
-	// private final static String SPEC4b = "homes3/homes.tfspec_impute2.json";
+	private final static String SPEC4 = "homes3/homes.tfspec_impute.json";
+	private final static String SPEC4b = "homes3/homes.tfspec_impute2.json";
 	private final static String SPEC5 = "homes3/homes.tfspec_omit.json";
 	private final static String SPEC5b = "homes3/homes.tfspec_omit2.json";
 
@@ -73,11 +74,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 	private static final int[] BIN_col8 = new int[] {1, 2, 2, 2, 2, 2, 3};
 
 	public enum TransformType {
-		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY,
-		// IMPUTE,
-		OMIT,
-		HASH,
-		HASH_RECODE,
+		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY, IMPUTE, OMIT, HASH, HASH_RECODE,
 	}
 
 	@Override
@@ -116,10 +113,10 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		runTransformTest(TransformType.OMIT, false);
 	}
 
-	// @Test
-	// public void testHomesImputeIDsCSV() {
-	// runTransformTest(TransformType.IMPUTE, false);
-	// }
+	@Test
+	public void testHomesImputeIDsCSV() {
+		runTransformTest(TransformType.IMPUTE, false);
+	}
 
 	@Test
 	public void testHomesRecodeColnamesCSV() {
@@ -151,10 +148,10 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 		runTransformTest(TransformType.OMIT, true);
 	}
 
-	// @Test
-	// public void testHomesImputeColnamesCSV() {
-	// runTransformTest(TransformType.IMPUTE, true);
-	// }
+	@Test
+	public void testHomesImputeColnamesCSV() {
+		runTransformTest(TransformType.IMPUTE, true);
+	}
 
 	@Test
 	public void testHomesHashColnamesCSV() {
@@ -186,7 +183,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			case RECODE: SPEC = colnames ? SPEC1b : SPEC1; DATASET = DATASET1; break;
 			case DUMMY: SPEC = colnames ? SPEC2b : SPEC2; DATASET = DATASET1; break;
 			case BIN: SPEC = colnames ? SPEC3b : SPEC3; DATASET = DATASET1; break;
-			// case IMPUTE: SPEC = colnames ? SPEC4b : SPEC4; DATASET = DATASET2; break;
+			case IMPUTE: SPEC = colnames ? SPEC4b : SPEC4; DATASET = DATASET2; break;
 			case OMIT: SPEC = colnames ? SPEC5b : SPEC5; DATASET = DATASET2; break;
 			case RECODE_DUMMY: SPEC = colnames ? SPEC6b : SPEC6; DATASET = DATASET1; break;
 			case BIN_DUMMY: SPEC = colnames ? SPEC7b : SPEC7; DATASET = DATASET1; break;
@@ -194,7 +191,7 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			case HASH_RECODE: SPEC = colnames ? SPEC9b : SPEC9; DATASET = DATASET1; break;
 		}
 
-		Thread t1 = null, t2 = null;
+		Thread t1 = null, t2 = null, t3 = null, t4 = null;
 		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 
@@ -202,11 +199,14 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			t1 = startLocalFedWorkerThread(port1);
 			int port2 = getRandomAvailablePort();
 			t2 = startLocalFedWorkerThread(port2);
+			int port3 = getRandomAvailablePort();
+			t3 = startLocalFedWorkerThread(port3);
+			int port4 = getRandomAvailablePort();
+			t4 = startLocalFedWorkerThread(port4);
 
 			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,
-				DataExpression.DEFAULT_DELIM_FILL, DataExpression.DEFAULT_DELIM_FILL_VALUE,
-				DATASET.equals(DATASET1) ? DataExpression.DEFAULT_NA_STRINGS : "NA" + DataExpression.DELIM_NA_STRING_SEP
-					+ "");
+				DataExpression.DEFAULT_DELIM_FILL, DataExpression.DEFAULT_DELIM_FILL_VALUE, DATASET.equals(DATASET1) ?
+				DataExpression.DEFAULT_NA_STRINGS : "NA" + DataExpression.DELIM_NA_STRING_SEP + "");
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			// split up dataset
 			FrameBlock dataset = FrameReaderFactory.createFrameReader(FileFormat.CSV, ffpCSV)
@@ -216,23 +216,37 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			ffpCSV.setNAStrings(UtilFunctions.defaultNaString);
 			FrameWriter fw = FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffpCSV);
 
-			FrameBlock A = new FrameBlock();
-			dataset.slice(0, dataset.getNumRows() - 1, 0, dataset.getNumColumns() / 2 - 1, A);
-			fw.writeFrameToHDFS(A, input("A"), A.getNumRows(), A.getNumColumns());
-			HDFSTool.writeMetaDataFile(input("A.mtd"), null, A.getSchema(), Types.DataType.FRAME,
-				new MatrixCharacteristics(A.getNumRows(), A.getNumColumns()), FileFormat.CSV, ffpCSV);
+			writeDatasetSlice(dataset, fw, ffpCSV, "AH",
+				0,
+				dataset.getNumRows() / 2 - 1,
+				0,
+				dataset.getNumColumns() / 2 - 1);
 
-			FrameBlock B = new FrameBlock();
-			dataset.slice(0, dataset.getNumRows() - 1, dataset.getNumColumns() / 2, dataset.getNumColumns() - 1, B);
-			fw.writeFrameToHDFS(B, input("B"), B.getNumRows(), B.getNumColumns());
-			HDFSTool.writeMetaDataFile(input("B.mtd"), null, B.getSchema(), Types.DataType.FRAME,
-				new MatrixCharacteristics(B.getNumRows(), B.getNumColumns()), FileFormat.CSV, ffpCSV);
+			writeDatasetSlice(dataset, fw, ffpCSV, "AL",
+				dataset.getNumRows() / 2,
+				dataset.getNumRows() - 1,
+				0,
+				dataset.getNumColumns() / 2 - 1);
+
+			writeDatasetSlice(dataset, fw, ffpCSV, "BH",
+				0,
+				dataset.getNumRows() / 2 - 1,
+				dataset.getNumColumns() / 2,
+				dataset.getNumColumns() - 1);
+
+			writeDatasetSlice(dataset, fw, ffpCSV, "BL",
+				dataset.getNumRows() / 2,
+				dataset.getNumRows() - 1,
+				dataset.getNumColumns() / 2,
+				dataset.getNumColumns() - 1);
 
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[] {"-nvargs", "in_A=" + TestUtils.federatedAddress(port1, input("A")),
-				"in_B=" + TestUtils.federatedAddress(port2, input("B")), "rows=" + dataset.getNumRows(),
-				"cols_A=" + A.getNumColumns(), "cols_B=" + B.getNumColumns(), "TFSPEC=" + HOME + "input/" + SPEC,
-				"TFDATA1=" + output("tfout1"), "TFDATA2=" + output("tfout2"), "OFMT=csv"};
+			programArgs = new String[] {"-nvargs", "in_AH=" + TestUtils.federatedAddress(port1, input("AH")),
+				"in_AL=" + TestUtils.federatedAddress(port2, input("AL")),
+				"in_BH=" + TestUtils.federatedAddress(port3, input("BH")),
+				"in_BL=" + TestUtils.federatedAddress(port4, input("BL")), "rows=" + dataset.getNumRows(),
+				"cols=" + dataset.getNumColumns(), "TFSPEC=" + HOME + "input/" + SPEC, "TFDATA1=" + output("tfout1"),
+				"TFDATA2=" + output("tfout2"), "OFMT=csv"};
 
 			runTest(true, false, null, -1);
 
@@ -266,8 +280,18 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			throw new RuntimeException(ex);
 		}
 		finally {
-			TestUtils.shutdownThreads(t1, t2);
+			TestUtils.shutdownThreads(t1, t2, t3, t4);
 			resetExecMode(rtold);
 		}
+	}
+
+	private void writeDatasetSlice(FrameBlock dataset, FrameWriter fw, FileFormatPropertiesCSV ffpCSV, String name,
+		int rl, int ru, int cl, int cu) throws IOException {
+		FrameBlock AH = new FrameBlock();
+		dataset.slice(rl, ru, cl, cu, AH);
+		fw.writeFrameToHDFS(AH, input(name), AH.getNumRows(), AH.getNumColumns());
+		HDFSTool.writeMetaDataFile(input(DataExpression.getMTDFileName(name)), null, AH.getSchema(),
+			Types.DataType.FRAME, new MatrixCharacteristics(AH.getNumRows(), AH.getNumColumns()),
+			FileFormat.CSV, ffpCSV);
 	}
 }

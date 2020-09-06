@@ -128,7 +128,7 @@ public class EncoderDummycode extends Encoder
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderDummycode) {
 			mergeColumnInfo(other, col);
 
@@ -138,7 +138,7 @@ public class EncoderDummycode extends Encoder
 			Arrays.fill(_domainSizes, 0, _colList.length, 1);
 			return;
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 	
 	@Override

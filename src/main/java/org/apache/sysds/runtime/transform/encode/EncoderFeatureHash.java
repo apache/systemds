@@ -110,14 +110,14 @@ public class EncoderFeatureHash extends Encoder
 	}
 	
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderFeatureHash) {
 			mergeColumnInfo(other, col);
 			if (((EncoderFeatureHash) other)._K != 0 && _K == 0)
 				_K = ((EncoderFeatureHash) other)._K;
 			return;
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 	
 	@Override

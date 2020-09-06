@@ -169,7 +169,7 @@ public class EncoderBin extends Encoder
 	}
 	
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderBin) {
 			EncoderBin otherBin = (EncoderBin) other;
 
@@ -217,7 +217,7 @@ public class EncoderBin extends Encoder
 			}
 			return;
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 	
 	@Override

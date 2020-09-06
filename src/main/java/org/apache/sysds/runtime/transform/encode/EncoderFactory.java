@@ -104,7 +104,7 @@ public class EncoderFactory
 			if( !oIDs.isEmpty() )
 				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length, minCol, maxCol));
 			if( !mvIDs.isEmpty() ) {
-				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length);
+				EncoderMVImpute ma = new EncoderMVImpute(jSpec, colnames, schema.length, minCol, maxCol);
 				ma.initRecodeIDList(rcIDs);
 				lencoders.add(ma);
 			}

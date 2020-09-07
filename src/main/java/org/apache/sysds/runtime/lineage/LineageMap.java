@@ -75,8 +75,8 @@ public class LineageMap {
 	public void processDedupItem(LineageMap lm, Long path, LineageItem[] liinputs, String name) {
 		String delim = LineageDedupUtils.DEDUP_DELIM;
 		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
-			// Encode everything in the opcode needed by the deserialization logic
-			// to map this lineage item to the right patch.
+			// Encode everything needed by the recomputation logic in the
+			// opcode to map this lineage item to the right patch.
 			String opcode = LineageItem.dedupItemOpcode + delim + entry.getKey()
 				+ delim + name + delim + path.toString();
 			LineageItem li = new LineageItem(opcode, liinputs);

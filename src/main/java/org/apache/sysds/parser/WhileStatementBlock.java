@@ -255,6 +255,17 @@ public class WhileStatementBlock extends StatementBlock
 		_predicateLops = predicateLops;
 	}
 	
+	public ArrayList<String> getInputstoSB() {
+		// By calling getInputstoSB on all the child statement blocks,
+		// we remove the variables only read in the while predicate but
+		// never used in the body from the input list.
+		ArrayList<String> inputs = new ArrayList<>();
+		WhileStatement fstmt = (WhileStatement)_statements.get(0);
+		for (StatementBlock sb : fstmt.getBody())
+			inputs.addAll(sb.getInputstoSB());
+		return inputs;
+	}
+	
 	@Override
 	public VariableSet analyze(VariableSet loPassed) {
 		VariableSet predVars = new VariableSet();

@@ -278,6 +278,17 @@ public class ForStatementBlock extends StatementBlock
 	public Lop getToLops()        { return _toLops; }
 	public Lop getIncrementLops() { return _incrementLops; }
 
+	public ArrayList<String> getInputstoSB() {
+		// By calling getInputstoSB on all the child statement blocks,
+		// we remove the variables only read in the for predicate but
+		// never used in the body from the input list.
+		ArrayList<String> inputs = new ArrayList<>();
+		ForStatement fstmt = (ForStatement)_statements.get(0);
+		for (StatementBlock sb : fstmt.getBody())
+			inputs.addAll(sb.getInputstoSB());
+		return inputs;
+	}
+
 	@Override
 	public VariableSet analyze(VariableSet loPassed) {
  		

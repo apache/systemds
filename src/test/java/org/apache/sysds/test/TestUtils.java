@@ -877,7 +877,7 @@ public class TestUtils
 					distance = getPercentDistance(expectedMatrix[i][j], actualMatrix[i][j], ignoreZero);
 					sumPercentDistance += distance;
 					if(distance < percentDistanceAllowed){
-						message += (expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in percent " + distance);
+						message += ("\n"+ expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in percent " + distance);
 						countErrors++;
 					}
 				}

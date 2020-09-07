@@ -253,12 +253,16 @@ public abstract class ColGroup implements Serializable {
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a vector on the right.
 	 * 
-	 * @param vector vector to multiply by (tall vector)
-	 * @param c      accumulator for holding the result
-	 * @param rl     row lower
-	 * @param ru     row upper if the internal SystemML code that performs the multiplication experiences an error
+	 * @param vector   vector to multiply by (tall vector)
+	 * @param c        accumulator for holding the result
+	 * @param rl       row lower
+	 * @param ru       row upper if the internal SystemML code that performs the multiplication experiences an error
+	 * @param dictVals The dictionary values materialized
 	 */
-	public abstract void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru);
+	public abstract void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals);
+
+	public abstract void rightMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int rl,
+		int ru, int vOff);
 
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
@@ -293,7 +297,7 @@ public abstract class ColGroup implements Serializable {
 	 * @param numCols The number of columns in the colGroups parent matrix.
 	 * @param rl      The row to start the matrix multiplication from
 	 * @param ru      The row to stop the matrix multiplication at.
-	 * @param vOff    The offset into the first argument matrix to start at. 
+	 * @param vOff    The offset into the first argument matrix to start at.
 	 */
 	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int numRows,
 		int numCols, int rl, int ru, int vOff);

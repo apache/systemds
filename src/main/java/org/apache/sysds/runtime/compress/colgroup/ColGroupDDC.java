@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.util.Arrays;
 import java.util.Iterator;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -205,30 +206,13 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		return counts;
 	}
 
+
 	@Override
-	public void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru) {
-		double[] b = ColGroupConverter.getDenseVector(vector);
-		// double[] c = result.getDenseBlockValues();
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-
-		// prepare reduced rhs w/ relevant values
-		double[] sb = new double[numCols];
-		for(int j = 0; j < numCols; j++) {
-			sb[j] = b[_colIndexes[j]];
-		}
-
-		// pre-aggregate all distinct values
-		double[] vals = preaggValues(numVals, sb);
-
-		// iterative over codes and add to output
-		for(int i = rl; i < ru; i++) {
-			int index = getIndex(i);
-			if(index != numVals) { // Since we know that multiplying with 0 is .. 0 don't begin to aggregate.
-				c[i] += vals[index];
-			}
-		}
+	public void rightMultByMatrix(double[] b, double[] c, int numVals, double[] values, int rl, int ru, int vOff){
+		throw new NotImplementedException("Not Implemented");
+		// final int numCols = getNumCols();
 	}
+	
 
 	@Override
 	public void leftMultByMatrix(double[] a, double[] c, int numVals, double[] values, int numRows, int numCols, int rl,

@@ -27,6 +27,7 @@ import java.util.HashMap;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -88,6 +89,13 @@ public class ColGroupDDC1 extends ColGroupDDC {
 	 */
 	public byte[] getData() {
 		return _data;
+	}
+
+	@Override
+	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
+		final int numVals = getNumValues();
+		double[] vals = preaggValues(numVals, b, dictVals);
+		LinearAlgebraUtils.vectListAdd(vals, c, _data, rl, ru);
 	}
 
 	@Override

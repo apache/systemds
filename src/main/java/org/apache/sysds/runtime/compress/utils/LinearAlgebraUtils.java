@@ -24,8 +24,8 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * This library contains all vector primitives that are used in compressed linear algebra. For primitives that exist
- * in LibMatrixMult, these calls are simply forwarded to ensure consistency in performance and result correctness.
+ * This library contains all vector primitives that are used in compressed linear algebra. For primitives that exist in
+ * LibMatrixMult, these calls are simply forwarded to ensure consistency in performance and result correctness.
  */
 public class LinearAlgebraUtils {
 	// forwarded calls to LibMatrixMult
@@ -51,7 +51,16 @@ public class LinearAlgebraUtils {
 		LibMatrixMult.vectAdd(a, c, ai, ci, len);
 	}
 
-
+	/**
+	 * Add aval to a series of indexes in c.
+	 * 
+	 * @param aval the value to add
+	 * @param c    The output vector to add on
+	 * @param bix  The indexes. Note that it is char so it only supports adding to a block at a time.
+	 * @param bi   The index to start at inside bix.
+	 * @param ci   An Offset into c, to enable adding values to indexes that are higher than char size.
+	 * @param len  The number of indexes to take.
+	 */
 	public static void vectAdd(final double aval, double[] c, char[] bix, final int bi, final int ci, final int len) {
 		final int bn = len % 8;
 
@@ -71,6 +80,46 @@ public class LinearAlgebraUtils {
 			c[ci + bix[j + 7]] += aval;
 		}
 
+	}
+
+	public static void vectListAdd(final double[] values, double[] c, char[] bix, final int rl, final int ru) {
+		final int bn = (ru - rl) % 8;
+
+		// rest, not aligned to 8-blocks
+		for(int j = rl; j < rl + bn; j++)
+			c[j] += values[bix[j]];
+
+		// unrolled 8-block (for better instruction-level parallelism)
+		for(int j = rl + bn; j < ru; j += 8) {
+			c[j + 0] += values[bix[j + 0]];
+			c[j + 1] += values[bix[j + 1]];
+			c[j + 2] += values[bix[j + 2]];
+			c[j + 3] += values[bix[j + 3]];
+			c[j + 4] += values[bix[j + 4]];
+			c[j + 5] += values[bix[j + 5]];
+			c[j + 6] += values[bix[j + 6]];
+			c[j + 7] += values[bix[j + 7]];
+		}
+	}
+
+	public static void vectListAdd(final double[] values, double[] c, byte[] bix, final int rl, final int ru) {
+		final int bn = (ru - rl) % 8;
+
+		// rest, not aligned to 8-blocks
+		for(int j = rl; j < rl + bn; j++)
+			c[j] += values[bix[j] & 0xFF];
+
+		// unrolled 8-block (for better instruction-level parallelism)
+		for(int j = rl + bn; j < ru; j += 8) {
+			c[j + 0] += values[bix[j + 0] & 0xFF];
+			c[j + 1] += values[bix[j + 1] & 0xFF];
+			c[j + 2] += values[bix[j + 2] & 0xFF];
+			c[j + 3] += values[bix[j + 3] & 0xFF];
+			c[j + 4] += values[bix[j + 4] & 0xFF];
+			c[j + 5] += values[bix[j + 5] & 0xFF];
+			c[j + 6] += values[bix[j + 6] & 0xFF];
+			c[j + 7] += values[bix[j + 7] & 0xFF];
+		}
 	}
 
 	public static void vectAdd(final double aval, double[] c, final int ci, final int len) {

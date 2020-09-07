@@ -254,7 +254,7 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
-	public void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru) {
+	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
 		throw new NotImplementedException("Should not be called use other matrix function");
 	}
 
@@ -273,20 +273,43 @@ public class ColGroupUncompressed extends ColGroup {
 		LibMatrixMult.matrixMult(_data, shortVector, result,rl,ru);
 	}
 
+	public void rightMultByMatrix(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
+		// Pull out the relevant rows of the vector
+		// int clen = _colIndexes.length;
+
+		// MatrixBlock subMatrix = new MatrixBlock(clen, vector.getNumColumns(), false);
+		// subMatrix.allocateDenseBlock();
+		// double[] b = subMatrix.getDenseBlockValues();
+		// TODO Fix, to copy correctly
+		throw new NotImplementedException("Dense right block uncompressed column multiplication not implemented yet.");
+		// for(int colIx = 0; colIx < clen; colIx++)
+		// 	b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
+		// subMatrix.recomputeNonZeros();
+
+		// // Multiply the selected columns by the appropriate parts of the vector
+		// LibMatrixMult.matrixMult(_data, subMatrix, result);
+	}
+
+	@Override
+	public void rightMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int rl, int ru, int vOff){
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
+	}
+
 	@Override
 	public void leftMultByRowVector(double[] vector, double[] c, int numVals) {
-		throw new NotImplementedException("Should not be called use other matrix function");
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
 	@Override
 	public void leftMultByRowVector(double[] vector, double[] c, int numVals, double[] values) {
-		throw new NotImplementedException("Should not be called use other matrix function");
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
 	@Override
 	public void leftMultByMatrix(double[] vector, double[] c, int numVals, double[] values, int numRows, int numCols, int rl, int ru, int vOff) {
-		throw new NotImplementedException("Should not be called use other matrix function");
+		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
+
 
 	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result) {
 		MatrixBlock pret = new MatrixBlock(matrix.getNumRows(), _colIndexes.length, false);

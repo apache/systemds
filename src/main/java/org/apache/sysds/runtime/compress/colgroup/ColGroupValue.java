@@ -180,24 +180,29 @@ public abstract class ColGroupValue extends ColGroup {
 		return _dict.hasZeroTuple(_colIndexes.length);
 	}
 
-	protected final double sumValues(int valIx, double[] b, double[] values) {
+	protected final double sumValues(int valIx, double[] b, double[] dictVals) {
 		final int numCols = getNumCols();
 		final int valOff = valIx * numCols;
 		double val = 0;
 		for(int i = 0; i < numCols; i++)
-			val += values[valOff + i] * b[i];
+			val += dictVals[valOff + i] * b[_colIndexes[i]];
 		return val;
 	}
 
-	protected final double[] preaggValues(int numVals, double[] b) {
-		return preaggValues(numVals, b, false);
+	protected final double[] preaggValues(int numVals, double[] b, double[] dictVals) {
+		return preaggValues(numVals, b, false, dictVals);
 	}
 
-	protected final double[] preaggValues(int numVals, double[] b, boolean allocNew) {
-		double[] ret = allocNew ? new double[numVals] : allocDVector(numVals, false);
-		final double[] values = _dict.getValues();
-		for(int k = 0; k < numVals; k++)
-			ret[k] = sumValues(k, b, values);
+	protected final double[] preaggValues(int numVals, double[] b, boolean allocNew, double[] dictVals) {
+		// + 1 to enable containing a zero value. which we have added at the length of the arrays index.
+		double[] ret = allocNew ? new double[numVals +1 ] : allocDVector(numVals +1, false);
+		if(_colIndexes.length == 1){
+			for(int k = 0; k < numVals; k++)
+				ret[k] = dictVals[k] * b[_colIndexes[0]];
+		}else{
+			for(int k = 0; k < numVals; k++)
+				ret[k] = sumValues(k, b, dictVals);
+		}
 
 		return ret;
 	}

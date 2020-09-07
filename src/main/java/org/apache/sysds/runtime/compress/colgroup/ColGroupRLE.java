@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
@@ -260,21 +261,8 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru) {
-		double[] b = ColGroupConverter.getDenseVector(vector);
-		// double[] c = result.getDenseBlockValues();
-		if(c == null) {
-
-			throw new NullPointerException("Result vector not available");
-		}
-		final int numCols = getNumCols();
+	public void rightMultByVector(double[] b , double[] c, int rl, int ru, double[] dictVals) {
 		final int numVals = getNumValues();
-
-		// prepare reduced rhs w/ relevant values
-		double[] sb = new double[numCols];
-		for(int j = 0; j < numCols; j++) {
-			sb[j] = b[_colIndexes[j]];
-		}
 
 		if(numVals >= 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
 			// L3 cache alignment, see comment rightMultByVector OLE column group
@@ -287,7 +275,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			// current pos / values per RLE list
 			int[] astart = new int[numVals];
 			int[] apos = skipScan(numVals, rl, astart);
-			double[] aval = preaggValues(numVals, sb);
+			double[] aval = preaggValues(numVals, b,dictVals);
 
 			// step 2: cache conscious matrix-vector via horizontal scans
 			for(int bi = rl; bi < ru; bi += blksz) {
@@ -324,7 +312,7 @@ public class ColGroupRLE extends ColGroupOffset {
 			for(int k = 0; k < numVals; k++) {
 				int boff = _ptr[k];
 				int blen = len(k);
-				double val = sumValues(k, sb, _dict.getValues());
+				double val = sumValues(k, b, dictVals);
 				int bix = 0;
 				int start = 0;
 
@@ -355,6 +343,11 @@ public class ColGroupRLE extends ColGroupOffset {
 				}
 			}
 		}
+	}
+
+	@Override
+	public void rightMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int rl, int ru, int vOff){
+		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override

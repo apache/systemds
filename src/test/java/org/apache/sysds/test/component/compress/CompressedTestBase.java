@@ -50,6 +50,7 @@ import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -451,6 +452,46 @@ public abstract class CompressedTestBase extends TestBase {
 
 			// vector-matrix compressed
 			MatrixBlock ret2 = cmb.aggregateBinaryOperations(matrix, cmb, new MatrixBlock(), abop);
+
+			// compare result with input
+			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
+			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+			if(compressionSettings.lossy) {
+				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.96, compressionSettings.toString());
+			}
+			else {
+				if(rows > 65000) {
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.01, 0.99, compressionSettings.toString());
+				}
+				else {
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 10000, 500, compressionSettings.toString());
+				}
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+		}
+	}
+
+	@Test
+	@Ignore
+	public void testRightMatrixMatrixMultSmall() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return; // Input was not compressed then just pass test
+
+			MatrixBlock matrix = DataConverter
+				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 2, 0.9, 1.5, 1.0, 3));
+
+			// Make Operator
+			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
+
+			// vector-matrix uncompressed
+			MatrixBlock ret1 = mb.aggregateBinaryOperations(mb, matrix, new MatrixBlock(), abop);
+
+			// vector-matrix compressed
+			MatrixBlock ret2 = cmb.aggregateBinaryOperations(cmb, matrix, new MatrixBlock(), abop);
 
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);

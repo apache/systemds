@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -185,6 +186,14 @@ public class CompressedMatrixBlockFactory {
 		LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
 		LOG.debug("--compressed size: " + _stats.size);
 		LOG.debug("--compression ratio: " + _stats.ratio);
+
+		if( LOG.isTraceEnabled()){
+			for (ColGroup colGroup : colGroupList) {
+				LOG.trace("--colGroups colIndexes : " + Arrays.toString(colGroup.getColIndices()));
+				LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName());
+				LOG.trace("--colGroups Values     : " + Arrays.toString(colGroup.getValues()));
+			}
+		}
 
 		return new ImmutablePair<>(res, _stats);
 		// --------------------------------------------------

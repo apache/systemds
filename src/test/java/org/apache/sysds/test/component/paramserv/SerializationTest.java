@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.paramserv;
 
+import java.io.*;
 import java.util.Arrays;
 
 import org.junit.Assert;
@@ -31,6 +32,32 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.ProgramConverter;
 
 public class SerializationTest {
+
+	@Test
+	public void serializeMatrixObject() {
+		MatrixObject mo1 = generateDummyMatrix(10);
+		MatrixObject mo1Deserialized = null;
+
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ObjectOutputStream out;
+
+		try {
+			out = new ObjectOutputStream(bos);
+			out.writeObject(mo1);
+			out.flush();
+			byte[] mo1Bytes = bos.toByteArray();
+
+			ByteArrayInputStream bis = new ByteArrayInputStream(mo1Bytes);
+			ObjectInput in = new ObjectInputStream(bis);
+			mo1Deserialized = (MatrixObject) in.readObject();
+		}
+	   	catch(Exception e){
+			assert(false);
+		}
+
+		Assert.assertTrue(Arrays.equals(mo1.acquireReadAndRelease().getDenseBlockValues(), mo1Deserialized.acquireReadAndRelease().getDenseBlockValues()));
+		Assert.assertEquals(mo1.getDataCharacteristics().getCols(), mo1Deserialized.getDataCharacteristics().getCols());
+	}
 
 	@Test
 	public void serializeUnnamedListObject() {

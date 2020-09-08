@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
-import java.io.IOException;
+import java.io.*;
 import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -35,11 +35,13 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -61,10 +63,10 @@ import org.apache.sysds.runtime.util.IndexRange;
  * {@link MatrixBlock} object without informing its {@link MatrixObject} object.
  * 
  */
-public class MatrixObject extends CacheableData<MatrixBlock>
+public class MatrixObject extends CacheableData<MatrixBlock> implements Externalizable
 {
 	private static final long serialVersionUID = 6374712373206495637L;
-	
+
 	public enum UpdateType {
 		COPY,
 		INPLACE,
@@ -85,7 +87,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
-	
+
+	/**
+	 * No op constructor for Externalizable interface
+	 */
+	public MatrixObject () {
+		super(DataType.MATRIX, ValueType.UNKNOWN);
+	}
+
 	/**
 	 * Constructor that takes the value type and the HDFS filename.
 	 * 
@@ -593,5 +602,63 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		//lazy evaluation of pending transformations.
 		long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(rdd, fname, fmt);
 		_metaData.getDataCharacteristics().setNonZeros(newnnz);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		// redirect serialization to writable impl
+		// out.writeObject(getDataType());
+		// out.writeObject(getValueType());
+		out.writeUTF(getFileName());
+
+		MetaDataFormat md = (MetaDataFormat) getMetaData();
+		DataCharacteristics dc = md.getDataCharacteristics();
+		ParForProgramBlock.PartitionFormat partFormat = (getPartitionFormat()!=null) ? new ParForProgramBlock.PartitionFormat(
+				getPartitionFormat(),getPartitionSize()) : ParForProgramBlock.PartitionFormat.NONE;
+
+		out.writeObject(dc.getRows());
+		out.writeObject(dc.getCols());
+		out.writeObject(dc.getBlocksize());
+		out.writeObject(dc.getNonZeros());
+		out.writeObject(md.getFileFormat());
+		out.writeObject(partFormat);
+		out.writeObject(getUpdateType());
+		out.writeObject(isHDFSFileExists());
+		out.writeObject(isCleanupEnabled());
+
+		// pin and serialize MatrixBlock
+		out.writeObject(acquireReadAndRelease());
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		// redirect deserialization to writable impl
+		// read everything in
+		// DataType dataType = (DataType) in.readObject();
+		// ValueType valueType = (ValueType) in.readObject();
+		String fileName = in.readUTF();
+
+		long rows = (long) in.readObject();
+		long cols = (long) in.readObject();
+		int blockSize = (int) in.readObject();
+		long nonZeros = (long) in.readObject();
+		FileFormat fileFormat = (FileFormat) in.readObject();
+		ParForProgramBlock.PartitionFormat partFormat = (ParForProgramBlock.PartitionFormat) in.readObject();
+		UpdateType updateType = (UpdateType) in.readObject();
+		Boolean isHDFSFileExists = (Boolean) in.readObject();
+		Boolean isCleanupEnabled = (Boolean) in.readObject();
+		MatrixBlock matrixBlock = (MatrixBlock) in.readObject();
+
+		// construct objects and set data
+		_hdfsFileName = fileName;
+		MatrixCharacteristics matrixCharacteristics = new MatrixCharacteristics(rows, cols, blockSize, nonZeros);
+		MetaDataFormat metaDataFormat = new MetaDataFormat(matrixCharacteristics, fileFormat);
+		setMetaData(metaDataFormat);
+		if(partFormat._dpf != PDataPartitionFormat.NONE )
+			setPartitioned( partFormat._dpf, partFormat._N );
+		setUpdateType(updateType);
+		setHDFSFileExists(isHDFSFileExists);
+		enableCleanup(isCleanupEnabled);
+		_data = matrixBlock;
 	}
 }

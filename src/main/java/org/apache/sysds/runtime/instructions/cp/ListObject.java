@@ -19,17 +19,30 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 
-public class ListObject extends Data {
+public class ListObject extends Data implements Externalizable {
 	private static final long serialVersionUID = 3652422061598967358L;
 
 	private final List<Data> _data;
@@ -37,6 +50,14 @@ public class ListObject extends Data {
 	private List<String> _names = null;
 	private int _nCacheable;
 	private List<LineageItem> _lineage = null;
+
+	/*
+	 * No op constructor for Externalizable interface
+	 */
+	public ListObject() {
+		super(DataType.LIST, ValueType.UNKNOWN);
+		_data = new ArrayList<>();
+	}
 	
 	public ListObject(List<Data> data) {
 		this(data, null, null);
@@ -279,5 +300,121 @@ public class ListObject extends Data {
 		}
 		sb.append(")");
 		return sb.toString();
+	}
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd serialization.
+	 *
+	 * @param out object output
+	 * @throws IOException if IOException occurs
+	 */
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		// write out length
+		out.writeInt(getLength());
+
+		// write out names for named list
+		out.writeBoolean(getNames() != null);
+		if(getNames() != null) {
+			for (int i = 0; i < getLength(); i++) {
+				out.writeObject(_names.get(i));
+			}
+		}
+
+		// write out data
+		for(int i = 0; i < getLength(); i++) {
+			Data d = getData(i);
+			out.writeObject(d.getDataType());
+			out.writeObject(d.getValueType());
+			switch(d.getDataType()) {
+				case LIST:
+					ListObject lo = (ListObject) d;
+					out.writeObject(lo);
+					break;
+				case MATRIX:
+					MatrixObject mo = (MatrixObject) d;
+					MetaDataFormat md = (MetaDataFormat) mo.getMetaData();
+					DataCharacteristics dc = md.getDataCharacteristics();
+
+					out.writeObject(dc.getRows());
+					out.writeObject(dc.getCols());
+					out.writeObject(dc.getBlocksize());
+					out.writeObject(dc.getNonZeros());
+					out.writeObject(md.getFileFormat());
+					out.writeObject(mo.acquireReadAndRelease());
+					break;
+				case SCALAR:
+					ScalarObject so = (ScalarObject) d;
+					out.writeObject(so.getStringValue());
+					break;
+				default:
+					throw new DMLRuntimeException("Unable to serialize datatype " + dataType);
+			}
+		}
+	}
+
+	/**
+	 * Redirects the default java serialization via externalizable to our default
+	 * hadoop writable serialization for efficient broadcast/rdd deserialization.
+	 *
+	 * @param in object input
+	 * @throws IOException if IOException occurs
+	 */
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		// read in length
+		int length = in.readInt();
+
+		// read in names
+		Boolean names = in.readBoolean();
+		if(names) {
+			_names = new ArrayList<>();
+			for (int i = 0; i < length; i++) {
+				_names.add((String) in.readObject());
+			}
+		}
+
+		// read in data
+		for(int i = 0; i < length; i++) {
+			DataType dataType = (DataType) in.readObject();
+			ValueType valueType = (ValueType) in.readObject();
+			Data d;
+			switch(dataType) {
+				case LIST:
+					d = (ListObject) in.readObject();
+					break;
+				case MATRIX:
+					long rows = (long) in.readObject();
+					long cols = (long) in.readObject();
+					int blockSize = (int) in.readObject();
+					long nonZeros = (long) in.readObject();
+					Types.FileFormat fileFormat = (Types.FileFormat) in.readObject();
+
+					// construct objects and set meta data
+					MatrixCharacteristics matrixCharacteristics = new MatrixCharacteristics(rows, cols, blockSize, nonZeros);
+					MetaDataFormat metaDataFormat = new MetaDataFormat(matrixCharacteristics, fileFormat);
+					MatrixBlock matrixBlock = (MatrixBlock) in.readObject();
+
+					d = new MatrixObject(valueType, Dag.getNextUniqueVarname(Types.DataType.MATRIX), metaDataFormat, matrixBlock);
+					break;
+				case SCALAR:
+					String value = (String) in.readObject();
+					ScalarObject so;
+					switch (valueType) {
+						case INT64:     so = new IntObject(Long.parseLong(value)); break;
+						case FP64:  	so = new DoubleObject(Double.parseDouble(value)); break;
+						case BOOLEAN: 	so = new BooleanObject(Boolean.parseBoolean(value)); break;
+						case STRING:  	so = new StringObject(value); break;
+						default:
+							throw new DMLRuntimeException("Unable to parse valuetype " + valueType);
+					}
+					d = so;
+					break;
+				default:
+					throw new DMLRuntimeException("Unable to deserialize datatype " + dataType);
+			}
+			_data.add(d);
+		}
 	}
 }

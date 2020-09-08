@@ -20,8 +20,8 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
@@ -38,8 +38,7 @@ public class CompressedSizeInfoColGroup {
 	private final CompressionType _bestCompressionType;
 	private final Map<CompressionType, Long> _sizes;
 
-	public CompressedSizeInfoColGroup(CompressedSizeEstimationFactors fact,
-		List<CompressionType> validCompressionTypes) {
+	public CompressedSizeInfoColGroup(EstimationFactors fact, Set<CompressionType> validCompressionTypes) {
 		_numVals = fact.numVals;
 		_numOffs = fact.numOffs;
 		_sizes = calculateCompressionSizes(fact, validCompressionTypes);
@@ -86,8 +85,8 @@ public class CompressedSizeInfoColGroup {
 		return _numOffs;
 	}
 
-	private static Map<CompressionType, Long> calculateCompressionSizes(CompressedSizeEstimationFactors fact,
-		List<CompressionType> validCompressionTypes) {
+	private static Map<CompressionType, Long> calculateCompressionSizes(EstimationFactors fact,
+		Set<CompressionType> validCompressionTypes) {
 		Map<CompressionType, Long> res = new HashMap<>();
 		for(CompressionType ct : validCompressionTypes) {
 			res.put(ct, getCompressionSize(ct, fact));
@@ -95,26 +94,24 @@ public class CompressedSizeInfoColGroup {
 		return res;
 	}
 
-	private static Long getCompressionSize(CompressionType ct, CompressedSizeEstimationFactors fact) {
+	private static Long getCompressionSize(CompressionType ct, EstimationFactors fact) {
 		long size = 0;
 		switch(ct) {
 			case DDC:
 				if(fact.numVals < 256) {
-					size = ColGroupSizes.estimateInMemorySizeDDC1(fact.numCols,
-						fact.numVals + (fact.containsZero ? 1 : 0),
-						fact.numRows);
+					size = ColGroupSizes.estimateInMemorySizeDDC1(fact.numCols, fact.numVals, fact.numRows, fact.lossy);
 				}
 				else {
-					size = ColGroupSizes.estimateInMemorySizeDDC2(fact.numCols,
-						fact.numVals + (fact.containsZero ? 1 : 0),
-						fact.numRows);
+					size = ColGroupSizes.estimateInMemorySizeDDC2(fact.numCols, fact.numVals, fact.numRows, fact.lossy);
 				}
 				break;
 			case RLE:
-				size = ColGroupSizes.estimateInMemorySizeRLE(fact.numCols, fact.numVals, fact.numRuns, fact.numRows);
+				size = ColGroupSizes
+					.estimateInMemorySizeRLE(fact.numCols, fact.numVals, fact.numRuns, fact.numRows, fact.lossy);
 				break;
 			case OLE:
-				size = ColGroupSizes.estimateInMemorySizeOLE(fact.numCols, fact.numVals, fact.numOffs, fact.numRows);
+				size = ColGroupSizes
+					.estimateInMemorySizeOLE(fact.numCols, fact.numVals, fact.numOffs, fact.numRows, fact.lossy);
 				break;
 			case UNCOMPRESSED:
 				size = ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows,

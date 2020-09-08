@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -41,10 +43,16 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class CompressedVectorTest extends CompressedTestBase {
 
+	private final int _k = 1;
+
 	protected static MatrixTypology[] usedMatrixTypologyLocal = new MatrixTypology[] {// types
 		MatrixTypology.SINGLE_COL,
 		// MatrixTypology.SINGLE_COL_L
 	};
+
+	protected int getK() {
+		return _k;
+	}
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -65,7 +73,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compSettings, MatrixTypology matrixTypology) {
-		super(sparType, valType, valRange, compSettings, matrixTypology);
+		super(sparType, valType, valRange, compSettings, matrixTypology, 1);
 	}
 
 	@Test
@@ -83,11 +91,19 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 			// quantile compressed
 			double ret2 = cmb.cmOperations(cm).getRequiredResult(opType);
-			// compare result with input allowing 1 bit difference in least significant location
-			TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
 
+			if(compressionSettings.lossy) {
+				double tol = lossyTolerance * 10;
+				assertTrue(
+					this.toString() + ": values uncomprssed: " + ret1 + "vs compressed: " + ret2 + " tolerance " + tol,
+					TestUtils.compareCellValue(ret1, ret2, tol, false));
+			}
+			else {
+				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 64));
+			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new Exception(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}
@@ -103,10 +119,15 @@ public class CompressedVectorTest extends CompressedTestBase {
 			MatrixBlock tmp2 = cmb.sortOperations(null, new MatrixBlock());
 			double ret2 = tmp2.pickValue(0.95);
 
-			// compare result with input
-			TestUtils.compareScalarBitsJUnit(ret1, ret2, 64);
+			if(compressionSettings.lossy) {
+				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
+			}
+			else {
+				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 64));
+			}
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
 	}

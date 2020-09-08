@@ -22,10 +22,7 @@ package org.apache.sysds.runtime.compress;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-/**
- * 
- * considers only a subset of row indexes
- */
+/** considers only a subset of row indexes */
 public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection {
 	protected MatrixBlock _data;
 
@@ -33,32 +30,19 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection {
 	private int lastIndex = -1;
 
 	// reusable return
-	private DblArray nonZeroReturn;
 	private DblArray reusableReturn;
 	private double[] reusableArr;
 
 	public ReaderColumnSelectionDenseSample(MatrixBlock data, int[] colIndexes, int[] sampleIndexes,
-		boolean skipZeros, CompressionSettings compSettings) {
-		super(colIndexes, -1, skipZeros, compSettings);
+		CompressionSettings compSettings) {
+		super(colIndexes, -1, compSettings);
 		_data = data;
 		_sampleIndexes = sampleIndexes;
 		reusableArr = new double[colIndexes.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
 
-	@Override
-	public DblArray nextRow() {
-		if(_skipZeros) {
-			while((nonZeroReturn = getNextRow()) != null && DblArray.isZero(nonZeroReturn)) {
-			}
-			return nonZeroReturn;
-		}
-		else {
-			return getNextRow();
-		}
-	}
-
-	private DblArray getNextRow() {
+	protected DblArray getNextRow() {
 		if(lastIndex == _sampleIndexes.length - 1)
 			return null;
 		lastIndex++;
@@ -72,10 +56,5 @@ public class ReaderColumnSelectionDenseSample extends ReaderColumnSelection {
 	@Override
 	public int getCurrentRowIndex() {
 		return _sampleIndexes[lastIndex];
-	}
-
-	@Override
-	public void reset() {
-		lastIndex = -1;
 	}
 }

@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -53,8 +54,8 @@ public class ColGroupUncompressed extends ColGroup {
 	 */
 	private MatrixBlock _data;
 
-	public ColGroupUncompressed() {
-		super(new int[] {}, -1);
+	protected ColGroupUncompressed() {
+		super();
 	}
 
 	public long getValuesSize() {
@@ -70,7 +71,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param compSettings   The Settings for how to compress this block, Here using information about the raw block if
 	 *                       it is transposed.
 	 */
-	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, CompressionSettings compSettings) {
+	protected ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, CompressionSettings compSettings) {
 		super(colIndicesList, compSettings.transposeInput ? rawBlock.getNumColumns() : rawBlock.getNumRows());
 
 		// prepare meta data
@@ -97,9 +98,8 @@ public class ColGroupUncompressed extends ColGroup {
 		int n = _colIndexes.length;
 		for(int i = 0; i < m; i++) {
 			for(int j = 0; j < n; j++) {
-				double val = compSettings.transposeInput ?
-					rawBlock.quickGetValue(_colIndexes[j], i) :
-					rawBlock.quickGetValue(i, _colIndexes[j]);
+				double val = compSettings.transposeInput ? rawBlock.quickGetValue(_colIndexes[j], i) : rawBlock
+					.quickGetValue(i, _colIndexes[j]);
 				_data.appendValue(i, j, val);
 			}
 		}
@@ -116,7 +116,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * 
 	 * @param groupsToDecompress compressed columns to subsume. Must contain at least one element.
 	 */
-	public ColGroupUncompressed(List<ColGroup> groupsToDecompress) {
+	protected ColGroupUncompressed(List<ColGroup> groupsToDecompress) {
 		super(mergeColIndices(groupsToDecompress), groupsToDecompress.get(0)._numRows);
 
 		// Invert the list of column indices
@@ -141,7 +141,7 @@ public class ColGroupUncompressed extends ColGroup {
 	 * @param numRows    number of rows in the column, for passing to the superclass
 	 * @param data       matrix block
 	 */
-	public ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) {
+	protected ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) {
 		super(colIndices, numRows);
 		_data = data;
 	}
@@ -254,6 +254,10 @@ public class ColGroupUncompressed extends ColGroup {
 	}
 
 	@Override
+	public void rightMultByVector(MatrixBlock vector, double[] c, int rl, int ru) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
 		// Pull out the relevant rows of the vector
 		int clen = _colIndexes.length;
@@ -266,41 +270,27 @@ public class ColGroupUncompressed extends ColGroup {
 		shortVector.recomputeNonZeros();
 
 		// Multiply the selected columns by the appropriate parts of the vector
-		LibMatrixMult.matrixMult(_data, shortVector, result, rl, ru);
-	}
-
-	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int k) {
-		// Pull out the relevant rows of the vector
-		int clen = _colIndexes.length;
-
-		MatrixBlock shortVector = new MatrixBlock(clen, 1, false);
-		shortVector.allocateDenseBlock();
-		double[] b = shortVector.getDenseBlockValues();
-		for(int colIx = 0; colIx < clen; colIx++)
-			b[colIx] = vector.quickGetValue(_colIndexes[colIx], 0);
-		shortVector.recomputeNonZeros();
-
-		// Multiply the selected columns by the appropriate parts of the vector
-		LibMatrixMult.matrixMult(_data, shortVector, result, k);
+		LibMatrixMult.matrixMult(_data, shortVector, result,rl,ru);
 	}
 
 	@Override
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result) {
-		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
-		LibMatrixMult.matrixMult(vector, _data, pret);
-
-		// copying partialResult to the proper indices of the result
-		if(!pret.isEmptyBlock(false)) {
-			double[] rsltArr = result.getDenseBlockValues();
-			for(int colIx = 0; colIx < _colIndexes.length; colIx++)
-				rsltArr[_colIndexes[colIx]] = pret.quickGetValue(0, colIx);
-			result.recomputeNonZeros();
-		}
+	public void leftMultByRowVector(double[] vector, double[] c, int numVals) {
+		throw new NotImplementedException("Should not be called use other matrix function");
 	}
 
-	public void leftMultByRowVector(MatrixBlock vector, MatrixBlock result, int k) {
-		MatrixBlock pret = new MatrixBlock(1, _colIndexes.length, false);
-		LibMatrixMult.matrixMult(vector, _data, pret, k);
+	@Override
+	public void leftMultByRowVector(double[] vector, double[] c, int numVals, double[] values) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
+	@Override
+	public void leftMultByMatrix(double[] vector, double[] c, int numVals, double[] values, int numRows, int numCols, int rl, int ru, int vOff) {
+		throw new NotImplementedException("Should not be called use other matrix function");
+	}
+
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result) {
+		MatrixBlock pret = new MatrixBlock(matrix.getNumRows(), _colIndexes.length, false);
+		LibMatrixMult.matrixMult(matrix, _data, pret);
 
 		// copying partialResult to the proper indices of the result
 		if(!pret.isEmptyBlock(false)) {
@@ -319,11 +309,14 @@ public class ColGroupUncompressed extends ColGroup {
 		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
 	}
 
-	@Override
+	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] ret) {
+		throw new NotImplementedException("Should not be called");
+	}
+
 	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock ret) {
 		// execute unary aggregate operations
 		LibMatrixAgg.aggregateUnaryMatrix(_data, ret, op);
-
+		ret = ret.allocateBlock();
 		// shift result into correct column indexes
 		if(op.indexFn instanceof ReduceRow) {
 			// shift partial results, incl corrections
@@ -339,6 +332,11 @@ public class ColGroupUncompressed extends ColGroup {
 					}
 			}
 		}
+	}
+
+	@Override
+	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] result, int rl, int ru) {
+		throw new NotImplementedException("Unimplemented Specific Sub ColGroup Aggregation Operation");
 	}
 
 	@Override
@@ -470,4 +468,30 @@ public class ColGroupUncompressed extends ColGroup {
 		sb.append(_data.toString());
 		return sb.toString();
 	}
+
+	@Override
+	public MatrixBlock getValuesAsBlock() {
+		return _data;
+	}
+
+	@Override
+	public boolean getIfCountsType() {
+		return false;
+	}
+
+	@Override
+	public double[] getValues() {
+		if(_data.isInSparseFormat()) {
+			return _data.getSparseBlock().values(0);
+		}
+		else {
+			return _data.getDenseBlock().values(0);
+		}
+	}
+
+	@Override
+	public boolean isLossy() {
+		return false;
+	}
+
 }

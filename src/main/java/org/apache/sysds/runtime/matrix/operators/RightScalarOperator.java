@@ -39,6 +39,10 @@ public class RightScalarOperator extends ScalarOperator
 	private static final long serialVersionUID = 5148300801904349919L;
 	
 	public RightScalarOperator(ValueFunction p, double cst) {
+		this(p, cst, 1);
+	}
+
+	public RightScalarOperator(ValueFunction p, double cst, int numThreads){
 		super(p, cst, (p instanceof GreaterThan && cst>=0)
 			|| (p instanceof GreaterThanEquals && cst>0)
 			|| (p instanceof LessThan && cst<=0)
@@ -46,12 +50,18 @@ public class RightScalarOperator extends ScalarOperator
 			|| (p instanceof Divide && cst!=0)
 			|| (p instanceof Power && cst!=0)
 			|| (Builtin.isBuiltinCode(p, BuiltinCode.MAX) && cst<=0)
-			|| (Builtin.isBuiltinCode(p, BuiltinCode.MIN) && cst>=0));
+			|| (Builtin.isBuiltinCode(p, BuiltinCode.MIN) && cst>=0), 
+			numThreads);
 	}
 
 	@Override
 	public ScalarOperator setConstant(double cst) {
 		return new RightScalarOperator(fn, cst);
+	}
+
+	@Override
+	public ScalarOperator setConstant(double cst, int numThreads) {
+		return new RightScalarOperator(fn, cst, numThreads);
 	}
 	
 	@Override

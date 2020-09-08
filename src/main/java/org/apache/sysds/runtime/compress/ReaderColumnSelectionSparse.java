@@ -32,8 +32,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * zero-value in a sparse matrix like any other value.
  */
 public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
-	private final DblArray ZERO_DBL_ARRAY;
-	private DblArray nonZeroReturn;
 
 	// reusable return
 	private DblArray reusableReturn;
@@ -43,11 +41,10 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 	private SparseRow[] sparseCols = null;
 	private int[] sparsePos = null;
 
-	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, boolean skipZeros, CompressionSettings compSettings) {
-		super(colIndexes, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), skipZeros, compSettings);
-		ZERO_DBL_ARRAY = new DblArray(new double[colIndexes.length], true);
+	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, CompressionSettings compSettings) {
+		super(colIndexes, compSettings.transposeInput ? data.getNumColumns() : data.getNumRows(), compSettings);
 		reusableArr = new double[colIndexes.length];
-		reusableReturn = new DblArray(reusableArr);
+		reusableReturn = null;
 
 		if(!_compSettings.transposeInput) {
 			throw new RuntimeException("SparseColumnSelectionReader should not be used without transposed input.");
@@ -60,19 +57,7 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 				sparseCols[i] = data.getSparseBlock().get(colIndexes[i]);
 	}
 
-	@Override
-	public DblArray nextRow() {
-		if(_skipZeros) {
-			while((nonZeroReturn = getNextRow()) != null && nonZeroReturn == ZERO_DBL_ARRAY) {
-			}
-			return nonZeroReturn;
-		}
-		else {
-			return getNextRow();
-		}
-	}
-
-	private DblArray getNextRow() {
+	protected DblArray getNextRow() {
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
@@ -98,6 +83,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 				zeroResult = false;
 			}
 
-		return zeroResult ? ZERO_DBL_ARRAY : reusableReturn;
+		return zeroResult ? null : reusableReturn;
 	}
 }

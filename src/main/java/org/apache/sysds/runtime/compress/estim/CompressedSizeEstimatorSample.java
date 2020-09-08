@@ -19,22 +19,17 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
 import org.apache.sysds.runtime.compress.estim.sample.HassAndStokes;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
-
-	private static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorSample.class.getName());
 
 	private int[] _sampleRows = null;
 	private HashMap<Integer, Double> _solveCache = null;
@@ -48,19 +43,14 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	 */
 	public CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings compSettings, int sampleSize) {
 		super(data, compSettings);
-		// get sample of rows, incl eager extraction
-		if(_numRows < sampleSize) {
-			throw new DMLRuntimeException("SampleSize should always be less than number of rows");
-		}
 
 		_sampleRows = getSortedUniformSample(_numRows, sampleSize, _compSettings.seed);
 
-		if(CompressedSizeEstimatorFactory.EXTRACT_SAMPLE_ONCE) {
-			MatrixBlock select = new MatrixBlock(_numRows, 1, false);
-			for(int i = 0; i < sampleSize; i++)
-				select.quickSetValue(_sampleRows[i], 0, 1);
-			_data = _data.removeEmptyOperations(new MatrixBlock(), !_compSettings.transposeInput, true, select);
-		}
+		// Override the _data Matrix block with the sampled matrix block.
+		MatrixBlock select = new MatrixBlock(_numRows, 1, false);
+		for(int i = 0; i < sampleSize; i++)
+			select.quickSetValue(_sampleRows[i], 0, 1);
+		_data = _data.removeEmptyOperations(new MatrixBlock(), !_compSettings.transposeInput, true, select);
 
 		// establish estimator-local cache for numeric solve
 		_solveCache = new HashMap<>();
@@ -73,58 +63,49 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		int[] sampleRows = _sampleRows;
 
 		// extract statistics from sample
-		UncompressedBitmap ubm = CompressedSizeEstimatorFactory.EXTRACT_SAMPLE_ONCE ? BitmapEncoder
-			.extractBitmap(colIndexes, _data, _compSettings) : BitmapEncoder
-				.extractBitmapFromSample(colIndexes, _data, sampleRows, _compSettings);
-		CompressedSizeEstimationFactors fact = CompressedSizeEstimationFactors
-			.computeSizeEstimationFactors(ubm, false, _numRows, numCols);
+		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _compSettings);
+		EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, numCols);
 
 		// estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
+		// TODO Replace this with lib matrix/data/LibMatrixCountDistinct
 		int totalCardinality = getNumDistinctValues(ubm, _numRows, sampleRows, _solveCache);
 		totalCardinality = Math.max(totalCardinality, fact.numVals);
+		totalCardinality =  _compSettings.lossy ? Math.min(totalCardinality, numCols * 127) : totalCardinality;
 		totalCardinality = Math.min(totalCardinality, _numRows);
 
-		// estimate unseen values
-		int unseenVals = totalCardinality - fact.numVals;
+		// Number of unseen values
+		// int unseenVals = totalCardinality - fact.numVals;
+
+		// Note this numZeros is the count of rows that are all zero.
+		int numZeros = ubm.getZeroCounts();
 
 		// estimate number of non-zeros (conservatively round up)
 		double C = Math.max(1 - (double) fact.numSingle / sampleSize, (double) sampleSize / _numRows);
-		int numZeros = sampleSize - fact.numOffs; // >=0
+
 		int numNonZeros = (int) Math.ceil(_numRows - (double) _numRows / sampleSize * C * numZeros);
 		numNonZeros = Math.max(numNonZeros, totalCardinality); // handle anomaly of zi=0
-
-		if(totalCardinality <= 0 || unseenVals < 0 || numZeros < 0 || numNonZeros <= 0)
-			LOG.warn("Invalid estimates detected for " + Arrays.toString(colIndexes) + ": " + totalCardinality + " "
-				+ unseenVals + " " + numZeros + " " + numNonZeros);
 
 		// estimate number of segments and number of runs incl correction for
 		// empty segments and empty runs (via expected mean of offset value)
 		// int numUnseenSeg = (int) (unseenVals * Math.ceil((double) _numRows / BitmapEncoder.BITMAP_BLOCK_SZ / 2));
-		int totalNumRuns = getNumRuns(ubm, sampleSize, _numRows, sampleRows);
+		int totalNumRuns = ubm.getNumValues() > 0 ? getNumRuns(ubm, sampleSize, _numRows, sampleRows) : 0;
 
-		// TODO. Make it possible to detect if the values contains a 0.
-		// Same case as in the Exact estimator, there is no way of knowing currently if a specific column or row
-		// contains
-		// a 0.
-		boolean containsZero = false;
+		boolean containsZero = numZeros > 0;
 
-		CompressedSizeEstimationFactors totalFacts = new CompressedSizeEstimationFactors(numCols, totalCardinality,
-			numNonZeros, totalNumRuns, fact.numSingle, _numRows, containsZero);
+		EstimationFactors totalFacts = new EstimationFactors(numCols, totalCardinality, numNonZeros, totalNumRuns,
+			fact.numSingle, _numRows, containsZero, ubm.getType() == BitmapType.Lossy);
 
 		// construct new size info summary
 		return new CompressedSizeInfoColGroup(totalFacts, _compSettings.validCompressions);
 	}
 
-	private static int getNumDistinctValues(UncompressedBitmap ubm, int numRows, int[] sampleRows,
+	private static int getNumDistinctValues(ABitmap ubm, int numRows, int[] sampleRows,
 		HashMap<Integer, Double> solveCache) {
 		return HassAndStokes.haasAndStokes(ubm, numRows, sampleRows.length, solveCache);
 	}
 
-	private static int getNumRuns(UncompressedBitmap ubm, int sampleSize, int totalNumRows, int[] sampleRows) {
+	private static int getNumRuns(ABitmap ubm, int sampleSize, int totalNumRows, int[] sampleRows) {
 		int numVals = ubm.getNumValues();
-		// all values in the sample are zeros
-		if(numVals == 0)
-			return 0;
 		double numRuns = 0;
 		for(int vi = 0; vi < numVals; vi++) {
 			int[] offsets = ubm.getOffsetsList(vi).extractValues();
@@ -289,8 +270,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	 * @return sorted array of integers
 	 */
 	private static int[] getSortedUniformSample(int range, int smplSize, long seed) {
-		if(smplSize == 0)
-			throw new DMLRuntimeException("Sample Size of 0 is invalid");
 		return UtilFunctions.getSortedSampleIndexes(range, smplSize, seed);
 	}
 

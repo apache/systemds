@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.utils.Bitmap;
 
 public class SmoothedJackknifeEstimator {
 
@@ -32,7 +32,7 @@ public class SmoothedJackknifeEstimator {
 	 * @param sampleSize The number of rows in the sample
 	 * @return Estimate of the number of distinct values
 	 */
-	public static int get(UncompressedBitmap ubm, int nRows, int sampleSize) {
+	public static int get(Bitmap ubm, int nRows, int sampleSize) {
 		int numVals = ubm.getNumValues();
 		int[] freqCounts = FrequencyCount.get(ubm);
 		// all values in the sample are zeros

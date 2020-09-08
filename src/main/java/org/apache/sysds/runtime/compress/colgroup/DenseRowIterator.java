@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 
 public class DenseRowIterator extends RowIterator<double[]> {
 
@@ -36,7 +36,7 @@ public class DenseRowIterator extends RowIterator<double[]> {
 	@Override
 	public double[] next() {
 		// prepare meta data common across column groups
-		final int blksz = BitmapEncoder.BITMAP_BLOCK_SZ;
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int ix = _rpos % blksz;
 		final boolean last = (_rpos + 1 == _ru);
 		// copy group rows into consolidated row

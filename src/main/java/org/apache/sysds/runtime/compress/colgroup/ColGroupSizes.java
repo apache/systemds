@@ -19,40 +19,14 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.BitmapEncoder;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class ColGroupSizes {
 	protected static final Log LOG = LogFactory.getLog(ColGroupSizes.class.getName());
-
-	public static long getEmptyMemoryFootprint(Class<?> colGroupClass) {
-		switch(colGroupClass.getSimpleName()) {
-			case "ColGroup":
-				return estimateInMemorySizeGroup(0);
-			case "ColGroupValue":
-				return estimateInMemorySizeGroupValue(0, 0);
-			case "ColGroupOffset":
-				return estimateInMemorySizeOffset(0, 0, 0, 0);
-			case "ColGroupDDC":
-				return estimateInMemorySizeDDC(0, 0);
-			case "ColGroupDDC1":
-				return estimateInMemorySizeDDC1(0, 0, 0);
-			case "ColGroupDDC2":
-				return estimateInMemorySizeDDC2(0, 0, 0);
-			case "ColGroupOLE":
-				return estimateInMemorySizeOLE(0, 0, 0, 0);
-			case "ColGroupRLE":
-				return estimateInMemorySizeRLE(0, 0, 0, 0);
-			case "ColGroupUncompressed":
-				return estimateInMemorySizeUncompressed(0, 0, 0.0);
-			default:
-				throw new NotImplementedException("Case not implemented");
-		}
-	}
 
 	public static long estimateInMemorySizeGroup(int nrColumns) {
 		long size = 0;
@@ -64,60 +38,60 @@ public class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMemorySizeGroupValue(int nrColumns, long nrValues) {
+	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
-		size += 24 //dictionary object
-			+ MemoryEstimates.doubleArrayCost(nrValues);
+		size += 8; // Dictionary Reference.
+		if(lossy){
+			size += QDictionary.getInMemorySize(nrValues);
+		}else{
+			size += Dictionary.getInMemorySize(nrValues);
+		}
 		return size;
 	}
 
-	public static long estimateInMemorySizeDDC(int nrCols, int uniqueVals) {
-		long size = estimateInMemorySizeGroupValue(nrCols, uniqueVals);
+	public static long estimateInMemorySizeDDC(int nrCols, int uniqueVals, boolean lossy) {
+		long size = estimateInMemorySizeGroupValue(nrCols, uniqueVals, lossy);
 		return size;
 	}
 
-	public static long estimateInMemorySizeDDC1(int nrCols, int uniqueVals, int dataLength) {
+	public static long estimateInMemorySizeDDC1(int nrCols, int uniqueVals, int dataLength, boolean lossy) {
 		if(uniqueVals > 255)
 			return Long.MAX_VALUE;
-		// LOG.debug("DD1C: " + nrCols + " nr unique: " + uniqueVals + " DataLength: " + dataLength);
-		long size = estimateInMemorySizeDDC(nrCols, uniqueVals);
+		long size = estimateInMemorySizeDDC(nrCols, uniqueVals, lossy);
 		size += MemoryEstimates.byteArrayCost(dataLength);
 		return size;
 	}
 
-	public static long estimateInMemorySizeDDC2(int nrCols, int uniqueVals, int dataLength) {
+	public static long estimateInMemorySizeDDC2(int nrCols, int uniqueVals, int dataLength, boolean lossy) {
 		if(uniqueVals > Character.MAX_VALUE)
 			return Long.MAX_VALUE;
-		// LOG.debug("DD2C: " + nrCols + "nr unique: " + uniqueVals +" datalen: "+ dataLength);
-		long size = estimateInMemorySizeDDC(nrCols, uniqueVals);
+		long size = estimateInMemorySizeDDC(nrCols, uniqueVals, lossy);
 		size += MemoryEstimates.charArrayCost(dataLength);
 		return size;
 	}
 
-	public static long estimateInMemorySizeOffset(int nrColumns, long nrValues, int pointers, int offsetLength) {
-		// LOG.debug("OFFSET list: nrC " + nrColumns +"\tnrV " + nrValues + "\tpl "+pointers +"\tdl "+ offsetLength);
-		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues);
+	public static long estimateInMemorySizeOffset(int nrColumns, int nrValues, int pointers, int offsetLength, boolean lossy) {
+		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, lossy);
 		size += MemoryEstimates.intArrayCost(pointers);
 		size += MemoryEstimates.charArrayCost(offsetLength);
 		return size;
 	}
 
-	public static long estimateInMemorySizeOLE(int nrColumns, int nrValues, int offsetLength, int nrRows) {
+	public static long estimateInMemorySizeOLE(int nrColumns, int nrValues, int offsetLength, int nrRows, boolean lossy) {
 		nrColumns = nrColumns > 0 ? nrColumns : 1;
-		offsetLength += (nrRows / BitmapEncoder.BITMAP_BLOCK_SZ) * 2;
+		offsetLength += (nrRows / CompressionSettings.BITMAP_BLOCK_SZ) * 2;
 		long size = 0;
-		// LOG.debug("OLE cols: " + nrColumns + " vals: " + nrValues + " pointers: " + (nrValues / nrColumns + 1)
-		// + " offsetLength: " + (offsetLength) + " runs: " + nrValues / nrColumns);
-		size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues / nrColumns) + 1, offsetLength);
-		size += MemoryEstimates.intArrayCost((int) nrValues / nrColumns);
+		size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues / nrColumns) + 1, offsetLength, lossy);
+		if (nrRows > CompressionSettings.BITMAP_BLOCK_SZ * 2){
+			size += MemoryEstimates.intArrayCost((int) nrValues / nrColumns);
+		}
 		return size;
 	}
 
-	public static long estimateInMemorySizeRLE(int nrColumns, int nrValues, int nrRuns, int nrRows) {
+	public static long estimateInMemorySizeRLE(int nrColumns, int nrValues, int nrRuns, int nrRows, boolean lossy) {
 		nrColumns = nrColumns > 0 ? nrColumns : 1;
 		int offsetLength = (nrRuns) * 2;
-		// LOG.debug("\n\tRLE cols: " + nrColumns + " vals: " + nrValues + " offsetLength: " + offsetLength);
-		long size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues / nrColumns) + 1, offsetLength);
+		long size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues / nrColumns) + 1, offsetLength, lossy);
 
 		return size;
 	}
@@ -130,4 +104,5 @@ public class ColGroupSizes {
 		size += MatrixBlock.estimateSizeInMemory(nrRows, nrColumns, sparsity);
 		return size;
 	}
+
 }

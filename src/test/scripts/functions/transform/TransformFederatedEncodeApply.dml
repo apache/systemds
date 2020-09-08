@@ -19,9 +19,11 @@
 #
 #-------------------------------------------------------------
 
-F1 = federated(type="frame", addresses=list($in_A, $in_B), ranges=
-    list(list(0,0), list($rows, $cols_A), # A range
-    list(0, $cols_A), list($rows, $cols_A + $cols_B))); # B range
+F1 = federated(type="frame", addresses=list($in_AH, $in_AL, $in_BH, $in_BL), ranges=list(
+    list(0,0), list($rows / 2, $cols / 2), # AH range
+    list($rows / 2,0), list($rows, $cols / 2), # AL range
+    list(0,$cols / 2), list($rows / 2, $cols), # BH range
+    list($rows / 2,$cols / 2), list($rows, $cols))); # BL range
 
 jspec = read($TFSPEC, data_type="scalar", value_type="string");
 

@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import org.apache.sysds.runtime.compress.BitmapEncoder;
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -44,17 +44,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class ColGroupOffset extends ColGroupValue {
 	private static final long serialVersionUID = -1635828933479403125L;
 
-	protected static final boolean CREATE_SKIP_LIST = true;
-
-	protected static final int READ_CACHE_BLKSZ = 2 * BitmapEncoder.BITMAP_BLOCK_SZ;
-	public static final int WRITE_CACHE_BLKSZ = 2 * BitmapEncoder.BITMAP_BLOCK_SZ;
-	public static boolean ALLOW_CACHE_CONSCIOUS_ROWSUMS = true;
-
 	/** Bitmaps, one per uncompressed value tuple in {@link #_dict}. */
-	protected int[] _ptr; // bitmap offsets per value
-	protected char[] _data; // linearized bitmaps (variable length)
+	protected int[] _ptr;
+	/** Linearized bitmaps (variable lengths) */
+	protected char[] _data;
 
-	public ColGroupOffset() {
+	protected ColGroupOffset() {
 		super();
 	}
 
@@ -64,22 +59,14 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	 * @param colIndices indices (within the block) of the columns included in this column
 	 * @param numRows    total number of rows in the parent block
 	 * @param ubm        Uncompressed bitmap representation of the block
+	 * @param cs         The Compression settings used for compression
 	 */
-	public ColGroupOffset(int[] colIndices, int numRows, UncompressedBitmap ubm) {
-		super(colIndices, numRows, ubm);
-		_zeros = (ubm.getNumOffsets() < numRows);
+	protected ColGroupOffset(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
+		super(colIndices, numRows, ubm, cs);
 	}
 
-	/**
-	 * Constructor for subclass methods that need to create shallow copies
-	 * 
-	 * @param colIndices raw column index information
-	 * @param numRows    number of rows in the block
-	 * @param zeros      indicator if column group contains zero values
-	 * @param values     set of distinct values for the block (associated bitmaps are kept in the subclass)
-	 */
-	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, double[] values) {
-		super(colIndices, numRows, values);
+	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict){
+		super(colIndices, numRows, dict);
 		_zeros = zeros;
 	}
 
@@ -104,10 +91,10 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public long estimateInMemorySize() {
 		// Could use a ternary operator, but it looks odd with our code formatter here.
 		if(_data == null) {
-			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _colIndexes.length, 0, 0);
+			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), _colIndexes.length, 0, 0, isLossy());
 		}
 		else {
-			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), getValues().length, _ptr.length, _data.length);
+			return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), getValues().length, _ptr.length, _data.length, isLossy());
 		}
 	}
 
@@ -217,10 +204,9 @@ public abstract class ColGroupOffset extends ColGroupValue {
 			LinearAlgebraUtils.vectMultiplyAdd(b[i], values, c, off, 0, numVals);
 	}
 
-	protected final double mxxValues(int bitmapIx, Builtin builtin) {
+	protected final double mxxValues(int bitmapIx, Builtin builtin, double[] values) {
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
-		final double[] values = getValues();
 		double val = (builtin.getBuiltinCode() == BuiltinCode.MAX) ?
 			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		for(int i = 0; i < numCols; i++)
@@ -262,79 +248,45 @@ public abstract class ColGroupOffset extends ColGroupValue {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		_numRows = in.readInt();
-		int numCols = in.readInt();
-		int numVals = in.readInt();
-		_zeros = in.readBoolean();
-
-		// read col indices
-		_colIndexes = new int[numCols];
-		for(int i = 0; i < numCols; i++)
-			_colIndexes[i] = in.readInt();
-
-		// read distinct values
-		double[] values = new double[numVals * numCols];
-		for(int i = 0; i < numVals * numCols; i++)
-			values[i] = in.readDouble();
-		_dict = new Dictionary(values);
+		super.readFields(in);
 		
 		// read bitmaps
-		int totalLen = in.readInt();
-		_ptr = new int[numVals + 1];
-		_data = new char[totalLen];
-		for(int i = 0, off = 0; i < numVals; i++) {
-			int len = in.readInt();
-			_ptr[i] = off;
-			for(int j = 0; j < len; j++)
-				_data[off + j] = in.readChar();
-			off += len;
+		_ptr = new int[in.readInt()];
+		for(int i = 0; i< _ptr.length; i++){
+			_ptr[i] = in.readInt();
 		}
-		_ptr[numVals] = totalLen;
+		int totalLen = in.readInt();
+		_data = new char[totalLen];
+		for(int i = 0; i< totalLen; i++){
+			_data[i] = in.readChar();
+		}
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		int numCols = getNumCols();
-		int numVals = getNumValues();
-		out.writeInt(_numRows);
-		out.writeInt(numCols);
-		out.writeInt(numVals);
-		out.writeBoolean(_zeros);
-
-		// write col indices
-		for(int i = 0; i < _colIndexes.length; i++)
-			out.writeInt(_colIndexes[i]);
-
-		// write distinct values
-		double[] values = getValues();
-		for(int i = 0; i < numCols * numVals; i++)
-			out.writeDouble(values[i]);
-
+		super.write(out);
 		// write bitmaps (lens and data, offset later recreated)
-		int totalLen = 0;
-		for(int i = 0; i < numVals; i++)
-			totalLen += len(i);
-		out.writeInt(totalLen);
-		for(int i = 0; i < numVals; i++) {
-			int len = len(i);
-			int off = _ptr[i];
-			out.writeInt(len);
-			for(int j = 0; j < len; j++)
-				out.writeChar(_data[off + j]);
+		out.writeInt(_ptr.length);
+		for(int i = 0; i < _ptr.length; i++){
+			out.writeInt(_ptr[i]);
 		}
+		out.writeInt(_data.length);
+		for(int i = 0; i < _data.length; i++){
+			out.writeChar(_data[i]);
+		}
+
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		long ret = 13; // header
-		// col indices
-		ret += 4 * _colIndexes.length;
-		// distinct values (groups of values)
-		ret += 8 * getValues().length;
+		long ret = super.getExactSizeOnDisk();
 		// actual bitmaps
-		ret += 4; // total length
-		for(int i = 0; i < getNumValues(); i++)
-			ret += 4 + 2 * len(i);
+		ret += 4; // total length // _ptr list
+		ret += 4 * _ptr.length;
+		ret += 4; // _data list
+		ret += 2 * _data.length;
+		// for(int i = 0; i < getNumValues(); i++)
+		// 	ret += 4 + 2 * len(i);
 
 		return ret;
 	}
@@ -529,7 +481,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		public IJV next() {
 			if(!hasNext())
 				throw new RuntimeException("No more offset entries.");
-			_ret.set(_rpos, _colIndexes[_cpos], (_vpos < 0) ? 0 : getValue(_vpos, _cpos));
+			_ret.set(_rpos, _colIndexes[_cpos], (_vpos < 0) ? 0 : _dict.getValue(_vpos *getNumCols()  + _cpos));
 			getNextValue();
 			return _ret;
 		}
@@ -553,7 +505,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 					return;
 				_cpos++;
 			}
-			while(!_inclZeros && (_vpos < 0 || getValue(_vpos, _cpos) == 0));
+			while(!_inclZeros && (_vpos < 0 ||  _dict.getValue(_vpos *getNumCols()  + _cpos) == 0));
 		}
 	}
 }

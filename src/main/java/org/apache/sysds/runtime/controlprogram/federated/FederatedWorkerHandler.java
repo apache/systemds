@@ -101,9 +101,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			
 			//select the response for the entire batch of requests
 			if (!tmp.isSuccessful()) {
-				log.error("Command " + request.getType() + " failed: " 
+				log.error("Command " + request.getType() + " failed: "
 					+ tmp.getErrorMessage() + "full command: \n" + request.toString());
-				response = (response == null || response.isSuccessful()) 
+				response = (response == null || response.isSuccessful())
 					? tmp : response; //return first error
 			}
 			else if( request.getType() == RequestType.GET_VAR ) {

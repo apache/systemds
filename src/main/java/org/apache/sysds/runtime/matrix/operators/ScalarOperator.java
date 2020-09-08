@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.BitwShiftL;
 import org.apache.sysds.runtime.functionobjects.BitwShiftR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.MinusNz;
@@ -31,7 +32,6 @@ import org.apache.sysds.runtime.functionobjects.Multiply2;
 import org.apache.sysds.runtime.functionobjects.NotEquals;
 import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
 
 /**
@@ -44,12 +44,17 @@ public abstract class ScalarOperator extends Operator
 
 	public final ValueFunction fn;
 	protected final double _constant;
+	private final int k; //num threads
 	
 	public ScalarOperator(ValueFunction p, double cst) {
 		this(p, cst, false);
 	}
 	
 	protected ScalarOperator(ValueFunction p, double cst, boolean altSparseSafe) {
+		this(p,cst,altSparseSafe, 1);
+	}
+
+	protected ScalarOperator(ValueFunction p, double cst, boolean altSparseSafe, int numThreads) {
 		super( isSparseSafeStatic(p) || altSparseSafe
 				|| (p instanceof NotEquals && cst==0)
 				|| (p instanceof Equals && cst!=0)
@@ -58,6 +63,7 @@ public abstract class ScalarOperator extends Operator
 				|| (p instanceof Builtin && ((Builtin)p).getBuiltinCode()==BuiltinCode.MIN && cst>=0));
 		fn = p;
 		_constant = cst;
+		k = numThreads;
 	}
 	
 	public double getConstant() {
@@ -66,6 +72,8 @@ public abstract class ScalarOperator extends Operator
 	
 	public abstract ScalarOperator setConstant(double cst);
 	
+	public abstract ScalarOperator setConstant(double cst, int numThreads);
+
 	/**
 	 * Apply the scalar operator over a given input value.
 	 * 
@@ -85,5 +93,9 @@ public abstract class ScalarOperator extends Operator
 			|| fn instanceof Power2 || fn instanceof And || fn instanceof MinusNz
 			|| fn instanceof Builtin && ((Builtin)fn).getBuiltinCode()==BuiltinCode.LOG_NZ)
 			|| fn instanceof BitwShiftL || fn instanceof BitwShiftR;
+	}
+
+	public int getNumThreads() {
+		return k;
 	}
 }

@@ -19,12 +19,18 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -35,44 +41,58 @@ import org.apache.sysds.runtime.util.DataConverter;
  * 
  */
 public class CompressibleInputGenerator {
+	protected static final Log LOG = LogFactory.getLog(CompressibleInputGenerator.class.getName());
 
 	public static MatrixBlock getInput(int rows, int cols, CompressionType ct, int nrUnique, double sparsity,
 		int seed) {
-		double[][] output = getInputDoubleMatrix(rows, cols, ct, nrUnique, sparsity, seed, false);
+		double[][] output = getInputDoubleMatrix(rows, cols, ct, nrUnique, 1000000, -1000000, sparsity, seed, false);
 		return DataConverter.convertToMatrixBlock(output);
 	}
 
-	public static double[][] getInputDoubleMatrix(int rows, int cols, CompressionType ct, int nrUnique, double sparsity,
-		int seed, boolean transpose) {
+	public static MatrixBlock getInput(int rows, int cols, CompressionType ct, int nrUnique, int max, int min,
+		double sparsity, int seed) {
+		double[][] output = getInputDoubleMatrix(rows, cols, ct, nrUnique, max, min, sparsity, seed, false);
+		return DataConverter.convertToMatrixBlock(output);
+	}
+
+	public static double[][] getInputDoubleMatrix(int rows, int cols, CompressionType ct, int nrUnique, int max,
+		int min, double sparsity, int seed, boolean transpose) {
 		double[][] output;
 		switch(ct) {
 			case RLE:
-				output = rle(rows, cols, nrUnique, sparsity, seed, transpose);
+				output = rle(rows, cols, nrUnique, max, min, sparsity, seed, transpose);
 				break;
 			case OLE:
-				output = ole(rows, cols, nrUnique, sparsity, seed, transpose);
+				output = ole(rows, cols, nrUnique, max, min, sparsity, seed, transpose);
 				break;
 			default:
 				throw new NotImplementedException("Not implemented generator.");
 		}
+		for(double[] x : output) {
 
+			DoubleSummaryStatistics stat = Arrays.stream(x).summaryStatistics();
+			double maxV = stat.getMax();
+			double minV = stat.getMin();
+			// LOG.debug("MAX: " + maxV + " - MIN:" + minV);
+			assertTrue(maxV <= max);
+			assertTrue(minV >= min);
+		}
 		return output;
 	}
 
-	private static double[][] rle(int rows, int cols, int nrUnique, double sparsity, int seed, boolean transpose) {
+	private static double[][] rle(int rows, int cols, int nrUnique, int max, int min, double sparsity, int seed,
+		boolean transpose) {
 
 		Random r = new Random(seed);
-		List<Double> values = getNRandomValues(nrUnique, r);
+		List<Double> values = getNRandomValues(nrUnique, r, max, min);
 
-		double[][] matrix = transpose ? new double[rows][cols]: new double[cols][rows];
+		double[][] matrix = transpose ? new double[rows][cols] : new double[cols][rows];
 
 		for(int colNr = 0; colNr < cols; colNr++) {
 			Collections.shuffle(values, r);
 
 			// Generate a Dirichlet distribution, to distribute the values
 			int[] occurences = makeDirichletDistribution(nrUnique, rows, r);
-
-			// double[] col = new double[rows];
 
 			int pointer = 0;
 			int valuePointer = 0;
@@ -82,9 +102,10 @@ public class CompressibleInputGenerator {
 				int after = zeros - before;
 				pointer += before;
 				for(int i = before; i < nr - after; i++) {
-					if(transpose){
+					if(transpose) {
 						matrix[pointer][colNr] = values.get(valuePointer);
-					}else{
+					}
+					else {
 						matrix[colNr][pointer] = values.get(valuePointer);
 					}
 					pointer++;
@@ -93,9 +114,10 @@ public class CompressibleInputGenerator {
 				valuePointer++;
 				if(valuePointer == values.size() && after == 0) {
 					while(pointer < rows) {
-						if(transpose){
+						if(transpose) {
 							matrix[pointer][colNr] = values.get(nrUnique - 1);
-						}else{
+						}
+						else {
 							matrix[colNr][pointer] = values.get(nrUnique - 1);
 						}
 						pointer++;
@@ -106,44 +128,70 @@ public class CompressibleInputGenerator {
 		return matrix;
 	}
 
-	// Note ole compress the best if there are multiple correlated columns.
-	// Therefore the multiple columns are needed for good compressions.
-	// Also Nr Unique is only associated to a specific column in this compression, so the number of
-	// uniques are only in a single column, making actual the nrUnique (cols * nrUnique)
-	// Does not guaranty that all the nr uniques are in use, since the values are randomly selected.
-	private static double[][] ole(int rows, int cols, int nrUnique, double sparsity, int seed, boolean transpose) {
+	/**
+	 * Note ole compress the best if there are multiple correlated columns. Therefore the multiple columns are needed
+	 * for good compressions. Also Nr Unique is only associated to a specific column in this compression, so the number
+	 * of uniques are only in a single column, making actual the nrUnique (cols * nrUnique) Does not guaranty that all
+	 * the nr uniques are in use, since the values are randomly selected.
+	 * 
+	 * @param rows      Number of rows in generated output
+	 * @param cols      Number of cols in generated output
+	 * @param nrUnique  Number of unique values in generated output, Note this means base unique in this case. and this
+	 *                  number will grow according to sparsity as well.
+	 * @param max       The Maximum Value contained
+	 * @param min       The Minimum value contained
+	 * @param sparsity  The sparsity of the generated matrix (only applicable to the first column)
+	 * @param seed      The seed of the generated matrix
+	 * @param transpose If the output should be a transposed matrix or not
+	 * @return Generated nicely compressible OLE col Group.
+	 */
+	private static double[][] ole(int rows, int cols, int nrUnique, int max, int min, double sparsity, int seed,
+		boolean transpose) {
 		// chose some random values
 		Random r = new Random(seed);
-		List<Double> values = getNRandomValues(nrUnique, r);
-		double[][] matrix = transpose ? new double[rows][cols]: new double[cols][rows];
+		List<Double> values = getNRandomValues(nrUnique, r, max, min);
+		double[][] matrix = transpose ? new double[rows][cols] : new double[cols][rows];
 
 		// Generate the first column.
-		// double[] col1 = new double[rows];
-		// matrix[0] = col1;
 		for(int x = 0; x < rows; x++) {
-			if(r.nextDouble() < sparsity) {
-				if(transpose){
-					matrix[x][0] = values.get(r.nextInt(nrUnique));
-				}else{
-					matrix[0][x] = values.get(r.nextInt(nrUnique));
-				}
+			if(transpose) {
+				matrix[x][0] = values.get(r.nextInt(nrUnique));
+				// LOG.debug(matrix[x][0]);
+			}
+			else {
+				matrix[0][x] = values.get(r.nextInt(nrUnique));
 			}
 		}
-
-		// System.out.println(Arrays.toString(matrix[0]));
 
 		for(int y = 1; y < cols; y++) {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() < sparsity) {
-					if(transpose){
-						matrix[x][y] = Double.longBitsToDouble(Double.doubleToLongBits(matrix[x][0] + y) << 32L);
-					}else{
-						matrix[y][x] = Double.longBitsToDouble(Double.doubleToLongBits(matrix[0][x] + y) << 32L);
+					if(transpose) {
+						double off = (double) y;
+						int v = (int) (matrix[x][0] * off);
+						matrix[x][y] = Math.abs((v) % ((int) (max - min))) + min;
+					}
+					else {
+						double off = (double) y;
+						int v = (int) (matrix[0][x] * off);
+						matrix[y][x] = Math.abs((v) % ((int) (max - min))) + min;
+						// matrix[y][x] = ((int) (matrix[0][x] * y + y)) % ((int) (max - min)) + min;
 					}
 				}
 			}
 		}
-		// System.out.println(Arrays.toString(matrix[1]));
+
+		for(int x = 0; x < rows; x++) {
+			if(r.nextDouble() > sparsity) {
+				if(transpose) {
+					matrix[x][0] = 0.0;
+					// LOG.debug(matrix[x][0]);
+				}
+				else {
+					matrix[0][x] = 0.0;
+				}
+			}
+		}
 
 		return matrix;
 	}
@@ -163,11 +211,13 @@ public class CompressibleInputGenerator {
 		return occurences;
 	}
 
-	private static List<Double> getNRandomValues(int nrUnique, Random r) {
+	private static List<Double> getNRandomValues(int nrUnique, Random r, int max, int min) {
 		List<Double> values = new ArrayList<>();
 		for(int i = 0; i < nrUnique; i++) {
-			values.add((double)Math.round(r.nextDouble()* 1000.0));
+			values.add((r.nextDouble() * (max - min)) + min);
+			// values.add(Math.floor(v));
 		}
+		// LOG.debug(values);
 		return values;
 	}
 }

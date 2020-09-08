@@ -266,7 +266,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 				// no synchronization necessary since names should anyway match
 				Encoder builtEncoder = (Encoder) response.getData()[0];
-				newOmit.mergeAt(builtEncoder, (int) (range.getBeginDims()[1] + 1));
+				newOmit.mergeAt(builtEncoder, (int) (range.getBeginDims()[0] + 1), (int) (range.getBeginDims()[1] + 1));
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);

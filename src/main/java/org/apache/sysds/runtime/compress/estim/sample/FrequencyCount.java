@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 
 public class FrequencyCount {
 
@@ -30,7 +30,7 @@ public class FrequencyCount {
 	 * @param ubm uncompressed bitmap
 	 * @return frequency counts
 	 */
-	protected static int[] get(UncompressedBitmap ubm) {
+	protected static int[] get(ABitmap ubm) {
 		// determine max frequency
 		int numVals = ubm.getNumValues();
 		int maxCount = 0;

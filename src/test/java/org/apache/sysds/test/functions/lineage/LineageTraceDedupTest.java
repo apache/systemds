@@ -51,6 +51,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 	protected static final String TEST_NAME7 = "LineageTraceDedup7"; //nested if-else branches
 	protected static final String TEST_NAME8 = "LineageTraceDedup8"; //while loop
 	protected static final String TEST_NAME9 = "LineageTraceDedup9"; //while loop w/ if
+	protected static final String TEST_NAME11 = "LineageTraceDedup11"; //mini-batch
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceDedupTest.class.getSimpleName() + "/";
 	
@@ -61,7 +62,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<11; i++)
+		for(int i=1; i<=11; i++)
 			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i));
 	}
 	
@@ -95,12 +96,11 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 		testLineageTrace(TEST_NAME5);
 	}
 	
-	/*@Test
+	@Test
 	public void testLineageTrace6() {
 		testLineageTrace(TEST_NAME6);
-	}*/
-	//FIXME: stack overflow only when ran the full package
-	
+	}
+
 	@Test
 	public void testLineageTrace7() {
 		testLineageTrace(TEST_NAME7);
@@ -114,6 +114,11 @@ public class LineageTraceDedupTest extends AutomatedTestBase
 	@Test
 	public void testLineageTrace9() {
 		testLineageTrace(TEST_NAME9);
+	}
+
+	@Test
+	public void testLineageTrace11() {
+		testLineageTrace(TEST_NAME11);
 	}
 	
 	public void testLineageTrace(String testname) {

@@ -214,9 +214,14 @@ if [ -z ${SKIP_SIGN} ]; then
 fi
 
 # skipped mvn clean verify release:update-versions verify install:install deploy:deploy
+#CMD="$MVN $PUBLISH_PROFILES deploy \
+#  -DskiptTests \
+#  -DaltDeploymentRepository=altDepRepo::default::file://$RELEASE_STAGING_LOCATION \
+#  ${GPG_OPTS}"
+
 CMD="$MVN $PUBLISH_PROFILES deploy \
   -DskiptTests \
-  -DaltDeploymentRepository=altDepRepo::default::file://$RELEASE_STAGING_LOCATION \
+  -DaltDeploymentRepository=altDepRepo::default::file:///temp \
   ${GPG_OPTS}"
 
 echo "Executing: " "$CMD"

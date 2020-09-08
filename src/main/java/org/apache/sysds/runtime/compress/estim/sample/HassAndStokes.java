@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
-import org.apache.sysds.runtime.compress.UncompressedBitmap;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 
 public class HassAndStokes {
 
@@ -46,7 +46,7 @@ public class HassAndStokes {
 	 * @param solveCache A Hashmap containing information for getDuj2aEstimate
 	 * @return An estimation of distinct elements in the population.
 	 */
-	public static int haasAndStokes(UncompressedBitmap ubm, int nRows, int sampleSize,
+	public static int haasAndStokes(ABitmap ubm, int nRows, int sampleSize,
 		HashMap<Integer, Double> solveCache) {
 		// obtain value and frequency histograms
 		int numVals = ubm.getNumValues();

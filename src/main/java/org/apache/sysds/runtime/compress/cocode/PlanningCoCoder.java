@@ -30,14 +30,13 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class PlanningCoCoder {
-	// internal configurations
-	private final static PartitionerType COLUMN_PARTITIONER = PartitionerType.BIN_PACKING;
 
 	private static final Log LOG = LogFactory.getLog(PlanningCoCoder.class.getName());
 
@@ -54,10 +53,11 @@ public class PlanningCoCoder {
 	 * @param colInfos      The information already gathered on the individual ColGroups of columns.
 	 * @param numRows       The number of rows in the input matrix.
 	 * @param k             The concurrency degree allowed for this operation.
+	 * @param cs            The Compression Settings used in the compression.
 	 * @return The Estimated (hopefully) best groups of ColGroups.
 	 */
-	public static List<int[]> findCocodesByPartitioning(CompressedSizeEstimator sizeEstimator,
-		CompressedSizeInfo colInfos, int numRows, int k) {
+	public static List<int[]> findCoCodesByPartitioning(CompressedSizeEstimator sizeEstimator,
+		CompressedSizeInfo colInfos, int numRows, int k, CompressionSettings cs) {
 		// filtering out non-group-able columns as singleton groups
 		// weight is the ratio of its cardinality to the number of rows
 
@@ -76,7 +76,8 @@ public class PlanningCoCoder {
 		}
 
 		// use column group partitioner to create partitions of columns
-		List<int[]> bins = createColumnGroupPartitioner(COLUMN_PARTITIONER).partitionColumns(groupCols, groupColsInfo);
+		List<int[]> bins = createColumnGroupPartitioner(cs.columnPartitioner)
+			.partitionColumns(groupCols, groupColsInfo, cs);
 
 		// brute force grouping within each partition
 		return (k > 1) ? getCocodingGroupsBruteForce(bins,

@@ -189,7 +189,7 @@ public class EncoderRecode extends Encoder
 	}
 
 	@Override
-	public void mergeAt(Encoder other, int col) {
+	public void mergeAt(Encoder other, int row, int col) {
 		if(other instanceof EncoderRecode) {
 			mergeColumnInfo(other, col);
 			
@@ -214,7 +214,7 @@ public class EncoderRecode extends Encoder
 			}
 			return;
 		}
-		super.mergeAt(other, col);
+		super.mergeAt(other, row, col);
 	}
 	
 	public int[] numDistinctValues() {

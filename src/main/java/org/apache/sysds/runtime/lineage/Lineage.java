@@ -125,17 +125,6 @@ public class Lineage {
 		_initDedupBlock = ldb;
 	}
 	
-	public void computeDedupBlock(ProgramBlock pb, ExecutionContext ec) {
-		if( !(pb instanceof ForProgramBlock || pb instanceof WhileProgramBlock) )
-			throw new DMLRuntimeException("Invalid deduplication block: "+ pb.getClass().getSimpleName());
-		if (!_dedupBlocks.containsKey(pb)) {
-			boolean valid = LineageDedupUtils.isValidDedupBlock(pb, false);
-			_dedupBlocks.put(pb, valid?
-				LineageDedupUtils.computeDedupBlock(pb, ec) : null);
-		}
-		_activeDedupBlock = _dedupBlocks.get(pb); //null if invalid
-	}
-
 	public void initializeDedupBlock(ProgramBlock pb, ExecutionContext ec) {
 		if( !(pb instanceof ForProgramBlock || pb instanceof WhileProgramBlock) )
 			throw new DMLRuntimeException("Invalid deduplication block: "+ pb.getClass().getSimpleName());

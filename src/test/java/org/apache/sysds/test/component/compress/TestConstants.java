@@ -24,15 +24,15 @@ package org.apache.sysds.test.component.compress;
  */
 public class TestConstants {
 
-	private static final int rows[] = {4, 2008, 1283, 5, 1, 251, 5000, 100000, 3123};
+	private static final int rows[] = {4, 2008, 1283, 5, 1, 251, 5000, 70000, 3123};
 	private static final int cols[] = {20, 20, 13, 998, 321, 1, 8, 10, 1};
-	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0};
+	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
 
-	private static final int[] mins = {-10, -2147};
-	private static final int[] maxs = {10, 2147};
+	private static final int[] mins = {-10, -127 * 2};
+	private static final int[] maxs = {10, 127};
 
 	public enum SparsityType {
-		DENSE, SPARSE, ULTRA_SPARSE, EMPTY,
+		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL
 	}
 
 	public enum ValueType {
@@ -51,15 +51,13 @@ public class TestConstants {
 		SINGLE_ROW, // Single Row with some columns
 		SINGLE_COL, // Single Column with some rows
 		L_ROWS, // Many Rows
-		XL_ROWS, // A LOT of rows. 
+		XL_ROWS, // A LOT of rows.
 		SINGLE_COL_L, // Single Column large.
 	}
 
 	public enum ValueRange {
-		SMALL, 
-		LARGE
+		SMALL, LARGE, BYTE
 	}
-
 
 	public static double getSparsityValue(SparsityType sparsityType) {
 		switch(sparsityType) {
@@ -71,8 +69,10 @@ public class TestConstants {
 				return sparsityValues[2];
 			case EMPTY:
 				return sparsityValues[3];
+			case FULL:
+				return sparsityValues[4];
 			default:
-				throw new RuntimeException("Invalid Sparsity type"); 
+				throw new RuntimeException("Invalid Sparsity type");
 		}
 	}
 
@@ -82,8 +82,10 @@ public class TestConstants {
 				return mins[0];
 			case LARGE:
 				return mins[1];
+			case BYTE:
+				return -127;
 			default:
-			throw new RuntimeException("Invalid range value enum type"); 
+				throw new RuntimeException("Invalid range value enum type");
 		}
 	}
 
@@ -93,8 +95,10 @@ public class TestConstants {
 				return maxs[0];
 			case LARGE:
 				return maxs[1];
+			case BYTE:
+				return 127;
 			default:
-				throw new RuntimeException("Invalid range value enum type"); 
+				throw new RuntimeException("Invalid range value enum type");
 		}
 	}
 
@@ -119,7 +123,7 @@ public class TestConstants {
 			case SINGLE_COL_L:
 				return rows[8];
 			default:
-				throw new RuntimeException("Invalid matrix enum type"); 
+				throw new RuntimeException("Invalid matrix enum type");
 		}
 	}
 
@@ -144,7 +148,7 @@ public class TestConstants {
 			case SINGLE_COL_L:
 				return cols[8];
 			default:
-				throw new RuntimeException("Invalid matrix enum type"); 
+				throw new RuntimeException("Invalid matrix enum type");
 		}
 	}
 }

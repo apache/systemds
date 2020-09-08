@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +33,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.lineage.LineageItem;
 
-public class ListObject extends Data {
+public class ListObject extends Data implements Externalizable {
 	private static final long serialVersionUID = 3652422061598967358L;
 
 	private final List<Data> _data;
@@ -279,5 +283,22 @@ public class ListObject extends Data {
 		}
 		sb.append(")");
 		return sb.toString();
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		// redirect serialization to writable impl
+		out.writeInt(getLength()); 					// write length
+		for(int i = 0; i < _data.size(); i++) {
+
+		}
+
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		// redirect deserialization to writable impl
+		// read size
+		in.readInt();
 	}
 }

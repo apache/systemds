@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Arrays;
@@ -244,6 +245,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			data = ExecutionContext.createCacheableData((CacheBlock) request.getParam(0));
 		else if( request.getParam(0) instanceof ScalarObject )
 			data = (ScalarObject) request.getParam(0);
+		else if( request.getParam(0) instanceof ListObject )
+			data = (ListObject) request.getParam(0);
+		else
+			throw new DMLRuntimeException("FederatedWorkerHandler: Unsupported object type, has to be of type CacheBlock or ScalarObject");
 		
 		//set variable and construct empty response
 		ec.setVariable(varname, data);

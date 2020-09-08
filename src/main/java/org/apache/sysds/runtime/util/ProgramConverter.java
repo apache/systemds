@@ -849,7 +849,7 @@ public class ProgramConverter
 		return sb.toString();
 	}
 
-	private static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs, HashMap<String, byte[]> clsMap ) {
+	public static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs, HashMap<String, byte[]> clsMap ) {
 		//note program contains variables, programblocks and function program blocks 
 		//but in order to avoid redundancy, we only serialize function program blocks
 		HashMap<String, FunctionProgramBlock> fpb = prog.getFunctionProgramBlocks();

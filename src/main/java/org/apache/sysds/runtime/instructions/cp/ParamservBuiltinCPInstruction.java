@@ -136,7 +136,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			return null;
 		}));
 
-
 		// get inputs
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();

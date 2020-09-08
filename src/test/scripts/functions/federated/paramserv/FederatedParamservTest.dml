@@ -31,7 +31,7 @@ labels = federated(addresses=list($y1, $y2),
                 list($examples_per_worker, 0), list($examples_per_worker * 2, $num_labels)))
 
 epochs = 5
-batch_size = 32
+batch_size = 1
 learning_rate = 0.01
 workers = 1
 utype = "BSP"

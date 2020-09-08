@@ -19,7 +19,10 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -27,6 +30,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.mlcontext.Metadata;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -35,6 +39,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -61,7 +66,7 @@ import org.apache.sysds.runtime.util.IndexRange;
  * {@link MatrixBlock} object without informing its {@link MatrixObject} object.
  * 
  */
-public class MatrixObject extends CacheableData<MatrixBlock>
+public class MatrixObject extends CacheableData<MatrixBlock> implements Externalizable
 {
 	private static final long serialVersionUID = 6374712373206495637L;
 	
@@ -593,5 +598,37 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		//lazy evaluation of pending transformations.
 		long newnnz = SparkExecutionContext.writeMatrixRDDtoHDFS(rdd, fname, fmt);
 		_metaData.getDataCharacteristics().setNonZeros(newnnz);
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		// redirect serialization to writable impl
+		out.writeBytes(getDataType().toString());
+		out.writeBytes(getValueType().toString());
+		out.writeBytes(getFileName());
+
+		MetaDataFormat md = (MetaDataFormat) getMetaData();
+		DataCharacteristics dc = md.getDataCharacteristics();
+		ParForProgramBlock.PartitionFormat partFormat = (getPartitionFormat()!=null) ? new ParForProgramBlock.PartitionFormat(
+				getPartitionFormat(),getPartitionSize()) : ParForProgramBlock.PartitionFormat.NONE;
+
+		out.writeBytes(String.valueOf(dc.getRows()));
+		out.writeBytes(String.valueOf(dc.getCols()));
+		out.writeBytes(String.valueOf(dc.getBlocksize()));
+		out.writeBytes(String.valueOf(dc.getNonZeros()));
+		out.writeBytes(md.getFileFormat().toString());
+		out.writeBytes(String.valueOf(partFormat));
+		out.writeBytes(String.valueOf(getUpdateType()));
+		out.writeBytes(String.valueOf(isHDFSFileExists()));
+		out.writeBytes(String.valueOf(isCleanupEnabled()));
+
+		out.writeObject(acquireReadAndRelease());
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		// redirect deserialization to writable impl
+		// read size
+		in.readInt();
 	}
 }

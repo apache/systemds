@@ -28,13 +28,16 @@ import org.apache.sysds.lops.Federated;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.*;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.util.ProgramConverter;
@@ -46,6 +49,7 @@ import java.io.ObjectOutputStream;
 import java.sql.Blob;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -72,27 +76,48 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 			return null;
 		});
 
-		// put params on federated worker
-		long paramsVarID = FederationUtils.getNextFedDataID();
+		// put batch number on federated worker
 		long jVarID = FederationUtils.getNextFedDataID();
+		Future<FederatedResponse> putJResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, jVarID, new IntObject(j)));
+
+		// put current parameters on federated worker
+		long paramsVarID = FederationUtils.getNextFedDataID();
 		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, paramsVarID, params));
-		Future<FederatedResponse> putJResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, jVarID, j));
+
 		try {
-			if(!putParamsResponse.get().isSuccessful() || !putJResponse.get().isSuccessful()) {
+			if(!putParamsResponse.get().isSuccessful() || !putJResponse.get().isSuccessful())
 				throw new DMLRuntimeException("FederatedLocalPSThread: put was not successful");
-			}
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute put" + e.getMessage());
 		}
 
-		// execute the udf on the remote worker
+		// prepare program and instruction
+		String instString = _inst.toString();
+		// _inst = FunctionCallCPInstruction.parseInstruction(instString);
+
+
+		String programString = "";
+
+		//Create a program block for the instruction filtering
+		/*BasicProgramBlock updateProgramBlock = new BasicProgramBlock(_ec.getProgram());
+		updateProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_inst)));
+		ArrayList<ProgramBlock> updateProgramBlocks = new ArrayList<>();
+		updateProgramBlocks.add(updateProgramBlock);*/
+
+		programString = ProgramConverter.serializeProgramForFederated(_ec.getProgram(),
+				new HashMap<>(),
+				false
+		);
+
+		// create and execute the udf on the remote worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
 				_featuresData.getVarID(),
-				new federatedComputeGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID()},
+				new federatedComputeGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID(), jVarID, paramsVarID},
 											  _batchSize,
 						 					  dataSize,
-											  j
+											  instString,
+											  programString
 				)
 		));
 
@@ -106,52 +131,47 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 		}
 	}
 
-	// INPUTS Theory: Works with everything that is serializable
 	private static class federatedComputeGradients extends FederatedUDF {
 		long _batchSize;
 		long _dataSize;
-		int _j;
+		String _instString;
+		String _programString;
 
-		protected federatedComputeGradients(long[] inIDs, long batchSize, long dataSize, int j) {
+		protected federatedComputeGradients(long[] inIDs, long batchSize, long dataSize, String instString, String programString) {
 			super(inIDs);
 			_batchSize = batchSize;
 			_dataSize = dataSize;
-			_j = j;
+			_instString = instString;
+			_programString = programString;
 		}
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			System.out.println("Starting UDF Execution");
 
+			Program prog = ProgramConverter.parseProgram(_programString, 0);
+
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];
-			ListObject params = (ListObject) data[2];
-
-			System.out.println("Features: " + features);
-			System.out.println("Labels: " + labels);
-			System.out.println("Params: " + params);
-
-			ec.setVariable(Statement.PS_MODEL, params);
+			long j = ((IntObject) data[2]).getLongValue();
+			ListObject params = (ListObject) data[3];
 
 			// slice batch from feature and label matrix
-			long begin = _j * _batchSize + 1;
-			long end = Math.min((_j + 1) * _batchSize, _dataSize);
+			long begin = j * _batchSize + 1;
+			long end = Math.min((j + 1) * _batchSize, _dataSize);
 			MatrixObject bFeatures = ParamservUtils.sliceMatrix(features, begin, end);
 			MatrixObject bLabels = ParamservUtils.sliceMatrix(labels, begin, end);
 
-			System.out.println("bFeatures: " + bFeatures);
-			System.out.println("bLabels: " + bLabels);
-
+			// prepare execution context
+			ec.setVariable(Statement.PS_MODEL, params);
 			ec.setVariable(Statement.PS_FEATURES, bFeatures);
 			ec.setVariable(Statement.PS_LABELS, bLabels);
 
 			System.out.println("Starting instruction");
 
-			// TODO: Logging would be nice
 			/*_inst.processInstruction(ec);
 			// Get the gradients
 			ListObject gradients = ec.getListObject(_output.getName());*/
-			// TODO: Cleanup
 
 			//return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{gradients});
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{new ArrayList<>()});

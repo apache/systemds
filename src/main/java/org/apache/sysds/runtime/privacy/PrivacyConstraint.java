@@ -144,7 +144,7 @@ public class PrivacyConstraint implements Externalizable
 	 * Get privacy constraints and put them into JSON object. 
 	 * @param json JSON object in which the privacy constraints are put
 	 * @return JSON object including the privacy constraints
-	 * @throws JSONException
+	 * @throws JSONException in case of errors in creating JSON object
 	 */
 	public JSONObject toJson(JSONObject json) throws JSONException {
 		if ( getPrivacyLevel() != null && getPrivacyLevel() != PrivacyLevel.None )

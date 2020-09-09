@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -228,20 +229,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		return new FederatedResponse(ResponseType.SUCCESS, id);
 	}
-
-	//TODO: Fit executeMatVecMult into new federated handling
-	/*private FederatedResponse executeMatVecMult(long varID, MatrixBlock vector, boolean isMatVecMult) {
-		MatrixObject matTo = (MatrixObject) _vars.get(varID);
-		PrivacyMonitor.handlePrivacyAllowAggregation(matTo);
-		MatrixBlock matBlock1 = matTo.acquireReadAndRelease();
-		// TODO other datatypes
-		AggregateBinaryOperator ab_op = InstructionUtils
-			.getMatMultOperator(OptimizerUtils.getConstrainedNumThreads(0));
-		MatrixBlock result = isMatVecMult ?
-			matBlock1.aggregateBinaryOperations(matBlock1, vector, new MatrixBlock(), ab_op) :
-			vector.aggregateBinaryOperations(vector, matBlock1, new MatrixBlock(), ab_op);
-		return new FederatedResponse(FederatedResponse.Type.SUCCESS, result);
-	}*/
 	
 	private FederatedResponse putVariable(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 1);
@@ -294,8 +281,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ExecutionContext ec = _ecm.get(request.getTID());
 		BasicProgramBlock pb = new BasicProgramBlock(null);
 		pb.getInstructions().clear();
-		pb.getInstructions().add(InstructionParser
-			.parseSingleInstruction((String)request.getParam(0)));
+		Instruction receivedInstruction = InstructionParser
+				.parseSingleInstruction((String)request.getParam(0));
+		pb.getInstructions().add(receivedInstruction);
 		try {
 			pb.execute(ec); //execute single instruction
 		}
@@ -305,41 +293,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
-
-	
-	//TODO: Reimplement executeAggregation to fit with the new federated structure
-	/*
-	private FederatedResponse executeAggregation(long varID, AggregateUnaryOperator operator) {
-		Data dataObject = _vars.get(varID);
-		if (dataObject.getDataType() != Types.DataType.MATRIX) {
-			return new FederatedResponse(FederatedResponse.Type.ERROR, 
-				new FederatedWorkerHandlerException("Aggregation only supported for matrices, not for "
-				+ dataObject.getDataType().name()));
-		}
-		MatrixObject matrixObject = (MatrixObject) dataObject;
-		PrivacyMonitor.handlePrivacyAllowAggregation(matrixObject);
-		MatrixBlock matrixBlock = matrixObject.acquireRead();
-		// create matrix for calculation with correction
-		MatrixCharacteristics mc = new MatrixCharacteristics();
-		// find out the characteristics after aggregation
-		operator.indexFn.computeDimension(matrixObject.getDataCharacteristics(), mc);
-		// make outBlock right size
-		int outNumRows = (int) mc.getRows();
-		int outNumCols = (int) mc.getCols();
-		if (operator.aggOp.existsCorrection()) {
-			// add rows for correction
-			int numMissing = operator.aggOp.correction.getNumRemovedRowsColumns();
-			if (operator.aggOp.correction.isRows())
-				outNumRows += numMissing;
-			else
-				outNumCols += numMissing;
-		}
-		MatrixBlock ret = new MatrixBlock(outNumRows, outNumCols, operator.aggOp.initialValue);
-		LibMatrixAgg.aggregateUnaryMatrix(matrixBlock, ret, operator);
-		// result block without correction
-		ret.dropLastRowsOrColumns(operator.aggOp.correction);
-		return new FederatedResponse(FederatedResponse.Type.SUCCESS, ret);
-	}*/
 	
 	private FederatedResponse execUDF(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 1);

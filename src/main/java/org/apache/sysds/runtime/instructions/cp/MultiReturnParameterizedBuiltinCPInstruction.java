@@ -48,6 +48,10 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		return _outputs.get(i);
 	}
 
+	public ArrayList<CPOperand> getOutputs(){
+		return _outputs;
+	}
+
 	public String[] getOutputNames() {
 		return _outputs.stream().map(output -> output.getName()).toArray(String[]::new);
 	}

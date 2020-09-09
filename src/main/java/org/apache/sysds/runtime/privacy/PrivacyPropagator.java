@@ -19,10 +19,9 @@
 
 package org.apache.sysds.runtime.privacy;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
 import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
@@ -85,7 +84,7 @@ public class PrivacyPropagator
 		else if (privacyConstraint1 != null)
 			return privacyConstraint1;
 		else if (privacyConstraint2 != null)
-			return privacyConstraint2; 
+			return privacyConstraint2;
 		return null;
 	}
 
@@ -128,10 +127,8 @@ public class PrivacyPropagator
 				// Assumption: aggregates in one or several dimensions, number of dimensions may change, only certain slices of the data may be aggregated upon, elements do not change position
 				return preprocessAggregateUnaryCPInstruction((AggregateUnaryCPInstruction)inst, ec);
 			case Append:
-				//TODO: Support propagation of fine-grained privacy constraints
-				return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
 			case Binary:
-				//TODO: Support propagation of fine-grained privacy constraints
+				// TODO: Support propagation of fine-grained privacy constraints
 				return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
 			case Builtin:
 			case BuiltinNary:
@@ -147,6 +144,11 @@ public class PrivacyPropagator
 				break;
 			case Dnn:
 				break;
+			 */
+			case FCall:
+				//TODO: Support propagation of fine-grained privacy constraints
+				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
+			/*
 			case MMChain:
 				break;
 			case MMTSJ:
@@ -200,40 +202,6 @@ public class PrivacyPropagator
 		}
 	}
 
-	public static Instruction preprocessCPInstruction(CPInstruction inst, ExecutionContext ec){
-		switch ( inst.getCPInstructionType() )
-		{
-			case Variable:
-				return preprocessVariableCPInstruction((VariableCPInstruction) inst, ec);
-			case AggregateUnary:
-			case Reorg:
-			case Unary:
-				return preprocessUnaryCPInstruction((UnaryCPInstruction) inst, ec);
-			case AggregateBinary:
-			case Append: 
-			case Binary:
-				return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
-			case AggregateTernary: 
-			case Ternary:
-				return preprocessTernaryCPInstruction((ComputationCPInstruction) inst, ec);
-			case Quaternary: 
-				return preprocessQuaternary((QuaternaryCPInstruction) inst, ec);
-			case BuiltinNary:
-			case Builtin:
-				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
-			case FCall:
-				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
-			case MultiReturnBuiltin:
-			case MultiReturnParameterizedBuiltin:
-				return preprocessMultiReturn((ComputationCPInstruction)inst, ec);
-			case ParameterizedBuiltin:
-				return preprocessParameterizedBuiltin((ParameterizedBuiltinCPInstruction) inst, ec);
-			case Ctable:   
-			default:
-				return preprocessInstructionSimple(inst, ec);
-		}
-	}
-
 	/**
 	 * Throw exception if privacy constraint activated for instruction or for input to instruction.
 	 * @param inst covariance instruction
@@ -266,7 +234,18 @@ public class PrivacyPropagator
 					mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
 					inst.setPrivacyConstraint(mergedPrivacyConstraint);
 				}
-				setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.output);
+				inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
+		}
+		return inst;
+	}
+
+	public static Instruction preprocessBinaryCPInstruction(BinaryCPInstruction inst, ExecutionContext ec){
+		PrivacyConstraint privacyConstraint1 = getInputPrivacyConstraint(ec, inst.input1);
+		PrivacyConstraint privacyConstraint2 = getInputPrivacyConstraint(ec, inst.input2);
+		if ( privacyConstraint1 != null || privacyConstraint2 != null) {
+			PrivacyConstraint mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
+			inst.setPrivacyConstraint(mergedPrivacyConstraint);
+			inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
 		}
 		return inst;
 	}
@@ -337,9 +316,8 @@ public class PrivacyPropagator
 			if ( inst.output != null){
 				//Only propagate to output if any of the elements are private. 
 				//It is an aggregation, hence the constraint can be removed in case of any other privacy level.
-				if(privacyConstraint.hasPrivateElements()){
-					setOutputPrivacyConstraint(ec, new PrivacyConstraint(PrivacyLevel.Private), inst.output);
-				}
+				if(privacyConstraint.hasPrivateElements())
+					inst.output.setPrivacyConstraint(new PrivacyConstraint(PrivacyLevel.Private));
 			}
 		}
 		return inst;
@@ -367,15 +345,12 @@ public class PrivacyPropagator
 	}
 
 	public static Instruction preprocessMultiReturn(ComputationCPInstruction inst, ExecutionContext ec){
-		if ( inst instanceof MultiReturnBuiltinCPInstruction )
-			return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), ((MultiReturnBuiltinCPInstruction) inst).getOutputNames() );
-		else if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
-			return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputNames() );
-		else throw new DMLRuntimeException("ComputationCPInstruction not recognized as either MultiReturnBuiltinCPInstruction or MultiReturnParameterizedBuiltinCPInstruction");
+		ArrayList<CPOperand> outputs = getOutputOperands(inst);
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), outputs);
 	}
 
 	public static Instruction preprocessParameterizedBuiltin(ParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), new String[]{inst.getOutputVariableName()} );
+		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutput() );
 	}
 
 	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, String[] outputNames){
@@ -394,8 +369,23 @@ public class PrivacyPropagator
 	}
 
 	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, CPOperand output){
-		String outputName = (output != null) ? output.getName() : null;
-		return mergePrivacyConstraintsFromInput(inst, ec, inputs, new String[]{outputName});	
+		return mergePrivacyConstraintsFromInput(inst, ec, inputs, getSingletonList(output));
+	}
+
+	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, ArrayList<CPOperand> outputs){
+		if ( inputs != null && inputs.length > 0 ){
+			PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
+			if ( privacyConstraints != null ){
+				PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
+				inst.setPrivacyConstraint(mergedPrivacyConstraint);
+				for ( CPOperand output : outputs ){
+					if ( output != null ) {
+						output.setPrivacyConstraint(mergedPrivacyConstraint);
+					}
+				}
+			}
+		}
+		return inst;
 	}
 
 	public static Instruction preprocessBuiltinNary(BuiltinNaryCPInstruction inst, ExecutionContext ec){
@@ -415,17 +405,6 @@ public class PrivacyPropagator
 		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.output);
 	}
 
-	public static Instruction preprocessBinaryCPInstruction(BinaryCPInstruction inst, ExecutionContext ec){
-		PrivacyConstraint privacyConstraint1 = getInputPrivacyConstraint(ec, inst.input1);
-		PrivacyConstraint privacyConstraint2 = getInputPrivacyConstraint(ec, inst.input2);
-		if ( privacyConstraint1 != null || privacyConstraint2 != null) {
-			PrivacyConstraint mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
-			inst.setPrivacyConstraint(mergedPrivacyConstraint);
-			setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, inst.output);
-		}
-		return inst;
-	}
-
 	public static Instruction preprocessUnaryCPInstruction(UnaryCPInstruction inst, ExecutionContext ec){
 		return propagateInputPrivacy(inst, ec, inst.input1, inst.output);
 	}
@@ -438,26 +417,21 @@ public class PrivacyPropagator
 				return propagateInputPrivacy(inst, ec, inst.getInput1(), inst.getInput2());
 			case CopyVariable:
 			case MoveVariable:
+			case RemoveVariableAndFile:
+			case CastAsMatrixVariable:
+			case CastAsFrameVariable:
+			case Write:
+			case SetFileName:
 				return propagateFirstInputPrivacy(inst, ec);
 			case RemoveVariable:
 				return propagateAllInputPrivacy(inst, ec);
-			case RemoveVariableAndFile:
-				return propagateFirstInputPrivacy(inst, ec);
-			case CastAsScalarVariable: 
-				return propagateCastAsScalarVariablePrivacy(inst, ec);
-			case CastAsMatrixVariable:
-			case CastAsFrameVariable:
-				return propagateFirstInputPrivacy(inst, ec);
+			case CastAsScalarVariable:
 			case CastAsDoubleVariable:
 			case CastAsIntegerVariable:
 			case CastAsBooleanVariable:
 				return propagateCastAsScalarVariablePrivacy(inst, ec);
 			case Read:
 				return inst;
-			case Write:
-				return propagateFirstInputPrivacy(inst, ec);
-			case SetFileName:
-				return propagateFirstInputPrivacy(inst, ec);
 			default:
 				throwExceptionIfPrivacyActivated(inst, ec);
 				return inst;
@@ -531,7 +505,7 @@ public class PrivacyPropagator
 		if ( privacyConstraint != null ) {
 			inst.setPrivacyConstraint(privacyConstraint);
 			if ( outputOperand != null)
-				setOutputPrivacyConstraint(ec, privacyConstraint, outputOperand);
+				outputOperand.setPrivacyConstraint(privacyConstraint);
 		}
 		return inst;
 	}
@@ -567,10 +541,6 @@ public class PrivacyPropagator
 		return null;
 	}
 
-	private static void setOutputPrivacyConstraint(ExecutionContext ec, PrivacyConstraint privacyConstraint, CPOperand output){
-		setOutputPrivacyConstraint(ec, privacyConstraint, output.getName());
-	}
-
 	/**
 	 * Set privacy constraint of data variable with outputName 
 	 * if the variable exists and the privacy constraint is not null.
@@ -589,13 +559,14 @@ public class PrivacyPropagator
 	}
 
 	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
-		PrivacyConstraint instructionPrivacyConstraint = inst.getPrivacyConstraint();
-		if ( privacyConstraintActivated(instructionPrivacyConstraint) )
-		{
-			String[] instructionOutputNames = getOutputVariableName(inst);
-			if ( instructionOutputNames != null && instructionOutputNames.length > 0 )
-				for ( String instructionOutputName : instructionOutputNames )
-					setOutputPrivacyConstraint(ec, instructionPrivacyConstraint, instructionOutputName);
+		// if inst has output
+		ArrayList<CPOperand> instOutputs = getOutputOperands(inst);
+		if (!instOutputs.isEmpty()){
+			for ( CPOperand output : instOutputs ){
+				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
+				if ( privacyConstraintActivated(outputPrivacyConstraint) )
+					setOutputPrivacyConstraint(ec, outputPrivacyConstraint, output.getName());
+			}
 		}
 	}
 
@@ -619,5 +590,26 @@ public class PrivacyPropagator
 		else if ( inst instanceof SqlCPInstruction )
 			instructionOutputNames = new String[]{((SqlCPInstruction) inst).getOutputVariableName()};
 		return instructionOutputNames;
+	}
+
+	private static ArrayList<CPOperand> getOutputOperands(Instruction inst){
+		// The order of the following statements is important
+		if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
+			return ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputs();
+		else if ( inst instanceof MultiReturnBuiltinCPInstruction )
+			return ((MultiReturnBuiltinCPInstruction) inst).getOutputs();
+		else if ( inst instanceof ComputationCPInstruction )
+			return getSingletonList(((ComputationCPInstruction) inst).getOutput());
+		else if ( inst instanceof VariableCPInstruction )
+			return getSingletonList(((VariableCPInstruction) inst).getOutput());
+		else if ( inst instanceof SqlCPInstruction )
+			return getSingletonList(((SqlCPInstruction) inst).getOutput());
+		return new ArrayList<CPOperand>();
+	}
+
+	private static ArrayList<CPOperand> getSingletonList(CPOperand operand){
+		if ( operand != null)
+			return new ArrayList<>(Collections.singletonList(operand));
+		else return new ArrayList<>();
 	}
 }

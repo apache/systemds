@@ -1,6 +1,8 @@
 package org.apache.sysds.test.functions.federated.paramserv;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -19,15 +21,15 @@ public class FederatedParamservTest extends AutomatedTestBase {
     private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
     private final static int _blocksize = 1024;
 
-    private int _epochs;
-    private int _batch_size;
-    private double _eta;
-    private String _utype;
-    private String _freq;
+    private final int _epochs;
+    private final int _batch_size;
+    private final double _eta;
+    private final String _utype;
+    private final String _freq;
+
+    private Types.ExecMode _platformOld;
 
     // parameters
-
-
     @Parameterized.Parameters
     public static Collection parameters() {
         return Arrays.asList(new Object[][] {
@@ -50,6 +52,13 @@ public class FederatedParamservTest extends AutomatedTestBase {
     public void setUp() {
         TestUtils.clearAssertionInformation();
         addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
+
+        _platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
+    }
+
+    @Override
+    public void tearDown() {
+        rtplatform = _platformOld;
     }
 
     @Test

@@ -991,10 +991,8 @@ public class ProgramConverter
 		int count = 0;
 		for( Instruction linst : inst ) {
 			//check that only cp instruction are transmitted
-
-			// TODO: Makes big problems
-			//if( !( linst instanceof CPInstruction) )
-				//throw new DMLRuntimeException( NOT_SUPPORTED_SPARK_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
+			if( !( linst instanceof CPInstruction) )
+				throw new DMLRuntimeException( NOT_SUPPORTED_SPARK_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
 			
 			//obtain serialized version of generated classes
 			if( linst instanceof SpoofCPInstruction ) {

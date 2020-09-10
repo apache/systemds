@@ -151,6 +151,7 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 			System.out.println("Starting UDF Execution");
 
 			Program prog = ProgramConverter.parseProgram(_programString, 0);
+			ec.setProgram(prog);
 
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];

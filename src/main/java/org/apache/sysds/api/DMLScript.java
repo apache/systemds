@@ -161,32 +161,13 @@ public class DMLScript
 			String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 			DMLScript.executeScript(conf, otherArgs);
 		} catch(Exception e){
+			errorPrint(e);
 			for(String s: args){
 				if(s.trim().contains("-debug")){
 					e.printStackTrace();
 				}
 			}
-			final String ANSI_RED = "\u001B[31m";
-			final String ANSI_RESET = "\u001B[0m";
-			StringBuilder sb = new StringBuilder();
-			sb.append(ANSI_RED);
-			sb.append("An Error Occured : ");
-			sb.append("\n" );
-			sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
-			sb.append(" -- ");
-			sb.append(e.getMessage());
-			Throwable s =  e.getCause();
-			while(s != null){
-				sb.append("\n" );
-				sb.append(StringUtils.leftPad(s.getClass().getSimpleName(),25));
-				sb.append(" -- ");
-				sb.append(s.getMessage());
-				s = s.getCause();
-			}
-			sb.append(ANSI_RESET);
-			System.out.println(sb.toString());
 		}
-
 	}
 
 	/**
@@ -575,5 +556,32 @@ public class DMLScript
 	
 	public static void setGlobalExecMode(ExecMode mode) {
 		EXEC_MODE = mode;
+	}
+
+	/**
+	 * Print the error in a user friendly manner.
+	 * 
+	 * @param e The exception thrown.
+	 */
+	public static void errorPrint(Exception e){
+		final String ANSI_RED = "\u001B[31m";
+		final String ANSI_RESET = "\u001B[0m";
+		StringBuilder sb = new StringBuilder();
+		sb.append(ANSI_RED + "\n");
+		sb.append("An Error Occured : ");
+		sb.append("\n" );
+		sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
+		sb.append(" -- ");
+		sb.append(e.getMessage());
+		Throwable s =  e.getCause();
+		while(s != null){
+			sb.append("\n" );
+			sb.append(StringUtils.leftPad(s.getClass().getSimpleName(),25));
+			sb.append(" -- ");
+			sb.append(s.getMessage());
+			s = s.getCause();
+		}
+		sb.append("\n" + ANSI_RESET);
+		System.out.println(sb.toString());
 	}
 }

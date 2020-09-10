@@ -2273,8 +2273,12 @@ public class DataExpression extends DataIdentifier
 						for (Object range : privateArray.toArray()){
 							JSONArray beginDims = ((JSONArray)range).getJSONArray(0);
 							JSONArray endDims = ((JSONArray)range).getJSONArray(1);
-							long[] beginDimsLong = Arrays.stream(beginDims.toArray()).mapToLong((x)->Long.valueOf(((Integer)x).longValue())).toArray();
-							long[] endDimsLong = Arrays.stream(endDims.toArray()).mapToLong((x)->Long.valueOf(((Integer)x).longValue())).toArray();
+							long[] beginDimsLong = new long[beginDims.length()];
+							long[] endDimsLong = new long[endDims.length()];
+							for ( int dimIndex = 0; dimIndex < beginDims.length(); dimIndex++ ){
+								beginDimsLong[dimIndex] = beginDims.getLong(dimIndex);
+								endDimsLong[dimIndex] = endDims.getLong(dimIndex);
+							}
 							DataRange dataRange = new DataRange(beginDimsLong, endDimsLong);
 							fineGrainedPrivacy.put(dataRange, PrivacyLevel.valueOf(key));
 						}

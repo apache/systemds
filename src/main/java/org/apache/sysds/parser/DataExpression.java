@@ -2254,42 +2254,59 @@ public class DataExpression extends DataIdentifier
 		Expression eprivacy = getVarParam(PRIVACY);
 		Expression eFineGrainedPrivacy = getVarParam(FINE_GRAINED_PRIVACY);
 		if ( eprivacy != null || eFineGrainedPrivacy != null ){
-
 			PrivacyConstraint privacyConstraint = new PrivacyConstraint();
 			if ( eprivacy != null ){
 				privacyConstraint.setPrivacyLevel(PrivacyLevel.valueOf(eprivacy.toString()));
 			}
 			if ( eFineGrainedPrivacy != null ){
-				FineGrainedPrivacy fineGrainedPrivacy = privacyConstraint.getFineGrainedPrivacy();
-				StringIdentifier fgPrivacyIdentifier = (StringIdentifier) eFineGrainedPrivacy;
-				String fgPrivacyValue = fgPrivacyIdentifier.getValue();
-				try {
-					JSONArtifact fgPrivacyJson = JSON.parse(fgPrivacyValue);
-					JSONObject fgPrivacyObject = (JSONObject)fgPrivacyJson;
-					JSONArray keys = fgPrivacyObject.names();
-					for ( int i = 0; i < keys.length(); i++ ){
-						String key = keys.getString(i);
-						JSONArray privateArray = fgPrivacyObject.getJSONArray(key);
-						for (Object range : privateArray.toArray()){
-							JSONArray beginDims = ((JSONArray)range).getJSONArray(0);
-							JSONArray endDims = ((JSONArray)range).getJSONArray(1);
-							long[] beginDimsLong = new long[beginDims.length()];
-							long[] endDimsLong = new long[endDims.length()];
-							for ( int dimIndex = 0; dimIndex < beginDims.length(); dimIndex++ ){
-								beginDimsLong[dimIndex] = beginDims.getLong(dimIndex);
-								endDimsLong[dimIndex] = endDims.getLong(dimIndex);
-							}
-							DataRange dataRange = new DataRange(beginDimsLong, endDimsLong);
-							fineGrainedPrivacy.put(dataRange, PrivacyLevel.valueOf(key));
-						}
-					}
-				} catch (JSONException exception){
-					throw new DMLException("JSONException: " + exception);
-				}
-				privacyConstraint.setFineGrainedPrivacyConstraints(fineGrainedPrivacy);
+				setFineGrainedPrivacy(privacyConstraint, eFineGrainedPrivacy);
 			}
 			getOutput().setPrivacy(privacyConstraint);
 		}
+	}
+
+	private void setFineGrainedPrivacy(PrivacyConstraint privacyConstraint, Expression eFineGrainedPrivacy){
+		FineGrainedPrivacy fineGrainedPrivacy = privacyConstraint.getFineGrainedPrivacy();
+		StringIdentifier fgPrivacyIdentifier = (StringIdentifier) eFineGrainedPrivacy;
+		String fgPrivacyValue = fgPrivacyIdentifier.getValue();
+		try {
+			putFineGrainedConstraintsFromString(fineGrainedPrivacy, fgPrivacyValue);
+		} catch (JSONException exception){
+			throw new DMLException("JSONException: " + exception);
+		}
+		privacyConstraint.setFineGrainedPrivacyConstraints(fineGrainedPrivacy);
+	}
+
+	private void putFineGrainedConstraintsFromString(FineGrainedPrivacy fineGrainedPrivacy, String fgPrivacyValue)
+		throws JSONException {
+		JSONArtifact fgPrivacyJson = JSON.parse(fgPrivacyValue);
+		JSONObject fgPrivacyObject = (JSONObject)fgPrivacyJson;
+		JSONArray keys = fgPrivacyObject.names();
+		for ( int i = 0; i < keys.length(); i++ ){
+			String key = keys.getString(i);
+			putFineGrainedConstraint(fgPrivacyObject, fineGrainedPrivacy, key);
+		}
+	}
+
+	private void putFineGrainedConstraint(JSONObject fgPrivacyObject, FineGrainedPrivacy fineGrainedPrivacy, String key)
+		throws JSONException {
+		JSONArray privateArray = fgPrivacyObject.getJSONArray(key);
+		for (Object range : privateArray.toArray()){
+			DataRange dataRange = getDataRangeFromObject(range);
+			fineGrainedPrivacy.put(dataRange, PrivacyLevel.valueOf(key));
+		}
+	}
+
+	private DataRange getDataRangeFromObject(Object range) throws JSONException {
+		JSONArray beginDims = ((JSONArray)range).getJSONArray(0);
+		JSONArray endDims = ((JSONArray)range).getJSONArray(1);
+		long[] beginDimsLong = new long[beginDims.length()];
+		long[] endDimsLong = new long[endDims.length()];
+		for ( int dimIndex = 0; dimIndex < beginDims.length(); dimIndex++ ){
+			beginDimsLong[dimIndex] = beginDims.getLong(dimIndex);
+			endDimsLong[dimIndex] = endDims.getLong(dimIndex);
+		}
+		return new DataRange(beginDimsLong, endDimsLong);
 	}
 	
 } // end class

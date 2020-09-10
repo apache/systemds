@@ -106,7 +106,7 @@ public class PrivacyPropagator
 			case FEDERATED:
 				return inst;
 			default:
-				throwExceptionIfPrivacyActivated(inst, ec);
+				throwExceptionIfPrivacyActivated(inst);
 				return inst;
 		}
 	}
@@ -209,7 +209,7 @@ public class PrivacyPropagator
 	 * @return input instruction if privacy constraints are not activated
 	 */
 	private static Instruction preprocessCovarianceCPInstruction(CovarianceCPInstruction inst, ExecutionContext ec){
-		throwExceptionIfPrivacyActivated(inst, ec);
+		throwExceptionIfPrivacyActivated(inst);
 		for ( CPOperand input : inst.getInputs() ){
 			PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
 			if ( privacyConstraint != null){
@@ -330,7 +330,7 @@ public class PrivacyPropagator
 	 * @return instruction
 	 */
 	public static Instruction preprocessInstructionSimple(Instruction inst, ExecutionContext ec){
-		throwExceptionIfPrivacyActivated(inst, ec);
+		throwExceptionIfPrivacyActivated(inst);
 		return inst;
 	}
 
@@ -345,7 +345,7 @@ public class PrivacyPropagator
 	}
 
 	public static Instruction preprocessMultiReturn(ComputationCPInstruction inst, ExecutionContext ec){
-		ArrayList<CPOperand> outputs = getOutputOperands(inst);
+		List<CPOperand> outputs = getOutputOperands(inst);
 		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), outputs);
 	}
 
@@ -372,7 +372,7 @@ public class PrivacyPropagator
 		return mergePrivacyConstraintsFromInput(inst, ec, inputs, getSingletonList(output));
 	}
 
-	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, ArrayList<CPOperand> outputs){
+	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, List<CPOperand> outputs){
 		if ( inputs != null && inputs.length > 0 ){
 			PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
 			if ( privacyConstraints != null ){
@@ -433,12 +433,12 @@ public class PrivacyPropagator
 			case Read:
 				return inst;
 			default:
-				throwExceptionIfPrivacyActivated(inst, ec);
+				throwExceptionIfPrivacyActivated(inst);
 				return inst;
 		}
 	}
 
-	private static void throwExceptionIfPrivacyActivated(Instruction inst, ExecutionContext ec){
+	private static void throwExceptionIfPrivacyActivated(Instruction inst){
 		if ( inst.getPrivacyConstraint() != null && inst.getPrivacyConstraint().hasConstraints() ) {
 			throw new DMLPrivacyException("Instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
 		}
@@ -560,7 +560,7 @@ public class PrivacyPropagator
 
 	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
 		// if inst has output
-		ArrayList<CPOperand> instOutputs = getOutputOperands(inst);
+		List<CPOperand> instOutputs = getOutputOperands(inst);
 		if (!instOutputs.isEmpty()){
 			for ( CPOperand output : instOutputs ){
 				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
@@ -592,7 +592,7 @@ public class PrivacyPropagator
 		return instructionOutputNames;
 	}
 
-	private static ArrayList<CPOperand> getOutputOperands(Instruction inst){
+	private static List<CPOperand> getOutputOperands(Instruction inst){
 		// The order of the following statements is important
 		if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
 			return ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputs();
@@ -607,7 +607,7 @@ public class PrivacyPropagator
 		return new ArrayList<CPOperand>();
 	}
 
-	private static ArrayList<CPOperand> getSingletonList(CPOperand operand){
+	private static List<CPOperand> getSingletonList(CPOperand operand){
 		if ( operand != null)
 			return new ArrayList<>(Collections.singletonList(operand));
 		else return new ArrayList<>();

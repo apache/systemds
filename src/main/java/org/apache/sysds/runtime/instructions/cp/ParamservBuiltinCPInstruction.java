@@ -195,10 +195,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
 		}
 
-		// Set features and lables for the control threads
+		// Set features and lables for the control threads and write the program and instruction to the federated workers
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(pFeatures.get(i));
 			threads.get(i).setLabels(pLabels.get(i));
+			threads.get(i).setup();
 		}
 
 		System.out.println("[+] Set data for workers");

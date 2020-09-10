@@ -50,10 +50,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.api.mlcontext.Matrix;
 import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.lops.Data;
-import org.apache.sysds.lops.Federated;
 import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.Statement.PSFrequency;
@@ -65,11 +62,13 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.paramserv.*;
+import org.apache.sysds.runtime.controlprogram.paramserv.FederatedPSControlThread;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
+import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartitioner;
@@ -224,7 +223,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		LongAccumulator aEpoch = sec.getSparkContext().sc().longAccumulator("numEpochs");
 		
 		// Create remote workers
-		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), 
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN),
 			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
 			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch);
 

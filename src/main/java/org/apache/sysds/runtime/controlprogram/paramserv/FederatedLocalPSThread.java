@@ -199,9 +199,8 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 
 		try {
 			Object[] responseData = udfResponse.get().getData();
-			System.out.println("[+] Got response: " + responseData[0]);
 			System.out.println("[+] Gradients calculation on federated worker successful");
-			return null;
+			return (ListObject) responseData[0];
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage());

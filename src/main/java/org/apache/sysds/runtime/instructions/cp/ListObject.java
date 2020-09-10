@@ -313,6 +313,8 @@ public class ListObject extends Data implements Externalizable {
 	public void writeExternal(ObjectOutput out) throws IOException {
 		// write out length
 		out.writeInt(getLength());
+		// write out num cacheable
+		out.writeInt(_nCacheable);
 
 		// write out names for named list
 		out.writeBoolean(getNames() != null);
@@ -365,6 +367,8 @@ public class ListObject extends Data implements Externalizable {
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		// read in length
 		int length = in.readInt();
+		// read in num cacheable
+		_nCacheable = in.readInt();
 
 		// read in names
 		Boolean names = in.readBoolean();

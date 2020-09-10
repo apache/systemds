@@ -30,12 +30,14 @@ labels = federated(addresses=list($y1, $y2),
     ranges=list(list(0, 0), list($examples_per_worker, $num_labels),
                 list($examples_per_worker, 0), list($examples_per_worker * 2, $num_labels)))
 
-epochs = 5
-batch_size = 1
-learning_rate = 0.01
+epochs = $epochs
+batch_size = $batch_size
+learning_rate = $eta
+utype = $utype
+freq = $freq
+
+# currently ignored parameters
 workers = 1
-utype = "BSP"
-freq = "BATCH"
 scheme = "DISJOINT_CONTIGUOUS"
 paramserv_mode = "LOCAL"
 

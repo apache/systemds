@@ -57,15 +57,33 @@ import java.util.concurrent.Future;
 public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Void> {
 	FederatedData _featuresData;
 	FederatedData _labelsData;
+	String _instructionString;
+	String _programSerialized;
 
 	public FederatedLocalPSThread(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
+
+		// prepare program and instruction
+		// Create a program block for the instruction filtering
+		BasicProgramBlock updateProgramBlock = new BasicProgramBlock(_ec.getProgram());
+		updateProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_inst)));
+		ArrayList<ProgramBlock> updateProgramBlocks = new ArrayList<>();
+		updateProgramBlocks.add(updateProgramBlock);
+
+		_programSerialized = ProgramConverter.serializeProgram(_ec.getProgram(),
+				updateProgramBlocks,
+				new HashMap<>(),
+				false
+		);
+
+		_instructionString = _inst.toString();
 	}
 
 	@Override
 	protected ListObject computeGradients(ListObject params, long dataSize, int batchIter, int i, int j) {
 		System.out.println("[+] Control thread started computing gradients method");
 
+		// prepare features and labels
 		// TODO: kind of a workaround. Assumes only one entry in the federation map
 		_features.getFedMapping().forEachParallel((range, data) -> {
 			_featuresData = data;
@@ -92,23 +110,6 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute put" + e.getMessage());
 		}
 
-		// prepare program and instruction
-		String instString = _inst.toString();
-		// _inst = FunctionCallCPInstruction.parseInstruction(instString);
-
-
-		String programString = "";
-
-		//Create a program block for the instruction filtering
-		/*BasicProgramBlock updateProgramBlock = new BasicProgramBlock(_ec.getProgram());
-		updateProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_inst)));
-		ArrayList<ProgramBlock> updateProgramBlocks = new ArrayList<>();
-		updateProgramBlocks.add(updateProgramBlock);*/
-
-		programString = ProgramConverter.serializeProgramForFederated(_ec.getProgram(),
-				new HashMap<>(),
-				false
-		);
 
 		// create and execute the udf on the remote worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
@@ -116,8 +117,8 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 				new federatedComputeGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID(), jVarID, paramsVarID},
 											  _batchSize,
 						 					  dataSize,
-											  instString,
-											  programString
+											  _instructionString,
+											  _programSerialized
 				)
 		));
 

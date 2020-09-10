@@ -817,7 +817,7 @@ public class ProgramConverter
 		//handle program
 		sb.append(PROG_BEGIN);
 		sb.append( NEWLINE );
-		sb.append( serializeProgram(prog, pbs, clsMap) );
+		sb.append( serializeProgram(prog, pbs, clsMap, true) );
 		sb.append(PROG_END);
 		sb.append( NEWLINE );
 		sb.append( COMPONENTS_DELIM );
@@ -849,39 +849,32 @@ public class ProgramConverter
 		return sb.toString();
 	}
 
-	private static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs, HashMap<String, byte[]> clsMap ) {
+	public static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs, HashMap<String, byte[]> clsMap, boolean opt) {
 		//note program contains variables, programblocks and function program blocks
 		//but in order to avoid redundancy, we only serialize function program blocks
-		HashMap<String, FunctionProgramBlock> fpb = prog.getFunctionProgramBlocks();
-		HashSet<String> cand = new HashSet<>();
-		rFindSerializationCandidates(pbs, cand);
-		return rSerializeFunctionProgramBlocks( fpb, cand, clsMap );
-	}
-
-	public static String serializeProgramForFederated( Program prog, HashMap<String, byte[]> clsMap, boolean opt) {
-		//note program contains variables, programblocks and function program blocks 
-		//but in order to avoid redundancy, we only serialize function program blocks
 		HashMap<String, FunctionProgramBlock> fpb = prog.getFunctionProgramBlocks(opt);
-		return rSerializeAllFunctionProgramBlocks(fpb, clsMap);
+		HashSet<String> cand = new HashSet<>();
+		rFindSerializationCandidates(pbs, cand, opt);
+		return rSerializeFunctionProgramBlocks(fpb, cand, clsMap);
 	}
 
-	private static void rFindSerializationCandidates( ArrayList<ProgramBlock> pbs, HashSet<String> cand ) 
+	private static void rFindSerializationCandidates( ArrayList<ProgramBlock> pbs, HashSet<String> cand, boolean opt)
 	{
 		for( ProgramBlock pb : pbs )
 		{
 			if( pb instanceof WhileProgramBlock ) {
 				WhileProgramBlock wpb = (WhileProgramBlock) pb;
-				rFindSerializationCandidates(wpb.getChildBlocks(), cand );
+				rFindSerializationCandidates(wpb.getChildBlocks(), cand, opt);
 			}
 			else if ( pb instanceof ForProgramBlock || pb instanceof ParForProgramBlock ) {
 				ForProgramBlock fpb = (ForProgramBlock) pb; 
-				rFindSerializationCandidates(fpb.getChildBlocks(), cand);
+				rFindSerializationCandidates(fpb.getChildBlocks(), cand, opt);
 			}
 			else if ( pb instanceof IfProgramBlock ) {
 				IfProgramBlock ipb = (IfProgramBlock) pb;
-				rFindSerializationCandidates(ipb.getChildBlocksIfBody(), cand);
+				rFindSerializationCandidates(ipb.getChildBlocksIfBody(), cand, opt);
 				if( ipb.getChildBlocksElseBody() != null )
-					rFindSerializationCandidates(ipb.getChildBlocksElseBody(), cand);
+					rFindSerializationCandidates(ipb.getChildBlocksElseBody(), cand, opt);
 			}
 			else if( pb instanceof BasicProgramBlock ) { 
 				BasicProgramBlock bpb = (BasicProgramBlock) pb;
@@ -892,8 +885,8 @@ public class ProgramConverter
 						if( !cand.contains(fkey) ) { //memoization for multiple calls, recursion
 							cand.add( fkey ); //add to candidates
 							//investigate chains of function calls
-							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fci.getNamespace(), fci.getFunctionName(), false);
-							rFindSerializationCandidates(fpb.getChildBlocks(), cand);
+							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fci.getNamespace(), fci.getFunctionName(), opt);
+							rFindSerializationCandidates(fpb.getChildBlocks(), cand, opt);
 						}
 					}
 			}
@@ -1000,8 +993,8 @@ public class ProgramConverter
 			//check that only cp instruction are transmitted
 
 			// TODO: Makes big problems
-			if( !( linst instanceof CPInstruction) )
-				throw new DMLRuntimeException( NOT_SUPPORTED_SPARK_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
+			//if( !( linst instanceof CPInstruction) )
+				//throw new DMLRuntimeException( NOT_SUPPORTED_SPARK_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
 			
 			//obtain serialized version of generated classes
 			if( linst instanceof SpoofCPInstruction ) {
@@ -1105,23 +1098,6 @@ public class ProgramConverter
 		for( Entry<String,FunctionProgramBlock> pb : pbs.entrySet() ) {
 			if( !cand.contains(pb.getKey()) ) //skip function not included in the parfor body
 				continue;
-			if( count>0 ) {
-				sb.append( ELEMENT_DELIM );
-				sb.append( NEWLINE );
-			}
-			sb.append( pb.getKey() );
-			sb.append( KEY_VALUE_DELIM );
-			sb.append( rSerializeProgramBlock(pb.getValue(), clsMap) );
-			count++;
-		}
-		sb.append(NEWLINE);
-		return sb.toString();
-	}
-
-	private static String rSerializeAllFunctionProgramBlocks(HashMap<String,FunctionProgramBlock> pbs, HashMap<String, byte[]> clsMap) {
-		StringBuilder sb = new StringBuilder();
-		int count = 0;
-		for( Entry<String,FunctionProgramBlock> pb : pbs.entrySet() ) {
 			if( count>0 ) {
 				sb.append( ELEMENT_DELIM );
 				sb.append( NEWLINE );

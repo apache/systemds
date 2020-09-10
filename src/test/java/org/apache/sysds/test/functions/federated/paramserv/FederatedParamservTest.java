@@ -1,20 +1,50 @@
 package org.apache.sysds.test.functions.federated.paramserv;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.junit.Test;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
+import java.util.Collection;
 
+@RunWith(Parameterized.class)
 public class FederatedParamservTest extends AutomatedTestBase {
     private final static String TEST_DIR = "functions/federated/paramserv/";
     private final static String TEST_NAME = "FederatedParamservTest";
     private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
-    private final static int blocksize = 1024;
+    private final static int _blocksize = 1024;
+
+    private int _epochs;
+    private int _batch_size;
+    private double _eta;
+    private String _utype;
+    private String _freq;
+
+    // parameters
+
+
+    @Parameterized.Parameters
+    public static Collection parameters() {
+        return Arrays.asList(new Object[][] {
+                {5, 1, 0.01, "BSP", "BATCH"},
+                {5, 1, 0.01, "ASP", "BATCH"},
+                {5, 1, 0.01, "BSP", "EPOCH"},
+                {5, 1, 0.01, "ASP", "EPOCH"},
+        });
+    }
+
+    public FederatedParamservTest(int epochs, int batch_size, double eta, String utype, String freq) {
+        _epochs = epochs;
+        _batch_size = batch_size;
+        _eta = eta;
+        _utype = utype;
+        _freq = freq;
+    }
 
     @Override
     public void setUp() {
@@ -36,15 +66,15 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
         // write row partitioned features to disk
         writeInputMatrixWithMTD("X1", generateDummyMNISTFeatures(examplesPerWorker, C, Hin, Win),false,
-                        new MatrixCharacteristics(examplesPerWorker, numFeatures, blocksize, examplesPerWorker * numFeatures));
+                        new MatrixCharacteristics(examplesPerWorker, numFeatures, _blocksize, examplesPerWorker * numFeatures));
         writeInputMatrixWithMTD("X2", generateDummyMNISTFeatures(examplesPerWorker, C, Hin, Win),false,
-                new MatrixCharacteristics(examplesPerWorker, numFeatures, blocksize, examplesPerWorker * numFeatures));
+                new MatrixCharacteristics(examplesPerWorker, numFeatures, _blocksize, examplesPerWorker * numFeatures));
 
         // write row partitioned labels to disk
         writeInputMatrixWithMTD("y1", generateDummyMNISTLabels(examplesPerWorker, numLabels),false,
-                new MatrixCharacteristics(examplesPerWorker, numLabels, blocksize, examplesPerWorker * numLabels));
+                new MatrixCharacteristics(examplesPerWorker, numLabels, _blocksize, examplesPerWorker * numLabels));
         writeInputMatrixWithMTD("y2", generateDummyMNISTLabels(examplesPerWorker, numLabels),false,
-                new MatrixCharacteristics(examplesPerWorker, numLabels, blocksize, examplesPerWorker * numLabels));
+                new MatrixCharacteristics(examplesPerWorker, numLabels, _blocksize, examplesPerWorker * numLabels));
 
         // start workers
         int port1 = getRandomAvailablePort();
@@ -61,8 +91,14 @@ public class FederatedParamservTest extends AutomatedTestBase {
                 "y2=" + TestUtils.federatedAddress(port2, input("y2")),
                 "examples_per_worker=" + examplesPerWorker,
                 "num_features=" + numFeatures,
-                "num_labels=" + numLabels
-                };
+                "num_labels=" + numLabels,
+                "epochs=" + _epochs,
+                "batch_size=" + _batch_size,
+                "eta=" + _eta,
+                "utype=" + _utype,
+                "freq=" + _freq
+            };
+
         ByteArrayOutputStream stdout= runTest(null);
         System.out.print(stdout.toString());
 

@@ -53,12 +53,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static org.apache.sysds.runtime.util.ProgramConverter.*;
 
 public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Void> {
 	FederatedData _featuresData;
 	FederatedData _labelsData;
-	String _instructionString;
-	String _programSerialized;
 
 	public FederatedLocalPSThread(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
@@ -86,20 +87,28 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 		ArrayList<ProgramBlock> updateProgramBlocks = new ArrayList<>();
 		updateProgramBlocks.add(updateProgramBlock);
 
-		_programSerialized = ProgramConverter.serializeProgram(_ec.getProgram(),
+		StringBuilder sb = new StringBuilder();
+		sb.append(PROG_BEGIN);
+		sb.append( NEWLINE );
+		sb.append(ProgramConverter.serializeProgram(_ec.getProgram(),
 				updateProgramBlocks,
 				new HashMap<>(),
 				false
-		);
+		));
+		sb.append(PROG_END);
+		String programSerialized = sb.toString();
 
-		// serialize instruction
-		_instructionString = _inst.toString();
-
-		// write program to worker and meta data to worker
+		// write program and meta data to worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
 				_featuresData.getVarID(),
-				new setupFederatedWorker(_batchSize, _features.getNumRows(), _instructionString, _programSerialized)
-		));
+				new setupFederatedWorker(_batchSize,
+										 _features.getNumRows(),
+										 programSerialized,
+						    			 _inst.getNamespace(),
+										 _inst.getFunctionName(),
+										 _ec.getListObject("hyperparams")
+					)
+			));
 
 		try {
 			FederatedResponse response = udfResponse.get();
@@ -118,27 +127,33 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 	private static class setupFederatedWorker extends FederatedUDF {
 		long _batchSize;
 		long _dataSize;
-		String _instructionString;
 		String _programString;
+		String _namespace;
+		String _functionName;
+		ListObject _hyperParams;
 
-		protected setupFederatedWorker(long batchSize, long dataSize, String instString, String programString) {
+		protected setupFederatedWorker(long batchSize, long dataSize, String programString, String namespace, String functionName, ListObject hyperParams) {
 			super(new long[]{});
 			_batchSize = batchSize;
 			_dataSize = dataSize;
-			_instructionString = instString;
 			_programString = programString;
+			_namespace = namespace;
+			_functionName = functionName;
+			_hyperParams = hyperParams;
 		}
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			// parse and set program
+			// parse and set program 	WARNING: the parsing writes all functions to optimized
 			Program prog = ProgramConverter.parseProgram(_programString, 0);
 			ec.setProgram(prog);
 
 			// set variables to ec
 			ec.setVariable("batchSize", new IntObject(_batchSize));
 			ec.setVariable("dataSize", new IntObject(_dataSize));
-			ec.setVariable("instructionString", new StringObject(_instructionString));
+			ec.setVariable("namespace", new StringObject(_namespace));
+			ec.setVariable("functionName", new StringObject(_functionName));
+			ec.setVariable("hyperparams", _hyperParams);
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
@@ -200,14 +215,17 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			// read in data by varid
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];
 			long j = ((IntObject) data[2]).getLongValue();
 			ListObject params = (ListObject) data[3];
 
+			// get data from execution context
 			long batchSize = ((IntObject) ec.getVariable("batchSize")).getLongValue();
 			long dataSize = ((IntObject) ec.getVariable("dataSize")).getLongValue();
-			String instructionString = ((StringObject) ec.getVariable("instructionString")).getStringValue();
+			String namespace = ((StringObject) ec.getVariable("namespace")).getStringValue();
+			String functionName = ((StringObject) ec.getVariable("functionName")).getStringValue();
 
 			// slice batch from feature and label matrix
 			long begin = j * batchSize + 1;
@@ -220,14 +238,24 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 			ec.setVariable(Statement.PS_FEATURES, bFeatures);
 			ec.setVariable(Statement.PS_LABELS, bLabels);
 
-			System.out.println("Starting instruction");
+			// recreate instruction and output
+			// TODO: Serialize instruction to ec or maybe put in program
+			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, functionName, true);
+			ArrayList<DataIdentifier> inputs = func.getInputParams();
+			ArrayList<DataIdentifier> outputs = func.getOutputParams();
+			CPOperand[] boundInputs = inputs.stream()
+					.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
+					.toArray(CPOperand[]::new);
+			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
+					.collect(Collectors.toCollection(ArrayList::new));
+			Instruction instruction = new FunctionCallCPInstruction(namespace, functionName, true, boundInputs,
+					func.getInputParamNames(), outputNames, "update function");
+			DataIdentifier output = outputs.get(0);
 
-			/*_inst.processInstruction(ec);
-			// Get the gradients
-			ListObject gradients = ec.getListObject(_output.getName());*/
-
-			//return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{gradients});
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{new ArrayList<>()});
+			// calculate and return gradients
+			instruction.processInstruction(ec);
+			ListObject gradients = ec.getListObject(output.getName());
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, gradients);
 		}
 	}
 }

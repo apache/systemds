@@ -120,10 +120,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private void runFederated(ExecutionContext ec) {
 		System.out.println("PARAMETER SERVER");
 		System.out.println("[+] Running in federated mode");
-		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 
 		// Debugging inputs
-		System.out.println("INPUTS");
+		/*System.out.println("INPUTS");
 		System.out.println("[+] Features Federated Matrix _ID: " + ec.getMatrixObject(getParam(PS_FEATURES)).getFedMapping().getID());
 		ec.getMatrixObject(getParam(PS_FEATURES)).getFedMapping().forEachParallel(((range, data) -> {
 			System.out.println("[+] Features Federated Data Member Object _varID: " + data.getVarID());
@@ -134,7 +133,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ec.getMatrixObject(getParam(PS_LABELS)).getFedMapping().forEachParallel(((range, data) -> {
 			System.out.println("[+] Lables Federated Data Member Object _varID: " + data.getVarID());
 			return null;
-		}));
+		}));*/
 
 		// get inputs
 		PSFrequency freq = getFrequency();
@@ -173,11 +172,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, getParLevel(workerNum));
 
 		// Create workers' execution context
+		// TODO: Copying should not be needed, as this gets done later
 		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
 
 		// Create the agg service's execution context
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
-
 		System.out.println("[+] Compiled and created execution contexts");
 
 		// Create the parameter server
@@ -195,17 +194,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
 		}
 
-		// Set features and lables for the control threads and write the program and instruction to the federated workers
+		// Set features and lables for the control threads and write the program and instructions and hyperparams to the federated workers
 		for (int i = 0; i < threads.size(); i++) {
 			threads.get(i).setFeatures(pFeatures.get(i));
 			threads.get(i).setLabels(pLabels.get(i));
 			threads.get(i).setup();
 		}
-
 		System.out.println("[+] Set data for workers");
-
-		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		try {
 			// Launch the worker threads and wait for completion

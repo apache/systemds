@@ -21,6 +21,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
     private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
     private final static int _blocksize = 1024;
 
+    private final int _examplesPerWorker;
     private final int _epochs;
     private final int _batch_size;
     private final double _eta;
@@ -33,16 +34,22 @@ public class FederatedParamservTest extends AutomatedTestBase {
     @Parameterized.Parameters
     public static Collection parameters() {
         return Arrays.asList(new Object[][] {
-                {5, 1, 0.01, "BSP", "BATCH"},
-                {5, 1, 0.01, "ASP", "BATCH"},
-                {5, 1, 0.01, "BSP", "EPOCH"},
-                {5, 1, 0.01, "ASP", "EPOCH"},
+                //Examples per worker, batch size, epochs, learning rate, update type, update frequency
+                {2, 1, 5, 0.01, "BSP", "BATCH"},
+                {2, 1, 5, 0.01, "ASP", "BATCH"},
+                {2, 1, 5, 0.01, "BSP", "EPOCH"},
+                {2, 1, 5, 0.01, "ASP", "EPOCH"},
+                {1000, 32, 2, 0.01, "BSP", "BATCH"},
+                {1000, 32, 2, 0.01, "ASP", "BATCH"},
+                {1000, 32, 2, 0.01, "BSP", "EPOCH"},
+                {1000, 32, 2, 0.01, "ASP", "EPOCH"},
         });
     }
 
-    public FederatedParamservTest(int epochs, int batch_size, double eta, String utype, String freq) {
-        _epochs = epochs;
+    public FederatedParamservTest(int examplesPerWorker, int batch_size, int epochs, double eta, String utype, String freq) {
+        _examplesPerWorker = examplesPerWorker;
         _batch_size = batch_size;
+        _epochs = epochs;
         _eta = eta;
         _utype = utype;
         _freq = freq;
@@ -71,19 +78,18 @@ public class FederatedParamservTest extends AutomatedTestBase {
         int C = 1, Hin = 28, Win = 28;
         int numFeatures = C*Hin*Win;
         int numLabels = 10;
-        int examplesPerWorker = 2;
 
         // write row partitioned features to disk
-        writeInputMatrixWithMTD("X1", generateDummyMNISTFeatures(examplesPerWorker, C, Hin, Win),false,
-                        new MatrixCharacteristics(examplesPerWorker, numFeatures, _blocksize, examplesPerWorker * numFeatures));
-        writeInputMatrixWithMTD("X2", generateDummyMNISTFeatures(examplesPerWorker, C, Hin, Win),false,
-                new MatrixCharacteristics(examplesPerWorker, numFeatures, _blocksize, examplesPerWorker * numFeatures));
+        writeInputMatrixWithMTD("X1", generateDummyMNISTFeatures(_examplesPerWorker, C, Hin, Win),false,
+                        new MatrixCharacteristics(_examplesPerWorker, numFeatures, _blocksize, _examplesPerWorker * numFeatures));
+        writeInputMatrixWithMTD("X2", generateDummyMNISTFeatures(_examplesPerWorker, C, Hin, Win),false,
+                new MatrixCharacteristics(_examplesPerWorker, numFeatures, _blocksize, _examplesPerWorker * numFeatures));
 
         // write row partitioned labels to disk
-        writeInputMatrixWithMTD("y1", generateDummyMNISTLabels(examplesPerWorker, numLabels),false,
-                new MatrixCharacteristics(examplesPerWorker, numLabels, _blocksize, examplesPerWorker * numLabels));
-        writeInputMatrixWithMTD("y2", generateDummyMNISTLabels(examplesPerWorker, numLabels),false,
-                new MatrixCharacteristics(examplesPerWorker, numLabels, _blocksize, examplesPerWorker * numLabels));
+        writeInputMatrixWithMTD("y1", generateDummyMNISTLabels(_examplesPerWorker, numLabels),false,
+                new MatrixCharacteristics(_examplesPerWorker, numLabels, _blocksize, _examplesPerWorker * numLabels));
+        writeInputMatrixWithMTD("y2", generateDummyMNISTLabels(_examplesPerWorker, numLabels),false,
+                new MatrixCharacteristics(_examplesPerWorker, numLabels, _blocksize, _examplesPerWorker * numLabels));
 
         // start workers
         int port1 = getRandomAvailablePort();
@@ -98,7 +104,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
                 "X2=" + TestUtils.federatedAddress(port2, input("X2")),
                 "y1=" + TestUtils.federatedAddress(port1, input("y1")),
                 "y2=" + TestUtils.federatedAddress(port2, input("y2")),
-                "examples_per_worker=" + examplesPerWorker,
+                "examples_per_worker=" + _examplesPerWorker,
                 "num_features=" + numFeatures,
                 "num_labels=" + numLabels,
                 "epochs=" + _epochs,

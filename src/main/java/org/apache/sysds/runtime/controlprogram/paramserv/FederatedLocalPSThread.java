@@ -178,6 +178,7 @@ public class FederatedLocalPSThread extends LocalPSWorker implements Callable<Vo
 		Future<FederatedResponse> putJResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, jVarID, new IntObject(j)));
 
 		// put current parameters on federated worker
+		// TODO: unnecessary in some cases (updated type epoch)
 		long paramsVarID = FederationUtils.getNextFedDataID();
 		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, paramsVarID, params));
 

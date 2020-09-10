@@ -121,20 +121,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		System.out.println("PARAMETER SERVER");
 		System.out.println("[+] Running in federated mode");
 
-		// Debugging inputs
-		/*System.out.println("INPUTS");
-		System.out.println("[+] Features Federated Matrix _ID: " + ec.getMatrixObject(getParam(PS_FEATURES)).getFedMapping().getID());
-		ec.getMatrixObject(getParam(PS_FEATURES)).getFedMapping().forEachParallel(((range, data) -> {
-			System.out.println("[+] Features Federated Data Member Object _varID: " + data.getVarID());
-			return null;
-		}));
-
-		System.out.println("[+] Labels Federated Matrix _ID: " + ec.getMatrixObject(getParam(PS_LABELS)).getFedMapping().getID());
-		ec.getMatrixObject(getParam(PS_LABELS)).getFedMapping().forEachParallel(((range, data) -> {
-			System.out.println("[+] Lables Federated Data Member Object _varID: " + data.getVarID());
-			return null;
-		}));*/
-
 		// get inputs
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
@@ -148,47 +134,25 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		List<MatrixObject> pLabels = result.pLabels;
 		int workerNum = result.workerNum;
 
-		// Check partitioning
-		System.out.println("PARTITIONING");
-		System.out.println("[+] Partitioned features");
-		for(MatrixObject feature : pFeatures) {
-			System.out.println(feature.toString());
-		}
-		System.out.println("[+] Partitioned labels");
-		for(MatrixObject label : pLabels) {
-			System.out.println(label.toString());
-		}
-
-		System.out.println("INFRASTRUCTURE");
 		// setup threading
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
 				.namingPattern("workers-pool-thread-%d").build();
 		ExecutorService es = Executors.newFixedThreadPool(workerNum, factory);
 
-		System.out.println("[+] Threading setup");
-
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
 		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, getParLevel(workerNum));
-
 		// Create workers' execution context
-		// TODO: Copying should not be needed, as this gets done later
 		List<ExecutionContext> federatedWorkerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
-
 		// Create the agg service's execution context
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
-		System.out.println("[+] Compiled and created execution contexts");
-
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
-
 		// Create the local workers
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
 				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
 				.collect(Collectors.toList());
-
-		System.out.println("[+] Created parameter server and threads for federated workers");
 
 		if(workerNum != threads.size()) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
@@ -200,7 +164,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			threads.get(i).setLabels(pLabels.get(i));
 			threads.get(i).setup();
 		}
-		System.out.println("[+] Set data for workers");
 
 		try {
 			// Launch the worker threads and wait for completion

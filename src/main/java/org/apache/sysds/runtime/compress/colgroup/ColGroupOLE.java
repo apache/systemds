@@ -333,13 +333,13 @@ public class ColGroupOLE extends ColGroupOffset {
 					double val = aval[k];
 					int bix = apos[k];
 
-					int len = _data[boff + bix];
-					int pos = boff + bix + 1;
-					// LOG.error("Len: "+pos +  " pos: "+bi + " ii " + len);
 					for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
 						// prepare length, start, and end pos
+						int len = _data[boff + bix];
+						int pos = boff + bix + 1;
+						
 						// compute partial results
-						LinearAlgebraUtils.vectAdd(val, c, _data, pos, ii, Math.min(len, ru));
+						LinearAlgebraUtils.vectAdd(val, c, _data, pos, ii, Math.min(len,ru));
 						bix += len + 1;
 					}
 

@@ -982,9 +982,12 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			// uc.rightMultByVector(vector, result, k);
 
 			// compute remaining compressed column groups in parallel
+			// note: OLE needs alignment to segment size, otherwise wrong entry
 			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
-			int blklen = getAlignedBlockSize((int) (Math.ceil((double) rlen / k)));
+			int seqsz = CompressionSettings.BITMAP_BLOCK_SZ;
+			int blklen = (int)(Math.ceil((double)rlen/k));
+			blklen += (blklen%seqsz != 0)?seqsz-blklen%seqsz:0;
 			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
 			for(int i = 0; i < k & i * blklen < getNumRows(); i++)
 				tasks.add(

@@ -184,8 +184,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, workerNum, model, aggServiceEC);
 
 		// Create the local workers
-		List<FederatedLocalPSThread> threads = IntStream.range(0, workerNum)
-				.mapToObj(i -> new FederatedLocalPSThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
+		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
+				.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, getEpochs(), getBatchSize(), federatedWorkerECs.get(i), ps))
 				.collect(Collectors.toList());
 
 		System.out.println("[+] Created parameter server and threads for federated workers");

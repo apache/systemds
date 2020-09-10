@@ -109,10 +109,8 @@ public class ParamservUtils {
 	 * @param lName list var name
 	 */
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
-		if(ec.getVariable(lName) != null) {
-			ListObject lo = (ListObject) ec.removeVariable(lName);
-			cleanupListObject(ec, lo, lo.getStatus());
-		}
+		ListObject lo = (ListObject) ec.removeVariable(lName);
+		cleanupListObject(ec, lo, lo.getStatus());
 	}
 
 	/**

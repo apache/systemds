@@ -19,7 +19,11 @@
 
 package org.apache.sysds.test.component.paramserv;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Collection;
 

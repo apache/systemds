@@ -24,13 +24,16 @@
 # e         error vector (classification accuracy, l2 norm, etc)
 # k         top-K subsets / slices
 # minSup    minimum support (min number of rows per slice)
-# w         weight [0,1]: 0 only size, 1 only error
+# alpha     weight [0,1]: 0 only size, 1 only error
+# dpEval    flag for data-parallel slice evaluation, 
+#           otherwise task-parallel
+# verbose   flag for verbose debug output 
 # ------------------------------------------------------------
 # TK        top-k slices (k x ncol(X) if successful) 
 # TKC       score, size, error of slices (k x 3)
 # ------------------------------------------------------------
 
-slicing = function(Matrix[Double] X, Matrix[Double] e, Integer k = 4, Integer minSup = 4, Double w = 0.5, Boolean verbose = FALSE) 
+slicing = function(Matrix[Double] X, Matrix[Double] e, Integer k = 4, Integer minSup = 32, Double alpha = 0.5, Boolean dpEval = FALSE, Boolean verbose = FALSE) 
   return(Matrix[Double] TK, Matrix[Double] TKC)
 {
   m = nrow(X);
@@ -44,10 +47,68 @@ slicing = function(Matrix[Double] X, Matrix[Double] e, Integer k = 4, Integer mi
   cix = matrix(X + foffb, m*n, 1);
   X2 = table(rix, cix); #one-hot encoded
 
-  # initialize interesting statistics
-  n2 = ncol(X2);          # one-hot encoded features
-  eAvg = sum(e) / m;      # average error
-  CID = seq(1,n2);        # column IDs
+  # initialize statistics and basic slices
+  n2 = ncol(X2);     # one-hot encoded features
+  eAvg = sum(e) / m; # average error
+  [S, R] = createAndScoreBasicSlices(X2, e, eAvg, minSup, alpha, verbose); 
+
+  # initialize top-k
+  [TK, TKC] = maintainTopK(S, R, matrix(0, 0, n2), matrix(0, 0, 3), k, minSup);
+
+  if( verbose ) {
+    [maxsc, minsc] = analyzeTopK(TKC);
+    print("SliceFinder: initial top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc)
+  }
+
+  # lattice enumeration w/ size/error pruning, one iteration per level
+  # termination condition (max #feature levels)
+  level = 1;
+  while( nrow(S) > 0 & sum(S) > 0 & level < n ) {
+    level = level + 1;
+
+    # enumerate candidate join pairs, incl size/error pruning 
+    nrS = nrow(S);
+    S = getPairedCandidates(S, R, TK, TKC, k, level, eAvg, minSup, alpha, n2, foffb, foffe); 
+
+    if(verbose) {
+      print("\nSliceFinder: level "+level+":")
+      print(" -- generated paired slice candidates: "+nrS+" -> "+nrow(S));      
+    }
+
+    # extract and evaluate candidate slices
+    if( dpEval ) { #data-parallel
+      R = evalSlice(X2, e, eAvg, t(S), level, alpha);
+    }
+    else { # task-parallel
+      R = matrix(0, nrow(S), 3)
+      parfor( i in 1:nrow(S) )
+        R[i,] = evalSlice(X2, e, eAvg, t(S[i,]), level, alpha);
+    }
+
+    # maintain top-k after evaluation
+    [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
+
+    if(verbose) {
+      [maxsc, minsc] = analyzeTopK(TKC);
+      valid = as.integer(sum(R[,3]>=minSup));
+      print(" -- valid slices after eval: "+valid+"/"+nrow(S));
+      print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc);
+    }
+  }
+
+  TK = decodeTopK(TK, foffb, foffe);
+
+  if( verbose ) {
+    print("SliceFinder: terminated at level "+level+":\n"
+      + toString(TK) + "\n" + toString(TKC));
+  }
+}
+
+createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] e, Double eAvg, 
+  Double minSup, Double alpha, Boolean verbose)
+  return(Matrix[Double] S, Matrix[Double] R)
+{
+  n2 = ncol(X2);
   cCnts = t(colSums(X2)); # column counts
   err = t(t(e) %*% X2)    # total error vector
 
@@ -58,72 +119,34 @@ slicing = function(Matrix[Double] X, Matrix[Double] e, Integer k = 4, Integer mi
 
   # working set of active slices (#attr x #slices) and top k
   selCols = (cCnts >= minSup);
-  attr = removeEmpty(target=CID, margin="rows", select=selCols);
-  cCnts = removeEmpty(target=cCnts, margin="rows", select=selCols);
-  err = removeEmpty(target=err, margin="rows", select=selCols);
+  attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols);
+  ss = removeEmpty(target=cCnts, margin="rows", select=selCols);
+  se = removeEmpty(target=err, margin="rows", select=selCols);
   S = table(seq(1,nrow(attr)), attr, nrow(attr), n2);
-  continue = ncol(S) > 0 & sum(S) > 0;
-  level = 1;
 
   # score 1-slices and create initial top-k 
-  R = scoreSlices(cCnts, err, m, eAvg, w);
-
-  [TK, TKC] = maintainTopK(S, R, matrix(0, 0, n2), matrix(0, 0, 3), k, minSup);
-
-  if( verbose ) {
-    [maxsc, minsc] = analyzeTopK(TKC);
-    print("SliceFinder: initial top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc)
-  }
-
-  # lattice enumeration w/ size/error pruning, one iteration per level
-  while( continue ) {
-    level = level + 1;
-
-    # enumerate candidate join pairs, incl size/error pruning 
-    enumC = getPairedCandidates(S, R, TK, TKC, k, level, minSup, foffb, foffe); 
-
-    if(verbose) {
-      print("SliceFinder: level "+level+":")
-      print(" -- generated paired slice candidates: "+nrow(S)+" -> "+nrow(enumC));      
-    }
-
-    # extract and evaluate candidate slices
-    #  note: this could be done as a single matrix multiply, but to avoid
-    #  large intermediates we use repeated matrix-vector multiplication
-    R = matrix(0, nrow(enumC), 3)
-    parfor( i in 1:nrow(enumC) )
-      R[i,] = evalSlice(X2, e, t(enumC[i,]), level, w);
-
-    # maintain top-k after evaluation
-    [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
-
-    # prune slices after evaluation and new top-K
-    # TODO evaluate if useful -> more pruning if at least 1 below threhsold?
-    [S, R] = pruneSlices(enumC, R, TK, TKC, k, minSup);
-    #S = enumC;
-
-    if(verbose) {
-      [maxsc, minsc] = analyzeTopK(TKC);
-      print(" -- after eval and pruning: "+nrow(S));
-      print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc);
-    }
-
-    # termination condition (max #feature levels)
-    continue = ncol(S) > 0 & sum(S) > 0 & level < n;
-  }
-
-  if( verbose ) {
-    print(sum(TK));
-    print("SliceFinder: terminated at level "+level+":\n"
-      + toString(TK) + "\n" + toString(TKC));
-  }
+  sc = score(ss, se, eAvg, alpha, nrow(X2));
+  R = cbind(sc, se, ss);
 }
+
+score = function(Matrix[Double] ss, Matrix[Double] se, Double eAvg, Double alpha, Integer n)
+  return(Matrix[Double] sc)
+{
+  sc = alpha * ((se/ss) / eAvg - 1) - (1-alpha) * (n/ss - 1);
+}
+
+scoreUB = function(Matrix[Double] ss, Matrix[Double] se, Double eAvg, Integer minSup, Double alpha, Integer n)
+  return(Matrix[Double] sc)
+{
+  sc = alpha * ((se/minSup) / eAvg - 1) - (1-alpha) * (n/ss - 1);
+}
+
 
 maintainTopK = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double] TK, Matrix[Double] TKC, Integer k, Integer minSup) 
   return(Matrix[Double] TK, Matrix[Double] TKC)
 {
   # prune invalid minSup and scores
-  I = (R[,1] > 1) & (R[,3] >= minSup);
+  I = (R[,1] > 0) & (R[,3] >= minSup);
 
   if( sum(I)!=0 ) {
     S = removeEmpty(target=S, margin="rows", select=I);
@@ -143,84 +166,116 @@ maintainTopK = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double] TK, M
 }
 
 analyzeTopK = function(Matrix[Double] TKC) return(Double maxsc, Double minsc) {
-  maxsc = ifelse(nrow(TKC)>0, as.scalar(TKC[1,1]), NaN);
-  minsc = ifelse(nrow(TKC)>0, as.scalar(TKC[nrow(TKC),1]), NaN);
+  maxsc = -Inf;
+  minsc = -Inf;
+  if( nrow(TKC)>0 ) {
+    maxsc = as.scalar(TKC[1,1]);
+    minsc = as.scalar(TKC[nrow(TKC),1]);  
+  }
 }
 
-
-scoreSlices = function(Matrix[Double] ss, Matrix[Double] se, Integer m, Double eAvg, Double w) 
-  return(Matrix[Double] C)
-{
-  sc = w * (se/ss / eAvg) + (1-w) * ss/m;
-  C = cbind(sc, se, ss);
-}
-
-evalSlice = function(Matrix[Double] X, Matrix[Double] e, Matrix[Double] s, Integer l, Double w = 0.5) 
-  return(Matrix[Double] C)
-{
-  I = (X %*% s) == l;          # slice indicator 
-  ss = sum(I);                 # absolute slice size (nnz)
-  se = as.scalar(t(I) %*% e);  # absolute slice error 
-
-  # score of relative error and relative size
-  sc = w * (se/ss / sum(e)/nrow(X)) + (1-w) * ss/nrow(X);
-  C = t(as.matrix(list(sc, se, ss)));
-}
-
-getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double] TK, Matrix[Double] TKC, Integer k, Integer level, Integer minSup, Matrix[Double] foffb, Matrix[Double] foffe)
+getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double] TK, 
+    Matrix[Double] TKC, Integer k, Integer level, Double eAvg, Integer minSup, Double alpha, 
+    Integer n2, Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] P) 
 {
-while(FALSE){}
   # join compatible slices (without self)
   join = S %*% t(S) == (level-2)
+  I = upper.tri(target=join, diag=FALSE);
   
-  # pruning by size (at least one below threshold)
-  vsize = outer(R[,3], t(R[,3]), "min") >= minSup;
-  I = join * vsize;
-  I = upper.tri(target=I, diag=FALSE);
-
   # pair construction
   nr = nrow(I); nc = ncol(I);
   rix = matrix(I * seq(1,nr), nr*nc, 1);
   cix = matrix(I * t(seq(1,nc)), nr*nc, 1);
   rix = removeEmpty(target=rix, margin="rows");
   cix = removeEmpty(target=cix, margin="rows");
-  P1 = table(seq(1,nrow(rix)), rix, nrow(rix), nrow(S));
-  P2 = table(seq(1,nrow(cix)), cix, nrow(rix), nrow(S));
-  P = ((P1 %*% S) + (P2 %*% S)) != 0;
+  
+  P = matrix(0,0,ncol(S))
+  if( sum(rix)!=0 ) {
+    P1 = table(seq(1,nrow(rix)), rix, nrow(rix), nrow(S));
+    P2 = table(seq(1,nrow(cix)), cix, nrow(rix), nrow(S));
+    P12 = (P1 + P2);
+    P = ((P1 %*% S) + (P2 %*% S)) != 0;
+    ss = min(P1 %*% R[,3], P2 %*% R[,3])
+    se = min(P1 %*% R[,2], P2 %*% R[,2])
 
-  # prune invalid self joins (>1 bit per feature)
-  I = matrix(1, nrow(P), 1);
-  for( j in 1:ncol(foffb) ) {
-    beg = as.scalar(foffb[1,j])+1;
-    end = as.scalar(foffe[1,j]);
-    I = I & (rowSums(P[,beg:end]) <= 1);
-  }
-  P = removeEmpty(target=P, margin="rows", select=I);
+    # prune invalid self joins (>1 bit per feature)
+    I = matrix(1, nrow(P), 1);
+    for( j in 1:ncol(foffb) ) {
+      beg = as.scalar(foffb[1,j])+1;
+      end = as.scalar(foffe[1,j]);
+      I = I & (rowSums(P[,beg:end]) <= 1);
+    }
+    P = removeEmpty(target=P, margin="rows", select=I);
+    P12 = removeEmpty(target=P12, margin="rows", select=I)
+    ss = removeEmpty(target=ss, margin="rows", select=I);
+    se = removeEmpty(target=se, margin="rows", select=I);
 
-  # deduplication
-  # TODO additional size pruning given dedup mapping
-  ID = matrix(1, nrow(P), 1);
-  dom = foffe-foffb;
-  for( j in 1:ncol(dom) ) {
-    beg = as.scalar(foffb[1,j])+1;
-    end = as.scalar(foffe[1,j]);
-    I = rowIndexMax(P[,beg:end]);
-    prod = 1;
-    if(j<ncol(dom))
-      prod = prod(dom[1,(j+1):ncol(dom)])
-    ID = ID + I * prod;
+    # prepare IDs for deduplication and pruning
+    ID = matrix(0, nrow(P), 1);
+    dom = foffe-foffb+1;
+    for( j in 1:ncol(dom) ) {
+      beg = as.scalar(foffb[1,j])+1;
+      end = as.scalar(foffe[1,j]);
+      I = rowIndexMax(P[,beg:end]) * rowMaxs(P[,beg:end]);
+      prod = 1;
+      if(j<ncol(dom))
+        prod = prod(dom[1,(j+1):ncol(dom)])
+      ID = ID + I * prod;
+    }
+
+    # size pruning, with rowMin-rowMax transform 
+    # to avoid densification (ignored zeros)
+    map = table(ID,seq(1,nrow(P)))
+    ubSizes = 1/rowMaxs(map * (1/t(ss)));
+    ubSizes = replace(target=ubSizes, pattern=Inf, replacement=0);    
+    fSizes = (ubSizes >= minSup)
+
+    # error pruning
+    ubError = 1/rowMaxs(map * (1/t(se)));
+    ubError = replace(target=ubError, pattern=Inf, replacement=0);    
+    ubScores = scoreUB(ubSizes, ubError, eAvg, minSup, alpha, n2);
+    [maxsc, minsc] = analyzeTopK(TKC);
+    fScores = (ubScores > minsc & ubScores > 0) 
+
+    # missing parents pruning
+    numParents = rowSums((map %*% P12) != 0) 
+    fParents = (numParents == level);
+
+    # apply all pruning 
+    map = map * (fSizes & fScores & fParents);
+    
+    # deduplication of join outputs
+    Dedup = removeEmpty(target=map, margin="rows") != 0
+    P = (Dedup %*% P) != 0
   }
-  Dedup = removeEmpty(target=table(ID,seq(1,nrow(P))), margin="rows") != 0
-  P = Dedup %*% P
 }
 
-pruneSlices = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double] TK, Matrix[Double] TKC, Integer k, Integer minSup)
-  return(Matrix[Double] S, Matrix[Double] R) 
+evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg, Matrix[Double] tS, Integer l, Double alpha) 
+  return(Matrix[Double] R)
 {
-  I = R[,3] >= minSup;
-  S = removeEmpty(target=S, margin="rows", select=I);
-  R = removeEmpty(target=R, margin="rows", select=I);
+  I = (X %*% tS) == l;  # slice indicator 
+  ss = t(colSums(I));  # absolute slice size (nnz)
+  se = t(t(e) %*% I);  # absolute slice error 
+
+  # score of relative error and relative size
+  sc = score(ss, se, eAvg, alpha, nrow(X));
+  R = cbind(sc, se, ss);
+}
+
+decodeTopK = function(Matrix[Double] TK, Matrix[Double] foffb, Matrix[Double] foffe)
+  return(Matrix[Double] TK) 
+{
+  R = matrix(1, nrow(TK), ncol(foffb));
+  if( nrow(TK) > 0 ) {
+    parfor( j in 1:ncol(foffb) ) {
+      beg = as.scalar(foffb[1,j])+1;
+      end = as.scalar(foffe[1,j]);
+      I = rowSums(TK[,beg:end]) * rowIndexMax(TK[,beg:end]);
+      R[, j] = I;
+    }
+  }
+  TK = R;
 }
 
 Forig = read("./Salaries.csv", data_type="frame", format="csv", header=TRUE);
@@ -233,10 +288,14 @@ jspec= "{ ids:true, recode:[1,2,3,6], bin:[{id:4, method:equi-width, numbins:14}
 [X,M] = transformencode(target=F, spec=jspec);
 X = X[,2:ncol(X)]
 
+#X = rbind(X,X)
+#X = cbind(X,X)
+#y = rbind(y,y)
+
 # learn model
 B = lm(X=X, y=y, verbose=FALSE);
 yhat = X %*% B;
 e = (y-yhat)^2;
 
 # call slice finding
-[S,C] = slicing(X=X, e=e, k=4, w=0.5, minSup=4, verbose=TRUE);
+[S,C] = slicing(X=X, e=e, k=10, alpha=0.95, minSup=4, verbose=TRUE);

@@ -155,7 +155,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		catch (Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR,
 				new FederatedWorkerHandlerException("Exception of type "
-				+ ex.getClass() + " thrown when processing request", ex));
+				+ ex.getClass() + " thrown when processing request"));
 		}
 	}
 	
@@ -206,7 +206,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 		}
 		catch (Exception ex) {
-			throw new DMLRuntimeException(ex);
+			throw new DMLRuntimeException("Exception in reading metadata of: " + filename);
 		}
 		
 		//put meta data object in symbol table, read on first operation
@@ -287,7 +287,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
-				"Exception of type " + ex.getClass() + " thrown when processing EXEC_INST request", ex));
+				"Exception of type " + ex.getClass() + " thrown when processing EXEC_INST request"));
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
@@ -308,7 +308,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
-				"Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request", ex));
+				"Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request"));
 		}
 	}
 
@@ -318,7 +318,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
-				"Exception of type " + ex.getClass() + " thrown when processing CLEAR request", ex));
+				"Exception of type " + ex.getClass() + " thrown when processing CLEAR request"));
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}

@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.BitmapEncoder;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
@@ -45,6 +46,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
  * Factory pattern for constructing ColGroups.
  */
 public class ColGroupFactory {
+	// private static final Log LOG = LogFactory.getLog(ColGroupFactory.class.getName());
 
 	/**
 	 * The actual compression method, that handles the logic of compressing multiple columns together. This method also
@@ -178,7 +180,8 @@ public class ColGroupFactory {
 
 			// Furthermore performance of a compressed representation that does not compress much, is decremental to
 			// overall performance.
-			if(compRatio > 1.0) {
+			
+			if(compRatio > 1.0 || compSettings.columnPartitioner == PartitionerType.COST) {
 				int rlen = compSettings.transposeInput ? in.getNumColumns() : in.getNumRows();
 				return compress(colIndexes, rlen, ubm, sizeInfo.getBestCompressionType(), compSettings, in);
 			}

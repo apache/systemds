@@ -76,6 +76,7 @@ public class CompressibleInputGenerator {
 			// LOG.debug("MAX: " + maxV + " - MIN:" + minV);
 			assertTrue(maxV <= max);
 			assertTrue(minV >= min);
+			
 		}
 		return output;
 	}

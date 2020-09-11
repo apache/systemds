@@ -31,14 +31,11 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
-import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
-import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
@@ -120,39 +117,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void testScalarOperations() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			double mult = 7;
-			// matrix-scalar uncompressed
-			ScalarOperator sop = new RightScalarOperator(Multiply.getMultiplyFnObject(), mult, _k);
-			MatrixBlock ret1 = mb.scalarOperations(sop, new MatrixBlock());
-
-			// matrix-scalar compressed
-			MatrixBlock ret2 = cmb.scalarOperations(sop, new MatrixBlock());
-			if(ret2 instanceof CompressedMatrixBlock)
-				ret2 = ((CompressedMatrixBlock) ret2).decompress();
-
-			// compare result with input
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-			if(compressionSettings.lossy) {
-				double modifiedTolerance = lossyTolerance * mult + lossyTolerance * 0.00001;
-				TestUtils.compareMatrices(d1, d2, modifiedTolerance, compressionSettings.toString());
-			}
-			else {
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 150, 1, compressionSettings.toString());
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
 	public void testCountDistinct() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
@@ -211,7 +175,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			double[][] d1 = DataConverter.convertToDoubleMatrix(mb);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(tmp);
 			if(compressionSettings.lossy) {
-				TestUtils.compareMatrices(d1, d2, lossyTolerance);
+				TestUtils.compareMatrices(d1, d2, lossyTolerance, compressionSettings.toString());
 			}
 			else {
 				TestUtils.compareMatricesBitAvgDistance(d1, d2, 0, 0, compressionSettings.toString());
@@ -252,18 +216,21 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				allowedTolerance = sampleTolerance;
 			}
 
-			StringBuilder builder = new StringBuilder();
-			builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
-			builder.append("\n\t" + String.format("%-40s - %12d with tolerance: %5d",
-				"<= estimated isolated ColGroups: ",
-				colsEstimate,
-				allowedTolerance));
-			builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
-			builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
-			builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
-			builder.append("\n\t" + this.toString());
-			boolean res = Math.abs(actualSize - colsEstimate) <= allowedTolerance;
-			assertTrue(builder.toString(), res);
+			boolean res = Math.abs(colsEstimate - actualSize) <= originalSize;
+			res = res && actualSize - allowedTolerance < colsEstimate;
+			if(!res) {
+				StringBuilder builder = new StringBuilder();
+				builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
+				builder.append("\n\t" + String.format("%-40s - %12d with tolerance: %5d",
+					"<= estimated isolated ColGroups: ",
+					colsEstimate,
+					allowedTolerance));
+				builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
+				builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
+				builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
+				builder.append("\n\t" + this.toString());
+				assertTrue(builder.toString(), res);
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();

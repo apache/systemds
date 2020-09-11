@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -86,7 +85,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		int nnz = 0;
 		for(int i = 0; i < _numRows; i++) {
 			int index = getIndex(i);
-			if(index != values.length) {
+			if(index < getNumValues()) {
 				nnz += ((c[i] = values[(index) * ncol + colpos]) != 0) ? 1 : 0;
 			}
 			else {
@@ -104,10 +103,9 @@ public abstract class ColGroupDDC extends ColGroupValue {
 			throw new RuntimeException("Column index " + c + " not in DDC group.");
 
 		// get value
-		int index = getIndex(r, ix);
-		if(index != getNumValues()) {
-
-			return _dict.getValue(index);
+		int index = getIndex(r);
+		if(index < getNumValues()) {
+			return _dict.getValue(index * _colIndexes.length + ix);
 		}
 		else {
 			return 0.0;
@@ -150,7 +148,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 		for(int rix = rl; rix < ru; rix++) {
 			int index = getIndex(rix);
-			if(index != numVals) {
+			if(index < numVals) {
 				setandExecute(c, kbuff, kplus2, vals[index], rix * (2 + (mean ? 1 : 0)));
 			}
 		}
@@ -158,18 +156,18 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final int numVals = getNumValues();
 		int ncol = getNumCols();
 		double[] dictionary = getValues();
 
 		for(int i = rl; i < ru; i++) {
-			int rowIndex = getIndex(i);
-			if(rowIndex != numVals) {
-				for(int j = 0; j < ncol; j++)
-					c[i] = builtin.execute(c[i], dictionary[rowIndex + j]);
-			}
-			else {
-				c[i] = builtin.execute(c[i], 0.0);
+			int index = getIndex(i) * ncol;
+			for(int j = 0; j < ncol; j++) {
+				if(index < dictionary.length) {
+					c[i] = builtin.execute(c[i], dictionary[index + j]);
+				}
+				else {
+					c[i] = builtin.execute(c[i], 0.0);
+				}
 			}
 		}
 	}
@@ -180,14 +178,13 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 	public void postScaling(double[] values, double[] vals, double[] c, int numVals, int i, int totalCols) {
 		final int ncol = getNumCols();
+		int valOff = 0;
 
-		for(int j = 0; j < ncol; j++) {
-			int colIx = _colIndexes[j] + i * totalCols;
-			for(int k = 0, valOff = 0; k < numVals; k++, valOff += ncol) {
-				double aval = vals[k];
-				if(valOff != numVals) {
-					c[colIx] += aval * values[valOff + j];
-				}
+		for(int k = 0; k < numVals; k++) {
+			double aval = vals[k];
+			for(int j = 0; j < ncol; j++) {
+				int colIx = _colIndexes[j] + i * totalCols;
+				c[colIx] += aval * values[valOff++];
 			}
 		}
 	}
@@ -206,20 +203,13 @@ public abstract class ColGroupDDC extends ColGroupValue {
 		return counts;
 	}
 
-
-	@Override
-	public void rightMultByMatrix(double[] b, double[] c, int numVals, double[] values, int rl, int ru, int vOff){
-		throw new NotImplementedException("Not Implemented");
-		// final int numCols = getNumCols();
-	}
-	
-
 	@Override
 	public void leftMultByMatrix(double[] a, double[] c, int numVals, double[] values, int numRows, int numCols, int rl,
 		int ru, int voff) {
-		numVals = (numVals == -1) ? getNumValues() : numVals;
 
+		numVals = (numVals == -1) ? getNumValues() : numVals;
 		for(int i = rl, j = voff; i < ru; i++, j++) {
+			int offC = i * numCols;
 			if(8 * numVals < _numRows) {
 				// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
 				// temporary array also avoids false sharing in multi-threaded environments
@@ -227,17 +217,34 @@ public abstract class ColGroupDDC extends ColGroupValue {
 				postScaling(values, vals, c, numVals, i, numCols);
 			}
 			else {
-				for(int k = 0, aOff = j  *_numRows; k < _numRows; k++, aOff++) {
+				for(int k = 0, aOff = j * _numRows; k < _numRows; k++, aOff++) {
 					double aval = a[aOff];
 					if(aval != 0) {
 						int valOff = getIndex(k) * _colIndexes.length;
-						if(valOff != numVals) {
+						if(valOff < numVals) {
 							for(int h = 0; h < _colIndexes.length; h++) {
-								int colIx = _colIndexes[h] + i * numCols;
+								int colIx = _colIndexes[h] + offC;
 								c[colIx] += aval * values[valOff + h];
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+
+	@Override
+	public void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] c, int numVals,
+		double[] values, int numRows, int numCols, int row, double[] MaterializedRow) {
+		numVals = (numVals == -1) ? getNumValues() : numVals;
+		for(int i = 0; i < spNrVals; i++) {
+			int k = indexes[i];
+			double aval = sparseV[i];
+			int valOff = getIndex(k);
+			if(valOff < numVals) {
+				for(int h = 0; h < _colIndexes.length; h++) {
+					int colIx = _colIndexes[h] + row * numCols;
+					c[colIx] += aval * values[valOff * _colIndexes.length + h];
 				}
 			}
 		}
@@ -265,24 +272,17 @@ public abstract class ColGroupDDC extends ColGroupValue {
 	 * @return the pre-aggregated values.
 	 */
 	public double[] preAggregate(double[] a, int numVals, int aRows) {
-		double[] vals;
+		double[] vals = allocDVector(numVals + 1, true);
 		if(aRows > 0) {
-			vals = allocDVector(numVals, true);
-			// int off = _numRows * aRows;
 			for(int i = 0, off = _numRows * aRows; i < _numRows; i++, off++) {
 				int index = getIndex(i);
-				if(index != numVals) { // Since we know that multiplying with 0 is .. 0 don't begin to aggregate.
-					vals[index] += a[off];
-				}
+				vals[index] += a[off];
 			}
 		}
 		else {
-			vals = allocDVector(numVals, true);
 			for(int i = 0; i < _numRows; i++) {
 				int index = getIndex(i);
-				if(index != numVals) { // Since we know that multiplying with 0 is .. 0 don't begin to aggregate.
-					vals[index] += a[i];
-				}
+				vals[index] += a[i];
 			}
 		}
 		return vals;
@@ -290,13 +290,15 @@ public abstract class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
-		// double[] c = result.getDenseBlockValues();
+
 		numVals = (numVals == -1) ? getNumValues() : numVals;
 
 		if(8 * numVals < _numRows) {
 			// iterative over codes and pre-aggregate inputs per code (guaranteed <=255)
 			// temporary array also avoids false sharing in multi-threaded environments
+
 			double[] vals = preAggregate(a, numVals);
+
 			postScaling(values, vals, c, numVals);
 		}
 		else {
@@ -305,7 +307,7 @@ public abstract class ColGroupDDC extends ColGroupValue {
 				double aval = a[i];
 				if(aval != 0)
 					for(int j = 0, valOff = getIndex(i) * _colIndexes.length; j < _colIndexes.length; j++)
-						if(valOff != numVals) {
+						if(valOff < numVals) {
 							c[_colIndexes[j]] += aval * values[valOff + j];
 						}
 			}

@@ -39,7 +39,7 @@ public class CompressionSettingsBuilder {
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = false;
-	private PartitionerType columnPartitioner = PartitionerType.STATIC; // BIN_PACKING or STATIC
+	private PartitionerType columnPartitioner = PartitionerType.COST;
 	private int maxStaticColGroupCoCode = 1;
 
 	public CompressionSettingsBuilder() {

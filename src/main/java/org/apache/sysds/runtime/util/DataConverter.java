@@ -77,8 +77,8 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * (before executing MR jobs).
  * 
  */
-public class DataConverter 
-{
+public class DataConverter {
+	// private static final Log LOG = LogFactory.getLog(DataConverter.class.getName());
 	private static final String DELIM = " ";
 	
 	//////////////
@@ -258,7 +258,7 @@ public class DataConverter
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		double[][] ret = new double[rows][cols]; //0-initialized
-		
+
 		if( mb.getNonZeros() > 0 ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();

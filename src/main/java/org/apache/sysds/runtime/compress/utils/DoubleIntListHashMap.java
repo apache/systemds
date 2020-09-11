@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 
@@ -157,5 +158,21 @@ public class DoubleIntListHashMap extends CustomHashMap {
 			return Double.compare(arg0.key, arg1.key);
 		}
 
+		@Override
+		public String toString(){
+			StringBuilder sb = new StringBuilder();
+			sb.append("[" + key + ", ");
+			sb.append( value + ", ");
+			sb.append( next + "]");
+			return sb.toString();
+		}
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName() + this.hashCode());
+		sb.append("\n" + Arrays.toString(_data));
+		return sb.toString();
 	}
 }

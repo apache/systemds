@@ -186,10 +186,13 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			String css = compressionSettings.toString();
 			if(compressionSettings.lossy) {
 				if(aggType == AggType.COLSUMS) {
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * 150 * cols, css);
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * rows, css);
 				}
 				else if(aggType == AggType.ROWSUMS) {
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * rows, css);
+					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * cols, css);
+				}
+				else if(aggType == AggType.ROWSUMSSQ) {
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.9, css, true);
 				}
 				else if(aggType == AggType.SUM) {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * cols * rows, css);
@@ -201,8 +204,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance, css);
 				}
 				else {
-					boolean ignoreZero = true;
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, ignoreZero);
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, true);
 				}
 			}
 			else {

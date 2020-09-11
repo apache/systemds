@@ -41,12 +41,15 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConverter;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupRLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.DenseRowIterator;
@@ -212,7 +215,6 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		ret.setNonZeros(nonZeros);
 
 		LOG.debug("decompressed block w/ k=" + k + " in " + time.stop() + "ms.");
-
 		return ret;
 	}
 
@@ -245,16 +247,16 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	public double quickGetValue(int r, int c) {
 
 		// TODO Optimize Quick Get Value, to located the correct column group without having to search for it
-
 		ColGroup grp = null;
 		for(ColGroup group : _colGroups) {
-
 			if(Arrays.binarySearch(group.getColIndices(), c) >= 0) {
 				grp = group;
 				break;
 			}
 		}
-
+		if(grp == null) {
+			throw new DMLCompressionException("ColGroup for column index not found");
+		}
 		// find row value
 		return grp.get(r, c);
 	}
@@ -429,7 +431,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 			for(ColGroup grp : _colGroups) {
 				if(grp instanceof ColGroupUncompressed) {
-					LOG.error("NOT HANDLING UNCOMPRESSED IN BINARY MV");
+					throw new DMLCompressionException("Not supported Binary MV");
 				}
 				else {
 
@@ -595,7 +597,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		// create output matrix block
 		if(ret == null)
 			ret = new MatrixBlock(rl, cl, false, rl * cl);
-		else
+		else if(!(ret.getNumColumns() == cl && ret.getNumRows() == rl && ret.isAllocated()))
 			ret.reset(rl, cl, false, rl * cl);
 
 		if(right) {
@@ -608,18 +610,19 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			}
 			else {
 				that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress() : that;
-				ret = rightMultByMatrix(_colGroups, that, ret, op.getNumThreads(), getNumColumns());
+				ret = rightMultByMatrix(_colGroups, that, ret, op.getNumThreads(), that.getNumColumns());
 			}
 		}
-		else{ // Left
+		else { // Left
 			that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress() : that;
-			if(that.getNumRows() == 1){
+			if(that.getNumRows() == 1) {
 				if(op.getNumThreads() > 1)
-					leftMultByVectorTranspose(_colGroups, that, ret, false, op.getNumThreads());
+					return leftMultByVectorTranspose(_colGroups, that, ret, false, op.getNumThreads());
 				else
-					leftMultByVectorTranspose(_colGroups, that, ret, false, true);
-			}else{
-				leftMultByMatrix(_colGroups, that, ret, op.getNumThreads(), 1);
+					return leftMultByVectorTranspose(_colGroups, that, ret, false, true);
+			}
+			else {
+				return leftMultByMatrix(_colGroups, that, ret, op.getNumThreads(), this.getNumColumns());
 			}
 		}
 
@@ -723,6 +726,14 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 						}
 						ret.quickSetValue(0, 0, kbuff._sum);
 					}
+					else if(op.aggOp.increOp.fn instanceof Mean) {
+						double val = ret.quickGetValue(0, 0);
+						for(Future<MatrixBlock> rtask : rtasks) {
+							double tmp = rtask.get().quickGetValue(0, 0);
+							val = val + tmp;
+						}
+						ret.quickSetValue(0, 0, val);
+					}
 					else {
 						double val = ret.quickGetValue(0, 0);
 						for(Future<MatrixBlock> rtask : rtasks) {
@@ -739,12 +750,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			}
 		}
 		else {
-			// process UC column group
 			for(ColGroup grp : _colGroups)
 				if(grp instanceof ColGroupUncompressed)
 					((ColGroupUncompressed) grp).unaryAggregateOperations(op, ret);
 
-			// process OLE/RLE column groups
 			aggregateUnaryOperations(op, _colGroups, ret, 0, rlen);
 		}
 
@@ -794,33 +803,12 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	private static void aggregateUnaryOperations(AggregateUnaryOperator op, List<ColGroup> groups, MatrixBlock ret,
 		int rl, int ru) {
 
-		// Seems misplaced logic for when to use CacheDDC
-		// boolean cacheDDC1 = false;
-		// op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof KahanPlus // rowSums
-		// && ColGroupOffset.ALLOW_CACHE_CONSCIOUS_ROWSUMS && ru - rl > CompressionSettings.BITMAP_BLOCK_SZ;
-
-		// process cache-conscious DDC1 groups (adds to output)
-		// if(cacheDDC1) {
-		// ArrayList<ColGroupDDC1> tmp = new ArrayList<>();
-		// for(ColGroup grp : groups)
-		// if(grp instanceof ColGroupDDC1)
-		// tmp.add((ColGroupDDC1) grp);
-		// if(!tmp.isEmpty())
-		// ColGroupDDC1
-		// .computeRowSums(tmp.toArray(new ColGroupDDC1[0]), ret, KahanPlus.getKahanPlusFnObject(), rl, ru);
-		// }
-
-		// process remaining groups (adds to output)
 		// note: UC group never passed into this function
 		double[] c = ret.getDenseBlockValues();
-		if(c == null) {
-			c = ret.getSparseBlock().values(0);
-			// throw new RuntimeException("aggregateUnaryOperation failed to materialize matrix data");
-		}
 		for(ColGroup grp : groups)
 			if(!(grp instanceof ColGroupUncompressed))
 				grp.unaryAggregateOperations(op, c, rl, ru);
-		// LOG.debug(Arrays.toString(c));
+
 	}
 
 	@Override
@@ -946,10 +934,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			int blklen = (int) (Math.ceil((double) rlen / k));
 			blklen += (blklen % seqsz != 0) ? seqsz - blklen % seqsz : 0;
 
-			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
+			ArrayList<RightMatrixVectorMultTask> tasks = new ArrayList<>();
 			for(int i = 0; i < k & i * blklen < getNumRows(); i++) {
-				tasks.add(
-					new RightMatrixMultTask(_colGroups, vector, result, i * blklen, Math.min((i + 1) * blklen, rlen)));
+				tasks.add(new RightMatrixVectorMultTask(_colGroups, vector, result, i * blklen,
+					Math.min((i + 1) * blklen, rlen)));
 			}
 
 			List<Future<Long>> ret = pool.invokeAll(tasks);
@@ -961,10 +949,10 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 				lnnz += tmp.get();
 			result.setNonZeros(lnnz);
 		}
-		catch(Exception e) {
-			LOG.error(e);
+		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
+
 	}
 
 	private static void rightMultByVector(List<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru) {
@@ -1012,11 +1000,11 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	 * @param result      buffer to hold the result; must have the appropriate size already
 	 * @param doTranspose if true, transpose vector
 	 */
-	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
-		boolean doTranspose, boolean allocTmp) {
-		// transpose vector if required
-		LOG.debug("Left Mult vector Transpose " + vector.getClass());
+	private static MatrixBlock leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector,
+		MatrixBlock result, boolean doTranspose, boolean allocTmp) {
+
 		MatrixBlock rowVector = vector;
+		// Note that transpose here is a metadata operation since the input is a vector.
 		if(doTranspose) {
 			rowVector = new MatrixBlock(1, vector.getNumRows(), false);
 			LibMatrixReorg.transpose(vector, rowVector);
@@ -1028,12 +1016,12 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		// setup memory pool for reuse
 		if(allocTmp) {
-			Pair<Integer, List<Integer>> v = getMaxNumValues(colGroups);
-			ColGroupValue.setupThreadLocalMemory(v.getLeft());
+			Pair<Integer, int[]> v = getMaxNumValues(colGroups);
+			ColGroupValue.setupThreadLocalMemory(v.getLeft() + 1); // +1 for efficiency in DDC groups.
 			for(int i = 0; i < colGroups.size(); i++) {
 				colGroups.get(i).leftMultByRowVector(rowVector.getDenseBlockValues(),
 					result.getDenseBlockValues(),
-					v.getRight().get(i));
+					v.getRight()[i]);
 			}
 		}
 		else {
@@ -1048,6 +1036,8 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		if(allocTmp)
 			ColGroupValue.cleanupThreadLocalMemory();
 		result.recomputeNonZeros();
+
+		return result;
 	}
 
 	// private static void leftMultByVectorTranspose(List<ColGroup> colGroups, ColGroupDDC vector, MatrixBlock result) {
@@ -1069,7 +1059,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	 * @param doTranspose if true, transpose vector
 	 * @param k           number of threads
 	 */
-	private void leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
+	private MatrixBlock leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result,
 		boolean doTranspose, int k) {
 		// transpose vector if required
 		MatrixBlock rowVector = vector;
@@ -1111,6 +1101,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 
 		// post-processing
 		result.recomputeNonZeros();
+		return result;
 	}
 
 	/**
@@ -1124,111 +1115,72 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 	 * @param k          The number of threads used
 	 * @param numColumns The number of columns in this colGroup
 	 */
-	private static void leftMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
+	private static MatrixBlock leftMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		int numColumns) {
-
-		ret.reset();
 		ret.allocateDenseBlock();
-
 		if(that.isInSparseFormat()) {
-			LOG.warn("Inefficient materialization of sparse matrix for left compressed matrix mult.");
-
-			// leftMultBySparseMatrix(colGroups, that, ret, k, numColumns);
-			leftMultByDenseMatrix(colGroups, that.allocateDenseBlock(), ret, k, numColumns);
+			ret = leftMultBySparseMatrix(colGroups, that, ret, k, numColumns);
 		}
 		else {
-			leftMultByDenseMatrix(colGroups, that, ret, k, numColumns);
+			ret = leftMultByDenseMatrix(colGroups, that, ret, k, numColumns);
 		}
 
-		ret.recomputeNonZeros();
+		ret.setNonZeros(ret.getNumColumns() * ret.getNumRows());
+		return ret;
 	}
 
-	private static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups,
-		MatrixBlock that, MatrixBlock ret, int k, int numColumns)
-	{
-		// Exchange with rightMultByDenseMatrix.
-
-		ret.reset();
+	private static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
+		int numColumns) {
 		ret.allocateDenseBlock();
 
-		// transpose input to optimize column access.
-		that = LibMatrixReorg
-			.transpose(that, new MatrixBlock(that.getNumColumns(), that.getNumRows(), that.isInSparseFormat()), k);
-
 		if(that.isInSparseFormat()) {
-			LOG.warn("Inefficient materialization of sparse matrix for right compressed matrix mult.");
-			rightMultByDenseMatrix(colGroups, that.allocateDenseBlock(), ret, k, numColumns);
+			ret = rightMultBySparseMatrix(colGroups, that, ret, k, numColumns);
 		}
 		else {
-			rightMultByDenseMatrix(colGroups, that, ret, k, numColumns);
+			ret = rightMultByDenseMatrix(colGroups, that, ret, k, numColumns);
+
 		}
-		ret.recomputeNonZeros();
+		ret.setNonZeros(ret.getNumColumns() * ret.getNumRows());
 		return ret;
 
-		// ret = LibMatrixReorg
-		// .transpose(ret, new MatrixBlock(ret.getNumColumns(), ret.getNumRows(), ret.isInSparseFormat()), k);
-
-		// MatrixBlock tmpIn = new MatrixBlock(1, that.getNumColumns(), false).allocateBlock();
-		// MatrixBlock tmpOut = new MatrixBlock(this.getNumRows(), 1, false).allocateBlock();
-		// for(int i = 0; i < that.getNumRows(); i++) { // on transpose
-		// tmpIn = that.slice(i, i, 0, that.getNumColumns() - 1, tmpIn);
-		// MatrixBlock tmpIn2 = LibMatrixReorg // meta data op
-		// .transpose(tmpIn, new MatrixBlock(tmpIn.getNumColumns(), tmpIn.getNumRows(), false));
-		// tmpOut.reset();
-		// if(k > 1)
-		// rightMultByVector(tmpIn2, tmpOut, k);
-		// else
-		// rightMultByVector(tmpIn2, tmpOut);
-		// MatrixBlock tmpOutT = LibMatrixReorg // meta data op
-		// .transpose(tmpOut, new MatrixBlock(tmpOut.getNumColumns(), tmpOut.getNumRows(), false), k);
-		// ret.leftIndexingOperations(tmpOutT, i, i, 0, ret.getNumColumns() - 1, ret, UpdateType.INPLACE);
-		// }
-		// ret.checkNonZeros();
-		// ret = LibMatrixReorg
-		// .transpose(ret, new MatrixBlock(ret.getNumColumns(), ret.getNumRows(), ret.isInSparseFormat()), k);
-		// return ret;
 	}
 
-	private static void leftMultByDenseMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
+	private static MatrixBlock leftMultByDenseMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		int numColumns) {
 		DenseBlock db = that.getDenseBlock();
+		if(db == null)
+			throw new DMLRuntimeException("Invalid LeftMult By Dense matrix, input matrix was sparse");
+
 		double[] retV = ret.getDenseBlockValues();
 		double[] thatV;
 		int blockU;
 		int blockL = 0;
-
-		for(ColGroup grp : colGroups) {
+		for(ColGroup grp : colGroups)
 			if(grp instanceof ColGroupUncompressed)
 				((ColGroupUncompressed) grp).leftMultByMatrix(that, ret);
-		}
 
-		for(int b = 0; b <= db.numBlocks(); b++) {
+		for(int b = 0; b < db.numBlocks(); b++) {
 			int blockSize = db.blockSize(b);
 			blockU = Math.min(blockL + blockSize, ret.getNumRows());
 			thatV = db.valuesAt(b);
 
 			if(k == 1) {
-				// OPTIMIZE dont allocate colGroups for the uncompressable columns.
-				// Optimize allocate once the materialization for all the blocks.
-				double[][] materialized = new double[colGroups.size()][];
-				for(int i = 0; i < colGroups.size(); i++) {
-					materialized[i] = colGroups.get(i).getValues();
-				}
-				Pair<Integer, List<Integer>> v = getMaxNumValues(colGroups);
-				for(int j = 0; j < colGroups.size(); j++)
+				Pair<Integer, int[]> v = getMaxNumValues(colGroups);
+				for(int j = 0; j < colGroups.size(); j++) {
 					colGroups.get(j).leftMultByMatrix(thatV,
 						retV,
-						v.getRight().get(j),
-						materialized[j],
+						v.getRight()[j],
+						colGroups.get(j).getValues(),
 						that.getNumRows(),
 						ret.getNumColumns(),
-						blockL,
-						blockU,
+						0,
+						ret.getNumRows(),
 						0);
+				}
 			}
 			else {
 				try {
-					ExecutorService pool = CommonThreadPool.get(Math.min(colGroups.size(), k));
+					ExecutorService pool = CommonThreadPool.get(k);
 					// compute remaining compressed column groups in parallel
 					ArrayList<LeftMatrixMatrixMultTask> tasks = new ArrayList<>();
 					List<ColGroup>[] parts = createStaticTaskPartitioningForMatrixMult(colGroups, k, false);
@@ -1237,7 +1189,6 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 						for(int blo = blockL; blo < blockU; blo += rowBlockSize) {
 							tasks.add(new LeftMatrixMatrixMultTask(part, thatV, retV, that.getNumRows(), numColumns,
 								blo, Math.min(blo + rowBlockSize, blockU), blo - blockL));
-
 						}
 					}
 
@@ -1248,50 +1199,270 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 						future.get();
 				}
 				catch(InterruptedException | ExecutionException e) {
-					LOG.error(e);
 					throw new DMLRuntimeException(e);
 				}
 			}
 			blockL += blockSize;
 		}
+		return ret;
 	}
 
-	// private static void leftMultBySparseMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-	// int numColumns) {
-	// // SparseBlock sb = that.getSparseBlock();
-	// throw new NotImplementedException("Sparse Block input not handled.");
-	// }
+	private static MatrixBlock leftMultBySparseMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+		int k, int numColumns) {
 
-	private static void rightMultByDenseMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		int numColumns) {
-		DenseBlock db = that.getDenseBlock();
-		double[] retV = ret.getDenseBlockValues();
-		double[] thatV;
-		int blockU;
-		int blockL = 0;
+		SparseBlock sb = that.getSparseBlock();
+		if(sb == null)
+			throw new DMLRuntimeException("Invalid Left Mult by Sparse matrix, input matrix was dense");
 
 		for(ColGroup grp : colGroups) {
 			if(grp instanceof ColGroupUncompressed)
-				((ColGroupUncompressed) grp).rightMultByMatrix(that, ret, 0, ret.getNumRows());
+				((ColGroupUncompressed) grp).leftMultByMatrix(that, ret);
 		}
 
-		// OPTIMIZE dont allocate colGroups for the uncompressable columns.
-		double[][] materialized = new double[colGroups.size()][];
-
-		for(int b = 0; b <= db.numBlocks(); b++) {
-			int blockSize = db.blockSize(b);
-			blockU = Math.min(blockL + blockSize, ret.getNumRows());
-			thatV = db.valuesAt(b);
-
+		if(k == 1) {
+			double[][] materialized = new double[colGroups.size()][];
+			boolean containsOLE = false;
 			for(int i = 0; i < colGroups.size(); i++) {
 				materialized[i] = colGroups.get(i).getValues();
+				if(colGroups.get(i) instanceof ColGroupOLE) {
+					containsOLE = true;
+				}
 			}
-			Pair<Integer, List<Integer>> v = getMaxNumValues(colGroups);
-			for(int j = 0; j < colGroups.size(); j++) {
-				colGroups.get(j)
-					.rightMultByMatrix(thatV, retV, v.getRight().get(j), materialized[j], blockL, blockU, 0);
+			double[] materializedRow = containsOLE ? new double[CompressionSettings.BITMAP_BLOCK_SZ * 2] : null;
+
+			Pair<Integer, int[]> v = getMaxNumValues(colGroups);
+			for(int r = 0; r < that.getNumRows(); r++) {
+				SparseRow row = sb.get(r);
+				if(row != null) {
+
+					for(int j = 0; j < colGroups.size(); j++) {
+						colGroups.get(j).leftMultBySparseMatrix(row.size(),
+							row.indexes(),
+							row.values(),
+							ret.getDenseBlockValues(),
+							v.getRight()[j],
+							materialized[j],
+							that.getNumRows(),
+							ret.getNumColumns(),
+							r,
+							materializedRow);
+					}
+				}
 			}
 		}
+		else {
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<LeftMatrixSparseMatrixMultTask> tasks = new ArrayList<>();
+			try {
+				// compute remaining compressed column groups in parallel
+				List<ColGroup>[] parts = createStaticTaskPartitioningForSparseMatrixMult(colGroups, k, false);
+				for(List<ColGroup> part : parts) {
+					tasks.add(new LeftMatrixSparseMatrixMultTask(part, sb, ret.getDenseBlockValues(), that.getNumRows(),
+						numColumns));
+				}
+
+				List<Future<Object>> futures = pool.invokeAll(tasks);
+				pool.shutdown();
+				for(Future<Object> future : futures)
+					future.get();
+			}
+			catch(InterruptedException | ExecutionException e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+
+		return ret;
+
+	}
+
+	private static MatrixBlock rightMultByDenseMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+		int k, int numColumns) {
+
+		// long StartTime = System.currentTimeMillis();
+		DenseBlock db = that.getDenseBlock();
+		double[] retV = ret.getDenseBlockValues();
+		double[] thatV;
+
+		for(ColGroup grp : colGroups) {
+			if(grp instanceof ColGroupUncompressed) {
+				((ColGroupUncompressed) grp).rightMultByMatrix(that, ret, 0, ret.getNumRows());
+			}
+		}
+
+		if(k == 1) {
+			Pair<Integer, int[]> v = getMaxNumValues(colGroups);
+			ColGroupValue.setupThreadLocalMemory((v.getLeft()) * that.getNumColumns());
+			for(int b = 0; b < db.numBlocks(); b++) {
+				// int blockSize = db.blockSize(b);
+				thatV = db.valuesAt(b);
+				for(int j = 0; j < colGroups.size(); j++) {
+					int colBlockSize = 128;
+					for(int i = 0; i < that.getNumColumns(); i += colBlockSize) {
+						if(colGroups.get(j) instanceof ColGroupValue) {
+							double[] preAggregatedB = ((ColGroupValue) colGroups.get(j)).preaggValues(v.getRight()[j],
+								thatV,
+								colGroups.get(j).getValues(),
+								i,
+								Math.min(i + colBlockSize, that.getNumColumns()),
+								that.getNumColumns());
+							int blklenRows = CompressionSettings.BITMAP_BLOCK_SZ;
+							for(int n = 0; n * blklenRows < ret.getNumRows(); n++) {
+								colGroups.get(j).rightMultByMatrix(preAggregatedB,
+									retV,
+									numColumns,
+									n * blklenRows,
+									Math.min((n + 1) * blklenRows, ret.getNumRows()),
+									i,
+									Math.min(i + colBlockSize, that.getNumColumns()));
+							}
+						}
+					}
+				}
+			}
+			ColGroupValue.cleanupThreadLocalMemory();
+		}
+		else {
+			// for(int b = 0; b < db.numBlocks(); b++) {
+			// compute remaining compressed column groups in parallel
+			// int blockSize = db.blockSize(b);
+			// int blockUCols = that.getNumColumns();
+			thatV = db.valuesAt(0);
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<RightMatrixMultTask> tasks = new ArrayList<>();
+			ArrayList<RightMatrixPreAggregateTask> preTask = new ArrayList<>(colGroups.size());
+			Pair<Integer, int[]> v;
+			final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
+			int blklenRows = (int) (Math.ceil((double) ret.getNumRows() / (4 * k)));
+
+			List<ColGroup> ddcGroups = new ArrayList<>();
+			List<ColGroup> oleGroups = new ArrayList<>();
+			List<ColGroup> rleGroups = new ArrayList<>();
+			for(ColGroup g : colGroups) {
+				if(g instanceof ColGroupDDC) {
+					ddcGroups.add(g);
+				}
+				else if(g instanceof ColGroupOLE) {
+					oleGroups.add(g);
+				}
+				else if(g instanceof ColGroupRLE) {
+					rleGroups.add(g);
+				}
+			}
+
+			try {
+				// Process DDC Groups!
+				// int blklenRows = CompressionSettings.BITMAP_BLOCK_SZ;
+				v = getMaxNumValues(ddcGroups);
+				List<Future<double[]>> ag = pool.invokeAll(preAggregate(ddcGroups, thatV, that, preTask, v));
+
+				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
+					RightMatrixMultTask rmmt = new RightMatrixMultTask(ddcGroups, retV, ag, v, numColumns,
+						j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), 0, that.getNumColumns(),
+						false);
+					tasks.add(rmmt);
+				}
+				for(Future<Object> future : pool.invokeAll(tasks))
+					future.get();
+				tasks.clear();
+
+				// Process RLE Groups
+				blklenRows += (blklenRows % blkz != 0) ? blkz - blklenRows % blkz : 0;
+				v = getMaxNumValues(rleGroups);
+				preTask = preAggregate(rleGroups, thatV, that, preTask, v);
+				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
+					RightMatrixMultTask rmmt = new RightMatrixMultTask(rleGroups, retV, pool.invokeAll(preTask), v,
+						numColumns, j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), 0,
+						that.getNumColumns(), true);
+					tasks.add(rmmt);
+				}
+
+				for(Future<Object> future : pool.invokeAll(tasks))
+					future.get();
+				tasks.clear();
+
+				// Process OLE Groups
+				// blklenRows += (blklenRows % blkz != 0) ? blkz - blklenRows % blkz : 0;
+
+				v = getMaxNumValues(oleGroups);
+				preTask = preAggregate(oleGroups, thatV, that, preTask, v);
+				for(int j = 0; j * blklenRows < ret.getNumRows(); j++) {
+					RightMatrixMultTask rmmt = new RightMatrixMultTask(oleGroups, retV, pool.invokeAll(preTask), v,
+						numColumns, j * blklenRows, Math.min((j + 1) * blklenRows, ret.getNumRows()), 0,
+						that.getNumColumns(), true);
+					tasks.add(rmmt);
+				}
+				for(Future<Object> future : pool.invokeAll(tasks))
+					future.get();
+				pool.shutdown();
+			}
+			catch(InterruptedException | ExecutionException e) {
+				throw new DMLRuntimeException(e);
+			}
+			// }
+		}
+
+		return ret;
+	}
+
+	private static ArrayList<RightMatrixPreAggregateTask> preAggregate(List<ColGroup> colGroups, double[] thatV,
+		MatrixBlock that, ArrayList<RightMatrixPreAggregateTask> preTask, Pair<Integer, int[]> v) {
+		preTask.clear();
+		for(int h = 0; h < colGroups.size(); h++) {
+			RightMatrixPreAggregateTask pAggT = new RightMatrixPreAggregateTask((ColGroupValue) colGroups.get(h),
+				v.getRight()[h], thatV, colGroups.get(h).getValues(), 0, that.getNumColumns(), that.getNumColumns());
+			preTask.add(pAggT);
+		}
+		return preTask;
+	}
+
+	private static MatrixBlock rightMultBySparseMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+		int k, int numColumns) {
+		SparseBlock sb = that.getSparseBlock();
+		double[] retV = ret.getDenseBlockValues();
+
+		if(sb == null)
+			throw new DMLRuntimeException("Invalid Right Mult by Sparse matrix, input matrix was dense");
+
+		for(ColGroup grp : colGroups) {
+			if(grp instanceof ColGroupUncompressed)
+				((ColGroupUncompressed) grp).rightMultByMatrix(that, ret, 0, ret.getNumColumns());
+		}
+
+		Pair<Integer, int[]> v = getMaxNumValues(colGroups);
+		// if(k == 1) {
+		for(int j = 0; j < colGroups.size(); j++) {
+			double[] preAggregatedB = ((ColGroupValue) colGroups.get(j)).preaggValues(v.getRight()[j],
+				sb,
+				colGroups.get(j).getValues(),
+				0,
+				that.getNumColumns(),
+				that.getNumColumns());
+			colGroups.get(j)
+				.rightMultByMatrix(preAggregatedB, retV, numColumns, 0, ret.getNumRows(), 0, that.getNumColumns());
+
+		}
+		// }
+		// else {
+		// ExecutorService pool = CommonThreadPool.get(k);
+		// ArrayList<RightMultBySparseMatrixTask> tasks = new ArrayList<>();
+		// try {
+
+		// for(int j = 0; j < ret.getNumColumns(); j += CompressionSettings.BITMAP_BLOCK_SZ) {
+		// tasks.add(new RightMultBySparseMatrixTask(colGroups, retV, sb, materialized, v, numColumns, j,
+		// Math.min(j + CompressionSettings.BITMAP_BLOCK_SZ, ret.getNumColumns())));
+		// }
+
+		// List<Future<Object>> futures = pool.invokeAll(tasks);
+		// pool.shutdown();
+		// for(Future<Object> future : futures)
+		// future.get();
+		// }
+		// catch(InterruptedException | ExecutionException e) {
+		// throw new DMLRuntimeException(e);
+		// }
+		// }
+
+		return ret;
 	}
 
 	private static void leftMultByTransposeSelf(List<ColGroup> groups, MatrixBlock result, int gl, int gu) {
@@ -1306,7 +1477,7 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		tmpret.allocateDenseBlock();
 
 		// setup memory pool for reuse
-		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups).getLeft());
+		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups).getLeft() + 1);
 
 		// approach: for each colgroup, extract uncompressed columns one at-a-time
 		// vector-matrix multiplies against remaining col groups
@@ -1396,18 +1567,45 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		return grpParts;
 	}
 
-	private static Pair<Integer, List<Integer>> getMaxNumValues(List<ColGroup> groups) {
+	@SuppressWarnings("unchecked")
+	private static List<ColGroup>[] createStaticTaskPartitioningForSparseMatrixMult(List<ColGroup> colGroups, int k,
+		boolean inclUncompressed) {
+		int numTasks = Math.min(k, colGroups.size());
+		List<ColGroup>[] grpParts = new ArrayList[numTasks];
+		int pos = 0;
+		for(int i = 0; i < numTasks; i++) {
+			grpParts[pos++] = new ArrayList<>();
+		}
+		pos = 0;
+		for(ColGroup grp : colGroups) {
+
+			if(grp instanceof ColGroupOLE) {
+				grpParts[pos].add((ColGroupOLE) grp);
+				pos = (pos == numTasks - 1) ? 0 : pos + 1;
+			}
+		}
+		for(ColGroup grp : colGroups) {
+			if(!(grp instanceof ColGroupOLE) && (inclUncompressed || !(grp instanceof ColGroupUncompressed))) {
+				grpParts[pos].add(grp);
+				pos = (pos == numTasks - 1) ? 0 : pos + 1;
+			}
+		}
+
+		return grpParts;
+	}
+
+	private static Pair<Integer, int[]> getMaxNumValues(List<ColGroup> groups) {
 		int numVals = 1;
-		List<Integer> numValues = new ArrayList<>(groups.size());
+		int[] numValues = new int[groups.size()];
 		int nr;
-		for(ColGroup grp : groups)
-			if(grp instanceof ColGroupValue) {
-				nr = ((ColGroupValue) grp).getNumValues();
-				numValues.add(nr);
+		for(int i = 0; i < groups.size(); i++)
+			if(groups.get(i) instanceof ColGroupValue) {
+				nr = ((ColGroupValue) groups.get(i)).getNumValues();
+				numValues[i] = nr;
 				numVals = Math.max(numVals, nr);
 			}
 			else {
-				numValues.add(-1);
+				numValues[i] = -1;
 			}
 		return new ImmutablePair<>(numVals, numValues);
 	}
@@ -1439,12 +1637,11 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		public Object call() {
 			// setup memory pool for reuse
 			try {
-				Pair<Integer, List<Integer>> v = getMaxNumValues(_groups);
-				ColGroupValue.setupThreadLocalMemory(v.getLeft());
+				Pair<Integer, int[]> v = getMaxNumValues(_groups);
+				ColGroupValue.setupThreadLocalMemory(v.getLeft() + 1);
 				for(int i = 0; i < _groups.size(); i++) {
-					_groups.get(i).leftMultByRowVector(_vect.getDenseBlockValues(),
-						_ret.getDenseBlockValues(),
-						v.getRight().get(i));
+					_groups.get(i)
+						.leftMultByRowVector(_vect.getDenseBlockValues(), _ret.getDenseBlockValues(), v.getRight()[i]);
 				}
 
 				ColGroupValue.cleanupThreadLocalMemory();
@@ -1486,13 +1683,13 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			for(int i = 0; i < _group.size(); i++) {
 				materialized[i] = _group.get(i).getValues();
 			}
-			Pair<Integer, List<Integer>> v = getMaxNumValues(_group);
+			Pair<Integer, int[]> v = getMaxNumValues(_group);
 			try {
-				ColGroupValue.setupThreadLocalMemory(v.getLeft());
+				ColGroupValue.setupThreadLocalMemory(v.getLeft() + 1);
 				for(int j = 0; j < _group.size(); j++) {
 					_group.get(j).leftMultByMatrix(_that,
 						_ret,
-						v.getRight().get(j),
+						v.getRight()[j],
 						materialized[j],
 						_numRows,
 						_numCols,
@@ -1510,14 +1707,78 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		}
 	}
 
-	private static class RightMatrixMultTask implements Callable<Long> {
+	private static class LeftMatrixSparseMatrixMultTask implements Callable<Object> {
+		private final List<ColGroup> _group;
+		private final SparseBlock _that;
+		private final double[] _ret;
+		private final int _numRows;
+		private final int _numCols;
+
+		protected LeftMatrixSparseMatrixMultTask(List<ColGroup> group, SparseBlock that, double[] ret, int numRows,
+			int numCols) {
+			_group = group;
+			_that = that;
+			_ret = ret;
+			_numRows = numRows;
+			_numCols = numCols;
+		}
+
+		@Override
+		public Object call() {
+			// setup memory pool for reuse
+
+			// double[][] materialized = new double[_group.size()][];
+			// for(int i = 0; i < _group.size(); i++) {
+			// materialized[i] = _group.get(i).getValues();
+			// }
+
+			boolean containsOLE = false;
+			for(int j = 0; j < _group.size(); j++) {
+				if(_group.get(j) instanceof ColGroupOLE) {
+					containsOLE = true;
+				}
+			}
+			// Temporary Array to store 2 * block size in
+			double[] tmpA = containsOLE ? new double[CompressionSettings.BITMAP_BLOCK_SZ * 2] : null;
+
+			Pair<Integer, int[]> v = getMaxNumValues(_group);
+			ColGroupValue.setupThreadLocalMemory(v.getLeft());
+			try {
+				for(int j = 0; j < _group.size(); j++) {
+					double[] materializedV = _group.get(j).getValues();
+					for(int r = 0; r < _that.numRows(); r++) {
+						if(_that.get(r) != null) {
+							_group.get(j).leftMultBySparseMatrix(_that.get(r).size(),
+								_that.get(r).indexes(),
+								_that.get(r).values(),
+								_ret,
+								v.getRight()[j],
+								materializedV,
+								_numRows,
+								_numCols,
+								r,
+								tmpA);
+						}
+					}
+				}
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
+			ColGroupValue.cleanupThreadLocalMemory();
+			return null;
+		}
+	}
+
+	private static class RightMatrixVectorMultTask implements Callable<Long> {
 		private final List<ColGroup> _groups;
 		private final MatrixBlock _vect;
 		private final MatrixBlock _ret;
 		private final int _rl;
 		private final int _ru;
 
-		protected RightMatrixMultTask(List<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru) {
+		protected RightMatrixVectorMultTask(List<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, int rl, int ru) {
 			_groups = groups;
 			_vect = vect;
 			_ret = ret;
@@ -1530,6 +1791,88 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 			try {
 				rightMultByVector(_groups, _vect, _ret, _rl, _ru);
 				return _ret.recomputeNonZeros(_rl, _ru - 1, 0, 0);
+			}
+			catch(Exception e) {
+				LOG.error(e);
+				throw new DMLRuntimeException(e);
+			}
+		}
+	}
+
+	private static class RightMatrixMultTask implements Callable<Object> {
+		private final List<ColGroup> _colGroups;
+		// private final double[] _thatV;
+		private final double[] _retV;
+		private final List<Future<double[]>> _aggB;
+		private final Pair<Integer, int[]> _v;
+		private final int _numColumns;
+
+		private final int _rl;
+		private final int _ru;
+		private final int _cl;
+		private final int _cu;
+		private final boolean _mem;
+
+		protected RightMatrixMultTask(List<ColGroup> groups, double[] retV, List<Future<double[]>> aggB,
+			Pair<Integer, int[]> v, int numColumns, int rl, int ru, int cl, int cu, boolean mem) {
+			_colGroups = groups;
+			// _thatV = thatV;
+			_retV = retV;
+			_aggB = aggB;
+			_v = v;
+			_numColumns = numColumns;
+			_rl = rl;
+			_ru = ru;
+			_cl = cl;
+			_cu = cu;
+			_mem = mem;
+		}
+
+		@Override
+		public Object call() {
+			try {
+				if(_mem)
+					ColGroupValue.setupThreadLocalMemory((_v.getLeft()));
+				for(int j = 0; j < _colGroups.size(); j++) {
+					// if (_colGroups.get(j) instanceof ColGroupRLE)
+					_colGroups.get(j).rightMultByMatrix(_aggB.get(j).get(), _retV, _numColumns, _rl, _ru, _cl, _cu);
+				}
+				if(_mem)
+					ColGroupValue.cleanupThreadLocalMemory();
+				return null;
+			}
+			catch(Exception e) {
+				LOG.error(e);
+				throw new DMLRuntimeException(e);
+			}
+		}
+	}
+
+	private static class RightMatrixPreAggregateTask implements Callable<double[]> {
+		private final ColGroupValue _colGroup;
+		private final int _numVals;
+		private final double[] _b;
+		private final double[] _dict;
+
+		private final int _cl;
+		private final int _cu;
+		private final int _cut;
+
+		protected RightMatrixPreAggregateTask(ColGroupValue colGroup, int numVals, double[] b, double[] dict, int cl,
+			int cu, int cut) {
+			_colGroup = colGroup;
+			_numVals = numVals;
+			_b = b;
+			_dict = dict;
+			_cl = cl;
+			_cu = cu;
+			_cut = cut;
+		}
+
+		@Override
+		public double[] call() {
+			try {
+				return _colGroup.preaggValues(_numVals, _b, _dict, _cl, _cu, _cut);
 			}
 			catch(Exception e) {
 				LOG.error(e);

@@ -737,7 +737,7 @@ public class TestUtils
 		for (int i = 0; i < rows && countErrors < 50; i++) {
 			for (int j = 0; j < cols && countErrors < 50; j++) {
 				if (!compareCellValue(expectedMatrix[i][j], actualMatrix[i][j], epsilon, false)) {
-					message += ("\n " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+					message += ("\n Expected: " +expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
@@ -765,7 +765,7 @@ public class TestUtils
 			for (int j = 0; j < cols; j++) {
 				if( !( (expectedFrame[i][j]==null && actualFrame[i][j]==null) ||
 					expectedFrame[i][j].equals(actualFrame[i][j]) || (expectedFrame[i][j]+".0").equals(actualFrame[i][j])) ) {
-					System.out.println(expectedFrame[i][j] +" vs actual: "+actualFrame[i][j]+" at "+i+" "+j);
+					System.out.println("Expected:" + expectedFrame[i][j] +" vs actual: "+actualFrame[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
@@ -783,7 +783,7 @@ public class TestUtils
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				if( !compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j], maxUnitsOfLeastPrecision)){
-					System.out.println(expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
+					System.out.println("Expected: " + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j);
 					countErrors++;
 				}
 			}
@@ -804,19 +804,20 @@ public class TestUtils
 		int countErrors = 0;
 		long sumDistance = 0;
 		long distance;
-		for (int i = 0; i < rows && countErrors < 50; i++) {
-			for (int j = 0; j < cols && countErrors < 50; j++) {
+		for (int i = 0; i < rows && countErrors < 20; i++) {
+			for (int j = 0; j < cols && countErrors < 20; j++) {
 				distance = compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j]);
 				sumDistance += distance;
 				if(distance > maxUnitsOfLeastPrecision){
-					message += ("\n " + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in bits: " + distance);
+					message += ("\n Expected:" + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in bits: " + distance);
 					countErrors++;
 				}
 			}
 		}
-		if(countErrors == 50){
-			assertTrue(message + "\n At least 50 values are not in equal", countErrors == 0);
-		}else{
+		if(countErrors == 20){
+			assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+		}
+		else{
 			long avgDistance = sumDistance / (rows * cols);
 			assertTrue(message + "\n" + countErrors + " values are not in equal", countErrors == 0);
 			assertTrue(message + "\nThe avg distance in bits: "+ avgDistance +" was higher than max: " + maxAvgDistance,
@@ -872,20 +873,25 @@ public class TestUtils
 			double sumPercentDistance = 0;
 			double distance;
 
-			for (int i = 0; i < rows; i++) {
-				for (int j = 0; j < cols; j++) {
+			for (int i = 0; i < rows && countErrors < 20; i++) {
+				for (int j = 0; j < cols && countErrors < 20; j++) {
 					distance = getPercentDistance(expectedMatrix[i][j], actualMatrix[i][j], ignoreZero);
 					sumPercentDistance += distance;
 					if(distance < percentDistanceAllowed){
-						message += ("\n"+ expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in percent " + distance);
+						message += ("\nExpected: "+ expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in percent " + distance);
 						countErrors++;
 					}
 				}
 			}
-			double avgDistance = sumPercentDistance / (rows * cols);
-			assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols), countErrors == 0);
-			assertTrue(message + "\nThe avg distance: "+ avgDistance +" was lower than threshold " + maxAveragePercentDistance,
-				avgDistance > maxAveragePercentDistance);
+			if(countErrors == 20){
+				assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+			}
+			else{
+				double avgDistance = sumPercentDistance / (rows * cols);
+				assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols), countErrors == 0);
+				assertTrue(message + "\nThe avg distance: "+ avgDistance +" was lower than threshold " + maxAveragePercentDistance,
+					avgDistance > maxAveragePercentDistance);
+			}
 	}
 
 	public static void compareMatricesBitAvgDistance(double[][] expectedMatrix, double[][] actualMatrix, int rows,

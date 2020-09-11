@@ -29,6 +29,8 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanFunction;
@@ -115,7 +117,7 @@ public abstract class ColGroupValue extends ColGroup {
 	}
 
 	public byte[] getByteValues() {
-		return ((QDictionary)_dict).getValuesByte();
+		return ((QDictionary) _dict).getValuesByte();
 	}
 
 	@Override
@@ -189,21 +191,120 @@ public abstract class ColGroupValue extends ColGroup {
 		return val;
 	}
 
-	protected final double[] preaggValues(int numVals, double[] b, double[] dictVals) {
-		return preaggValues(numVals, b, false, dictVals);
+	protected final double sumValues(int valIx, double[] b, double[] dictVals, int off) {
+		final int numCols = getNumCols();
+		final int valOff = valIx * numCols;
+		double val = 0;
+		for(int i = 0; i < numCols; i++)
+			val += dictVals[valOff + i] * b[_colIndexes[i] + off];
+		return val;
 	}
 
-	protected final double[] preaggValues(int numVals, double[] b, boolean allocNew, double[] dictVals) {
+	protected final double sumValuesSparse(int valIx, SparseRow[] rows, double[] dictVals, int rowsIndex) {
+		final int numCols = getNumCols();
+		final int valOff = valIx * numCols;
+		double val = 0;
+		for(int i = 0; i < numCols; i++) {
+			val += dictVals[valOff + i] * rows[i].values()[rowsIndex];
+		}
+		return val;
+	}
+
+	protected final double[] preaggValues(int numVals, double[] b, double[] dictVals) {
+		return preaggValues(numVals, b, false, dictVals, 0);
+	}
+
+	protected final double[] preaggValues(int numVals, double[] b, double[] dictVals, int off) {
+		return preaggValues(numVals, b, false, dictVals, off);
+	}
+
+	protected final double[] preaggValues(int numVals, double[] b, boolean allocNew, double[] dictVals, int off) {
 		// + 1 to enable containing a zero value. which we have added at the length of the arrays index.
-		double[] ret = allocNew ? new double[numVals +1 ] : allocDVector(numVals +1, false);
-		if(_colIndexes.length == 1){
+		double[] ret = allocNew ? new double[numVals + 1] : allocDVector(numVals + 1, true);
+
+		if(_colIndexes.length == 1) {
 			for(int k = 0; k < numVals; k++)
-				ret[k] = dictVals[k] * b[_colIndexes[0]];
-		}else{
+				ret[k] = dictVals[k] * b[_colIndexes[0] + off];
+		}
+		else {
 			for(int k = 0; k < numVals; k++)
-				ret[k] = sumValues(k, b, dictVals);
+				ret[k] = sumValues(k, b, dictVals, off);
 		}
 
+		return ret;
+	}
+
+	/**
+	 * Aggregates a double array, that contains the values to add to the output matrix.
+	 * 
+	 * Used in right mult by dense matrix
+	 * 
+	 * @param numVals  The number of values contained in the dictionary.
+	 * @param b        The matrix to multiply with
+	 * @param dictVals The values contained in the dictionary materialized as doubles
+	 * @param cl       Lower column index to aggregate from
+	 * @param cu       Upper column index to aggregate to
+	 * @param cut      The total number of columns in b.
+	 * @return The aggregated matrix output. Note this has to be mapped to the output matrix.
+	 */
+	public double[] preaggValues(final int numVals, final double[] b, double[] dictVals, final int cl, final int cu,
+		final int cut) {
+
+		final int retRows = (cu - cl);
+		final int retCols = (numVals);
+		final double[] ret = allocDVector(retCols * retRows, true);
+		for(int k = 0, off = 0; k < numVals * _colIndexes.length; k += _colIndexes.length, off += retRows) {
+			for(int h = 0; h < _colIndexes.length; h++) {
+				int idb = _colIndexes[h] * cut;
+				double v = dictVals[k + h];
+				// TODO: Test if filtering out 0 here is beneficial.
+				// TODO: utilize dictionary quantisation here and dont materialize dictVals beforehand.
+				for(int i = cl, n = off; i < cu; i++, n += 1) {
+					ret[n] += v * b[idb + i];
+				}
+
+			}
+		}
+
+		return ret;
+	}
+
+	public double[] preaggValues(final int numVals, final SparseBlock b, double[] dictVals, final int cl, final int cu,
+		final int cut) {
+
+		final int retRows = (cu - cl);
+		final int retCols = (numVals);
+		final double[] ret = allocDVector(retCols * retRows, true);
+		for(int h = 0; h < _colIndexes.length; h++) {
+			SparseRow row = b.get(_colIndexes[h]);
+			// SparseRow row = b[_colIndexes[h]];
+			for(int i = 0; i < row.size(); i++) {
+				double v = row.values()[i];
+				for(int k = h, off = row.indexes()[i];
+					k < numVals * _colIndexes.length;
+					k += _colIndexes.length, off += retRows) {
+					ret[off] += dictVals[k] * v;
+				}
+			}
+		}
+		return ret;
+	}
+
+	protected final double[] preaggValue(int k, double[] b, double[] dictVals, int cl, int cu, int cut) {
+		double[] ret = allocDVector(cu - cl, true);
+		for(int h = 0; h < _colIndexes.length; h++) {
+			for(int i = cl, n = 0; i < cu; i++, n++) {
+				ret[n] = dictVals[k + h] * b[_colIndexes[h] * cut + i];
+			}
+		}
+		return ret;
+	}
+
+	protected final double[] sparsePreaggValues(int numVals, double v, boolean allocNew, double[] dictVals) {
+		double[] ret = allocNew ? new double[numVals + 1] : allocDVector(numVals + 1, true);
+
+		for(int k = 0; k < numVals; k++)
+			ret[k] = dictVals[k] * v;
 		return ret;
 	}
 
@@ -232,8 +333,11 @@ public abstract class ColGroupValue extends ColGroup {
 	 */
 	protected void computeColMxx(double[] c, Builtin builtin) {
 		if(_zeros) {
-			for(int x = 0; x < _colIndexes.length; x++) {
-				c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
+			if(_colIndexes.length == 1) {
+
+				for(int x = 0; x < _colIndexes.length; x++) {
+					c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
+				}
 			}
 		}
 		_dict.aggregateCols(c, builtin, _colIndexes);
@@ -273,10 +377,12 @@ public abstract class ColGroupValue extends ColGroup {
 	@Override
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
 		// sum and sumsq (reduceall/reducerow over tuples and counts)
-		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq || op.aggOp.increOp.fn  instanceof Mean) {
-			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof Mean) ? KahanPlus
-				.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
-			boolean mean = op.aggOp.increOp.fn  instanceof Mean;
+		if(op.aggOp.increOp.fn instanceof KahanPlus || op.aggOp.increOp.fn instanceof KahanPlusSq ||
+			op.aggOp.increOp.fn instanceof Mean) {
+			KahanFunction kplus = (op.aggOp.increOp.fn instanceof KahanPlus ||
+				op.aggOp.increOp.fn instanceof Mean) ? KahanPlus
+					.getKahanPlusFnObject() : KahanPlusSq.getKahanPlusSqFnObject();
+			boolean mean = op.aggOp.increOp.fn instanceof Mean;
 
 			if(op.indexFn instanceof ReduceAll)
 				computeSum(c, kplus);

@@ -28,6 +28,7 @@ import java.util.Iterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -253,16 +254,46 @@ public abstract class ColGroup implements Serializable {
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a vector on the right.
 	 * 
-	 * @param vector   vector to multiply by (tall vector)
-	 * @param c        accumulator for holding the result
-	 * @param rl       row lower
-	 * @param ru       row upper if the internal SystemML code that performs the multiplication experiences an error
+	 * @param vector   Vector to multiply by (tall vector)
+	 * @param c        Accumulator for holding the result
+	 * @param rl       Row to start at
+	 * @param ru       Row to stop at
 	 * @param dictVals The dictionary values materialized
 	 */
 	public abstract void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals);
 
-	public abstract void rightMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int rl,
-		int ru, int vOff);
+	/**
+	 * Right multiply by matrix. for which the compressed matrix is on the left and the uncompressed is on the right.
+	 * Note that there is no b argument, but the b is aggregated into the values needed for assignment and addition into
+	 * output.
+	 * 
+	 * @param preAggregatedB The preAggregated values that is to be put into c
+	 * @param c              The output matrix
+	 * @param thatNrColumns  The number of columns in B (before aggregation)
+	 * @param rl             The row index to start the multiplication from
+	 * @param ru             The row index to stop the multiplication at
+	 * @param cl             The column index to start from
+	 * @param cu             The row index to stop at.
+	 */
+	public abstract void rightMultByMatrix(double[] preAggregatedB, double[] c, int thatNrColumns, int rl, int ru,
+		int cl, int cu);
+
+	/**
+	 * Sparse right multiply by matrix, for which the compressed matrix is on the left and the uncompressed sparse is on
+	 * the right. This call differ from the other right multiply by not having a preAggregation phase.
+	 * 
+	 * This should only be called in very sparse situations.
+	 * 
+	 * @param rows      The sparse rows
+	 * @param c         The output matrix linearized
+	 * @param numVals   The number of values in the dictionary
+	 * @param dictVals  The materialized dictionary
+	 * @param nrColumns The number of columns in the matrix to multiply with and also in the output
+	 * @param rl        The row index to start at
+	 * @param ru        The row index to stop at.
+	 */
+	public abstract void rightMultBySparseMatrix(SparseRow[] rows, double[] c, int numVals, double[] dictVals,
+		int nrColumns, int rl, int ru);
 
 	/**
 	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
@@ -286,8 +317,7 @@ public abstract class ColGroup implements Serializable {
 	public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values);
 
 	/**
-	 * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	 * column vector is assumed to be transposed already i.e. its size now is 1xn).
+	 * Multiply with a matrix on the left.
 	 * 
 	 * @param matrix  matrix to left multiply
 	 * @param result  matrix block result
@@ -301,6 +331,25 @@ public abstract class ColGroup implements Serializable {
 	 */
 	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numVals, double[] values, int numRows,
 		int numCols, int rl, int ru, int vOff);
+
+	/**
+	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
+	 * 
+	 * @param spNrVals        the Number of sparse values (since the number of indexes does not align with number of
+	 *                        values)
+	 * @param indexes         the indexes for the sparse values in the given row.
+	 * @param sparseV         the sparse values.
+	 * @param result          the linearized output matrix
+	 * @param numVals         the number of values in the dictionary
+	 * @param values          the dictionary values materialized
+	 * @param numRows         the number of rows in the left hand side input matrix (the sparse one)
+	 * @param numCols         the number of columns in the compression.
+	 * @param row             the row index of the sparse row to multiply with.
+	 * @param MaterializedRow The sparse row materialized (should only be done if needed for the specific type of
+	 *                        ColumnGroup)
+	 */
+	public abstract void leftMultBySparseMatrix(int spNrVals, int[] indexes, double[] sparseV, double[] result,
+		int numVals, double[] values, int numRows, int numCols, int row, double[] MaterializedRow);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual

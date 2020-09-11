@@ -50,7 +50,8 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, 1, defaultCompressionSettings);
 	}
 
-	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, CompressionSettings customSettings) {
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb,
+		CompressionSettings customSettings) {
 		return compress(mb, 1, customSettings);
 	}
 
@@ -73,7 +74,8 @@ public class CompressedMatrixBlockFactory {
 	 * @param compSettings The Compression settings used
 	 * @return A compressed matrix block.
 	 */
-	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, CompressionSettings compSettings) {
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k,
+		CompressionSettings compSettings) {
 		// Check for redundant compression
 		if(mb instanceof CompressedMatrixBlock) {
 			throw new DMLRuntimeException("Redundant compression, block already compressed.");
@@ -120,9 +122,15 @@ public class CompressedMatrixBlockFactory {
 		// --------------------------------------------------
 		// PHASE 2: Grouping columns
 		// Divide the columns into column groups.
-		List<int[]> coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
+		List<int[]> coCodeColGroups = PlanningCoCoder
+			.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
 		_stats.setNextTimePhase(time.stop());
-		LOG.debug("--compression phase 2: " + _stats.getLastTimePhase());
+		if(LOG.isDebugEnabled()) {
+
+			LOG.debug("--compression phase 2: " + _stats.getLastTimePhase());
+			for(int[] group : coCodeColGroups)
+				LOG.debug(Arrays.toString(group));
+		}
 
 		// TODO: Make second estimate of memory usage if the ColGroups are as above?
 		// This should already be done inside the PlanningCoCoder, and therefore this information
@@ -150,10 +158,10 @@ public class CompressedMatrixBlockFactory {
 		// --------------------------------------------------
 		// PHASE 4: Best-effort dictionary sharing for DDC1 single-col groups
 		// Dictionary dict = (!(compSettings.validCompressions.contains(CompressionType.DDC)) ||
-		// 	!(compSettings.allowSharedDDCDictionary)) ? null : createSharedDDC1Dictionary(colGroupList);
+		// !(compSettings.allowSharedDDCDictionary)) ? null : createSharedDDC1Dictionary(colGroupList);
 		// if(dict != null) {
-		// 	applySharedDDC1Dictionary(colGroupList, dict);
-		// 	res._sharedDDC1Dict = true;
+		// applySharedDDC1Dictionary(colGroupList, dict);
+		// res._sharedDDC1Dict = true;
 		// }
 		// _stats.setNextTimePhase(time.stop());
 		if(LOG.isDebugEnabled()) {
@@ -180,18 +188,21 @@ public class CompressedMatrixBlockFactory {
 		_stats.setNextTimePhase(time.stop());
 		_stats.setColGroupsCounts(colGroupList);
 
-		LOG.debug("--num col groups: " + colGroupList.size() + ", -- num input cols: " + numCols);
-		LOG.debug("--compression phase 5: " + _stats.getLastTimePhase());
-		LOG.debug("--col groups types " + _stats.getGroupsTypesString());
-		LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
-		LOG.debug("--compressed size: " + _stats.size);
-		LOG.debug("--compression ratio: " + _stats.ratio);
+		
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("--num col groups: " + colGroupList.size() + ", -- num input cols: " + numCols);
+			LOG.debug("--compression phase 5: " + _stats.getLastTimePhase());
+			LOG.debug("--col groups types " + _stats.getGroupsTypesString());
+			LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
+			LOG.debug("--compressed size: " + _stats.size);
+			LOG.debug("--compression ratio: " + _stats.ratio);
 
-		if( LOG.isTraceEnabled()){
-			for (ColGroup colGroup : colGroupList) {
-				LOG.trace("--colGroups colIndexes : " + Arrays.toString(colGroup.getColIndices()));
-				LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName());
-				LOG.trace("--colGroups Values     : " + Arrays.toString(colGroup.getValues()));
+			if(LOG.isTraceEnabled()) {
+				for(ColGroup colGroup : colGroupList) {
+					LOG.trace("--colGroups colIndexes : " + Arrays.toString(colGroup.getColIndices()));
+					LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName());
+					LOG.trace("--colGroups Values     : " + Arrays.toString(colGroup.getValues()));
+				}
 			}
 		}
 
@@ -206,59 +217,59 @@ public class CompressedMatrixBlockFactory {
 	 * @return the shared value list for the DDC ColGroups.
 	 */
 	// private static Dictionary createSharedDDC1Dictionary(List<ColGroup> colGroups) {
-	// 	// create joint dictionary
-	// 	HashSet<Double> vals = new HashSet<>();
-	// 	HashMap<Integer, Double> mins = new HashMap<>();
-	// 	HashMap<Integer, Double> maxs = new HashMap<>();
-	// 	int numDDC1 = 0;
-	// 	for(final ColGroup grp : colGroups)
-	// 		if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
-	// 			final ColGroupDDC1 grpDDC1 = (ColGroupDDC1) grp;
-	// 			final double[] values = grpDDC1.getValues();
-	// 			double min = Double.POSITIVE_INFINITY;
-	// 			double max = Double.NEGATIVE_INFINITY;
-	// 			for(int i = 0; i < values.length; i++) {
-	// 				vals.add(values[i]);
-	// 				min = Math.min(min, values[i]);
-	// 				max = Math.max(max, values[i]);
-	// 			}
-	// 			mins.put(grpDDC1.getColIndex(0), min);
-	// 			maxs.put(grpDDC1.getColIndex(0), max);
-	// 			numDDC1++;
-	// 		}
+	// // create joint dictionary
+	// HashSet<Double> vals = new HashSet<>();
+	// HashMap<Integer, Double> mins = new HashMap<>();
+	// HashMap<Integer, Double> maxs = new HashMap<>();
+	// int numDDC1 = 0;
+	// for(final ColGroup grp : colGroups)
+	// if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
+	// final ColGroupDDC1 grpDDC1 = (ColGroupDDC1) grp;
+	// final double[] values = grpDDC1.getValues();
+	// double min = Double.POSITIVE_INFINITY;
+	// double max = Double.NEGATIVE_INFINITY;
+	// for(int i = 0; i < values.length; i++) {
+	// vals.add(values[i]);
+	// min = Math.min(min, values[i]);
+	// max = Math.max(max, values[i]);
+	// }
+	// mins.put(grpDDC1.getColIndex(0), min);
+	// maxs.put(grpDDC1.getColIndex(0), max);
+	// numDDC1++;
+	// }
 
-	// 	// abort shared dictionary creation if empty or too large
-	// 	int maxSize = vals.contains(0d) ? 256 : 255;
-	// 	if(numDDC1 < 2 || vals.size() > maxSize)
-	// 		return null;
+	// // abort shared dictionary creation if empty or too large
+	// int maxSize = vals.contains(0d) ? 256 : 255;
+	// if(numDDC1 < 2 || vals.size() > maxSize)
+	// return null;
 
-	// 	// build consolidated shared dictionary
-	// 	double[] values = vals.stream().mapToDouble(Double::doubleValue).toArray();
-	// 	int[] colIndexes = new int[numDDC1];
-	// 	double[] extrema = new double[2 * numDDC1];
-	// 	int pos = 0;
-	// 	for(Entry<Integer, Double> e : mins.entrySet()) {
-	// 		colIndexes[pos] = e.getKey();
-	// 		extrema[2 * pos] = e.getValue();
-	// 		extrema[2 * pos + 1] = maxs.get(e.getKey());
-	// 		pos++;
-	// 	}
-	// 	return new DictionaryShared(values, colIndexes, extrema);
+	// // build consolidated shared dictionary
+	// double[] values = vals.stream().mapToDouble(Double::doubleValue).toArray();
+	// int[] colIndexes = new int[numDDC1];
+	// double[] extrema = new double[2 * numDDC1];
+	// int pos = 0;
+	// for(Entry<Integer, Double> e : mins.entrySet()) {
+	// colIndexes[pos] = e.getKey();
+	// extrema[2 * pos] = e.getValue();
+	// extrema[2 * pos + 1] = maxs.get(e.getKey());
+	// pos++;
+	// }
+	// return new DictionaryShared(values, colIndexes, extrema);
 	// }
 
 	// private static void applySharedDDC1Dictionary(List<ColGroup> colGroups, Dictionary dict) {
-	// 	// create joint mapping table
-	// 	HashMap<Double, Integer> map = new HashMap<>();
-	// 	double[] values = dict.getValues();
-	// 	for(int i = 0; i < values.length; i++)
-	// 		map.put(values[i], i);
+	// // create joint mapping table
+	// HashMap<Double, Integer> map = new HashMap<>();
+	// double[] values = dict.getValues();
+	// for(int i = 0; i < values.length; i++)
+	// map.put(values[i], i);
 
-	// 	// recode data of all relevant DDC1 groups
-	// 	for(ColGroup grp : colGroups)
-	// 		if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
-	// 			ColGroupDDC1 grpDDC1 = (ColGroupDDC1) grp;
-	// 			grpDDC1.recodeData(map);
-	// 			grpDDC1.setDictionary(dict);
-	// 		}
+	// // recode data of all relevant DDC1 groups
+	// for(ColGroup grp : colGroups)
+	// if(grp.getNumCols() == 1 && grp instanceof ColGroupDDC1) {
+	// ColGroupDDC1 grpDDC1 = (ColGroupDDC1) grp;
+	// grpDDC1.recodeData(map);
+	// grpDDC1.setDictionary(dict);
+	// }
 	// }
 }

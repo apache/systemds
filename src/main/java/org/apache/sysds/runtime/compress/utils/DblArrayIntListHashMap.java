@@ -174,5 +174,23 @@ public class DblArrayIntListHashMap extends CustomHashMap {
 		public int compareTo(DArrayIListEntry o) {
 			return compare(this, o);
 		}
+
+		@Override
+		public String toString(){
+			StringBuilder sb = new StringBuilder();
+			sb.append("[" + key + ", ");
+			sb.append( value + ", ");
+			sb.append( next + "]");
+			return sb.toString();
+		}
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName() + this.hashCode());
+		for(DArrayIListEntry ent : _data)
+			sb.append("\n" + ent);
+		return sb.toString();
 	}
 }

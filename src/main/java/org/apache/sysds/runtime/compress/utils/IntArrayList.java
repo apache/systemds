@@ -106,9 +106,13 @@ public class IntArrayList {
 		sb.append("IntArrayList ");
 		sb.append("size: " + _size);
 		if(_size == 1){
-			sb.append(" [" + _val0+ "]");
+			sb.append(" [" + _val0+ "] ");
 		} else{
-			sb.append(" " + Arrays.toString(_data));
+			sb.append(" [");
+			for(int i = 0; i < _size-1; i++){
+				sb.append(_data[i] + ", ");
+			}
+			sb.append(_data[_data.length-1]+"] ");
 		}
 		return sb.toString();
 	}

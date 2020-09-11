@@ -26,6 +26,7 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -43,16 +44,10 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class CompressedVectorTest extends CompressedTestBase {
 
-	private final int _k = 1;
-
 	protected static MatrixTypology[] usedMatrixTypologyLocal = new MatrixTypology[] {// types
-		MatrixTypology.SINGLE_COL,
+		MatrixTypology.SINGLE_COL, 
 		// MatrixTypology.SINGLE_COL_L
 	};
-
-	protected int getK() {
-		return _k;
-	}
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -73,7 +68,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettings compSettings, MatrixTypology matrixTypology) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, 1);
+		super(sparType, valType, valRange, compSettings, matrixTypology, InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Test

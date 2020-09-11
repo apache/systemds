@@ -69,7 +69,7 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public double getValue(int i) {
-		return (i == _values.length) ? 0.0 : _values[i] * _scale;
+		return (i >= _values.length) ? 0.0 : _values[i] * _scale;
 	}
 
 	public byte getValueByte(int i) {
@@ -250,12 +250,15 @@ public class QDictionary extends ADictionary {
 	@Override
 	protected void colSum(double[] c, int[] counts, int[] colIndexes, KahanFunction kplus) {
 
+
+		final int rows = c.length/2;
 		if(!(kplus instanceof KahanPlusSq)) {
 			int[] sum = new int[colIndexes.length];
-			for(int k = 0, valOff = 0; k < _values.length; k++, valOff += colIndexes.length) {
+			int valOff = 0;
+			for(int k = 0; k < _values.length/ colIndexes.length; k++) {
 				int cntk = counts[k];
 				for(int j = 0; j < colIndexes.length; j++) {
-					sum[j] += cntk * getValueByte(valOff + j);
+					sum[j] += cntk * getValueByte(valOff++);
 				}
 			}
 			for(int j = 0; j < colIndexes.length; j++) {
@@ -264,13 +267,14 @@ public class QDictionary extends ADictionary {
 		}
 		else {
 			KahanObject kbuff = new KahanObject(0, 0);
-			for(int k = 0, valOff = 0; k < _values.length; k++, valOff += colIndexes.length) {
+			int valOff = 0;
+			for(int k = 0; k < _values.length/ colIndexes.length; k++) {
 				int cntk = counts[k];
 				for(int j = 0; j < colIndexes.length; j++) {
-					kbuff.set(c[colIndexes[j]], c[colIndexes[j] + colIndexes.length]);
-					kplus.execute3(kbuff, getValue(valOff + j), cntk);
+					kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
+					kplus.execute3(kbuff, getValue(valOff++), cntk);
 					c[colIndexes[j]] = kbuff._sum;
-					c[colIndexes[j] + colIndexes.length] = kbuff._correction;
+					c[colIndexes[j] + rows] = kbuff._correction;
 				}
 			}
 		}
@@ -280,20 +284,22 @@ public class QDictionary extends ADictionary {
 	protected double sum(int[] counts, int ncol, KahanFunction kplus) {
 		if(!(kplus instanceof KahanPlusSq)) {
 			int sum = 0;
-			for(int k = 0, valOff = 0; k < _values.length; k++, valOff += ncol) {
-				int cntk = counts[k];
+			int valOff = 0;
+			for(int k = 0; k < _values.length / ncol; k++) {
+				int countK = counts[k];
 				for(int j = 0; j < ncol; j++) {
-					sum += cntk * getValueByte(valOff + j);
+					sum += countK * getValueByte(valOff++);
 				}
 			}
 			return sum * _scale;
 		}
 		else {
 			KahanObject kbuff = new KahanObject(0, 0);
-			for(int k = 0, valOff = 0; k < _values.length; k++, valOff += ncol) {
-				int cntk = counts[k];
+			int valOff = 0;
+			for(int k = 0; k < _values.length / ncol; k++) {
+				int countK = counts[k];
 				for(int j = 0; j < ncol; j++) {
-					kplus.execute3(kbuff, getValue(valOff + j), cntk);
+					kplus.execute3(kbuff, getValue(valOff++), countK);
 				}
 			}
 			return kbuff._sum;

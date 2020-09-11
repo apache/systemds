@@ -300,6 +300,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		FederatedUDF udf = (FederatedUDF) request.getParam(0);
 		Data[] inputs = Arrays.stream(udf.getInputIDs())
 			.mapToObj(id -> ec.getVariable(String.valueOf(id)))
+			.map(PrivacyMonitor::handlePrivacy)
 			.toArray(Data[]::new);
 		
 		//execute user-defined function

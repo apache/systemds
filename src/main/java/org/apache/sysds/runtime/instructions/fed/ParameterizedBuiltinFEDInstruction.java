@@ -299,7 +299,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		}
 
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			MatrixObject mo = (MatrixObject) PrivacyMonitor.handlePrivacy(data[0]);
+			MatrixObject mo = (MatrixObject) data[0];
 			MatrixBlock mb = mo.acquireRead();
 			String[] colNames = _meta.getColumnNames();
 
@@ -331,8 +331,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
-			FrameBlock fb = fo.acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
 			// return column names
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {fb.getColumnNames()});
 		}
@@ -350,8 +349,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameObject fo = (FrameObject) PrivacyMonitor.handlePrivacy(data[0]);
-			FrameBlock fb = fo.acquireReadAndRelease();
+			FrameBlock fb = ((FrameObject)data[0]).acquireReadAndRelease();
 			_encoder.build(fb);
 			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {_encoder});
 		}

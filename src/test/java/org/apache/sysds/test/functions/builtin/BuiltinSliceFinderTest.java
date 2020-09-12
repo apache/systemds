@@ -20,175 +20,99 @@
 package org.apache.sysds.test.functions.builtin;
 
 
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Random;
-
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties.ExecType;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
 public class BuiltinSliceFinderTest extends AutomatedTestBase {
 
-	private final static String TEST_NAME = "slicefinder";
-	private final static String TEST_DIR = "functions/builtin/";
+	private static final String TEST_NAME = "slicefinder";
+	private static final String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSliceFinderTest.class.getSimpleName() + "/";
-
-	private final static int rows = 2000;
-	private final static int cols = 10;
-
+	private static final boolean VERBOSE = true;
+	
+	private static final double[][] EXPECTED_TOPK = new double[][]{
+		{1.042, 69210699988.477, 18.000},
+		{0.478, 92957580467.849, 39.000},
+		{0.316, 40425449547.480, 10.000},
+		{0.262, 67630559163.266, 29.000},
+		{0.224, 202448990843.317, 125.000},
+		{0.218, 68860581248.568, 31.000},
+		{0.164, 206527445340.279, 135.000},
+		{0.122, 68961886413.866, 34.000},
+		{0.098, 360278523220.479, 266.000},
+		{0.092, 73954209826.485, 39.000}
+	};
+	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
 	}
 
 	@Test
-	public void SingleFreatureTest() {
-		runslicefindertest(1,true, ExecType.CP, BuiltinLmTest.LinregType.AUTO);
+	public void testTop4HybridDP() {
+		runSliceFinderTest(4, true, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop4SinglenodeDP() {
+		runSliceFinderTest(4, true, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testTop4HybridTP() {
+		runSliceFinderTest(4, false, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop4SinglenodeTP() {
+		runSliceFinderTest(4, false, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void MultipleValuesOneFeature() {
-		runslicefindertest(2,true, ExecType.CP, BuiltinLmTest.LinregType.AUTO);
+	public void testTop10HybridDP() {
+		runSliceFinderTest(10, true, ExecMode.HYBRID);
 	}
-
+	
 	@Test
-	public void MultipleFeaturesSingleValues() {
-		runslicefindertest(3,true, ExecType.CP, BuiltinLmTest.LinregType.AUTO);
+	public void testTop10SinglenodeDP() {
+		runSliceFinderTest(10, true, ExecMode.SINGLE_NODE);
 	}
-
-	private void runslicefindertest(int test,boolean sparse, ExecType instType, BuiltinLmTest.LinregType linregAlgo) {
-		ExecMode platformOld = setExecMode(instType);
+	
+	@Test
+	public void testTop10HybridTP() {
+		runSliceFinderTest(10, false, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop10SinglenodeTP() {
+		runSliceFinderTest(10, false, ExecMode.SINGLE_NODE);
+	}
+	
+	private void runSliceFinderTest(int K, boolean dp, ExecMode mode) {
+		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
 		String dml_test_name = TEST_NAME;
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
-
+		String data = HOME + "/data/Salaries.csv";
+		
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			//setOutputBuffering(false);
 			fullDMLScriptName = HOME + dml_test_name + ".dml";
-			programArgs = new String[]{"-args", input("A"), input("B"), input("Y0"), output("C")};
-			double[][] A = TestUtils.ceil(getRandomMatrix(rows, cols, 0, 10, 1, 7));
-			double[][] B = TestUtils.ceil(getRandomMatrix(10, 1, 0, 10, 1.0, 3));
-			double[][] As = new double[rows][cols];
-			double [] Ys = new double[rows];
-			double Y[] = new double[rows];
-			
-			//Y = X %*% B
-			for (int i = 0; i < rows; i++)
-				for (int k = 0; k < cols; k++)
-					Y[i] += A[i][k] * B[k][0];
-
-			double AA[][] = new double[rows][cols+1];
-
-			int value0 = 7;
-			int value1 = 2;
-			int coll0 = 5;
-			int coll1 = 3;
-			
-			switch (test) {
-				case 1:
-					AA = modifyValue(A, Y,value0,coll0);
-					break;
-				case 2:
-					AA = modifyValue(A, Y, value0, coll0);
-					for(int i = 0;i<rows;i++){
-						for(int j = 0; j < cols+1;j++){
-							if(j == cols )
-								Ys[i] = (int) AA[i][j];
-							else
-								As[i][j] = AA[i][j];
-						}
-					}
-					AA = modifyValue(As,Ys,value1,coll0);
-					break;
-				case 3:
-					AA = modifyValue(A, Y, value0, coll0);
-					for(int i = 0;i<rows;i++){
-						for(int j = 0; j < cols+1;j++){
-							if(j == cols ){
-								Ys[i] = (int) AA[i][j];
-							}else{
-								As[i][j] = AA[i][j];
-							}
-						}
-
-					}
-					AA = modifyValue(As,Ys,value1,coll1);
-					break;
-			}
-			double[][] Y0 = new double[rows][1];
-			for(int i = 0; i< rows;i++){
-				Y0[i][0]= AA[i][10];
-			}
-			writeInputMatrixWithMTD("A", A, true);
-			writeInputMatrixWithMTD("B", B, true);
-			writeInputMatrixWithMTD("Y0", Y0, true);
+			programArgs = new String[]{"-args", data,
+				String.valueOf(K),String.valueOf(dp).toUpperCase(),
+				String.valueOf(VERBOSE).toUpperCase(), output("R")};
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
-			double[][] ress = new double [5][20];
-			for (Entry<MatrixValue.CellIndex, Double> a : dmlfile.entrySet()) {
-				MatrixValue.CellIndex ci = a.getKey();
-				ress[ci.row-1][ci.column-1] = a.getValue();
-			}
-			for(int i = 0; i < 5; i++){
-				if(test == 1 ){
-					if(ress[i][3] == value0 && ress[i][4] ==  coll0+1 && ress[i][12] == 0 && ress[i][13] == 0){
-						System.out.print("Test passed!");
-					}
-				}else{
-					if(((ress[i][3] == value0 | ress[i][3] == value1)  && (ress[i][4] ==  coll0+1 | ress[i][4] == coll1 +1)) && ((ress[i][12] == value0 | ress[i][12] == value1)
-							&& (ress[i][13] == coll0+1 | ress[i][13] == coll1+1))){
-						System.out.print("Test passed!");
-					}
-				}
-			}
+			double[][] ret = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromHDFS("R"));
+			for(int i=0; i<K; i++)
+				TestUtils.compareMatrices(EXPECTED_TOPK[i], ret[i], 1e-2);
 		}
 		finally {
 			rtplatform = platformOld;
 		}
-	}
-	
-	private static double[][] randomizeArray(double[][]y){
-		Random rgen=new Random();
-		for(int i=0; i<y.length; i++){
-			int randomPosition=rgen.nextInt(y.length);
-			double temp=y[i][0];
-			y[i][0]=y[randomPosition][0];
-			y[randomPosition][0]=temp;
-		}
-		return y;
-	}
-
-	private static double[][] modifyValue(double[][] A, double[] Y, int value, int coll){
-		int counter = 0;
-		double nvec[][] = new double[rows][1];
-		for (int i = 0; i < rows; i++) {
-			if (A[i][coll] == value) {
-				nvec[counter][0] = Y[i];
-				counter++;
-			}
-		}
-		double[][] y = new double[counter][1];
-		for (int i = 0; i < counter; i++)
-			y[i][0] = nvec[i][0];
-
-		double[][] yy = randomizeArray(y);
-		double AA [][] = new double[rows][cols + 1];
-		counter = 0;
-
-		for(int i = 0; i<rows; i++) {
-			for(int j = 0; j < cols + 1;j++)
-				AA[i][j] = (j == cols ) ? Y[i] : A[i][j];
-			if(A[i][coll] == value) {  // this condition changes the values you choose
-				AA[i][10] = yy[counter][0];
-				counter++;
-			}
-		}
-		return AA;
 	}
 }

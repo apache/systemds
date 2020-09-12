@@ -179,9 +179,15 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double
     Integer n2, Matrix[Double] foffb, Matrix[Double] foffe)
   return(Matrix[Double] P) 
 {
+  # prune invalid slices (possible without affecting overall
+  # pruning effectiveness due to handling of missing parents)
+  pI = (R[,3] >= minSup);
+  S = removeEmpty(target=S, margin="rows", select=pI)
+  R = removeEmpty(target=R, margin="rows", select=pI)
+
   # join compatible slices (without self)
   join = S %*% t(S) == (level-2)
-  I = upper.tri(target=join, diag=FALSE);
+  I = upper.tri(target=join, diag=FALSE, values=TRUE);
   
   # pair construction
   nr = nrow(I); nc = ncol(I);
@@ -194,8 +200,8 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double
   if( sum(rix)!=0 ) {
     P1 = table(seq(1,nrow(rix)), rix, nrow(rix), nrow(S));
     P2 = table(seq(1,nrow(cix)), cix, nrow(rix), nrow(S));
-    P12 = (P1 + P2);
-    P = ((P1 %*% S) + (P2 %*% S)) != 0;
+    P12 = P1 + P2; # combined slice
+    P = (P12 %*% S) != 0;
     ss = min(P1 %*% R[,3], P2 %*% R[,3])
     se = min(P1 %*% R[,2], P2 %*% R[,2])
 
@@ -206,8 +212,8 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double
       end = as.scalar(foffe[1,j]);
       I = I & (rowSums(P[,beg:end]) <= 1);
     }
-    P = removeEmpty(target=P, margin="rows", select=I);
     P12 = removeEmpty(target=P12, margin="rows", select=I)
+    P = removeEmpty(target=P, margin="rows", select=I);
     ss = removeEmpty(target=ss, margin="rows", select=I);
     se = removeEmpty(target=se, margin="rows", select=I);
 
@@ -224,16 +230,20 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double
       ID = ID + I * prod;
     }
 
+    # ID transformation to avoid exceeding INT_MAX and
+    # and to void creating huge sparse intermediates
+    [ID, M] = transformencode(target=as.frame(ID), spec="{ids:true,recode:[1]}")
+
     # size pruning, with rowMin-rowMax transform 
     # to avoid densification (ignored zeros)
-    map = table(ID,seq(1,nrow(P)))
+    map = table(ID, seq(1,nrow(P)), max(ID), nrow(P))
     ubSizes = 1/rowMaxs(map * (1/t(ss)));
-    ubSizes = replace(target=ubSizes, pattern=Inf, replacement=0);    
+    ubSizes = replace(target=ubSizes, pattern=Inf, replacement=0);
     fSizes = (ubSizes >= minSup)
 
     # error pruning
     ubError = 1/rowMaxs(map * (1/t(se)));
-    ubError = replace(target=ubError, pattern=Inf, replacement=0);    
+    ubError = replace(target=ubError, pattern=Inf, replacement=0);
     ubScores = scoreUB(ubSizes, ubError, eAvg, minSup, alpha, n2);
     [maxsc, minsc] = analyzeTopK(TKC);
     fScores = (ubScores > minsc & ubScores > 0) 
@@ -254,7 +264,7 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R, Matrix[Double
 evalSlice = function(Matrix[Double] X, Matrix[Double] e, Double eAvg, Matrix[Double] tS, Integer l, Double alpha) 
   return(Matrix[Double] R)
 {
-  I = (X %*% tS) == l;  # slice indicator 
+  I = (X %*% tS) == l; # slice indicator
   ss = t(colSums(I));  # absolute slice size (nnz)
   se = t(t(e) %*% I);  # absolute slice error 
 
@@ -288,9 +298,9 @@ jspec= "{ ids:true, recode:[1,2,3,6], bin:[{id:4, method:equi-width, numbins:14}
 [X,M] = transformencode(target=F, spec=jspec);
 X = X[,2:ncol(X)]
 
-#X = rbind(X,X)
-#X = cbind(X,X)
-#y = rbind(y,y)
+X = rbind(X,X)
+X = cbind(X,X)
+y = rbind(y,y)
 
 # learn model
 B = lm(X=X, y=y, verbose=FALSE);
@@ -298,4 +308,4 @@ yhat = X %*% B;
 e = (y-yhat)^2;
 
 # call slice finding
-[S,C] = slicing(X=X, e=e, k=10, alpha=0.95, minSup=4, verbose=TRUE);
+[S,C] = slicing(X=X, e=e, k=10, alpha=0.95, minSup=32, verbose=TRUE);

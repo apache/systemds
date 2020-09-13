@@ -29,7 +29,7 @@ import org.apache.sysds.parser.DMLProgram;
 public abstract class IPAPass 
 {
 	protected static final Log LOG = LogFactory.getLog(IPAPass.class.getName());
-    
+
 	/**
 	 * Indicates if an IPA pass is applicable for the current
 	 * configuration such as global flags or the chosen execution 
@@ -47,6 +47,8 @@ public abstract class IPAPass
 	 * @param prog dml program
 	 * @param fgraph function call graph
 	 * @param fcallSizes function call size infos
+	 * @return true if function call graph should be rebuild
 	 */
-	public abstract void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes );
+	public abstract boolean rewriteProgram( DMLProgram prog,
+		FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes );
 }

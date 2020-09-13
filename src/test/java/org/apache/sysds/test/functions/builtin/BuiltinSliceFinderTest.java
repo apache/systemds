@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.builtin;
 
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -110,6 +111,9 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase {
 			double[][] ret = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromHDFS("R"));
 			for(int i=0; i<K; i++)
 				TestUtils.compareMatrices(EXPECTED_TOPK[i], ret[i], 1e-2);
+		
+			//ensure proper inlining, despite initially multiple calls and large function
+			Assert.assertFalse(heavyHittersContainsSubString("evalSlice"));
 		}
 		finally {
 			rtplatform = platformOld;

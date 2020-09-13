@@ -47,7 +47,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 	{
 		for( String fkey : fgraph.getReachableFunctions() ) {
 			FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fkey);
@@ -87,6 +87,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 						+ fkey +"' with '"+call2.getFunctionKey()+"'");
 			}
 		}
+		return false;
 	}
 	
 	private static boolean singleFunctionOp(ArrayList<Hop> hops) {

@@ -21,6 +21,7 @@ package org.apache.sysds.hops.ipa;
 
 
 import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
 import org.apache.sysds.parser.DMLProgram;
@@ -42,17 +43,22 @@ public class IPAPassApplyStaticAndDynamicHopRewrites extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		try {
-			//construct rewriter w/o checkpoint injection to avoid redundancy
+			// construct rewriter w/o checkpoint injection to avoid redundancy
 			ProgramRewriter rewriter = new ProgramRewriter(
 				InterProceduralAnalysis.APPLY_STATIC_REWRITES,
 				InterProceduralAnalysis.APPLY_DYNAMIC_REWRITES);
 			rewriter.removeStatementBlockRewrite(RewriteInjectSparkLoopCheckpointing.class);
 			
-			//rewrite program hop dags and statement blocks
-			rewriter.rewriteProgramHopDAGs(prog, true); //rewrite and split
-		} 
+			// rewrite program hop dags and statement blocks
+			ProgramRewriteStatus status = new ProgramRewriteStatus();
+			rewriter.rewriteProgramHopDAGs(prog, true, status); //rewrite and split
+			// in case of removed branches entire function calls might have been eliminated,
+			// accordingly, we should rebuild the function call graph to allow for inlining
+			// even large functions, and avoid restrictions of scalar/size propagation
+			return status.getRemovedBranches();
+		}
 		catch (LanguageException ex) {
 			throw new HopsException(ex);
 		}

@@ -191,8 +191,10 @@ public class ProgramRewriter
 	}
 	
 	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp, boolean splitDags) {
-		ProgramRewriteStatus state = new ProgramRewriteStatus();
-		
+		return rewriteProgramHopDAGs(dmlp, splitDags, new ProgramRewriteStatus());
+	}
+	
+	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp, boolean splitDags, ProgramRewriteStatus state) {
 		// for each namespace, handle function statement blocks
 		for (String namespaceKey : dmlp.getNamespaces().keySet())
 			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {

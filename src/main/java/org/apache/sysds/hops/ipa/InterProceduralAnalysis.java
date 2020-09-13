@@ -97,7 +97,7 @@ public class InterProceduralAnalysis
 	private final StatementBlock _sb;
 	
 	//function call graph for functions reachable from main
-	private final FunctionCallGraph _fgraph;
+	private FunctionCallGraph _fgraph;
 	
 	//set IPA passes to apply in order 
 	private final ArrayList<IPAPass> _passes;
@@ -200,9 +200,10 @@ public class InterProceduralAnalysis
 			}
 			
 			//step 2: apply additional IPA passes
+			boolean rebuildFGraph = false;
 			for( IPAPass pass : _passes )
 				if( pass.isApplicable(_fgraph) )
-					pass.rewriteProgram(_prog, _fgraph, fcallSizes);
+					rebuildFGraph |= pass.rewriteProgram(_prog, _fgraph, fcallSizes);
 			
 			//early abort without functions or on reached fixpoint
 			if( _fgraph.getReachableFunctions().isEmpty() 
@@ -212,6 +213,10 @@ public class InterProceduralAnalysis
 						+ " repetitions due to reached fixpoint.");
 				break;
 			}
+			
+			//step 3: rebuild function call graph if necessary
+			if( rebuildFGraph && i < repetitions-1 )
+				_fgraph = new FunctionCallGraph(_prog);
 		}
 		
 		//cleanup pass: remove unused functions

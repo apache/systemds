@@ -52,7 +52,7 @@ public class IPAPassEliminateDeadCode extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		// step 1: backwards pass over main program to track used and remove unused vars
 		findAndRemoveDeadCode(prog.getStatementBlocks(), new HashSet<>(), fgraph);
 		
@@ -66,6 +66,7 @@ public class IPAPassEliminateDeadCode extends IPAPass
 			// backward pass over function to track used and remove unused vars
 			findAndRemoveDeadCode(fstmt.getBody(), usedVars, fgraph);
 		}
+		return false;
 	}
 	
 	private static void findAndRemoveDeadCode(List<StatementBlock> sbs, Set<String> usedVars, FunctionCallGraph fgraph) {

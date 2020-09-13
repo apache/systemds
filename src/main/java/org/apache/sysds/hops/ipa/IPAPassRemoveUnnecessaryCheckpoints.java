@@ -55,7 +55,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		//remove unnecessary checkpoint before update 
 		removeCheckpointBeforeUpdate(prog);
 		
@@ -64,6 +64,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		
 		//remove unnecessary checkpoint read-{write|uagg}
 		removeCheckpointReadWrite(prog);
+		return false;
 	}
 	
 	private static void removeCheckpointBeforeUpdate(DMLProgram dmlp) {

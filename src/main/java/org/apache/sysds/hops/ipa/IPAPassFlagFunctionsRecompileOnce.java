@@ -53,10 +53,10 @@ public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 	{
 		if( !ConfigurationManager.isDynamicRecompilation() )
-			return;
+			return false;
 		
 		try {
 			// flag applicable functions for recompile-once, note that this IPA pass
@@ -82,6 +82,7 @@ public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 		catch( LanguageException ex ) {
 			throw new HopsException(ex);
 		}
+		return false;
 	}
 	
 	/**

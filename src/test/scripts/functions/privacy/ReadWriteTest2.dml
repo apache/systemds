@@ -20,6 +20,5 @@
 #-------------------------------------------------------------
 
 A = read($a, rows=$m, cols=$n, format="text");
-B = read($b, rows=$n, cols=$k, format="text");
-C = A %*% B;
-write(C, $c, format="text");
+B = A;
+write(B, $b, format="text");

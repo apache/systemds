@@ -40,7 +40,6 @@ public abstract class FEDInstruction extends Instruction {
 	}
 	
 	protected final FEDType _fedType;
-	protected final Operator _optr;
 	protected long _tid = -1; //main
 	
 	protected FEDInstruction(FEDType type, String opcode, String istr) {
@@ -48,8 +47,8 @@ public abstract class FEDInstruction extends Instruction {
 	}
 	
 	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr) {
+		super(op);
 		_fedType = type;
-		_optr = op;
 		instString = istr;
 		instOpcode = opcode;
 	}

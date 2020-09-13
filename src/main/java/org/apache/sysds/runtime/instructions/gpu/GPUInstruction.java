@@ -148,21 +148,16 @@ public abstract class GPUInstruction extends Instruction {
 	public final static String MISC_TIMER_CUMULATIVE_SUMPROD_KERNEL =  	   "cumSumProdk"; // time spent in cumulative sum-product cuda kernel
 
 	protected GPUINSTRUCTION_TYPE _gputype;
-	protected Operator _optr;
 
 	protected boolean _requiresLabelUpdate = false;
 
-	private GPUInstruction(String opcode, String istr) {
+	protected GPUInstruction(Operator op, String opcode, String istr) {
+		super(op);
 		instString = istr;
 
 		// prepare opcode and update requirement for repeated usage
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
-	}
-
-	protected GPUInstruction(Operator op, String opcode, String istr) {
-		this(opcode, istr);
-		_optr = op;
 	}
 	
 	@Override

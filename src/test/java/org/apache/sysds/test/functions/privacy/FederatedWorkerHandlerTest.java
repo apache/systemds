@@ -21,28 +21,27 @@ package org.apache.sysds.test.functions.privacy;
 
 import java.util.Arrays;
 
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.common.Types;
 import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertTrue;
 
 @net.jcip.annotations.NotThreadSafe
-@Ignore //FIXME: fix privacy propagation for various operations
 public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/federated/";
 	private static final String TEST_DIR_SCALAR = TEST_DIR + "matrix_scalar/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWorkerHandlerTest.class.getSimpleName() + "/";
 	private final static String TEST_CLASS_DIR_SCALAR = TEST_DIR_SCALAR + FederatedWorkerHandlerTest.class.getSimpleName() + "/";
-	private static final String TEST_PROG_SCALAR_ADDITION_MATRIX = "ScalarAdditionFederatedMatrix";
+	private static final String TEST_PROG_SCALAR_ADDITION_MATRIX = "FederatedScalarAdditionMatrix";
 	private final static String AGGREGATION_TEST_NAME = "FederatedSumTest";
 	private final static String TRANSFER_TEST_NAME = "FederatedRCBindTest";
 	private final static String MATVECMULT_TEST_NAME = "FederatedMultiplyTest";
@@ -64,12 +63,12 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	@Test
 	public void scalarPrivateTest(){
-		scalarTest(PrivacyLevel.Private, DMLException.class);
+		scalarTest(PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
 	public void scalarPrivateAggregationTest(){
-		scalarTest(PrivacyLevel.PrivateAggregation, DMLException.class);
+		scalarTest(PrivacyLevel.PrivateAggregation, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -113,11 +112,11 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			t.start();
 			sleep(FED_WORKER_WAIT);
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR_SCALAR + dmlFile + ".dml";
-			programArgs = new String[]{"-checkPrivacy", "-args",
-					TestUtils.federatedAddress(FEDERATED_WORKER_HOST, FEDERATED_WORKER_PORT, input("M")),
-					Integer.toString(rows), Integer.toString(cols),
-					Integer.toString(s),
-					output("R")};
+			programArgs = new String[]{"-checkPrivacy", "-nvargs",
+					"in=" + TestUtils.federatedAddress(FEDERATED_WORKER_HOST, FEDERATED_WORKER_PORT, input("M")),
+					"rows=" + Integer.toString(rows), "cols=" + Integer.toString(cols),
+					"scalar=" + Integer.toString(s),
+					"out=" + output("R")};
 			boolean exceptionExpected = (expectedException != null);
 			runTest(true, exceptionExpected, expectedException, -1);
 
@@ -127,7 +126,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			e.printStackTrace();
 			assert (false);
 		} finally {
-			assert(checkedPrivacyConstraintsContains(privacyLevel));
+			assertTrue("The privacy level " + privacyLevel.toString() + " should have been checked during execution",
+				checkedPrivacyConstraintsContains(privacyLevel));
 			rtplatform = platformOld;
 			TestUtils.shutdownThread(t);
 			rtplatform = platformOld;
@@ -137,7 +137,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	@Test
 	public void aggregatePrivateTest() {
-		federatedSum(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLException.class);
+		federatedSum(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -161,7 +161,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
 		int port = getRandomAvailablePort();
-		Process t = startLocalFedWorker(port);
+		Thread t = startLocalFedWorkerThread(port);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -188,8 +188,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("aggregation");
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + AGGREGATION_TEST_NAME + ".dml";
-		programArgs = new String[] {"-checkPrivacy", "-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
-			Integer.toString(cols), Integer.toString(rows * 2), output("S"), output("R"), output("C")};
+		programArgs = new String[] {"-checkPrivacy", "-nvargs", "in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
+			"cols=" + cols, "out_S=" + output("S"), "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, (expectedException != null), expectedException, -1);
 
@@ -197,7 +197,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if ( expectedException == null )
 			compareResults(1e-11);
 
-		assert(checkedPrivacyConstraintsContains(privacyLevel));
+		assertTrue("The privacy level " + privacyLevel.toString() + " should have been checked during execution",
+			checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;
@@ -206,12 +207,12 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	@Test
 	public void transferPrivateTest() {
-		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLException.class);
+		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
 	public void transferPrivateAggregationTest() {
-		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLException.class);
+		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -248,8 +249,9 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get("transfer");
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TRANSFER_TEST_NAME + ".dml";
-		programArgs = new String[] {"-checkPrivacy", "-args", "\"localhost:" + port + "/" + input("A") + "\"", Integer.toString(rows),
-			Integer.toString(cols), output("R"), output("C")};
+		programArgs = new String[] {"-checkPrivacy", "-nvargs",
+			"in=" + TestUtils.federatedAddress(port, input("A")), "rows=" + rows,
+			"cols=" + cols, "out_R=" + output("R"), "out_C=" + output("C")};
 
 		runTest(true, (expectedException != null), expectedException, -1);
 
@@ -266,12 +268,12 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 	@Test
 	public void matVecMultPrivateTest() {
-		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLException.class);
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
 	public void matVecMultPrivateAggregationTest() {
-		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLException.class);
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLRuntimeException.class);
 	}
 
 	@Test
@@ -287,7 +289,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 
-		Process t1, t2;
+		Thread t1, t2;
 
 		getAndLoadTestConfiguration("matvecmult");
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -308,8 +310,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
-		t1 = startLocalFedWorker(port1);
-		t2 = startLocalFedWorker(port2);
+		t1 = startLocalFedWorkerThread(port1);
+		t2 = startLocalFedWorkerThread(port2);
 
 		TestConfiguration config = availableTestConfigurations.get("matvecmult");
 		loadTestConfiguration(config);

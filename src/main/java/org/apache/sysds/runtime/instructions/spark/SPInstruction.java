@@ -41,7 +41,6 @@ public abstract class SPInstruction extends Instruction {
 	}
 
 	protected final SPType _sptype;
-	protected final Operator _optr;
 	protected final boolean _requiresLabelUpdate;
 
 	protected SPInstruction(SPType type, String opcode, String istr) {
@@ -49,8 +48,8 @@ public abstract class SPInstruction extends Instruction {
 	}
 
 	protected SPInstruction(SPType type, Operator op, String opcode, String istr) {
+		super(op);
 		_sptype = type;
-		_optr = op;
 		instString = istr;
 
 		// prepare opcode and update requirement for repeated usage
@@ -61,10 +60,6 @@ public abstract class SPInstruction extends Instruction {
 	@Override
 	public IType getType() {
 		return IType.SPARK;
-	}
-	
-	public Operator getOperator() {
-		return _optr;
 	}
 
 	public SPType getSPInstructionType() {

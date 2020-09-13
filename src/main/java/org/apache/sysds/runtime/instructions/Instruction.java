@@ -25,6 +25,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyPropagator;
 
@@ -39,6 +40,11 @@ public abstract class Instruction
 	}
 	
 	private static final Log LOG = LogFactory.getLog(Instruction.class.getName());
+	protected final Operator _optr;
+
+	protected Instruction(Operator _optr){
+		this._optr = _optr;
+	}
 
 	public static final String OPERAND_DELIM = Lop.OPERAND_DELIMITOR;
 	public static final String DATATYPE_PREFIX = Lop.DATATYPE_PREFIX;
@@ -135,6 +141,10 @@ public abstract class Instruction
 
 	public PrivacyConstraint getPrivacyConstraint(){
 		return privacyConstraint;
+	}
+
+	public Operator getOperator() {
+		return _optr;
 	}
 	
 	/**

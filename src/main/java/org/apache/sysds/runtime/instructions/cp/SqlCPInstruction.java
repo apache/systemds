@@ -132,4 +132,8 @@ public class SqlCPInstruction extends CPInstruction {
 	public String getOutputVariableName(){
 		return _output.getName();
 	}
+
+	public CPOperand getOutput(){
+		return _output;
+	}
 }

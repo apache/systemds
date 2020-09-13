@@ -456,11 +456,6 @@ public class HDFSTool
 			}
 		}
 
-		//add privacy constraints
-		if ( privacyConstraint != null ){
-			mtd.put(DataExpression.PRIVACY, privacyConstraint.getPrivacyLevel().name());
-		}
-
 		//add username and time
 		String userName = System.getProperty("user.name");
 		if (StringUtils.isNotEmpty(userName)) {
@@ -477,6 +472,11 @@ public class HDFSTool
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 		mtd.put(DataExpression.CREATEDPARAM, sdf.format(new Date()));
+
+		//add privacy constraints
+		if ( privacyConstraint != null ){
+			privacyConstraint.toJson(mtd);
+		}
 
 		return mtd.toString(4); // indent with 4 spaces	
 	}

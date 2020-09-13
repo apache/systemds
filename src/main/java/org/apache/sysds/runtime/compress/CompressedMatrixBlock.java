@@ -1143,9 +1143,9 @@ public class CompressedMatrixBlock extends AbstractCompressedMatrixBlock {
 		ret.recomputeNonZeros();
 	}
 
-	private MatrixBlock rightMultByMatrix(List<ColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		int numColumns) {
-
+	private static MatrixBlock rightMultByMatrix(List<ColGroup> colGroups,
+		MatrixBlock that, MatrixBlock ret, int k, int numColumns)
+	{
 		// Exchange with rightMultByDenseMatrix.
 
 		ret.reset();

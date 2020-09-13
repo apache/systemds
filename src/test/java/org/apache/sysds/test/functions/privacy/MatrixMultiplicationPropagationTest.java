@@ -109,8 +109,10 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		compareResults(1e-9);
 
 		// Check that the output metadata is correct
-		String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
-		assertEquals(String.valueOf(privacyLevel), actualPrivacyValue);
+		if ( privacyLevel != PrivacyLevel.None ){
+			String actualPrivacyValue = readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
+			assertEquals(String.valueOf(privacyLevel), actualPrivacyValue);
+		} else exceptionExpected("c", OUTPUT_DIR);
 	}
 
 	@Test
@@ -142,9 +144,18 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 
 		// Check that a JSONException is thrown 
 		// because no privacy metadata should be written to c
+		exceptionExpected("c", OUTPUT_DIR);
+	}
+
+	/**
+	 * Check that an exception is thrown when metadata of variable is read.
+	 * @param variable name of variable
+	 * @param dir directory of variable
+	 */
+	private static void exceptionExpected(String variable, String dir){
 		boolean JSONExceptionThrown = false;
 		try{
-			readDMLMetaDataValue("c", OUTPUT_DIR, DataExpression.PRIVACY);
+			readDMLMetaDataValue(variable, dir, DataExpression.PRIVACY);
 		} catch (JSONException e){
 			JSONExceptionThrown = true;
 		} catch (Exception e){
@@ -180,7 +191,10 @@ public class MatrixMultiplicationPropagationTest extends AutomatedTestBase {
 		
 		writeInputMatrixWithMTD("a", a, false, dataCharacteristics, privacyConstraint);
 
-		String actualPrivacyValue = readDMLMetaDataValue("a", INPUT_DIR, DataExpression.PRIVACY);
-		assertEquals(String.valueOf(privacyLevel), actualPrivacyValue);
+		if ( privacyLevel != PrivacyLevel.None ){
+			String actualPrivacyValue = readDMLMetaDataValue("a", INPUT_DIR, DataExpression.PRIVACY);
+			assertEquals(String.valueOf(privacyLevel), actualPrivacyValue);
+		} else exceptionExpected("a", INPUT_DIR);
+		
 	}
 }

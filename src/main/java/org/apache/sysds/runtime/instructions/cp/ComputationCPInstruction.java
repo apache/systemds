@@ -59,6 +59,10 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 		return output.getName();
 	}
 
+	public CPOperand getOutput(){
+		return output;
+	}
+
 	public CPOperand[] getInputs(){
 		return new CPOperand[]{input1, input2, input3};
 	}

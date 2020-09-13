@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -280,8 +281,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ExecutionContext ec = _ecm.get(request.getTID());
 		BasicProgramBlock pb = new BasicProgramBlock(null);
 		pb.getInstructions().clear();
-		pb.getInstructions().add(InstructionParser
-			.parseSingleInstruction((String)request.getParam(0)));
+		Instruction receivedInstruction = InstructionParser
+			.parseSingleInstruction((String)request.getParam(0));
+		pb.getInstructions().add(receivedInstruction);
 		try {
 			pb.execute(ec); //execute single instruction
 		}

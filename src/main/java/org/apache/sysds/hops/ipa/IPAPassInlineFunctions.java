@@ -53,7 +53,7 @@ public class IPAPassInlineFunctions extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 	{
 		//NOTE: we inline single-statement-block (i.e., last-level block) functions
 		//that do not contain other functions, and either are small or called once
@@ -133,6 +133,7 @@ public class IPAPassInlineFunctions extends IPAPass
 				}
 			}
 		}
+		return false;
 	}
 	
 	private static boolean containsFunctionOp(ArrayList<Hop> hops) {

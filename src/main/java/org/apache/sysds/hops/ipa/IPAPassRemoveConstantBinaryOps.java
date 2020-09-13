@@ -56,13 +56,12 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
+	public boolean rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		//approach: scan over top-level program (guaranteed to be unconditional),
 		//collect ones=matrix(1,...); remove b(*)ones if not outer operation
 		HashMap<String, Hop> mOnes = new HashMap<>();
 		
-		for( StatementBlock sb : prog.getStatementBlocks() ) 
-		{
+		for( StatementBlock sb : prog.getStatementBlocks() )  {
 			//pruning updated variables
 			for( String var : sb.variablesUpdated().getVariableNames() )
 				if( mOnes.containsKey( var ) )
@@ -79,6 +78,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 				collectMatrixOfOnes(sb.getHops(), mOnes);
 			}
 		}
+		return false;
 	}
 	
 	private static void collectMatrixOfOnes(ArrayList<Hop> roots, HashMap<String,Hop> mOnes)

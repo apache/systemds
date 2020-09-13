@@ -48,10 +48,10 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 	}
 
 	@Override
-	public void rewriteProgram (DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) 
+	public boolean rewriteProgram (DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) 
 	{
 		if (!LineageCacheConfig.isMultiLevelReuse())
-			return;
+			return false;
 		
 		try {
 			// Find the individual functions and statementblocks with non-determinism.
@@ -84,6 +84,7 @@ public class IPAPassFlagNonDeterminism extends IPAPass {
 		catch( LanguageException ex ) {
 			throw new HopsException(ex);
 		}
+		return false;
 	}
 
 	private boolean rIsNonDeterministicFnc (String fname, ArrayList<StatementBlock> sbs) 

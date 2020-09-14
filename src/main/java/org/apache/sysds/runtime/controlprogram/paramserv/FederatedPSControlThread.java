@@ -114,6 +114,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 						programSerialized,
 						_inst.getNamespace(),
 						_inst.getFunctionName(),
+						_ps.getAggInst().getFunctionName(),
 						_ec.getListObject("hyperparams")
 				)
 		));
@@ -137,18 +138,20 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		long _dataSize;
 		long _numBatches;
 		String _programString;
-		String _gradientsNamespace;
+		String _namespace;
 		String _gradientsFunctionName;
+		String _aggregationFunctionName;
 		ListObject _hyperParams;
 
-		protected setupFederatedWorker(long batchSize, long dataSize, long numBatches, String programString, String gradientsNamespace, String gradientsFunctionName, ListObject hyperParams) {
+		protected setupFederatedWorker(long batchSize, long dataSize, long numBatches, String programString, String namespace, String gradientsFunctionName, String aggregationFunctionName, ListObject hyperParams) {
 			super(new long[]{});
 			_batchSize = batchSize;
 			_dataSize = dataSize;
 			_numBatches = numBatches;
 			_programString = programString;
-			_gradientsNamespace = gradientsNamespace;
+			_namespace = namespace;
 			_gradientsFunctionName = gradientsFunctionName;
+			_aggregationFunctionName = aggregationFunctionName;
 			_hyperParams = hyperParams;
 		}
 
@@ -161,8 +164,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable("batchSize", new IntObject(_batchSize));
 			ec.setVariable("dataSize", new IntObject(_dataSize));
 			ec.setVariable("numBatches", new IntObject(_numBatches));
-			ec.setVariable("gradientsNamespace", new StringObject(_gradientsNamespace));
+			ec.setVariable("namespace", new StringObject(_namespace));
 			ec.setVariable("gradientsFunctionName", new StringObject(_gradientsFunctionName));
+			ec.setVariable("aggregationFunctionName", new StringObject(_aggregationFunctionName));
 			ec.setVariable("hyperparams", _hyperParams);
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
@@ -189,23 +193,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		return null;
 	}
 
-	protected void computeEpoch() {
-		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
-			// Pull the global parameters from ps
-			ListObject model = pullModel();
-			pushGradients(computeEpochGradients(model));
-		}
-	}
-
-	protected void computeBatch(int numBatches) {
-		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
-			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
-				ListObject model = pullModel();
-				pushGradients(computeBatchGradients(model, batchCounter));
-			}
-		}
-	}
-
 	protected ListObject pullModel() {
 		// Pull the global parameters from ps
 		ListObject model = _ps.pull(_workerID);
@@ -220,6 +207,15 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 
 	// Batch computation logic for federated worker
+	protected void computeBatch(int numBatches) {
+		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
+			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
+				ListObject model = pullModel();
+				pushGradients(computeBatchGradients(model, batchCounter));
+			}
+		}
+	}
+
 	protected ListObject computeBatchGradients(ListObject model, int batchCounter) {
 		// put batch counter on federated worker
 		long batchCounterVarID = FederationUtils.getNextFedDataID();
@@ -268,7 +264,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// get data from execution context
 			long batchSize = ((IntObject) ec.getVariable("batchSize")).getLongValue();
 			long dataSize = ((IntObject) ec.getVariable("dataSize")).getLongValue();
-			String gradientsNamespace = ((StringObject) ec.getVariable("gradientsNamespace")).getStringValue();
+			String namespace = ((StringObject) ec.getVariable("namespace")).getStringValue();
 			String gradientsFunctionName = ((StringObject) ec.getVariable("gradientsFunctionName")).getStringValue();
 
 			// slice batch from feature and label matrix
@@ -283,7 +279,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_LABELS, bLabels);
 
 			// recreate gradient instruction and output
-			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(gradientsNamespace, gradientsFunctionName, true);
+			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, gradientsFunctionName, true);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 			CPOperand[] boundInputs = inputs.stream()
@@ -291,13 +287,13 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-			Instruction gradientsInstruction = new FunctionCallCPInstruction(gradientsNamespace, gradientsFunctionName, true, boundInputs,
+			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunctionName, true, boundInputs,
 					func.getInputParamNames(), outputNames, "gradient function");
-			DataIdentifier output = outputs.get(0);
+			DataIdentifier gradientsOutput = outputs.get(0);
 
 			// calculate and return gradients
 			gradientsInstruction.processInstruction(ec);
-			ListObject gradients = ec.getListObject(output.getName());
+			ListObject gradients = ec.getListObject(gradientsOutput.getName());
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, gradients);
 		}
 	}
@@ -305,6 +301,14 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 
 	// Epoch computation logic for federated worker
+	protected void computeEpoch() {
+		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
+			// Pull the global parameters from ps
+			ListObject model = pullModel();
+			pushGradients(computeEpochGradients(model));
+		}
+	}
+
 	protected ListObject computeEpochGradients(ListObject model) {
 		// put current model on federated worker
 		long modelVarID = FederationUtils.getNextFedDataID();
@@ -350,14 +354,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			long batchSize = ((IntObject) ec.getVariable("batchSize")).getLongValue();
 			long dataSize = ((IntObject) ec.getVariable("dataSize")).getLongValue();
 			long numBatches = ((IntObject) ec.getVariable("numBatches")).getLongValue();
-			String gradientsNamespace = ((StringObject) ec.getVariable("gradientsNamespace")).getStringValue();
+			String namespace = ((StringObject) ec.getVariable("namespace")).getStringValue();
 			String gradientsFunctionName = ((StringObject) ec.getVariable("gradientsFunctionName")).getStringValue();
 
-			// prepare execution context
-			ec.setVariable(Statement.PS_MODEL, model);
-
 			// recreate gradient instruction and output
-			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(gradientsNamespace, gradientsFunctionName, true);
+			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, gradientsFunctionName, true);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 			CPOperand[] boundInputs = inputs.stream()
@@ -365,11 +366,27 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-			Instruction gradientsInstruction = new FunctionCallCPInstruction(gradientsNamespace, gradientsFunctionName, true, boundInputs,
+			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunctionName, true, boundInputs,
 					func.getInputParamNames(), outputNames, "gradient function");
-			DataIdentifier output = outputs.get(0);
+			DataIdentifier gradientsOutput = outputs.get(0);
+
+			// recreate aggregation instruction and output
+			func = ec.getProgram().getFunctionProgramBlock(namespace, gradientsFunctionName, true);
+			inputs = func.getInputParams();
+			outputs = func.getOutputParams();
+			boundInputs = inputs.stream()
+					.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
+					.toArray(CPOperand[]::new);
+			outputNames = outputs.stream().map(DataIdentifier::getName)
+					.collect(Collectors.toCollection(ArrayList::new));
+			Instruction aggregationInstruction = new FunctionCallCPInstruction(namespace, gradientsFunctionName, true, boundInputs,
+					func.getInputParamNames(), outputNames, "aggregation function");
+			DataIdentifier aggregationOutput = outputs.get(0);
+
 
 			ListObject accGradients = null;
+			// prepare execution context
+			ec.setVariable(Statement.PS_MODEL, model);
 			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
 				// slice batch from feature and label matrix
 				long begin = batchCounter * batchSize + 1;
@@ -377,24 +394,27 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				MatrixObject bFeatures = ParamservUtils.sliceMatrix(features, begin, end);
 				MatrixObject bLabels = ParamservUtils.sliceMatrix(labels, begin, end);
 
-
-				boolean localUpdate = batchCounter < numBatches - 1;
-				// Accumulate the intermediate gradients
-
 				// prepare execution context
 				ec.setVariable(Statement.PS_FEATURES, bFeatures);
 				ec.setVariable(Statement.PS_LABELS, bLabels);
+				boolean localUpdate = batchCounter < numBatches - 1;
 
-				// calculate gradients
+				// calculate intermediate gradients
 				gradientsInstruction.processInstruction(ec);
-				ListObject gradients = ec.getListObject(output.getName());
+				ListObject gradients = ec.getListObject(gradientsOutput.getName());
 
-				// TODO: Clean up
 				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, false);
 
 				// Update the local model with gradients
 				if(localUpdate) {
-					// TODO: Update Local Model
+					// Set gradients in execution Context
+					ec.setVariable(Statement.PS_GRADIENTS, gradients);
+					// Invoke the aggregate function
+					aggregationInstruction.processInstruction(ec);
+					// Get the new model
+					model = ec.getListObject(aggregationOutput.getName());
+					// Set new model in execution context
+					ec.setVariable(Statement.PS_MODEL, model);
 				}
 			}
 

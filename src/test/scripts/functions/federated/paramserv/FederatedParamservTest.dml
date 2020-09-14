@@ -22,11 +22,11 @@
 source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
 
 # create federated input matrices
-features = federated(addresses=list($X1, $X2),
+features = federated(addresses=list($X0, $X1),
     ranges=list(list(0, 0), list($examples_per_worker, $num_features),
                 list($examples_per_worker, 0), list($examples_per_worker * 2, $num_features)))
 
-labels = federated(addresses=list($y1, $y2),
+labels = federated(addresses=list($y0, $y1),
     ranges=list(list(0, 0), list($examples_per_worker, $num_labels),
                 list($examples_per_worker, 0), list($examples_per_worker * 2, $num_labels)))
 
@@ -35,6 +35,7 @@ batch_size = $batch_size
 learning_rate = $eta
 utype = $utype
 freq = $freq
+network_type = $network_type
 
 # currently ignored parameters
 workers = 1

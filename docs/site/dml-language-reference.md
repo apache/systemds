@@ -2033,6 +2033,7 @@ The built-in function <code>map()</code> provides support for the lambda express
 Function | Description | Parameters | Example
 -------- | ----------- | ---------- | -------
 map() | It will execute the given lambda expression on a frame.| Input: (X &lt;frame&gt;, y &lt;String&gt;) <br/>Output: &lt;frame&gt;. <br/> X is a frame and y is a String containing the lambda expression to be executed on frame X. | X = read("file1", data_type="frame", rows=2, cols=3, format="binary") <br/> y = "lambda expression" <br/> Z = map(X, y) <br/> # Dimensions of Z = Dimensions of X; <br/> example: Z = map(X, "x -> x.charAt(2)")
+
 Example let X = 
 
  ##### FRAME: nrow = 10, ncol = 1 <br/>

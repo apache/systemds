@@ -50,7 +50,6 @@ public class EnumeratorTest extends AutomatedTestBase {
 	private void runEnumerator(Types.ExecMode instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
-		setOutputBuffering(false);
 		try
 		{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

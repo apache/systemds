@@ -41,7 +41,7 @@ logical = cbind(logical, as.frame("mvi"))
 
 cmask = matrix(0, 1, ncol(X))
 [pip, hp, acc] = bandit(X_train=X_train, Y_train=y_train, X_val = X_val, Y_val = y_val, mask=cmask, lp=logical,
-                 R=$2, k=$3, verbose=TRUE);
+                 R=$2, k=$3, verbose=FALSE);
 
 
 

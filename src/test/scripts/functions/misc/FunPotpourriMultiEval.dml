@@ -23,7 +23,7 @@ X = rand(rows=10, cols= 10)
 t1 = interQuartileMean(X[,7]);
 
 for(i in 1:5)
-  X = eval("winsorize", list(X, FALSE))
+  X = eval("winsorize", list(X))
 
 t2 = interQuartileMean(X[,7]);
 print("expected=TRUE, actual="+(t2 < t1))

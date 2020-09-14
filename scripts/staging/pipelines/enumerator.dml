@@ -43,12 +43,7 @@ return(Frame[String] Kpipeline)
 
     Kpipeline = getFinalTopK(p, h, k)
     print("top k pipelines of "+i+"th logical pipeline "+toString(Kpipeline))
-    # str = "top k pipelines of iteration "+i
-    # str = append(str, toString(Kpipeline))
   }
-  # if(verbose)
-  # print("final top k pipelines \n"+toString(Kpipeline))
-  # write(str, "D:/Workspace/Pipelines/output/kpipeline.txt")
 }  
 
 # The pipeline execution functions 
@@ -269,5 +264,5 @@ L = read($2, data_type="frame", format="csv");
 OP = read($3, data_type="frame", format="csv");
 MVIP = read($4, data_type="frame", format="csv");
 param = read($5, data_type="frame", format="csv");
-R = enumerator(X, Y, L, OP, MVIP, param, 5, TRUE);
+R = enumerator(X, Y, L, OP, MVIP, param, 5, FALSE);
 write(R, $6, format="csv", sep=",")

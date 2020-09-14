@@ -54,7 +54,6 @@ public class BuiltinBanditTest extends AutomatedTestBase {
 
 	private void runBanditTest(Integer resources, Integer k, LopProperties.ExecType et) {
 		Types.ExecMode modeOld = setExecMode(et);
-		setOutputBuffering(false);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;

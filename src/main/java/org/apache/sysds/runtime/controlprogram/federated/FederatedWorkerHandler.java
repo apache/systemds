@@ -205,6 +205,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				fmt = FileFormat.safeValueOf(mtd.getString(DataExpression.FORMAT_TYPE));
 			}
 		}
+		catch (DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
+		}
 		catch (Exception ex) {
 			throw new DMLRuntimeException("Exception in reading metadata of: " + filename);
 		}
@@ -285,6 +288,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		try {
 			pb.execute(ec); //execute single instruction
 		}
+		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
+		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
 				"Exception of type " + ex.getClass() + " thrown when processing EXEC_INST request"));
@@ -306,6 +312,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		try {
 			return udf.execute(ec, inputs);
 		}
+		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
+		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(
 				"Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request"));
@@ -315,6 +324,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private FederatedResponse execClear() {
 		try {
 			_ecm.clear();
+		}
+		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
+			throw ex;
 		}
 		catch(Exception ex) {
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(

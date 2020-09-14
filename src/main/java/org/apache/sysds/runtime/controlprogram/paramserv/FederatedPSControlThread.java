@@ -24,7 +24,6 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
-import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -55,6 +54,7 @@ import static org.apache.sysds.runtime.util.ProgramConverter.*;
 public class FederatedPSControlThread extends PSWorker implements Callable<Void> {
 	FederatedData _featuresData;
 	FederatedData _labelsData;
+	int _numBatches;
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
@@ -75,29 +75,42 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			return null;
 		});
 
+		// calculate number of batches and get data size
+		long dataSize = _features.getNumRows();
+		_numBatches = (int) Math.ceil((double) dataSize / _batchSize);
+
 		// serialize program
-		// Create a program block for the instruction filtering
-		BasicProgramBlock updateProgramBlock = new BasicProgramBlock(_ec.getProgram());
-		updateProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_inst)));
-		ArrayList<ProgramBlock> updateProgramBlocks = new ArrayList<>();
-		updateProgramBlocks.add(updateProgramBlock);
+		// Create program blocks for the instruction filtering
+		String programSerialized = "";
+		ArrayList<ProgramBlock> programBlocks = new ArrayList<>();
+
+		BasicProgramBlock gradientProgramBlock = new BasicProgramBlock(_ec.getProgram());
+		gradientProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_inst)));
+		programBlocks.add(gradientProgramBlock);
+
+		if(_freq == Statement.PSFrequency.EPOCH) {
+			BasicProgramBlock aggProgramBlock = new BasicProgramBlock(_ec.getProgram());
+			aggProgramBlock.setInstructions(new ArrayList<>(Arrays.asList(_ps.getAggInst())));
+			programBlocks.add(aggProgramBlock);
+		}
 
 		StringBuilder sb = new StringBuilder();
 		sb.append(PROG_BEGIN);
 		sb.append( NEWLINE );
 		sb.append(ProgramConverter.serializeProgram(_ec.getProgram(),
-				updateProgramBlocks,
+				programBlocks,
 				new HashMap<>(),
 				false
 		));
 		sb.append(PROG_END);
-		String programSerialized = sb.toString();
+		programSerialized = sb.toString();
 
 		// write program and meta data to worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
 				_featuresData.getVarID(),
 				new setupFederatedWorker(_batchSize,
-						_features.getNumRows(),
+						dataSize,
+						_numBatches,
 						programSerialized,
 						_inst.getNamespace(),
 						_inst.getFunctionName(),
@@ -122,32 +135,34 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	private static class setupFederatedWorker extends FederatedUDF {
 		long _batchSize;
 		long _dataSize;
+		long _numBatches;
 		String _programString;
-		String _namespace;
-		String _functionName;
+		String _gradientsNamespace;
+		String _gradientsFunctionName;
 		ListObject _hyperParams;
 
-		protected setupFederatedWorker(long batchSize, long dataSize, String programString, String namespace, String functionName, ListObject hyperParams) {
+		protected setupFederatedWorker(long batchSize, long dataSize, long numBatches, String programString, String gradientsNamespace, String gradientsFunctionName, ListObject hyperParams) {
 			super(new long[]{});
 			_batchSize = batchSize;
 			_dataSize = dataSize;
+			_numBatches = numBatches;
 			_programString = programString;
-			_namespace = namespace;
-			_functionName = functionName;
+			_gradientsNamespace = gradientsNamespace;
+			_gradientsFunctionName = gradientsFunctionName;
 			_hyperParams = hyperParams;
 		}
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			// parse and set program 	WARNING: the parsing writes all functions to optimized
-			Program prog = ProgramConverter.parseProgram(_programString, 0);
-			ec.setProgram(prog);
+			// parse and set program - WARNING: the parsing writes all functions to optimized
+			ec.setProgram(ProgramConverter.parseProgram(_programString, 0));
 
 			// set variables to ec
 			ec.setVariable("batchSize", new IntObject(_batchSize));
 			ec.setVariable("dataSize", new IntObject(_dataSize));
-			ec.setVariable("namespace", new StringObject(_namespace));
-			ec.setVariable("functionName", new StringObject(_functionName));
+			ec.setVariable("numBatches", new IntObject(_numBatches));
+			ec.setVariable("gradientsNamespace", new StringObject(_gradientsNamespace));
+			ec.setVariable("gradientsFunctionName", new StringObject(_gradientsFunctionName));
 			ec.setVariable("hyperparams", _hyperParams);
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
@@ -158,15 +173,12 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	@Override
 	public Void call() throws Exception {
 		try {
-			long dataSize = _features.getNumRows();
-			int numBatches = (int) Math.ceil((double) dataSize / _batchSize);
-
 			switch (_freq) {
 				case BATCH:
-					computeBatch(numBatches);
+					computeBatch(_numBatches);
 					break;
 				case EPOCH:
-					computeEpoch(numBatches);
+					computeEpoch();
 					break;
 				default:
 					throw new DMLRuntimeException(String.format("%s not support update frequency %s", getWorkerName(), _freq));
@@ -177,47 +189,21 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		return null;
 	}
 
-	// TODO: Cleanup after - this sends the model unnecessarily often
-	protected void computeEpoch(int numBatches) {
+	protected void computeEpoch() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			// Pull the global parameters from ps
-			ListObject params = pullModel();
-			ListObject accGradients = null;
-			
-			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
-				ListObject gradients = computeBatchGradients(params, batchCounter);
-
-				boolean localUpdate = batchCounter < numBatches - 1;
-				// Accumulate the intermediate gradients
-				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, !localUpdate);
-
-				// Update the local model with gradients
-				if(localUpdate)
-					params = updateModel(params, gradients, epochCounter, batchCounter, numBatches);
-			}
-
-			// Push the gradients to ps
-			pushGradients(accGradients);
+			ListObject model = pullModel();
+			pushGradients(computeEpochGradients(model));
 		}
 	}
 
-	// TODO: Cleanup after functionality is fine
 	protected void computeBatch(int numBatches) {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
-				ListObject globalParams = pullModel();
-				ListObject gradients = computeBatchGradients(globalParams, batchCounter);
-
-				// Push the gradients to ps
-				pushGradients(gradients);
+				ListObject model = pullModel();
+				pushGradients(computeBatchGradients(model, batchCounter));
 			}
 		}
-	}
-
-	// TODO: Will not work on federated worker - beware when implementing
-	protected ListObject updateModel(ListObject globalParams, ListObject gradients, int i, int j, int batchIter) {
-		globalParams = _ps.updateLocalModel(_ec, gradients, globalParams);
-		return globalParams;
 	}
 
 	protected ListObject pullModel() {
@@ -231,26 +217,25 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		_ps.push(_workerID, gradients);
 	}
 
+
+
 	// Batch computation logic for federated worker
 	protected ListObject computeBatchGradients(ListObject model, int batchCounter) {
-		System.out.println("[+] Control thread started computing gradients method");
-
 		// put batch counter on federated worker
 		long batchCounterVarID = FederationUtils.getNextFedDataID();
-		Future<FederatedResponse> putJResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, batchCounterVarID, new IntObject(batchCounter)));
+		Future<FederatedResponse> putBatchCounterResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, batchCounterVarID, new IntObject(batchCounter)));
 
 		// put current model on federated worker
 		long modelVarID = FederationUtils.getNextFedDataID();
 		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, modelVarID, model));
 
 		try {
-			if(!putParamsResponse.get().isSuccessful() || !putJResponse.get().isSuccessful())
+			if(!putParamsResponse.get().isSuccessful() || !putBatchCounterResponse.get().isSuccessful())
 				throw new DMLRuntimeException("FederatedLocalPSThread: put was not successful");
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute put" + e.getMessage());
 		}
-		System.out.println("[+] Writing of model and current batch successful");
 
 		// create and execute the udf on the remote worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
@@ -260,7 +245,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 		try {
 			Object[] responseData = udfResponse.get().getData();
-			System.out.println("[+] Gradients calculation on federated worker successful");
 			return (ListObject) responseData[0];
 		}
 		catch(Exception e) {
@@ -278,18 +262,18 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// read in data by varid
 			MatrixObject features = (MatrixObject) data[0];
 			MatrixObject labels = (MatrixObject) data[1];
-			long j = ((IntObject) data[2]).getLongValue();
+			long batchCounter = ((IntObject) data[2]).getLongValue();
 			ListObject model = (ListObject) data[3];
 
 			// get data from execution context
 			long batchSize = ((IntObject) ec.getVariable("batchSize")).getLongValue();
 			long dataSize = ((IntObject) ec.getVariable("dataSize")).getLongValue();
-			String namespace = ((StringObject) ec.getVariable("namespace")).getStringValue();
-			String functionName = ((StringObject) ec.getVariable("functionName")).getStringValue();
+			String gradientsNamespace = ((StringObject) ec.getVariable("gradientsNamespace")).getStringValue();
+			String gradientsFunctionName = ((StringObject) ec.getVariable("gradientsFunctionName")).getStringValue();
 
 			// slice batch from feature and label matrix
-			long begin = j * batchSize + 1;
-			long end = Math.min((j + 1) * batchSize, dataSize);
+			long begin = batchCounter * batchSize + 1;
+			long end = Math.min((batchCounter + 1) * batchSize, dataSize);
 			MatrixObject bFeatures = ParamservUtils.sliceMatrix(features, begin, end);
 			MatrixObject bLabels = ParamservUtils.sliceMatrix(labels, begin, end);
 
@@ -298,9 +282,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_FEATURES, bFeatures);
 			ec.setVariable(Statement.PS_LABELS, bLabels);
 
-			// recreate instruction and output
-			// TODO: Serialize instruction to ec or maybe put in program
-			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(namespace, functionName, true);
+			// recreate gradient instruction and output
+			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(gradientsNamespace, gradientsFunctionName, true);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 			CPOperand[] boundInputs = inputs.stream()
@@ -308,14 +291,114 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-			Instruction instruction = new FunctionCallCPInstruction(namespace, functionName, true, boundInputs,
-					func.getInputParamNames(), outputNames, "update function");
+			Instruction gradientsInstruction = new FunctionCallCPInstruction(gradientsNamespace, gradientsFunctionName, true, boundInputs,
+					func.getInputParamNames(), outputNames, "gradient function");
 			DataIdentifier output = outputs.get(0);
 
 			// calculate and return gradients
-			instruction.processInstruction(ec);
+			gradientsInstruction.processInstruction(ec);
 			ListObject gradients = ec.getListObject(output.getName());
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, gradients);
+		}
+	}
+
+
+
+	// Epoch computation logic for federated worker
+	protected ListObject computeEpochGradients(ListObject model) {
+		// put current model on federated worker
+		long modelVarID = FederationUtils.getNextFedDataID();
+		Future<FederatedResponse> putParamsResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, modelVarID, model));
+
+		try {
+			if(!putParamsResponse.get().isSuccessful())
+				throw new DMLRuntimeException("FederatedLocalPSThread: put was not successful");
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute put" + e.getMessage());
+		}
+
+		// create and execute the udf on the remote worker
+		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(new FederatedRequest(FederatedRequest.RequestType.EXEC_UDF,
+				_featuresData.getVarID(),
+				new federatedComputeEpochGradients(new long[]{_featuresData.getVarID(), _labelsData.getVarID(), modelVarID})
+		));
+
+		try {
+			Object[] responseData = udfResponse.get().getData();
+			return (ListObject) responseData[0];
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("FederatedLocalPSThread: failed to execute UDF" + e.getMessage());
+		}
+
+	}
+
+	private static class federatedComputeEpochGradients extends FederatedUDF {
+		protected federatedComputeEpochGradients(long[] inIDs) {
+			super(inIDs);
+		}
+
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			// read in data by varid
+			MatrixObject features = (MatrixObject) data[0];
+			MatrixObject labels = (MatrixObject) data[1];
+			ListObject model = (ListObject) data[2];
+
+			// get data from execution context
+			long batchSize = ((IntObject) ec.getVariable("batchSize")).getLongValue();
+			long dataSize = ((IntObject) ec.getVariable("dataSize")).getLongValue();
+			long numBatches = ((IntObject) ec.getVariable("numBatches")).getLongValue();
+			String gradientsNamespace = ((StringObject) ec.getVariable("gradientsNamespace")).getStringValue();
+			String gradientsFunctionName = ((StringObject) ec.getVariable("gradientsFunctionName")).getStringValue();
+
+			// prepare execution context
+			ec.setVariable(Statement.PS_MODEL, model);
+
+			// recreate gradient instruction and output
+			FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(gradientsNamespace, gradientsFunctionName, true);
+			ArrayList<DataIdentifier> inputs = func.getInputParams();
+			ArrayList<DataIdentifier> outputs = func.getOutputParams();
+			CPOperand[] boundInputs = inputs.stream()
+					.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
+					.toArray(CPOperand[]::new);
+			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
+					.collect(Collectors.toCollection(ArrayList::new));
+			Instruction gradientsInstruction = new FunctionCallCPInstruction(gradientsNamespace, gradientsFunctionName, true, boundInputs,
+					func.getInputParamNames(), outputNames, "gradient function");
+			DataIdentifier output = outputs.get(0);
+
+			ListObject accGradients = null;
+			for (int batchCounter = 0; batchCounter < numBatches; batchCounter++) {
+				// slice batch from feature and label matrix
+				long begin = batchCounter * batchSize + 1;
+				long end = Math.min((batchCounter + 1) * batchSize, dataSize);
+				MatrixObject bFeatures = ParamservUtils.sliceMatrix(features, begin, end);
+				MatrixObject bLabels = ParamservUtils.sliceMatrix(labels, begin, end);
+
+
+				boolean localUpdate = batchCounter < numBatches - 1;
+				// Accumulate the intermediate gradients
+
+				// prepare execution context
+				ec.setVariable(Statement.PS_FEATURES, bFeatures);
+				ec.setVariable(Statement.PS_LABELS, bLabels);
+
+				// calculate gradients
+				gradientsInstruction.processInstruction(ec);
+				ListObject gradients = ec.getListObject(output.getName());
+
+				// TODO: Clean up
+				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, false);
+
+				// Update the local model with gradients
+				if(localUpdate) {
+					// TODO: Update Local Model
+				}
+			}
+
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, accGradients);
 		}
 	}
 

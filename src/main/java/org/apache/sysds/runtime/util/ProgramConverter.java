@@ -1098,7 +1098,8 @@ public class ProgramConverter
 				continue;
 			if( count>0 ) {
 				sb.append( ELEMENT_DELIM );
-				sb.append( NEWLINE );
+				//TODO: Newline weirdness
+				//sb.append( NEWLINE );
 			}
 			sb.append( pb.getKey() );
 			sb.append( KEY_VALUE_DELIM );

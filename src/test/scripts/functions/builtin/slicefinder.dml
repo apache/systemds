@@ -37,6 +37,6 @@ yhat = X %*% B;
 e = (y-yhat)^2;
 
 # call slice finding
-[TK,TKC] = slicefinder(X=X, e=e, k=$2, alpha=0.95, minSup=4, dpEval=$3, verbose=$4);
+[TK,TKC] = slicefinder(X=X, e=e, k=$2, alpha=0.95, minSup=4, tpEval=$3, verbose=$4);
 
 write(TKC, $5)

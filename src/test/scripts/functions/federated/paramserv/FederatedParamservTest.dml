@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 source("src/test/scripts/functions/federated/paramserv/TwoNN.dml") as TwoNN
+source("src/test/scripts/functions/federated/paramserv/CNN.dml") as CNN
 
 # create federated input matrices
 features = federated(addresses=list($X0, $X1),
@@ -35,12 +36,18 @@ batch_size = $batch_size
 learning_rate = $eta
 utype = $utype
 freq = $freq
-network_type = $network_type
+# network_type = $network_type
 
 # currently ignored parameters
 workers = 1
 scheme = "DISJOINT_CONTIGUOUS"
 paramserv_mode = "LOCAL"
 
+# config for the cnn
+channels = $channels
+hin = $hin
+win = $win
+
 model = TwoNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
+# model = CNN::train_paramserv(features, labels, matrix(0, rows=0, cols=0), matrix(0, rows=0, cols=0), channels, hin, win, epochs, workers, utype, freq, batch_size, scheme, paramserv_mode, learning_rate)
 print(toString(model))

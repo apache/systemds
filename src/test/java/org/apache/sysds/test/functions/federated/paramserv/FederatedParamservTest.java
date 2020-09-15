@@ -74,12 +74,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
         TestUtils.clearAssertionInformation();
         addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
 
-        _platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
+        //_platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
     }
 
     @Override
     public void tearDown() {
-        rtplatform = _platformOld;
+        //rtplatform = _platformOld;
     }
 
     @Test
@@ -97,6 +97,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
         fullDMLScriptName = HOME + TEST_NAME + ".dml";
         // generate program args
         List<String> programArgsList = new ArrayList<>(Arrays.asList(
+                "-stats",
                 "-nvargs",
                 "examples_per_worker=" + _examplesPerWorker,
                 "num_features=" + numFeatures,
@@ -106,7 +107,10 @@ public class FederatedParamservTest extends AutomatedTestBase {
                 "eta=" + _eta,
                 "utype=" + _utype,
                 "freq=" + _freq,
-                "network_type=" + _networkType
+                "network_type=" + _networkType,
+                "channels=" + C,
+                "hin=" + Hin,
+                "win=" + Win
         ));
 
         // for each worker

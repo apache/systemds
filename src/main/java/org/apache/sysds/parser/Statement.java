@@ -103,6 +103,15 @@ public abstract class Statement implements ParseInfo
 		NONE, EPOCH, EPOCH10
 	}
 
+	// String constants related to federated parameter server functionality
+	// prefixed with code: "1701-NCC-" to not overwrite anything
+	public static final String PS_FED_BATCH_SIZE = "1701-NCC-batch_size";
+	public static final String PS_FED_DATA_SIZE = "1701-NCC-data_size";
+	public static final String PS_FED_NUM_BATCHES = "1701-NCC-num_batches";
+	public static final String PS_FED_NAMESPACE = "1701-NCC-namespace";
+	public static final String PS_FED_GRADIENTS_FNAME = "1701-NCC-gradients_fname";
+	public static final String PS_FED_AGGREGATION_FNAME = "1701-NCC-aggregation_fname";
+
 
 	public abstract boolean controlStatement();
 	

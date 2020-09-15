@@ -1285,7 +1285,7 @@ public class OptimizerRuleBased extends Optimizer {
 					if( HopRewriteUtils.isNary(h, OpOpN.EVAL) ) {
 						ProgramBlock pb = OptTreeConverter.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
 						pb.getProgram().getFunctionProgramBlocks(false)
-							.forEach((fname, fvalue) -> ParamservUtils.recompileProgramBlocks(1, fvalue.getChildBlocks()));
+							.forEach((fname, fvalue) -> ParamservUtils.recompileProgramBlocks(1, fvalue.getChildBlocks(), false));
 					}
 				}
 				else

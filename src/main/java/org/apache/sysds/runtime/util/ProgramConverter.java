@@ -1098,8 +1098,6 @@ public class ProgramConverter
 				continue;
 			if( count>0 ) {
 				sb.append( ELEMENT_DELIM );
-				//TODO: Newline weirdness
-				//sb.append( NEWLINE );
 			}
 			sb.append( pb.getKey() );
 			sb.append( KEY_VALUE_DELIM );
@@ -1116,7 +1114,6 @@ public class ProgramConverter
 		for( ProgramBlock pb : pbs ) {
 			if( count>0 ) {
 				sb.append( ELEMENT_DELIM );
-				sb.append(NEWLINE);
 			}
 			sb.append( rSerializeProgramBlock(pb, clsMap) );
 			count++;
@@ -1355,7 +1352,7 @@ public class ProgramConverter
 	private static LocalVariableMap parseVariables(String in) {
 		LocalVariableMap ret = null;
 		if( in.length()> VARS_BEGIN.length() + VARS_END.length()) {
-			String varStr = in.substring( VARS_BEGIN.length(),in.length()- VARS_END.length()).trim();
+			String varStr = in.substring( VARS_BEGIN.length(),in.length() - VARS_END.length()).trim();
 			ret = LocalVariableMap.deserialize(varStr);
 		}
 		else { //empty input symbol table

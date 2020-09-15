@@ -958,11 +958,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			&& (!checkNnz || nonZeros<ULTRA_SPARSE_BLOCK_NNZ);
 	}
 	
-	public boolean isUltraSparsePermutationMatrix() {
-		if( !isUltraSparse(false) )
+	public boolean isSparsePermutationMatrix() {
+		if( !isInSparseFormat() )
 			return false;
-		boolean isPM = true;
 		SparseBlock sblock = getSparseBlock();
+		boolean isPM = (sblock != null);
 		for( int i=0; i<rlen & isPM; i++ )
 			isPM &= sblock.isEmpty(i) || sblock.size(i) == 1;
 		return isPM;

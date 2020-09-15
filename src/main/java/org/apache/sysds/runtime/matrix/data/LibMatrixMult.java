@@ -122,8 +122,9 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing: output allocation
+		boolean m1Perm = m1.isSparsePermutationMatrix();
 		boolean ultraSparse = (fixedRet && ret.sparse)
-			|| (!fixedRet && isUltraSparseMatrixMult(m1, m2));
+			|| (!fixedRet && isUltraSparseMatrixMult(m1, m2, m1Perm));
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
 		ret.sparse = ultraSparse;
@@ -137,7 +138,7 @@ public class LibMatrixMult
 		
 		//core matrix mult computation
 		if( ultraSparse )
-			matrixMultUltraSparse(m1, m2, ret, 0, ru2);
+			matrixMultUltraSparse(m1, m2, ret, m1Perm, 0, ru2);
 		else if(!m1.sparse && !m2.sparse)
 			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, cu);
 		else if(m1.sparse && m2.sparse)
@@ -184,7 +185,8 @@ public class LibMatrixMult
 		
 		//pre-processing: output allocation (in contrast to single-threaded,
 		//we need to allocate sparse as well in order to prevent synchronization)
-		boolean ultraSparse = isUltraSparseMatrixMult(m1, m2);
+		boolean m1Perm = m1.isSparsePermutationMatrix();
+		boolean ultraSparse = isUltraSparseMatrixMult(m1, m2, m1Perm);
 		boolean tm2 = checkPrepMatrixMultRightInput(m1,m2);
 		m2 = prepMatrixMultRightInput(m1, m2);
 		ret.sparse = ultraSparse;
@@ -207,7 +209,7 @@ public class LibMatrixMult
 			ArrayList<MatrixMultTask> tasks = new ArrayList<>();
 			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(num, k, (pm2r||pm2c));
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
-				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, lb, lb+blklens.get(i)));
+				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, m1Perm, lb, lb+blklens.get(i)));
 			//execute tasks
 			List<Future<Object>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
@@ -1509,14 +1511,14 @@ public class LibMatrixMult
 	 * @param rl row lower bound
 	 * @param ru row upper bound
 	 */
-	private static void matrixMultUltraSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {
+	private static void matrixMultUltraSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean m1Perm, int rl, int ru) {
 		final boolean leftUS = m1.isUltraSparse()
 			|| (m1.isUltraSparse(false) && !m2.isUltraSparse())
 			|| (m1.sparse && !m2.sparse);
 		
 		if( m1 == m2 ) //self-product
 			matrixMultUltraSparseSelf(m1, ret, rl, ru);
-		else if( leftUS )
+		else if( leftUS || m1Perm )
 			matrixMultUltraSparseLeft(m1, m2, ret, rl, ru);
 		else
 			matrixMultUltraSparseRight(m1, m2, ret, rl, ru);
@@ -3833,7 +3835,7 @@ public class LibMatrixMult
 			||(!leftTranspose && FPfactor * m1.clen * m1.rlen * m1.rlen > threshold));
 	}
 	
-	public static boolean isUltraSparseMatrixMult(MatrixBlock m1, MatrixBlock m2) {
+	public static boolean isUltraSparseMatrixMult(MatrixBlock m1, MatrixBlock m2, boolean m1Perm) {
 		if( m2.clen == 1 ) //mv always dense
 			return false;
 		//note: ultra-sparse matrix mult implies also sparse outputs, hence we need
@@ -3842,8 +3844,7 @@ public class LibMatrixMult
 			m1.getSparsity(), m2.getSparsity(), m1.rlen, m1.clen, m2.clen, true);
 		return (m1.isUltraSparse() || m2.isUltraSparse()) //base case
 			|| (m1.isUltraSparse(false) && m1 == m2) //ultra-sparse self product
-			|| (m1.isUltraSparsePermutationMatrix() 
-				&& OptimizerUtils.getSparsity(m2.rlen, m2.clen, m2.nonZeros)<1.0)
+			|| (m1Perm && OptimizerUtils.getSparsity(m2.rlen, m2.clen, m2.nonZeros)<1.0)
 			|| ((m1.isUltraSparse(false) || m2.isUltraSparse(false)) 
 				&& outSp < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2)
 			|| (m1.getSparsity() < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2
@@ -3949,17 +3950,19 @@ public class LibMatrixMult
 		private final boolean _tm2; //transposed m2
 		private final boolean _pm2r; //par over m2 rows
 		private final boolean _pm2c; //par over m2 rows
+		private final boolean _m1Perm; //sparse permutation
 		private final int _rl;
 		private final int _ru;
 
 		protected MatrixMultTask( MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
-				boolean tm2, boolean pm2r, boolean pm2c, int rl, int ru )
+			boolean tm2, boolean pm2r, boolean pm2c, boolean m1Perm, int rl, int ru )
 		{
 			_m1 = m1;
 			_m2 = m2;
 			_tm2 = tm2;
 			_pm2r = pm2r;
 			_pm2c = pm2c;
+			_m1Perm = m1Perm;
 			_rl = rl;
 			_ru = ru;
 			
@@ -3986,7 +3989,7 @@ public class LibMatrixMult
 			
 			//compute block matrix multiplication
 			if( _ret.sparse ) //ultra-sparse
-				matrixMultUltraSparse(_m1, _m2, _ret, rl, ru);
+				matrixMultUltraSparse(_m1, _m2, _ret, _m1Perm, rl, ru);
 			else if(!_m1.sparse && !_m2.sparse)
 				matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2r, rl, ru, cl, cu);
 			else if(_m1.sparse && _m2.sparse)

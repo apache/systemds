@@ -26,8 +26,9 @@
 # maxL      maximum level L (conjunctions of L predicates), 0 unlimited
 # minSup    minimum support (min number of rows per slice)
 # alpha     weight [0,1]: 0 only size, 1 only error
-# dpEval    flag for data-parallel slice evaluation, 
-#           otherwise task-parallel
+# tpEval    flag for task-parallel slice evaluation, 
+#           otherwise data-parallel
+# tpBlksz   block size for task-parallel execution (num slices) 
 # verbose   flag for verbose debug output 
 # ------------------------------------------------------------
 # TK        top-k slices (k x ncol(X) if successful) 
@@ -36,7 +37,7 @@
 
 m_slicefinder = function(Matrix[Double] X, Matrix[Double] e,
     Integer k = 4, Integer maxL = 0, Integer minSup = 32, Double alpha = 0.5,
-    Boolean dpEval = FALSE, Boolean verbose = FALSE)
+    Boolean tpEval = TRUE, Integer tpBlksz = 16, Boolean verbose = FALSE)
   return(Matrix[Double] TK, Matrix[Double] TKC)
 {
   m = nrow(X);
@@ -80,15 +81,19 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e,
     }
 
     # extract and evaluate candidate slices
-    if( dpEval ) { #data-parallel
+    if( tpEval ) { # task-parallel
+      # hybrid task-parallel w/ 1 matrix-matrix for blocks of 16 matrix-vector 
+      R = matrix(0, nrow(S), 4)
+      parfor( i in 1:ceil(nrow(S)/tpBlksz), check=0 ) {
+        beg = (i-1)*tpBlksz + 1; 
+        end = min(i*tpBlksz, nrow(R));
+        R[beg:end,] = evalSlice(X2, e, eAvg, t(S[beg:end,]), level, alpha);
+      }
+    }
+    else { # data-parallel
       R = evalSlice(X2, e, eAvg, t(S), level, alpha);
     }
-    else { # task-parallel
-      R = matrix(0, nrow(S), 4)
-      parfor( i in 1:nrow(S) )
-        R[i,] = evalSlice(X2, e, eAvg, t(S[i,]), level, alpha);
-    }
-
+    
     # maintain top-k after evaluation
     [TK, TKC] = maintainTopK(S, R, TK, TKC, k, minSup);
 
@@ -199,7 +204,7 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R,
 {
   # prune invalid slices (possible without affecting overall
   # pruning effectiveness due to handling of missing parents)
-  pI = (R[,4] >= minSup);
+  pI = (R[,4] >= minSup & R[,2] > 0);
   S = removeEmpty(target=S, margin="rows", select=pI)
   R = removeEmpty(target=R, margin="rows", select=pI)
 
@@ -219,7 +224,8 @@ getPairedCandidates = function(Matrix[Double] S, Matrix[Double] R,
     P1 = table(seq(1,nrow(rix)), rix, nrow(rix), nrow(S));
     P2 = table(seq(1,nrow(cix)), cix, nrow(rix), nrow(S));
     P12 = P1 + P2; # combined slice
-    P = (P12 %*% S) != 0;
+    P = (P1 %*% S + P2 %*% S) != 0;
+
     se = min(P1 %*% R[,2], P2 %*% R[,2])
     sm = min(P1 %*% R[,3], P2 %*% R[,3])
     ss = min(P1 %*% R[,4], P2 %*% R[,4])

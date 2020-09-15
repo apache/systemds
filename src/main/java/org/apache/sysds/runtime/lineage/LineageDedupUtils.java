@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.utils.Explain;
 
 public class LineageDedupUtils {
@@ -95,11 +96,11 @@ public class LineageDedupUtils {
 		// instead reuse the stored maps for this and future interations
 		// NOTE: this optimization saves redundant tracing, but that
 		//       kills reuse opportunities
-		if (ldb.isAllPathsTaken())
+		initLocalLineage(ec);
+		if (ReuseCacheType.isNone() && ldb.isAllPathsTaken())
 			return;
 
 		// copy the input LineageItems of the loop-body
-		initLocalLineage(ec);
 		ArrayList<String> inputnames = fpb.getStatementBlock().getInputstoSB();
 		LineageItem[] liinputs = LineageItemUtils.getLineageItemInputstoSB(inputnames, ec);
 		// TODO: find the inputs from the ProgramBlock instead of StatementBlock
@@ -123,10 +124,12 @@ public class LineageDedupUtils {
 		ec.setLineage(_mainLineage);
 	}
 	
-	public static void setDedupMap(LineageDedupBlock ldb, long takenPath) {
+	public static LineageMap setDedupMap(LineageDedupBlock ldb, long takenPath) {
 		// if this iteration took a new path, store the corresponding map
 		if (ldb.getMap(takenPath) == null)
 			ldb.setMap(takenPath, _tmpLineage.getLineageMap());
+		// always return the lineagemap from the last run
+		return _tmpLineage.getLineageMap().isEmpty() ? ldb.getMap(takenPath) : _tmpLineage.getLineageMap();
 	}
 	
 	private static void initLocalLineage(ExecutionContext ec) {

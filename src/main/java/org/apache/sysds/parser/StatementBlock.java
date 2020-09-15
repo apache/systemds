@@ -434,6 +434,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		}
 		return outputs;
 	}
+	
+	public ArrayList<String> getUpdatedVars() {
+		return new ArrayList<String>(_updated.getVariableNames());
+	}
 
 	public static ArrayList<StatementBlock> mergeStatementBlocks(List<StatementBlock> sb){
 		if (sb == null || sb.isEmpty())

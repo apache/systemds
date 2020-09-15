@@ -53,7 +53,7 @@ public class Lineage {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
-		if (_activeDedupBlock == null || !_activeDedupBlock.isAllPathsTaken())
+		if (_activeDedupBlock == null || !ReuseCacheType.isNone() || !_activeDedupBlock.isAllPathsTaken())
 			_map.trace(inst, ec);
 	}
 	
@@ -61,11 +61,12 @@ public class Lineage {
 		if( _activeDedupBlock != null ) {
 			ArrayList<String> inputnames = pb.getStatementBlock().getInputstoSB();
 			LineageItem[] liinputs = LineageItemUtils.getLineageItemInputstoSB(inputnames, ec);
+			ArrayList<String> updatedVars = pb.getStatementBlock().getUpdatedVars();
 			long lpath = _activeDedupBlock.getPath();
-			LineageDedupUtils.setDedupMap(_activeDedupBlock, lpath);
-			LineageMap lm = _activeDedupBlock.getMap(lpath);
+			LineageMap lm = LineageDedupUtils.setDedupMap(_activeDedupBlock, lpath);
+			//LineageMap lm = _activeDedupBlock.getMap(lpath);
 			if (lm != null)
-				_map.processDedupItem(lm, lpath, liinputs, pb.getStatementBlock().getName());
+				_map.processDedupItem(lm, lpath, liinputs, updatedVars, pb.getStatementBlock().getName());
 		}
 	}
 	

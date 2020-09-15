@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.utils.Explain;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,14 +73,19 @@ public class LineageMap {
 		}
 	}
 	
-	public void processDedupItem(LineageMap lm, Long path, LineageItem[] liinputs, String name) {
+	public void processDedupItem(LineageMap lm, Long path, LineageItem[] liinputs, ArrayList<String> updVars, String name) {
 		String delim = LineageDedupUtils.DEDUP_DELIM;
 		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
+			if (!updVars.contains(entry.getKey()))
+				continue;
 			// Encode everything needed by the recomputation logic in the
 			// opcode to map this lineage item to the right patch.
 			String opcode = LineageItem.dedupItemOpcode + delim + entry.getKey()
 				+ delim + name + delim + path.toString();
-			LineageItem li = new LineageItem(opcode, liinputs);
+			// Save a pointer to the dedup patch in the dedup lineage item.
+			// This saved dedup patch is different from dedup block, this is a
+			// bigger DAG which is not cut at the placeholder leaves.
+			LineageItem li = new LineageItem(opcode, liinputs, entry.getValue());
 			addLineageItem(Pair.of(entry.getKey(), li));
 		}
 	}
@@ -125,6 +131,10 @@ public class LineageMap {
 	
 	public boolean containsKey(String key) {
 		return _traces.containsKey(key);
+	}
+	
+	public boolean isEmpty() {
+		return _traces.isEmpty();
 	}
 	
 	public void resetLineageMaps() {

@@ -32,6 +32,7 @@ public class LineageItem {
 	private final String _opcode;
 	private final String _data;
 	private final LineageItem[] _inputs;
+	private final LineageItem _dedupPatchDag;
 	private int _hash = 0;
 	// init visited to true to ensure visited items are
 	// not hidden when used as inputs to new items
@@ -60,6 +61,10 @@ public class LineageItem {
 		this(_idSeq.getNextID(), "", opcode, inputs);
 	}
 
+	public LineageItem(String opcode, LineageItem[] inputs, LineageItem dedupDag) { 
+		this(_idSeq.getNextID(), "", opcode, inputs, dedupDag);
+	}
+
 	public LineageItem(String data, String opcode, LineageItem[] inputs) {
 		this(_idSeq.getNextID(), data, opcode, inputs);
 	}
@@ -75,12 +80,17 @@ public class LineageItem {
 	public LineageItem(long id, String data, String opcode) {
 		this(id, data, opcode, null);
 	}
-	
+
 	public LineageItem(long id, String data, String opcode, LineageItem[] inputs) {
+		this(id, data, opcode, inputs, null);
+	}
+	
+	public LineageItem(long id, String data, String opcode, LineageItem[] inputs, LineageItem patchRoot) {
 		_id = id;
 		_opcode = opcode;
 		_data = data;
 		_inputs = inputs;
+		_dedupPatchDag = patchRoot;
 		// materialize hash on construction 
 		// (constant time operation if input hashes constructed)
 		_hash = hashCode();
@@ -132,6 +142,10 @@ public class LineageItem {
 			throw new DMLRuntimeException("An inner node could not be a literal!");
 	}
 	
+	public boolean isPlaceholder() {
+		return _opcode.startsWith(LineageItemUtils.LPLACEHOLDER);
+	}
+	
 	@Override
 	public String toString() {
 		return LineageItemUtils.explainSingleLineageItem(this);
@@ -150,15 +164,29 @@ public class LineageItem {
 	
 	private boolean equalsLI(LineageItem that) {
 		if (isVisited() || this == that)
-			return true;
+			return true; 
 		
-		boolean ret = _opcode.equals(that._opcode);
-		ret &= _data.equals(that._data);
-		ret &= (hashCode() == that.hashCode());
-		if( ret && _inputs != null && _inputs.length == that._inputs.length )
-			for (int i = 0; i < _inputs.length; i++)
-				ret &= _inputs[i].equalsLI(that._inputs[i]);
+		// For dedup items, compare the patch DAG
+		LineageItem left = this._dedupPatchDag != null ? this._dedupPatchDag : this;
+		LineageItem right = that._dedupPatchDag != null ? that._dedupPatchDag : that;
+		// NOTE: It's not needed to come back to the main DAG as the _dedupPatchDag 
+		// is not cut at the placeholders and contains all nodes.
 		
+		boolean ret = left._opcode.equals(right._opcode);
+		ret &= left._data.equals(right._data);
+		ret &= (left.hashCode() == right.hashCode());
+		if( ret && left._inputs != null && left._inputs.length == right._inputs.length )
+			for (int i = 0; i < left._inputs.length; i++) {
+				// Skip the placeholders
+				LineageItem leftInput = left._inputs[i].isPlaceholder() ? 
+						left._inputs[i].getInputs()[0]:left._inputs[i];
+				LineageItem rightInput = right._inputs[i].isPlaceholder() ? 
+						right._inputs[i].getInputs()[0] : right._inputs[i];
+				ret &= leftInput.equalsLI(rightInput);
+				if (left._inputs[i].isPlaceholder()) left._inputs[i].setVisited();
+			}
+		
+		left.setVisited();
 		setVisited();
 		return ret;
 	}
@@ -167,6 +195,17 @@ public class LineageItem {
 	public int hashCode() {
 		if (_hash == 0) {
 			//compute hash over opcode and all inputs
+			if (isPlaceholder()) {
+				//placeholder item has the same hash as its input
+				_hash = _inputs[0].hashCode();
+				return _hash;
+			}
+			if (_dedupPatchDag != null) {
+				//dedup item has the same hash as patch DAG root
+				_hash = _dedupPatchDag._hash;
+				return _hash;
+			}
+
 			int h = UtilFunctions.intHashCode(
 				_opcode.hashCode(), _data.hashCode());
 			if (_inputs != null)
@@ -208,8 +247,11 @@ public class LineageItem {
 		q.push(this);
 		while( !q.empty() ) {
 			LineageItem tmp = q.pop();
-			if( !tmp.isVisited() )
+			if( !tmp.isVisited() && !tmp.isPlaceholder() )
+				// skip the placeholders
 				continue;
+			if (tmp.isDedup() && tmp._dedupPatchDag != null)
+				tmp._dedupPatchDag.resetVisitStatusNR();
 			if (tmp.getInputs() != null)
 				for (LineageItem li : tmp.getInputs())
 					q.push(li);

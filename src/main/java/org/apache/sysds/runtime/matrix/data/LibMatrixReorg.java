@@ -674,7 +674,7 @@ public class LibMatrixReorg
 			if( rows )
 				ret.reset(lmax, in.rlen, true);
 			else //cols
-				ret.reset(in.rlen, lmax, true);	
+				ret.reset(in.rlen, lmax, true);
 			return ret;
 		}
 		
@@ -1994,10 +1994,11 @@ public class LibMatrixReorg
 				//handle invalid values if not to be ignored
 				if( !ignore && val<=0 )
 					throw new DMLRuntimeException("Invalid input value <= 0 for ignore=false: "+val);
-					
+				
 				//set expanded value if matching
+				//note: tmpi populated with i+j indexes, then sorted
 				if( val == Math.floor(val) && val >= 1 && val <= max )
-					ret.appendValue((int)(val-1), i+tmpi[j], 1);
+					ret.appendValue((int)(val-1), tmpi[j], 1);
 			}
 		}
 		

@@ -49,19 +49,8 @@ jobs:
           ${{ runner.os }}-maven-test-
 
     - name: Component Tests
-      run: |
-        log="/tmp/sysdstest.log"
-        echo "Starting Tests"
-        mvn test -D maven.test.skip=false -Dtest=org.apache.sysds.test.component.*.** 2>&1 > $log
-        grep_args="SUCCESS"
-        grepvals="$( tail -n 100 $log | grep $grep_args)"
-        if [[ $grepvals == *"SUCCESS"* ]]; then
-        	echo "--------------------- last 100 lines from test ------------------------"
-        	tail -n 100 $log
-        	echo "------------------ last 100 lines from test end -----------------------"
-        	exit 0
-        else
-        	echo "\n $(cat $log)"
-        	exit 1
-        fi
+      run: mvn test -D maven.test.skip=false -Dtest=org.apache.sysds.test.component.** 
+    
+    - name: User Tests
+      run: mvn test -D maven.test.skip=false -Dtest=org.apache.sysds.test.usertest.** 
 

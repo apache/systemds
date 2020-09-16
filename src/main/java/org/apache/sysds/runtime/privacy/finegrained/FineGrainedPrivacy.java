@@ -33,6 +33,12 @@ public interface FineGrainedPrivacy {
 	 */
 	public void put(DataRange dataRange, PrivacyLevel privacyLevel);
 
+	public void putRow(int rowIndex, int rowLength, PrivacyLevel privacyLevel);
+
+	public void putCol(int colIndex, int colLength, PrivacyLevel privacyLevel);
+
+	public void putElement(int rowIndex, int colIndex, PrivacyLevel privacyLevel);
+
 	/**
 	 * Get the data ranges and related privacy levels within given data search range.
 	 * @param searchRange the range from which all privacy levels are retrieved
@@ -77,4 +83,8 @@ public interface FineGrainedPrivacy {
 	 * @return all constraints
 	 */
 	public ArrayList<Map.Entry<DataRange, PrivacyLevel>> getAllConstraintsList();
+
+	public PrivacyLevel[] getRowPrivacy(int numRows, int numCols);
+
+	public PrivacyLevel[] getColPrivacy(int numRows, int numCols);
 }

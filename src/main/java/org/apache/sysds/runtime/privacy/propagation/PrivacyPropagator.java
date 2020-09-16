@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.privacy;
+package org.apache.sysds.runtime.privacy.propagation;
 
 import java.util.*;
 
@@ -42,9 +42,9 @@ import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.privacy.DMLPrivacyException;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
-import org.apache.sysds.runtime.privacy.finegrained.DataRange;
-import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -64,7 +64,61 @@ public class PrivacyPropagator
 		}
 		return cd;
 	}
-	
+
+	private static boolean anyInputHasLevel(PrivacyLevel[] inputLevels, PrivacyLevel targetLevel){
+		return Arrays.stream(inputLevels).anyMatch(i -> i == targetLevel);
+	}
+
+	/**
+	 * Returns the output privacy level based on the given input privacy levels and operator type.
+	 * It represents the basic logic of privacy propagation:
+	 *
+	 * Unary input:
+	 * Input   | NonAggregate | Aggregate
+	 * -----------------------------------
+	 * priv    | priv         | priv
+	 * privAgg | privAgg      | none
+	 * none    | none         | none
+	 *
+	 * Binary input:
+	 * Input   			| NonAggregate 	| Aggregate
+	 * --------------------------------------------
+	 * priv-priv 		| priv 			| priv
+	 * priv-privAgg 	| priv 			| priv
+	 * priv-none 		| priv 			| priv
+	 * privAgg-priv 	| priv 			| priv
+	 * none-priv 		| priv 			| priv
+	 * privAgg-privAgg 	| privAgg 		| none
+	 * none-none 		| none 			| none
+	 * privAgg-none 	| privAgg 		| none
+	 * none-privAgg 	| privAgg 		| none
+	 *
+	 * @param inputLevels privacy levels of the input
+	 * @param operatorType type of the operator which is either an aggregation (Aggregate) or not an aggregation (NonAggregate)
+	 * @return output privacy level
+	 */
+	public static PrivacyLevel corePropagation(PrivacyLevel[] inputLevels, OperatorType operatorType){
+		if (anyInputHasLevel(inputLevels, PrivacyLevel.Private))
+			return PrivacyLevel.Private;
+		if (operatorType == OperatorType.Aggregate)
+			return PrivacyLevel.None;
+		if (operatorType == OperatorType.NonAggregate && anyInputHasLevel(inputLevels,PrivacyLevel.PrivateAggregation))
+			return PrivacyLevel.PrivateAggregation;
+		return PrivacyLevel.None;
+	}
+
+	public static PrivacyConstraint mergeNary(PrivacyConstraint[] privacyConstraints, OperatorType operatorType){
+		PrivacyLevel[] privacyLevels = Arrays.stream(privacyConstraints)
+			.map(constraint -> {
+				if (constraint != null)
+					return constraint.getPrivacyLevel();
+				else return PrivacyLevel.None;
+			})
+			.toArray(PrivacyLevel[]::new);
+		PrivacyLevel outputPrivacyLevel = corePropagation(privacyLevels, operatorType);
+		return new PrivacyConstraint(outputPrivacyLevel);
+	}
+
 	public static PrivacyConstraint mergeBinary(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2) {
 		if (privacyConstraint1 != null && privacyConstraint2 != null){
 			PrivacyLevel privacyLevel1 = privacyConstraint1.getPrivacyLevel();
@@ -228,10 +282,12 @@ public class PrivacyPropagator
 				if ( (privacyConstraint1 != null && privacyConstraint1.hasFineGrainedConstraints() ) || (privacyConstraint2 != null && privacyConstraint2.hasFineGrainedConstraints() )){
 					MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
 					MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
-					mergedPrivacyConstraint = matrixMultiplicationPropagation(input1, privacyConstraint1, input2, privacyConstraint2);
+					Propagator propagator = new MatrixMultiplicationPropagatorPrivateFirst(input1, privacyConstraint1, input2, privacyConstraint2);
+					mergedPrivacyConstraint = propagator.propagate();
 				}
 				else {
-					mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
+					mergedPrivacyConstraint = mergeNary(new PrivacyConstraint[]{privacyConstraint1,privacyConstraint2},
+						OperatorType.NonAggregate);
 					inst.setPrivacyConstraint(mergedPrivacyConstraint);
 				}
 				inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
@@ -248,58 +304,6 @@ public class PrivacyPropagator
 			inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
 		}
 		return inst;
-	}
-
-	/**
-	 * Return the merged fine-grained privacy constraint of a matrix multiplication with the given privacy constraints.
-	 * The current implementation has a tendency to create small ranges of privacy level private. These ranges could be merged
-	 * to create fewer ranges spanning the same elements.
-	 * @param input1 first input matrix block
-	 * @param privacyConstraint1 privacy constraint of the first matrix
-	 * @param input2 second input matrix block
-	 * @param privacyConstraint2 privacy constraint of the second matrix
-	 * @return merged privacy constraint
-	 */
-	public static PrivacyConstraint matrixMultiplicationPropagation(MatrixBlock input1, PrivacyConstraint privacyConstraint1, MatrixBlock input2, PrivacyConstraint privacyConstraint2){
-		// If the overall privacy level is private, then the fine-grained constraints do not have to be checked.
-		if ( (privacyConstraint1 != null && privacyConstraint1.getPrivacyLevel() == PrivacyLevel.Private) || (privacyConstraint2 != null && privacyConstraint2.getPrivacyLevel() == PrivacyLevel.Private) )
-			return new PrivacyConstraint(PrivacyLevel.Private);
-		
-		boolean hasOverallConstraintAggregate = ( (privacyConstraint1 != null && privacyConstraint1.getPrivacyLevel() == PrivacyLevel.PrivateAggregation ) || ( privacyConstraint2 != null && privacyConstraint2.getPrivacyLevel() == PrivacyLevel.PrivateAggregation));
-		PrivacyConstraint mergedConstraint = new PrivacyConstraint();
-		if ( hasOverallConstraintAggregate )
-			mergedConstraint.setPrivacyLevel(PrivacyLevel.PrivateAggregation);
-
-		int r1 = input1.getNumRows();
-		int c1 = input1.getNumColumns();
-		int r2 = input2.getNumRows();
-		int c2 = input2.getNumColumns();
-		FineGrainedPrivacy mergedFineGrainedConstraints = mergedConstraint.getFineGrainedPrivacy();
-
-		for (int i = 0; i < r1; i++){
-
-			// Get privacy of first matrix row
-			long[] beginRange1 = new long[]{i,0};
-			long[] endRange1 = new long[]{i,c1};
-			Map<DataRange, PrivacyLevel> privacyInRow = (privacyConstraint1 != null) ? privacyConstraint1.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(beginRange1, endRange1)) : new HashMap<>();
-			
-			for (int j = 0; j < c2; j++){
-				// Get Privacy of Second matrix col
-				long[] beginRange2 = new long[]{0,j};
-				long[] endRange2 = new long[]{r2,j};
-				Map<DataRange, PrivacyLevel> privacyInCol = (privacyConstraint2 != null) ? privacyConstraint2.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(beginRange2, endRange2)) : new HashMap<>();
-			
-				// if any elements in the row or col has privacy level private or privateaggregate, 
-				// then output element in the index should be same level.
-				long[] beginRangeMerged = new long[]{i,j};
-				long[] endRangeMerged = new long[]{i,j};
-				if ( privacyInRow.containsValue(PrivacyLevel.Private) || privacyInCol.containsValue(PrivacyLevel.Private))
-					mergedFineGrainedConstraints.put(new DataRange(beginRangeMerged, endRangeMerged), PrivacyLevel.Private);
-				else if ( !hasOverallConstraintAggregate && (privacyInRow.containsValue(PrivacyLevel.PrivateAggregation) || privacyInCol.containsValue(PrivacyLevel.PrivateAggregation) ))
-					mergedFineGrainedConstraints.put(new DataRange(beginRangeMerged, endRangeMerged), PrivacyLevel.PrivateAggregation);
-			}
-		}
-		return mergedConstraint;
 	}
 
 	/**
@@ -572,8 +576,8 @@ public class PrivacyPropagator
 
 	private static boolean privacyConstraintActivated(PrivacyConstraint instructionPrivacyConstraint){
 		return instructionPrivacyConstraint != null && 
-			(instructionPrivacyConstraint.privacyLevel == PrivacyLevel.Private 
-			|| instructionPrivacyConstraint.privacyLevel == PrivacyLevel.PrivateAggregation);
+			(instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.Private
+			|| instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
 	}
 
 	@SuppressWarnings("unused")

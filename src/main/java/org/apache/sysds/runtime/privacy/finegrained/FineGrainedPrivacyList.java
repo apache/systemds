@@ -36,8 +36,58 @@ public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 	private ArrayList<Map.Entry<DataRange, PrivacyLevel>> constraintCollection = new ArrayList<>();
 
 	@Override
+	public PrivacyLevel[] getRowPrivacy(int numRows, int numCols) {
+		PrivacyLevel[] privacyLevels = new PrivacyLevel[numRows];
+		for (int i = 0; i < numRows; i++) {
+			long[] beginRange1 = new long[] {i, 0};
+			long[] endRange1 = new long[] {i, numCols};
+			privacyLevels[i] = getStrictestPrivacyLevel(new DataRange(beginRange1, endRange1));
+		}
+		return privacyLevels;
+	}
+
+	@Override
+	public PrivacyLevel[] getColPrivacy(int numRows, int numCols) {
+		PrivacyLevel[] privacyLevels = new PrivacyLevel[numCols];
+		for (int i = 0; i < numCols; i++) {
+			long[] beginRange = new long[] {0, i};
+			long[] endRange = new long[] {numRows, i};
+			privacyLevels[i] = getStrictestPrivacyLevel(new DataRange(beginRange, endRange));
+		}
+		return privacyLevels;
+	}
+
+	private PrivacyLevel getStrictestPrivacyLevel(DataRange searchRange){
+		PrivacyLevel strictestLevel = PrivacyLevel.None;
+		for ( Map.Entry<DataRange, PrivacyLevel> constraint : constraintCollection ) {
+			if(constraint.getKey().overlaps(searchRange)) {
+				if(constraint.getValue() == PrivacyLevel.Private)
+					return PrivacyLevel.Private;
+				if(constraint.getValue() == PrivacyLevel.PrivateAggregation)
+					strictestLevel = PrivacyLevel.PrivateAggregation;
+			}
+		}
+		return strictestLevel;
+	}
+
+	@Override
 	public void put(DataRange dataRange, PrivacyLevel privacyLevel) {
 		constraintCollection.add(new AbstractMap.SimpleEntry<>(dataRange, privacyLevel));
+	}
+
+	@Override
+	public void putRow(int rowIndex, int rowLength, PrivacyLevel privacyLevel){
+		put(new DataRange(new long[] {rowIndex, 0}, new long[] {rowIndex, rowLength-1}), privacyLevel);
+	}
+
+	@Override
+	public void putCol(int colIndex, int colLength, PrivacyLevel privacyLevel){
+		put(new DataRange(new long[] {0, colIndex}, new long[] {colLength-1, colIndex}), privacyLevel);
+	}
+
+	@Override
+	public void putElement(int rowIndex, int colIndex, PrivacyLevel privacyLevel){
+		put(new DataRange(new long[]{rowIndex,colIndex},new long[]{rowIndex,colIndex}), privacyLevel);
 	}
 
 	@Override

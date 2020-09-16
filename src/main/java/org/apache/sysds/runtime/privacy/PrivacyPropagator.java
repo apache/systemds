@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.privacy;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -64,7 +65,66 @@ public class PrivacyPropagator
 		}
 		return cd;
 	}
-	
+
+	public enum OperatorType {
+		Aggregate,
+		NonAggregate
+	}
+
+	private static boolean anyInputHasLevel(PrivacyLevel[] inputLevels, PrivacyLevel targetLevel){
+		return Arrays.stream(inputLevels).anyMatch(i -> i == targetLevel);
+	}
+
+	/**
+	 * Returns the output privacy level based on the given input privacy levels and operator type.
+	 * It represents the basic logic of privacy propagation:
+	 *
+	 * Unary input:
+	 * Input   | NonAggregate | Aggregate
+	 * -----------------------------------
+	 * priv    | priv         | priv
+	 * privAgg | privAgg      | none
+	 * none    | none         | none
+	 *
+	 * Binary input:
+	 * Input   			| NonAggregate 	| Aggregate
+	 * -----------------------------------
+	 * priv-priv 		| priv 			| priv
+	 * priv-privAgg 	| priv 			| priv
+	 * priv-none 		| priv 			| priv
+	 * privAgg-priv 	| priv 			| priv
+	 * none-priv 		| priv 			| priv
+	 * privAgg-privAgg 	| privAgg 		| none
+	 * none-none 		| none 			| none
+	 * privAgg-none 	| privAgg 		| none
+	 * none-privAgg 	| privAgg 		| none
+	 *
+	 * @param inputLevels privacy levels of the input
+	 * @param operatorType type of the operator which is either an aggregation (Aggregate) or not an aggregation (NonAggregate)
+	 * @return output privacy level
+	 */
+	public static PrivacyLevel corePropagation(PrivacyLevel[] inputLevels, OperatorType operatorType){
+		if (anyInputHasLevel(inputLevels, PrivacyLevel.Private))
+			return PrivacyLevel.Private;
+		if (operatorType == OperatorType.Aggregate)
+			return PrivacyLevel.None;
+		if (operatorType == OperatorType.NonAggregate && anyInputHasLevel(inputLevels,PrivacyLevel.PrivateAggregation))
+			return PrivacyLevel.PrivateAggregation;
+		return PrivacyLevel.None;
+	}
+
+	public static PrivacyConstraint mergeNary(PrivacyConstraint[] privacyConstraints, OperatorType operatorType){
+		PrivacyLevel[] privacyLevels = Arrays.stream(privacyConstraints)
+			.map(constraint -> {
+				if (constraint != null)
+					return constraint.getPrivacyLevel();
+				else return PrivacyLevel.None;
+			})
+			.toArray(PrivacyLevel[]::new);
+		PrivacyLevel outputPrivacyLevel = corePropagation(privacyLevels, operatorType);
+		return new PrivacyConstraint(outputPrivacyLevel);
+	}
+
 	public static PrivacyConstraint mergeBinary(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2) {
 		if (privacyConstraint1 != null && privacyConstraint2 != null){
 			PrivacyLevel privacyLevel1 = privacyConstraint1.getPrivacyLevel();
@@ -231,7 +291,8 @@ public class PrivacyPropagator
 					mergedPrivacyConstraint = matrixMultiplicationPropagation(input1, privacyConstraint1, input2, privacyConstraint2);
 				}
 				else {
-					mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
+					mergedPrivacyConstraint = mergeNary(new PrivacyConstraint[]{privacyConstraint1,privacyConstraint2},
+						OperatorType.NonAggregate);
 					inst.setPrivacyConstraint(mergedPrivacyConstraint);
 				}
 				inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
@@ -260,7 +321,7 @@ public class PrivacyPropagator
 	 * @param privacyConstraint2 privacy constraint of the second matrix
 	 * @return merged privacy constraint
 	 */
-	public static PrivacyConstraint matrixMultiplicationPropagation(MatrixBlock input1, PrivacyConstraint privacyConstraint1, MatrixBlock input2, PrivacyConstraint privacyConstraint2){
+	/*public static PrivacyConstraint matrixMultiplicationPropagation(MatrixBlock input1, PrivacyConstraint privacyConstraint1, MatrixBlock input2, PrivacyConstraint privacyConstraint2){
 		// If the overall privacy level is private, then the fine-grained constraints do not have to be checked.
 		if ( (privacyConstraint1 != null && privacyConstraint1.getPrivacyLevel() == PrivacyLevel.Private) || (privacyConstraint2 != null && privacyConstraint2.getPrivacyLevel() == PrivacyLevel.Private) )
 			return new PrivacyConstraint(PrivacyLevel.Private);
@@ -300,6 +361,133 @@ public class PrivacyPropagator
 			}
 		}
 		return mergedConstraint;
+	}*/
+
+	public static PrivacyConstraint matrixMultiplicationPropagation(
+		MatrixBlock input1, PrivacyConstraint privacyConstraint1,
+		MatrixBlock input2, PrivacyConstraint privacyConstraint2) {
+
+		// If the overall privacy level is private, then the fine-grained constraints do not have to be checked.
+		if ( (privacyConstraint1 != null && privacyConstraint1.getPrivacyLevel() == PrivacyLevel.Private)
+			|| (privacyConstraint2 != null && privacyConstraint2.getPrivacyLevel() == PrivacyLevel.Private) )
+			return new PrivacyConstraint(PrivacyLevel.Private);
+
+		int r1 = input1.getNumRows();
+		int c1 = input1.getNumColumns();
+		int r2 = input2.getNumRows();
+		int c2 = input2.getNumColumns();
+		PrivacyConstraint mergedConstraint = new PrivacyConstraint();
+		FineGrainedPrivacy mergedFineGrainedConstraints = mergedConstraint.getFineGrainedPrivacy();
+
+		// Get row privacy levels for input1
+		PrivacyLevel[] rowPrivacy = (privacyConstraint1 != null && privacyConstraint1.getFineGrainedPrivacy() != null) ?
+			privacyConstraint1.getFineGrainedPrivacy().getRowPrivacy(r1,c1) :
+			Stream.generate(() -> PrivacyLevel.None).limit(r1).toArray(PrivacyLevel[]::new);
+		// Get col privacy levels for input2
+		PrivacyLevel[] colPrivacy = (privacyConstraint2 != null && privacyConstraint2.getFineGrainedPrivacy() != null) ?
+			privacyConstraint2.getFineGrainedPrivacy().getColPrivacy(r2,c2) :
+			Stream.generate(() -> PrivacyLevel.None).limit(c2).toArray(PrivacyLevel[]::new);
+		// Get operator type array based on values in rows of input1 and cols of input2
+		OperatorType[] operatorTypes1 = getOperatorTypesRow(input1);
+		OperatorType[] operatorTypes2 = getOperatorTypesCol(input2);
+		// Propagate privacy levels based on above arrays
+		generateFineGrainedConstraintsPrivateFirst(mergedFineGrainedConstraints, rowPrivacy, colPrivacy, operatorTypes1, operatorTypes2);
+		return mergedConstraint;
+	}
+
+	private static void generateFineGrainedConstraintsNaive(FineGrainedPrivacy mergedFineGrainedConstraints,
+		PrivacyLevel[] rowPrivacy, PrivacyLevel[] colPrivacy,
+		OperatorType[] operatorTypes1, OperatorType[] operatorTypes2){
+		for ( int i = 0; i < rowPrivacy.length; i++){
+			for ( int j = 0; j < colPrivacy.length; j++){
+				OperatorType operatorType = mergeOperatorType(operatorTypes1[i], operatorTypes2[j]);
+				PrivacyLevel outputLevel = corePropagation(new PrivacyLevel[]{rowPrivacy[i], colPrivacy[j]}, operatorType);
+				mergedFineGrainedConstraints.put(new DataRange(new long[]{i,j}, new long[]{i,j}), outputLevel);
+			}
+		}
+	}
+
+	private static OperatorType mergeOperatorType(OperatorType input1, OperatorType input2){
+		if (input1 == OperatorType.NonAggregate || input2 == OperatorType.NonAggregate)
+			return OperatorType.NonAggregate;
+		else return OperatorType.Aggregate;
+	}
+
+	private static void generateFineGrainedConstraintsPrivateFirst(FineGrainedPrivacy mergedFineGrainedConstraints,
+		PrivacyLevel[] rowPrivacy, PrivacyLevel[] colPrivacy, OperatorType[] operatorTypes1, OperatorType[] operatorTypes2){
+		int r1 = rowPrivacy.length;
+		int c2 = colPrivacy.length;
+		for ( int i = 0; i < rowPrivacy.length; i++ ) {
+			if(rowPrivacy[i] == PrivacyLevel.Private) {
+				// mark entire row private
+				mergedFineGrainedConstraints.put(new DataRange(new long[] {i, 0}, new long[] {i, c2}), PrivacyLevel.Private);
+			}
+		}
+
+		for ( int j = 0; j < colPrivacy.length; j++ ) {
+			if(colPrivacy[j] == PrivacyLevel.Private) {
+				// mark entire col private
+				mergedFineGrainedConstraints.put(new DataRange(new long[] {0, j}, new long[] {r1, j}), PrivacyLevel.Private);
+			}
+		}
+
+		for ( int k = 0; k < operatorTypes1.length; k++ ){
+			if ( operatorTypes1[k] == OperatorType.NonAggregate ){
+				if ( rowPrivacy[k] == PrivacyLevel.PrivateAggregation ){
+					// Mark entire row PrivateAggregation
+					mergedFineGrainedConstraints.put(
+						new DataRange(new long[] {k, 0}, new long[] {k, c2}), PrivacyLevel.PrivateAggregation);
+				} else {
+					// Go through each element of colPrivacy and if element is PrivateAggregation then mark cell as PrivateAggregation
+					for ( int l = 0; l < colPrivacy.length; l++ ){
+						if ( colPrivacy[l] == PrivacyLevel.PrivateAggregation )
+							mergedFineGrainedConstraints.put(new DataRange(new long[]{k,l}, new long[]{k,l}), PrivacyLevel.PrivateAggregation);
+					}
+				}
+			}
+		}
+
+		// Do the same for operatorTypes2
+		for ( int k = 0; k < operatorTypes2.length; k++ ){
+			if ( operatorTypes2[k] == OperatorType.NonAggregate ){
+				if ( colPrivacy[k] == PrivacyLevel.PrivateAggregation ){
+					// Mark entire col PrivateAggregation
+					mergedFineGrainedConstraints.put(
+						new DataRange(new long[] {0, k}, new long[] {r1, k}), PrivacyLevel.PrivateAggregation);
+				} else {
+					// Go through each element of rowPrivacy and if element is PrivateAggregation then mark cell as PrivateAggregation
+					for ( int l = 0; l < rowPrivacy.length; l++ ){
+						if ( rowPrivacy[l] == PrivacyLevel.PrivateAggregation )
+							mergedFineGrainedConstraints.put(new DataRange(new long[]{k,l}, new long[]{k,l}), PrivacyLevel.PrivateAggregation);
+					}
+				}
+			}
+		}
+	}
+
+	private static OperatorType[] getOperatorTypesRow(MatrixBlock input1){
+		OperatorType[] operatorTypes = new OperatorType[input1.getNumRows()];
+		for (int i = 0; i < input1.getNumRows(); i++) {
+			MatrixBlock rowSlice = input1.slice(i,i);
+			operatorTypes[i] = getOperatorType(rowSlice);
+		}
+		return operatorTypes;
+	}
+
+	private static OperatorType[] getOperatorTypesCol(MatrixBlock input2){
+		OperatorType[] operatorTypes = new OperatorType[input2.getNumColumns()];
+		for (int j = 0; j < input2.getNumColumns(); j++) {
+			MatrixBlock colSlice = input2.slice(0, input2.getNumRows()-1, j, j, new MatrixBlock());
+			operatorTypes[j] = getOperatorType(colSlice);
+		}
+		return operatorTypes;
+	}
+
+	private static OperatorType getOperatorType(MatrixBlock inputSlice){
+		if(inputSlice.getNonZeros() == 1)
+			return OperatorType.NonAggregate;
+		else
+			return OperatorType.Aggregate;
 	}
 
 	/**

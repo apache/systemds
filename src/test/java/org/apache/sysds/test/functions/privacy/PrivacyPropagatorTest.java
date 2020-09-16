@@ -85,7 +85,10 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		assertTrue("Privacy level of element 1 is Private", outputElement1.containsValue(PrivacyLevel.Private));
 		assertTrue("Privacy level of element 2 is Private", outputElement2.containsValue(PrivacyLevel.Private));
 		assertTrue("Privacy level of element 3 is Private", outputElement3.containsValue(PrivacyLevel.Private));
-		assertTrue("Any other index has no privacy constraint", mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{2,0}, new long[]{3,2})).isEmpty() );
+		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{2,0}, new long[]{3,2}));
+		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
+			(!expectedEmpty.containsValue(PrivacyLevel.Private)
+				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
 	}
 
 	@Test
@@ -100,8 +103,10 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		assertTrue("Fine grained constraint should not be propagated", mergedConstraint.hasFineGrainedConstraints());
 		assertTrue("Merged constraint should not contain privacy level PrivateAggregation", mergedConstraint.getFineGrainedPrivacy().getDataRangesOfPrivacyLevel(PrivacyLevel.PrivateAggregation).length == 0);
 		Map<DataRange, PrivacyLevel> outputRange = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,0},new long[]{3,1}));
-		assertEquals(8, outputRange.size());
 		assertTrue("Privacy level is Private", outputRange.containsValue(PrivacyLevel.Private));
-		assertTrue("Any other index has no privacy constraint", mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,2}, new long[]{3,2})).isEmpty() );
+		Map<DataRange, PrivacyLevel> expectedEmpty = mergedConstraint.getFineGrainedPrivacy().getPrivacyLevel(new DataRange(new long[]{0,2}, new long[]{3,2}));
+		assertTrue("Any other index has no privacy constraint", expectedEmpty.isEmpty() ||
+			(!expectedEmpty.containsValue(PrivacyLevel.Private)
+				&& !expectedEmpty.containsValue(PrivacyLevel.PrivateAggregation)));
 	}
 }

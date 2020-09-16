@@ -77,4 +77,8 @@ public interface FineGrainedPrivacy {
 	 * @return all constraints
 	 */
 	public ArrayList<Map.Entry<DataRange, PrivacyLevel>> getAllConstraintsList();
+
+	public PrivacyLevel[] getRowPrivacy(int numRows, int numCols);
+
+	public PrivacyLevel[] getColPrivacy(int numRows, int numCols);
 }

@@ -102,4 +102,13 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 		constraintCollection.forEach((k,v)->outputList.add(new AbstractMap.SimpleEntry<>(k,v)));
 		return outputList;
 	}
+
+	@Override
+	public PrivacyLevel[] getRowPrivacy(int numRows, int numCols){
+		return new PrivacyLevel[0];
+	}
+
+	public PrivacyLevel[] getColPrivacy(int numRows, int numCols){
+		return new PrivacyLevel[0];
+	}
 }

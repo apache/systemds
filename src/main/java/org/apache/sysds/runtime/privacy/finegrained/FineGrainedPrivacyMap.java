@@ -40,6 +40,18 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 		constraintCollection.put(dataRange, privacyLevel);
 	}
 
+	@Override public void putRow(int rowIndex, int rowLength, PrivacyLevel privacyLevel) {
+
+	}
+
+	@Override public void putCol(int colIndex, int colLength, PrivacyLevel privacyLevel) {
+
+	}
+
+	@Override public void putElement(int rowIndex, int colIndex, PrivacyLevel privacyLevel) {
+
+	}
+
 	@Override
 	public Map<DataRange, PrivacyLevel> getPrivacyLevel(DataRange searchRange) {
 		Map<DataRange, PrivacyLevel> matches = new LinkedHashMap<>();
@@ -101,5 +113,14 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 		ArrayList<Map.Entry<DataRange, PrivacyLevel>> outputList = new ArrayList<>();
 		constraintCollection.forEach((k,v)->outputList.add(new AbstractMap.SimpleEntry<>(k,v)));
 		return outputList;
+	}
+
+	@Override
+	public PrivacyLevel[] getRowPrivacy(int numRows, int numCols){
+		return new PrivacyLevel[0];
+	}
+
+	public PrivacyLevel[] getColPrivacy(int numRows, int numCols){
+		return new PrivacyLevel[0];
 	}
 }

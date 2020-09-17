@@ -193,7 +193,7 @@ public class FullPowerTest extends AutomatedTestBase
 				double[][] B = getRandomMatrix(1, 1, min, max, 1.0, 3);
 				writeScalarInputMatrixWithMTD( "B", B, true );
 			}
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 		

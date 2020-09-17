@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -196,8 +197,20 @@ public abstract class AutomatedTestBase {
 
 	private boolean isOutAndExpectedDeletionDisabled = false;
 
-	private boolean outputBuffering = true;
+	private static boolean outputBuffering = false;
 	
+	static {
+		java.io.InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("my.properties");
+		java.util.Properties properties = new Properties();
+		try {
+			properties.load(inputStream);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+		}
+		outputBuffering = Boolean.parseBoolean(properties.getProperty("automatedtestbase.outputbuffering"));
+	}
+
 	// Timestamp before test start.
 	private long lTimeBeforeTest;
 
@@ -1665,10 +1678,6 @@ public abstract class AutomatedTestBase {
 	 */
 	protected boolean isOutAndExpectedDeletionDisabled() {
 		return isOutAndExpectedDeletionDisabled;
-	}
-
-	public void setOutputBuffering(boolean flag) {
-		outputBuffering = flag;
 	}
 
 	/**

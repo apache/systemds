@@ -53,6 +53,7 @@
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
 		<jacoco.skip>true</jacoco.skip>
+		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
 	</properties>
 
@@ -366,6 +367,23 @@
 					<quiet>true</quiet>
 					<skip>true</skip>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+            	<artifactId>properties-maven-plugin</artifactId>
+            	<version>1.0.0</version>
+            	<executions>
+            	    <execution>
+            	        <phase>generate-resources</phase>
+            	        <goals>
+            	            <goal>write-project-properties</goal>
+            	        </goals>
+            	        <configuration>
+            	            <outputFile>${project.build.testOutputDirectory}/my.properties</outputFile>
+            	        </configuration>
+            	    </execution>
+            	</executions>
 			</plugin>
 		</plugins>
 	</build>

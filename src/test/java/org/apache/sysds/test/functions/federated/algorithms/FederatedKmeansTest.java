@@ -106,7 +106,7 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
-		setOutputBuffering(false);
+		
 		
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";

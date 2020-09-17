@@ -307,7 +307,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 			double[][] B = getRandomMatrix(rowsB, colsB, 0, 1, sparsityB, 3); 
 			writeInputMatrix("B", B, true);
 	
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
@@ -363,7 +363,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 			double[][] B = getRandomMatrix(rows2, cols2, 0, 1, sparsity1, 3); 
 			writeInputMatrix("B", B, true);
 	
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			

@@ -26,21 +26,13 @@ cd /github/workspace
 
 log="/tmp/sysdstest.log"
 
-echo "Starting Tests"
-
-mvn test -D maven.test.skip=false -Dtest=$1 2>&1 > $log
+mvn -ntp test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 | grep -v "already exists in destination." | tee $log
 
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"
 
 if [[ $grepvals == *"SUCCESS"* ]]; then
-	echo "--------------------- last 100 lines from test ------------------------"
-	tail -n 100 $log
-	echo "------------------ last 100 lines from test end -----------------------"
-	sleep 3
 	exit 0
 else
-	echo "\n $(cat $log)"
-	sleep 3
 	exit 1
 fi

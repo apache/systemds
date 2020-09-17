@@ -45,7 +45,7 @@ jobs:
           ${{ runner.os }}-maven-
   
     - name: Make Documentation SystemDS Java
-      run: mvn -P distribution package
+      run: mvn -ntp -P distribution package
 
   documentation2:
     runs-on: ubuntu-latest

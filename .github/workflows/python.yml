@@ -67,7 +67,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
 
     - name: Maven clean & package
-      run: mvn clean package -P distribution
+      run: mvn -ntp clean package -P distribution
 
     - name: Setup Python
       uses: actions/setup-python@v1

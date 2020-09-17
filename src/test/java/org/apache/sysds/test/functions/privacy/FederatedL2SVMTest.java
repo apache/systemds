@@ -399,7 +399,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 				"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 				"in_Y=" + input("Y"), "out=" + output("Z")};
-			setOutputBuffering(false);
+			
 			runTest(true, exception2, expectedException2, -1);
 
 			if ( !(exception1 || exception2) ) {

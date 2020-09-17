@@ -133,7 +133,7 @@ public class FrameMapTest extends AutomatedTestBase {
 				writeInputFrameWithMTD("A", A, true, schemaStrings1, FileFormat.CSV);
 			}
 
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1);
 
 			FrameBlock outputFrame = readDMLFrameFromHDFS("O", FileFormat.CSV);

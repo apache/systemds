@@ -88,7 +88,7 @@ public class BuiltinNaLocfTest extends AutomatedTestBase {
 	private void runLocfTest(boolean lineage, String option, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
-			setOutputBuffering(false);
+			
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";

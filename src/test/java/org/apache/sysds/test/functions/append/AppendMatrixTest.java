@@ -179,7 +179,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			
 			int expectedCompiled = platform==ExecMode.SINGLE_NODE ?
 				0 : 6; //2x(rblk+chkpt), append, write
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, expectedCompiled);
 			runRScript(true);
 			

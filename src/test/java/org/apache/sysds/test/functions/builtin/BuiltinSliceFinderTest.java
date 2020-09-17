@@ -101,7 +101,7 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase {
 		
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-			//setOutputBuffering(false);
+			//
 			fullDMLScriptName = HOME + dml_test_name + ".dml";
 			programArgs = new String[]{"-args", data,
 				String.valueOf(K),String.valueOf(!dp).toUpperCase(),

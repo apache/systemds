@@ -177,7 +177,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 	
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			
@@ -248,7 +248,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 	
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			

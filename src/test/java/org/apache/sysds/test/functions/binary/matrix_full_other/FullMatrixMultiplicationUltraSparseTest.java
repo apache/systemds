@@ -172,7 +172,7 @@ public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase
 			double[][] B = getRandomMatrix(rowsB, colsB, 0, 1, sparsityRight, 3); 
 			writeInputMatrix("B", B, true);
 	
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
 			

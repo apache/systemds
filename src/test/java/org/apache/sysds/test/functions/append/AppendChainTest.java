@@ -137,7 +137,7 @@ public class AppendChainTest extends AutomatedTestBase
 	
 			int expectedCompiled = platform==ExecMode.SINGLE_NODE ?
 				0 : 8; //3x(rblk+chkpt), append, write
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, expectedCompiled);
 			runRScript(true);
 			

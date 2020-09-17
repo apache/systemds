@@ -265,7 +265,7 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 
-			setOutputBuffering(false);
+			
 			runRScript(true); 
 		
 			//compare matrices 

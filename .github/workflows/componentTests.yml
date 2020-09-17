@@ -49,8 +49,9 @@ jobs:
           ${{ runner.os }}-maven-test-
 
     - name: Component Tests
-      run: mvn test -D maven.test.skip=false -Dtest=org.apache.sysds.test.component.** 
+      run: mvn -ntp test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=org.apache.sysds.test.component.** | grep -v "already exists in destination."
     
     - name: User Tests
-      run: mvn test -D maven.test.skip=false -Dtest=org.apache.sysds.test.usertest.** 
+      run: mvn -ntp test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=org.apache.sysds.test.usertest.** | grep -v "already exists in destination."
+
 

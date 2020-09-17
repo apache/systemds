@@ -132,7 +132,7 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 			double[][] B= getRandomMatrix(rows2, cols, min, max, sparsity, 923);
 			writeInputMatrixWithMTD("B", B, true);
 
-			setOutputBuffering(false);
+			
 			runTest(true, false, null, -1);
 			runRScript(true);
 	

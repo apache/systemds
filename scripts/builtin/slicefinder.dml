@@ -33,13 +33,17 @@
 # ------------------------------------------------------------
 # TK        top-k slices (k x ncol(X) if successful) 
 # TKC       score, size, error of slices (k x 3)
+# D         debug matrix, populated with enumeration stats if verbose
 # ------------------------------------------------------------
 
 m_slicefinder = function(Matrix[Double] X, Matrix[Double] e,
     Integer k = 4, Integer maxL = 0, Integer minSup = 32, Double alpha = 0.5,
     Boolean tpEval = TRUE, Integer tpBlksz = 16, Boolean verbose = FALSE)
-  return(Matrix[Double] TK, Matrix[Double] TKC)
+  return(Matrix[Double] TK, Matrix[Double] TKC, Matrix[Double] D)
 {
+  # init debug matrix: levelID, enumerated S, valid S, TKmax, TKmin
+  D = matrix(0, 0, 5); 
+  
   m = nrow(X);
   n = ncol(X);
   
@@ -62,6 +66,7 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e,
   if( verbose ) {
     [maxsc, minsc] = analyzeTopK(TKC);
     print("SliceFinder: initial top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc)
+    D = rbind(D, t(as.matrix(list(1, n2, nrow(S), maxsc, minsc))));
   }
 
   # lattice enumeration w/ size/error pruning, one iteration per level
@@ -99,9 +104,10 @@ m_slicefinder = function(Matrix[Double] X, Matrix[Double] e,
 
     if(verbose) {
       [maxsc, minsc] = analyzeTopK(TKC);
-      valid = as.integer(sum(R[,4]>=minSup));
+      valid = as.integer(sum(R[,2]>0 & R[,4]>=minSup));
       print(" -- valid slices after eval: "+valid+"/"+nrow(S));
       print(" -- top-K: count="+nrow(TK)+", max="+maxsc+", min="+minsc);
+      D = rbind(D, t(as.matrix(list(level, nrow(S), valid, maxsc, minsc))));
     }
   }
 
@@ -123,12 +129,12 @@ createAndScoreBasicSlices = function(Matrix[Double] X2, Matrix[Double] e,
   merr = t(colMaxs(X2 * e)); # maximum error vector
 
   if( verbose ) {
-    drop = as.integer(sum(cCnts < minSup));
+    drop = as.integer(sum(cCnts < minSup | err == 0));
     print("SliceFinder: dropping "+drop+"/"+n2+" features below minSup = "+minSup+".");
   }
 
   # working set of active slices (#attr x #slices) and top k
-  selCols = (cCnts >= minSup);
+  selCols = (cCnts >= minSup & err > 0);
   attr = removeEmpty(target=seq(1,n2), margin="rows", select=selCols);
   ss = removeEmpty(target=cCnts, margin="rows", select=selCols);
   se = removeEmpty(target=err, margin="rows", select=selCols);

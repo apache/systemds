@@ -402,7 +402,7 @@ public class PrivacyPropagator
 			for ( int j = 0; j < colPrivacy.length; j++){
 				OperatorType operatorType = mergeOperatorType(operatorTypes1[i], operatorTypes2[j]);
 				PrivacyLevel outputLevel = corePropagation(new PrivacyLevel[]{rowPrivacy[i], colPrivacy[j]}, operatorType);
-				mergedFineGrainedConstraints.put(new DataRange(new long[]{i,j}, new long[]{i,j}), outputLevel);
+				mergedFineGrainedConstraints.putElement(i,j,outputLevel);
 			}
 		}
 	}
@@ -420,14 +420,14 @@ public class PrivacyPropagator
 		for ( int i = 0; i < rowPrivacy.length; i++ ) {
 			if(rowPrivacy[i] == PrivacyLevel.Private) {
 				// mark entire row private
-				mergedFineGrainedConstraints.put(new DataRange(new long[] {i, 0}, new long[] {i, c2}), PrivacyLevel.Private);
+				mergedFineGrainedConstraints.putRow(i,c2,PrivacyLevel.Private);
 			}
 		}
 
 		for ( int j = 0; j < colPrivacy.length; j++ ) {
 			if(colPrivacy[j] == PrivacyLevel.Private) {
 				// mark entire col private
-				mergedFineGrainedConstraints.put(new DataRange(new long[] {0, j}, new long[] {r1, j}), PrivacyLevel.Private);
+				mergedFineGrainedConstraints.putCol(j,r1,PrivacyLevel.Private);
 			}
 		}
 
@@ -435,13 +435,12 @@ public class PrivacyPropagator
 			if ( operatorTypes1[k] == OperatorType.NonAggregate ){
 				if ( rowPrivacy[k] == PrivacyLevel.PrivateAggregation ){
 					// Mark entire row PrivateAggregation
-					mergedFineGrainedConstraints.put(
-						new DataRange(new long[] {k, 0}, new long[] {k, c2}), PrivacyLevel.PrivateAggregation);
-				} else {
+					mergedFineGrainedConstraints.putRow(k,c2,PrivacyLevel.PrivateAggregation);
+				} else if ( rowPrivacy[k] != PrivacyLevel.Private ){
 					// Go through each element of colPrivacy and if element is PrivateAggregation then mark cell as PrivateAggregation
 					for ( int l = 0; l < colPrivacy.length; l++ ){
 						if ( colPrivacy[l] == PrivacyLevel.PrivateAggregation )
-							mergedFineGrainedConstraints.put(new DataRange(new long[]{k,l}, new long[]{k,l}), PrivacyLevel.PrivateAggregation);
+							mergedFineGrainedConstraints.putElement(k,l,PrivacyLevel.PrivateAggregation);
 					}
 				}
 			}
@@ -452,20 +451,19 @@ public class PrivacyPropagator
 			if ( operatorTypes2[k] == OperatorType.NonAggregate ){
 				if ( colPrivacy[k] == PrivacyLevel.PrivateAggregation ){
 					// Mark entire col PrivateAggregation
-					mergedFineGrainedConstraints.put(
-						new DataRange(new long[] {0, k}, new long[] {r1, k}), PrivacyLevel.PrivateAggregation);
-				} else {
+					mergedFineGrainedConstraints.putCol(k,r1,PrivacyLevel.PrivateAggregation);
+				} else if ( rowPrivacy[k] != PrivacyLevel.Private ){
 					// Go through each element of rowPrivacy and if element is PrivateAggregation then mark cell as PrivateAggregation
 					for ( int l = 0; l < rowPrivacy.length; l++ ){
 						if ( rowPrivacy[l] == PrivacyLevel.PrivateAggregation )
-							mergedFineGrainedConstraints.put(new DataRange(new long[]{k,l}, new long[]{k,l}), PrivacyLevel.PrivateAggregation);
+							mergedFineGrainedConstraints.putElement(k,l,PrivacyLevel.PrivateAggregation);
 					}
 				}
 			}
 		}
 	}
 
-	private static OperatorType[] getOperatorTypesRow(MatrixBlock input1){
+	public static OperatorType[] getOperatorTypesRow(MatrixBlock input1){
 		OperatorType[] operatorTypes = new OperatorType[input1.getNumRows()];
 		for (int i = 0; i < input1.getNumRows(); i++) {
 			MatrixBlock rowSlice = input1.slice(i,i);
@@ -474,7 +472,7 @@ public class PrivacyPropagator
 		return operatorTypes;
 	}
 
-	private static OperatorType[] getOperatorTypesCol(MatrixBlock input2){
+	public static OperatorType[] getOperatorTypesCol(MatrixBlock input2){
 		OperatorType[] operatorTypes = new OperatorType[input2.getNumColumns()];
 		for (int j = 0; j < input2.getNumColumns(); j++) {
 			MatrixBlock colSlice = input2.slice(0, input2.getNumRows()-1, j, j, new MatrixBlock());

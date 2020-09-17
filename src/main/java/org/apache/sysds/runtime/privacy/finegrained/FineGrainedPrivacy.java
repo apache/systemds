@@ -33,6 +33,12 @@ public interface FineGrainedPrivacy {
 	 */
 	public void put(DataRange dataRange, PrivacyLevel privacyLevel);
 
+	public void putRow(int rowIndex, int rowLength, PrivacyLevel privacyLevel);
+
+	public void putCol(int colIndex, int colLength, PrivacyLevel privacyLevel);
+
+	public void putElement(int rowIndex, int colIndex, PrivacyLevel privacyLevel);
+
 	/**
 	 * Get the data ranges and related privacy levels within given data search range.
 	 * @param searchRange the range from which all privacy levels are retrieved

@@ -371,19 +371,19 @@
 
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
-            	<artifactId>properties-maven-plugin</artifactId>
-            	<version>1.0.0</version>
-            	<executions>
-            	    <execution>
-            	        <phase>generate-resources</phase>
-            	        <goals>
-            	            <goal>write-project-properties</goal>
-            	        </goals>
-            	        <configuration>
-            	            <outputFile>${project.build.testOutputDirectory}/my.properties</outputFile>
-            	        </configuration>
-            	    </execution>
-            	</executions>
+				<artifactId>properties-maven-plugin</artifactId>
+				<version>1.0.0</version>
+				<executions>
+					<execution>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>write-project-properties</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.build.testOutputDirectory}/my.properties</outputFile>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
@@ -739,12 +739,12 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 			<exclusions>
-	        	<exclusion>
-	        		<!-- always exclude recursive fetching of native libraries -->
-	          		<groupId>org.jcuda</groupId>
+				<exclusion>
+					<!-- always exclude recursive fetching of native libraries -->
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcuda-natives</artifactId>
-	        	</exclusion>
-	      	</exclusions>
+				</exclusion>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -753,12 +753,12 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 			<exclusions>
-	        	<exclusion>
-	        		<!-- always exclude recursive fetching of native libraries -->
-	          		<groupId>org.jcuda</groupId>
+				<exclusion>
+					<!-- always exclude recursive fetching of native libraries -->
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcublas-natives</artifactId>
-	        	</exclusion>
-	      	</exclusions>
+				</exclusion>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -767,12 +767,12 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 			<exclusions>
-	        	<exclusion>
-	        		<!-- always exclude recursive fetching of native libraries -->
-	          		<groupId>org.jcuda</groupId>
+				<exclusion>
+					<!-- always exclude recursive fetching of native libraries -->
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcusparse-natives</artifactId>
-	        	</exclusion>
-	      	</exclusions>
+				</exclusion>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -781,12 +781,12 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 			<exclusions>
-	        	<exclusion>
-	        		<!-- always exclude recursive fetching of native libraries -->
-	          		<groupId>org.jcuda</groupId>
+				<exclusion>
+					<!-- always exclude recursive fetching of native libraries -->
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcusolver-natives</artifactId>
-	        	</exclusion>
-	      	</exclusions>
+				</exclusion>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -795,12 +795,12 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 			<exclusions>
-	        	<exclusion>
-	        		<!-- always exclude recursive fetching of native libraries -->
-	          		<groupId>org.jcuda</groupId>
+				<exclusion>
+					<!-- always exclude recursive fetching of native libraries -->
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcudnn-natives</artifactId>
-	        	</exclusion>
-	      	</exclusions>
+				</exclusion>
+		  	</exclusions>
 		</dependency>
 
 		<!-- for all platforms, to be included in the extra jar -->

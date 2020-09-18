@@ -22,6 +22,7 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
@@ -66,7 +67,7 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 			
 			 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
 			LOG.trace("Optimal MM Chain: ");
-			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split, 1);
+			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, new MutableInt(1), split, 1);
 		}
 	}
 	

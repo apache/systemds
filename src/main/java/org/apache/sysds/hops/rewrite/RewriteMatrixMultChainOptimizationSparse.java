@@ -66,7 +66,8 @@ public class RewriteMatrixMultChainOptimizationSparse extends RewriteMatrixMultC
 			
 			 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
 			LOG.trace("Optimal MM Chain: ");
-			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split, 1);
+			OpIndex opIndex = new OpIndex();
+			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, opIndex, split, 1);
 		}
 	}
 	

@@ -197,7 +197,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			
 			 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
 			LOG.trace("Optimal MM Chain: ");
-			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split, 1);
+			OpIndex opIndex = new OpIndex();
+			opIndex.opindex = 1;
+			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, opIndex, split, 1);
 		}
 	}
 	
@@ -247,6 +249,10 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		return split;
 	}
 
+    class OpIndex {
+        int opindex;
+    }
+
 	/**
 	 * mmChainRelinkHops(): This method gets invoked after finding the optimal
 	 * order (split[][]) from dynamic programming. It relinks the Hops that are
@@ -264,7 +270,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @param level log level
 	 */
 	protected final void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators,
-			int opIndex, int[][] split, int level) 
+			OpIndex opIndex, int[][] split, int level)
 	{
 		//single matrix - end of recursion
 		if( i == j ) {
@@ -283,9 +289,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			mmChain.get(i).getParent().add(h);
 		}
 		else {
-			h.getInput().add(mmOperators.get(opIndex));
-			mmOperators.get(opIndex).getParent().add(h);
-			opIndex = opIndex + 1;
+			h.getInput().add(mmOperators.get(opIndex.opindex));
+			mmOperators.get(opIndex.opindex).getParent().add(h);
+			opIndex.opindex = opIndex.opindex + 1;
 		}
 
 		// Set Input2 for current Hop h
@@ -294,9 +300,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			mmChain.get(j).getParent().add(h);
 		} 
 		else {
-			h.getInput().add(mmOperators.get(opIndex));
-			mmOperators.get(opIndex).getParent().add(h);
-			opIndex = opIndex + 1;
+			h.getInput().add(mmOperators.get(opIndex.opindex));
+			mmOperators.get(opIndex.opindex).getParent().add(h);
+			opIndex.opindex = opIndex.opindex + 1;
 		}
 
 		// Find children for both the inputs

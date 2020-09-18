@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.privacy.propagation;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;

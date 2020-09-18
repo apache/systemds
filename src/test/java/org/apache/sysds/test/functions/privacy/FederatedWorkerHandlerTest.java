@@ -259,7 +259,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if ( expectedException == null )
 			compareResults(1e-11);
 		
-		assert(checkedPrivacyConstraintsContains(privacyLevel));
+		assertTrue(checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;

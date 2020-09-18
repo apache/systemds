@@ -33,14 +33,16 @@ import org.junit.Test;
 import org.apache.sysds.common.Types;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @net.jcip.annotations.NotThreadSafe
 public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
-	private static final String TEST_DIR = "functions/federated/";
-	private static final String TEST_DIR_SCALAR = TEST_DIR + "matrix_scalar/";
+	private static final String TEST_DIR = "functions/privacy/";
+	private static final String TEST_DIR_fed = "functions/federated/";
+	private static final String TEST_DIR_SCALAR = TEST_DIR_fed + "matrix_scalar/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedWorkerHandlerTest.class.getSimpleName() + "/";
-	private final static String TEST_CLASS_DIR_SCALAR = TEST_DIR_SCALAR + FederatedWorkerHandlerTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR_SCALAR = TEST_DIR + FederatedWorkerHandlerTest.class.getSimpleName() + "/";
 	private static final String TEST_PROG_SCALAR_ADDITION_MATRIX = "FederatedScalarAdditionMatrix";
 	private final static String AGGREGATION_TEST_NAME = "FederatedSumTest";
 	private final static String TRANSFER_TEST_NAME = "FederatedRCBindTest";
@@ -123,8 +125,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			if ( !exceptionExpected )
 				compareResults();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
-			assert (false);
+			fail("InterruptedException thrown" + e.getMessage() + " " + Arrays.toString(e.getStackTrace()));
 		} finally {
 			assertTrue("The privacy level " + privacyLevel.toString() + " should have been checked during execution",
 				checkedPrivacyConstraintsContains(privacyLevel));
@@ -156,7 +157,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 
 		getAndLoadTestConfiguration("aggregation");
-		String HOME = SCRIPT_DIR + TEST_DIR;
+		String HOME = SCRIPT_DIR + TEST_DIR_fed;
 
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
@@ -226,7 +227,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 
 
 		getAndLoadTestConfiguration("transfer");
-		String HOME = SCRIPT_DIR + TEST_DIR;
+		String HOME = SCRIPT_DIR + TEST_DIR_fed;
 
 		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
 		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols), new PrivacyConstraint(privacyLevel));
@@ -259,7 +260,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if ( expectedException == null )
 			compareResults(1e-11);
 		
-		assert(checkedPrivacyConstraintsContains(privacyLevel));
+		assertTrue("Privacy constraint with level " + privacyLevel + " should have been checked during execution",
+			checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;
@@ -292,7 +294,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		Thread t1, t2;
 
 		getAndLoadTestConfiguration("matvecmult");
-		String HOME = SCRIPT_DIR + TEST_DIR;
+		String HOME = SCRIPT_DIR + TEST_DIR_fed;
 
 		// write input matrices
 		int halfRows = rows / 2;
@@ -337,7 +339,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if (expectedException == null)
 			compareResults(1e-9);
 
-		assert(checkedPrivacyConstraintsContains(privacyLevel));
+		assertTrue("Privacy constraint with level " + privacyLevel + " should have been checked during execution",
+			checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThreads(t1, t2);
 

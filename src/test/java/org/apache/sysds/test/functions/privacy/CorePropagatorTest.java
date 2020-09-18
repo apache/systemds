@@ -26,7 +26,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-import org.apache.sysds.runtime.privacy.PrivacyPropagator;
+import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.runtime.privacy.propagation.OperatorType;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 

@@ -5,6 +5,10 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 
+/**
+ * MatrixMultiplicationPropagator that overrides generateFineGrainedConstraints by finding the private elements first
+ * followed by propagating PrivateAggregation in case of non-aggregating operator types.
+ */
 public class MatrixMultiplicationPropagatorPrivateFirst extends MatrixMultiplicationPropagator {
 
 	public MatrixMultiplicationPropagatorPrivateFirst(){
@@ -17,6 +21,16 @@ public class MatrixMultiplicationPropagatorPrivateFirst extends MatrixMultiplica
 	}
 
 	@Override
+	/**
+	 * Generates fine-grained constraints and puts them in the mergedFineGrainedConstraints instance.
+	 * This implementation first loops over the rowPrivacy array and sets the entire row to private if the rowPrivacy is private.
+	 * Next, it loops over the colPrivacy array and sets the entire column to private if the colPrivacy is private.
+	 * Then it loops over the operatorTypes for both input matrices.
+	 * If the operator type is non-aggregate and the privacy level is PrivateAggregation,
+	 * then it sets the entire row/column to PrivateAggregation.
+	 * If the operator type is non-aggregate and the privacy level is not private, then it loops through all elements
+	 * in the row/column and checks for PrivateAggregation in the privacy level array of the other input.
+	 */
 	protected void generateFineGrainedConstraints(FineGrainedPrivacy mergedFineGrainedConstraints,
 		PrivacyLevel[] rowPrivacy, PrivacyLevel[] colPrivacy,
 		OperatorType[] operatorTypes1, OperatorType[] operatorTypes2) {

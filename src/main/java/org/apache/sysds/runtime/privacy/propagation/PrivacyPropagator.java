@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.privacy;
+package org.apache.sysds.runtime.privacy.propagation;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -43,11 +43,9 @@ import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.privacy.DMLPrivacyException;
+import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
-import org.apache.sysds.runtime.privacy.propagation.MatrixMultiplicationPropagatorPrivateFirst;
-import org.apache.sysds.runtime.privacy.propagation.OperatorType;
-import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
-import org.apache.sysds.runtime.privacy.propagation.Propagator;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -579,8 +577,8 @@ public class PrivacyPropagator
 
 	private static boolean privacyConstraintActivated(PrivacyConstraint instructionPrivacyConstraint){
 		return instructionPrivacyConstraint != null && 
-			(instructionPrivacyConstraint.privacyLevel == PrivacyLevel.Private 
-			|| instructionPrivacyConstraint.privacyLevel == PrivacyLevel.PrivateAggregation);
+			(instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.Private
+			|| instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
 	}
 
 	@SuppressWarnings("unused")

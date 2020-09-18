@@ -22,6 +22,7 @@ package org.apache.sysds.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
@@ -197,7 +198,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			
 			 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
 			LOG.trace("Optimal MM Chain: ");
-			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split, 1);
+			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, new MutableInt(1), split, 1);
 		}
 	}
 	
@@ -263,9 +264,13 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @param split optimal order
 	 * @param level log level
 	 */
-	protected final void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators,
-			int opIndex, int[][] split, int level) 
+	protected final void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain,
+		ArrayList<Hop> mmOperators, MutableInt opIndex, int[][] split, int level)
 	{
+		//NOTE: the opIndex is a MutableInt in order to get the correct positions
+		//in ragged chains like ((((a, b), c), (D, E), f), e) that might be given
+		//like that by the original scripts variable assignments
+		
 		//single matrix - end of recursion
 		if( i == j ) {
 			logTraceHop(h, level);
@@ -283,9 +288,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			mmChain.get(i).getParent().add(h);
 		}
 		else {
-			h.getInput().add(mmOperators.get(opIndex));
-			mmOperators.get(opIndex).getParent().add(h);
-			opIndex = opIndex + 1;
+			int ix = opIndex.getAndIncrement();
+			h.getInput().add(mmOperators.get(ix));
+			mmOperators.get(ix).getParent().add(h);
 		}
 
 		// Set Input2 for current Hop h
@@ -294,9 +299,9 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			mmChain.get(j).getParent().add(h);
 		} 
 		else {
-			h.getInput().add(mmOperators.get(opIndex));
-			mmOperators.get(opIndex).getParent().add(h);
-			opIndex = opIndex + 1;
+			int ix = opIndex.getAndIncrement();
+			h.getInput().add(mmOperators.get(ix));
+			mmOperators.get(ix).getParent().add(h);
 		}
 
 		// Find children for both the inputs

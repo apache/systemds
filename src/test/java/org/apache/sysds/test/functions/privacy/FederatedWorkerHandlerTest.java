@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.apache.sysds.common.Types;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @net.jcip.annotations.NotThreadSafe
 public class FederatedWorkerHandlerTest extends AutomatedTestBase {
@@ -123,8 +124,7 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 			if ( !exceptionExpected )
 				compareResults();
 		} catch (InterruptedException e) {
-			e.printStackTrace();
-			assert (false);
+			fail("InterruptedException thrown" + e.getMessage() + " " + Arrays.toString(e.getStackTrace()));
 		} finally {
 			assertTrue("The privacy level " + privacyLevel.toString() + " should have been checked during execution",
 				checkedPrivacyConstraintsContains(privacyLevel));
@@ -259,7 +259,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if ( expectedException == null )
 			compareResults(1e-11);
 		
-		assertTrue(checkedPrivacyConstraintsContains(privacyLevel));
+		assertTrue("Privacy constraint with level " + privacyLevel + " should have been checked during execution",
+			checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThread(t);
 		rtplatform = platformOld;
@@ -337,7 +338,8 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 		if (expectedException == null)
 			compareResults(1e-9);
 
-		assert(checkedPrivacyConstraintsContains(privacyLevel));
+		assertTrue("Privacy constraint with level " + privacyLevel + " should have been checked during execution",
+			checkedPrivacyConstraintsContains(privacyLevel));
 
 		TestUtils.shutdownThreads(t1, t2);
 

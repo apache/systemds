@@ -23,9 +23,9 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 library("matrixStats")
-library("doMC")
 
-registerDoMC(NULL) # physical cores
+# library("doMC")
+# registerDoMC(NULL) # physical cores
 
 ################################################################################
 
@@ -82,8 +82,12 @@ slicefinder = function(X, e,
 
     # extract and evaluate candidate slices
     if( tpEval ) { # task-parallel
-      R = foreach( i=1:nrow(S), .combine=rbind) %dopar% {
-        return (evalSlice(X2, e, eAvg, as.matrix(S[i,]), level, alpha))
+      #R = foreach( i=1:nrow(S), .combine=rbind) %dopar% {
+      #  return (evalSlice(X2, e, eAvg, as.matrix(S[i,]), level, alpha))
+      #}
+      R = matrix(0, nrow(S), 4)
+      for(i in 1:nrow(S)) {
+        R[i,] = evalSlice(X2, e, eAvg, as.matrix(S[i,]), level, alpha)
       }
     }
     else { # data-parallel

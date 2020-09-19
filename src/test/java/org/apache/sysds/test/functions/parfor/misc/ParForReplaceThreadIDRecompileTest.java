@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.parfor;
+package org.apache.sysds.test.functions.parfor.misc;
 
 import java.util.HashMap;
 

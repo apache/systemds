@@ -22,13 +22,18 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.HashMap;
+
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class BuiltinSliceFinderTest extends AutomatedTestBase {
-
+public class BuiltinSliceFinderTest extends AutomatedTestBase
+{
+	private static final String PREP_NAME = "slicefinderPrep";
 	private static final String TEST_NAME = "slicefinder";
 	private static final String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSliceFinderTest.class.getSimpleName() + "/";
@@ -94,21 +99,43 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase {
 	
 	private void runSliceFinderTest(int K, boolean dp, ExecMode mode) {
 		ExecMode platformOld = setExecMode(ExecMode.HYBRID);
-		String dml_test_name = TEST_NAME;
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		String data = HOME + "/data/Salaries.csv";
 		
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-			//
-			fullDMLScriptName = HOME + dml_test_name + ".dml";
-			programArgs = new String[]{"-args", data,
+			
+			//run data preparation
+			fullDMLScriptName = HOME + PREP_NAME + ".dml";
+			programArgs = new String[]{"-args", data, output("X"), output("e")};
+			runTest(true, false, null, -1);
+			
+			//read output and store for dml and R
+			double[][] X = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromHDFS("X"));
+			double[][] e = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromHDFS("e"));
+			writeInputMatrixWithMTD("X", X, true);
+			writeInputMatrixWithMTD("e", e, true);
+			
+			//execute main test
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			programArgs = new String[]{"-args", input("X"), input("e"),
 				String.valueOf(K),String.valueOf(!dp).toUpperCase(),
 				String.valueOf(VERBOSE).toUpperCase(), output("R")};
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + String.valueOf(K) 
+				+ " " + String.valueOf(!dp).toUpperCase() + " " + expectedDir();
+			
 			runTest(true, false, null, -1);
-
-			double[][] ret = TestUtils.convertHashMapToDoubleArray(readDMLMatrixFromHDFS("R"));
+			runRScript(true); 
+			
+			//compare dml and R
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
+			TestUtils.compareMatrices(dmlfile, rfile, 1e-2, "Stat-DML", "Stat-R");
+			
+			//compare expected results
+			double[][] ret = TestUtils.convertHashMapToDoubleArray(dmlfile);
 			for(int i=0; i<K; i++)
 				TestUtils.compareMatrices(EXPECTED_TOPK[i], ret[i], 1e-2);
 		

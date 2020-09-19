@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,8 +20,26 @@
 #
 #-------------------------------------------------------------
 
-# This file can be used to pass maven project properties to python
-# via string substitutions using the maven-resources-plugin
-__project_group_id__ = 'org.apache.systemds'
-__project_artifact_id__ = 'systemds'
-__project_version__ = '2.0.0-SNAPSHOT'
+#BASE_DIR=$(pwd)
+#BASE_DIR="/c/virtual\ D/SystemDS/systemds"
+BASE_DIR="../.." #points to systemds directory
+RELEASE_WORK_DIR=$BASE_DIR/target/release2
+RELEASE_VERSION=2.0.0
+eval cd $RELEASE_WORK_DIR/systemds/src/main/python
+
+# Steps:
+# 1. update systemds/project_info.py with the new version
+sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_VERSION/" systemds/project_info.py
+
+# 2. generate distribution archives
+python3 create_python_dist.py
+
+# 3. upload the distribution archives to testpypi/pypi
+#    - For testing follow https://packaging.python.org/tutorials/packaging-projects/
+#    - Note: for testing use command prompt in windows and use Edit->paste to paste 
+#      the API token (known issues)
+
+#python -m twine upload --repository testpypi dist/* #Test
+#python twine upload dist/*  #Real
+
+exit

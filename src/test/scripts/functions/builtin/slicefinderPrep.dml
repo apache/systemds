@@ -19,10 +19,22 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
-e = read($2);
+FXY = read($1, data_type="frame", format="csv", header=TRUE);
 
-# call slice finding
-[TS,TR] = slicefinder(X=X, e=e, k=$3, alpha=0.95, minSup=4, tpEval=$4, verbose=$5);
+F = FXY[,1:ncol(FXY)-1];
+y = as.matrix(FXY[,ncol(FXY)]);
 
-write(TR, $6)
+# data preparation
+jspec= "{ ids:true, recode:[1,2,3,6],bin:[" 
+      +"{id:4, method:equi-width, numbins:14},"
+      +"{id:5, method:equi-width, numbins:12}]}"
+[X,M] = transformencode(target=F, spec=jspec);
+X = X[,2:ncol(X)]
+
+# learn model
+B = lm(X=X, y=y, verbose=FALSE);
+yhat = X %*% B;
+e = (y-yhat)^2;
+
+write(X, $2)
+write(e, $3)

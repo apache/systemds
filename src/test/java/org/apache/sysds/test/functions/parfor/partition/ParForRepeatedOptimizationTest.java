@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.parfor;
+package org.apache.sysds.test.functions.parfor.partition;
 
 import java.util.HashMap;
 
@@ -36,7 +36,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-public class ParForRepeatedOptimizationTest extends AutomatedTestBase 
+public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "parfor_repeatedopt1";
 	private final static String TEST_NAME2 = "parfor_repeatedopt2";

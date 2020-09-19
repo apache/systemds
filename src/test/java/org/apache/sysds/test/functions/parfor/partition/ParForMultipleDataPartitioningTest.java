@@ -17,61 +17,84 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.parfor;
+package org.apache.sysds.test.functions.parfor.partition;
 
 import java.util.HashMap;
 
 import org.junit.Test;
+import org.apache.sysds.hops.Hop;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-public class ParForFunctionSerializationTest extends AutomatedTestBase 
+public class ParForMultipleDataPartitioningTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "parfor_funct";
+
+	private final static String TEST_NAME = "parfor_mdatapartitioning";
 	private final static String TEST_DIR = "functions/parfor/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + ParForFunctionSerializationTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForMultipleDataPartitioningTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 20;
-	private final static int cols = 10;
+	private final static int rows = (int)Hop.CPThreshold+1;
+	private final static int cols = 10;    
 	private final static double sparsity = 1.0;
 	
 	
 	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+	public void setUp() 
+	{
+		addTestConfiguration(TEST_NAME, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, 
+			new String[] { "Rout" }) ); //TODO this specification is not intuitive
+	}
+
+	
+	@Test
+	public void testParForDataPartitioningEquivalentSchemes() 
+	{
+		runParForDataPartitioningTest(true);
 	}
 
 	@Test
-	public void testParForFunctSerialization() {
-		runFunctionTest(1);
+	public void testParForDataPartitioningDifferentSchemes() 
+	{
+		runParForDataPartitioningTest(false);
 	}
 	
-	private void runFunctionTest( int testNum )
-	{
-		String TEST_NAME = null;
-		switch( testNum ) {
-			case 1: TEST_NAME = TEST_NAME1; break;
-		}
+	
+	/**
+	 * 
+	 * @param outer execution mode of outer parfor loop
+	 * @param inner execution mode of inner parfor loop
+	 * @param instType execution mode of instructions
+	 */
+	private void runParForDataPartitioningTest( boolean equiSchemes )
+	{		
+		//script
+		int scriptNum = -1;
+		if( equiSchemes )
+			scriptNum = 1;  
+		else
+			scriptNum = 2;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 		
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		fullDMLScriptName = HOME + TEST_NAME + scriptNum + ".dml";
 		programArgs = new String[]{"-args", input("V"), 
 			Integer.toString(rows), Integer.toString(cols), output("R") };
 		
-		fullRScriptName = HOME + TEST_NAME1 + ".R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			inputDir() + " " + expectedDir() + " " + scriptNum;
 
 		long seed = System.nanoTime();
-		double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 		writeInputMatrix("V", V, true);
 
 		boolean exceptionExpected = false;
@@ -81,6 +104,6 @@ public class ParForFunctionSerializationTest extends AutomatedTestBase
 		//compare matrices
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
-		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
+		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
 	}
 }

@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
 class OperationNode(DAGNode):
     """A Node representing an operation in SystemDS"""
+    shape: Optional[Tuple[int]]
     _result_var: Optional[Union[float, np.array]]
     _lineage_trace: Optional[str]
     _script: Optional[DMLScript]
@@ -49,6 +50,7 @@ class OperationNode(DAGNode):
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
                  output_type: OutputType = OutputType.MATRIX,
                  is_python_local_data: bool = False,
+                 shape: Tuple[int] = (),
                  number_of_outputs=1,
                  output_types: Iterable[OutputType] = None):
         """
@@ -66,6 +68,7 @@ class OperationNode(DAGNode):
             Default is None, and means every multi output is a matrix.
         """
         self.sds_context = sds_context
+        self.shape = shape
         if unnamed_input_nodes is None:
             unnamed_input_nodes = []
         if named_input_nodes is None:
@@ -171,40 +174,40 @@ class OperationNode(DAGNode):
         assert self.output_type == OutputType.MATRIX, f'{self.operation} only supported for matrices'
 
     def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '+', [self, other])
+        return OperationNode(self.sds_context, '+', [self, other], shape=self.shape)
 
     def __sub__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '-', [self, other])
+        return OperationNode(self.sds_context, '-', [self, other], shape=self.shape)
 
     def __mul__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '*', [self, other])
+        return OperationNode(self.sds_context, '*', [self, other], shape=self.shape)
 
     def __truediv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '/', [self, other])
+        return OperationNode(self.sds_context, '/', [self, other], shape=self.shape)
 
     def __floordiv__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '//', [self, other])
+        return OperationNode(self.sds_context, '//', [self, other], shape=self.shape)
 
     def __lt__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '<', [self, other])
+        return OperationNode(self.sds_context, '<', [self, other], shape=self.shape)
 
     def __le__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '<=', [self, other])
+        return OperationNode(self.sds_context, '<=', [self, other], shape=self.shape)
 
     def __gt__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '>', [self, other])
+        return OperationNode(self.sds_context, '>', [self, other], shape=self.shape)
 
     def __ge__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '>=', [self, other])
+        return OperationNode(self.sds_context, '>=', [self, other], shape=self.shape)
 
     def __eq__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '==', [self, other])
+        return OperationNode(self.sds_context, '==', [self, other], shape=self.shape)
 
     def __ne__(self, other) -> 'OperationNode':
-        return OperationNode(self.sds_context, '!=', [self, other])
+        return OperationNode(self.sds_context, '!=', [self, other], shape=self.shape)
 
-    def __matmul__(self, other: VALID_ARITHMETIC_TYPES) -> 'OperationNode':
-        return OperationNode(self.sds_context, '%*%', [self, other])
+    def __matmul__(self, other: 'OperationNode') -> 'OperationNode':
+        return OperationNode(self.sds_context, '%*%', [self, other], shape=(self.shape[0], other.shape[0]))
 
     def sum(self, axis: int = None) -> 'OperationNode':
         """Calculate sum of matrix.
@@ -214,9 +217,9 @@ class OperationNode(DAGNode):
         """
         self._check_matrix_op()
         if axis == 0:
-            return OperationNode(self.sds_context, 'colSums', [self])
+            return OperationNode(self.sds_context, 'colSums', [self], shape=(self.shape[1],))
         elif axis == 1:
-            return OperationNode(self.sds_context, 'rowSums', [self])
+            return OperationNode(self.sds_context, 'rowSums', [self], shape=(self.shape[0],))
         elif axis is None:
             return OperationNode(self.sds_context, 'sum', [self], output_type=OutputType.DOUBLE)
         raise ValueError(
@@ -230,9 +233,9 @@ class OperationNode(DAGNode):
         """
         self._check_matrix_op()
         if axis == 0:
-            return OperationNode(self.sds_context, 'colMeans', [self])
+            return OperationNode(self.sds_context, 'colMeans', [self], shape=(self.shape[1],))
         elif axis == 1:
-            return OperationNode(self.sds_context, 'rowMeans', [self])
+            return OperationNode(self.sds_context, 'rowMeans', [self], shape=(self.shape[0],))
         elif axis is None:
             return OperationNode(self.sds_context, 'mean', [self], output_type=OutputType.DOUBLE)
         raise ValueError(
@@ -246,9 +249,9 @@ class OperationNode(DAGNode):
         """
         self._check_matrix_op()
         if axis == 0:
-            return OperationNode(self.sds_context, 'colVars', [self])
+            return OperationNode(self.sds_context, 'colVars', [self], shape=(self.shape[1],))
         elif axis == 1:
-            return OperationNode(self.sds_context, 'rowVars', [self])
+            return OperationNode(self.sds_context, 'rowVars', [self], shape=(self.shape[0],))
         elif axis is None:
             return OperationNode(self.sds_context, 'var', [self], output_type=OutputType.DOUBLE)
         raise ValueError(
@@ -259,70 +262,70 @@ class OperationNode(DAGNode):
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'abs', [self])
+        return OperationNode(self.sds_context, 'abs', [self], shape = self.shape)
 
     def sin(self) -> 'OperationNode':
         """Calculate sin.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'sin', [self])
+        return OperationNode(self.sds_context, 'sin', [self], shape = self.shape)
 
     def cos(self) -> 'OperationNode':
         """Calculate cos.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'cos', [self])
+        return OperationNode(self.sds_context, 'cos', [self], shape = self.shape)
 
     def tan(self) -> 'OperationNode':
         """Calculate tan.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'tan', [self])
+        return OperationNode(self.sds_context, 'tan', [self], shape = self.shape)
 
     def asin(self) -> 'OperationNode':
         """Calculate arcsin.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'asin', [self])
+        return OperationNode(self.sds_context, 'asin', [self], shape = self.shape)
 
     def acos(self) -> 'OperationNode':
         """Calculate arccos.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'acos', [self])
+        return OperationNode(self.sds_context, 'acos', [self], shape = self.shape)
 
     def atan(self) -> 'OperationNode':
         """Calculate arctan.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'atan', [self])
+        return OperationNode(self.sds_context, 'atan', [self], shape = self.shape)
 
     def sinh(self) -> 'OperationNode':
         """Calculate sin.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'sinh', [self])
+        return OperationNode(self.sds_context, 'sinh', [self], shape = self.shape)
 
     def cosh(self) -> 'OperationNode':
         """Calculate cos.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'cosh', [self])
+        return OperationNode(self.sds_context, 'cosh', [self], shape = self.shape)
 
     def tanh(self) -> 'OperationNode':
         """Calculate tan.
 
         :return: `OperationNode` representing operation
         """
-        return OperationNode(self.sds_context, 'tanh', [self])
+        return OperationNode(self.sds_context, 'tanh', [self], shape = self.shape)
 
     def moment(self, moment, weights: DAGNode = None) -> 'OperationNode':
         # TODO write tests

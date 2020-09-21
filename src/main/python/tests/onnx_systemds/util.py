@@ -78,19 +78,23 @@ def run_and_compare_output(name: str, test_case: unittest.TestCase) -> None:
     :param name: The name of the test-case (also used for finding onnx-model, dml-wrapper and reference output)
     :param test_case: The testcase
     """
-    onnx2systemds("tests/onnx_systemds/test_models/" + name + ".onnx", "tests/onnx_systemds/dml_output/" + name + ".dml")
-    ret = invoke_systemds("tests/onnx_systemds/dml_wrapper/" + name + "_wrapper.dml")
-    test_case.assertEqual(ret, 0, "systemds failed")
+    try:
+        onnx2systemds("tests/onnx_systemds/test_models/" + name + ".onnx", "tests/onnx_systemds/dml_output/" + name + ".dml")
+        ret = invoke_systemds("tests/onnx_systemds/dml_wrapper/" + name + "_wrapper.dml")
+        test_case.assertEqual(ret, 0, "systemds failed")
 
-    # We read the file content such that pytest can present the actual difference between the files
-    with open("tests/onnx_systemds/output_reference/" + name + "_reference.out") as reference_file:
-        reference_content = reference_file.read()
+        # We read the file content such that pytest can present the actual difference between the files
+        with open("tests/onnx_systemds/output_reference/" + name + "_reference.out") as reference_file:
+            reference_content = reference_file.read()
 
-    with open("tests/onnx_systemds/output_test/" + name + ".out") as output_file:
-        test_content = output_file.read()
+        with open("tests/onnx_systemds/output_test/" + name + ".out") as output_file:
+            test_content = output_file.read()
 
-    test_case.assertEqual(
-        test_content,
-        reference_content,
-        "generated output differed from reference output"
-    )
+        test_case.assertEqual(
+            test_content,
+            reference_content,
+            "generated output differed from reference output"
+        )
+    except KeyError as e:
+        if "SYSTEMDS_ROOT" in os.environ:
+            test_case.fail("SYSTEMDS Key was set and the test failed anyway.")

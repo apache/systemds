@@ -50,6 +50,17 @@ class Matrix(OperationNode):
             unnamed_params = [f'\'{mat}\'']
             named_params = {}
             self._np_array = None
+        if type(mat) is np.ndarray:
+            self._np_array = mat
+            unnamed_params = ['\'./tmp/{file_name}\'']
+            self.shape = mat.shape
+            if len(self.shape) == 2:
+                named_params = {'rows': mat.shape[0], 'cols': mat.shape[1]}
+            elif len(self.shape) == 1:
+                named_params = {'rows': mat.shape[0], 'cols': 1}
+            else:
+                # TODO Support tensors.
+                raise ValueError("Only two dimensional arrays supported")
         else:
             # TODO better alternative than format string?
             unnamed_params = ['\'./tmp/{file_name}\'']
@@ -58,13 +69,13 @@ class Matrix(OperationNode):
         unnamed_params.extend(args)
         named_params.update(kwargs)
         super().__init__(sds_context, 'read', unnamed_params,
-                         named_params, is_python_local_data=self._is_numpy())
+                         named_params, is_python_local_data=self._is_numpy(), shape=mat.shape)
 
-    def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
+    def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         assert self.is_python_local_data, 'Can only pass data to prepared script if it is python local!'
         if self._is_numpy():
             prepared_script.setMatrix(var_name, numpy_to_matrix_block(
-                jvm, self._np_array), True)  # True for reuse
+                sds, self._np_array), True)  # True for reuse
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
@@ -107,7 +118,8 @@ class Matrix(OperationNode):
 
         cols = self._np_array.shape[1]
         if by > cols:
-            raise IndexError("Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
+            raise IndexError(
+                "Index {i} is out of bounds for axis 1 with size {c}".format(i=by, c=cols))
 
         named_input_nodes = {'target': self, 'by': by, 'decreasing': str(decreasing).upper(),
                              'index.return': str(index_return).upper()}
@@ -131,10 +143,8 @@ class Matrix(OperationNode):
         :return: the OperationNode representing this operation
         """
 
-        self._is_numpy()
-
         # check square dimension
-        if self._np_array.shape[0] != self._np_array.shape[1]:
+        if self.shape[0] != self.shape[1]:
             raise ValueError("Last 2 dimensions of the array must be square")
 
         if safe:
@@ -147,3 +157,21 @@ class Matrix(OperationNode):
                 raise ValueError("Matrix is not symmetric")
 
         return OperationNode(self.sds_context, 'cholesky', [self])
+
+    def to_one_hot(self, num_classes: int) -> OperationNode:
+        """ OneHot encode the matrix.
+
+        It is assumed that there is only one column to encode, and all values are whole numbers > 0
+
+        :param num_classes: The number of classes to encode into. max value contained in the matrix must be <= num_classes
+        :return: The OperationNode containing the oneHotEncoded values
+        """
+        if len(self.shape) != 1:
+            raise ValueError(
+                "Only Matrixes  with a single column or row is valid in One Hot, " + str(self.shape) + " is invalid")
+
+        if num_classes < 2:
+            raise ValueError("Number of classes should be larger than 1")
+
+        named_input_nodes = {"X": self, "numClasses": num_classes}
+        return OperationNode(self.sds_context, 'toOneHot', named_input_nodes=named_input_nodes, shape=(self.shape[0], num_classes))

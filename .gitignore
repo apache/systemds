@@ -54,6 +54,9 @@ src/main/python/tests/onnx_systemds/output_test
 src/main/python/tests/onnx_systemds/dml_output
 src/main/python/tests/onnx_systemds/test_models/*.onnx
 
+# Tutorial data mnist
+src/main/python/systemds/examples/tutorials/mnist/
+
 # User configuration files
 conf/SystemDS-config.xml
 

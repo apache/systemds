@@ -40,8 +40,16 @@ if [ -z "$SYSDS_QUIET" ]; then
   SYSDS_QUIET=0
 fi
 
+# an echo toggle
+print_out()
+{
+  if [ $SYSDS_QUIET == 0 ]; then
+    echo "$1"
+  fi
+}
+
 if [ -n "$SYSTEMDS_STANDALONE_OPTS" ]; then
-	echo "Overriding SYSTEMDS_STANDALONE_OPTS with env var: $SYSTEMDS_STANDALONE_OPTS"
+	print_out "Overriding SYSTEMDS_STANDALONE_OPTS with env var: $SYSTEMDS_STANDALONE_OPTS"
 else
   # specify paramteters  to java when running locally here
   SYSTEMDS_STANDALONE_OPTS="\
@@ -51,7 +59,7 @@ else
 fi
 
 if [ -n "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
-	echo "Overriding SYSTEMDS_DISTRIBUTED_OPTS with env var $SYSTEMDS_DISTRIBUTED_OPTS"
+	print_out "Overriding SYSTEMDS_DISTRIBUTED_OPTS with env var $SYSTEMDS_DISTRIBUTED_OPTS"
 else
   # specify parameters to pass to spark-submit when running on spark here
   SYSTEMDS_DISTRIBUTED_OPTS="\
@@ -122,14 +130,6 @@ while getopts "h:f:" options; do
   esac
 done
 
-# an echo toggle
-print_out()
-{
-  if [ $SYSDS_QUIET == 0 ]; then
-    echo "$1"
-  fi
-}
-
 # Peel off first and/or second argument so that $@ contains arguments to DML script
 if  echo "$1" | grep -q "jar"; then
   SYSTEMDS_JAR_FILE=$1
@@ -175,10 +175,10 @@ fi
 
 if [ -z "$SYSTEMDS_ROOT" ] ; then
   SYSTEMDS_ROOT=.
+	print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
 else
   # construct a relative path
 	SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
-	echo "Using existing SystemDS at ${SYSTEMDS_ROOT}"
 fi;
 
 # when using find, look in the directories in this order
@@ -194,7 +194,7 @@ if [ -z "$SYSTEMDS_JAR_FILE" ];then
     fi
   fi
 else
-	echo "Using user supplied systemds jar file $SYSTEMDS_JAR_FILE"
+	print_out "Using user supplied systemds jar file $SYSTEMDS_JAR_FILE"
 fi
 
 # check if log4j config file exists, otherwise unset

@@ -19,31 +19,20 @@
 
 package org.apache.sysds.runtime.privacy.propagation;
 
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
-import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 
 /**
  * MatrixMultiplicationPropagator that overrides generateFineGrainedConstraints by finding the private elements first
- * followed by propagating PrivateAggregation in case of non-aggregating operator types.
+ * while propagating PrivateAggregation in case of non-aggregating operator types. This is an optimized version of
+ * MatrixMultiplicationPropagatorPrivateFirst since it does both kinds of propagation in the same loop.
  */
-public class MatrixMultiplicationPropagatorPrivateFirst extends MatrixMultiplicationPropagator {
-
-	public MatrixMultiplicationPropagatorPrivateFirst(){
-		super();
-	}
-
-	public MatrixMultiplicationPropagatorPrivateFirst(MatrixBlock input1, PrivacyConstraint privacyConstraint1,
-		MatrixBlock input2, PrivacyConstraint privacyConstraint2) {
-		super(input1, privacyConstraint1, input2, privacyConstraint2);
-	}
+public class MatrixMultiplicationPropagatorPrivateFirstOptimized extends MatrixMultiplicationPropagator {
 
 	/**
 	 * Generates fine-grained constraints and puts them in the mergedFineGrainedConstraints instance.
-	 * This implementation first loops over the rowPrivacy array and sets the entire row to private if the rowPrivacy is private.
-	 * Next, it loops over the colPrivacy array and sets the entire column to private if the colPrivacy is private.
-	 * Then it loops over the operatorTypes for both input matrices.
+	 * This implementation loops over the rowPrivacy array and sets the entire row to private if the rowPrivacy is private.
+	 * During this loop, if the element is not private, it will check the operator type and check for private aggregation level.
 	 * If the operator type is non-aggregate and the privacy level is PrivateAggregation,
 	 * then it sets the entire row/column to PrivateAggregation.
 	 * If the operator type is non-aggregate and the privacy level is not private, then it loops through all elements
@@ -51,7 +40,7 @@ public class MatrixMultiplicationPropagatorPrivateFirst extends MatrixMultiplica
 	 */
 	@Override
 	protected void generateFineGrainedConstraints(FineGrainedPrivacy mergedFineGrainedConstraints,
-		PrivacyLevel[] rowPrivacy, PrivacyLevel[] colPrivacy,
+		PrivacyConstraint.PrivacyLevel[] rowPrivacy, PrivacyConstraint.PrivacyLevel[] colPrivacy,
 		OperatorType[] operatorTypes1, OperatorType[] operatorTypes2) {
 		int r1 = rowPrivacy.length;
 		int c2 = colPrivacy.length;
@@ -60,6 +49,18 @@ public class MatrixMultiplicationPropagatorPrivateFirst extends MatrixMultiplica
 				// mark entire row private
 				mergedFineGrainedConstraints.putRow(i,c2, PrivacyConstraint.PrivacyLevel.Private);
 			}
+			else if ( operatorTypes1[i] == OperatorType.NonAggregate ){
+				if ( rowPrivacy[i] == PrivacyConstraint.PrivacyLevel.PrivateAggregation ){
+					// Mark entire row PrivateAggregation
+					mergedFineGrainedConstraints.putRow(i,c2, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
+				} else { // rowPrivacy[i] is None, but colPrivacy could be PrivateAggregation
+					// Go through each element of colPrivacy and if element is PrivateAggregation then mark cell as PrivateAggregation
+					for ( int l = 0; l < colPrivacy.length; l++ ){
+						if ( colPrivacy[l] == PrivacyConstraint.PrivacyLevel.PrivateAggregation )
+							mergedFineGrainedConstraints.putElement(i,l, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
+					}
+				}
+			}
 		}
 
 		for ( int j = 0; j < colPrivacy.length; j++ ) {
@@ -67,34 +68,15 @@ public class MatrixMultiplicationPropagatorPrivateFirst extends MatrixMultiplica
 				// mark entire col private
 				mergedFineGrainedConstraints.putCol(j,r1, PrivacyConstraint.PrivacyLevel.Private);
 			}
-		}
-
-		for ( int k = 0; k < operatorTypes1.length; k++ ){
-			if ( operatorTypes1[k] == OperatorType.NonAggregate ){
-				if ( rowPrivacy[k] == PrivacyConstraint.PrivacyLevel.PrivateAggregation ){
-					// Mark entire row PrivateAggregation
-					mergedFineGrainedConstraints.putRow(k,c2, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
-				} else if ( rowPrivacy[k] != PrivacyConstraint.PrivacyLevel.Private ){
-					// Go through each element of colPrivacy and if element is PrivateAggregation then mark cell as PrivateAggregation
-					for ( int l = 0; l < colPrivacy.length; l++ ){
-						if ( colPrivacy[l] == PrivacyConstraint.PrivacyLevel.PrivateAggregation )
-							mergedFineGrainedConstraints.putElement(k,l, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
-					}
-				}
-			}
-		}
-
-		// Do the same for operatorTypes2
-		for ( int k = 0; k < operatorTypes2.length; k++ ){
-			if ( operatorTypes2[k] == OperatorType.NonAggregate ){
-				if ( colPrivacy[k] == PrivacyConstraint.PrivacyLevel.PrivateAggregation ){
+			else if ( operatorTypes2[j] == OperatorType.NonAggregate ){
+				if ( colPrivacy[j] == PrivacyConstraint.PrivacyLevel.PrivateAggregation ){
 					// Mark entire col PrivateAggregation
-					mergedFineGrainedConstraints.putCol(k,r1, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
-				} else if ( colPrivacy[k] != PrivacyConstraint.PrivacyLevel.Private ){
+					mergedFineGrainedConstraints.putCol(j,r1, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
+				} else { // colPrivacy[j] is None, but rowPrivacy could be PrivateAggregation
 					// Go through each element of rowPrivacy and if element is PrivateAggregation then mark cell as PrivateAggregation
 					for ( int l = 0; l < rowPrivacy.length; l++ ){
 						if ( rowPrivacy[l] == PrivacyConstraint.PrivacyLevel.PrivateAggregation )
-							mergedFineGrainedConstraints.putElement(k,l, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
+							mergedFineGrainedConstraints.putElement(j,l, PrivacyConstraint.PrivacyLevel.PrivateAggregation);
 					}
 				}
 			}

@@ -37,7 +37,7 @@ public abstract class MatrixMultiplicationPropagator implements Propagator {
 	 * Constructor for empty instance.
 	 * The fields can later be set with the setFields method.
 	 */
-	public MatrixMultiplicationPropagator(){};
+	public MatrixMultiplicationPropagator(){}
 
 	/**
 	 * Constructs the propagator and initializes the fields used for propagation.

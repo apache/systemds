@@ -169,6 +169,18 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		mmPropagationPrivateGeneralized(PrivacyLevel.PrivateAggregation, propagator);
 	}
 
+	@Test
+	public void matrixMultiplicationPropagationTestPrivateGeneralPrivateFirstOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		mmPropagationPrivateGeneralized(PrivacyLevel.Private, propagator);
+	}
+
+	@Test
+	public void matrixMultiplicationPropagationTestPrivateGeneral2PrivateFirstOptimized() {
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		mmPropagationPrivateGeneralized(PrivacyLevel.PrivateAggregation, propagator);
+	}
+
 	private void mmPropagationTestPrivateFineGrainedGeneralized(MatrixMultiplicationPropagator propagator){
 		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
 		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
@@ -207,6 +219,12 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		mmPropagationTestPrivateFineGrainedGeneralized(propagator);
 	}
 
+	@Test
+	public void matrixMultiplicationPropagationTestPrivateFineGrainedPrivateFirstOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		mmPropagationTestPrivateFineGrainedGeneralized(propagator);
+	}
+
 	private void mmPropagationTestPrivateFineGrained2Generalized(MatrixMultiplicationPropagator propagator){
 		MatrixBlock inputMatrix1 = new MatrixBlock(4,3,2);
 		MatrixBlock inputMatrix2 = new MatrixBlock(3,3,4);
@@ -235,6 +253,12 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 	@Test
 	public void matrixMultiplicationPropagationTestPrivateFineGrained2Naive(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorNaive();
+		mmPropagationTestPrivateFineGrained2Generalized(propagator);
+	}
+
+	@Test
+	public void matrixMultiplicationPropagationTestPrivateFineGrained2PrivateFirstOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
 		mmPropagationTestPrivateFineGrained2Generalized(propagator);
 	}
 
@@ -279,6 +303,12 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 	@Test
 	public void matrixMultiplicationPropagationTestPrivatePrivateAggregationFineGrainedNaive(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorNaive();
+		mmPropagationTestPrivatePrivateAggregationFineGrainedGeneralized(propagator);
+	}
+
+	@Test
+	public void matrixMultiplicationPropagationTestPrivatePrivateAggregationFineGrainedPrivateFirstOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
 		mmPropagationTestPrivatePrivateAggregationFineGrainedGeneralized(propagator);
 	}
 
@@ -409,6 +439,18 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		NonAggGeneralizedTest(PrivacyLevel.Private, propagator);
 	}
 
+	@Test
+	public void matrixMultiplicationPropagationTestNonAggPrivateOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		NonAggGeneralizedTest(PrivacyLevel.PrivateAggregation, propagator);
+	}
+
+	@Test
+	public void matrixMultiplicationPropagationTestNonAggPrivatePrivateOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		NonAggGeneralizedTest(PrivacyLevel.Private, propagator);
+	}
+
 	private void NonAggGeneralizedTest(PrivacyLevel privacyLevel, MatrixMultiplicationPropagator propagator){
 		int nonAggRow = 2;
 		MatrixBlock m1 = getMatrixBlock(4,2);
@@ -454,6 +496,18 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 		NonAggGeneralizedColTest(PrivacyLevel.Private, propagator);
 	}
 
+	@Test
+	public void matrixMultiplicationPropagationTestNonAgg2PrivateFirstOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		NonAggGeneralizedColTest(PrivacyLevel.PrivateAggregation, propagator);
+	}
+
+	@Test
+	public void matrixMultiplicationPropagationTestNonAggPrivate2PrivateFirstOptimized(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		NonAggGeneralizedColTest(PrivacyLevel.Private, propagator);
+	}
+
 	private void NonAggGeneralizedColTest(PrivacyLevel privacyLevel, MatrixMultiplicationPropagator propagator){
 		int nonAggCol = 2;
 		MatrixBlock m1 = getMatrixBlock(4,2);
@@ -496,6 +550,18 @@ public class PrivacyPropagatorTest extends AutomatedTestBase {
 	@Test
 	public void matrixMultiplicationPropagationTestNonAggRowColNaiveNAA(){
 		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorNaive();
+		NonAggGeneralizedRowColTest(PrivacyLevel.PrivateAggregation, false, propagator);
+	}
+
+	@Test
+	public void matrixMultiplicationPropagationTestNonAggRowColPrivateFirstOptimizedNA(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
+		NonAggGeneralizedRowColTest(PrivacyLevel.PrivateAggregation, true, propagator);
+	}
+
+	@Test
+	public void matrixMultiplicationPropagationTestNonAggRowColPrivateFirstOptimizedNAA(){
+		MatrixMultiplicationPropagator propagator = new MatrixMultiplicationPropagatorPrivateFirstOptimized();
 		NonAggGeneralizedRowColTest(PrivacyLevel.PrivateAggregation, false, propagator);
 	}
 

@@ -269,19 +269,20 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     #sed -i .bak "s|<tag>HEAD<\/tag>|<tag>$RELEASE_TAG<\/tag>|" $BASE_DIR/target/release/systemds/pom.xml
 
     # Remove SNAPSHOT from the version in pom
-    sed -i "s/<version>$RELEASE_VERSION-SNAPSHOT<\/version>/<version>$RELEASE_VERSION<\/version>/" /c/virtual\ D/SystemDS/systemds/target/release2/systemds/pom.xml
     eval cd $RELEASE_WORK_DIR/systemds
     ## Rerunning mvn with clean and package goals, as release:prepare changes ordeer for some dependencies like unpack and shade.
     $MVN $PUBLISH_PROFILES clean package $DRY_RUN \
     -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" \ 
     -DskipTests" \
     -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG" \
-    
+
+    exit
+
     # Pull the latest code (with committed pom changes) and deploy to the local target directory
     checkout_code
     # Remove SNAPSHOT from the version in pom
-    sed -i "s/<version>$RELEASE_VERSION-SNAPSHOT<\/version>/<version>$RELEASE_VERSION<\/version>/" /c/virtual\ D/SystemDS/systemds/target/release2/systemds/pom.xml
     eval cd $RELEASE_WORK_DIR/systemds
+    sed -i "s/<version>$RELEASE_VERSION-SNAPSHOT<\/version>/<version>$RELEASE_VERSION<\/version>/" pom.xml
     GPG_OPTS="-Dgpg.keyname=$GPG_KEYID -Dgpg.passphrase=$GPG_PASSPHRASE"
     # Deploy to /target folder for the next job to pick the artifacts up for there
     CMD="$MVN $PUBLISH_PROFILES deploy \

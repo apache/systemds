@@ -23,42 +23,54 @@
 MVN=mvn
 PUBLISH_PROFILES="-Pdistribution,rat"
 DRY_RUN=-DdryRun=true
-GPG_PASSPHRASE=$1
+GPG_KEYID=$1
+GPG_PASSPHRASE=$2
 DEVELOPMENT_VERSION=2.1.0-SNAPSHOT
-RELEASE_TAG=v2.0
 RELEASE_STAGING_LOCATION="/c/virtual\ D/SystemDS/systemds/temp"
 BASE_DIR="/c/virtual\ D/SystemDS/systemds"
-RELEASE_WORK_DIR="/c/virtual\ D/SystemDS/systemds/target/release2"
+#BASE_DIR="../.." #points to systemds directory
+RELEASE_WORK_DIR=$BASE_DIR/target/release2
 RELEASE_VERSION=2.0.0
 RELEASE_RC=rc1
 GIT_REF=-master
 #export GNUPGHOME="/c/virtual\ D/SystemDS/systemds/target/.gnupg_copy"
 export GNUPGHOME="../../../target/.gnupg_copy/"
 
-RELEASE_STAGING_REMOTE="https://dist.apache.org/repos/dist/dev/systemds/"
-eval cd $RELEASE_STAGING_LOCATION;
-rm -rf svn-release-staging
-# Checkout the artifacts
-svn co $RELEASE_STAGING_REMOTE svn-release-staging
-rm -rf svn-release-staging/$RELEASE_VERSION-$RELEASE_RC
-# Create a new folder for this release
-mkdir -p svn-release-staging/$RELEASE_VERSION-$RELEASE_RC
-# Copy the artifacts from target
-eval cp $RELEASE_WORK_DIR/systemds/target/systemds-*-bin.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
-eval cp $RELEASE_WORK_DIR/systemds/target/systemds-*-src.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+function checkout_code {
+    # Checkout code
+    eval rm -rf $RELEASE_WORK_DIR
+    eval mkdir -p $RELEASE_WORK_DIR
+    eval cd $RELEASE_WORK_DIR
+    git clone https://github.com/apache/systemds.git
+    cd systemds
+    git checkout $GIT_REF
+    git_hash=`git rev-parse --short HEAD`
+    echo "Checked out SystemDS git hash $git_hash"
 
-cd svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
-rm -f *.asc
-for i in *.zip *.tgz; do gpg --output $i.asc --detach-sig --armor $i; done
-rm -f *.sha512
-for i in *.zip *.tgz; do shasum -a 512 $i > $i.sha512; done
+    git clean -d -f -x
+    #rm .gitignore
+    #rm -rf .git
 
-cd .. #exit $RELEASE_VERSION-$RELEASE_RC/
+    eval cd "$BASE_DIR" #return to base dir
+}
 
-#svn add $RELEASE_VERSION-$RELEASE_RC/
-svn add $(svn status | awk '{$1=""; print $0}')
-#svn ci -m"Apache systemds $RELEASE_VERSION-$RELEASE_RC"
-#manually commit from tortoise
+# Pull the latest code (with committed pom changes) and deploy to the local target directory
+checkout_code
+# Remove SNAPSHOT from the version in pom
+eval cd $RELEASE_WORK_DIR/systemds
+sed -i "s/<version>$RELEASE_VERSION-SNAPSHOT<\/version>/<version>$RELEASE_VERSION<\/version>/" pom.xml
+GPG_OPTS="-Dgpg.keyname=$GPG_KEYID -Dgpg.passphrase=$GPG_PASSPHRASE"
+# Deploy to /target folder for the next job to pick the artifacts up for there
+CMD="$MVN $PUBLISH_PROFILES deploy \
+-DskiptTests \
+-DaltDeploymentRepository=altDepRepo::default::file:./target \
+${GPG_OPTS}"
+
+echo "Executing: " "$CMD"
+$CMD
+
+eval cd $RELEASE_WORK_DIR
+
 
 exit 0
 

@@ -21,7 +21,7 @@
 
 cmake_minimum_required(VERSION 3.8)
 cmake_policy(SET CMP0074 NEW) # make use of <package>_ROOT variable
-project (systemds)
+project (systemds LANGUAGES CXX)
 
 # All custom find modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -41,8 +41,19 @@ set_target_properties(systemds PROPERTIES MACOSX_RPATH 1)
 set(MATH_LIBRARIES "")
 
 # sets the installation path to src/main/cpp/lib
-set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR})
-install(TARGETS systemds LIBRARY DESTINATION lib)
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}" CACHE PATH "sets the installation path to src/main/cpp/lib" FORCE)
+endif()
+
+# sets the installation path to src/main/cpp/lib
+# install(TARGETS systemds LIBRARY DESTINATION lib)
+install(TARGETS systemds RUNTIME DESTINATION lib)
+
+# unify library filenames to libsystemds_<...>
+if (WIN32)
+    set(CMAKE_IMPORT_LIBRARY_PREFIX lib CACHE INTERNAL "")
+    set(CMAKE_SHARED_LIBRARY_PREFIX lib CACHE INTERNAL "")
+endif()
 
 set(CMAKE_BUILD_TYPE Release)
 

@@ -62,13 +62,13 @@ Once installed you please verify your version numbers.
 Additionally you have to install a few python packages.
 Note depending on your installation you might need to use pip3 instead of pip::
 
-  pip install numpy py4j wheel jinja2 onnx
+  pip install numpy py4j wheel jinja2 onnx requests
 
 Then to build the system you do the following
 
 - Clone the Git Repository: https://github.com/apache/systemds.git
 - Open an terminal at the root of the repository.
-- Package the Java code using the ``mvn package -P distribution`` command
+- Package the Java code using the ``mvn clean package -P distribution`` command
 - ``cd src/main/python`` to point at the root of the SystemDS Python library.
 - Copy `jars` with ``python pre_setup.py``
 - Install with ``pip install .``

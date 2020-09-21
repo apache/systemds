@@ -57,26 +57,30 @@ class SystemDSContext(object):
         root = os.environ.get("SYSTEMDS_ROOT")
         if root == None:
             # If there is no systemds install default to use the PIP packaged java files.
-            root =  os.path.join(get_module_dir(), "systemds-java")
-        
+            root = os.path.join(get_module_dir(), "systemds-java")
+
         # nt means its Windows
         cp_separator = ";" if os.name == "nt" else ":"
-        lib_cp = os.path.join(root, "target","lib", "*")
-        systemds_cp = os.path.join(root,"target","SystemDS.jar")
-        classpath = cp_separator.join([lib_cp , systemds_cp])
-
-        command = ["java", "-cp", classpath]
 
         if os.environ.get("SYSTEMDS_ROOT") != None:
+            lib_cp = os.path.join(root, "target", "lib", "*")
+            systemds_cp = os.path.join(root, "target", "SystemDS.jar")
+            classpath = cp_separator.join([lib_cp, systemds_cp])
+
+            command = ["java", "-cp", classpath]
             files = glob(os.path.join(root, "conf", "log4j*.properties"))
             if len(files) > 1:
-                print("WARNING: Multiple logging files found selecting: " + files[0])
+                print(
+                    "WARNING: Multiple logging files found selecting: " + files[0])
             if len(files) == 0:
                 print("WARNING: No log4j file found at: "
                       + os.path.join(root, "conf")
                       + " therefore using default settings")
             else:
                 command.append("-Dlog4j.configuration=file:" + files[0])
+        else:
+            lib_cp = os.path.join(root, "lib", "*")
+            command = ["java", "-cp", lib_cp]
 
         command.append("org.apache.sysds.api.PythonDMLScript")
 
@@ -89,13 +93,12 @@ class SystemDSContext(object):
 
         process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
         first_stdout = process.stdout.readline()
-        
-        if(b"GatewayServer Started" in first_stdout):
-            print("Startup success")
-        else:
+
+        if(not b"GatewayServer Started" in first_stdout):
             stderr = process.stderr.readline().decode("utf-8")
             if(len(stderr) > 1):
-                raise Exception("Exception in startup of GatewayServer: " + stderr)
+                raise Exception(
+                    "Exception in startup of GatewayServer: " + stderr)
             outputs = []
             outputs.append(first_stdout.decode("utf-8"))
             max_tries = 10
@@ -109,7 +112,8 @@ class SystemDSContext(object):
                     outputs.append(next_line)
 
                 if (i == max_tries-1):
-                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8") )
+                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(
+                        outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8"))
 
         # Handle Std out from the subprocess.
         self.__stdout = Queue()
@@ -121,10 +125,9 @@ class SystemDSContext(object):
             process.stderr, self.__stderr), daemon=True).start()
 
         # Py4j connect to the started process.
-        gateway_parameters = GatewayParameters(
-            port=port, eager_load=True, read_timeout=5)
+        gwp = GatewayParameters(port=port, eager_load=True)
         self.java_gateway = JavaGateway(
-            gateway_parameters=gateway_parameters, java_process=process)
+            gateway_parameters=gwp, java_process=process)
 
     def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
@@ -147,6 +150,21 @@ class SystemDSContext(object):
             return [self.__stderr.get() for x in range(self.__stderr.qsize())]
         else:
             return [self.__stderr.get() for x in range(lines)]
+
+    def exception_and_close(self, e):
+        """
+        Method for printing exception, printing stdout and error, while also closing the context correctly.
+        """
+        # e = sys.exc_info()[0]
+        print("Exception Encountered! closing JVM")
+        print("standard out:")
+        [print(x) for x in self.get_stdout()]
+        print("standard error")
+        [print(x) for x in self.get_stderr()]
+        print("exception")
+        print(e)
+        self.close()
+        exit()
 
     def __enter__(self):
         return self

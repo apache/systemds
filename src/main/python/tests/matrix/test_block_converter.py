@@ -34,12 +34,10 @@ class Test_MatrixBlockConverter(unittest.TestCase):
     """
 
     sds: SystemDSContext = None
-    jvm: JVMView = None
 
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        cls.jvm = cls.sds.java_gateway.jvm
 
     @classmethod
     def tearDownClass(cls):
@@ -47,13 +45,11 @@ class Test_MatrixBlockConverter(unittest.TestCase):
 
     def test_unrelated_java_code(self):
         # https://www.py4j.org/getting_started.html
-        java_list = self.jvm.java.util.ArrayList()
+        java_list = self.sds.java_gateway.jvm.java.util.ArrayList()
         java_list.append(10)
         java_list.append(131)
         java_list.append(31)
-        self.jvm.java.util.Collections.sort(java_list)
-        # HACK! using eval to convert the printed java string to python array.
-        # TODO learn how to use py4j converter for simple collections
+        self.sds.java_gateway.jvm.java.util.Collections.sort(java_list)
         self.assertListEqual([10, 31, 131], eval(java_list.toString()))
 
     def test_simple_1x1(self):
@@ -77,9 +73,9 @@ class Test_MatrixBlockConverter(unittest.TestCase):
         self.convert_back_and_forth(array)
 
     def convert_back_and_forth(self, array):
-        matrix_block = numpy_to_matrix_block(self.jvm, array)
+        matrix_block = numpy_to_matrix_block(self.sds, array)
         # use the ability to call functions on matrix_block.
-        returned = matrix_block_to_numpy(self.jvm, matrix_block)
+        returned = matrix_block_to_numpy(self.sds.java_gateway.jvm, matrix_block)
         self.assertTrue(np.allclose(array, returned))
 
 

@@ -86,17 +86,22 @@ public class Py4jConverterUtils {
 			double[] denseBlock = new double[(int) limit];
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.nativeOrder());
+
 			switch(valueType) {
+				case UINT8:
+					for(int i = 0; i< limit; i++)
+						denseBlock[i] = buf.get() & 0xFF;
+					break;
 				case INT32:
-					for(int i = 0; i < rlen * clen; i++)
+					for(int i = 0; i < limit; i++)
 						denseBlock[i] = buf.getInt();
 					break;
 				case FP32:
-					for(int i = 0; i < rlen * clen; i++)
+					for(int i = 0; i < limit; i++)
 						denseBlock[i] = buf.getFloat();
 					break;
 				case FP64:
-					for(int i = 0; i < rlen * clen; i++)
+					for(int i = 0; i < limit; i++)
 						denseBlock[i] = buf.getDouble();
 					break;
 				default:

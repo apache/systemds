@@ -89,12 +89,15 @@ class DMLScript:
                 _list_to_java_array(gateway, self.out_var_name))
             for (name, input_node) in self.inputs.items():
                 input_node.pass_python_data_to_prepared_script(
-                    gateway.jvm, name, self.prepared_script)
+                    self.sds_context, name, self.prepared_script)
 
             if lineage:
                 connection.setLineage(True)
+        try:
+            ret = self.prepared_script.executeScript()
+        except Exception as e:
+            self.sds_context.exception_and_close(e)
 
-        ret = self.prepared_script.executeScript()
         if lineage:
             if len(self.out_var_name) == 1:
                 return ret, self.prepared_script.getLineageTrace(self.out_var_name[0])
@@ -130,7 +133,6 @@ class DMLScript:
             for output in self.out_var_name:
                 traces.append(self.prepared_script.getLineageTrace(output))
             return traces
-        
 
     def build_code(self, dag_root: DAGNode) -> None:
         """Builds code from our DAG
@@ -141,7 +143,8 @@ class DMLScript:
         if(dag_root.number_of_outputs > 1):
             self.out_var_name = []
             for idx in range(dag_root.number_of_outputs):
-                self.add_code(f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
+                self.add_code(
+                    f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
                 self.out_var_name.append(f'{baseOutVarString}_{idx}')
         else:
             self.out_var_name.append(baseOutVarString)

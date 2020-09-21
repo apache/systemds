@@ -33,6 +33,12 @@ import org.apache.wink.json4j.JSONObject;
 
 public class PrivacyUtils {
 
+	public static boolean privacyConstraintActivated(PrivacyConstraint instructionPrivacyConstraint){
+		return instructionPrivacyConstraint != null &&
+			(instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.Private
+				|| instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
+	}
+
 	public static void setFineGrainedPrivacy(PrivacyConstraint privacyConstraint, Expression eFineGrainedPrivacy){
 		FineGrainedPrivacy fineGrainedPrivacy = privacyConstraint.getFineGrainedPrivacy();
 		StringIdentifier fgPrivacyIdentifier = (StringIdentifier) eFineGrainedPrivacy;

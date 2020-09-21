@@ -24,4 +24,4 @@
 # Execute the docker container
 docker run \
   -v $(pwd)/docker/mountFolder:/input \
-  --rm sebaba/sysds:0.2
+  --rm systemds/sysds:latest

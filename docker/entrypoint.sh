@@ -25,8 +25,8 @@
 cd /github/workspace
 
 log="/tmp/sysdstest.log"
-mvn -ntp compile test-compile
-mvn -ntp test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 | grep -v "already exists in destination." | tee $log
+mvn -ntp test-compile 2>&1 | grep -E "BUILD|Total time:|---|Building SystemDS"
+mvn -ntp test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 2>&1 | grep -v "already exists in destination." | tee $log
 
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"

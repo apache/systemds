@@ -49,9 +49,9 @@ jobs:
           ${{ runner.os }}-maven-test-
 
     - name: Component Tests
-      run: mvn -ntp test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=org.apache.sysds.test.component.** | grep -v "already exists in destination."
+      run: ./docker/entrypoint.sh org.apache.sysds.test.component.**
     
     - name: User Tests
-      run: mvn -ntp test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=org.apache.sysds.test.usertest.** | grep -v "already exists in destination."
+      run: ./docker/entrypoint.sh org.apache.sysds.test.usertest.** 
 
 

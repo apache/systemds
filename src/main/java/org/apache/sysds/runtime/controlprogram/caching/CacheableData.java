@@ -919,7 +919,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			LOG.trace("CACHE: Freeing evicted matrix...  " + hashCode() + "  HDFS path: " + 
 				(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
 		
-		LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
+		if(isCachingActive())
+			LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
 		
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");

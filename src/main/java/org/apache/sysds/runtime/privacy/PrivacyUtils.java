@@ -39,6 +39,13 @@ public class PrivacyUtils {
 				|| instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
 	}
 
+	public static PrivacyLevel getGeneralPrivacyLevel(PrivacyConstraint privacyConstraint){
+		if ( privacyConstraint != null ){
+			return privacyConstraint.getPrivacyLevel();
+		}
+		else return PrivacyLevel.None;
+	}
+
 	public static void setFineGrainedPrivacy(PrivacyConstraint privacyConstraint, Expression eFineGrainedPrivacy){
 		FineGrainedPrivacy fineGrainedPrivacy = privacyConstraint.getFineGrainedPrivacy();
 		StringIdentifier fgPrivacyIdentifier = (StringIdentifier) eFineGrainedPrivacy;

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.privacy.propagation;
 import java.util.*;
 
 import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.*;
@@ -301,14 +302,38 @@ public class PrivacyPropagator
 	public static Instruction preprocessAppendCPInstruction(AppendCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
 		if ( someConstraintSetBinary(privacyConstraints) ){
-			MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
-			MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
-			Propagator propagator = null;
-			if ( inst.getAppendType() == AppendCPInstruction.AppendType.RBIND)
-				propagator = new RBindPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
-			inst.output.setPrivacyConstraint(propagator.propagate());
-			// check for fine-grained privacy?
-			// or call directly to propagator?
+			if ( inst.getAppendType() == AppendCPInstruction.AppendType.STRING ){
+				PrivacyLevel[] privacyLevels = new PrivacyLevel[2];
+				privacyLevels[0] = PrivacyUtils.getGeneralPrivacyLevel(privacyConstraints[0]);
+				privacyLevels[1] =  PrivacyUtils.getGeneralPrivacyLevel(privacyConstraints[1]);
+				PrivacyConstraint outputConstraint = new PrivacyConstraint(corePropagation(privacyLevels, OperatorType.NonAggregate));
+				inst.output.setPrivacyConstraint(outputConstraint);
+			} else if ( inst.getAppendType() == AppendCPInstruction.AppendType.LIST ){
+				ListObject input1 = (ListObject) ec.getVariable(inst.input1);
+				if ( inst.getOpcode().equals("remove")){
+					ScalarObject removePosition = ec.getScalarInput(inst.input2);
+					PropagatorMultiReturn propagator = new ListRemovePropagator(input1, privacyConstraints[0], removePosition);
+					PrivacyConstraint[] outputConstraints = propagator.propagate();
+					inst.output.setPrivacyConstraint(outputConstraints[0]);
+					((ListAppendRemoveCPInstruction) inst).getOutput2().setPrivacyConstraint(outputConstraints[1]);
+				} else {
+					ListObject input2 = (ListObject) ec.getVariable(inst.input2);
+					Propagator propagator = new ListAppendPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
+					inst.output.setPrivacyConstraint(propagator.propagate());
+				}
+			}
+			else {
+				MatrixBlock input1 = ec.getMatrixInput(inst.input1.getName());
+				MatrixBlock input2 = ec.getMatrixInput(inst.input2.getName());
+				Propagator propagator = null;
+				if ( inst.getAppendType() == AppendCPInstruction.AppendType.RBIND )
+					propagator = new RBindPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
+				else if ( inst.getAppendType() == AppendCPInstruction.AppendType.CBIND )
+					propagator = new CBindPropagator(input1, privacyConstraints[0], input2, privacyConstraints[1]);
+				else throw new DMLPrivacyException("Instruction " + inst.getCPInstructionType() + " with append type " +
+						inst.getAppendType() + " is not supported by the privacy propagator");
+				inst.output.setPrivacyConstraint(propagator.propagate());
+			}
 		}
 		return inst;
 	}

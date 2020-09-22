@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.privacy.propagation;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 /**
- * Interface for all propagator instances.
+ * Interface for all propagator instances with a single output.
  */
 public interface Propagator {
 	/**

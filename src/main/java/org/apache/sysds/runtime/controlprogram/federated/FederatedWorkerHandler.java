@@ -76,6 +76,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) {
+		ctx.writeAndFlush(createResponse(msg)).addListener(new CloseListener());
+	}
+
+	public FederatedResponse createResponse(Object msg) {
 		if( log.isDebugEnabled() ){
 			log.debug("Received: " + msg.getClass().getSimpleName());
 		}
@@ -94,7 +98,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			}
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
-	
+			
 			//execute command and handle privacy constraints
 			FederatedResponse tmp = executeCommand(request);
 			conditionalAddCheckedConstraints(request, tmp);
@@ -102,9 +106,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			//select the response for the entire batch of requests
 			if (!tmp.isSuccessful()) {
 				log.error("Command " + request.getType() + " failed: "
-					+ tmp.getErrorMessage() + "full command: \n" + request.toString());
+						+ tmp.getErrorMessage() + "full command: \n" + request.toString());
 				response = (response == null || response.isSuccessful())
-					? tmp : response; //return first error
+						? tmp : response; //return first error
 			}
 			else if( request.getType() == RequestType.GET_VAR ) {
 				if( response != null && response.isSuccessful() )
@@ -114,13 +118,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			else if( response == null && i == requests.length-1 ) {
 				response = tmp; //return last
 			}
-
+			
 			if (DMLScript.STATISTICS && request.getType() == RequestType.CLEAR && Statistics.allowWorkerStatistics){
 				System.out.println("Federated Worker " + Statistics.display());
 				Statistics.reset();
 			}
 		}
-		ctx.writeAndFlush(response).addListener(new CloseListener());
+		return response;
 	}
 
 	private static void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response){

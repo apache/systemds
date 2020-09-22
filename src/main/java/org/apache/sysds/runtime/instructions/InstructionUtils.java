@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions;
 
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 import org.apache.sysds.common.Types;
@@ -138,6 +139,19 @@ public class InstructionUtils
 			throw new DMLRuntimeException("checkNumFields() -- expected number (" + expected1 + " or "+ expected2 +") != is not equal to actual number (" + numFields + ").");
 		
 		return numFields; 
+	}
+
+	public static int checkNumFields( String[] parts, int... expected ) {
+		int numParts = parts.length;
+		int numFields = numParts - 1; //account for opcode
+		
+		if (Arrays.stream(expected).noneMatch((i) -> numFields == i))
+			throw new DMLRuntimeException(
+				"checkNumFields() -- expected number ("
+					+ Arrays.stream(expected).mapToObj(Integer::toString).reduce((a, b) -> a + ", " + b).orElse("")
+					+ ") != is not equal to actual number (" + numFields + ").");
+		
+		return numFields;
 	}
 
 	public static int checkNumFields( String str, int expected1, int expected2 ) {

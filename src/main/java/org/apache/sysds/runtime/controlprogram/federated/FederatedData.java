@@ -63,20 +63,10 @@ public class FederatedData {
 		_dataType = dataType;
 		_address = address;
 		_filepath = filepath;
-		if( _address != null )
+		if(_address != null)
 			_allFedSites.add(_address);
 	}
-	
-	/**
-	 * Make a copy of the <code>FederatedData</code> metadata, but use another varID (refer to another object on worker)
-	 * @param other the <code>FederatedData</code> of which we want to copy the worker information from
-	 * @param varID the varID of the variable we refer to
-	 */
-	public FederatedData(FederatedData other, long varID) {
-		this(other._dataType, other._address, other._filepath);
-		_varID = varID;
-	}
-	
+
 	public InetSocketAddress getAddress() {
 		return _address;
 	}
@@ -100,6 +90,16 @@ public class FederatedData {
 	boolean equalAddress(FederatedData that) {
 		return _address != null && that != null && that._address != null 
 			&& _address.equals(that._address);
+	}
+	
+	/**
+	 * Make a copy of the <code>FederatedData</code> metadata, but use another varID (refer to another object on worker)
+	 * @param varID the varID of the variable we refer to
+	 */
+	public FederatedData copyWithNewID(long varID) {
+		FederatedData copy = new FederatedData(_dataType, _address, _filepath);
+		copy.setVarID(varID);
+		return copy;
 	}
 	
 	public synchronized Future<FederatedResponse> initFederatedData(long id) {

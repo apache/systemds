@@ -47,19 +47,40 @@ public abstract class AppendPropagator implements Propagator {
 	@Override
 	public PrivacyConstraint propagate() {
 		PrivacyConstraint mergedPrivacyConstraint = new PrivacyConstraint();
-		if (PrivacyUtils.privacyConstraintActivated(privacyConstraint1)){
+		if ( PrivacyUtils.privacyConstraintActivated(privacyConstraint1) ){
 			//Get dimensions of input1 and make a fine-grained constraint of that size with privacy level
-			appendInput1(mergedPrivacyConstraint.getFineGrainedPrivacy(),
+			mergedPrivacyConstraint.getFineGrainedPrivacy().put(new DataRange(new long[]{0,0}, input1.getDataCharacteristics().getDims()), privacyConstraint1.getPrivacyLevel());
+			privacyConstraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+				constraint -> mergedPrivacyConstraint.getFineGrainedPrivacy().put(constraint.getKey(), constraint.getValue())
+			);
+
+
+			/*appendInput1(mergedPrivacyConstraint.getFineGrainedPrivacy(),
 				new DataRange(new long[]{0,0}, input1.getDataCharacteristics().getDims()), privacyConstraint1.getPrivacyLevel());
+			if ( privacyConstraint1.hasFineGrainedConstraints() ){
+				// propagate fine-grained constraints
+				privacyConstraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+					constraint -> appendInput1(
+						mergedPrivacyConstraint.getFineGrainedPrivacy(),
+						constraint.getKey(), constraint.getValue()
+					)
+				);
+			}*/
 		}
-		if (PrivacyUtils.privacyConstraintActivated(privacyConstraint2)){
+		if ( PrivacyUtils.privacyConstraintActivated(privacyConstraint2) ){
 			//Get dimensions of input2 and ...
 			appendInput2(mergedPrivacyConstraint.getFineGrainedPrivacy(),
 				new DataRange(new long[]{0,0}, input2.getDataCharacteristics().getDims()), privacyConstraint2.getPrivacyLevel());
+			if ( privacyConstraint2.hasFineGrainedConstraints() ){
+				// propagate fine-grained constraints
+				privacyConstraint2.getFineGrainedPrivacy().getAllConstraintsList().forEach(
+					constraint -> appendInput2(
+						mergedPrivacyConstraint.getFineGrainedPrivacy(),
+						constraint.getKey(), constraint.getValue()
+					)
+				);
+			}
 		}
-
-		//TODO: fine-grained propagation
-
 		return mergedPrivacyConstraint;
 	}
 

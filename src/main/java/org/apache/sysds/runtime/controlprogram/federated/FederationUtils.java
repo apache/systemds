@@ -20,13 +20,16 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -205,5 +208,14 @@ public class FederationUtils {
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+	}
+
+	public static FederationMap federateLocalData(CacheableData<?> data) {
+		long id = FederationUtils.getNextFedDataID();
+		FederatedLocalData federatedLocalData = new FederatedLocalData(id, data);
+		Map<FederatedRange, FederatedData> fedMap = new HashMap<>();
+		fedMap.put(new FederatedRange(new long[2], new long[] {data.getNumRows(), data.getNumColumns()}),
+			federatedLocalData);
+		return new FederationMap(id, fedMap);
 	}
 }

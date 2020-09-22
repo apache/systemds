@@ -194,6 +194,25 @@ public class FederationMap
 		return ret;
 	}
 	
+	public FederationMap identCopy(long tid, long id) {
+		Future<FederatedResponse>[] copyInstr = execute(tid,
+			new FederatedRequest(RequestType.EXEC_INST, _ID,
+				VariableCPInstruction.prepareCopyInstruction(Long.toString(_ID), Long.toString(id)).toString()));
+		for(Future<FederatedResponse> future : copyInstr) {
+			try {
+				FederatedResponse response = future.get();
+				if(!response.isSuccessful())
+					response.throwExceptionFromResponse();
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+		FederationMap copyFederationMap = copyWithNewID(id);
+		copyFederationMap._type = _type;
+		return copyFederationMap;
+	}
+	
 	public FederationMap copyWithNewID() {
 		return copyWithNewID(FederationUtils.getNextFedDataID());
 	}
@@ -202,7 +221,7 @@ public class FederationMap
 		Map<FederatedRange, FederatedData> map = new TreeMap<>();
 		//TODO handling of file path, but no danger as never written
 		for( Entry<FederatedRange, FederatedData> e : _fedMap.entrySet() )
-			map.put(new FederatedRange(e.getKey()), new FederatedData(e.getValue(), id));
+			map.put(new FederatedRange(e.getKey()), e.getValue().copyWithNewID(id));
 		return new FederationMap(id, map, _type);
 	}
 	
@@ -210,26 +229,22 @@ public class FederationMap
 		Map<FederatedRange, FederatedData> map = new TreeMap<>();
 		//TODO handling of file path, but no danger as never written
 		for( Entry<FederatedRange, FederatedData> e : _fedMap.entrySet() )
-			map.put(new FederatedRange(e.getKey(), clen), new FederatedData(e.getValue(), id));
+			map.put(new FederatedRange(e.getKey(), clen), e.getValue().copyWithNewID(id));
 		return new FederationMap(id, map);
 	}
 
-	public FederationMap rbind(long offset, FederationMap that) {
-		for( Entry<FederatedRange, FederatedData> e : that._fedMap.entrySet() ) {
-			_fedMap.put(
-				new FederatedRange(e.getKey()).shift(offset, 0),
-				new FederatedData(e.getValue(), _ID));
+	public FederationMap bind(long rOffset, long cOffset, FederationMap that) {
+		for(Entry<FederatedRange, FederatedData> e : that._fedMap.entrySet()) {
+			_fedMap.put(new FederatedRange(e.getKey()).shift(rOffset, cOffset), e.getValue().copyWithNewID(_ID));
 		}
 		return this;
 	}
-	
+
 	public FederationMap transpose() {
 		Map<FederatedRange, FederatedData> tmp = new TreeMap<>(_fedMap);
 		_fedMap.clear();
 		for( Entry<FederatedRange, FederatedData> e : tmp.entrySet() ) {
-			_fedMap.put(
-				new FederatedRange(e.getKey()).transpose(),
-				new FederatedData(e.getValue(), _ID));
+			_fedMap.put(new FederatedRange(e.getKey()).transpose(), e.getValue().copyWithNewID(_ID));
 		}
 		//derive output type
 		switch(_type) {

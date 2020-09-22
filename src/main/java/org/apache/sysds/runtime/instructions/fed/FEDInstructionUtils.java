@@ -24,9 +24,19 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
@@ -70,7 +80,9 @@ public class FEDInstructionUtils {
 			BinaryCPInstruction instruction = (BinaryCPInstruction) inst;
 			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
 				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
-				if(!instruction.getOpcode().equals("append")) //TODO support rbind/cbind
+				if(instruction.getOpcode().equals("append"))
+					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
+				else
 					fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}
@@ -142,6 +154,13 @@ public class FEDInstructionUtils {
 			AppendGAlignedSPInstruction instruction = (AppendGAlignedSPInstruction) inst;
 			Data data = ec.getVariable(instruction.input1);
 			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+				fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
+			}
+		}
+		else if (inst instanceof AppendGSPInstruction) {
+			AppendGSPInstruction instruction = (AppendGSPInstruction) inst;
+			Data data = ec.getVariable(instruction.input1);
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
 				fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
 			}
 		}

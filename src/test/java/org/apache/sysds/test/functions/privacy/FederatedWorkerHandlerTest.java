@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.privacy;
 import java.util.Arrays;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -29,8 +30,8 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.apache.sysds.common.Types;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -207,16 +208,19 @@ public class FederatedWorkerHandlerTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void transferPrivateTest() {
 		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.Private, DMLRuntimeException.class);
 	}
 
 	@Test
+	@Ignore
 	public void transferPrivateAggregationTest() {
 		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.PrivateAggregation, DMLRuntimeException.class);
 	}
 
 	@Test
+	@Ignore
 	public void transferNonePrivateTest() {
 		federatedRCBind(Types.ExecMode.SINGLE_NODE, PrivacyLevel.None, null);
 	}

@@ -145,11 +145,17 @@ public class InstructionUtils
 		int numParts = parts.length;
 		int numFields = numParts - 1; //account for opcode
 		
-		if (Arrays.stream(expected).noneMatch((i) -> numFields == i))
-			throw new DMLRuntimeException(
-				"checkNumFields() -- expected number ("
-					+ Arrays.stream(expected).mapToObj(Integer::toString).reduce((a, b) -> a + ", " + b).orElse("")
-					+ ") != is not equal to actual number (" + numFields + ").");
+		if (Arrays.stream(expected).noneMatch((i) -> numFields == i)) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("checkNumFields() -- expected number (");
+			for (int i = 0; i < expected.length; i++) {
+				sb.append(expected[i]);
+				if (i != expected.length - 1)
+					sb.append(", ");
+			}
+			sb.append(") != is not equal to actual number (").append(numFields).append(").");
+			throw new DMLRuntimeException(sb.toString());
+		}
 		
 		return numFields;
 	}

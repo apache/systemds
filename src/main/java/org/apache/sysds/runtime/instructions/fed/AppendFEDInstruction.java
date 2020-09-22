@@ -64,14 +64,20 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 
 		// check input dimensions
 		if(_cbind && mo1.getNumRows() != mo2.getNumRows()) {
-			throw new DMLRuntimeException("Append-cbind is not possible for federated input matrices "
-				+ input1.getName() + " and " + input2.getName() + " with different number of rows: " + mo1.getNumRows()
-				+ " vs " + mo2.getNumRows());
+			StringBuilder sb = new StringBuilder();
+			sb.append("Append-cbind is not possible for federated input matrices ");
+			sb.append(input1.getName()).append(" and ").append(input2.getName());
+			sb.append(" with different number of rows: ");
+			sb.append(mo1.getNumRows()).append(" vs ").append(mo2.getNumRows());
+			throw new DMLRuntimeException(sb.toString());
 		}
 		else if(!_cbind && mo1.getNumColumns() != mo2.getNumColumns()) {
-			throw new DMLRuntimeException("Append-rbind is not possible for federated input matrices "
-				+ input1.getName() + " and " + input2.getName() + " with different number of columns: "
-				+ mo1.getNumColumns() + " vs " + mo2.getNumColumns());
+			StringBuilder sb = new StringBuilder();
+			sb.append("Append-rbind is not possible for federated input matrices ");
+			sb.append(input1.getName()).append(" and ").append(input2.getName());
+			sb.append(" with different number of columns: ");
+			sb.append(mo1.getNumColumns()).append(" vs ").append(mo2.getNumColumns());
+			throw new DMLRuntimeException(sb.toString());
 		}
 
 		FederationMap fm1;

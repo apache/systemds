@@ -54,6 +54,8 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
+		// we generate 3 datasets, both with rbind and cbind (F...Federated, L...Local):
+		// F-F, F-L, L-F
 		addTestConfiguration(TEST_NAME,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,
 				new String[] {"R_FF", "R_FL", "R_LF", "C_FF", "C_FL", "C_LF"}));

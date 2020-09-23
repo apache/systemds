@@ -40,12 +40,12 @@ public class MatrixMultiplicationPropagatorNaive extends MatrixMultiplicationPro
 		super(input1, privacyConstraint1, input2, privacyConstraint2);
 	}
 
-	@Override
 	/**
 	 * Generates fine-grained constraints and puts them in the mergedFineGrainedConstraints instance.
 	 * This implementation loops over every cell of the output matrix and sets the constraint based on the
 	 * row/column privacy constraints and the row/column operator type.
 	 */
+	@Override
 	protected void generateFineGrainedConstraints(FineGrainedPrivacy mergedFineGrainedConstraints,
 		PrivacyLevel[] rowPrivacy, PrivacyConstraint.PrivacyLevel[] colPrivacy,
 		OperatorType[] operatorTypes1, OperatorType[] operatorTypes2) {

@@ -82,7 +82,7 @@ public class PrivacyPropagator
 	 *
 	 * Binary input:
 	 * Input   			| NonAggregate 	| Aggregate
-	 * -----------------------------------
+	 * --------------------------------------------
 	 * priv-priv 		| priv 			| priv
 	 * priv-privAgg 	| priv 			| priv
 	 * priv-none 		| priv 			| priv

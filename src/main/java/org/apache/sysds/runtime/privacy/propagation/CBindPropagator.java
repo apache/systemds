@@ -32,12 +32,6 @@ public class CBindPropagator extends AppendPropagator {
 	}
 
 	@Override
-	protected void appendInput1(FineGrainedPrivacy mergedConstraint, DataRange range,
-		PrivacyConstraint.PrivacyLevel privacyLevel) {
-		mergedConstraint.put(range, privacyLevel);
-	}
-
-	@Override
 	protected void appendInput2(FineGrainedPrivacy mergedConstraint, DataRange range,
 		PrivacyConstraint.PrivacyLevel privacyLevel) {
 		long rowBegin = range.getBeginDims()[0]; //same as before

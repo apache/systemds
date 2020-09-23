@@ -42,6 +42,7 @@ public class ListRemovePropagator implements PropagatorMultiReturn {
 
 	@Override
 	public PrivacyConstraint[] propagate() {
+		//TODO: Also let output privacy depend on removePosition privacy constraint
 		PrivacyConstraint output1PrivacyConstraint = new PrivacyConstraint();
 		PrivacyConstraint output2PrivacyConstraint = new PrivacyConstraint();
 		if ( PrivacyUtils.privacyConstraintActivated(listPrivacyConstraint) ){

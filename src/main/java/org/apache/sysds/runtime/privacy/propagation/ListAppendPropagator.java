@@ -40,24 +40,34 @@ public class ListAppendPropagator implements Propagator {
 
 	@Override public PrivacyConstraint propagate() {
 		PrivacyConstraint mergedPrivacyConstraint = new PrivacyConstraint();
+		propagateInput1Constraint(mergedPrivacyConstraint);
+		propagateInput2Constraint(mergedPrivacyConstraint);
+		return mergedPrivacyConstraint;
+	}
+
+	private void propagateInput1Constraint(PrivacyConstraint mergedPrivacyConstraint){
 		if(PrivacyUtils.privacyConstraintActivated(privacyConstraint1)) {
 			mergedPrivacyConstraint.getFineGrainedPrivacy()
-				.put(new DataRange(new long[] {0}, new long[] {input1.getLength()}), privacyConstraint1.getPrivacyLevel());
+				.put(new DataRange(new long[] {0}, new long[] {input1.getLength()-1}), privacyConstraint1.getPrivacyLevel());
+		}
+		if ( PrivacyUtils.privacyConstraintFineGrainedActivated(privacyConstraint1) ){
 			privacyConstraint1.getFineGrainedPrivacy().getAllConstraintsList().forEach(
 				constraint -> mergedPrivacyConstraint.getFineGrainedPrivacy().put(constraint.getKey(), constraint.getValue()));
 		}
+	}
+
+	private void propagateInput2Constraint(PrivacyConstraint mergedPrivacyConstraint){
 		if ( PrivacyUtils.privacyConstraintActivated(privacyConstraint2) ){
 			mergedPrivacyConstraint.getFineGrainedPrivacy()
-				.put(new DataRange(new long[]{input1.getLength()}, new long[]{input2.getLength()}), privacyConstraint2.getPrivacyLevel());
-			if ( privacyConstraint2.hasFineGrainedConstraints() ){
-				for ( Map.Entry<DataRange, PrivacyConstraint.PrivacyLevel> constraint : privacyConstraint2.getFineGrainedPrivacy().getAllConstraintsList()){
-					long beginIndex = constraint.getKey().getBeginDims()[0] + input1.getLength();
-					long endIndex = constraint.getKey().getEndDims()[0] + input1.getLength();
-					mergedPrivacyConstraint.getFineGrainedPrivacy()
-						.put(new DataRange(new long[]{beginIndex}, new long[]{endIndex}), constraint.getValue());
-				}
+				.put(new DataRange(new long[]{input1.getLength()}, new long[]{input1.getLength() + input2.getLength() - 1}), privacyConstraint2.getPrivacyLevel());
+		}
+		if ( PrivacyUtils.privacyConstraintFineGrainedActivated(privacyConstraint2) ){
+			for ( Map.Entry<DataRange, PrivacyConstraint.PrivacyLevel> constraint : privacyConstraint2.getFineGrainedPrivacy().getAllConstraintsList()){
+				long beginIndex = constraint.getKey().getBeginDims()[0] + input1.getLength();
+				long endIndex = constraint.getKey().getEndDims()[0] + input1.getLength();
+				mergedPrivacyConstraint.getFineGrainedPrivacy()
+					.put(new DataRange(new long[]{beginIndex}, new long[]{endIndex}), constraint.getValue());
 			}
 		}
-		return mergedPrivacyConstraint;
 	}
 }

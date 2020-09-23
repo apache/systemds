@@ -32,16 +32,6 @@ public class RBindPropagator extends AppendPropagator {
 	}
 
 	@Override
-	/**
-	 * Simply put the fine-grained constraint using the given data range.
-	 * This is possible because the constraints do not change position in output.
-	 */
-	protected void appendInput1(FineGrainedPrivacy mergedConstraint, DataRange range,
-		PrivacyConstraint.PrivacyLevel privacyLevel) {
-		mergedConstraint.put(range, privacyLevel);
-	}
-
-	@Override
 	protected void appendInput2(FineGrainedPrivacy mergedConstraint, DataRange range,
 		PrivacyConstraint.PrivacyLevel privacyLevel) {
 		long rowBegin = range.getBeginDims()[0] + input1.getNumRows();

@@ -33,10 +33,24 @@ import org.apache.wink.json4j.JSONObject;
 
 public class PrivacyUtils {
 
-	public static boolean privacyConstraintActivated(PrivacyConstraint instructionPrivacyConstraint){
-		return instructionPrivacyConstraint != null &&
-			(instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.Private
-				|| instructionPrivacyConstraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
+	/**
+	 * Returns true if the privacy constraint is not null and the privacy level is set to Private or PrivateAggregation.
+	 * @param constraint to check
+	 * @return true if the privacy constraint is not null and activated
+	 */
+	public static boolean privacyConstraintActivated(PrivacyConstraint constraint){
+		return constraint != null &&
+			(constraint.getPrivacyLevel() == PrivacyLevel.Private
+				|| constraint.getPrivacyLevel() == PrivacyLevel.PrivateAggregation);
+	}
+
+	/**
+	 * Returns true if the privacy constraint is not null and it has fine-grained constraints.
+	 * @param constraint to check
+	 * @return true if the privacy constraint is not null and has fine-grained constraints
+	 */
+	public static boolean privacyConstraintFineGrainedActivated(PrivacyConstraint constraint){
+		return constraint != null && constraint.getFineGrainedPrivacy().hasConstraints();
 	}
 
 	public static PrivacyLevel getGeneralPrivacyLevel(PrivacyConstraint privacyConstraint){

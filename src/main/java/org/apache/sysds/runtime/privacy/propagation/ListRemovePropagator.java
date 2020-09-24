@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.PrivacyUtils;
 import org.apache.sysds.runtime.privacy.finegrained.DataRange;
+import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 
 import java.util.Map;
 
@@ -42,35 +43,64 @@ public class ListRemovePropagator implements PropagatorMultiReturn {
 
 	@Override
 	public PrivacyConstraint[] propagate() {
-		//TODO: Also let output privacy depend on removePosition privacy constraint
 		PrivacyConstraint output1PrivacyConstraint = new PrivacyConstraint();
 		PrivacyConstraint output2PrivacyConstraint = new PrivacyConstraint();
-		if ( PrivacyUtils.privacyConstraintActivated(listPrivacyConstraint) ){
-			output1PrivacyConstraint.setPrivacyLevel(listPrivacyConstraint.getPrivacyLevel());
-			output2PrivacyConstraint.setPrivacyLevel(listPrivacyConstraint.getPrivacyLevel());
-		}
-		if ( listPrivacyConstraint.hasFineGrainedConstraints() ){
-			Map<DataRange, PrivacyLevel> output1Ranges = listPrivacyConstraint.getFineGrainedPrivacy()
-				.getPrivacyLevel(new DataRange(new long[]{0}, new long[]{removePosition.getLongValue()}));
-			output1Ranges.forEach(
-				(range, privacyLevel) -> {
-					long endDim = Long.min(range.getEndDims()[0], removePosition.getLongValue());
-					DataRange cappedRange = new DataRange(range.getBeginDims(),new long[]{endDim});
-					output1PrivacyConstraint.getFineGrainedPrivacy().put(cappedRange, privacyLevel);
-				}
-			);
-
-			Map<DataRange, PrivacyLevel> output2Ranges = listPrivacyConstraint.getFineGrainedPrivacy()
-				.getPrivacyLevel(new DataRange(new long[]{removePosition.getLongValue()+1}, new long[]{list.getLength()}));
-			output2Ranges.forEach(
-				(range, privacyLevel) -> {
-					long shiftValue = removePosition.getLongValue() + 1;
-					long[] beginDims = new long[]{range.getBeginDims()[0]-shiftValue};
-					long[] endDims = new long[]{range.getEndDims()[0]-shiftValue};
-					output2PrivacyConstraint.getFineGrainedPrivacy().put(new DataRange(beginDims, endDims), privacyLevel);
-				}
-			);
-		}
+		propagateGeneralConstraints(output1PrivacyConstraint, output2PrivacyConstraint);
+		propagateFineGrainedConstraints(output1PrivacyConstraint, output2PrivacyConstraint);
 		return new PrivacyConstraint[]{output1PrivacyConstraint, output2PrivacyConstraint};
+	}
+
+	private void propagateFineGrainedConstraints(PrivacyConstraint output1PrivacyConstraint, PrivacyConstraint output2PrivacyConstraint){
+		if ( PrivacyUtils.privacyConstraintFineGrainedActivated(listPrivacyConstraint) ){
+			propagateFirstHalf(output1PrivacyConstraint);
+			propagateSecondHalf(output1PrivacyConstraint);
+			propagateRemovedElement(output2PrivacyConstraint);
+		}
+	}
+
+	private void propagateFirstHalf(PrivacyConstraint output1PrivacyConstraint){
+		// The newEndDimension is minus 2 since removePosition is given in 1-index terms whereas the data
+		// and privacy constraints are 0-index and the privacy constraints are given as closed intervals
+		long[] newEndDimension = new long[]{removePosition.getLongValue()-2};
+		Map<DataRange, PrivacyLevel> output1Ranges = listPrivacyConstraint.getFineGrainedPrivacy()
+			.getPrivacyLevel(new DataRange(new long[]{0}, newEndDimension));
+		output1Ranges.forEach(
+			(range, privacyLevel) -> {
+				long endDim = Long.min(range.getEndDims()[0], removePosition.getLongValue()-2);
+				DataRange cappedRange = new DataRange(range.getBeginDims(),new long[]{endDim});
+				output1PrivacyConstraint.getFineGrainedPrivacy().put(cappedRange, privacyLevel);
+			}
+		);
+	}
+
+	private void propagateSecondHalf(PrivacyConstraint output1PrivacyConstraint){
+		Map<DataRange, PrivacyLevel> output2Ranges = listPrivacyConstraint.getFineGrainedPrivacy()
+			.getPrivacyLevel(new DataRange(new long[]{removePosition.getLongValue()}, new long[]{list.getLength()}));
+		output2Ranges.forEach(
+			(range, privacyLevel) -> {
+				long[] beginDims = new long[]{range.getBeginDims()[0]-1};
+				long[] endDims = new long[]{range.getEndDims()[0]-1};
+				output1PrivacyConstraint.getFineGrainedPrivacy().put(new DataRange(beginDims, endDims), privacyLevel);
+			}
+		);
+	}
+
+	private void propagateRemovedElement(PrivacyConstraint output2PrivacyConstraint){
+		if ( output2PrivacyConstraint.getPrivacyLevel() != PrivacyLevel.Private ){
+			Map<DataRange, PrivacyLevel> elementPrivacy = listPrivacyConstraint.getFineGrainedPrivacy()
+				.getPrivacyLevelOfElement(new long[]{removePosition.getLongValue()-1});
+			if ( elementPrivacy.containsValue(PrivacyLevel.PrivateAggregation) )
+				output2PrivacyConstraint.setPrivacyLevel(PrivacyLevel.PrivateAggregation);
+		}
+	}
+
+	private void propagateGeneralConstraints(PrivacyConstraint output1PrivacyConstraint, PrivacyConstraint output2PrivacyConstraint){
+		PrivacyLevel[] inputPrivacyLevels = PrivacyUtils.getGeneralPrivacyLevels(new PrivacyConstraint[]{
+			listPrivacyConstraint,
+			removePosition.getPrivacyConstraint()
+		});
+		PrivacyLevel outputPrivacyLevel = PrivacyPropagator.corePropagation(inputPrivacyLevels, OperatorType.NonAggregate);
+		output1PrivacyConstraint.setPrivacyLevel(outputPrivacyLevel);
+		output2PrivacyConstraint.setPrivacyLevel(outputPrivacyLevel);
 	}
 }

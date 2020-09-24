@@ -60,6 +60,13 @@ public class PrivacyUtils {
 		else return PrivacyLevel.None;
 	}
 
+	public static PrivacyLevel[] getGeneralPrivacyLevels(PrivacyConstraint[] privacyConstraints){
+		PrivacyLevel[] privacyLevels = new PrivacyLevel[privacyConstraints.length];
+		for ( int i = 0; i < privacyConstraints.length; i++)
+			privacyLevels[i] = getGeneralPrivacyLevel(privacyConstraints[i]);
+		return privacyLevels;
+	}
+
 	public static void setFineGrainedPrivacy(PrivacyConstraint privacyConstraint, Expression eFineGrainedPrivacy){
 		FineGrainedPrivacy fineGrainedPrivacy = privacyConstraint.getFineGrainedPrivacy();
 		StringIdentifier fgPrivacyIdentifier = (StringIdentifier) eFineGrainedPrivacy;

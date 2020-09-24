@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -107,11 +107,21 @@ var activeTableTab = "activeTableTab";
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
+<dl>
+<dt>All Implemented Interfaces:</dt>
+<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
+</dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">PrivacyConstraint</span>
-extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></pre>
-<div class="block">PrivacyConstraint holds all privacy constraints for data in the system at compile time and runtime.</div>
+extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
+implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></pre>
+<div class="block">PrivacyConstraint holds all privacy constraints for data in the system at
+ compile time and runtime.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../serialized-form.html#org.apache.sysds.runtime.privacy.PrivacyConstraint">Serialized Form</a></dd>
+</dl>
 </li>
 </ul>
 </div>
@@ -149,10 +159,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#PrivacyConstraint--">PrivacyConstraint</a></span>()</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#PrivacyConstraint--">PrivacyConstraint</a></span>()</code>
+<div class="block">Basic Constructor with a fine-grained collection 
+ based on a list implementation.</div>
+</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel-">PrivacyConstraint</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.PrivacyLevel.html" title="enum in org.apache.sysds.runtime.privacy">PrivacyConstraint.PrivacyLevel</a>&nbsp;privacyLevel)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#PrivacyConstraint-org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy-">PrivacyConstraint</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/finegrained/FineGrainedPrivacy.html" title="interface in org.apache.sysds.runtime.privacy.finegrained">FineGrainedPrivacy</a>&nbsp;fineGrainedPrivacyCollection)</code>
+<div class="block">Constructor with the option to choose between 
+ different fine-grained collection implementations.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel-">PrivacyConstraint</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.PrivacyLevel.html" title="enum in org.apache.sysds.runtime.privacy">PrivacyConstraint.PrivacyLevel</a>&nbsp;privacyLevel)</code>
+<div class="block">Constructor with default fine-grained collection implementation
+ where the entire data object is set to the given privacy level.</div>
+</td>
 </tr>
 </table>
 </li>
@@ -170,12 +192,56 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/privacy/finegrained/FineGrainedPrivacy.html" title="interface in org.apache.sysds.runtime.privacy.finegrained">FineGrainedPrivacy</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#getFineGrainedPrivacy--">getFineGrainedPrivacy</a></span>()</code>
+<div class="block">Get fine-grained privacy instance.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.PrivacyLevel.html" title="enum in org.apache.sysds.runtime.privacy">PrivacyConstraint.PrivacyLevel</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#getPrivacyLevel--">getPrivacyLevel</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#hasConstraints--">hasConstraints</a></span>()</code>
+<div class="block">Return true if any constraints have level Private or PrivateAggregate.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#hasFineGrainedConstraints--">hasFineGrainedConstraints</a></span>()</code>
+<div class="block">Checks if fine-grained privacy is set for this privacy constraint.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#hasPrivateElements--">hasPrivateElements</a></span>()</code>
+<div class="block">Return true if any of the elements has privacy level private</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;is)</code>&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#setFineGrainedPrivacyConstraints-org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy-">setFineGrainedPrivacyConstraints</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/finegrained/FineGrainedPrivacy.html" title="interface in org.apache.sysds.runtime.privacy.finegrained">FineGrainedPrivacy</a>&nbsp;fineGrainedPrivacy)</code>
+<div class="block">Sets fine-grained privacy for the privacy constraint.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#setPrivacyLevel-org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel-">setPrivacyLevel</a></span>(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.PrivacyLevel.html" title="enum in org.apache.sysds.runtime.privacy">PrivacyConstraint.PrivacyLevel</a>&nbsp;privacyLevel)</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>org.apache.wink.json4j.JSONObject</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#toJson-org.apache.wink.json4j.JSONObject-">toJson</a></span>(org.apache.wink.json4j.JSONObject&nbsp;json)</code>
+<div class="block">Get privacy constraints and put them into JSON object.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;objectOutput)</code>&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -206,6 +272,23 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>PrivacyConstraint</h4>
 <pre>public&nbsp;PrivacyConstraint()</pre>
+<div class="block">Basic Constructor with a fine-grained collection 
+ based on a list implementation.</div>
+</li>
+</ul>
+<a name="PrivacyConstraint-org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PrivacyConstraint</h4>
+<pre>public&nbsp;PrivacyConstraint(<a href="../../../../../org/apache/sysds/runtime/privacy/finegrained/FineGrainedPrivacy.html" title="interface in org.apache.sysds.runtime.privacy.finegrained">FineGrainedPrivacy</a>&nbsp;fineGrainedPrivacyCollection)</pre>
+<div class="block">Constructor with the option to choose between 
+ different fine-grained collection implementations.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>fineGrainedPrivacyCollection</code> - the instance in which fine-grained constraints are stored</dd>
+</dl>
 </li>
 </ul>
 <a name="PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel-">
@@ -215,6 +298,12 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>PrivacyConstraint</h4>
 <pre>public&nbsp;PrivacyConstraint(<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.PrivacyLevel.html" title="enum in org.apache.sysds.runtime.privacy">PrivacyConstraint.PrivacyLevel</a>&nbsp;privacyLevel)</pre>
+<div class="block">Constructor with default fine-grained collection implementation
+ where the entire data object is set to the given privacy level.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>privacyLevel</code> - for the entire data object.</dd>
+</dl>
 </li>
 </ul>
 </li>
@@ -237,10 +326,132 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="getPrivacyLevel--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getPrivacyLevel</h4>
 <pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.PrivacyLevel.html" title="enum in org.apache.sysds.runtime.privacy">PrivacyConstraint.PrivacyLevel</a>&nbsp;getPrivacyLevel()</pre>
+</li>
+</ul>
+<a name="hasFineGrainedConstraints--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>hasFineGrainedConstraints</h4>
+<pre>public&nbsp;boolean&nbsp;hasFineGrainedConstraints()</pre>
+<div class="block">Checks if fine-grained privacy is set for this privacy constraint.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if the privacy constraint has fine-grained constraints.</dd>
+</dl>
+</li>
+</ul>
+<a name="setFineGrainedPrivacyConstraints-org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setFineGrainedPrivacyConstraints</h4>
+<pre>public&nbsp;void&nbsp;setFineGrainedPrivacyConstraints(<a href="../../../../../org/apache/sysds/runtime/privacy/finegrained/FineGrainedPrivacy.html" title="interface in org.apache.sysds.runtime.privacy.finegrained">FineGrainedPrivacy</a>&nbsp;fineGrainedPrivacy)</pre>
+<div class="block">Sets fine-grained privacy for the privacy constraint. 
+ Existing fine-grained privacy collection will be overwritten.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>fineGrainedPrivacy</code> - fine-grained privacy instance which is set for the privacy constraint</dd>
+</dl>
+</li>
+</ul>
+<a name="getFineGrainedPrivacy--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getFineGrainedPrivacy</h4>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/privacy/finegrained/FineGrainedPrivacy.html" title="interface in org.apache.sysds.runtime.privacy.finegrained">FineGrainedPrivacy</a>&nbsp;getFineGrainedPrivacy()</pre>
+<div class="block">Get fine-grained privacy instance.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>fine-grained privacy instance</dd>
+</dl>
+</li>
+</ul>
+<a name="hasPrivateElements--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>hasPrivateElements</h4>
+<pre>public&nbsp;boolean&nbsp;hasPrivateElements()</pre>
+<div class="block">Return true if any of the elements has privacy level private</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if any element has privacy level private</dd>
+</dl>
+</li>
+</ul>
+<a name="hasConstraints--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>hasConstraints</h4>
+<pre>public&nbsp;boolean&nbsp;hasConstraints()</pre>
+<div class="block">Return true if any constraints have level Private or PrivateAggregate.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if any constraints have level Private or PrivateAggregate</dd>
+</dl>
+</li>
+</ul>
+<a name="toJson-org.apache.wink.json4j.JSONObject-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>toJson</h4>
+<pre>public&nbsp;org.apache.wink.json4j.JSONObject&nbsp;toJson(org.apache.wink.json4j.JSONObject&nbsp;json)
+                                         throws org.apache.wink.json4j.JSONException</pre>
+<div class="block">Get privacy constraints and put them into JSON object.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>json</code> - JSON object in which the privacy constraints are put</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>JSON object including the privacy constraints</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>org.apache.wink.json4j.JSONException</code> - in case of errors in creating JSON object</dd>
+</dl>
+</li>
+</ul>
+<a name="readExternal-java.io.ObjectInput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;is)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#readExternal-java.io.ObjectInput-" title="class or interface in java.io">readExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="writeExternal-java.io.ObjectOutput-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;objectOutput)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#writeExternal-java.io.ObjectOutput-" title="class or interface in java.io">writeExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+</dl>
 </li>
 </ul>
 </li>

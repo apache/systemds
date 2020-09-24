@@ -90,7 +90,7 @@
 <p class="caption"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms.html">Built-in Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
 <ul>
@@ -279,7 +279,7 @@ all operations are only building the DAG without actually executing (lazy evalua
 
 <dl class="py method">
 <dt id="systemds.matrix.Matrix.pass_python_data_to_prepared_script">
-<code class="sig-name descname">pass_python_data_to_prepared_script</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jvm</span><span class="p">:</span> <span class="n">py4j.java_gateway.JVMView</span></em>, <em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prepared_script</span><span class="p">:</span> <span class="n">py4j.java_gateway.JavaObject</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.matrix.Matrix.pass_python_data_to_prepared_script" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">pass_python_data_to_prepared_script</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sds</span></em>, <em class="sig-param"><span class="n">var_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prepared_script</span><span class="p">:</span> <span class="n">py4j.java_gateway.JavaObject</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#systemds.matrix.Matrix.pass_python_data_to_prepared_script" title="Permalink to this definition">¶</a></dt>
 <dd><p>Passes data from python to the prepared script object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -310,6 +310,21 @@ all operations are only building the DAG without actually executing (lazy evalua
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.matrix.Matrix.to_one_hot">
+<code class="sig-name descname">to_one_hot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_classes</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.matrix.Matrix.to_one_hot" title="Permalink to this definition">¶</a></dt>
+<dd><p>OneHot encode the matrix.</p>
+<p>It is assumed that there is only one column to encode, and all values are whole numbers &gt; 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>num_classes</strong> – The number of classes to encode into. max value contained in the matrix must be &lt;= num_classes</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The OperationNode containing the oneHotEncoded values</p>
 </dd>
 </dl>
 </dd></dl>

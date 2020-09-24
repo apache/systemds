@@ -142,33 +142,63 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">apply</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>
+<div class="block">Applies the scalar operation on the dictionary.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
 <td class="colLast"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">apply</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">QDictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html#apply-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">apply</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
+</tr>
 <tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupRLE.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ADictionary.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html#applyScalarOp-org.apache.sysds.runtime.matrix.operators.ScalarOperator-double-int-">applyScalarOp</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+             double&nbsp;newVal,
+             int&nbsp;numCols)</code>
+<div class="block">Applies the scalar operation on the dictionary.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Dictionary.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html#applyScalarOp-org.apache.sysds.runtime.matrix.operators.ScalarOperator-double-int-">applyScalarOp</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+             double&nbsp;newVal,
+             int&nbsp;numCols)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">QDictionary</a></code></td>
+<td class="colLast"><span class="typeNameLabel">QDictionary.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html#applyScalarOp-org.apache.sysds.runtime.matrix.operators.ScalarOperator-double-int-">applyScalarOp</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op,
+             double&nbsp;newVal,
+             int&nbsp;numCols)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupDDC1.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC1.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupRLE.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupDDC1.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC1.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>
 <div class="block">Perform the specified scalar operation directly on the compressed column group, without decompressing individual
  cells if possible.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ColGroupDDC2.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC2.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupOLE.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
@@ -363,6 +393,21 @@
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ScalarOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html#setConstant-double-">setConstant</a></span>(double&nbsp;cst)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></td>
+<td class="colLast"><span class="typeNameLabel">RightScalarOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/RightScalarOperator.html#setConstant-double-int-">setConstant</a></span>(double&nbsp;cst,
+           int&nbsp;numThreads)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LeftScalarOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/LeftScalarOperator.html#setConstant-double-int-">setConstant</a></span>(double&nbsp;cst,
+           int&nbsp;numThreads)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ScalarOperator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html#setConstant-double-int-">setConstant</a></span>(double&nbsp;cst,
+           int&nbsp;numThreads)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

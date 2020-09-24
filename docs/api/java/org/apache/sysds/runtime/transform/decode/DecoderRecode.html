@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":9};
+var methods = {"i0":10,"i1":10,"i2":9,"i3":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -163,13 +163,21 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
  quoted tokens (potentially including separators) are supported.</div>
 </td>
 </tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/decode/DecoderRecode.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></span>(int&nbsp;colStart,
+               int&nbsp;colEnd,
+               int&nbsp;dummycodedOffset)</code>
+<div class="block">Returns a new Decoder that only handles a sub range of columns.</div>
+</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.transform.decode.Decoder">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.decode.<a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#getColnames--">getColnames</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#getSchema--">getSchema</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#setColnames-java.lang.String:A-">setColnames</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#getColnames--">getColnames</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#getSchema--">getSchema</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#setColnames-java.lang.String:A-">setColnames</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -210,6 +218,30 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <dd><code>out</code> - output frame block</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>returns given output frame block for convenience</dd>
+</dl>
+</li>
+</ul>
+<a name="subRangeDecoder-int-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>subRangeDecoder</h4>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a>&nbsp;subRangeDecoder(int&nbsp;colStart,
+                               int&nbsp;colEnd,
+                               int&nbsp;dummycodedOffset)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#subRangeDecoder-int-int-int-">Decoder</a></code></span></div>
+<div class="block">Returns a new Decoder that only handles a sub range of columns. The sub-range refers to the columns after
+ decoding.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>colStart</code> - the start index of the sub-range (1-based, inclusive)</dd>
+<dd><code>colEnd</code> - the end index of the sub-range (1-based, exclusive)</dd>
+<dd><code>dummycodedOffset</code> - the offset of dummycoded segments before colStart</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a decoder of the same type, just for the sub-range</dd>
 </dl>
 </li>
 </ul>

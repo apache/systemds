@@ -256,6 +256,10 @@
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html#getPrivacyConstraint--">getPrivacyConstraint</a></span>()</code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CPOperand.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html#getPrivacyConstraint--">getPrivacyConstraint</a></span>()</code>&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
@@ -266,6 +270,10 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">CPOperand.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html#setPrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">setPrivacyConstraint</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html#setPrivacyConstraints-org.apache.sysds.runtime.privacy.PrivacyConstraint-">setPrivacyConstraints</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;pc)</code>&nbsp;</td>
 </tr>
@@ -285,10 +293,19 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
+<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#matrixMultiplicationPropagation-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-">matrixMultiplicationPropagation</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input1,
+                               <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
+                               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input2,
+                               <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>
+<div class="block">Return the merged fine-grained privacy constraint of a matrix multiplication with the given privacy constraints.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeBinary-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">mergeBinary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
            <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-">mergeNary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints)</code>&nbsp;</td>
 </tr>
@@ -303,12 +320,26 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeBinary-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">mergeBinary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
-           <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#matrixMultiplicationPropagation-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.privacy.PrivacyConstraint-">matrixMultiplicationPropagation</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input1,
+                               <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
+                               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;input2,
+                               <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>
+<div class="block">Return the merged fine-grained privacy constraint of a matrix multiplication with the given privacy constraints.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
+<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeBinary-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">mergeBinary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
+           <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-">mergeNary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">PrivacyUtils.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyUtils.html#setFineGrainedPrivacy-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.parser.Expression-">setFineGrainedPrivacy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint,
+                     <a href="../../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&nbsp;eFineGrainedPrivacy)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

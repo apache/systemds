@@ -152,8 +152,9 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>abstract <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html#partitionColumns-java.util.List-java.util.HashMap-">partitionColumns</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html#partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">partitionColumns</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo,
+                <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>
 <div class="block">Partitions a list of columns into a list of partitions that contains subsets of columns.</div>
 </td>
 </tr>
@@ -196,20 +197,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="partitionColumns-java.util.List-java.util.HashMap-">
+<a name="partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>partitionColumns</h4>
 <pre>public abstract&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;&nbsp;partitionColumns(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
-                                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo)</pre>
+                                             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo,
+                                             <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</pre>
 <div class="block">Partitions a list of columns into a list of partitions that contains subsets of columns. Note that this call must
  compute a complete and disjoint partitioning.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>groupCols</code> - list of columns</dd>
 <dd><code>groupColsInfo</code> - list of column infos</dd>
+<dd><code>cs</code> - The Compression settings used for the compression</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>list of partitions (where each partition is a list of columns)</dd>
 </dl>

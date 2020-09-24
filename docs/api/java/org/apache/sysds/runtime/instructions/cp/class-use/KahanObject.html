@@ -83,22 +83,18 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></td>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.data">org.apache.sysds.runtime.data</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.functionobjects">org.apache.sysds.runtime.functionobjects</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -107,26 +103,6 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
-<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a> in <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>double</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#sumValues-int-org.apache.sysds.runtime.functionobjects.KahanFunction-org.apache.sysds.runtime.instructions.cp.KahanObject-">sumValues</a></span>(int&nbsp;valIx,
-         <a href="../../../../../../../org/apache/sysds/runtime/functionobjects/KahanFunction.html" title="class in org.apache.sysds.runtime.functionobjects">KahanFunction</a>&nbsp;kplus,
-         <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>&nbsp;kbuff)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.data">
 <!--   -->
 </a>
@@ -286,11 +262,24 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>[]</code></td>
-<td class="colLast"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html#getMeans_scnomv--">getMeans_scnomv</a></span>()</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>[]</code></td>
 <td class="colLast"><span class="typeNameLabel">EncoderMVImpute.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html#getMeans--">getMeans</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructors in <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/package-summary.html">org.apache.sysds.runtime.transform.encode</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.html#EncoderMVImpute-int:A-org.apache.sysds.runtime.transform.encode.EncoderMVImpute.MVMethod:A-java.lang.String:A-org.apache.sysds.runtime.instructions.cp.KahanObject:A-long:A-java.util.List-int-">EncoderMVImpute</a></span>(int[]&nbsp;colList,
+               <a href="../../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode">EncoderMVImpute.MVMethod</a>[]&nbsp;mvMethodList,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;replacementList,
+               <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/KahanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">KahanObject</a>[]&nbsp;meanList,
+               long[]&nbsp;countList,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;rcList,
+               int&nbsp;clen)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

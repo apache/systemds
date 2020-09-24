@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -208,17 +208,23 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                      boolean&nbsp;splitDags)</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriter.html#rewriteProgramHopDAGs-org.apache.sysds.parser.DMLProgram-boolean-org.apache.sysds.hops.rewrite.ProgramRewriteStatus-">rewriteProgramHopDAGs</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;dmlp,
+                     boolean&nbsp;splitDags,
+                     <a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;state)</code>&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriter.html#rRewriteStatementBlock-org.apache.sysds.parser.StatementBlock-org.apache.sysds.hops.rewrite.ProgramRewriteStatus-boolean-">rRewriteStatementBlock</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
                       <a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;status,
                       boolean&nbsp;splitDags)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriter.html#rRewriteStatementBlockHopDAGs-org.apache.sysds.parser.StatementBlock-org.apache.sysds.hops.rewrite.ProgramRewriteStatus-">rRewriteStatementBlockHopDAGs</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;current,
                              <a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;state)</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriter.html#rRewriteStatementBlocks-java.util.ArrayList-org.apache.sysds.hops.rewrite.ProgramRewriteStatus-boolean-">rRewriteStatementBlocks</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&gt;&nbsp;sbs,
                        <a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;status,
@@ -352,6 +358,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>rewriteProgramHopDAGs</h4>
 <pre>public&nbsp;<a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;rewriteProgramHopDAGs(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;dmlp,
                                                   boolean&nbsp;splitDags)</pre>
+</li>
+</ul>
+<a name="rewriteProgramHopDAGs-org.apache.sysds.parser.DMLProgram-boolean-org.apache.sysds.hops.rewrite.ProgramRewriteStatus-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>rewriteProgramHopDAGs</h4>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;rewriteProgramHopDAGs(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;dmlp,
+                                                  boolean&nbsp;splitDags,
+                                                  <a href="../../../../../org/apache/sysds/hops/rewrite/ProgramRewriteStatus.html" title="class in org.apache.sysds.hops.rewrite">ProgramRewriteStatus</a>&nbsp;state)</pre>
 </li>
 </ul>
 <a name="rewriteHopDAGsFunction-org.apache.sysds.parser.FunctionStatementBlock-boolean-">

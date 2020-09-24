@@ -126,7 +126,11 @@ var activeTableTab = "activeTableTab";
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is-external=true" title="class or interface in java.lang">Enum</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&gt;</pre>
 <div class="block">Public Group types supported
  
- Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC.</div>
+ Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC. That
+ differentiation is hidden to a user.
+ 
+ Includes Uncompressed for sparse/dense representation RLE for Run length encoding OLE for Offset Length encoding
+ DDC for Dense dictionary encoding</div>
 </li>
 </ul>
 </div>

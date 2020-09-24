@@ -162,7 +162,7 @@ extends <a href="../../../../../org/apache/sysds/hops/ipa/IPAPass.html" title="c
 </td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/ipa/IPAPassEliminateDeadCode.html#rewriteProgram-org.apache.sysds.parser.DMLProgram-org.apache.sysds.hops.ipa.FunctionCallGraph-org.apache.sysds.hops.ipa.FunctionCallSizeInfo-">rewriteProgram</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
               <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
               <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</code>
@@ -236,9 +236,9 @@ extends <a href="../../../../../org/apache/sysds/hops/ipa/IPAPass.html" title="c
 <ul class="blockListLast">
 <li class="blockList">
 <h4>rewriteProgram</h4>
-<pre>public&nbsp;void&nbsp;rewriteProgram(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
-                           <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
-                           <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</pre>
+<pre>public&nbsp;boolean&nbsp;rewriteProgram(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
+                              <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
+                              <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../org/apache/sysds/hops/ipa/IPAPass.html#rewriteProgram-org.apache.sysds.parser.DMLProgram-org.apache.sysds.hops.ipa.FunctionCallGraph-org.apache.sysds.hops.ipa.FunctionCallSizeInfo-">IPAPass</a></code></span></div>
 <div class="block">Rewrites the given program or its functions in place,
  with access to the read-only function call graph.</div>
@@ -249,6 +249,8 @@ extends <a href="../../../../../org/apache/sysds/hops/ipa/IPAPass.html" title="c
 <dd><code>prog</code> - dml program</dd>
 <dd><code>fgraph</code> - function call graph</dd>
 <dd><code>fcallSizes</code> - function call size infos</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if function call graph should be rebuild</dd>
 </dl>
 </li>
 </ul>

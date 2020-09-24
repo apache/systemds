@@ -83,10 +83,6 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.compress">org.apache.sysds.runtime.compress</a></td>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.compress.utils">org.apache.sysds.runtime.compress.utils</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -95,24 +91,6 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
-<li class="blockList"><a name="org.apache.sysds.runtime.compress">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a> in <a href="../../../../../../../org/apache/sysds/runtime/compress/package-summary.html">org.apache.sysds.runtime.compress</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/compress/package-summary.html">org.apache.sysds.runtime.compress</a> that return <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></code></td>
-<td class="colLast"><span class="typeNameLabel">UncompressedBitmap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/UncompressedBitmap.html#getOffsetsList-int-">getOffsetsList</a></span>(int&nbsp;ix)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.utils">
 <!--   -->
 </a>
@@ -149,6 +127,18 @@
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></code></td>
 <td class="colLast"><span class="typeNameLabel">DoubleIntListHashMap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/DoubleIntListHashMap.html#get-double-">get</a></span>(double&nbsp;key)</code>&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]</code></td>
+<td class="colLast"><span class="typeNameLabel">ABitmap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getOffsetList--">getOffsetList</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ABitmap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getOffsetsList-int-">getOffsetsList</a></span>(int&nbsp;idx)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></code></td>
+<td class="colLast"><span class="typeNameLabel">BitmapLossy.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/BitmapLossy.html#getOffsetsList-int-">getOffsetsList</a></span>(int&nbsp;ix)</code>&nbsp;</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
@@ -177,10 +167,28 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#ABitmap-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">ABitmap</a></span>(int&nbsp;numCols,
+       <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsetsLists,
+       int&nbsp;numZeroGroups)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/Bitmap.html#Bitmap-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-double:A-">Bitmap</a></span>(int&nbsp;numCols,
+      <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsetsLists,
+      int&nbsp;numZeroGroups,
+      double[]&nbsp;values)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/BitmapLossy.html#BitmapLossy-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-byte:A-double-">BitmapLossy</a></span>(int&nbsp;numCols,
+           <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsetsLists,
+           int&nbsp;numZeroGroups,
+           byte[]&nbsp;values,
+           double&nbsp;scale)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/DblArrayIntListHashMap.DArrayIListEntry.html#DArrayIListEntry-org.apache.sysds.runtime.compress.utils.DblArray-org.apache.sysds.runtime.compress.utils.IntArrayList-">DArrayIListEntry</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/utils/DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;ekey,
                 <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>&nbsp;evalue)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/utils/DoubleIntListHashMap.DIListEntry.html#DIListEntry-double-org.apache.sysds.runtime.compress.utils.IntArrayList-">DIListEntry</a></span>(double&nbsp;ekey,
            <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>&nbsp;evalue)</code>&nbsp;</td>
 </tr>

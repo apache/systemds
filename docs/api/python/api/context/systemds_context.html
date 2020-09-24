@@ -90,7 +90,7 @@
 <p class="caption"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms.html">Built-in Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Onnx SystemDS</span></p>
 <ul>
@@ -226,6 +226,12 @@ that can be read from to get the printed statements from the JVM.</p>
 <dt id="systemds.context.SystemDSContext.close">
 <code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Close the connection to the java process and do necessary cleanup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.context.SystemDSContext.exception_and_close">
+<code class="sig-name descname">exception_and_close</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">e</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.context.SystemDSContext.exception_and_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for printing exception, printing stdout and error, while also closing the context correctly.</p>
 </dd></dl>
 
 <dl class="py method">

@@ -18,12 +18,6 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
-var altColor = "altColor";
-var rowColor = "rowColor";
-var tableTab = "tableTab";
-var activeTableTab = "activeTableTab";
 </script>
 <noscript>
 <div>JavaScript is disabled on your browser.</div>
@@ -77,13 +71,13 @@ var activeTableTab = "activeTableTab";
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
-<li><a href="#method.summary">Method</a></li>
+<li><a href="#methods.inherited.from.class.org.apache.sysds.runtime.compress.ReaderColumnSelection">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
-<li><a href="#method.detail">Method</a></li>
+<li>Method</li>
 </ul>
 </div>
 <a name="skip.navbar.top">
@@ -134,9 +128,8 @@ extends <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSe
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionDense.html#ReaderColumnSelectionDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-boolean-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionDense</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionDense.html#ReaderColumnSelectionDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-org.apache.sysds.runtime.compress.CompressionSettings-">ReaderColumnSelectionDense</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                           int[]&nbsp;colIndices,
-                          boolean&nbsp;skipZeros,
                           <a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>&nbsp;</td>
 </tr>
 </table>
@@ -148,25 +141,12 @@ extends <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSe
 <!--   -->
 </a>
 <h3>Method Summary</h3>
-<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/compress/utils/DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelectionDense.html#nextRow--">nextRow</a></span>()</code>
-<div class="block">Gets the next row, null when no more rows.</div>
-</td>
-</tr>
-</table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.compress.ReaderColumnSelection">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.<a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html" title="class in org.apache.sysds.runtime.compress">ReaderColumnSelection</a></h3>
-<code><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html#getCurrentRowIndex--">getCurrentRowIndex</a>, <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html#reset--">reset</a></code></li>
+<code><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html#getCurrentRowIndex--">getCurrentRowIndex</a>, <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html#nextRow--">nextRow</a>, <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html#reset--">reset</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -189,7 +169,7 @@ extends <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSe
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="ReaderColumnSelectionDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-boolean-org.apache.sysds.runtime.compress.CompressionSettings-">
+<a name="ReaderColumnSelectionDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-org.apache.sysds.runtime.compress.CompressionSettings-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -197,33 +177,7 @@ extends <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSe
 <h4>ReaderColumnSelectionDense</h4>
 <pre>public&nbsp;ReaderColumnSelectionDense(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data,
                                   int[]&nbsp;colIndices,
-                                  boolean&nbsp;skipZeros,
                                   <a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</pre>
-</li>
-</ul>
-</li>
-</ul>
-<!-- ============ METHOD DETAIL ========== -->
-<ul class="blockList">
-<li class="blockList"><a name="method.detail">
-<!--   -->
-</a>
-<h3>Method Detail</h3>
-<a name="nextRow--">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>nextRow</h4>
-<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/compress/utils/DblArray.html" title="class in org.apache.sysds.runtime.compress.utils">DblArray</a>&nbsp;nextRow()</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html#nextRow--">ReaderColumnSelection</a></code></span></div>
-<div class="block">Gets the next row, null when no more rows.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html#nextRow--">nextRow</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSelection.html" title="class in org.apache.sysds.runtime.compress">ReaderColumnSelection</a></code></dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>next row</dd>
-</dl>
 </li>
 </ul>
 </li>
@@ -282,13 +236,13 @@ extends <a href="../../../../../org/apache/sysds/runtime/compress/ReaderColumnSe
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
-<li><a href="#method.summary">Method</a></li>
+<li><a href="#methods.inherited.from.class.org.apache.sysds.runtime.compress.ReaderColumnSelection">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
-<li><a href="#method.detail">Method</a></li>
+<li>Method</li>
 </ul>
 </div>
 <a name="skip.navbar.bottom">

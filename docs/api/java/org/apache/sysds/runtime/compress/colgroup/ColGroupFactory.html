@@ -158,11 +158,11 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compress-int:A-int-org.apache.sysds.runtime.compress.UncompressedBitmap-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-">compress</a></span>(int[]&nbsp;colIndexes,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compress-int:A-int-org.apache.sysds.runtime.compress.utils.ABitmap-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-">compress</a></span>(int[]&nbsp;colIndexes,
         int&nbsp;rlen,
-        <a href="../../../../../../org/apache/sysds/runtime/compress/UncompressedBitmap.html" title="class in org.apache.sysds.runtime.compress">UncompressedBitmap</a>&nbsp;ubm,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm,
         <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&nbsp;compType,
-        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
         <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawMatrixBlock)</code>
 <div class="block">Method for compressing an ColGroup.</div>
 </td>
@@ -235,13 +235,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code>compRatios</code> - The previously computed Compression ratings of individual col indexes.</dd>
 <dd><code>groups</code> - The column groups to consider compressing together.</dd>
 <dd><code>compSettings</code> - The compression settings to construct the compression based on.</dd>
-<dd><code>k</code> - The number of parallelism used.</dd>
+<dd><code>k</code> - The degree of parallelism used.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A Resulting array of ColGroups, containing the compressed information from the input matrix block.</dd>
 </dl>
 </li>
 </ul>
-<a name="compress-int:A-int-org.apache.sysds.runtime.compress.UncompressedBitmap-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
+<a name="compress-int:A-int-org.apache.sysds.runtime.compress.utils.ABitmap-org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -249,19 +249,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>compress</h4>
 <pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroup</a>&nbsp;compress(int[]&nbsp;colIndexes,
                                 int&nbsp;rlen,
-                                <a href="../../../../../../org/apache/sysds/runtime/compress/UncompressedBitmap.html" title="class in org.apache.sysds.runtime.compress">UncompressedBitmap</a>&nbsp;ubm,
+                                <a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm,
                                 <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">ColGroup.CompressionType</a>&nbsp;compType,
-                                <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+                                <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
                                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawMatrixBlock)</pre>
 <div class="block">Method for compressing an ColGroup.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>colIndexes</code> - The Column indexes to compress</dd>
 <dd><code>rlen</code> - The number of rows in the columns</dd>
-<dd><code>ubm</code> - The uncompressedBitmap containing all the data needed for the compression (unless
-                       Uncompressed ColGroup)</dd>
+<dd><code>ubm</code> - The Bitmap containing all the data needed for the compression (unless Uncompressed
+                       ColGroup)</dd>
 <dd><code>compType</code> - The CompressionType selected</dd>
-<dd><code>compSettings</code> - The compression Settings used for the given compression</dd>
+<dd><code>cs</code> - The compression Settings used for the given compression</dd>
 <dd><code>rawMatrixBlock</code> - The copy of the original input (maybe transposed) MatrixBlock</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A Compressed ColGroup</dd>
